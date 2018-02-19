@@ -13,3 +13,6 @@ To generate application run
 #### Kotlin conversion is in progress...
 
 This works with current JHipster master branch.
+
+PRS are welcome :bowtie:
+Wide testing is needed :eyeglasses:
