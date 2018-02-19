@@ -48,7 +48,7 @@ class AuditResource (private val auditEventService: AuditEventService) {
      * @return the ResponseEntity with status 200 (OK) and the list of AuditEvents in body
      */
     @GetMapping
-    fun getAll(pageable: Pageable): ResponseEntity<List<AuditEvent>> {
+    fun getAll(pageable: Pageable): ResponseEntity<MutableList<AuditEvent>> {
         val page = auditEventService.findAll(pageable)
         val headers = PaginationUtil.generatePaginationHttpHeaders(page, "/management/audits")
         return ResponseEntity(page.content, headers, HttpStatus.OK)
@@ -66,7 +66,7 @@ class AuditResource (private val auditEventService: AuditEventService) {
     fun getByDates(
         @RequestParam(value = "fromDate") fromDate: LocalDate,
         @RequestParam(value = "toDate") toDate: LocalDate,
-        pageable: Pageable): ResponseEntity<List<AuditEvent>> {
+        pageable: Pageable): ResponseEntity<MutableList<AuditEvent>> {
 
         val page = auditEventService.findByDates(
             fromDate.atStartOfDay(ZoneId.systemDefault()).toInstant(),
