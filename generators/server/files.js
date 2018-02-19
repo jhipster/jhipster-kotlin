@@ -323,7 +323,7 @@ function writeFiles() {
 
             if (this.authenticationType === 'jwt') {
                 this.template(`${BASE_DIR}${SERVER_MAIN_SRC_DIR}package/web/rest/vm/_LoginVM.java`, `${javaDir}web/rest/vm/LoginVM.java`);
-                this.template(`${BASE_DIR}${SERVER_MAIN_SRC_DIR}package/web/rest/_UserJWTController.java`, `${javaDir}web/rest/UserJWTController.java`);
+                this.template(`${SERVER_MAIN_SRC_DIR}package/web/rest/_UserJWTController.kt`, `${javaDir}web/rest/UserJWTController.kt`);
             }
 
             this.template(`${BASE_DIR}${SERVER_MAIN_SRC_DIR}package/security/_package-info.java`, `${javaDir}security/package-info.java`);
@@ -623,7 +623,7 @@ function writeFiles() {
                         this.copy(`${BASE_DIR}${SERVER_MAIN_RES_DIR}config/liquibase/authorities.csv`, `${SERVER_MAIN_RES_DIR}config/liquibase/authorities.csv`);
                         this.copy(`${BASE_DIR}${SERVER_MAIN_RES_DIR}config/liquibase/users_authorities.csv`, `${SERVER_MAIN_RES_DIR}config/liquibase/users_authorities.csv`);
                     }
-                    this.template(`${BASE_DIR}${SERVER_MAIN_SRC_DIR}package/web/rest/_AccountResource.java`, `${javaDir}web/rest/AccountResource.java`);
+                    this.template(`${SERVER_MAIN_SRC_DIR}package/web/rest/_AccountResource.kt`, `${javaDir}web/rest/AccountResource.kt`);
                     this.template(`${BASE_DIR}${SERVER_MAIN_SRC_DIR}package/domain/_User.java`, `${javaDir}domain/User.java`);
                     this.template(`${BASE_DIR}${SERVER_TEST_SRC_DIR}package/web/rest/_AccountResourceIntTest.java`, `${testDir}web/rest/AccountResourceIntTest.java`);
                     this.template(`${BASE_DIR}${SERVER_TEST_SRC_DIR}package/security/_SecurityUtilsUnitTest.java`, `${testDir}security/SecurityUtilsUnitTest.java`);
@@ -639,7 +639,7 @@ function writeFiles() {
                         this.template(`${BASE_DIR}${SERVER_MAIN_SRC_DIR}package/service/mapper/_UserMapper.java`, `${javaDir}service/mapper/UserMapper.java`);
                         this.template(`${BASE_DIR}${SERVER_MAIN_SRC_DIR}package/repository/_UserRepository.java`, `${javaDir}repository/UserRepository.java`);
                         this.template(`${BASE_DIR}${SERVER_MAIN_SRC_DIR}package/repository/_AuthorityRepository.java`, `${javaDir}repository/AuthorityRepository.java`);
-                        this.template(`${BASE_DIR}${SERVER_MAIN_SRC_DIR}package/web/rest/_UserResource.java`, `${javaDir}web/rest/UserResource.java`);
+                        this.template(`${SERVER_MAIN_SRC_DIR}package/web/rest/_UserResource.kt`, `${javaDir}web/rest/UserResource.kt`);
                         if (this.searchEngine === 'elasticsearch') {
                             this.template(`${BASE_DIR}${SERVER_MAIN_SRC_DIR}package/repository/search/_UserSearchRepository.java`, `${javaDir}repository/search/UserSearchRepository.java`);
                         }
@@ -703,8 +703,8 @@ function writeFiles() {
             this.template(`${BASE_DIR}${SERVER_MAIN_SRC_DIR}package/service/dto/_UserDTO.java`, `${javaDir}service/dto/UserDTO.java`);
             this.template(`${BASE_DIR}${SERVER_MAIN_SRC_DIR}package/service/dto/_PasswordChangeDTO.java`, `${javaDir}service/dto/PasswordChangeDTO.java`);
             this.template(`${BASE_DIR}${SERVER_MAIN_SRC_DIR}package/web/rest/vm/_ManagedUserVM.java`, `${javaDir}web/rest/vm/ManagedUserVM.java`);
-            this.template(`${BASE_DIR}${SERVER_MAIN_SRC_DIR}package/web/rest/_AccountResource.java`, `${javaDir}web/rest/AccountResource.java`);
-            this.template(`${BASE_DIR}${SERVER_MAIN_SRC_DIR}package/web/rest/_UserResource.java`, `${javaDir}web/rest/UserResource.java`);
+            this.template(`${SERVER_MAIN_SRC_DIR}package/web/rest/_AccountResource.kt`, `${javaDir}web/rest/AccountResource.kt`);
+            this.template(`${SERVER_MAIN_SRC_DIR}package/web/rest/_UserResource.kt`, `${javaDir}web/rest/UserResource.kt`);
             if (this.searchEngine === 'elasticsearch') {
                 this.template(`${BASE_DIR}${SERVER_MAIN_SRC_DIR}package/repository/search/_UserSearchRepository.java`, `${javaDir}repository/search/UserSearchRepository.java`);
             }
@@ -713,7 +713,7 @@ function writeFiles() {
             this.template(`${BASE_DIR}${SERVER_MAIN_SRC_DIR}package/service/mapper/_UserMapper.java`, `${javaDir}service/mapper/UserMapper.java`);
 
             if (this.databaseType === 'sql' || this.databaseType === 'mongodb' || this.databaseType === 'couchbase') {
-                this.template(`${BASE_DIR}${SERVER_MAIN_SRC_DIR}package/web/rest/_AuditResource.java`, `${javaDir}web/rest/AuditResource.java`);
+                this.template(`${SERVER_MAIN_SRC_DIR}package/web/rest/_AuditResource.kt`, `${javaDir}web/rest/AuditResource.kt`);
             }
 
             /* User management java test files */
