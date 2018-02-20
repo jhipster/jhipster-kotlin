@@ -349,7 +349,7 @@ function writeFiles() {
                 this.template(`${BASE_DIR}${SERVER_MAIN_SRC_DIR}package/security/social/_CustomSignInAdapter.java`, `${javaDir}security/social/CustomSignInAdapter.java`);
                 this.template(`${BASE_DIR}${SERVER_MAIN_SRC_DIR}package/security/social/_package-info.java`, `${javaDir}security/social/package-info.java`);
                 this.template(`${BASE_DIR}${SERVER_MAIN_SRC_DIR}package/service/_SocialService.java`, `${javaDir}service/SocialService.java`);
-                this.template(`${BASE_DIR}${SERVER_MAIN_SRC_DIR}package/web/rest/_SocialController.java`, `${javaDir}web/rest/SocialController.java`);
+                this.template(`${SERVER_MAIN_SRC_DIR}package/web/rest/_SocialController.kt`, `${javaDir}web/rest/SocialController.kt`);
             }
         },
 
@@ -363,7 +363,7 @@ function writeFiles() {
             this.template(`${BASE_DIR}${SERVER_MAIN_SRC_DIR}package/gateway/accesscontrol/_AccessControlFilter.java`, `${javaDir}gateway/accesscontrol/AccessControlFilter.java`);
             this.template(`${BASE_DIR}${SERVER_MAIN_SRC_DIR}package/gateway/responserewriting/_SwaggerBasePathRewritingFilter.java`, `${javaDir}gateway/responserewriting/SwaggerBasePathRewritingFilter.java`);
             this.template(`${BASE_DIR}${SERVER_MAIN_SRC_DIR}package/web/rest/vm/_RouteVM.java`, `${javaDir}web/rest/vm/RouteVM.java`);
-            this.template(`${BASE_DIR}${SERVER_MAIN_SRC_DIR}package/web/rest/_GatewayResource.java`, `${javaDir}web/rest/GatewayResource.java`);
+            this.template(`${SERVER_MAIN_SRC_DIR}package/web/rest/_GatewayResource.kt`, `${javaDir}web/rest/GatewayResource.kt`);
             if (this.authenticationType === 'uaa') {
                 this.template(`${BASE_DIR}${SERVER_MAIN_SRC_DIR}package/web/rest/_AuthResource.java`, `${javaDir}web/rest/AuthResource.java`);
                 this.template(`${BASE_DIR}${SERVER_MAIN_SRC_DIR}package/web/filter/_RefreshTokenFilter.java`, `${javaDir}web/filter/RefreshTokenFilter.java`);
