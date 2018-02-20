@@ -1,0 +1,63 @@
+<%#
+ Copyright 2013-2018 the original author or authors from the JHipster project.
+
+ This file is part of the JHipster project, see http://www.jhipster.tech/
+ for more information.
+
+ Licensed under the Apache License, Version 2.0 (the "License")
+ you may not use this file except in compliance with the License.
+ You may obtain a copy of the License at
+
+      http://www.apache.org/licenses/LICENSE-2.0
+
+ Unless required by applicable law or agreed to in writing, software
+ distributed under the License is distributed on an "AS IS" BASIS,
+ WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
+ See the License for the specific language governing permissions and
+ limitations under the License.
+-%>
+package <%=packageName%>.web.rest
+
+import <%=packageName%>.web.rest.vm.RouteVM
+
+import java.util.ArrayList
+import java.util.List
+
+import org.slf4j.LoggerFactory
+import org.springframework.cloud.client.discovery.DiscoveryClient
+import org.springframework.cloud.netflix.zuul.filters.Route
+import org.springframework.cloud.netflix.zuul.filters.RouteLocator
+import org.springframework.http.*
+import org.springframework.web.bind.annotation.*
+
+import com.codahale.metrics.annotation.Timed
+
+/**
+ * REST controller for managing Gateway configuration.
+ */
+@RestController
+@RequestMapping("/api/gateway")
+class GatewayResource(private val routeLocator: RouteLocator, private val discoveryClient: DiscoveryClient) {
+
+    private val log = LoggerFactory.getLogger(GatewayResource::class.java)
+
+    /**
+     * GET  /routes : get the active routes.
+     *
+     * @return the ResponseEntity with status 200 (OK) and with body the list of routes
+     */
+    @GetMapping("/routes")
+    @Timed
+    fun activeRoutes(): ResponseEntity<List<RouteVM>> {
+        val routes = routeLocator.routes
+        val routeVMs = ArrayList<RouteVM>()
+        routes.forEach { route ->
+            val routeVM = RouteVM()
+            routeVM.path = route.fullPath
+            routeVM.serviceId = route.id
+            routeVM.serviceInstances = discoveryClient.getInstances(route.location)
+            routeVMs.add(routeVM)
+        }
+        return ResponseEntity(routeVMs, HttpStatus.OK)
+    }
+}
