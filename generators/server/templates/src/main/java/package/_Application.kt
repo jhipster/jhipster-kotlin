@@ -85,41 +85,45 @@ class <%= mainClass %>(private val env: Environment) {
             log.error("You have misconfigured your application! It should not " + "run with both the 'dev' and 'cloud' profiles at the same time.")
         }
     }
-}
-/**
-* Main method, used to run the application.
-*
-* @param args the command line arguments
-* @throws UnknownHostException if the local host name could not be resolved into an address
-*/
-@Throws(UnknownHostException::class)
-fun main(args: Array<String>) {
-    val log = LoggerFactory.getLogger(<%= mainClass %>::class.java)
-    val app = SpringApplication(<%= mainClass %>::class.java)
-    DefaultProfileUtil.addDefaultProfile(app)
-    val env = app.run(*args).environment
-    var protocol = "http"
-    if (env.getProperty("server.ssl.key-store") != null) {
-        protocol = "https"
+
+    companion object {
+        /**
+        * Main method, used to run the application.
+        *
+        * @param args the command line arguments
+        * @throws UnknownHostException if the local host name could not be resolved into an address
+        */
+        @Throws(UnknownHostException::class)
+        @JvmStatic
+        fun main(args: Array<String>) {
+            val log = LoggerFactory.getLogger(<%= mainClass %>::class.java)
+            val app = SpringApplication(<%= mainClass %>::class.java)
+            DefaultProfileUtil.addDefaultProfile(app)
+            val env = app.run(*args).environment
+            var protocol = "http"
+            if (env.getProperty("server.ssl.key-store") != null) {
+                protocol = "https"
+            }
+            log.info("\n----------------------------------------------------------\n\t" +
+                "Application '{}' is running! Access URLs:\n\t" +
+                "Local: \t\t{}://localhost:{}\n\t" +
+                "External: \t{}://{}:{}\n\t" +
+                "Profile(s): \t{}\n----------------------------------------------------------",
+                env.getProperty("spring.application.name"),
+                protocol,
+                env.getProperty("server.port"),
+                protocol,
+                InetAddress.getLocalHost().hostAddress,
+                env.getProperty("server.port"),
+                env.activeProfiles)
+
+            <%_ if (serviceDiscoveryType && (applicationType === 'microservice' || applicationType === 'gateway' || applicationType === 'uaa')) { _%>
+
+            val configServerStatus = env.getProperty("configserver.status")
+            log.info("\n----------------------------------------------------------\n\t" +
+                    "Config Server: \t{}\n----------------------------------------------------------",
+                configServerStatus == null ? "Not found or not setup for this application" : configServerStatus)
+            <%_ } _%>
+        }
     }
-    log.info("\n----------------------------------------------------------\n\t" +
-        "Application '{}' is running! Access URLs:\n\t" +
-        "Local: \t\t{}://localhost:{}\n\t" +
-        "External: \t{}://{}:{}\n\t" +
-        "Profile(s): \t{}\n----------------------------------------------------------",
-        env.getProperty("spring.application.name"),
-        protocol,
-        env.getProperty("server.port"),
-        protocol,
-        InetAddress.getLocalHost().hostAddress,
-        env.getProperty("server.port"),
-        env.activeProfiles)
-
-    <%_ if (serviceDiscoveryType && (applicationType === 'microservice' || applicationType === 'gateway' || applicationType === 'uaa')) { _%>
-
-    val configServerStatus = env.getProperty("configserver.status")
-    log.info("\n----------------------------------------------------------\n\t" +
-            "Config Server: \t{}\n----------------------------------------------------------",
-        configServerStatus == null ? "Not found or not setup for this application" : configServerStatus)
-    <%_ } _%>
 }
