@@ -446,7 +446,7 @@ function writeFiles() {
             }
             this.template(`${BASE_DIR}${SERVER_MAIN_SRC_DIR}package/config/_Constants.java`, `${javaDir}config/Constants.java`);
             this.template(`${SERVER_MAIN_SRC_DIR}package/config/_DateTimeFormatConfiguration.kt`, `${javaDir}config/DateTimeFormatConfiguration.kt`);
-            this.template(`${BASE_DIR}${SERVER_MAIN_SRC_DIR}package/config/_LoggingConfiguration.java`, `${javaDir}config/LoggingConfiguration.java`);
+            this.template(`${SERVER_MAIN_SRC_DIR}package/config/_LoggingConfiguration.kt`, `${javaDir}config/LoggingConfiguration.kt`);
 
             if (this.databaseType === 'sql' || this.databaseType === 'mongodb' || this.databaseType === 'couchbase') {
                 this.template(`${BASE_DIR}${SERVER_MAIN_SRC_DIR}package/config/_CloudDatabaseConfiguration.java`, `${javaDir}config/CloudDatabaseConfiguration.java`);
