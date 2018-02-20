@@ -190,6 +190,13 @@ function writeFiles() {
                 this.copy(`${BASE_DIR}gradlew.bat`, 'gradlew.bat');
                 this.copy(`${BASE_DIR}gradle/wrapper/gradle-wrapper.jar`, 'gradle/wrapper/gradle-wrapper.jar');
                 this.copy(`${BASE_DIR}gradle/wrapper/gradle-wrapper.properties`, 'gradle/wrapper/gradle-wrapper.properties');
+                this.template(`gradle/_kotlin.gradle`, 'gradle/kotlin.gradle');
+
+                this.addGradlePlugin('org.jetbrains.kotlin', 'kotlin-gradle-plugin', '1.2.21');
+                this.addGradlePlugin('org.jetbrains.kotlin', 'kotlin-allopen', '1.2.21');
+
+                this.applyFromGradleScript('gradle/kotlin');
+
                 break;
             case 'maven':
             default:
