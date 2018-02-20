@@ -1,5 +1,5 @@
-<a name="0.0.4"></a>
-# [0.0.4](https://github.com/sendilkumarn/jhipster-kotlin/compare/0.0.3...0.0.4) (2018-02-20)
+<a name="0.0.5"></a>
+# [0.0.5](https://github.com/sendilkumarn/jhipster-kotlin/compare/0.0.3...0.0.5) (2018-02-20)
 ### Features
 * Added `GatewayResource` | `SocialController` | `LoggingConfiguration`
 
