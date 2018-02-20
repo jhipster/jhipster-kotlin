@@ -1,3 +1,8 @@
+<a name="0.0.4"></a>
+# [0.0.4](https://github.com/sendilkumarn/jhipster-kotlin/compare/0.0.3...0.0.4) (2018-02-20)
+### Features
+* Added `GatewayResource` | `SocialController` | `LoggingConfiguration`
+
 <a name="0.0.3"></a>
 # [0.0.3](https://github.com/sendilkumarn/jhipster-kotlin/compare/0.0.2...0.0.3) (2018-02-20)
 ### Features
