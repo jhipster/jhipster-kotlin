@@ -21,7 +21,6 @@ package <%=packageName%>.config
 import io.github.jhipster.async.ExceptionHandlingAsyncTaskExecutor
 import io.github.jhipster.config.JHipsterProperties
 
-import org.slf4j.Logger
 import org.slf4j.LoggerFactory
 import org.springframework.aop.interceptor.AsyncUncaughtExceptionHandler
 import org.springframework.aop.interceptor.SimpleAsyncUncaughtExceptionHandler
@@ -39,7 +38,7 @@ class AsyncConfiguration(private val jHipsterProperties: JHipsterProperties): As
 
     private val log = LoggerFactory.getLogger(this.javaClass)
 
-    @Bean(name = arrayOf("taskExecutor"))
+    @Bean(name = ["taskExecutor"])
     override fun getAsyncExecutor(): Executor {
         log.debug("Creating Async Task Executor")
         val executor = ThreadPoolTaskExecutor()
