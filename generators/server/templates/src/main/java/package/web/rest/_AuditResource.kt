@@ -84,6 +84,6 @@ class AuditResource (private val auditEventService: AuditEventService) {
      */
     @GetMapping("/{id:.+}")
     operator fun get(@PathVariable id: Long?): ResponseEntity<AuditEvent> {
-        return ResponseUtil.wrapOrNotFound(auditEventService.find(id))
+        return ResponseUtil.wrapOrNotFound(auditEventService.find(id!!))
     }
 }
