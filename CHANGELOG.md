@@ -1,7 +1,13 @@
+<a name="0.0.6"></a>
+# [0.0.6](https://github.com/sendilkumarn/jhipster-kotlin/compare/0.0.5...0.0.6) (2018-02-21)
+* Added Repository files ( `Userrepository` is not used but converted to Kotlin)
+* Added `DomainUserDetailsService` | `UserMapper` | `LoggingConfiguration` | `RandomUtil`
+* Added Service files
+
 <a name="0.0.5"></a>
 # [0.0.5](https://github.com/sendilkumarn/jhipster-kotlin/compare/0.0.3...0.0.5) (2018-02-20)
 ### Features
-* Added `GatewayResource` | `SocialController` | `LoggingConfiguration`
+* Added `GatewayResource` | `SocialController` 
 
 <a name="0.0.3"></a>
 # [0.0.3](https://github.com/sendilkumarn/jhipster-kotlin/compare/0.0.2...0.0.3) (2018-02-20)
