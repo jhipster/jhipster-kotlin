@@ -1,0 +1,130 @@
+<%#
+ Copyright 2013-2018 the original author or authors from the JHipster project.
+
+ This file is part of the JHipster project, see http://www.jhipster.tech/
+ for more information.
+
+ Licensed under the Apache License, Version 2.0 (the "License")
+ you may not use this file except in compliance with the License.
+ You may obtain a copy of the License at
+
+      http://www.apache.org/licenses/LICENSE-2.0
+
+ Unless required by applicable law or agreed to in writing, software
+ distributed under the License is distributed on an "AS IS" BASIS,
+ WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
+ See the License for the specific language governing permissions and
+ limitations under the License.
+-%>
+package <%=packageName%>.service
+
+import <%=packageName%>.domain.Authority
+import <%=packageName%>.domain.User
+import <%=packageName%>.repository.AuthorityRepository
+import <%=packageName%>.repository.UserRepository
+import <%=packageName%>.security.AuthoritiesConstants
+<%_ if (searchEngine === 'elasticsearch') { _%>
+import <%=packageName%>.repository.search.UserSearchRepository
+<%_ } _%>
+
+import org.apache.commons.lang3.RandomStringUtils
+import org.apache.commons.lang3.StringUtils
+import org.slf4j.LoggerFactory
+import org.springframework.security.crypto.password.PasswordEncoder
+import org.springframework.social.connect.Connection
+import org.springframework.social.connect.UserProfile
+import org.springframework.social.connect.UsersConnectionRepository
+import org.springframework.stereotype.Service
+
+import java.util.HashSet
+import java.util.Locale
+
+@Service
+class SocialService(private val usersConnectionRepository: UsersConnectionRepository, private val authorityRepository: AuthorityRepository,
+                    private val passwordEncoder: PasswordEncoder, private val userRepository: UserRepository,
+                    private val mailService: MailService<% if (searchEngine === 'elasticsearch') { %>, private val userSearchRepository: UserSearchRepository<% } %>) {
+
+    private val log = LoggerFactory.getLogger(SocialService::class.java)
+
+    fun deleteUserSocialConnection(login: String) {
+        val connectionRepository = usersConnectionRepository.createConnectionRepository(login)
+        connectionRepository.findAllConnections().keys.stream()
+            .forEach { providerId ->
+                connectionRepository.removeConnections(providerId)
+                log.debug("Delete user social connection providerId: {}", providerId)
+            }
+    }
+
+    fun createSocialUser(connection: Connection<*>?, langKey: String) {
+        if (connection == null) {
+            log.error("Cannot create social user because connection is null")
+            throw IllegalArgumentException("Connection cannot be null")
+        }
+        val userProfile = connection.fetchUserProfile()
+        val providerId = connection.key.providerId
+        val imageUrl = connection.imageUrl
+        val user = createUserIfNotExist(userProfile, langKey, providerId, imageUrl)
+        createSocialConnection(user.login, connection)
+        mailService.sendSocialRegistrationValidationEmail(user, providerId)
+    }
+
+    private fun createUserIfNotExist(userProfile: UserProfile, langKey: String, providerId: String, imageUrl: String): User {
+        val email = userProfile.email
+        var userName = userProfile.username
+        if (!StringUtils.isBlank(userName)) {
+            userName = userName.toLowerCase(Locale.ENGLISH)
+        }
+        if (StringUtils.isBlank(email) && StringUtils.isBlank(userName)) {
+            log.error("Cannot create social user because email and login are null")
+            throw IllegalArgumentException("Email and login cannot be null")
+        }
+        if (StringUtils.isBlank(email) && userRepository.findOneByLogin(userName).isPresent) {
+            log.error("Cannot create social user because email is null and login already exist, login -> {}", userName)
+            throw IllegalArgumentException("Email cannot be null with an existing login")
+        }
+        if (!StringUtils.isBlank(email)) {
+            val user = userRepository.findOneByEmailIgnoreCase(email)
+            if (user.isPresent) {
+                log.info("User already exist associate the connection to this account")
+                return user.get()
+            }
+        }
+
+        val login = getLoginDependingOnProviderId(userProfile, providerId)
+        val encryptedPassword = passwordEncoder.encode(RandomStringUtils.random(10))
+        val authorities = HashSet<<% if (databaseType === 'couchbase') { %>String<% } else { %>Authority<% } %>>(1)
+        authorities.add(authorityRepository.findById(AuthoritiesConstants.USER).get()<%if (databaseType === 'couchbase') { %>.getName()<% } %>)
+
+        val newUser = User()
+        newUser.login = login
+        newUser.password = encryptedPassword
+        newUser.firstName = userProfile.firstName
+        newUser.lastName = userProfile.lastName
+        newUser.email = email
+        newUser.activated = true
+        newUser.authorities = authorities
+        newUser.langKey = langKey
+        newUser.imageUrl = imageUrl
+
+        <%_ if (searchEngine === 'elasticsearch') { _%>
+        userSearchRepository.save(newUser)
+        <%_ } _%>
+        return userRepository.save(newUser)
+    }
+
+    /**
+     * @return login if provider manage a login like Twitter or GitHub otherwise email address.
+     * Because provider like Google or Facebook didn't provide login or login like "12099388847393"
+     */
+    private fun getLoginDependingOnProviderId(userProfile: UserProfile, providerId: String): String {
+        when (providerId) {
+            "twitter" -> return userProfile.username.toLowerCase()
+            else -> return userProfile.firstName.toLowerCase().replace(" ", "_") + "_" + userProfile.lastName.toLowerCase().replace(" ", "_")
+        }
+    }
+
+    private fun createSocialConnection(login: String, connection: Connection<*>) {
+        val connectionRepository = usersConnectionRepository.createConnectionRepository(login)
+        connectionRepository.addConnection(connection)
+    }
+}
