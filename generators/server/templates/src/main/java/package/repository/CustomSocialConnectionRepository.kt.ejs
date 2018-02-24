@@ -122,7 +122,7 @@ open class CustomSocialConnectionRepository(private val userId: String, private 
     private fun getNewMaxRank(providerId: String): Double {
         val socialUserConnections = socialUserConnectionRepository.findAllByUserIdAndProviderIdOrderByRankAsc(userId, providerId)
         return socialUserConnections.stream()
-            .mapToDouble{ it.rank.toDouble() }
+            .mapToDouble{ it.rank!!.toDouble() }
             .max()
             .orElse(0.0) + 1.0
     }
@@ -142,7 +142,7 @@ open class CustomSocialConnectionRepository(private val userId: String, private 
             userId,
             connection.key.providerId,
             connection.key.providerUserId,
-            rank,
+            rank!!,
             connection.displayName,
             connection.profileUrl,
             connection.imageUrl,
@@ -154,7 +154,7 @@ open class CustomSocialConnectionRepository(private val userId: String, private 
     }
 
     private fun providerUserIdsToConnections(providerId: String, providerUserIds: List<String>): List<Connection<*>> {
-        val socialUserConnections = socialUserConnectionRepository.findAllByUserIdAndProviderIdAndProviderUserIdIn(userId, providerId, providerUserIds)
+        val socialUserConnections = socialUserConnectionRepository.findAllByUserIdAndProviderIdAndProviderUserIdIn(userId, providerId, providerUserIds.toSet())
         return socialUserConnectionsToConnections(socialUserConnections)
     }
 

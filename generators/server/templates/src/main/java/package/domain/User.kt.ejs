@@ -1,0 +1,237 @@
+<%#
+ Copyright 2013-2018 the original author or authors from the JHipster project.
+ This file is part of the JHipster project, see http://www.jhipster.tech/
+ for more information.
+ Licensed under the Apache License, Version 2.0 (the "License")
+ you may not use this file except in compliance with the License.
+ You may obtain a copy of the License at
+      http://www.apache.org/licenses/LICENSE-2.0
+ Unless required by applicable law or agreed to in writing, software
+ distributed under the License is distributed on an "AS IS" BASIS,
+ WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
+ See the License for the specific language governing permissions and
+ limitations under the License.
+-%>
+package <%=packageName%>.domain
+
+<%_ if (authenticationType === 'oauth2' && applicationType !== 'monolith') { _%>
+import java.util.Set
+class User {
+    var  login: String? = null
+    var  firstName: String? = null
+    var  lastName: String? = null
+    var  email: String? = null
+    var  langKey: String? = null
+    var  imageUrl: String? = null
+    var  activated: Boolean
+    var  authorities: MutableSet<String>
+    constructor(login: String, firstName: String, lastName: String,email: String, langKey: String,
+        imageUrl: String, activated: Boolean, authorities: Set<String>) {
+        this.login = login
+        this.firstName = firstName
+        this.lastName = lastName
+        this.email = email
+        this.langKey = langKey
+        this.imageUrl = imageUrl
+        this.activated = activated
+        this.authorities = authorities
+    }
+}
+<%_ } else { _%>
+import <%=packageName%>.config.Constants
+<% if (databaseType === 'cassandra') { %>
+import com.datastax.driver.mapping.annotations.*<% } %>
+import com.fasterxml.jackson.annotation.JsonIgnore
+import org.apache.commons.lang3.StringUtils<% if (databaseType === 'sql') { %>
+import org.hibernate.annotations.BatchSize<% } %><% if (enableHibernateCache) { %>
+import org.hibernate.annotations.Cache
+import org.hibernate.annotations.CacheConcurrencyStrategy<% } %>
+import javax.validation.constraints.Email
+<%_ if (databaseType === 'mongodb') { _%>
+import org.springframework.data.annotation.Id
+import org.springframework.data.mongodb.core.index.Indexed
+import org.springframework.data.mongodb.core.mapping.Field
+<%_ } _%>
+<%_ if (databaseType === 'couchbase') { _%>
+import org.springframework.data.annotation.Id
+import com.couchbase.client.java.repository.annotation.Field
+import org.springframework.data.couchbase.core.mapping.Document
+import org.springframework.data.couchbase.core.mapping.id.GeneratedValue
+import org.springframework.data.couchbase.core.mapping.id.IdAttribute
+import org.springframework.data.couchbase.core.mapping.id.IdPrefix
+<%_ } _%>
+<%_ if (databaseType === 'sql') { _%>
+import javax.persistence.*
+<%_ } _%>
+import javax.validation.constraints.NotNull
+import javax.validation.constraints.Pattern
+import javax.validation.constraints.Size
+import java.io.Serializable
+import java.util.HashSet
+import java.util.Locale
+import java.util.Objects
+import java.util.Set
+import java.time.Instant
+<%_ if (databaseType === 'couchbase') { _%>
+import static <%=packageName%>.config.Constants.ID_DELIMITER
+import static org.springframework.data.couchbase.core.mapping.id.GenerationStrategy.USE_ATTRIBUTES
+<%_ } _%>
+/**
+ * A user.
+ */<% if (databaseType === 'sql') { %>
+@Entity
+@Table(name = "<%= jhiTablePrefix %>_user")<% } %>
+<%_ if (enableHibernateCache) { if (cacheProvider === 'infinispan') { _%>
+@Cache(usage = CacheConcurrencyStrategy.READ_WRITE) <%_ } else { _%>
+@Cache(usage = CacheConcurrencyStrategy.NONSTRICT_READ_WRITE) <%_ } } _%><% if (databaseType === 'mongodb') { %>
+@org.springframework.data.mongodb.core.mapping.Document(collection = "<%= jhiTablePrefix %>_user")<% } %><% if (databaseType === 'couchbase') { %>
+@Document<% } %><% if (databaseType === 'cassandra') { %>
+@Table(name = "user")<% } %><% if (searchEngine === 'elasticsearch') { %>
+@org.springframework.data.elasticsearch.annotations.Document(indexName = "user")<% } %>
+class User:<% if (databaseType === 'sql' || databaseType === 'mongodb' || databaseType === 'couchbase') { %> AbstractAuditingEntity(),<% } %> Serializable {
+<% if (databaseType === 'sql') { %>
+    @Id
+    <%_ if (prodDatabaseType === 'mysql' || prodDatabaseType === 'mariadb') { _%>
+    @GeneratedValue(strategy = GenerationType.IDENTITY)
+    <%_ }  else { _%>
+    @GeneratedValue(strategy = GenerationType.SEQUENCE, generator = "sequenceGenerator")
+    @SequenceGenerator(name = "sequenceGenerator")
+    <%_ } _%>
+    var id: Long? = null<% } else { %><% if (databaseType === 'couchbase') { %>
+    val PREFIX = "user"
+    @SuppressWarnings("unused")
+    @IdPrefix
+    var prefix: String = PREFIX<% } %>
+<% if (databaseType === 'mongodb' || databaseType === 'couchbase') { %>
+    @Id<% } %><% if (databaseType === 'couchbase') { %>
+    @GeneratedValue(strategy = USE_ATTRIBUTES, delimiter = ID_DELIMITER)<% } %><% if (databaseType === 'cassandra') { %>
+    @PartitionKey<% } %>
+    var id: String? = null<% } %>
+    <%_ let columnMax = 50
+        if (enableSocialSignIn) {
+            columnMax = 100
+        } _%>
+    @NotNull
+    @Pattern(regexp = Constants.LOGIN_REGEX)
+    @Size(min = 1, max = <%=columnMax %>)<% if (databaseType === 'sql') { %>
+    @Column(length = <%=columnMax %>, unique = true, nullable = false)<% } %><% if (databaseType === 'mongodb') { %>
+    @Indexed<% } %><% if (databaseType === 'couchbase') { %>
+    @IdAttribute<% } %>
+    var login: String? = null
+    set(login) {
+            field = StringUtils.lowerCase(login, Locale.ENGLISH)
+        }
+<%_ if (authenticationType !== 'oauth2') { _%>
+    @JsonIgnore
+    @NotNull
+    @Size(min = 60, max = 60)<% if (databaseType === 'sql') { %>
+    @Column(name = "password_hash", length = 60)<% } %>
+    var password: String? = null
+<%_ } _%>
+    @Size(max = 50)<% if (databaseType === 'sql') { %>
+    @Column(name = "first_name", length = 50)<% } %><% if (databaseType === 'mongodb' || databaseType === 'couchbase') { %>
+    @Field("first_name")<% } %>
+    var firstName: String? = null
+    @Size(max = 50)<% if (databaseType === 'sql') { %>
+    @Column(name = "last_name", length = 50)<% } %><% if (databaseType === 'mongodb' || databaseType === 'couchbase') { %>
+    @Field("last_name")<% } %>
+    var lastName: String? = null
+    @Email
+    @Size(min = 5, max = 254)<% if (databaseType === 'sql') { %>
+    @Column(length = 254, unique = true)<% } %><% if (databaseType === 'mongodb') { %>
+    @Indexed<% } %>
+    var email: String? = null
+<%_ if (databaseType === 'sql') { _%>
+    @NotNull
+    @Column(nullable = false)
+<%_ } _%>
+    var activated = false
+    @Size(min = 2, max = 6)<% if (databaseType === 'sql') { %>
+    @Column(name = "lang_key", length = 6)<% } %><% if (databaseType === 'mongodb' || databaseType === 'couchbase') { %>
+    @Field("lang_key")<% } %><% if (databaseType === 'cassandra') { %>
+    @Column(name = "lang_key")<% } %>
+    var langKey: String? = null
+    <%_ if (databaseType === 'mongodb' || databaseType === 'couchbase' || databaseType === 'sql') { _%>
+    @Size(max = 256)<% if (databaseType === 'sql') { %>
+    @Column(name = "image_url", length = 256)<% } %><% if (databaseType === 'mongodb' || databaseType === 'couchbase') { %>
+    @Field("image_url")<% } %>
+    var imageUrl: String? = null
+    <%_ } _%>
+<%_ if (authenticationType !== 'oauth2') { _%>
+    @Size(max = 20)<% if (databaseType === 'sql') { %>
+    @Column(name = "activation_key", length = 20)<% } %><% if (databaseType === 'mongodb' || databaseType === 'couchbase') { %>
+    @Field("activation_key")<% } %><% if (databaseType === 'cassandra') { %>
+    @Column(name = "activation_key")<% } %>
+    @JsonIgnore
+    var activationKey: String? = null
+    @Size(max = 20)<% if (databaseType === 'sql') { %>
+    @Column(name = "reset_key", length = 20)<% } %><% if (databaseType === 'mongodb' || databaseType === 'couchbase') { %>
+    @Field("reset_key")<% } %><% if (databaseType === 'cassandra') { %>
+    @Column(name = "reset_key")<% } %>
+    @JsonIgnore
+    var resetKey: String? = null
+    <%_ if (databaseType === 'sql' || databaseType === 'cassandra') { _%>
+    @Column(name = "reset_date")
+    <%_ } else if (databaseType === 'mongodb' || databaseType === 'couchbase') { _%>
+    @Field("reset_date")
+    <%_ } _%>
+    var resetDate: Instant? = null
+<%_ } _%>
+    @JsonIgnore<% if (databaseType === 'sql') { %>
+    @ManyToMany
+    @JoinTable(
+        name = "<%= jhiTablePrefix %>_user_authority",
+        joinColumns =  [(JoinColumn(name = "user_id", referencedColumnName = "id"))],
+        inverseJoinColumns = [(JoinColumn(name = "authority_name", referencedColumnName = "name"))])
+    <%_ if (enableHibernateCache) { if (cacheProvider === 'infinispan') { _%>
+    @Cache(usage = CacheConcurrencyStrategy.READ_WRITE) <%_ } else { _%>
+    @Cache(usage = CacheConcurrencyStrategy.NONSTRICT_READ_WRITE) <%_ } } _%><% if (databaseType === 'sql') { %>
+    @BatchSize(size = 20)<% } %><% } %><% if (databaseType === 'sql' || databaseType === 'mongodb') { %>
+    var authorities: MutableSet<Authority> = HashSet()<% } %><% if (databaseType === 'cassandra' || databaseType === 'couchbase') { %>
+    var authorities: MutableSet<String> = HashSet()<% } %><% if (authenticationType === 'session' && databaseType === 'sql') { %>
+    @JsonIgnore
+    @OneToMany(cascade = CascadeType.ALL, orphanRemoval = true, mappedBy = "user")
+    <%_ if (enableHibernateCache) { if (cacheProvider === 'infinispan') { _%>
+    @Cache(usage = CacheConcurrencyStrategy.READ_WRITE)
+    <%_ } else { _%>
+    @Cache(usage = CacheConcurrencyStrategy.NONSTRICT_READ_WRITE)
+    <%_ } } _%>
+    var persistentTokens: MutableSet<PersistentToken> = HashSet()<% } %>
+
+    override fun equals(o: Any?): Boolean {
+        if (this === o) {
+            return true
+        }
+        if (o == null || javaClass != o.javaClass) {
+            return false
+        }
+
+        val user = o as User?
+        return !(user!!.id == null || id == null) && id == user.id
+    }
+
+    override fun hashCode(): Int {
+        return Objects.hashCode(id)
+    }
+
+    override fun toString(): String {
+        return "User{" +
+            "login='" + login + '\'' +
+            ", firstName='" + firstName + '\'' +
+            ", lastName='" + lastName + '\'' +
+            ", email='" + email + '\'' +<% if (databaseType === 'mongodb' || databaseType === 'couchbase' || databaseType === 'sql') { %>
+            ", imageUrl='" + imageUrl + '\'' +<% } %>
+            ", activated='" + activated + '\'' +
+            ", langKey='" + langKey + '\'' +
+            <%_ if (authenticationType !== 'oauth2') { _%>
+            ", activationKey='" + activationKey + '\'' +
+            <%_ } _%>
+            "}"
+    }
+
+    companion object {
+
+        private const val serialVersionUID = 1L
+    }
+}
+<%_ } _%>

@@ -209,7 +209,7 @@ class UserService(private val userRepository: UserRepository
                 .map{ authorityRepository.findById(it) }
                 .filter{ it.isPresent }
                 .map{ it.get() }
-                .toSet()
+                .toMutableSet()
             user.authorities = authorities
         }
         <%_ } _%>
@@ -326,7 +326,7 @@ class UserService(private val userRepository: UserRepository
     fun deleteUser(login: String) {
         userRepository.findOneByLogin(login).ifPresent { user ->
             <%_ if (enableSocialSignIn) { _%>
-            socialService.deleteUserSocialConnection(user.login)
+            socialService.deleteUserSocialConnection(user.login!!)
             <%_ } _%>
             userRepository.delete(user)
             <%_ if (searchEngine === 'elasticsearch') { _%>
@@ -346,7 +346,7 @@ class UserService(private val userRepository: UserRepository
             .flatMap { userRepository.findOneByLogin(it) }
             .ifPresent { user ->
                 val currentEncryptedPassword = user.password
-                assertClearTextPasswordMatchesEncryptedPassword(currentClearTextPassword, currentEncryptedPassword)
+                assertClearTextPasswordMatchesEncryptedPassword(currentClearTextPassword, currentEncryptedPassword!!)
                 val encryptedPassword = passwordEncoder.encode(newPassword)
                 user.password = encryptedPassword
                 <%_ if (databaseType === 'mongodb' || databaseType === 'couchbase' || databaseType === 'cassandra') { _%>
@@ -455,7 +455,7 @@ class UserService(private val userRepository: UserRepository
      * @return a list of all the authorities
      */
     fun getAuthorities(): List<String> {
-        return authorityRepository.findAll().map(Authority::getName).toList()
+        return authorityRepository.findAll().map { it.name }.toList()
     }
     <%_ } _%>
 
@@ -590,8 +590,8 @@ class UserService(private val userRepository: UserRepository
     <%_ if (cacheManagerIsAvailable === true) { _%>
 
     private fun clearUserCaches(user: User) {
-        Objects.requireNonNull<Cache>(cacheManager.getCache(UserRepository.USERS_BY_LOGIN_CACHE)).evict(user.login)
-        Objects.requireNonNull<Cache>(cacheManager.getCache(UserRepository.USERS_BY_EMAIL_CACHE)).evict(user.email)
+        Objects.requireNonNull<Cache>(cacheManager.getCache(UserRepository.USERS_BY_LOGIN_CACHE)).evict(user.login!!)
+        Objects.requireNonNull<Cache>(cacheManager.getCache(UserRepository.USERS_BY_EMAIL_CACHE)).evict(user.email!!)
     }
     <%_ } _%>
 }

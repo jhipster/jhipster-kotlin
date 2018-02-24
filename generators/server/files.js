@@ -313,7 +313,7 @@ function writeFiles() {
             }
 
             if (this.authenticationType === 'session') {
-                this.template(rewriteDir(`${SERVER_MAIN_SRC_DIR}package/domain/PersistentToken.java.ejs`), `${javaDir}domain/PersistentToken.java`);
+                this.template(rewriteDir(`${SERVER_MAIN_SRC_DIR}package/domain/PersistentToken.kt.ejs`), `${javaDir}domain/PersistentToken.kt`);
                 this.template(rewriteDir(`${SERVER_MAIN_SRC_DIR}package/repository/PersistentTokenRepository.java.ejs`), `${javaDir}repository/PersistentTokenRepository.java`);
             }
 
@@ -339,7 +339,7 @@ function writeFiles() {
             if (this.enableSocialSignIn) {
                 this.template(rewriteDir(`${SERVER_MAIN_SRC_DIR}package/security/social/package-info.java.ejs`), `${javaDir}security/social/package-info.java`);
                 this.template(rewriteDir(`${SERVER_MAIN_SRC_DIR}package/config/social/SocialConfiguration.java.ejs`), `${javaDir}config/social/SocialConfiguration.java`);
-                this.template(rewriteDir(`${SERVER_MAIN_SRC_DIR}package/domain/SocialUserConnection.java.ejs`), `${javaDir}domain/SocialUserConnection.java`);
+                this.template(rewriteDir(`${SERVER_MAIN_SRC_DIR}package/domain/SocialUserConnection.kt.ejs`), `${javaDir}domain/SocialUserConnection.kt`);
                 this.template(rewriteDir(`${SERVER_MAIN_SRC_DIR}package/repository/CustomSocialConnectionRepository.kt.ejs`), `${javaDir}repository/CustomSocialConnectionRepository.kt`);
                 this.template(rewriteDir(`${SERVER_MAIN_SRC_DIR}package/repository/CustomSocialUsersConnectionRepository.java.ejs`), `${javaDir}repository/CustomSocialUsersConnectionRepository.java`);
                 this.template(rewriteDir(`${SERVER_MAIN_SRC_DIR}package/repository/SocialUserConnectionRepository.kt.ejs`), `${javaDir}repository/SocialUserConnectionRepository.kt`);
@@ -491,8 +491,8 @@ function writeFiles() {
             this.template(rewriteDir(`${SERVER_MAIN_SRC_DIR}package/domain/package-info.java.ejs`), `${javaDir}domain/package-info.java`);
 
             if (this.databaseType === 'sql' || this.databaseType === 'mongodb' || this.databaseType === 'couchbase') {
-                this.template(rewriteDir(`${SERVER_MAIN_SRC_DIR}package/domain/AbstractAuditingEntity.java.ejs`), `${javaDir}domain/AbstractAuditingEntity.java`);
-                this.template(rewriteDir(`${SERVER_MAIN_SRC_DIR}package/domain/PersistentAuditEvent.java.ejs`), `${javaDir}domain/PersistentAuditEvent.java`);
+                this.template(rewriteDir(`${SERVER_MAIN_SRC_DIR}package/domain/AbstractAuditingEntity.kt.ejs`), `${javaDir}domain/AbstractAuditingEntity.kt`);
+                this.template(rewriteDir(`${SERVER_MAIN_SRC_DIR}package/domain/PersistentAuditEvent.kt.ejs`), `${javaDir}domain/PersistentAuditEvent.kt`);
             }
         },
 
@@ -628,13 +628,13 @@ function writeFiles() {
                         this.copy(rewriteDir(`${SERVER_MAIN_RES_DIR}config/liquibase/users_authorities.csv.ejs`), `${SERVER_MAIN_RES_DIR}config/liquibase/users_authorities.csv`);
                     }
                     this.template(rewriteDir(`${SERVER_MAIN_SRC_DIR}package/web/rest/AccountResource.kt.ejs`), `${javaDir}web/rest/AccountResource.kt`);
-                    this.template(rewriteDir(`${SERVER_MAIN_SRC_DIR}package/domain/User.java.ejs`), `${javaDir}domain/User.java`);
+                    this.template(rewriteDir(`${SERVER_MAIN_SRC_DIR}package/domain/User.kt.ejs`), `${javaDir}domain/User.kt`);
                     this.template(rewriteDir(`${SERVER_TEST_SRC_DIR}package/web/rest/AccountResourceIntTest.java.ejs`), `${testDir}web/rest/AccountResourceIntTest.java`);
                     this.template(rewriteDir(`${SERVER_TEST_SRC_DIR}package/security/SecurityUtilsUnitTest.java.ejs`), `${testDir}security/SecurityUtilsUnitTest.java`);
 
                     if (this.applicationType === 'monolith') {
                         this.template(rewriteDir(`${SERVER_MAIN_RES_DIR}config/liquibase/users.csv.ejs`), `${SERVER_MAIN_RES_DIR}config/liquibase/users.csv`);
-                        this.template(rewriteDir(`${SERVER_MAIN_SRC_DIR}package/domain/Authority.java.ejs`), `${javaDir}domain/Authority.java`);
+                        this.template(rewriteDir(`${SERVER_MAIN_SRC_DIR}package/domain/Authority.kt.ejs`), `${javaDir}domain/Authority.kt`);
                         this.template(rewriteDir(`${SERVER_MAIN_SRC_DIR}package/service/UserService.kt.ejs`), `${javaDir}service/UserService.kt`);
                         this.template(rewriteDir(`${SERVER_MAIN_SRC_DIR}package/service/dto/package-info.java.ejs`), `${javaDir}service/dto/package-info.java`);
                         this.template(rewriteDir(`${SERVER_MAIN_SRC_DIR}package/service/dto/UserDTO.java.ejs`), `${javaDir}service/dto/UserDTO.java`);
@@ -681,10 +681,10 @@ function writeFiles() {
             }
 
             /* User management java domain files */
-            this.template(rewriteDir(`${SERVER_MAIN_SRC_DIR}package/domain/User.java.ejs`), `${javaDir}domain/User.java`);
+            this.template(rewriteDir(`${SERVER_MAIN_SRC_DIR}package/domain/User.kt.ejs`), `${javaDir}domain/User.kt`);
 
             if (this.databaseType === 'sql' || this.databaseType === 'mongodb' || this.databaseType === 'couchbase') {
-                this.template(rewriteDir(`${SERVER_MAIN_SRC_DIR}package/domain/Authority.java.ejs`), `${javaDir}domain/Authority.java`);
+                this.template(rewriteDir(`${SERVER_MAIN_SRC_DIR}package/domain/Authority.kt.ejs`), `${javaDir}domain/Authority.kt`);
             }
 
             /* User management java repo files */
