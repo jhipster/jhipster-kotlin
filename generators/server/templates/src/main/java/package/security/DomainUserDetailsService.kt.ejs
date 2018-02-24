@@ -73,12 +73,12 @@ class DomainUserDetailsService(private val userRepository: UserRepository) : Use
         if (!user.getActivated()) {
             throw UserNotActivatedException("User " + lowercaseLogin + " was not activated")
         }
-        val grantedAuthorities = user.getAuthorities()<% if (databaseType === 'sql' || databaseType === 'mongodb') { %>
+        val grantedAuthorities = user.authorities<% if (databaseType === 'sql' || databaseType === 'mongodb') { %>
             .map { SimpleGrantedAuthority(it.name) }<% } %><% if (databaseType === 'cassandra' || databaseType === 'couchbase') { %>
             .map { SimpleGrantedAuthority(it) }<% } %>
             .toList()
-        return org.springframework.security.core.userdetails.User(user.getLogin(),
-            user.getPassword(),
+        return org.springframework.security.core.userdetails.User(user.login,
+            user.password,
             grantedAuthorities)
     }
 }
