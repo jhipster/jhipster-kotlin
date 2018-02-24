@@ -68,7 +68,7 @@ const mavenPluginConfiguration = `          <configuration>
 
 
 const rewriteDir = (ejsFile) => {
-    if (!ejsFile.endsWith('.kt.ejs')) {
+    if (!ejsFile.endsWith('.kt.ejs') && !ejsFile.endsWith('kotlin.gradle')) {
         ejsFile = BASE_DIR + ejsFile;
     }
     return ejsFile;
