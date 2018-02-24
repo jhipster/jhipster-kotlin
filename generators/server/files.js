@@ -321,7 +321,7 @@ function writeFiles() {
                 this.template(rewriteDir(`${SERVER_MAIN_SRC_DIR}package/config/OAuth2Configuration.java.ejs`), `${javaDir}config/OAuth2Configuration.java`);
                 this.template(rewriteDir(`${SERVER_MAIN_SRC_DIR}package/security/OAuth2AuthenticationSuccessHandler.java.ejs`), `${javaDir}security/OAuth2AuthenticationSuccessHandler.java`);
             } else {
-                this.template(rewriteDir(`${SERVER_MAIN_SRC_DIR}package/security/DomainUserDetailsService.java.ejs`), `${javaDir}security/DomainUserDetailsService.java`);
+                this.template(rewriteDir(`${SERVER_MAIN_SRC_DIR}package/security/DomainUserDetailsService.kt.ejs`), `${javaDir}security/DomainUserDetailsService.kt`);
                 this.template(rewriteDir(`${SERVER_MAIN_SRC_DIR}package/security/UserNotActivatedException.java.ejs`), `${javaDir}security/UserNotActivatedException.java`);
             }
 
