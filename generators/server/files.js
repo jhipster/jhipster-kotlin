@@ -693,7 +693,7 @@ function writeFiles() {
                 this.template(rewriteDir(`${SERVER_MAIN_SRC_DIR}package/repository/AuthorityRepository.kt.ejs`), `${javaDir}repository/AuthorityRepository.kt`);
                 this.template(rewriteDir(`${SERVER_MAIN_SRC_DIR}package/repository/PersistenceAuditEventRepository.kt.ejs`), `${javaDir}repository/PersistenceAuditEventRepository.kt`);
             }
-            this.template(rewriteDir(`${SERVER_MAIN_SRC_DIR}package/repository/UserRepository.java.ejs`), `${javaDir}repository/UserRepository.java`);
+            this.template(rewriteDir(`${SERVER_MAIN_SRC_DIR}package/repository/UserRepository.kt.ejs`), `${javaDir}repository/UserRepository.kt`);
 
             /* User management java service files */
             this.template(rewriteDir(`${SERVER_MAIN_SRC_DIR}package/service/UserService.kt.ejs`), `${javaDir}service/UserService.kt`);
