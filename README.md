@@ -1,4 +1,4 @@
-[![Logo][khipster-image]]
+![Logo][khipster-image]
 # Greetings, Kotlin Hipster!
 
 A Kotlin application generator based on JHipster.
