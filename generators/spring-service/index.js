@@ -18,7 +18,7 @@
  */
 
 const _ = require('lodash');
-const BaseGenerator = require('../generator-base');
+const BaseGenerator = require('../generator-jhipster');
 const constants = require('../generator-constants');
 
 const SERVER_MAIN_SRC_DIR = constants.SERVER_MAIN_SRC_DIR;
