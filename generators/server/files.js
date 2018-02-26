@@ -714,17 +714,17 @@ function writeFiles() {
             this.template(rewriteDir(`${SERVER_MAIN_SRC_DIR}package/service/dto/UserDTO.java.ejs`), `${javaDir}service/dto/UserDTO.java`);
             this.template(rewriteDir(`${SERVER_MAIN_SRC_DIR}package/service/dto/PasswordChangeDTO.java.ejs`), `${javaDir}service/dto/PasswordChangeDTO.java`);
             this.template(rewriteDir(`${SERVER_MAIN_SRC_DIR}package/web/rest/vm/ManagedUserVM.java.ejs`), `${javaDir}web/rest/vm/ManagedUserVM.java`);
-            this.template(`${SERVER_MAIN_SRC_KOTLIN_DIR}package/web/rest/AccountResource.kt.ejs`, `${javaDir}web/rest/AccountResource.kt`);
-            this.template(`${SERVER_MAIN_SRC_KOTLIN_DIR}package/web/rest/UserResource.kt.ejs`, `${javaDir}web/rest/UserResource.kt`);
+            this.template(`${SERVER_MAIN_SRC_KOTLIN_DIR}package/web/rest/AccountResource.kt.ejs`, `${kotlinDir}web/rest/AccountResource.kt`);
+            this.template(`${SERVER_MAIN_SRC_KOTLIN_DIR}package/web/rest/UserResource.kt.ejs`, `${kotlinDir}web/rest/UserResource.kt`);
             if (this.searchEngine === 'elasticsearch') {
                 this.template(rewriteDir(`${SERVER_MAIN_SRC_DIR}package/repository/search/UserSearchRepository.java.ejs`), `${javaDir}repository/search/UserSearchRepository.java`);
             }
             this.template(rewriteDir(`${SERVER_MAIN_SRC_DIR}package/web/rest/vm/KeyAndPasswordVM.java.ejs`), `${javaDir}web/rest/vm/KeyAndPasswordVM.java`);
             this.template(rewriteDir(`${SERVER_MAIN_SRC_DIR}package/service/mapper/package-info.java.ejs`), `${javaDir}service/mapper/package-info.java`);
-            this.template(`${SERVER_MAIN_SRC_KOTLIN_DIR}package/service/mapper/UserMapper.kt.ejs`, `${javaDir}service/mapper/UserMapper.kt`);
+            this.template(`${SERVER_MAIN_SRC_KOTLIN_DIR}package/service/mapper/UserMapper.kt.ejs`, `${kotlinDir}service/mapper/UserMapper.kt`);
 
             if (this.databaseType === 'sql' || this.databaseType === 'mongodb' || this.databaseType === 'couchbase') {
-                this.template(`${SERVER_MAIN_SRC_KOTLIN_DIR}package/web/rest/AuditResource.kt.ejs`, `${javaDir}web/rest/AuditResource.kt`);
+                this.template(`${SERVER_MAIN_SRC_KOTLIN_DIR}package/web/rest/AuditResource.kt.ejs`, `${kotlinDir}web/rest/AuditResource.kt`);
             }
 
             /* User management java test files */
