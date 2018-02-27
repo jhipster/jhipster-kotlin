@@ -22,7 +22,7 @@ const crypto = require('crypto');
 const _ = require('lodash');
 const ServerGenerator = require('generator-jhipster/generators/server');
 const writeFiles = require('./files').writeFiles;
-const prompts = require('./prompts');
+const prompts = require('generator-jhipster/generators/server/prompts');
 const packagejs = require('generator-jhipster/package.json');
 const constants = require('generator-jhipster/generators/generator-constants');
 
