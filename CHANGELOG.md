@@ -1,3 +1,12 @@
+<a name="0.0.9"></a>
+# [0.0.9](https://github.com/sendilkumarn/jhipster-kotlin/compare/0.0.8...0.0.9) (2018-02-28)
+* Added awesome kotlin generator images
+* Updated readme
+* Fixed Social User Connection Repository
+* Fixed maven kotlin-stdlib to use jdk8
+* Updated prompts to use from main generator
+* use KHipster banner
+
 <a name="0.0.8"></a>
 # [0.0.8](https://github.com/sendilkumarn/jhipster-kotlin/compare/0.0.7...0.0.8) (2018-02-24)
 * Added domain related changes
