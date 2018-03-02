@@ -16,6 +16,8 @@
  See the License for the specific language governing permissions and
  limitations under the License.
 -%>
+import org.gradle.internal.os.OperatingSystem
+
 apply plugin: 'kotlin' // Required for Kotlin integration
 apply plugin: "kotlin-spring" // See https://kotlinlang.org/docs/reference/compiler-plugins.html#kotlin-spring-compiler-plugin
 
@@ -29,5 +31,13 @@ compileKotlin {
     kotlinOptions {
     	jvmTarget = "1.8"
     	freeCompilerArgs = ["-Xjsr305=strict"]
+    }
+}
+
+if (OperatingSystem.current().isWindows()) {
+    bootRun {
+        doFirst {
+            classpath += files("$buildDir/classes/kotlin/main")
+        }
     }
 }
