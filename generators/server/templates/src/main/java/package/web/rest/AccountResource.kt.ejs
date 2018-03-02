@@ -61,7 +61,7 @@ class AccountResource<% if (applicationType === 'monolith') { %>(private val use
      */
     @GetMapping("/authenticate")
     @Timed
-    fun isAuthenticated(request: HttpServletRequest): String {
+    fun isAuthenticated(request: HttpServletRequest): String? {
         log.debug("REST request to check if the current user is authenticated")
         return request.remoteUser
     }
@@ -173,7 +173,7 @@ class AccountResource(private val userRepository: UserRepository,
     @Timed
     @ResponseStatus(HttpStatus.CREATED)
     fun registerAccount(@Valid @RequestBody managedUserVM: ManagedUserVM) {
-        if (!checkPasswordLength(managedUserVM.password!!)) {
+        if (!checkPasswordLength(managedUserVM.password)) {
             throw InvalidPasswordException()
         }
         userRepository.findOneByLogin(managedUserVM.login.toLowerCase()).ifPresent { _ -> throw LoginAlreadyUsedException() }
@@ -345,9 +345,9 @@ class AccountResource(private val userRepository: UserRepository,
         }
     }
 
-    private fun checkPasswordLength(password: String): Boolean {
+    private fun checkPasswordLength(password: String?): Boolean {
         return !StringUtils.isEmpty(password) &&
-            password.length >= ManagedUserVM.PASSWORD_MIN_LENGTH &&
+            password!!.length >= ManagedUserVM.PASSWORD_MIN_LENGTH &&
             password.length <= ManagedUserVM.PASSWORD_MAX_LENGTH
     }
 }
