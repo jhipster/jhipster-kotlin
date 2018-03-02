@@ -35,7 +35,7 @@ const BASE_DIR = '../../../node_modules/generator-jhipster/generators/server/tem
 
 const KOTLIN_VERSION_STR = ['${', 'kotlin.version}'].join('');
 
-const mavenPluginConfiguration = `          <configuration>
+const mavenKotlinPluginConfiguration = `                <configuration>
                     <args>
                         <arg>-Xjsr305=strict</arg>
                     </args>
@@ -43,31 +43,42 @@ const mavenPluginConfiguration = `          <configuration>
                         <plugin>spring</plugin>
                     </compilerPlugins>
                     <jvmTarget>1.8</jvmTarget>
-                    </configuration>
-                    <executions>
-                        <execution>
-                            <id>compile</id>
-                            <phase>compile</phase>
-                            <goals>
-                                <goal>compile</goal>
-                            </goals>
-                        </execution>
-                        <execution>
-                            <id>test-compile</id>
-                            <phase>test-compile</phase>
-                            <goals>
-                                <goal>test-compile</goal>
-                            </goals>
-                        </execution> 
-                    </executions>
-                    <dependencies>
-                        <dependency>
-                            <groupId>org.jetbrains.kotlin</groupId>
-                            <artifactId>kotlin-maven-allopen</artifactId>
-                            <version>${KOTLIN_VERSION_STR}</version>
-                        </dependency>
-                    </dependencies>`;
-
+                </configuration>
+                <executions>
+                    <execution>
+                        <id>compile</id>
+                        <phase>compile</phase>
+                        <goals>
+                            <goal>compile</goal>
+                        </goals>
+                        <configuration>
+                            <sourceDirs>
+                                <sourceDir>${project.basedir}/src/main/kotlin</sourceDir>
+                                <sourceDir>${project.basedir}/src/main/java</sourceDir>
+                            </sourceDirs>
+                        </configuration>
+                    </execution>
+                    <execution>
+                        <id>test-compile</id>
+                        <phase>test-compile</phase>
+                        <goals>
+                            <goal>test-compile</goal>
+                        </goals>
+                        <configuration>
+                            <sourceDirs>
+                                <sourceDir>${project.basedir}/src/test/kotlin</sourceDir>
+                                <sourceDir>${project.basedir}/src/test/java</sourceDir>
+                            </sourceDirs>
+                        </configuration>
+                    </execution>
+                </executions>
+                <dependencies>
+                    <dependency>
+                        <groupId>org.jetbrains.kotlin</groupId>
+                        <artifactId>kotlin-maven-allopen</artifactId>
+                        <version>${kotlin.version}</version>
+                    </dependency>
+                </dependencies>`;
 
 const rewriteDir = (ejsFile) => {
     if (!ejsFile.endsWith('.kt.ejs') && !ejsFile.endsWith('kotlin.gradle') && !ejsFile.endsWith('banner.txt')) {
@@ -216,7 +227,7 @@ function writeFiles() {
                 this.addMavenDependency('org.jetbrains.kotlin', 'kotlin-stdlib-jdk8', KOTLIN_VERSION_STR);
                 this.addMavenDependency('org.jetbrains.kotlin', 'kotlin-reflect', KOTLIN_VERSION_STR);
 
-                this.addMavenPlugin('org.jetbrains.kotlin', 'kotlin-maven-plugin', KOTLIN_VERSION_STR, mavenPluginConfiguration);
+                this.addMavenPluginAtStart('org.jetbrains.kotlin', 'kotlin-maven-plugin', KOTLIN_VERSION_STR, mavenKotlinPluginConfiguration);
             }
         },
 
