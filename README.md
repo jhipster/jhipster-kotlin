@@ -1,6 +1,10 @@
 ![Logo][khipster-image]
 # Greetings, Kotlin Hipster!
 
+[![NPM version][npm-image]][npm-url]
+[![Build Status][travis-image]][travis-url-main]
+[![Dependency Status][daviddm-image]][daviddm-url]
+
 A Kotlin application generator based on JHipster.
 
 To generate application run
@@ -47,4 +51,11 @@ PRS are welcome :bowtie:
 
 Wide testing is needed :eyeglasses:
 
+
 [khipster-image]: https://raw.githubusercontent.com/sendilkumarn/jhipster-kotlin-artwork/master/logo-khipster.png
+[npm-image]: https://badge.fury.io/js/generator-jhipster-kotlin.svg
+[npm-url]: https://npmjs.org/package/generator-jhipster-kotlin
+[travis-image]: https://travis-ci.org/jhipster/generator-jhipster-kotlin.svg?branch=master
+[travis-url-main]: https://travis-ci.org/jhipster/generator-jhipster-kotlin
+[daviddm-image]: https://david-dm.org/jhipster/generator-jhipster-kotlin.svg?theme=shields.io
+[daviddm-url]: https://david-dm.org/jhipster/generator-jhipster-kotlin
