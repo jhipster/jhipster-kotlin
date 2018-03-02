@@ -207,6 +207,7 @@ function writeFiles() {
                 this.addMavenProperty('kotlin.version', '1.2.21');
 
                 this.addMavenDependency('org.jetbrains.kotlin', 'kotlin-stdlib-jdk8', KOTLIN_VERSION_STR);
+                this.addMavenDependency('com.fasterxml.jackson.module', 'jackson-module-kotlin', '2.9.4.1');
                 this.addMavenDependency('org.jetbrains.kotlin', 'kotlin-reflect', KOTLIN_VERSION_STR);
 
                 this.addMavenPlugin('org.jetbrains.kotlin', 'kotlin-maven-plugin', KOTLIN_VERSION_STR, mavenPluginConfiguration);
