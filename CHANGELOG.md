@@ -1,3 +1,12 @@
+<a name="0.1.0"></a>
+# [0.1.0](https://github.com/sendilkumarn/jhipster-kotlin/compare/0.0.9...0.1.0) (2018-03-07)
+* Added the kotlin class files to the classpath
+* Added Travis for the project
+* Fixed null condition checks to make tests pass :tada:
+* Added Kotlin Jackson Mapper to the project
+* Moved Kotlin files to separate folder
+* Moved to runApplication
+
 <a name="0.0.9"></a>
 # [0.0.9](https://github.com/sendilkumarn/jhipster-kotlin/compare/0.0.8...0.0.9) (2018-02-28)
 * Added awesome kotlin generator images
