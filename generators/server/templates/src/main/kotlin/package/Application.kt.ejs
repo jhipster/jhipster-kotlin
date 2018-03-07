@@ -26,7 +26,6 @@ import <%=packageName%>.config.DefaultProfileUtil
 import io.github.jhipster.config.JHipsterConstants
 
 import org.slf4j.LoggerFactory
-import org.springframework.boot.SpringApplication
 import org.springframework.boot.autoconfigure.SpringBootApplication
 <%_ if (databaseType === 'sql') { _%>
 import org.springframework.boot.autoconfigure.liquibase.LiquibaseProperties
@@ -97,9 +96,11 @@ class <%= mainClass %>(private val env: Environment) {
         @JvmStatic
         fun main(args: Array<String>) {
             val log = LoggerFactory.getLogger(<%= mainClass %>::class.java)
-            val app = SpringApplication(<%= mainClass %>::class.java)
-            DefaultProfileUtil.addDefaultProfile(app)
-            val env = app.run(*args).environment
+            
+            val env = runApplication<<%= mainClass %>> {
+                setDefaultProperties(DefaultProfileUtil.addDefaultProfile())
+            }.environment
+            
             var protocol = "http"
             if (env.getProperty("server.ssl.key-store") != null) {
                 protocol = "https"
