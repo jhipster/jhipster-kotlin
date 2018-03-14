@@ -22,6 +22,7 @@ const crypto = require('crypto');
 const _ = require('lodash');
 const ServerGenerator = require('generator-jhipster/generators/server');
 const writeFiles = require('./files').writeFiles;
+const os = require('os');
 const prompts = require('generator-jhipster/generators/server/prompts');
 const packagejs = require('generator-jhipster/package.json');
 const constants = require('generator-jhipster/generators/generator-constants');
@@ -97,6 +98,10 @@ module.exports = class extends ServerGenerator {
                     this.applicationType = 'monolith';
                 }
 
+                this.reactive = this.config.get('reactive');
+                if (this.reactive === undefined) {
+                    this.reactive = false;
+                }
                 this.packageName = this.config.get('packageName');
                 this.serverPort = this.config.get('serverPort');
                 if (this.serverPort === undefined) {
@@ -243,6 +248,7 @@ module.exports = class extends ServerGenerator {
             askFori18n: prompts.askFori18n,
 
             setSharedConfigOptions() {
+                this.configOptions.reactive = this.reactive;
                 this.configOptions.packageName = this.packageName;
                 this.configOptions.cacheProvider = this.cacheProvider;
                 this.configOptions.enableHibernateCache = this.enableHibernateCache;
@@ -279,6 +285,7 @@ module.exports = class extends ServerGenerator {
             insight() {
                 const insight = this.insight();
                 insight.trackWithEvent('generator', 'server');
+                insight.track('app/reactive', this.reactive);
                 insight.track('app/authenticationType', this.authenticationType);
                 insight.track('app/cacheProvider', this.cacheProvider);
                 insight.track('app/enableHibernateCache', this.enableHibernateCache);
@@ -302,6 +309,7 @@ module.exports = class extends ServerGenerator {
                 this.lowercaseBaseName = this.baseName.toLowerCase();
                 this.humanizedBaseName = _.startCase(this.baseName);
                 this.mainClass = this.getMainClassName();
+                this.cacheManagerIsAvailable = ['ehcache', 'hazelcast', 'infinispan'].includes(this.cacheProvider) || this.applicationType === 'gateway';
 
                 this.pkType = this.getPkType(this.databaseType);
 
@@ -316,6 +324,7 @@ module.exports = class extends ServerGenerator {
             saveConfig() {
                 this.config.set('jhipsterVersion', packagejs.version);
                 this.config.set('baseName', this.baseName);
+                this.config.set('reactive', this.reactive);
                 this.config.set('packageName', this.packageName);
                 this.config.set('packageFolder', this.packageFolder);
                 this.config.set('serverPort', this.serverPort);
@@ -381,6 +390,23 @@ module.exports = class extends ServerGenerator {
     }
 
     end() {
-        super.end();
+        if (this.prodDatabaseType === 'oracle') {
+            this.log('\n\n');
+            this.warning(`${chalk.yellow.bold('You have selected Oracle database.\n')
+            }Please follow our documentation on using Oracle to set up the \n` +
+                'Oracle proprietary JDBC driver.');
+        }
+        this.log(chalk.green.bold('\nServer application generated successfully.\n'));
+
+        let executable = 'mvnw';
+        if (this.buildTool === 'gradle') {
+            executable = 'gradlew';
+        }
+        let logMsgComment = '';
+        if (os.platform() === 'win32') {
+            logMsgComment = ` (${chalk.yellow.bold(executable)} if using Windows Command Prompt)`;
+        }
+        this.log(chalk.green(`${'Run your Spring Boot application:' +
+            '\n '}${chalk.yellow.bold(`./${executable}`)}${logMsgComment}`));
     }
 };
