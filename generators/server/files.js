@@ -387,6 +387,10 @@ function writeFiles() {
                 this.template(rewriteDir(`${SERVER_MAIN_SRC_DIR}package/security/oauth2/OAuth2TokenEndpointClientAdapter.java.ejs`), `${javaDir}security/oauth2/OAuth2TokenEndpointClientAdapter.java`);
                 this.template(rewriteDir(`${SERVER_MAIN_SRC_DIR}package/security/oauth2/UaaTokenEndpointClient.java.ejs`), `${javaDir}security/oauth2/UaaTokenEndpointClient.java`);
             }
+            if (this.authenticationType === 'oauth2') {
+                this.template(`${SERVER_MAIN_SRC_DIR}package/config/OAuth2Configuration.java.ejs`, `${javaDir}config/OAuth2Configuration.java`);
+                this.template(`${SERVER_MAIN_SRC_DIR}package/security/OAuth2AuthenticationSuccessHandler.java.ejs`, `${javaDir}security/OAuth2AuthenticationSuccessHandler.java`);
+            }
         },
 
         writeServerMicroserviceFiles() {
@@ -424,7 +428,9 @@ function writeFiles() {
             if (this.authenticationType === 'oauth2' && this.applicationType === 'gateway') {
                 this.template(rewriteDir(`${SERVER_MAIN_SRC_DIR}package/config/OAuth2SsoConfiguration.java.ejs`), `${javaDir}config/OAuth2SsoConfiguration.java`);
             }
-            this.copy(rewriteDir(`${SERVER_MAIN_RES_DIR}static/microservices_index.html.ejs`), `${SERVER_MAIN_RES_DIR}static/index.html`);
+            if (this.applicationType === 'microservice') {
+                this.copy(rewriteDir(`${SERVER_MAIN_RES_DIR}static/microservices_index.html.ejs`), `${SERVER_MAIN_RES_DIR}static/index.html`);
+            }
         },
 
         writeServerMicroserviceAndGatewayFiles() {
@@ -473,7 +479,6 @@ function writeFiles() {
             this.template(rewriteDir(`${SERVER_MAIN_SRC_DIR}package/config/LocaleConfiguration.kt.ejs`), `${kotlinDir}config/LocaleConfiguration.kt`);
             this.template(rewriteDir(`${SERVER_MAIN_SRC_DIR}package/config/LoggingAspectConfiguration.kt.ejs`), `${kotlinDir}config/LoggingAspectConfiguration.kt`);
             this.template(rewriteDir(`${SERVER_MAIN_SRC_DIR}package/config/MetricsConfiguration.java.ejs`), `${javaDir}config/MetricsConfiguration.java`);
-            this.template(rewriteDir(`${SERVER_MAIN_SRC_DIR}package/config/ThymeleafConfiguration.java.ejs`), `${javaDir}config/ThymeleafConfiguration.java`);
             this.template(rewriteDir(`${SERVER_MAIN_SRC_DIR}package/config/WebConfigurer.java.ejs`), `${javaDir}config/WebConfigurer.java`);
             if (this.websocket === 'spring-websocket') {
                 this.template(rewriteDir(`${SERVER_MAIN_SRC_DIR}package/config/WebsocketConfiguration.java.ejs`), `${javaDir}config/WebsocketConfiguration.java`);
@@ -684,11 +689,11 @@ function writeFiles() {
             }
 
             // Email templates
-            this.copy(rewriteDir(`${SERVER_MAIN_RES_DIR}mails/activationEmail.html.ejs`), `${SERVER_MAIN_RES_DIR}mails/activationEmail.html`);
-            this.copy(rewriteDir(`${SERVER_MAIN_RES_DIR}mails/creationEmail.html.ejs`), `${SERVER_MAIN_RES_DIR}mails/creationEmail.html`);
-            this.copy(rewriteDir(`${SERVER_MAIN_RES_DIR}mails/passwordResetEmail.html.ejs`), `${SERVER_MAIN_RES_DIR}mails/passwordResetEmail.html`);
+            this.template(rewriteDir(`${SERVER_MAIN_RES_DIR}templates/mail/activationEmail.html.ejs`), `${SERVER_MAIN_RES_DIR}templates/mail/activationEmail.html`);
+            this.template(rewriteDir(`${SERVER_MAIN_RES_DIR}templates/mail/creationEmail.html.ejs`), `${SERVER_MAIN_RES_DIR}templates/mail/creationEmail.html`);
+            this.template(rewriteDir(`${SERVER_MAIN_RES_DIR}templates/mail/passwordResetEmail.html.ejs`), `${SERVER_MAIN_RES_DIR}templates/mail/passwordResetEmail.html`);
             if (this.enableSocialSignIn) {
-                this.copy(rewriteDir(`${SERVER_MAIN_RES_DIR}mails/socialRegistrationValidationEmail.html.ejs`), `${SERVER_MAIN_RES_DIR}mails/socialRegistrationValidationEmail.html`);
+                this.copy(rewriteDir(`${SERVER_MAIN_RES_DIR}templates/mail/socialRegistrationValidationEmail.html.ejs`), `${SERVER_MAIN_RES_DIR}templates/mail/socialRegistrationValidationEmail.html`);
             }
 
             /* User management java domain files */
@@ -732,7 +737,7 @@ function writeFiles() {
             }
 
             /* User management java test files */
-            this.copy(rewriteDir(`${SERVER_TEST_RES_DIR}mails/testEmail.html.ejs`), `${SERVER_TEST_RES_DIR}mails/testEmail.html`);
+            this.copy(rewriteDir(`${SERVER_TEST_RES_DIR}templates/mail/testEmail.html.ejs`), `${SERVER_TEST_RES_DIR}templates/mail/testEmail.html`);
             this.copy(rewriteDir(`${SERVER_TEST_RES_DIR}i18n/messages_en.properties.ejs`), `${SERVER_TEST_RES_DIR}i18n/messages_en.properties`);
 
             if (this.searchEngine === 'elasticsearch') {
