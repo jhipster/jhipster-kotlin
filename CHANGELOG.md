@@ -1,5 +1,5 @@
 <a name="0.2.0"></a>
-# [0.2.0](https://github.com/sendilkumarn/jhipster-kotlin/compare/0.1.0...0.2.0) (2018-03-07)
+# [0.2.0](https://github.com/sendilkumarn/jhipster-kotlin/compare/0.1.0...0.2.0) (2018-03-15)
 * Used local JHipster snapshot rather than master
 * Updated files / index based on latest changes in the master
 * Updated pom.xml based on master
