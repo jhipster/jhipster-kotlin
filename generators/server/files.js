@@ -200,8 +200,8 @@ function writeFiles() {
                 this.copy(rewriteDir('gradle/wrapper/gradle-wrapper.properties'), 'gradle/wrapper/gradle-wrapper.properties');
                 this.template(rewriteDir('gradle/_kotlin.gradle'), 'gradle/kotlin.gradle');
 
-                this.addGradlePlugin('org.jetbrains.kotlin', 'kotlin-gradle-plugin', '1.2.21');
-                this.addGradlePlugin('org.jetbrains.kotlin', 'kotlin-allopen', '1.2.21');
+                this.addGradlePlugin('org.jetbrains.kotlin', 'kotlin-gradle-plugin', '1.2.30');
+                this.addGradlePlugin('org.jetbrains.kotlin', 'kotlin-allopen', '1.2.30');
 
                 this.applyFromGradleScript('gradle/kotlin');
                 break;
@@ -214,7 +214,7 @@ function writeFiles() {
                 this.template(rewriteDir('pom.xml.ejs'), 'pom.xml', null, { interpolate: INTERPOLATE_REGEX });
                 // TODO find a better way to handle this
                 // this.addMavenProperty('kotlin.compiler.incremental', 'true');
-                // this.addMavenProperty('kotlin.version', '1.2.21');
+                // this.addMavenProperty('kotlin.version', '1.2.30');
                 //
                 // this.addMavenDependency('org.jetbrains.kotlin', 'kotlin-stdlib-jdk8', KOTLIN_VERSION_STR);
                 // this.addMavenDependency('com.fasterxml.jackson.module', 'jackson-module-kotlin', '2.9.4.1');
