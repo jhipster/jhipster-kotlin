@@ -1,3 +1,7 @@
+<a name="0.3.0"></a>
+# [0.3.0](https://github.com/sendilkumarn/jhipster-kotlin/compare/0.2.1...0.3.0) (2018-03-18)
+* Bump minor version
+
 <a name="0.2.1"></a>
 # [0.2.1](https://github.com/sendilkumarn/jhipster-kotlin/compare/0.2.0...0.2.1) (2018-03-18)
 * Updated the Kotlin to 1.2.30 :tada:
