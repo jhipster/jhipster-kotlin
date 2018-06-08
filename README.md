@@ -45,7 +45,7 @@ Conversations are happening at [here](https://jhipster-kotlin.slack.com)
 
 #### Kotlin conversion is in progress...
 
-This works with current JHipster master branch.
+
 
 PRS are welcome :bowtie:
 
