@@ -1,7 +1,7 @@
 
 <div align="center">
 	<a href="https://github.com/jhipster/jhipster-kotlin">
-		<img width="200" height="200" src="https://github.com/jhipster/jhipster-kotlin/blob/master/logo-khipster.png">
+		<img width="160" height="200" src="https://github.com/jhipster/jhipster-kotlin/blob/master/logo-khipster.png">
 	</a>
 </div>
 
