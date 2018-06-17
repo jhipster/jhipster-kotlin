@@ -67,15 +67,15 @@ const BASE_DIR = '../../../node_modules/generator-jhipster/generators/server/tem
 //                         </dependency>
 //                     </dependencies>`;
 
-const rewriteDir = ejsFile => {
+const rewriteDir = (ejsFile) => {
     if (
-      !ejsFile.endsWith('.kt.ejs')
+        !ejsFile.endsWith('.kt.ejs')
       && !ejsFile.endsWith('kotlin.gradle')
       && !ejsFile.endsWith('banner.txt')
-      && ejsFile !== 'pom.xml.ejs' ) {
+      && ejsFile !== 'pom.xml.ejs') {
         ejsFile = BASE_DIR + ejsFile;
     } else {
-      ejsFile = ejsFile.replace(SERVER_MAIN_SRC_DIR, SERVER_MAIN_SRC_KOTLIN_DIR);
+        ejsFile = ejsFile.replace(SERVER_MAIN_SRC_DIR, SERVER_MAIN_SRC_KOTLIN_DIR);
     }
     return ejsFile;
 };
@@ -86,15 +86,16 @@ module.exports = {
 
 let javaDir;
 let kotlinDir;
-let kotlinTestDir;
+let testKotlinDir;
 
 function writeFiles() {
     return {
 
         setUpJavaDir() {
+            this.testDir = `${constants.SERVER_TEST_SRC_DIR + this.packageFolder}/`;
             javaDir = this.javaDir = `${constants.SERVER_MAIN_SRC_DIR + this.packageFolder}/`;
             kotlinDir = this.kotlinDir = `${SERVER_MAIN_SRC_KOTLIN_DIR + this.packageFolder}/`;
-            kotlinTestDir = this.kotlinTestDir = `${SERVER_TEST_SRC_KOTLIN_DIR + this.packageFolder}/`;
+            testKotlinDir = this.kotlinTestDir = `${SERVER_TEST_SRC_KOTLIN_DIR + this.packageFolder}/`;
         },
 
         cleanupOldServerFiles() {
