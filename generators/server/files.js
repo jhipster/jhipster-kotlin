@@ -347,19 +347,6 @@ function writeFiles() {
             if (this.authenticationType === 'session') {
                 this.template(rewriteDir(`${SERVER_MAIN_SRC_DIR}package/security/PersistentTokenRememberMeServices.java.ejs`), `${javaDir}security/PersistentTokenRememberMeServices.java`);
             }
-
-            if (this.enableSocialSignIn) {
-                this.template(rewriteDir(`${SERVER_MAIN_SRC_DIR}package/security/social/package-info.java.ejs`), `${javaDir}security/social/package-info.java`);
-                this.template(rewriteDir(`${SERVER_MAIN_SRC_DIR}package/config/social/SocialConfiguration.java.ejs`), `${javaDir}config/social/SocialConfiguration.java`);
-                this.template(rewriteDir(`${SERVER_MAIN_SRC_DIR}package/domain/SocialUserConnection.kt.ejs`), `${kotlinDir}domain/SocialUserConnection.kt`);
-                this.template(rewriteDir(`${SERVER_MAIN_SRC_DIR}package/repository/CustomSocialConnectionRepository.kt.ejs`), `${kotlinDir}repository/CustomSocialConnectionRepository.kt`);
-                this.template(rewriteDir(`${SERVER_MAIN_SRC_DIR}package/repository/CustomSocialUsersConnectionRepository.java.ejs`), `${javaDir}repository/CustomSocialUsersConnectionRepository.java`);
-                this.template(rewriteDir(`${SERVER_MAIN_SRC_DIR}package/repository/SocialUserConnectionRepository.kt.ejs`), `${kotlinDir}repository/SocialUserConnectionRepository.kt`);
-                this.template(rewriteDir(`${SERVER_MAIN_SRC_DIR}package/security/social/CustomSignInAdapter.java.ejs`), `${javaDir}security/social/CustomSignInAdapter.java`);
-                this.template(rewriteDir(`${SERVER_MAIN_SRC_DIR}package/security/social/package-info.java.ejs`), `${javaDir}security/social/package-info.java`);
-                this.template(rewriteDir(`${SERVER_MAIN_SRC_DIR}package/service/SocialService.kt.ejs`), `${kotlinDir}service/SocialService.kt`);
-                this.template(rewriteDir(`${SERVER_MAIN_SRC_DIR}package/web/rest/SocialController.kt.ejs`), `${kotlinDir}web/rest/SocialController.kt`);
-            }
         },
 
         writeServerJavaGatewayFiles() {
@@ -586,7 +573,6 @@ function writeFiles() {
             this.template(rewriteDir(`${SERVER_TEST_SRC_DIR}package/config/WebConfigurerTestController.java.ejs`), `${testDir}config/WebConfigurerTestController.java`);
             this.template(rewriteDir(`${SERVER_TEST_SRC_DIR}package/web/rest/TestUtil.java.ejs`), `${testDir}web/rest/TestUtil.java`);
             this.template(rewriteDir(`${SERVER_TEST_SRC_DIR}package/web/rest/LogsResourceIntTest.java.ejs`), `${testDir}web/rest/LogsResourceIntTest.java`);
-            this.template(rewriteDir(`${SERVER_TEST_SRC_DIR}package/web/rest/ProfileInfoResourceIntTest.java.ejs`), `${testDir}web/rest/ProfileInfoResourceIntTest.java`);
             this.template(rewriteDir(`${SERVER_TEST_SRC_DIR}package/web/rest/errors/ExceptionTranslatorIntTest.java.ejs`), `${testDir}web/rest/errors/ExceptionTranslatorIntTest.java`);
             this.template(rewriteDir(`${SERVER_TEST_SRC_DIR}package/web/rest/errors/ExceptionTranslatorTestController.java.ejs`), `${testDir}web/rest/errors/ExceptionTranslatorTestController.java`);
             this.template(rewriteDir(`${SERVER_TEST_SRC_DIR}package/web/rest/util/PaginationUtilUnitTest.java.ejs`), `${testDir}web/rest/util/PaginationUtilUnitTest.java`);
@@ -693,9 +679,6 @@ function writeFiles() {
             this.template(rewriteDir(`${SERVER_MAIN_RES_DIR}templates/mail/activationEmail.html.ejs`), `${SERVER_MAIN_RES_DIR}templates/mail/activationEmail.html`);
             this.template(rewriteDir(`${SERVER_MAIN_RES_DIR}templates/mail/creationEmail.html.ejs`), `${SERVER_MAIN_RES_DIR}templates/mail/creationEmail.html`);
             this.template(rewriteDir(`${SERVER_MAIN_RES_DIR}templates/mail/passwordResetEmail.html.ejs`), `${SERVER_MAIN_RES_DIR}templates/mail/passwordResetEmail.html`);
-            if (this.enableSocialSignIn) {
-                this.copy(rewriteDir(`${SERVER_MAIN_RES_DIR}templates/mail/socialRegistrationValidationEmail.html.ejs`), `${SERVER_MAIN_RES_DIR}templates/mail/socialRegistrationValidationEmail.html`);
-            }
 
             /* User management java domain files */
             this.template(rewriteDir(`${SERVER_MAIN_SRC_DIR}package/domain/User.kt.ejs`), `${kotlinDir}domain/User.kt`);
@@ -747,11 +730,6 @@ function writeFiles() {
             this.template(rewriteDir(`${SERVER_TEST_SRC_DIR}package/service/MailServiceIntTest.java.ejs`), `${testDir}service/MailServiceIntTest.java`);
             this.template(rewriteDir(`${SERVER_TEST_SRC_DIR}package/service/UserServiceIntTest.java.ejs`), `${testDir}service/UserServiceIntTest.java`);
             this.template(rewriteDir(`${SERVER_TEST_SRC_DIR}package/web/rest/UserResourceIntTest.java.ejs`), `${testDir}web/rest/UserResourceIntTest.java`);
-
-            if (this.enableSocialSignIn) {
-                this.template(rewriteDir(`${SERVER_TEST_SRC_DIR}package/repository/CustomSocialUsersConnectionRepositoryIntTest.java.ejs`), `${testDir}repository/CustomSocialUsersConnectionRepositoryIntTest.java`);
-                this.template(rewriteDir(`${SERVER_TEST_SRC_DIR}package/service/SocialServiceIntTest.java.ejs`), `${testDir}service/SocialServiceIntTest.java`);
-            }
 
             this.template(rewriteDir(`${SERVER_TEST_SRC_DIR}package/web/rest/AccountResourceIntTest.java.ejs`), `${testDir}web/rest/AccountResourceIntTest.java`);
             this.template(rewriteDir(`${SERVER_TEST_SRC_DIR}package/security/SecurityUtilsUnitTest.java.ejs`), `${testDir}security/SecurityUtilsUnitTest.java`);

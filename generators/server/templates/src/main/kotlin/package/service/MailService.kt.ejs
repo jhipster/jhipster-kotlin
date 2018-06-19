@@ -35,9 +35,6 @@ import org.springframework.scheduling.annotation.Async
 import org.springframework.stereotype.Service
 import org.thymeleaf.context.Context
 import org.thymeleaf.spring5.SpringTemplateEngine
-<%_ if (enableSocialSignIn) { _%>
-import org.apache.commons.lang3.StringUtils
-<%_ } _%>
 
 /**
  * Service for sending emails.
@@ -77,7 +74,7 @@ class MailService(private val jHipsterProperties: JHipsterProperties, private va
             }
         }
     }
-    
+
     @Async
     fun sendEmailFromTemplate(user: User, templateName: String, titleKey: String) {
         val locale = Locale.forLanguageTag(user.langKey)
@@ -107,21 +104,6 @@ class MailService(private val jHipsterProperties: JHipsterProperties, private va
     fun sendPasswordResetMail(user: User) {
         log.debug("Sending password reset email to '{}'", user.email)
         sendEmailFromTemplate(user, "mail/passwordResetEmail", "email.reset.title")
-    }
-    <%_ } _%>
-    <%_ if (enableSocialSignIn) { _%>
-
-    @Async
-    fun sendSocialRegistrationValidationEmail(user: User, provider: String) {
-        log.debug("Sending social registration validation email to '{}'", user.email)
-        val locale = Locale.forLanguageTag(user.langKey)
-        val context = Context(locale)
-        context.setVariable(USER, user)
-        context.setVariable(BASE_URL, jHipsterProperties.mail.baseUrl)
-        context.setVariable("provider", provider.capitalize())
-        val content = templateEngine.process("mail/socialRegistrationValidationEmail", context)
-        val subject = messageSource.getMessage("email.social.registration.title", null, locale)
-        sendEmail(user.email!!, subject, content, false, true)
     }
     <%_ } _%>
 
