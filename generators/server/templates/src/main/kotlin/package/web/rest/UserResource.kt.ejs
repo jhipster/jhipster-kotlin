@@ -91,11 +91,11 @@ import org.elasticsearch.index.query.QueryBuilders.queryStringQuery
 @RestController
 @RequestMapping("/api")
 class UserResource(
-    private val userRepository: UserRepository, 
-    private val userService:UserService 
-<%_ if (authenticationType !== 'oauth2') { _%>, private val mailService: MailService<%_ } _%>
-<%_ if (searchEngine === 'elasticsearch') { _%>, private val userSearchRepository: UserSearchRepository<%_ } _%>) {
-    
+    private val userService:UserService,
+    private val userRepository: UserRepository<% if (authenticationType !== 'oauth2') { %>,
+    private val mailService: MailService<% } %><% if (searchEngine === 'elasticsearch') { %>,
+    private val userSearchRepository: UserSearchRepository<% } %>) {
+
     private val log = LoggerFactory.getLogger(UserResource::class.java)
 
 <%_ if (authenticationType !== 'oauth2') { _%>
@@ -233,7 +233,7 @@ class UserResource(
      * @param query the query to search
      * @return the result of the search
      */
-    // TODO needs testing 
+    // TODO needs testing
     @GetMapping("/_search/users/{query}")
     @Timed
     fun search(@PathVariable query: String): List<User> {

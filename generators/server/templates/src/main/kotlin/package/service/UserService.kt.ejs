@@ -70,7 +70,7 @@ import org.springframework.transaction.annotation.Transactional<% } %>
 <%_ if ((databaseType === 'sql' || databaseType === 'mongodb' || databaseType === 'couchbase') && authenticationType === 'session') { _%>
 import java.time.LocalDate
 <%_ } _%>
-<%_ if (authenticationType !== 'oauth2' && (databaseType === 'sql' || databaseType === 'mongodb' || databaseType === 'couchbase')) { _%>    
+<%_ if (authenticationType !== 'oauth2' && (databaseType === 'sql' || databaseType === 'mongodb' || databaseType === 'couchbase')) { _%>
 import java.time.temporal.ChronoUnit
 <%_ } _%>
 import java.time.Instant
@@ -83,7 +83,6 @@ import java.util.*
 @Transactional<% } %>
 class UserService(private val userRepository: UserRepository
     <% if (authenticationType !== 'oauth2') { %>, private val passwordEncoder: PasswordEncoder<% } %>
-    <% if (enableSocialSignIn) { %>, private val socialService: SocialService<% } %>
     <% if (searchEngine === 'elasticsearch') { %>, private val userSearchRepository: UserSearchRepository<% } %>
     <% if (databaseType === 'sql' || databaseType === 'mongodb' || databaseType === 'couchbase') { %><% if (authenticationType === 'session') { %>, private val persistentTokenRepository: PersistentTokenRepository<% } %>, private val authorityRepository: AuthorityRepository<% } %>
     <% if (cacheManagerIsAvailable === true) { %>, private val cacheManager: CacheManager<% } %>){
@@ -154,7 +153,7 @@ class UserService(private val userRepository: UserRepository
         <% if (databaseType === 'cassandra') { %>
         newUser.setId(UUID.randomUUID().toString())<% } %><% if (databaseType === 'cassandra' || databaseType === 'couchbase') { %>
         val authorities = HashSet<Authority>()<% } %>
-        
+
         val encryptedPassword = passwordEncoder.encode(password)
         newUser.login = userDTO.login
         // new user gets initially a generated password
@@ -225,7 +224,7 @@ class UserService(private val userRepository: UserRepository
         userSearchRepository.save(user)<% } %>
         <%_ if (cacheManagerIsAvailable === true) { _%>
         this.clearUserCaches(user)
-        <%_ } _%> 
+        <%_ } _%>
         log.debug("Created Information for User: {}", user)
         return user
     }
@@ -308,7 +307,7 @@ class UserService(private val userRepository: UserRepository
                 <%_ } else { // Cassandra & Couchbase _%>
                 user.authorities = userDTO.authorities
                 <%_ } _%>
-                <%_ if (databaseType === 'mongodb' || databaseType === 'couchbase' || databaseType === 'cassandra') { _%>    
+                <%_ if (databaseType === 'mongodb' || databaseType === 'couchbase' || databaseType === 'cassandra') { _%>
                 userRepository.save(user)
                 <%_ } _%>
                 <%_ if (searchEngine === 'elasticsearch') { _%>
@@ -325,9 +324,6 @@ class UserService(private val userRepository: UserRepository
 
     fun deleteUser(login: String) {
         userRepository.findOneByLogin(login).ifPresent { user ->
-            <%_ if (enableSocialSignIn) { _%>
-            socialService.deleteUserSocialConnection(user.login!!)
-            <%_ } _%>
             userRepository.delete(user)
             <%_ if (searchEngine === 'elasticsearch') { _%>
             userSearchRepository.delete(user)
@@ -338,7 +334,7 @@ class UserService(private val userRepository: UserRepository
             log.debug("Deleted User: {}", user)
         }
     }
-    
+
 <%_ if (authenticationType !== 'oauth2') { _%>
 
     fun changePassword(currentClearTextPassword: String, newPassword: String) {
@@ -358,7 +354,7 @@ class UserService(private val userRepository: UserRepository
                 log.debug("Changed password for User: {}", user)
             }
     }
-    
+
     private fun assertClearTextPasswordMatchesEncryptedPassword(clearTextPassword: String, encryptedPassword: String) {
         if (!passwordEncoder.matches(clearTextPassword, encryptedPassword)) {
             throw InvalidPasswordException()
@@ -376,7 +372,7 @@ class UserService(private val userRepository: UserRepository
     }<% } else { // Cassandra %>
     fun getAllManagedUsers(): List<UserDTO> {
         return userRepository.findAll()
-            .filter { !Constants.ANONYMOUS_USER.equals(it.login) } 
+            .filter { !Constants.ANONYMOUS_USER.equals(it.login) }
             .map { userDTO(it) }
             .toList()
     }<% } %>
@@ -580,7 +576,7 @@ class UserService(private val userRepository: UserRepository
     }
 
     private fun authoritiesFromStringStream(strings: List<String>): Set<<% if (databaseType === 'couchbase') { %>String<% } else { %>Authority<% } %>> {
-        return strings<% if (databaseType !== 'couchbase') { %>.map { 
+        return strings<% if (databaseType !== 'couchbase') { %>.map {
                 val auth = Authority()
                 auth.name = it
                 auth
