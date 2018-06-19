@@ -540,7 +540,7 @@ function writeFiles() {
             this.template(rewriteDir(`${SERVER_MAIN_SRC_DIR}package/web/rest/package-info.java.ejs`), `${javaDir}web/rest/package-info.java`);
 
             this.template(rewriteDir(`${SERVER_MAIN_SRC_DIR}package/web/rest/LogsResource.kt.ejs`), `${kotlinDir}web/rest/LogsResource.kt`);
-            this.template(rewriteDir(`${SERVER_MAIN_SRC_DIR}package/web/rest/ProfileInfoResource.kt.ejs`), `${kotlinDir}web/rest/ProfileInfoResource.kt`);
+            // this.template(rewriteDir(`${SERVER_MAIN_SRC_DIR}package/web/rest/ProfileInfoResource.kt.ejs`), `${kotlinDir}web/rest/ProfileInfoResource.kt`);
         },
 
         writeServerJavaWebsocketFiles() {
