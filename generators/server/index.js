@@ -28,7 +28,7 @@ module.exports = class extends ServerGenerator {
         const jhContext = this.jhipsterContext = this.options.jhipsterContext;
 
         if (!jhContext) {
-            this.error(`This is a JHipster blueprint and should be used only like ${chalk.yellow('jhipster --blueprint generator-jhipster-sample-blueprint')}`);
+            this.error(`This is a JHipster blueprint and should be used only like ${chalk.yellow('jhipster --blueprint kotlin')}`);
         }
 
         this.configOptions = jhContext.configOptions || {};
