@@ -15,9 +15,9 @@ A Kotlin application generator based on JHipster.
 
 To generate application run
 
-`jhipster --blueprint generator-jhipster-kotlin`
+`jhipster --blueprint kotlin`
 
-# To run the application currently (till JHipster 5 is released)
+# To run the application in development
 
 Step 1 : to setup JHipster locally
 
@@ -39,9 +39,13 @@ Step 2 : to setup KHipster generator
 
 `npm link | yarn link`
 
+`npm link generator-jhipster | yarn link generator-jhipster`
+
 Step 3 : before generating your application, go to your application folder
 
 `yarn link "generator-jhipster" && yarn link "generator-jhipster-kotlin"`
+
+or
 
 `npm link "generator-jhipster" && npm link "generator-jhipster-kotlin"`
 
@@ -50,7 +54,6 @@ Conversations are happening at [here](https://jhipster-kotlin.slack.com)
 
 
 #### Kotlin conversion is in progress...
-
 
 
 PRS are welcome :bowtie:
