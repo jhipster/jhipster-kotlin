@@ -88,6 +88,7 @@ let javaDir;
 let kotlinDir;
 let testKotlinDir;
 
+// TODO: Switch to the metadata model from main generator and use the writeFilesToDisk method
 function writeFiles() {
     return {
 
