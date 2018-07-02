@@ -1,8 +1,8 @@
 /* eslint-disable consistent-return */
 const chalk = require('chalk');
-const EntityClientGenerator = require('generator-jhipster/generators/entity-client');
+const EntityGenerator = require('generator-jhipster/generators/entity');
 
-module.exports = class extends EntityClientGenerator {
+module.exports = class extends EntityGenerator {
     constructor(args, opts) {
         super(args, Object.assign({ fromBlueprint: true }, opts)); // fromBlueprint variable is important
 
@@ -30,15 +30,11 @@ module.exports = class extends EntityClientGenerator {
         return super._configuring();
     }
 
-    get default() {
-        return super._default();
-    }
-
     get writing() {
         return super._writing();
     }
 
-    get end() {
-        return super._end();
+    get install() {
+        return super._install();
     }
 };
