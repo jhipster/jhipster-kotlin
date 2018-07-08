@@ -23,7 +23,9 @@ import com.codahale.metrics.annotation.Timed
 <%_ if (authenticationType !== 'oauth2' || searchEngine === 'elasticsearch') { _%>
 import <%=packageName%>.domain.User
 <%_ } _%>
+<%_ if (authenticationType !== 'oauth2') { _%>
 import <%=packageName%>.repository.UserRepository
+<%_ } _%>
 <%_ if (searchEngine === 'elasticsearch') { _%>
 import <%=packageName%>.repository.search.UserSearchRepository
 <%_ } _%>
@@ -91,8 +93,8 @@ import org.elasticsearch.index.query.QueryBuilders.queryStringQuery
 @RestController
 @RequestMapping("/api")
 class UserResource(
-    private val userService:UserService,
-    private val userRepository: UserRepository<% if (authenticationType !== 'oauth2') { %>,
+    private val userService:UserService<% if (authenticationType !== 'oauth2') { %>,
+    private val userRepository: UserRepository,
     private val mailService: MailService<% } %><% if (searchEngine === 'elasticsearch') { %>,
     private val userSearchRepository: UserSearchRepository<% } %>) {
 
@@ -170,6 +172,7 @@ class UserResource(
      */
     @GetMapping("/users")
     @Timed
+    @Secured(AuthoritiesConstants.ADMIN)
     <%_ if (databaseType === 'sql' || databaseType === 'mongodb' || databaseType === 'couchbase') { _%>
     fun getAllUsers(pageable: Pageable): ResponseEntity<List<UserDTO>> {
         val page = userService.getAllManagedUsers(pageable)
