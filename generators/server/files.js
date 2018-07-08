@@ -496,8 +496,8 @@ function writeFiles() {
             this.template(rewriteDir(`${SERVER_MAIN_SRC_DIR}package/domain/package-info.java.ejs`), `${javaDir}domain/package-info.java`);
 
             if (this.databaseType === 'sql' || this.databaseType === 'mongodb' || this.databaseType === 'couchbase') {
-                this.template(rewriteDir(`${SERVER_MAIN_SRC_DIR}package/domain/AbstractAuditingEntity.kt.ejs`), `${kotlinDir}domain/AbstractAuditingEntity.kt`);
-                this.template(rewriteDir(`${SERVER_MAIN_SRC_DIR}package/domain/PersistentAuditEvent.kt.ejs`), `${kotlinDir}domain/PersistentAuditEvent.kt`);
+                this.template(rewriteDir(`${SERVER_MAIN_SRC_DIR}package/domain/AbstractAuditingEntity.java.ejs`), `${javaDir}domain/AbstractAuditingEntity.java`);
+                this.template(rewriteDir(`${SERVER_MAIN_SRC_DIR}package/domain/PersistentAuditEvent.java.ejs`), `${javaDir}domain/PersistentAuditEvent.java`);
             }
         },
 
@@ -632,13 +632,13 @@ function writeFiles() {
                         this.copy(rewriteDir(`${SERVER_MAIN_RES_DIR}config/liquibase/users_authorities.csv.ejs`), `${SERVER_MAIN_RES_DIR}config/liquibase/users_authorities.csv`);
                     }
                     this.template(rewriteDir(`${SERVER_MAIN_SRC_DIR}package/web/rest/AccountResource.kt.ejs`), `${kotlinDir}web/rest/AccountResource.kt`);
-                    this.template(rewriteDir(`${SERVER_MAIN_SRC_DIR}package/domain/User.kt.ejs`), `${kotlinDir}domain/User.kt`);
+                    this.template(rewriteDir(`${SERVER_MAIN_SRC_DIR}package/domain/User.java.ejs`), `${javaDir}domain/User.java`);
                     this.template(rewriteDir(`${SERVER_TEST_SRC_DIR}package/web/rest/AccountResourceIntTest.java.ejs`), `${testDir}web/rest/AccountResourceIntTest.java`);
                     this.template(rewriteDir(`${SERVER_TEST_SRC_DIR}package/security/SecurityUtilsUnitTest.java.ejs`), `${testDir}security/SecurityUtilsUnitTest.java`);
 
                     if (this.applicationType === 'monolith') {
                         this.template(rewriteDir(`${SERVER_MAIN_RES_DIR}config/liquibase/users.csv.ejs`), `${SERVER_MAIN_RES_DIR}config/liquibase/users.csv`);
-                        this.template(rewriteDir(`${SERVER_MAIN_SRC_DIR}package/domain/Authority.kt.ejs`), `${kotlinDir}domain/Authority.kt`);
+                        this.template(rewriteDir(`${SERVER_MAIN_SRC_DIR}package/domain/Authority.java.ejs`), `${javaDir}domain/Authority.java`);
                         this.template(rewriteDir(`${SERVER_MAIN_SRC_DIR}package/service/UserService.kt.ejs`), `${kotlinDir}service/UserService.kt`);
                         this.template(rewriteDir(`${SERVER_MAIN_SRC_DIR}package/service/dto/package-info.java.ejs`), `${javaDir}service/dto/package-info.java`);
                         this.template(rewriteDir(`${SERVER_MAIN_SRC_DIR}package/service/dto/UserDTO.java.ejs`), `${javaDir}service/dto/UserDTO.java`);
@@ -682,10 +682,10 @@ function writeFiles() {
             this.template(rewriteDir(`${SERVER_MAIN_RES_DIR}templates/mail/passwordResetEmail.html.ejs`), `${SERVER_MAIN_RES_DIR}templates/mail/passwordResetEmail.html`);
 
             /* User management java domain files */
-            this.template(rewriteDir(`${SERVER_MAIN_SRC_DIR}package/domain/User.kt.ejs`), `${kotlinDir}domain/User.kt`);
+            this.template(rewriteDir(`${SERVER_MAIN_SRC_DIR}package/domain/User.java.ejs`), `${javaDir}domain/User.java`);
 
             if (this.databaseType === 'sql' || this.databaseType === 'mongodb' || this.databaseType === 'couchbase') {
-                this.template(rewriteDir(`${SERVER_MAIN_SRC_DIR}package/domain/Authority.kt.ejs`), `${kotlinDir}domain/Authority.kt`);
+                this.template(rewriteDir(`${SERVER_MAIN_SRC_DIR}package/domain/Authority.java.ejs`), `${javaDir}domain/Authority.java`);
             }
 
             /* User management java repo files */
