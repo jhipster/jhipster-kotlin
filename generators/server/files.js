@@ -661,7 +661,7 @@ function writeFiles() {
                             this.template(rewriteDir(`${SERVER_MAIN_SRC_DIR}package/repository/PersistenceAuditEventRepository.kt.ejs`), `${kotlinDir}repository/PersistenceAuditEventRepository.kt`);
                             this.template(rewriteDir(`${SERVER_MAIN_SRC_DIR}package/service/AuditEventService.kt.ejs`), `${kotlinDir}service/AuditEventService.kt`);
                             this.template(rewriteDir(`${SERVER_MAIN_SRC_DIR}package/web/rest/AuditResource.kt.ejs`), `${kotlinDir}web/rest/AuditResource.kt`);
-                            this.template(rewriteDir(`${SERVER_TEST_SRC_DIR}package/repository/CustomAuditEventRepositoryIntTest.kt.ejs`), `${testKotlinDir}repository/CustomAuditEventRepositoryIntTest.kt`);
+                            this.template(rewriteDir(`${SERVER_TEST_SRC_KOTLIN_DIR}package/repository/CustomAuditEventRepositoryIntTest.kt.ejs`), `${testKotlinDir}repository/CustomAuditEventRepositoryIntTest.kt`);
                             this.template(rewriteDir(`${SERVER_TEST_SRC_DIR}package/web/rest/AuditResourceIntTest.java.ejs`), `${testDir}web/rest/AuditResourceIntTest.java`);
                         }
                     }
