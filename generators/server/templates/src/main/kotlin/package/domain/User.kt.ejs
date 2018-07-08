@@ -71,7 +71,9 @@ import java.util.HashSet
 import java.util.Locale
 import java.util.Objects
 import java.util.Set
+<%_ if (authenticationType !== 'oauth2') { _%>
 import java.time.Instant
+<%_ } _%>
 <%_ if (databaseType === 'couchbase') { _%>
 import static <%=packageName%>.config.Constants.ID_DELIMITER
 import static org.springframework.data.couchbase.core.mapping.id.GenerationStrategy.USE_ATTRIBUTES
@@ -99,19 +101,19 @@ class User:<% if (databaseType === 'sql' || databaseType === 'mongodb' || databa
     <%_ } _%>
     var id: Long? = null<% } else { %><% if (databaseType === 'couchbase') { %>
     val PREFIX = "user"
-    @SuppressWarnings("unused")
+
     @IdPrefix
-    var prefix: String = PREFIX<% } %>
-<% if (databaseType === 'mongodb' || databaseType === 'couchbase') { %>
+    var prefix: String = PREFIX
+    <% } %>
+    <% if (databaseType === 'mongodb' || databaseType === 'couchbase') { %>
     @Id<% } %><% if (databaseType === 'couchbase') { %>
     @GeneratedValue(strategy = USE_ATTRIBUTES, delimiter = ID_DELIMITER)<% } %><% if (databaseType === 'cassandra') { %>
     @PartitionKey<% } %>
     var id: String? = null<% } %>
-    <%_ let columnMax = 50 _%>
     @NotNull
     @Pattern(regexp = Constants.LOGIN_REGEX)
-    @Size(min = 1, max = <%=columnMax %>)<% if (databaseType === 'sql') { %>
-    @Column(length = <%=columnMax %>, unique = true, nullable = false)<% } %><% if (databaseType === 'mongodb') { %>
+    @Size(min = 1, max = 50)<% if (databaseType === 'sql') { %>
+    @Column(length = 50, unique = true, nullable = false)<% } %><% if (databaseType === 'mongodb') { %>
     @Indexed<% } %><% if (databaseType === 'couchbase') { %>
     @IdAttribute<% } %>
     var login: String? = null
@@ -122,7 +124,7 @@ class User:<% if (databaseType === 'sql' || databaseType === 'mongodb' || databa
     @JsonIgnore
     @NotNull
     @Size(min = 60, max = 60)<% if (databaseType === 'sql') { %>
-    @Column(name = "password_hash", length = 60)<% } %>
+    @Column(name = "password_hash", length = 60, nullable = false)<% } %>
     var password: String? = null
 <%_ } _%>
     @Size(max = 50)<% if (databaseType === 'sql') { %>
