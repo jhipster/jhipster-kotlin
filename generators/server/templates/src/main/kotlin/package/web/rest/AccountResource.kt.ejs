@@ -19,19 +19,12 @@ limitations under the License.
 package <%=packageName%>.web.rest
 
 <%_ if (authenticationType === 'oauth2') { _%>
-    <%_ if (applicationType === 'monolith') { _%>
 import <%=packageName%>.service.UserService
 import <%=packageName%>.service.dto.UserDTO
-    <%_ } else { _%>
-import <%=packageName%>.domain.User
-    <%_ } _%>
 import <%=packageName%>.web.rest.errors.InternalServerErrorException
 
 import com.codahale.metrics.annotation.Timed
 import org.slf4j.LoggerFactory
-    <%_ if (applicationType !== 'monolith') { _%>
-import org.springframework.security.core.GrantedAuthority
-    <%_ } _%>
 import org.springframework.security.oauth2.provider.OAuth2Authentication
 import org.springframework.web.bind.annotation.GetMapping
 import org.springframework.web.bind.annotation.RequestMapping
@@ -39,18 +32,13 @@ import org.springframework.web.bind.annotation.RestController
 
 import javax.servlet.http.HttpServletRequest
 import java.security.Principal
-    <%_ if (applicationType !== 'monolith') { _%>
-import java.util.stream.Collectors
-    <%_ } _%>
-import java.util.Optional
-import org.springframework.security.core.Authentication
 
 /**
  * REST controller for managing the current user's account.
  */
 @RestController
 @RequestMapping("/api")
-class AccountResource<% if (applicationType === 'monolith') { %>(private val userService: UserService)<% } %> {
+class AccountResource(private val userService: UserService) {
 
     private val log = LoggerFactory.getLogger(AccountResource::class.java)
 
@@ -78,7 +66,6 @@ class AccountResource<% if (applicationType === 'monolith') { %>(private val use
     @GetMapping("/account")
     @Timed
     @SuppressWarnings("unchecked")
-    <%_ if (applicationType === 'monolith') { _%>
     fun getAccount(principal: Principal?): UserDTO? {
         if (principal != null) {
             if (principal is OAuth2Authentication) {
@@ -93,33 +80,6 @@ class AccountResource<% if (applicationType === 'monolith') { %>(private val use
             throw InternalServerErrorException("User could not be found");
         }
     }
-    <%_ } else { _%>
-    fun getAccount(principal: Principal): User? {
-        return Optional.ofNullable(principal)
-            .filter { it -> it is OAuth2Authentication }
-            .map<Authentication> { it -> (it as OAuth2Authentication).userAuthentication }
-            .map { authentication ->
-                val details = authentication.details as Map<*, *>
-                var activated: Boolean? = false
-                if (details["email_verified"] != null) {
-                    activated = details["email_verified"] as Boolean
-                }
-                User(
-                    authentication.name,
-                    details["given_name"] as String,
-                    details["family_name"] as String,
-                    details["email"] as String,
-                    details["langKey"] as String,
-                    details["picture"] as String,
-                    activated!!,
-                    authentication.authorities.
-                        map { it.authority }
-                        .toMutableSet()
-                )
-            }
-            .orElseThrow { InternalServerErrorException("User could not be found") }
-    }
-    <%_ } _%>
 }
 <%_ } else { _%>
 import com.codahale.metrics.annotation.Timed
