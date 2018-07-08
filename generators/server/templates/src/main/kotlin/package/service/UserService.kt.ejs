@@ -487,6 +487,18 @@ class UserService(private val userRepository: UserRepository
 
      private fun syncUserWithIdP(details: Map<String, Any>, user: User): User {
         // save account in to sync users between IdP and JHipster's local database
+        val dbAuthorities = getAuthorities()
+        val userAuthorities = user.authorities.map { it.name }
+
+        userAuthorities
+            .filter { !dbAuthorities.contains(it) }
+            .map {
+                log.debug("Saving authority '$it' in local database ...")
+                val authorityToSave = Authority()
+                authorityToSave.name = it
+                authorityRepository.save(authorityToSave)
+            }
+            
         val existingUser = userRepository.findOneByLogin(user.login)
         if (existingUser.isPresent) {
             // if IdP sends last updated information, use it to determine if an update should happen
