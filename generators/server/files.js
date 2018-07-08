@@ -32,6 +32,8 @@ const SERVER_MAIN_SRC_KOTLIN_DIR = `${constants.MAIN_DIR}kotlin/`;
 const SERVER_TEST_SRC_KOTLIN_DIR = `${constants.TEST_DIR}kotlin/`;
 
 const BASE_DIR = '../../../node_modules/generator-jhipster/generators/server/templates/';
+const shouldSkipUserManagement = generator => generator.skipUserManagement && (generator.applicationType !== 'monolith' || generator.authenticationType !== 'oauth2');
+
 
 // const KOTLIN_VERSION_STR = ['${', 'kotlin.version}'].join('');
 // const mavenPluginConfiguration = `          <configuration>
@@ -113,6 +115,7 @@ function writeFiles() {
         writeDockerFiles() {
             // Create Docker and Docker Compose files
             this.template(rewriteDir(`${DOCKER_DIR}Dockerfile.ejs`), `${DOCKER_DIR}Dockerfile`);
+            this.template(rewriteDir(`${DOCKER_DIR}entrypoint.sh.ejs`), `${DOCKER_DIR}entrypoint.sh`);
             this.template(rewriteDir(`${DOCKER_DIR}.dockerignore.ejs`), `${DOCKER_DIR}.dockerignore`);
             this.template(rewriteDir(`${DOCKER_DIR}app.yml.ejs`), `${DOCKER_DIR}app.yml`);
             this.template(rewriteDir(`${DOCKER_DIR}${this.prodDatabaseType}.yml.ejs`), `${DOCKER_DIR}${this.prodDatabaseType}.yml`);
@@ -158,6 +161,9 @@ function writeFiles() {
                     this.copy(rewriteDir(`${DOCKER_DIR}config/docker-config/application.yml.ejs`), `${DOCKER_DIR}central-server-config/docker-config/application.yml`);
                     this.copy(rewriteDir(`${DOCKER_DIR}config/localhost-config/application.yml.ejs`), `${DOCKER_DIR}central-server-config/localhost-config/application.yml`);
                 }
+            }
+            if (this.cacheProvider === 'memcached') {
+                this.copy(rewriteDir(`${DOCKER_DIR}memcached.yml.ejs`), `${DOCKER_DIR}memcached.yml`);
             }
 
             if (this.enableSwaggerCodegen) {
@@ -255,7 +261,7 @@ function writeFiles() {
 
             if (this.databaseType === 'mongodb') {
                 this.template(rewriteDir(`${SERVER_MAIN_SRC_DIR}package/config/dbmigrations/package-info.java.ejs`), `${javaDir}config/dbmigrations/package-info.java`);
-                if (!this.skipUserManagement) {
+                if (!this.skipUserManagement && (this.skipUserManagement && this.authenticationType === 'oauth2')) {
                     this.template(rewriteDir(`${SERVER_MAIN_SRC_DIR}package/config/dbmigrations/InitialSetupMigration.java.ejs`), `${javaDir}config/dbmigrations/InitialSetupMigration.java`);
                 }
             }
@@ -352,17 +358,23 @@ function writeFiles() {
 
         writeServerJavaGatewayFiles() {
             if (this.applicationType !== 'gateway') return;
+            if (this.serviceDiscoveryType) {
+                this.template(rewriteDir(`${SERVER_MAIN_SRC_DIR}package/config/GatewayConfiguration.java.ejs`), `${javaDir}config/GatewayConfiguration.java`);
+                this.template(rewriteDir(`${SERVER_MAIN_SRC_DIR}package/config/apidoc/GatewaySwaggerResourcesProvider.java.ejs`), `${javaDir}config/apidoc/GatewaySwaggerResourcesProvider.java`);
+                this.template(rewriteDir(`${SERVER_MAIN_SRC_DIR}package/gateway/ratelimiting/RateLimitingFilter.java.ejs`), `${javaDir}gateway/ratelimiting/RateLimitingFilter.java`);
+                if (this.authenticationType === 'jwt') {
+                    this.template(rewriteDir(`${SERVER_MAIN_SRC_DIR}package/gateway/TokenRelayFilter.java.ejs`), `${javaDir}gateway/TokenRelayFilter.java`);    
+                }
 
-            this.template(rewriteDir(`${SERVER_MAIN_SRC_DIR}package/config/GatewayConfiguration.java.ejs`), `${javaDir}config/GatewayConfiguration.java`);
-            this.template(rewriteDir(`${SERVER_MAIN_SRC_DIR}package/config/apidoc/GatewaySwaggerResourcesProvider.java.ejs`), `${javaDir}config/apidoc/GatewaySwaggerResourcesProvider.java`);
-            this.template(rewriteDir(`${SERVER_MAIN_SRC_DIR}package/gateway/ratelimiting/RateLimitingFilter.java.ejs`), `${javaDir}gateway/ratelimiting/RateLimitingFilter.java`);
-            this.template(rewriteDir(`${SERVER_MAIN_SRC_DIR}package/gateway/TokenRelayFilter.java.ejs`), `${javaDir}gateway/TokenRelayFilter.java`);
-            this.template(rewriteDir(`${SERVER_MAIN_SRC_DIR}package/gateway/accesscontrol/AccessControlFilter.java.ejs`), `${javaDir}gateway/accesscontrol/AccessControlFilter.java`);
-            this.template(rewriteDir(`${SERVER_MAIN_SRC_DIR}package/gateway/responserewriting/SwaggerBasePathRewritingFilter.java.ejs`), `${javaDir}gateway/responserewriting/SwaggerBasePathRewritingFilter.java`);
-            this.template(rewriteDir(`${SERVER_MAIN_SRC_DIR}package/web/rest/vm/RouteVM.java.ejs`), `${javaDir}web/rest/vm/RouteVM.java`);
-            this.template(rewriteDir(`${SERVER_MAIN_SRC_DIR}package/web/rest/GatewayResource.kt.ejs`), `${kotlinDir}web/rest/GatewayResource.kt`);
+                this.template(rewriteDir(`${SERVER_MAIN_SRC_DIR}package/gateway/accesscontrol/AccessControlFilter.java.ejs`), `${javaDir}gateway/accesscontrol/AccessControlFilter.java`);
+                this.template(rewriteDir(`${SERVER_MAIN_SRC_DIR}package/gateway/responserewriting/SwaggerBasePathRewritingFilter.java.ejs`), `${javaDir}gateway/responserewriting/SwaggerBasePathRewritingFilter.java`);
+                this.template(rewriteDir(`${SERVER_MAIN_SRC_DIR}package/web/rest/vm/RouteVM.java.ejs`), `${javaDir}web/rest/vm/RouteVM.java`);
+                this.template(rewriteDir(`${SERVER_MAIN_SRC_DIR}package/web/rest/GatewayResource.kt.ejs`), `${kotlinDir}web/rest/GatewayResource.kt`);    
+            }
             if (this.authenticationType === 'uaa') {
-                this.template(rewriteDir(`${SERVER_MAIN_SRC_DIR}package/web/rest/AuthResource.java.ejs`), `${javaDir}web/rest/AuthResource.java`);
+                if (this.serviceDiscoveryType) {
+                    this.template(rewriteDir(`${SERVER_MAIN_SRC_DIR}package/web/rest/AuthResource.java.ejs`), `${javaDir}web/rest/AuthResource.java`);
+                }
                 this.template(rewriteDir(`${SERVER_MAIN_SRC_DIR}package/web/filter/RefreshTokenFilter.java.ejs`), `${javaDir}web/filter/RefreshTokenFilter.java`);
                 this.template(rewriteDir(`${SERVER_MAIN_SRC_DIR}package/web/filter/RefreshTokenFilterConfigurer.java.ejs`), `${javaDir}web/filter/RefreshTokenFilterConfigurer.java`);
                 this.template(rewriteDir(`${SERVER_MAIN_SRC_DIR}package/config/oauth2/OAuth2AuthenticationConfiguration.java.ejs`), `${javaDir}config/oauth2/OAuth2AuthenticationConfiguration.java`);
@@ -376,7 +388,7 @@ function writeFiles() {
                 this.template(rewriteDir(`${SERVER_MAIN_SRC_DIR}package/security/oauth2/OAuth2TokenEndpointClientAdapter.java.ejs`), `${javaDir}security/oauth2/OAuth2TokenEndpointClientAdapter.java`);
                 this.template(rewriteDir(`${SERVER_MAIN_SRC_DIR}package/security/oauth2/UaaTokenEndpointClient.java.ejs`), `${javaDir}security/oauth2/UaaTokenEndpointClient.java`);
             }
-            if (this.authenticationType === 'oauth2') {
+            if (this.authenticationType === 'oauth2' && this.serviceDiscoveryType) {
                 this.template(`${SERVER_MAIN_SRC_DIR}package/config/OAuth2Configuration.java.ejs`, `${javaDir}config/OAuth2Configuration.java`);
                 this.template(`${SERVER_MAIN_SRC_DIR}package/security/OAuth2AuthenticationSuccessHandler.java.ejs`, `${javaDir}security/OAuth2AuthenticationSuccessHandler.java`);
             }
@@ -385,7 +397,10 @@ function writeFiles() {
         writeServerMicroserviceFiles() {
             if (this.applicationType !== 'microservice' && !(this.applicationType === 'gateway' && (this.authenticationType === 'uaa' || this.authenticationType === 'oauth2'))) return;
 
-            this.template(rewriteDir(`${SERVER_MAIN_SRC_DIR}package/config/MicroserviceSecurityConfiguration.java.ejs`), `${javaDir}config/MicroserviceSecurityConfiguration.java`);
+            if (this.authenticationType === 'uaa' && this.applicationType !== 'uaa') {
+                this.template(rewriteDir(`${SERVER_MAIN_SRC_DIR}package/config/MicroserviceSecurityConfiguration.java.ejs`), `${javaDir}config/SecurityConfiguration.java`);
+            }
+            
             if (this.authenticationType === 'uaa') {
                 this.template(rewriteDir(`${SERVER_MAIN_SRC_DIR}package/config/oauth2/OAuth2Properties.java.ejs`), `${javaDir}config/oauth2/OAuth2Properties.java`);
                 this.template(rewriteDir(`${SERVER_MAIN_SRC_DIR}package/config/oauth2/OAuth2JwtAccessTokenConverter.java.ejs`), `${javaDir}config/oauth2/OAuth2JwtAccessTokenConverter.java`);
@@ -397,8 +412,12 @@ function writeFiles() {
                 this.template(rewriteDir(`${SERVER_MAIN_SRC_DIR}package/client/AuthorizedFeignClient.java.ejs`), `${javaDir}client/AuthorizedFeignClient.java`);
                 this.template(rewriteDir(`${SERVER_MAIN_SRC_DIR}package/client/OAuth2InterceptedFeignConfiguration.java.ejs`), `${javaDir}client/OAuth2InterceptedFeignConfiguration.java`);
                 this.template(rewriteDir(`${SERVER_MAIN_SRC_DIR}package/client/AuthorizedUserFeignClient.java.ejs`), `${javaDir}client/AuthorizedUserFeignClient.java`);
-                this.template(rewriteDir(`${SERVER_MAIN_SRC_DIR}package/client/UserFeignClientInterceptor.java.ejs`), `${javaDir}client/UserFeignClientInterceptor.java`);
+                this.template(rewriteDir(`${SERVER_MAIN_SRC_DIR}package/client/OAuth2_UserFeignClientInterceptor.java.ejs`), `${javaDir}client/UserFeignClientInterceptor.java`);
                 this.template(rewriteDir(`${SERVER_MAIN_SRC_DIR}package/client/OAuth2UserClientFeignConfiguration.java.ejs`), `${javaDir}client/OAuth2UserClientFeignConfiguration.java`);
+            }
+            if (this.applicationType === 'microservice' && this.authenticationType === 'jwt') {
+                this.template(rewriteDir(`${SERVER_MAIN_SRC_DIR}package/config/FeignConfiguration.java.ejs`), `${javaDir}config/FeignConfiguration.java`);
+                this.template(rewriteDir(`${SERVER_MAIN_SRC_DIR}package/client/JWT_UserFeignClientInterceptor.java.ejs`), `${javaDir}client/UserFeignClientInterceptor.java`);
             }
             if (this.authenticationType === 'oauth2') {
                 this.template(rewriteDir(`${SERVER_MAIN_SRC_DIR}package/security/oauth2/AuthorizationHeaderUtil.java.ejs`), `${javaDir}/security/oauth2/AuthorizationHeaderUtil.java`);
@@ -412,9 +431,13 @@ function writeFiles() {
                 this.template(rewriteDir(`${SERVER_MAIN_SRC_DIR}package/config/FeignConfiguration.java.ejs`), `${javaDir}config/FeignConfiguration.java`);
                 this.template(rewriteDir(`${SERVER_MAIN_SRC_DIR}package/client/AuthorizedFeignClient.java.ejs`), `${javaDir}client/AuthorizedFeignClient.java`);
                 this.template(rewriteDir(`${SERVER_MAIN_SRC_DIR}package/client/OAuth2InterceptedFeignConfiguration.java.ejs`), `${javaDir}client/OAuth2InterceptedFeignConfiguration.java`);
+                this.template(rewriteDir(`${SERVER_MAIN_SRC_DIR}package/client/OAuth2TokenServicesConfiguration.java.ejs`), `${javaDir}client/OAuth2TokenServicesConfiguration.java`);
                 this.template(rewriteDir(`${SERVER_MAIN_SRC_DIR}package/client/TokenRelayRequestInterceptor.java.ejs`), `${javaDir}client/TokenRelayRequestInterceptor.java`);
             }
-            if (this.authenticationType === 'oauth2' && this.applicationType === 'gateway') {
+
+            if (!(this.applicationType !== 'microservice' && !(this.applicationType === 'gateway'
+                    && (this.authenticationType === 'uaa' || this.authenticationType === 'oauth2')))
+                    && (this.authenticationType === 'oauth2' && this.applicationType === 'gateway')) {
                 this.template(rewriteDir(`${SERVER_MAIN_SRC_DIR}package/config/OAuth2SsoConfiguration.java.ejs`), `${javaDir}config/OAuth2SsoConfiguration.java`);
             }
             if (this.applicationType === 'microservice') {
@@ -441,7 +464,7 @@ function writeFiles() {
 
             this.template(rewriteDir(`${SERVER_MAIN_SRC_DIR}package/config/package-info.java.ejs`), `${javaDir}config/package-info.java`);
             this.template(rewriteDir(`${SERVER_MAIN_SRC_DIR}package/config/AsyncConfiguration.kt.ejs`), `${kotlinDir}config/AsyncConfiguration.kt`);
-            if (['ehcache', 'hazelcast', 'infinispan'].includes(this.cacheProvider) || this.applicationType === 'gateway') {
+            if (['ehcache', 'hazelcast', 'infinispan', 'memcached'].includes(this.cacheProvider)) {
                 this.template(rewriteDir(`${SERVER_MAIN_SRC_DIR}package/config/CacheConfiguration.java.ejs`), `${javaDir}config/CacheConfiguration.java`);
             }
             if (this.cacheProvider === 'infinispan') {
@@ -457,7 +480,9 @@ function writeFiles() {
                 this.template(rewriteDir(`${SERVER_MAIN_SRC_DIR}package/config/audit/package-info.java.ejs`), `${javaDir}config/audit/package-info.java`);
                 this.template(rewriteDir(`${SERVER_MAIN_SRC_DIR}package/config/audit/AuditEventConverter.java.ejs`), `${javaDir}config/audit/AuditEventConverter.java`);
             }
-
+            if (this.databaseType === 'sql') {
+                this.template(rewriteDir(`${SERVER_MAIN_SRC_DIR}package/config/LiquibaseConfiguration.java.ejs`), `${javaDir}config/LiquibaseConfiguration.java`);
+            }
             if (this.databaseType === 'couchbase') {
                 this.template(rewriteDir(`${SERVER_MAIN_SRC_DIR}package/repository/N1qlCouchbaseRepository.kt.ejs`), `${kotlinDir}repository/N1qlCouchbaseRepository.kt`);
                 this.template(rewriteDir(`${SERVER_MAIN_SRC_DIR}package/repository/CustomN1qlCouchbaseRepository.kt.ejs`), `${kotlinDir}repository/CustomN1qlCouchbaseRepository.kt`);
@@ -541,7 +566,6 @@ function writeFiles() {
             this.template(rewriteDir(`${SERVER_MAIN_SRC_DIR}package/web/rest/package-info.java.ejs`), `${javaDir}web/rest/package-info.java`);
 
             this.template(rewriteDir(`${SERVER_MAIN_SRC_DIR}package/web/rest/LogsResource.kt.ejs`), `${kotlinDir}web/rest/LogsResource.kt`);
-            // this.template(rewriteDir(`${SERVER_MAIN_SRC_DIR}package/web/rest/ProfileInfoResource.kt.ejs`), `${kotlinDir}web/rest/ProfileInfoResource.kt`);
         },
 
         writeServerJavaWebsocketFiles() {
@@ -582,7 +606,7 @@ function writeFiles() {
             this.template(rewriteDir(`${SERVER_TEST_RES_DIR}logback.xml.ejs`), `${SERVER_TEST_RES_DIR}logback.xml`);
 
             // Create Gateway tests files
-            if (this.applicationType === 'gateway') {
+            if (this.applicationType === 'gateway' && this.serviceDiscoveryType) {
                 this.template(rewriteDir(`${SERVER_TEST_SRC_DIR}package/gateway/responserewriting/SwaggerBasePathRewritingFilterTest.java.ejs`), `${testDir}gateway/responserewriting/SwaggerBasePathRewritingFilterTest.java`);
             }
             if (this.serviceDiscoveryType) {
@@ -613,11 +637,11 @@ function writeFiles() {
             if (this.cucumberTests) {
                 this.template(rewriteDir(`${SERVER_TEST_SRC_DIR}package/cucumber/CucumberTest.java.ejs`), `${testDir}cucumber/CucumberTest.java`);
                 this.template(rewriteDir(`${SERVER_TEST_SRC_DIR}package/cucumber/stepdefs/StepDefs.java.ejs`), `${testDir}cucumber/stepdefs/StepDefs.java`);
-                this.copy(rewriteDir(`${TEST_DIR}features/gitkeep`), `${TEST_DIR}features/.gitkeep`);
+                this.copy(rewriteDir(`${SERVER_TEST_SRC_DIR}../features/gitkeep`), `${TEST_DIR}features/.gitkeep`);
             }
 
             // Create auth config test files
-            if (this.applicationType === 'monolith' && this.authenticationType !== 'oauth2') {
+            if (!shouldSkipUserManagement(this) && this.authenticationType !== 'oauth2') {
                 this.template(rewriteDir(`${SERVER_TEST_SRC_DIR}package/security/DomainUserDetailsServiceIntTest.java.ejs`), `${testDir}security/DomainUserDetailsServiceIntTest.java`);
             }
         },
@@ -631,9 +655,13 @@ function writeFiles() {
                         this.copy(rewriteDir(`${SERVER_MAIN_RES_DIR}config/liquibase/authorities.csv.ejs`), `${SERVER_MAIN_RES_DIR}config/liquibase/authorities.csv`);
                         this.copy(rewriteDir(`${SERVER_MAIN_RES_DIR}config/liquibase/users_authorities.csv.ejs`), `${SERVER_MAIN_RES_DIR}config/liquibase/users_authorities.csv`);
                     }
-                    this.template(rewriteDir(`${SERVER_MAIN_SRC_DIR}package/web/rest/AccountResource.kt.ejs`), `${kotlinDir}web/rest/AccountResource.kt`);
+
+                    if (['monolith', 'gateway'].includes(this.applicationType)) {
+                        this.template(rewriteDir(`${SERVER_MAIN_SRC_DIR}package/web/rest/AccountResource.kt.ejs`), `${kotlinDir}web/rest/AccountResource.kt`);
+                        this.template(rewriteDir(`${SERVER_TEST_SRC_DIR}package/web/rest/AccountResourceIntTest.java.ejs`), `${testDir}web/rest/AccountResourceIntTest.java`);
+                    }
+
                     this.template(rewriteDir(`${SERVER_MAIN_SRC_DIR}package/domain/User.java.ejs`), `${javaDir}domain/User.java`);
-                    this.template(rewriteDir(`${SERVER_TEST_SRC_DIR}package/web/rest/AccountResourceIntTest.java.ejs`), `${testDir}web/rest/AccountResourceIntTest.java`);
                     this.template(rewriteDir(`${SERVER_TEST_SRC_DIR}package/security/SecurityUtilsUnitTest.java.ejs`), `${testDir}security/SecurityUtilsUnitTest.java`);
 
                     if (this.applicationType === 'monolith') {
@@ -725,7 +753,7 @@ function writeFiles() {
             this.copy(rewriteDir(`${SERVER_TEST_RES_DIR}templates/mail/testEmail.html.ejs`), `${SERVER_TEST_RES_DIR}templates/mail/testEmail.html`);
             this.copy(rewriteDir(`${SERVER_TEST_RES_DIR}i18n/messages_en.properties.ejs`), `${SERVER_TEST_RES_DIR}i18n/messages_en.properties`);
 
-            if (this.searchEngine === 'elasticsearch') {
+            if (this.skipUserManagement && this.authenticationType === 'oauth2' && this.searchEngine === 'elasticsearch') {
                 this.template(rewriteDir(`${SERVER_TEST_SRC_DIR}package/repository/search/UserSearchRepositoryMockConfiguration.java.ejs`), `${testDir}repository/search/UserSearchRepositoryMockConfiguration.java`);
             }
             this.template(rewriteDir(`${SERVER_TEST_SRC_DIR}package/service/MailServiceIntTest.java.ejs`), `${testDir}service/MailServiceIntTest.java`);
