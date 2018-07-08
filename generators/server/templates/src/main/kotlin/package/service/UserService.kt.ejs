@@ -342,7 +342,9 @@ class UserService(private val userRepository: UserRepository
             .flatMap { userRepository.findOneByLogin(it) }
             .ifPresent { user ->
                 val currentEncryptedPassword = user.password
-                assertClearTextPasswordMatchesEncryptedPassword(currentClearTextPassword, currentEncryptedPassword!!)
+                if (!passwordEncoder.matches(clearTextPassword, encryptedPassword)) {
+                   throw InvalidPasswordException()
+                }
                 val encryptedPassword = passwordEncoder.encode(newPassword)
                 user.password = encryptedPassword
                 <%_ if (databaseType === 'mongodb' || databaseType === 'couchbase' || databaseType === 'cassandra') { _%>
@@ -353,12 +355,6 @@ class UserService(private val userRepository: UserRepository
                 <%_ } _%>
                 log.debug("Changed password for User: {}", user)
             }
-    }
-
-    private fun assertClearTextPasswordMatchesEncryptedPassword(clearTextPassword: String, encryptedPassword: String) {
-        if (!passwordEncoder.matches(clearTextPassword, encryptedPassword)) {
-            throw InvalidPasswordException()
-        }
     }
 
 <%_ } _%>
