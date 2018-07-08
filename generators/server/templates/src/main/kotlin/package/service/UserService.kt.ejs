@@ -461,6 +461,7 @@ class UserService(private val userRepository: UserRepository
      * @return the user from the authentication
      */
     fun getUserFromAuthentication(authentication: OAuth2Authentication): UserDTO {
+        val oauth2AuthenticationDetails =  authentication.details // should be an OAuth2AuthenticationDetails
         val details = authentication.userAuthentication.details as Map<String, Any>
         val user = getUser(details)
         val userAuthorities = extractAuthorities(authentication, details)
@@ -476,6 +477,7 @@ class UserService(private val userRepository: UserRepository
 
         val token = getToken(details, user, grantedAuthorities)
         val auth = OAuth2Authentication(authentication.oAuth2Request, token)
+        auth.details = oauth2AuthenticationDetails // must be present in a gateway for TokenRelayFilter to work
         SecurityContextHolder.getContext().authentication = auth
 
         return UserDTO(syncUserWithIdP(details, user))
@@ -484,12 +486,15 @@ class UserService(private val userRepository: UserRepository
      private fun syncUserWithIdP(details: Map<String, Any>, user: User): User {
         // save account in to sync users between IdP and JHipster's local database
         val dbAuthorities = getAuthorities()
+        <%_ if (databaseType !== 'couchbase') { _%>
         val userAuthorities = user.authorities.map { it.name }
-
+        <%_ } else { _%>
+        val userAuthorities = user.authorities
+        <%_ } _%>
         userAuthorities
             .filter { !dbAuthorities.contains(it) }
             .map {
-                log.debug("Saving authority '$it' in local database ...")
+                log.debug("Saving authority '$it' in local database")
                 val authorityToSave = Authority()
                 authorityToSave.name = it
                 authorityRepository.save(authorityToSave)
@@ -502,18 +507,18 @@ class UserService(private val userRepository: UserRepository
                 val dbModifiedDate = existingUser.get().lastModifiedDate
                 val idpModifiedDate = Date(java.lang.Long.valueOf((details["updated_at"] as Int).toLong())).toInstant()
                 if (idpModifiedDate.isAfter(dbModifiedDate)) {
-                    log.debug("Updating user '{}' in local database...", user.login)
+                    log.debug("Updating user '{}' in local database", user.login)
                     updateUser(user.firstName, user.lastName, user.email,
                         user.langKey, user.imageUrl)
                 }
                 // no last updated info, blindly update
             } else {
-                log.debug("Updating user '{}' in local database...", user.login)
+                log.debug("Updating user '{}' in local database", user.login)
                 updateUser(user.firstName, user.lastName, user.email,
                     user.langKey, user.imageUrl)
             }
         } else {
-            log.debug("Saving user '{}' in local database...", user.login)
+            log.debug("Saving user '{}' in local database", user.login)
             userRepository.save(user)
             <%_ if (cacheManagerIsAvailable === true) { _%>
             this.clearUserCaches(user)
