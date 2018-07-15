@@ -13,28 +13,32 @@ module.exports = class extends EntityGenerator {
         }
 
         this.configOptions = jhContext.configOptions || {};
-        if (jhContext.databaseType === 'cassandra') {
-            this.pkType = 'UUID';
-        }
+        // This sets up options for this sub generator and is being reused from JHipster
+        jhContext.setupEntityOptions(this, jhContext, this);
     }
 
     get initializing() {
+        // Here we are not overriding this phase and hence its being handled by JHipster
         return super._initializing();
     }
 
     get prompting() {
+        // Here we are not overriding this phase and hence its being handled by JHipster
         return super._prompting();
     }
 
     get configuring() {
+        // Here we are not overriding this phase and hence its being handled by JHipster
         return super._configuring();
     }
 
     get writing() {
+        // Here we are not overriding this phase and hence its being handled by JHipster
         return super._writing();
     }
 
     get install() {
+        // Here we are not overriding this phase and hence its being handled by JHipster
         return super._install();
     }
 };
