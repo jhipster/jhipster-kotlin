@@ -573,8 +573,13 @@ class UserService(private val userRepository: UserRepository
             user.langKey = details["langKey"] as String
         } else if (details["locale"] != null) {
             val locale = details["locale"] as String
-            val langKey = locale.substring(0, locale.indexOf("-"))
-            user.langKey = langKey
+            if(locale.contains("-")) {
+                val langKey = locale.substring(0, locale.indexOf("-"))
+                user.langKey = langKey
+            } else if(locale.contains("_")) {
+                val langKey = locale.substring(0, locale.indexOf("_"))
+                user.langKey = langKey
+            }
         }
         if (details["picture"] != null) {
             user.imageUrl = details["picture"] as String
