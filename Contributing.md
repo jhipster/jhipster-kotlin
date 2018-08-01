@@ -1,9 +1,44 @@
-# Setup
-* Clone the repo `git clone https://github.com/sendilkumarn/jhipster-kotlin`
-* cd into the repo `cd jhipster-kotlin`
-* install the dependencies `yarn` | `npm i`
-* link the repo `yarn link` | `npm link`
-* Go to your project folder 
-* run `yarn link "generator-jhipster-kotlin"` | `npm link "generator-jhipster-kotlin"`
+# We really love to have you and your awesome (intention) contributions here. 🎉🎉🎉 Thanks 🎉🎉🎉
 
-More detailed contributing guide check [here](https://github.com/jhipster/generator-jhipster/blob/master/CONTRIBUTING.md)
+## To run the application in development
+
+### Step 1 👍 : to setup JHipster locally 
+
+`git clone https://github.com/jhipster/generator-jhipster`
+
+`cd generator-jhipster`
+
+`npm install | yarn`
+
+`npm link | yarn link`
+
+( 🏁 Kudos, you just setup JHipster and linked to it locally )
+
+### Step 2 ✌️ : to setup JHipster-Kotlin generator 
+
+`git clone https://github.com/jhipster/jhipster-kotlin`
+
+`cd jhipster-kotlin`
+
+`npm install | yarn`
+
+`npm link | yarn link`
+
+`npm link generator-jhipster | yarn link generator-jhipster`
+
+( 🏁 Kudos, you just setup JHipster-Kotlin and linked to it locally )
+( 📝 Note: you are linking the JHipster to JHipster-Kotlin with the final command)
+
+### Step 3 🤟 : before generating your application, go to your application folder 
+
+`yarn link "generator-jhipster" && yarn link "generator-jhipster-kotlin"`
+
+or
+
+`npm link "generator-jhipster" && npm link "generator-jhipster-kotlin"`
+
+( 🏁 Kudos, you have done it. It is the time to generate the application `jhipster --blueprint kotlin` )
+
+✨✨✨✨ You are rocking ✨✨✨✨
+
+Fix / Code / Document and create a pull request 💯
