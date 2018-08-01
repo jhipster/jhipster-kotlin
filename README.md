@@ -31,7 +31,7 @@ To generate an application run `jhipster --blueprint kotlin`
 
 🗣 Conversations 🗣 are happening [here](https://jhipster-kotlin.slack.com)
 
-Found an issue 🐞 , let us know [here]((https://github.com/jhipster/jhipster-kotlin/issues). 
+Found an issue 🐞 , let us know [here](https://github.com/jhipster/jhipster-kotlin/issues). 
 
 Interested in contributing 🎉🎉🎉🎉 , check out our [contributing guide](https://github.com/jhipster/jhipster-kotlin/blob/master/CONTRIBUTING.md) to get started.
 
