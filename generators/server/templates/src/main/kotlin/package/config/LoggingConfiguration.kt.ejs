@@ -4,7 +4,7 @@
  This file is part of the JHipster project, see https://www.jhipster.tech/
  for more information.
 
- Licensed under the Apache License, Version 2.0 (the "License");
+ Licensed under the Apache License, Version 2.0 (the "License")
  you may not use this file except in compliance with the License.
  You may obtain a copy of the License at
 
@@ -16,37 +16,35 @@
  See the License for the specific language governing permissions and
  limitations under the License.
 -%>
-package <%=packageName%>.config;
+package <%=packageName%>.config
 
-import java.net.InetSocketAddress;
+import java.net.InetSocketAddress
 
-import io.github.jhipster.config.JHipsterProperties;
+import io.github.jhipster.config.JHipsterProperties
 
-import ch.qos.logback.classic.AsyncAppender;
-import ch.qos.logback.classic.Level;
-import ch.qos.logback.classic.LoggerContext;
-import ch.qos.logback.classic.boolex.OnMarkerEvaluator;
-import ch.qos.logback.classic.spi.ILoggingEvent;
-import ch.qos.logback.classic.spi.LoggerContextListener;
-import ch.qos.logback.core.Appender;
-import ch.qos.logback.core.filter.EvaluatorFilter;
-import ch.qos.logback.core.spi.ContextAwareBase;
-import ch.qos.logback.core.spi.FilterReply;
-import net.logstash.logback.appender.LogstashTcpSocketAppender;
-import net.logstash.logback.encoder.LogstashEncoder;
-import net.logstash.logback.stacktrace.ShortenedThrowableConverter;
-import org.slf4j.Logger;
-import org.slf4j.LoggerFactory;
-import org.springframework.beans.factory.annotation.Value;
+import ch.qos.logback.classic.AsyncAppender
+import ch.qos.logback.classic.Level
+import ch.qos.logback.classic.LoggerContext
+import ch.qos.logback.classic.boolex.OnMarkerEvaluator
+import ch.qos.logback.classic.spi.ILoggingEvent
+import ch.qos.logback.classic.spi.LoggerContextListener
+import ch.qos.logback.core.filter.EvaluatorFilter
+import ch.qos.logback.core.spi.ContextAwareBase
+import ch.qos.logback.core.spi.FilterReply
+import net.logstash.logback.appender.LogstashTcpSocketAppender
+import net.logstash.logback.encoder.LogstashEncoder
+import net.logstash.logback.stacktrace.ShortenedThrowableConverter
+import org.slf4j.LoggerFactory
+import org.springframework.beans.factory.annotation.Value
 <%_ if (serviceDiscoveryType === "eureka") { _%>
-import org.springframework.cloud.context.config.annotation.RefreshScope;
+import org.springframework.cloud.context.config.annotation.RefreshScope
 <%_ } _%>
 <%_ if (serviceDiscoveryType === "consul") { _%>
-import org.springframework.cloud.consul.ConditionalOnConsulEnabled;
-import org.springframework.cloud.consul.serviceregistry.ConsulRegistration;
-import org.springframework.cloud.context.config.annotation.RefreshScope;
+import org.springframework.cloud.consul.ConditionalOnConsulEnabled
+import org.springframework.cloud.consul.serviceregistry.ConsulRegistration
+import org.springframework.cloud.context.config.annotation.RefreshScope
 <%_ } _%>
-import org.springframework.context.annotation.Configuration;
+import org.springframework.context.annotation.Configuration
 
 @Configuration
 <%_ if (serviceDiscoveryType === "eureka") { _%>
@@ -56,7 +54,7 @@ import org.springframework.context.annotation.Configuration;
 @ConditionalOnConsulEnabled
 @RefreshScope
 <%_ } _%>
-public class LoggingConfiguration(@param:Value("\${spring.application.name}") private val appName: String, @param:Value("\${server.port}") private val serverPort: String,
+class LoggingConfiguration(@param:Value("\${spring.application.name}") private val appName: String, @param:Value("\${server.port}") private val serverPort: String,
     <% if (serviceDiscoveryType === "consul") { %> private val consulRegistration: ConsulRegistration,<% } %><% if (serviceDiscoveryType && (applicationType === 'microservice' || applicationType === 'gateway' || applicationType === 'uaa')) { %> @Value("\${info.project.version:}") private val version: String,<% } %>
                            private val jHipsterProperties: JHipsterProperties) {
 
@@ -87,16 +85,16 @@ public class LoggingConfiguration(@param:Value("\${spring.application.name}") pr
         logstashAppender.name = LOGSTASH_APPENDER_NAME
         logstashAppender.context = context
         <%_ if (serviceDiscoveryType && (applicationType === 'microservice' || applicationType === 'gateway' || applicationType === 'uaa')) { _%>
-        var optionalFields = "";
+        var optionalFields = ""
         <%_ if (serviceDiscoveryType === 'consul') { _%>
         if (consulRegistration != null) {
-            optionalFields = "\"instance_id\":\"" + consulRegistration.getInstanceId() + "\",";
+            optionalFields = "\"instance_id\":\"" + consulRegistration.getInstanceId() + "\","
         }
         <%_ } _%>
         val customFields = "{\"app_name\":\"" + appName + "\",\"app_port\":\"" + serverPort + "\"," +
-            optionalFields + "\"version\":\"" + version + "\"}";
+            optionalFields + "\"version\":\"" + version + "\"}"
         <%_ } else { _%>
-        val customFields = "{\"app_name\":\"" + appName + "\",\"app_port\":\"" + serverPort + "\"}";
+        val customFields = "{\"app_name\":\"" + appName + "\",\"app_port\":\"" + serverPort + "\"}"
         <%_ } _%>
 
         // More documentation is available at: https://github.com/logstash/logstash-logback-encoder
