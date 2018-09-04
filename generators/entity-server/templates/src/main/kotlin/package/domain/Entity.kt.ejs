@@ -118,15 +118,7 @@ import static org.springframework.data.couchbase.core.mapping.id.GenerationStrat
 <%_ } if (searchEngine === 'elasticsearch' && databaseType !== 'mongodb') { _%>
 @Document(indexName = "<%= entityInstance.toLowerCase() %>")
 <%_ } _%>
-data class <%= entityClass %> {
-
-    <%_ if (databaseType === 'couchbase') { _%>
-    val PREFIX: String = "<%= entityInstance.toLowerCase() %>";
-
-    @SuppressWarnings("unused")
-    @IdPrefix
-    val prefix: String = PREFIX,
-    <%_ } _%>
+data class <%= entityClass %> (
 
     @Id
     <%_ if (databaseType === 'sql') { _%>
@@ -155,6 +147,7 @@ data class <%= entityClass %> {
     const fieldName = fields[idx].fieldName;
     const fieldNameUnderscored = fields[idx].fieldNameUnderscored;
     const fieldNameAsDatabaseColumn = fields[idx].fieldNameAsDatabaseColumn;
+    const comma = (idx === (fields.length - 1)) ?  ',' : '';
     if (fieldValidate === true) {
         if (fieldValidate === true && fieldValidateRules.includes('required')) {
             required = true;
@@ -183,9 +176,9 @@ data class <%= entityClass %> {
     @Field("<%=fieldNameUnderscored %>")
     <%_ } _%>
     <%_ if (fieldTypeBlobContent !== 'text') { _%>
-    var <%= fieldName %>: <%= fieldType %>,
+    var <%= fieldName %>: <%= fieldType %><%= comma %>
     <%_ } else { _%>
-    var <%= fieldName %>: String?,
+    var <%= fieldName %>: String?<%= comma %>
     <%_ } _%>
 
     <%_ if ((fieldType === 'byte[]' || fieldType === 'ByteBuffer') && fieldTypeBlobContent !== 'text') { _%>
@@ -198,7 +191,7 @@ data class <%= entityClass %> {
       <%_ if (databaseType === 'mongodb' || databaseType === 'couchbase') { _%>
     @Field("<%=fieldNameUnderscored %>_content_type")
       <%_ } _%>
-    var <%= fieldName %>ContentType: String?,
+    var <%= fieldName %>ContentType: String?<%= comma %>
 
     <%_ }
     }
@@ -324,4 +317,16 @@ data class <%= entityClass %> {
     // jhipster-needle-entity-add-getters-setters - JHipster will add getters and setters here, do not remove
 
 
+)
+<%_ if (databaseType === 'couchbase') { _%>
+class <%= entityClass %> {
+
+    
+    val PREFIX: String = "<%= entityInstance.toLowerCase() %>";
+
+    @SuppressWarnings("unused")
+    @IdPrefix
+    val prefix: String = PREFIX
+    
 }
+<%_ } _%>

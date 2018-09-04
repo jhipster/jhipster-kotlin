@@ -16,10 +16,20 @@
  See the License for the specific language governing permissions and
  limitations under the License.
 -%>
-<%_ if (!viaService) { %>
-        <%= entityInstance %>Repository.deleteById(id)
-<%_ if (searchEngine === 'elasticsearch') { _%>
-        <%= entityInstance %>SearchRepository.deleteById(id)
-<%_ } _%><%_ } else { _%>
-        <%= entityInstance %>Service.delete(id)
+<%_ if (!viaService) { _%>
+val <%= entityInstance %>Repository: <%= entityClass %>Repository
+<%_ if (dto === 'mapstruct') { _%>
+, val <%= entityInstance %>Mapper: <%= entityClass %>Mapper
 <%_ } _%>
+<%_ if (searchEngine === 'elasticsearch') { _%>
+, val <%= entityInstance %>SearchRepository: <%= entityClass %>SearchRepository
+<%_ } _%>
+<%_ if (reactiveRepositories) { _%>
+, val <%= entityInstance %>ReactiveRepository: <%= entityClass %>ReactiveRepository
+<%_ } _%><%_  } else { _%>
+val <%= entityInstance %>Service: <%= entityClass %>Service
+<%_ if (queryService) {  _%>
+, val <%= entityInstance %>QueryService: <%= entityClass %>QueryService
+<%_ } _%><%_ } _%>
+<%_ if (saveUserSnapshot) { _%>
+, val userRepository: UserRepository<%_ } _%>
