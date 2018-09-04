@@ -30,7 +30,6 @@ const TEST_DIR = constants.TEST_DIR;
 const SERVER_MAIN_SRC_KOTLIN_DIR = `${constants.MAIN_DIR}kotlin/`;
 const SERVER_TEST_SRC_KOTLIN_DIR = `${constants.TEST_DIR}kotlin/`;
 
-// const BASE_DIR = '../../../node_modules/generator-jhipster/generators/entity-server/templates/';
 /**
  * The default is to use a file path string. It implies use of the template method.
  * For any other config an object { file:.., method:.., template:.. } can be used
