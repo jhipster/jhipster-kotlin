@@ -1,3 +1,8 @@
+<a name="0.5.0"></a>
+# [0.5.0](https://github.com/sendilkumarn/jhipster-kotlin/compare/0.4.0...0.5.0) (2018-08-01)
+* Fixed few issues due to JHipster upstream changes
+* Clear Readme and Contributing documents to make it easier for users
+
 <a name="0.4.0"></a>
 # [0.4.0](https://github.com/sendilkumarn/jhipster-kotlin/compare/0.3.0...0.4.0) (2018-06-20)
 * Fixed core generator's issue with blueprint

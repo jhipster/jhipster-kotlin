@@ -1,3 +1,5 @@
+> ## ⚠️ Status: In Development
+> This project is currently in development. We would love ❤️ to see you to use it and give us your feedback and help in shaping this project 💪
 
 <div align="center">
 	<a href="https://github.com/jhipster/jhipster-kotlin">
@@ -11,55 +13,29 @@
 [![Build Status][travis-image]][travis-url-main]
 [![Dependency Status][daviddm-image]][daviddm-url]
 
-A Kotlin application generator based on JHipster.
+This project adds Kotlin to the JHipster application 😎. It is based on JHipster Blueprint 🔵.
 
-To generate application run
+## 🚀 How to get started
 
-`jhipster --blueprint kotlin`
+To generate an application run `jhipster --blueprint kotlin`
 
-# To run the application in development
+## 🚦 What we have now 
+(⚠️This list is not tested exhaustively - denotes default options are working.⚠️)
 
-Step 1 : to setup JHipster locally
+✅ General App generation
+✅ Spring Controller
+~Spring Service~
+~Entity generation~
 
-`git clone https://github.com/jhipster/generator-jhipster`
+## ❤️ for community
 
-`cd generator-jhipster`
+🗣 Conversations 🗣 are happening [here](https://jhipster-kotlin.slack.com)
 
-`npm install | yarn`
+Found an issue 🐞 , let us know [here](https://github.com/jhipster/jhipster-kotlin/issues). 
 
-`npm link | yarn link`
+Interested in contributing 🎉🎉🎉🎉 , check out our [contributing guide](https://github.com/jhipster/jhipster-kotlin/blob/master/CONTRIBUTING.md) to get started.
 
-Step 2 : to setup KHipster generator
-
-`git clone https://github.com/jhipster/jhipster-kotlin`
-
-`cd jhipster-kotlin`
-
-`npm install | yarn`
-
-`npm link | yarn link`
-
-`npm link generator-jhipster | yarn link generator-jhipster`
-
-Step 3 : before generating your application, go to your application folder
-
-`yarn link "generator-jhipster" && yarn link "generator-jhipster-kotlin"`
-
-or
-
-`npm link "generator-jhipster" && npm link "generator-jhipster-kotlin"`
-
-
-Conversations are happening at [here](https://jhipster-kotlin.slack.com)
-
-
-#### Kotlin conversion is in progress...
-
-
-PRS are welcome :bowtie:
-
-Wide testing is needed :eyeglasses:
-
+With JHipster we can generate a wide range of applications (26000) 😮. Would love ❤️ to get it tested. 🤓
 
 [khipster-image]: https://raw.githubusercontent.com/sendilkumarn/jhipster-kotlin-artwork/master/logo-khipster.png
 [npm-image]: https://badge.fury.io/js/generator-jhipster-kotlin.svg

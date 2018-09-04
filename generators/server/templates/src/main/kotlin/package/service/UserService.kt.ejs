@@ -133,7 +133,7 @@ class UserService(private val userRepository: UserRepository
 
     fun requestPasswordReset(mail: String): Optional<User> {
         return userRepository.findOneByEmailIgnoreCase(mail)
-            .filter({ it.activated!! })
+            .filter { it.activated }
             .map { user ->
                 user.resetKey = RandomUtil.generateResetKey()
                 user.resetDate = Instant.now()
@@ -387,7 +387,7 @@ class UserService(private val userRepository: UserRepository
     <%_ if (databaseType === 'sql') { _%>
     @Transactional(readOnly = true)
     <%_ } _%>
-    fun getUserWithAuthorities(id: Long): Optional<User> {
+    fun getUserWithAuthorities(id: <%= pkType %>): Optional<User> {
         <%_ if (databaseType === 'sql') { _%>
         return userRepository.findOneWithAuthoritiesById(id)
         <%_ } else { // MongoDB, Couchbase and and Cassandra _%>
@@ -573,8 +573,13 @@ class UserService(private val userRepository: UserRepository
             user.langKey = details["langKey"] as String
         } else if (details["locale"] != null) {
             val locale = details["locale"] as String
-            val langKey = locale.substring(0, locale.indexOf("-"))
-            user.langKey = langKey
+            if(locale.contains("-")) {
+                val langKey = locale.substring(0, locale.indexOf("-"))
+                user.langKey = langKey
+            } else if(locale.contains("_")) {
+                val langKey = locale.substring(0, locale.indexOf("_"))
+                user.langKey = langKey
+            }
         }
         if (details["picture"] != null) {
             user.imageUrl = details["picture"] as String
