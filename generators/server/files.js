@@ -363,13 +363,13 @@ function writeFiles() {
                 this.template(rewriteDir(`${SERVER_MAIN_SRC_DIR}package/config/apidoc/GatewaySwaggerResourcesProvider.java.ejs`), `${javaDir}config/apidoc/GatewaySwaggerResourcesProvider.java`);
                 this.template(rewriteDir(`${SERVER_MAIN_SRC_DIR}package/gateway/ratelimiting/RateLimitingFilter.java.ejs`), `${javaDir}gateway/ratelimiting/RateLimitingFilter.java`);
                 if (this.authenticationType === 'jwt') {
-                    this.template(rewriteDir(`${SERVER_MAIN_SRC_DIR}package/gateway/TokenRelayFilter.java.ejs`), `${javaDir}gateway/TokenRelayFilter.java`);    
+                    this.template(rewriteDir(`${SERVER_MAIN_SRC_DIR}package/gateway/TokenRelayFilter.java.ejs`), `${javaDir}gateway/TokenRelayFilter.java`);
                 }
 
                 this.template(rewriteDir(`${SERVER_MAIN_SRC_DIR}package/gateway/accesscontrol/AccessControlFilter.java.ejs`), `${javaDir}gateway/accesscontrol/AccessControlFilter.java`);
                 this.template(rewriteDir(`${SERVER_MAIN_SRC_DIR}package/gateway/responserewriting/SwaggerBasePathRewritingFilter.java.ejs`), `${javaDir}gateway/responserewriting/SwaggerBasePathRewritingFilter.java`);
                 this.template(rewriteDir(`${SERVER_MAIN_SRC_DIR}package/web/rest/vm/RouteVM.java.ejs`), `${javaDir}web/rest/vm/RouteVM.java`);
-                this.template(rewriteDir(`${SERVER_MAIN_SRC_DIR}package/web/rest/GatewayResource.kt.ejs`), `${kotlinDir}web/rest/GatewayResource.kt`);    
+                this.template(rewriteDir(`${SERVER_MAIN_SRC_DIR}package/web/rest/GatewayResource.kt.ejs`), `${kotlinDir}web/rest/GatewayResource.kt`);
             }
             if (this.authenticationType === 'uaa') {
                 if (this.serviceDiscoveryType) {
@@ -400,7 +400,7 @@ function writeFiles() {
             if (this.authenticationType === 'uaa' && this.applicationType !== 'uaa') {
                 this.template(rewriteDir(`${SERVER_MAIN_SRC_DIR}package/config/MicroserviceSecurityConfiguration.java.ejs`), `${javaDir}config/SecurityConfiguration.java`);
             }
-            
+
             if (this.authenticationType === 'uaa') {
                 this.template(rewriteDir(`${SERVER_MAIN_SRC_DIR}package/config/oauth2/OAuth2Properties.java.ejs`), `${javaDir}config/oauth2/OAuth2Properties.java`);
                 this.template(rewriteDir(`${SERVER_MAIN_SRC_DIR}package/config/oauth2/OAuth2JwtAccessTokenConverter.java.ejs`), `${javaDir}config/oauth2/OAuth2JwtAccessTokenConverter.java`);
