@@ -149,31 +149,34 @@ class UserService(private val userRepository: UserRepository
 
     fun registerUser(userDTO: UserDTO, password: String): User {
 
-
-        userRepository.findOneByLogin(userDTO.login.toLowerCase()).ifPresent { existingUser -> {
-            if(!existingUser.activated) {
-                userRepository.delete(existingUser)
-                <%_ if (cacheManagerIsAvailable === true) { _%>
-                this.clearUserCaches(existingUser)
-                <%_ } _%>
-            } else {
-                throw LoginAlreadyUsedException()
+        userRepository.findOneByLogin(userDTO.login.toLowerCase()).ifPresent { existingUser -> 
+            run {
+                if(!existingUser.activated) {
+                    userRepository.delete(existingUser)
+                    <%_ if (cacheManagerIsAvailable === true) { _%>
+                    this.clearUserCaches(existingUser)
+                    <%_ } _%>
+                } else {
+                    throw LoginAlreadyUsedException()
+                }
             }
-        }}
+        }
 
-        userRepository.findOneByEmailIgnoreCase(userDTO.email).ifPresent { existingUser -> {
-            if(!existingUser.activated) {
-                userRepository.delete(existingUser)
-                <%_ if (databaseType === 'sql') { _%>
-                userRepository.flush()
-                <%_ } _%>
-                <%_ if (cacheManagerIsAvailable === true) { _%>
-                this.clearUserCaches(existingUser)
-                <%_ } _%>
-            } else {
-                throw EmailAlreadyUsedException()
+        userRepository.findOneByEmailIgnoreCase(userDTO.email).ifPresent { existingUser -> 
+            run {
+                if(!existingUser.activated) {
+                    userRepository.delete(existingUser)
+                    <%_ if (databaseType === 'sql') { _%>
+                    userRepository.flush()
+                    <%_ } _%>
+                    <%_ if (cacheManagerIsAvailable === true) { _%>
+                    this.clearUserCaches(existingUser)
+                    <%_ } _%>
+                } else {
+                    throw EmailAlreadyUsedException()
+                }
             }
-        }}
+        }
 
         val newUser = User()
         <% if (databaseType === 'cassandra') { %>
