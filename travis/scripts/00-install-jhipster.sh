@@ -54,17 +54,14 @@ if [[ "$TRAVIS_REPO_SLUG" == *"/generator-jhipster" ]]; then
         npm test
     fi
 
-elif [[ "$JHIPSTER_BRANCH" == "release" ]]; then
-    npm install -g generator-jhipster
-
 else
     git clone "$JHIPSTER_REPO" generator-jhipster
     cd generator-jhipster
     if [ "$JHIPSTER_BRANCH" == "latest" ]; then
         LATEST=$(git describe --abbrev=0)
-        git checkout -b "$LATEST" "$LATEST"
+        git checkout "$LATEST"
     elif [ "$JHIPSTER_BRANCH" != "master" ]; then
-        git checkout -b "$JHIPSTER_BRANCH" origin/"$JHIPSTER_BRANCH"
+        git checkout "$JHIPSTER_BRANCH"
     fi
     git --no-pager log -n 10 --graph --pretty='%Cred%h%Creset -%C(yellow)%d%Creset %s %Cgreen(%cr) %C(bold blue)<%an>%Creset' --abbrev-commit
 
