@@ -653,7 +653,7 @@ function writeFiles() {
                 if (this.authenticationType === 'oauth2') {
                     if (this.databaseType === 'sql') {
                         this.copy(rewriteDir(`${SERVER_MAIN_RES_DIR}config/liquibase/authorities.csv.ejs`), `${SERVER_MAIN_RES_DIR}config/liquibase/authorities.csv`);
-                        this.copy(rewriteDir(`${SERVER_MAIN_RES_DIR}config/liquibase/users_authorities.csv.ejs`), `${SERVER_MAIN_RES_DIR}config/liquibase/users_authorities.csv`);
+                        this.template(rewriteDir(`${SERVER_MAIN_RES_DIR}config/liquibase/users_authorities.csv.ejs`), `${SERVER_MAIN_RES_DIR}config/liquibase/users_authorities.csv`);
                     }
 
                     if (['monolith', 'gateway'].includes(this.applicationType)) {
@@ -701,7 +701,7 @@ function writeFiles() {
             if (this.databaseType === 'sql') {
                 this.template(rewriteDir(`${SERVER_MAIN_RES_DIR}config/liquibase/users.csv.ejs`), `${SERVER_MAIN_RES_DIR}config/liquibase/users.csv`);
                 this.copy(rewriteDir(`${SERVER_MAIN_RES_DIR}config/liquibase/authorities.csv.ejs`), `${SERVER_MAIN_RES_DIR}config/liquibase/authorities.csv`);
-                this.copy(rewriteDir(`${SERVER_MAIN_RES_DIR}config/liquibase/users_authorities.csv.ejs`), `${SERVER_MAIN_RES_DIR}config/liquibase/users_authorities.csv`);
+                this.template(rewriteDir(`${SERVER_MAIN_RES_DIR}config/liquibase/users_authorities.csv.ejs`), `${SERVER_MAIN_RES_DIR}config/liquibase/users_authorities.csv`);
             }
 
             // Email templates
