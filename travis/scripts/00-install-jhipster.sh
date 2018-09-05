@@ -49,7 +49,7 @@ if [[ "$TRAVIS_REPO_SLUG" == *"/generator-jhipster" ]]; then
 
     cd "$TRAVIS_BUILD_DIR"/
     npm install
-    npm install -g "$TRAVIS_BUILD_DIR"
+    npm link
     if [[ "$JHIPSTER" == "" || "$JHIPSTER" == "ngx-default" ]]; then
         npm test
     fi
@@ -69,7 +69,7 @@ else
     git --no-pager log -n 10 --graph --pretty='%Cred%h%Creset -%C(yellow)%d%Creset %s %Cgreen(%cr) %C(bold blue)<%an>%Creset' --abbrev-commit
 
     npm install
-    npm install -g "$HOME"/generator-jhipster
+    npm link
 fi
 
 #-------------------------------------------------------------------------------
@@ -81,8 +81,8 @@ ls -al "$HOME"
 # Install JHipster Kotlin
 #-------------------------------------------------------------------------------
 cd "$TRAVIS_BUILD_DIR"/
-npm link generator-jhipster
 npm install
 # TODO: need to be removed as soon as there are some tests
 # npm test
 npm link
+npm link generator-jhipster
