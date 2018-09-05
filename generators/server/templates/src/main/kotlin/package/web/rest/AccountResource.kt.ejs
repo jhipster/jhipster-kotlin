@@ -93,6 +93,7 @@ import <%=packageName%>.repository.UserRepository
 import <%=packageName%>.security.SecurityUtils
 import <%=packageName%>.service.MailService
 import <%=packageName%>.service.UserService
+import <%=packageName%>.service.dto.PasswordChangeDTO
 import <%=packageName%>.service.dto.UserDTO
 import <%=packageName%>.web.rest.errors.*
 import <%=packageName%>.web.rest.vm.KeyAndPasswordVM
@@ -105,7 +106,6 @@ import org.springframework.web.bind.annotation.*
 
 import javax.servlet.http.HttpServletRequest
 import javax.validation.Valid
-import <%=packageName%>.service.dto.PasswordChangeDTO
 <%_ if (authenticationType === 'session') { _%>
 import java.io.UnsupportedEncodingException
 import java.net.URLDecoder
@@ -138,8 +138,7 @@ class AccountResource(private val userRepository: UserRepository,
         if (!checkPasswordLength(managedUserVM.password)) {
             throw InvalidPasswordException()
         }
-        userRepository.findOneByLogin(managedUserVM.login.toLowerCase()).ifPresent { _ -> throw LoginAlreadyUsedException() }
-        userRepository.findOneByEmailIgnoreCase(managedUserVM.email).ifPresent { _ -> throw EmailAlreadyUsedException() }
+        
         val user = userService.registerUser(managedUserVM, managedUserVM.password!!)
         mailService.sendActivationEmail(user)
     }

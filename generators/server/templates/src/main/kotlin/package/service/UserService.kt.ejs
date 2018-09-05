@@ -62,7 +62,7 @@ import org.springframework.security.oauth2.provider.OAuth2Authentication
 <%_ } _%>
 <%_ if (authenticationType !== 'oauth2') { _%>
 import org.springframework.security.crypto.password.PasswordEncoder
-import <%=packageName%>.web.rest.errors.InvalidPasswordException
+import <%=packageName%>.web.rest.errors.*
 <%_ } _%>
 import org.springframework.stereotype.Service<% if (databaseType === 'sql') { %>
 import org.springframework.transaction.annotation.Transactional<% } %>
@@ -149,18 +149,44 @@ class UserService(private val userRepository: UserRepository
 
     fun registerUser(userDTO: UserDTO, password: String): User {
 
+
+        userRepository.findOneByLogin(userDTO.login.toLowerCase()).ifPresent { existingUser -> {
+            if(!existingUser.activated) {
+                userRepository.delete(existingUser)
+                <%_ if (cacheManagerIsAvailable === true) { _%>
+                this.clearUserCaches(existingUser)
+                <%_ } _%>
+            } else {
+                throw LoginAlreadyUsedException()
+            }
+        }}
+
+        userRepository.findOneByEmailIgnoreCase(userDTO.email).ifPresent { existingUser -> {
+            if(!existingUser.activated) {
+                userRepository.delete(existingUser)
+                <%_ if (databaseType === 'sql') { _%>
+                userRepository.flush()
+                <%_ } _%>
+                <%_ if (cacheManagerIsAvailable === true) { _%>
+                this.clearUserCaches(existingUser)
+                <%_ } _%>
+            } else {
+                throw EmailAlreadyUsedException()
+            }
+        }}
+
         val newUser = User()
         <% if (databaseType === 'cassandra') { %>
         newUser.setId(UUID.randomUUID().toString())<% } %><% if (databaseType === 'cassandra' || databaseType === 'couchbase') { %>
         val authorities = HashSet<Authority>()<% } %>
 
         val encryptedPassword = passwordEncoder.encode(password)
-        newUser.login = userDTO.login
+        newUser.login = userDTO.login.toLowerCase()
         // new user gets initially a generated password
         newUser.password = encryptedPassword
         newUser.firstName = userDTO.firstName
         newUser.lastName = userDTO.lastName
-        newUser.email = userDTO.email
+        newUser.email = userDTO.email.toLowerCase()
         <%_ if (databaseType === 'sql' || databaseType === 'mongodb' || databaseType === 'couchbase') { _%>
         newUser.imageUrl = userDTO.imageUrl
         <%_ } _%>
@@ -189,10 +215,10 @@ class UserService(private val userRepository: UserRepository
     fun createUser(userDTO: UserDTO): User {
         val user = User()<% if (databaseType === 'cassandra') { %>
         user.id = UUID.randomUUID().toString()<% } %>
-        user.login = userDTO.login
+        user.login = userDTO.login.toLowerCase()
         user.firstName = userDTO.firstName
         user.lastName = userDTO.lastName
-        user.email = userDTO.email
+        user.email = userDTO.email.toLowerCase()
         <%_ if (databaseType === 'sql' || databaseType === 'mongodb' || databaseType === 'couchbase') { _%>
         user.imageUrl = userDTO.imageUrl
         <%_ } _%>
@@ -247,7 +273,7 @@ class UserService(private val userRepository: UserRepository
             .ifPresent { user ->
                 user.firstName = firstName
                 user.lastName = lastName
-                user.email = email
+                user.email = email.toLowerCase()
                 user.langKey = langKey
                 <%_ if (databaseType === 'mongodb' || databaseType === 'couchbase' || databaseType === 'sql') { _%>
                 user.imageUrl = imageUrl
@@ -287,10 +313,10 @@ class UserService(private val userRepository: UserRepository
                 this.clearUserCaches(user)
                 <%_ } _%>
 
-                user.login = userDTO.login
+                user.login = userDTO.login.toLowerCase()
                 user.firstName = userDTO.firstName
                 user.lastName = userDTO.lastName
-                user.email = userDTO.email
+                user.email = userDTO.email.toLowerCase()
                 <%_ if (databaseType === 'sql' || databaseType === 'mongodb'|| databaseType === 'couchbase') { _%>
                 user.imageUrl = userDTO.imageUrl
                 <%_ } _%>
@@ -556,7 +582,7 @@ class UserService(private val userRepository: UserRepository
 
     private fun getUser(details: Map<String, Any>): User {
         val user = User()
-        user.login = details["preferred_username"] as String
+        user.login = details["preferred_username"].toLowerCase() as String
         if (details["given_name"] != null) {
             user.firstName = details["given_name"] as String
         }
@@ -567,7 +593,7 @@ class UserService(private val userRepository: UserRepository
             user.activated = details["email_verified"] as Boolean
         }
         if (details["email"] != null) {
-            user.email = details["email"] as String
+            user.email = details["email"].toLowerCase() as String
         }
         if (details["langKey"] != null) {
             user.langKey = details["langKey"] as String
