@@ -24,7 +24,7 @@ To generate an application run `jhipster --blueprint kotlin`
 
 ✅ General App generation
 ✅ Spring Controller
-✅Spring Service
+✅ Spring Service
 ~Entity generation~
 
 ## ❤️ for community

@@ -57,7 +57,7 @@ module.exports = class extends BaseGenerator {
 
     get initializing() {
         if (useBlueprint) return;
-        return this._initializing();
+        return super._initializing();
     }
 
     // Public API method used by the getter and also by Blueprints
