@@ -39,67 +39,16 @@ module.exports = class extends BaseGenerator {
         this.databaseType = this.config.get('databaseType');
     }
 
-    // Public API method used by the getter and also by Blueprints
-    _initializing() {
-        return {
-            initializing() {
-                this.log(`The spring-service ${this.name} is being created.`);
-                const configuration = this.getAllJhipsterConfig(this, true);
-                const blueprintConfiguration = this.getJhipsterAppConfig('generator-jhipster-kotlin');
-                this.baseName = blueprintConfiguration.baseName || configuration.get('baseName');
-                this.packageName = blueprintConfiguration.packageName || configuration.get('packageName');
-                this.packageFolder = blueprintConfiguration.packageFolder || configuration.get('packageFolder');
-                this.databaseType = blueprintConfiguration.databaseType || configuration.get('databaseType');
-
-            }
-        };
-    }
-
     get initializing() {
-        if (useBlueprint) return;
         return super._initializing();
     }
 
-    // Public API method used by the getter and also by Blueprints
-    _prompting() {
-        return {
-            prompting() {
-                const done = this.async();
-                const prompts = [
-                    {
-                        type: 'confirm',
-                        name: 'useInterface',
-                        message: '(1/1) Do you want to use an interface for your service?',
-                        default: false
-                    }
-                ];
-                this.prompt(prompts).then((props) => {
-                    this.useInterface = props.useInterface;
-                done();
-                });
-            }
-        };
-    }
-
     get prompting() {
-        if (useBlueprint) return;
-        return this._prompting();
-    }
-
-    // Public API method used by the getter and also by Blueprints
-    _default() {
-        return {
-            insight() {
-                const insight = this.insight();
-                insight.trackWithEvent('generator', 'service');
-                insight.track('service/interface', this.useInterface);
-            }
-        };
+        return super._prompting();
     }
 
     get default() {
-        if (useBlueprint) return;
-        return this._default();
+        return super._default();
     }
 
     // Public API method used by the getter and also by Blueprints
