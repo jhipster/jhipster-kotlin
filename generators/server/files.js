@@ -118,7 +118,9 @@ function writeFiles() {
             this.template(rewriteDir(`${DOCKER_DIR}entrypoint.sh.ejs`), `${DOCKER_DIR}entrypoint.sh`);
             this.template(rewriteDir(`${DOCKER_DIR}.dockerignore.ejs`), `${DOCKER_DIR}.dockerignore`);
             this.template(rewriteDir(`${DOCKER_DIR}app.yml.ejs`), `${DOCKER_DIR}app.yml`);
-            this.template(rewriteDir(`${DOCKER_DIR}${this.prodDatabaseType}.yml.ejs`), `${DOCKER_DIR}${this.prodDatabaseType}.yml`);
+            if (this.prodDatabaseType !== 'no') {
+                this.template(`${DOCKER_DIR}${this.prodDatabaseType}.yml.ejs`, `${DOCKER_DIR}${this.prodDatabaseType}.yml`);
+            }
             if (this.prodDatabaseType === 'mongodb') {
                 this.template(rewriteDir(`${DOCKER_DIR}mongodb-cluster.yml.ejs`), `${DOCKER_DIR}mongodb-cluster.yml`);
                 this.template(rewriteDir(`${DOCKER_DIR}mongodb/MongoDB.Dockerfile.ejs`), `${DOCKER_DIR}mongodb/MongoDB.Dockerfile`);
@@ -190,9 +192,9 @@ function writeFiles() {
                 this.template(rewriteDir('gradle/profile_dev.gradle.ejs'), 'gradle/profile_dev.gradle', this, { interpolate: INTERPOLATE_REGEX });
                 this.template(rewriteDir('gradle/profile_prod.gradle.ejs'), 'gradle/profile_prod.gradle', this, { interpolate: INTERPOLATE_REGEX });
                 // this.template(rewriteDir('gradle/mapstruct.gradle.ejs'), 'gradle/mapstruct.gradle', this, { interpolate: INTERPOLATE_REGEX });
-                this.template(rewriteDir('gradle/graphite.gradle.ejs'), 'gradle/graphite.gradle');
-                this.template(rewriteDir('gradle/prometheus.gradle.ejs'), 'gradle/prometheus.gradle');
-                this.template(rewriteDir('gradle/zipkin.gradle.ejs'), 'gradle/zipkin.gradle');
+                // this.template(rewriteDir('gradle/graphite.gradle.ejs'), 'gradle/graphite.gradle');
+                // this.template(rewriteDir('gradle/prometheus.gradle.ejs'), 'gradle/prometheus.gradle');
+                // this.template(rewriteDir('gradle/zipkin.gradle.ejs'), 'gradle/zipkin.gradle');
                 if (this.gatlingTests) {
                     this.template(rewriteDir('gradle/gatling.gradle.ejs'), 'gradle/gatling.gradle');
                 }
