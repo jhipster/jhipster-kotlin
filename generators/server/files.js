@@ -192,9 +192,9 @@ function writeFiles() {
                 this.template(rewriteDir('gradle/profile_dev.gradle.ejs'), 'gradle/profile_dev.gradle', this, { interpolate: INTERPOLATE_REGEX });
                 this.template(rewriteDir('gradle/profile_prod.gradle.ejs'), 'gradle/profile_prod.gradle', this, { interpolate: INTERPOLATE_REGEX });
                 // this.template(rewriteDir('gradle/mapstruct.gradle.ejs'), 'gradle/mapstruct.gradle', this, { interpolate: INTERPOLATE_REGEX });
-                // this.template(rewriteDir('gradle/graphite.gradle.ejs'), 'gradle/graphite.gradle');
-                // this.template(rewriteDir('gradle/prometheus.gradle.ejs'), 'gradle/prometheus.gradle');
-                // this.template(rewriteDir('gradle/zipkin.gradle.ejs'), 'gradle/zipkin.gradle');
+                this.template(rewriteDir('gradle/graphite.gradle.ejs'), 'gradle/graphite.gradle');
+                this.template(rewriteDir('gradle/prometheus.gradle.ejs'), 'gradle/prometheus.gradle');
+                this.template(rewriteDir('gradle/zipkin.gradle.ejs'), 'gradle/zipkin.gradle');
                 if (this.gatlingTests) {
                     this.template(rewriteDir('gradle/gatling.gradle.ejs'), 'gradle/gatling.gradle');
                 }
