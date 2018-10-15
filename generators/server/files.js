@@ -119,7 +119,7 @@ function writeFiles() {
             this.template(rewriteDir(`${DOCKER_DIR}.dockerignore.ejs`), `${DOCKER_DIR}.dockerignore`);
             this.template(rewriteDir(`${DOCKER_DIR}app.yml.ejs`), `${DOCKER_DIR}app.yml`);
             if (this.prodDatabaseType !== 'no') {
-                this.template(`${DOCKER_DIR}${this.prodDatabaseType}.yml.ejs`, `${DOCKER_DIR}${this.prodDatabaseType}.yml`);
+                this.template(rewriteDir(`${DOCKER_DIR}${this.prodDatabaseType}.yml.ejs`), `${DOCKER_DIR}${this.prodDatabaseType}.yml`);
             }
             if (this.prodDatabaseType === 'mongodb') {
                 this.template(rewriteDir(`${DOCKER_DIR}mongodb-cluster.yml.ejs`), `${DOCKER_DIR}mongodb-cluster.yml`);
