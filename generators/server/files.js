@@ -316,11 +316,13 @@ function writeFiles() {
                 this.template(rewriteDir(`${SERVER_MAIN_SRC_DIR}package/security/jwt/JWTFilter.java.ejs`), `${javaDir}security/jwt/JWTFilter.java`);
             }
 
+            if (this.applicationType === 'microservice' ||
+                (this.applicationType !== 'uaa' && (!shouldSkipUserManagement(this) || (this.authenticationType === 'jwt')))) {
+                this.template(rewriteDir(`${SERVER_MAIN_SRC_DIR}package/config/SecurityConfiguration.java.ejs`), `${javaDir}config/SecurityConfiguration.java`);
+            }
+
             /* Skip the code below for --skip-user-management */
-            if (this.skipUserManagement && (this.applicationType !== 'monolith' || this.authenticationType !== 'oauth2')) {
-                if (this.applicationType !== 'microservice' && this.authenticationType === 'jwt') {
-                    this.template(rewriteDir(`${SERVER_MAIN_SRC_DIR}package/config/SecurityConfiguration.java.ejs`), `${javaDir}config/SecurityConfiguration.java`);
-                }
+            if (shouldSkipUserManagement(this)) {
                 return;
             }
 
@@ -329,8 +331,6 @@ function writeFiles() {
                 this.template(rewriteDir(`${SERVER_MAIN_SRC_DIR}package/config/UaaConfiguration.java.ejs`), `${javaDir}config/UaaConfiguration.java`);
                 this.template(rewriteDir(`${SERVER_MAIN_SRC_DIR}package/config/UaaProperties.java.ejs`), `${javaDir}config/UaaProperties.java`);
                 this.template(rewriteDir(`${SERVER_MAIN_SRC_DIR}package/security/IatTokenEnhancer.java.ejs`), `${javaDir}security/IatTokenEnhancer.java`);
-            } else {
-                this.template(rewriteDir(`${SERVER_MAIN_SRC_DIR}package/config/SecurityConfiguration.java.ejs`), `${javaDir}config/SecurityConfiguration.java`);
             }
 
             if (this.authenticationType === 'session') {
