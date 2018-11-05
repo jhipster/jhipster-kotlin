@@ -23,7 +23,7 @@ if (['ehcache', 'hazelcast', 'infinispan'].includes(cacheProvider) || applicatio
     cacheManagerIsAvailable = true;
 }
 _%>
-package <%=packageName%>.repository
+package <%=packageName%>.repository<% if (reactive) { %>.reactive<% } %>
 <%_ if (databaseType === 'cassandra') { _%>
 
 import com.datastax.driver.core.*
@@ -45,7 +45,7 @@ import org.springframework.data.jpa.repository.EntityGraph
 import org.springframework.data.jpa.repository.JpaRepository
 <%_ } _%>
 <%_ if (databaseType === 'mongodb') { _%>
-import org.springframework.data.mongodb.repository.MongoRepository
+import org.springframework.data.mongodb.repository.<% if (reactive) { %>Reactive<% } %>MongoRepository
 <%_ } _%>
 import org.springframework.stereotype.Repository
 <%_ if (databaseType === 'cassandra') { _%>
@@ -55,7 +55,12 @@ import javax.validation.ConstraintViolation
 import javax.validation.ConstraintViolationException
 import javax.validation.Validator
 <%_ } _%>
+<%_ if (reactive) { _%>
+import reactor.core.publisher.Flux
+import reactor.core.publisher.Mono
+<%_ } else { _%>
 import java.util.Optional
+<%_ } _%>
 <%_ if (databaseType === 'cassandra') { _%>
 import java.util.Set
 <%_ } _%>
@@ -87,7 +92,7 @@ import static <%=packageName%>.config.Constants.ID_DELIMITER
 <%_ } _%>
 <%_ if (databaseType === 'sql' || databaseType === 'mongodb' || databaseType === 'couchbase') { _%>
 @Repository
-interface UserRepository : <% if (databaseType === 'sql') { %>JpaRepository<User, <% if (authenticationType === 'oauth2') { %>String<% } else { %>Long<% } %>><% } %><% if (databaseType === 'mongodb') { %>MongoRepository<User, String><% } %><% if (databaseType === 'couchbase') { %>N1qlCouchbaseRepository<User, String><% } %> {
+interface UserRepository : <% if (databaseType === 'sql') { %>JpaRepository<User, <% if (authenticationType === 'oauth2') { %>String<% } else { %>Long<% } %>><% } %><% if (reactive) { %>Reactive<% } %><% if (databaseType === 'mongodb') { %>MongoRepository<User, String><% } %><% if (databaseType === 'couchbase') { %>N1qlCouchbaseRepository<User, String><% } %> {
     <%_ if (cacheManagerIsAvailable) { _%>
 
     companion object {
@@ -99,13 +104,13 @@ interface UserRepository : <% if (databaseType === 'sql') { %>JpaRepository<User
     <%_ } _%>
     <%_ if (authenticationType !== 'oauth2') { _%>
 
-    fun findOneByActivationKey(activationKey: String): Optional<User>
+    fun findOneByActivationKey(activationKey: String): <% if (reactive) { %>Mono<% } else { %>Optional<% } %><User>
     <%_ } _%>
 
-    fun findAllByActivatedIsFalseAndCreatedDateBefore(dateTime: Instant): List<User>
+    fun findAllByActivatedIsFalseAndCreatedDateBefore(dateTime: Instant): <% if (reactive) { %>Flux<% } else { %>List<% } %><User>
     <%_ if (authenticationType !== 'oauth2') { _%>
 
-    fun findOneByResetKey(resetKey: String): Optional<User>
+    fun findOneByResetKey(resetKey: String): <% if (reactive) { %>Mono<% } else { %>Optional<% } %><User>
     <%_ } _%>
 
     <%_ if (databaseType === 'couchbase' || databaseType === 'mongodb') { _%>
@@ -113,7 +118,7 @@ interface UserRepository : <% if (databaseType === 'sql') { %>JpaRepository<User
     @Cacheable(cacheNames = [USERS_BY_EMAIL_CACHE])
         <%_ } _%>
     <%_ } _%>
-    fun findOneByEmailIgnoreCase(email: String): Optional<User>
+    fun findOneByEmailIgnoreCase(email: String): <% if (reactive) { %>Mono<% } else { %>Optional<% } %><User>
 
     <%_ if (databaseType === 'couchbase') { _%>
         <%_ if (cacheManagerIsAvailable === true) { _%>
@@ -128,7 +133,7 @@ interface UserRepository : <% if (databaseType === 'sql') { %>JpaRepository<User
         <%_ if (cacheManagerIsAvailable === true) { _%>
     @Cacheable(cacheNames = [USERS_BY_LOGIN_CACHE])
         <%_ } _%>
-    fun findOneByLogin(login: String): Optional<User>
+    fun findOneByLogin(login: String): <% if (reactive) { %>Mono<% } else { %>Optional<% } %><User>
     <%_ } else { _%>
     fun findOneByLogin(login: String): Optional<User>
     <%_ } _%>
@@ -150,7 +155,11 @@ interface UserRepository : <% if (databaseType === 'sql') { %>JpaRepository<User
     fun findOneWithAuthoritiesByEmail(email: String): Optional<User>
     <%_ } _%>
 
-    fun findAllByLoginNot(pageable: Pageable, login: String): Page<User>
+    fun findAllByLoginNot(pageable: Pageable, login: String): <% if (reactive) { %>Flux<% } else { %>Page<% } %><User>
+    
+    <%_ if (reactive) { _%>
+    fun countAllByLoginNot(anonymousUser: String): Mono<Long>
+    <%_ } _%>
 }
 <%_ } else if (databaseType === 'cassandra') { _%>
 @Repository
