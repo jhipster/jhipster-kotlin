@@ -332,7 +332,7 @@ function writeFiles() {
             }
 
             if (this.authenticationType === 'session') {
-                this.template(rewriteDir(`${SERVER_MAIN_SRC_DIR}package/domain/PersistentToken.kt.ejs`), `${kotlinDir}domain/PersistentToken.kt`);
+                this.template(rewriteDir(`${SERVER_MAIN_SRC_DIR}package/domain/PersistentToken.java.ejs`), `${kotlinDir}domain/PersistentToken.java`);
                 this.template(rewriteDir(`${SERVER_MAIN_SRC_DIR}package/repository/PersistentTokenRepository.java.ejs`), `${javaDir}repository/PersistentTokenRepository.java`);
             }
 
