@@ -667,7 +667,7 @@ function writeFiles() {
                     if (this.applicationType === 'monolith') {
                         this.template(rewriteDir(`${SERVER_MAIN_RES_DIR}config/liquibase/users.csv.ejs`), `${SERVER_MAIN_RES_DIR}config/liquibase/users.csv`);
                         this.template(rewriteDir(`${SERVER_MAIN_SRC_DIR}package/domain/Authority.java.ejs`), `${javaDir}domain/Authority.java`);
-                        this.template(rewriteDir(`${SERVER_MAIN_SRC_DIR}package/service/UserService.kt.ejs`), `${kotlinDir}service/UserService.kt`);
+                        this.template(rewriteDir(`${SERVER_MAIN_SRC_DIR}package/service/UserService.java.ejs`), `${kotlinDir}service/UserService.java`);
                         this.template(rewriteDir(`${SERVER_MAIN_SRC_DIR}package/service/dto/package-info.java.ejs`), `${javaDir}service/dto/package-info.java`);
                         this.template(rewriteDir(`${SERVER_MAIN_SRC_DIR}package/service/dto/UserDTO.java.ejs`), `${javaDir}service/dto/UserDTO.java`);
                         this.template(rewriteDir(`${SERVER_MAIN_SRC_DIR}package/service/dto/PasswordChangeDTO.java.ejs`), `${javaDir}service/dto/PasswordChangeDTO.java`);
@@ -725,7 +725,7 @@ function writeFiles() {
             this.template(rewriteDir(`${SERVER_MAIN_SRC_DIR}package/repository/UserRepository.kt.ejs`), `${kotlinDir}repository/UserRepository.kt`);
 
             /* User management java service files */
-            this.template(rewriteDir(`${SERVER_MAIN_SRC_DIR}package/service/UserService.kt.ejs`), `${kotlinDir}service/UserService.kt`);
+            this.template(rewriteDir(`${SERVER_MAIN_SRC_DIR}package/service/UserService.java.ejs`), `${kotlinDir}service/UserService.java`);
             this.template(rewriteDir(`${SERVER_MAIN_SRC_DIR}package/service/MailService.kt.ejs`), `${kotlinDir}service/MailService.kt`);
             if (this.databaseType === 'sql' || this.databaseType === 'mongodb' || this.databaseType === 'couchbase') {
                 this.template(rewriteDir(`${SERVER_MAIN_SRC_DIR}package/service/AuditEventService.kt.ejs`), `${kotlinDir}service/AuditEventService.kt`);
