@@ -490,7 +490,7 @@ function writeFiles() {
 
             this.template(rewriteDir(`${SERVER_MAIN_SRC_DIR}package/config/ApplicationProperties.kt.ejs`), `${kotlinDir}config/ApplicationProperties.kt`);
             this.template(rewriteDir(`${SERVER_MAIN_SRC_DIR}package/config/JacksonConfiguration.kt.ejs`), `${kotlinDir}config/JacksonConfiguration.kt`);
-            this.template(rewriteDir(`${SERVER_MAIN_SRC_DIR}package/config/LocaleConfiguration.kt.ejs`), `${kotlinDir}config/LocaleConfiguration.kt`);
+            this.template(rewriteDir(`${SERVER_MAIN_SRC_DIR}package/config/LocaleConfiguration.java.ejs`), `${kotlinDir}config/LocaleConfiguration.java`);
             this.template(rewriteDir(`${SERVER_MAIN_SRC_DIR}package/config/LoggingAspectConfiguration.kt.ejs`), `${kotlinDir}config/LoggingAspectConfiguration.kt`);
             this.template(rewriteDir(`${SERVER_MAIN_SRC_DIR}package/config/MetricsConfiguration.java.ejs`), `${javaDir}config/MetricsConfiguration.java`);
             this.template(rewriteDir(`${SERVER_MAIN_SRC_DIR}package/config/WebConfigurer.java.ejs`), `${javaDir}config/WebConfigurer.java`);
