@@ -346,7 +346,7 @@ function writeFiles() {
 
             if (this.authenticationType === 'jwt') {
                 this.template(rewriteDir(`${SERVER_MAIN_SRC_DIR}package/web/rest/vm/LoginVM.java.ejs`), `${javaDir}web/rest/vm/LoginVM.java`);
-                this.template(rewriteDir(`${SERVER_MAIN_SRC_DIR}package/web/rest/UserJWTController.kt.ejs`), `${kotlinDir}web/rest/UserJWTController.kt`);
+                this.template(rewriteDir(`${SERVER_MAIN_SRC_DIR}package/web/rest/UserJWTController.java.ejs`), `${kotlinDir}web/rest/UserJWTController.java`);
             }
 
             this.template(rewriteDir(`${SERVER_MAIN_SRC_DIR}package/security/package-info.java.ejs`), `${javaDir}security/package-info.java`);
