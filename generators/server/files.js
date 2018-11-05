@@ -675,7 +675,7 @@ function writeFiles() {
                         this.template(rewriteDir(`${SERVER_MAIN_SRC_DIR}package/service/mapper/UserMapper.kt.ejs`), `${kotlinDir}service/mapper/UserMapper.kt`);
                         this.template(rewriteDir(`${SERVER_MAIN_SRC_DIR}package/repository/UserRepository.kt.ejs`), `${kotlinDir}repository/UserRepository.kt`);
                         this.template(rewriteDir(`${SERVER_MAIN_SRC_DIR}package/repository/AuthorityRepository.kt.ejs`), `${kotlinDir}repository/AuthorityRepository.kt`);
-                        this.template(rewriteDir(`${SERVER_MAIN_SRC_DIR}package/web/rest/UserResource.kt.ejs`), `${kotlinDir}web/rest/UserResource.kt`);
+                        this.template(rewriteDir(`${SERVER_MAIN_SRC_DIR}package/web/rest/UserResource.java.ejs`), `${kotlinDir}web/rest/UserResource.java`);
                         if (this.searchEngine === 'elasticsearch') {
                             this.template(rewriteDir(`${SERVER_MAIN_SRC_DIR}package/repository/search/UserSearchRepository.java.ejs`), `${javaDir}repository/search/UserSearchRepository.java`);
                         }
