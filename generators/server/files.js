@@ -657,7 +657,7 @@ function writeFiles() {
                     }
 
                     if (['monolith', 'gateway'].includes(this.applicationType)) {
-                        this.template(rewriteDir(`${SERVER_MAIN_SRC_DIR}package/web/rest/AccountResource.kt.ejs`), `${kotlinDir}web/rest/AccountResource.kt`);
+                        this.template(rewriteDir(`${SERVER_MAIN_SRC_DIR}package/web/rest/AccountResource.java.ejs`), `${kotlinDir}web/rest/AccountResource.java`);
                         this.template(rewriteDir(`${SERVER_TEST_SRC_DIR}package/web/rest/AccountResourceIntTest.java.ejs`), `${testDir}web/rest/AccountResourceIntTest.java`);
                     }
 
