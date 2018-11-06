@@ -566,8 +566,8 @@ function writeFiles() {
             
             if (this.databaseType === 'sql') {
                 this.template(rewriteDir(`${SERVER_TEST_SRC_DIR}package/config/timezone/HibernateTimeZoneTest.java.ejs`), `${testDir}config/timezone/HibernateTimeZoneTest.java`);
-                this.template(rewriteDir(`${SERVER_TEST_SRC_DIR}package/config/timezone/DateTimeWrapper.java.ejs`), `${testDir}config/timezone/DateTimeWrapper.java`);
-                this.template(rewriteDir(`${SERVER_TEST_SRC_DIR}package/config/timezone/DateTimeWrapperRepository.java.ejs`), `${testDir}config/timezone/DateTimeWrapperRepository.java`);
+                this.template(rewriteDir(`${SERVER_TEST_SRC_DIR}package/repository/timezone/DateTimeWrapper.java.ejs`), `${testDir}repository/timezone/DateTimeWrapper.java`);
+                this.template(rewriteDir(`${SERVER_TEST_SRC_DIR}package/repository/timezone/DateTimeWrapperRepository.java.ejs`), `${testDir}repository/timezone/DateTimeWrapperRepository.java`);
             }
 
             this.template(rewriteDir(`${SERVER_TEST_RES_DIR}config/application.yml.ejs`), `${SERVER_TEST_RES_DIR}config/application.yml`);
