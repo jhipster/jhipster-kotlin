@@ -70,6 +70,10 @@ function writeFiles() {
             cleanup.cleanupOldServerFiles(this, this.javaDir, this.testDir);
         },
 
+        writeJibFiles() {
+            this.template(rewriteDir('src/main/jib/entrypoint.sh.ejs'), 'src/main/jib/entrypoint.sh');
+        },
+
         writeDockerFiles() {
             // Create Docker and Docker Compose files
             this.template(rewriteDir(`${DOCKER_DIR}Dockerfile.ejs`), `${DOCKER_DIR}Dockerfile`);
@@ -373,7 +377,7 @@ function writeFiles() {
                 this.template(rewriteDir(`${SERVER_MAIN_SRC_DIR}package/client/OAuth2_UserFeignClientInterceptor.java.ejs`), `${javaDir}client/UserFeignClientInterceptor.java`);
                 this.template(rewriteDir(`${SERVER_MAIN_SRC_DIR}package/client/OAuth2UserClientFeignConfiguration.java.ejs`), `${javaDir}client/OAuth2UserClientFeignConfiguration.java`);
             }
-            if (this.applicationType === 'microservice' && this.authenticationType === 'jwt') {
+            if (!this.reactive && (this.applicationType === 'microservice' || this.applicationType === 'gateway') && this.authenticationType === 'jwt') {
                 this.template(rewriteDir(`${SERVER_MAIN_SRC_DIR}package/config/FeignConfiguration.java.ejs`), `${javaDir}config/FeignConfiguration.java`);
                 this.template(rewriteDir(`${SERVER_MAIN_SRC_DIR}package/client/JWT_UserFeignClientInterceptor.java.ejs`), `${javaDir}client/UserFeignClientInterceptor.java`);
             }
@@ -559,6 +563,12 @@ function writeFiles() {
             this.template(rewriteDir(`${SERVER_TEST_SRC_DIR}package/web/rest/errors/ExceptionTranslatorIntTest.java.ejs`), `${testDir}web/rest/errors/ExceptionTranslatorIntTest.java`);
             this.template(rewriteDir(`${SERVER_TEST_SRC_DIR}package/web/rest/errors/ExceptionTranslatorTestController.java.ejs`), `${testDir}web/rest/errors/ExceptionTranslatorTestController.java`);
             this.template(rewriteDir(`${SERVER_TEST_SRC_DIR}package/web/rest/util/PaginationUtilUnitTest.java.ejs`), `${testDir}web/rest/util/PaginationUtilUnitTest.java`);
+            
+            if (this.databaseType === 'sql') {
+                this.template(rewriteDir(`${SERVER_TEST_SRC_DIR}package/config/timezone/HibernateTimeZoneTest.java.ejs`), `${testDir}config/timezone/HibernateTimeZoneTest.java`);
+                this.template(rewriteDir(`${SERVER_TEST_SRC_DIR}package/config/timezone/DateTimeWrapper.java.ejs`), `${testDir}config/timezone/DateTimeWrapper.java`);
+                this.template(rewriteDir(`${SERVER_TEST_SRC_DIR}package/config/timezone/DateTimeWrapperRepository.java.ejs`), `${testDir}config/timezone/DateTimeWrapperRepository.java`);
+            }
 
             this.template(rewriteDir(`${SERVER_TEST_RES_DIR}config/application.yml.ejs`), `${SERVER_TEST_RES_DIR}config/application.yml`);
             this.template(rewriteDir(`${SERVER_TEST_RES_DIR}logback.xml.ejs`), `${SERVER_TEST_RES_DIR}logback.xml`);
