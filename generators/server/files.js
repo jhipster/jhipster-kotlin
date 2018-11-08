@@ -308,7 +308,7 @@ function writeFiles() {
 
             if (this.authenticationType === 'jwt') {
                 this.template(rewriteDir(`${SERVER_MAIN_SRC_DIR}package/web/rest/vm/LoginVM.java.ejs`), `${javaDir}web/rest/vm/LoginVM.java`);
-                this.template(rewriteDir(`${SERVER_MAIN_SRC_DIR}package/web/rest/UserJWTController.java.ejs`), `${kotlinDir}web/rest/UserJWTController.java`);
+                this.template(rewriteDir(`${SERVER_MAIN_SRC_DIR}package/web/rest/UserJWTController.java.ejs`), `${javaDir}web/rest/UserJWTController.java`);
             }
 
             this.template(rewriteDir(`${SERVER_MAIN_SRC_DIR}package/security/package-info.java.ejs`), `${javaDir}security/package-info.java`);
@@ -452,7 +452,7 @@ function writeFiles() {
 
             this.template(rewriteDir(`${SERVER_MAIN_SRC_DIR}package/config/ApplicationProperties.kt.ejs`), `${kotlinDir}config/ApplicationProperties.kt`);
             this.template(rewriteDir(`${SERVER_MAIN_SRC_DIR}package/config/JacksonConfiguration.kt.ejs`), `${kotlinDir}config/JacksonConfiguration.kt`);
-            this.template(rewriteDir(`${SERVER_MAIN_SRC_DIR}package/config/LocaleConfiguration.java.ejs`), `${kotlinDir}config/LocaleConfiguration.java`);
+            this.template(rewriteDir(`${SERVER_MAIN_SRC_DIR}package/config/LocaleConfiguration.java.ejs`), `${javaDir}config/LocaleConfiguration.java`);
             this.template(rewriteDir(`${SERVER_MAIN_SRC_DIR}package/config/LoggingAspectConfiguration.kt.ejs`), `${kotlinDir}config/LoggingAspectConfiguration.kt`);
             this.template(rewriteDir(`${SERVER_MAIN_SRC_DIR}package/config/MetricsConfiguration.java.ejs`), `${javaDir}config/MetricsConfiguration.java`);
             this.template(rewriteDir(`${SERVER_MAIN_SRC_DIR}package/config/WebConfigurer.java.ejs`), `${javaDir}config/WebConfigurer.java`);
@@ -501,7 +501,7 @@ function writeFiles() {
             /* Skip the code below for --skip-user-management */
             if (this.skipUserManagement) return;
 
-            this.template(rewriteDir(`${SERVER_MAIN_SRC_DIR}package/service/util/RandomUtil.java.ejs`), `${kotlinDir}service/util/RandomUtil.java`);
+            this.template(rewriteDir(`${SERVER_MAIN_SRC_DIR}package/service/util/RandomUtil.java.ejs`), `${javaDir}service/util/RandomUtil.java`);
         },
 
         writeServerJavaWebErrorFiles() {
@@ -625,7 +625,7 @@ function writeFiles() {
                     }
 
                     if (['monolith', 'gateway'].includes(this.applicationType)) {
-                        this.template(rewriteDir(`${SERVER_MAIN_SRC_DIR}package/web/rest/AccountResource.java.ejs`), `${kotlinDir}web/rest/AccountResource.java`);
+                        this.template(rewriteDir(`${SERVER_MAIN_SRC_DIR}package/web/rest/AccountResource.java.ejs`), `${javaDir}web/rest/AccountResource.java`);
                         this.template(rewriteDir(`${SERVER_TEST_SRC_DIR}package/web/rest/AccountResourceIntTest.java.ejs`), `${testDir}web/rest/AccountResourceIntTest.java`);
                     }
 
@@ -635,15 +635,15 @@ function writeFiles() {
                     if (this.applicationType === 'monolith') {
                         this.template(rewriteDir(`${SERVER_MAIN_RES_DIR}config/liquibase/users.csv.ejs`), `${SERVER_MAIN_RES_DIR}config/liquibase/users.csv`);
                         this.template(rewriteDir(`${SERVER_MAIN_SRC_DIR}package/domain/Authority.java.ejs`), `${javaDir}domain/Authority.java`);
-                        this.template(rewriteDir(`${SERVER_MAIN_SRC_DIR}package/service/UserService.java.ejs`), `${kotlinDir}service/UserService.java`);
+                        this.template(rewriteDir(`${SERVER_MAIN_SRC_DIR}package/service/UserService.java.ejs`), `${javaDir}service/UserService.java`);
                         this.template(rewriteDir(`${SERVER_MAIN_SRC_DIR}package/service/dto/package-info.java.ejs`), `${javaDir}service/dto/package-info.java`);
                         this.template(rewriteDir(`${SERVER_MAIN_SRC_DIR}package/service/dto/UserDTO.java.ejs`), `${javaDir}service/dto/UserDTO.java`);
                         this.template(rewriteDir(`${SERVER_MAIN_SRC_DIR}package/service/dto/PasswordChangeDTO.java.ejs`), `${javaDir}service/dto/PasswordChangeDTO.java`);
                         this.template(rewriteDir(`${SERVER_MAIN_SRC_DIR}package/service/mapper/package-info.java.ejs`), `${javaDir}service/mapper/package-info.java`);
                         this.template(rewriteDir(`${SERVER_MAIN_SRC_DIR}package/service/mapper/UserMapper.kt.ejs`), `${kotlinDir}service/mapper/UserMapper.kt`);
-                        this.template(rewriteDir(`${SERVER_MAIN_SRC_DIR}package/repository/UserRepository.java.ejs`), `${kotlinDir}repository/UserRepository.java`);
+                        this.template(rewriteDir(`${SERVER_MAIN_SRC_DIR}package/repository/UserRepository.java.ejs`), `${javaDir}repository/UserRepository.java`);
                         this.template(rewriteDir(`${SERVER_MAIN_SRC_DIR}package/repository/AuthorityRepository.kt.ejs`), `${kotlinDir}repository/AuthorityRepository.kt`);
-                        this.template(rewriteDir(`${SERVER_MAIN_SRC_DIR}package/web/rest/UserResource.java.ejs`), `${kotlinDir}web/rest/UserResource.java`);
+                        this.template(rewriteDir(`${SERVER_MAIN_SRC_DIR}package/web/rest/UserResource.java.ejs`), `${javaDir}web/rest/UserResource.java`);
                         if (this.searchEngine === 'elasticsearch') {
                             this.template(rewriteDir(`${SERVER_MAIN_SRC_DIR}package/repository/search/UserSearchRepository.java.ejs`), `${javaDir}repository/search/UserSearchRepository.java`);
                         }
@@ -690,10 +690,10 @@ function writeFiles() {
                 this.template(rewriteDir(`${SERVER_MAIN_SRC_DIR}package/repository/AuthorityRepository.kt.ejs`), `${kotlinDir}repository/AuthorityRepository.kt`);
                 this.template(rewriteDir(`${SERVER_MAIN_SRC_DIR}package/repository/PersistenceAuditEventRepository.kt.ejs`), `${kotlinDir}repository/PersistenceAuditEventRepository.kt`);
             }
-            this.template(rewriteDir(`${SERVER_MAIN_SRC_DIR}package/repository/UserRepository.java.ejs`), `${kotlinDir}repository/UserRepository.java`);
+            this.template(rewriteDir(`${SERVER_MAIN_SRC_DIR}package/repository/UserRepository.java.ejs`), `${javaDir}repository/UserRepository.java`);
 
             /* User management java service files */
-            this.template(rewriteDir(`${SERVER_MAIN_SRC_DIR}package/service/UserService.java.ejs`), `${kotlinDir}service/UserService.java`);
+            this.template(rewriteDir(`${SERVER_MAIN_SRC_DIR}package/service/UserService.java.ejs`), `${javaDir}service/UserService.java`);
             this.template(rewriteDir(`${SERVER_MAIN_SRC_DIR}package/service/MailService.kt.ejs`), `${kotlinDir}service/MailService.kt`);
             if (this.databaseType === 'sql' || this.databaseType === 'mongodb' || this.databaseType === 'couchbase') {
                 this.template(rewriteDir(`${SERVER_MAIN_SRC_DIR}package/service/AuditEventService.kt.ejs`), `${kotlinDir}service/AuditEventService.kt`);
@@ -704,8 +704,8 @@ function writeFiles() {
             this.template(rewriteDir(`${SERVER_MAIN_SRC_DIR}package/service/dto/UserDTO.java.ejs`), `${javaDir}service/dto/UserDTO.java`);
             this.template(rewriteDir(`${SERVER_MAIN_SRC_DIR}package/service/dto/PasswordChangeDTO.java.ejs`), `${javaDir}service/dto/PasswordChangeDTO.java`);
             this.template(rewriteDir(`${SERVER_MAIN_SRC_DIR}package/web/rest/vm/ManagedUserVM.java.ejs`), `${javaDir}web/rest/vm/ManagedUserVM.java`);
-            this.template(rewriteDir(`${SERVER_MAIN_SRC_DIR}package/web/rest/AccountResource.java.ejs`), `${kotlinDir}web/rest/AccountResource.java`);
-            this.template(rewriteDir(`${SERVER_MAIN_SRC_DIR}package/web/rest/UserResource.java.ejs`), `${kotlinDir}web/rest/UserResource.java`);
+            this.template(rewriteDir(`${SERVER_MAIN_SRC_DIR}package/web/rest/AccountResource.java.ejs`), `${javaDir}web/rest/AccountResource.java`);
+            this.template(rewriteDir(`${SERVER_MAIN_SRC_DIR}package/web/rest/UserResource.java.ejs`), `${javaDir}web/rest/UserResource.java`);
             if (this.searchEngine === 'elasticsearch') {
                 this.template(rewriteDir(`${SERVER_MAIN_SRC_DIR}package/repository/search/UserSearchRepository.java.ejs`), `${javaDir}repository/search/UserSearchRepository.java`);
             }
