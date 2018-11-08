@@ -54,7 +54,7 @@ env:
     - JHI_E2E_HEADLESS=true
     - JHI_SCRIPTS=$HOME/generator-jhipster/test-integration/scripts
   matrix:
-    - JHIPSTER=ngx-maven PROFILE=prod PROTRACTOR=1
+    - JHI_APP=kotlin-ngx-maven JHI_PROFILE=prod JHI_PROTRACTOR=1
 
 #----------------------------------------------------------------------
 # Install all tools and check configuration
@@ -77,16 +77,14 @@ before_install:
 #----------------------------------------------------------------------  
 install:
   - $TRAVIS_BUILD_DIR/test-integration/scripts/10-install-jhipster-kotlin.sh
-
-  # generate project and entities
-  # TODO: need to be removed as soon as entities are ready
   # - $JHI_SCRIPTS/11-generate-entities.sh
   - $TRAVIS_BUILD_DIR/test-integration/scripts/12-generate-project-kotlin.sh
+  - $JHI_SCRIPTS/13-replace-version-generated-project.sh
+  - $JHI_SCRIPTS/14-jhipster-info.sh
 
 #----------------------------------------------------------------------
 # Launch tests
 #----------------------------------------------------------------------
-script:
 script:
   - $JHI_SCRIPTS/20-docker-compose.sh
   - $JHI_SCRIPTS/21-tests-backend.sh

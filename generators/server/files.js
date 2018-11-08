@@ -563,7 +563,7 @@ function writeFiles() {
             this.template(rewriteDir(`${SERVER_TEST_SRC_DIR}package/web/rest/errors/ExceptionTranslatorIntTest.java.ejs`), `${testDir}web/rest/errors/ExceptionTranslatorIntTest.java`);
             this.template(rewriteDir(`${SERVER_TEST_SRC_DIR}package/web/rest/errors/ExceptionTranslatorTestController.java.ejs`), `${testDir}web/rest/errors/ExceptionTranslatorTestController.java`);
             this.template(rewriteDir(`${SERVER_TEST_SRC_DIR}package/web/rest/util/PaginationUtilUnitTest.java.ejs`), `${testDir}web/rest/util/PaginationUtilUnitTest.java`);
-            
+
             if (this.databaseType === 'sql') {
                 this.template(rewriteDir(`${SERVER_TEST_SRC_DIR}package/config/timezone/HibernateTimeZoneTest.java.ejs`), `${testDir}config/timezone/HibernateTimeZoneTest.java`);
                 this.template(rewriteDir(`${SERVER_TEST_SRC_DIR}package/repository/timezone/DateTimeWrapper.java.ejs`), `${testDir}repository/timezone/DateTimeWrapper.java`);
