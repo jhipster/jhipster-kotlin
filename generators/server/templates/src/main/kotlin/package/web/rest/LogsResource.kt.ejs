@@ -26,6 +26,9 @@ import com.codahale.metrics.annotation.Timed
 import org.slf4j.LoggerFactory
 import org.springframework.http.HttpStatus
 import org.springframework.web.bind.annotation.*
+<%_ if (reactive) { _%>
+import reactor.core.publisher.Flux
+<%_ } _%>
 
 /**
  * Controller for view and managing Log Level at runtime.
@@ -36,10 +39,15 @@ class LogsResource {
 
     @GetMapping("/logs")
     @Timed
-    fun getList(): kotlin.collections.List<LoggerVM> {
+    fun getList(): <% if (reactive) { %>Flux<% } else { %>kotlin.collections.List<% } %><LoggerVM> {
         val context = LoggerFactory.getILoggerFactory() as LoggerContext
+        <%_ if (reactive) { _%>
+        return Flux.fromIterable(context.getLoggerList())
+            .map{ LoggerVM(it) }
+        <%_ } else { _%>
         return context.loggerList
             .map{ LoggerVM(it) }
+         <%_ } _%>
     }
 
     @PutMapping("/logs")
