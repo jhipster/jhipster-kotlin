@@ -21,11 +21,11 @@ const _ = require('lodash');
 const chalk = require('chalk');
 const BaseGenerator = require('generator-jhipster/generators/generator-base');
 const constants = require('generator-jhipster/generators/generator-constants');
-const prompts = require('./prompts');
 const statistics = require('generator-jhipster/generators/statistics');
+const prompts = require('./prompts');
 
 const SERVER_MAIN_SRC_DIR = `${constants.MAIN_DIR}kotlin/`;
-const SERVER_TEST_SRC_DIR = `${constants.TEST_DIR}kotlin/`; 
+const SERVER_TEST_SRC_DIR = `${constants.TEST_DIR}kotlin/`;
 
 module.exports = class extends BaseGenerator {
     constructor(args, opts) {
@@ -137,7 +137,7 @@ module.exports = class extends BaseGenerator {
 
                 this.mainClass = this.getMainClassName();
 
-                this.controllerActions.forEach((action) => {
+                this.controllerActions.forEach(action => {
                     action.actionPath = _.kebabCase(action.actionName);
                     action.actionNameUF = _.upperFirst(action.actionName);
                     this.log(
