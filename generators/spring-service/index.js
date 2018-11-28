@@ -17,38 +17,100 @@
  * limitations under the License.
  */
 const _ = require('lodash');
+const chalk = require('chalk');
 const BaseGenerator = require('generator-jhipster/generators/generator-base');
 const constants = require('generator-jhipster/generators/generator-constants');
-const SERVER_MAIN_SRC_DIR = `${constants.MAIN_DIR}kotlin/`;
-const SERVER_TEST_SRC_DIR = constants.SERVER_TEST_SRC_DIR; // TODO: Yet to change this  `${constants.TEST_DIR}kotlin/`;
+const statistics = require('generator-jhipster/generators/statistics');
 
-let useBlueprint;
+const SERVER_MAIN_SRC_DIR = `${constants.MAIN_DIR}kotlin/`;
 
 module.exports = class extends BaseGenerator {
     constructor(args, opts) {
         super(args, Object.assign({ fromBlueprint: true }, opts));
         this.argument('name', { type: String, required: true });
         this.name = this.options.name;
+
+        // This adds support for a `--from-cli` flag
+        this.option('from-cli', {
+            desc: 'Indicates the command is run from JHipster CLI',
+            type: Boolean,
+            defaults: false
+        });
+        this.option('default', {
+            type: Boolean,
+            default: false,
+            description: 'default option'
+        });
+        this.defaultOption = this.options.default;
     }
 
-    initializing() {
-        this.log(`The service ${this.name} is being created.`);
-        this.baseName = this.config.get('baseName');
-        this.packageName = this.config.get('packageName');
-        this.packageFolder = this.config.get('packageFolder');
-        this.databaseType = this.config.get('databaseType');
+    _initializing() {
+        return {
+            validateFromCli() {
+                if (!this.options['from-cli']) {
+                    this.warning(
+                        `Deprecated: JHipster seems to be invoked using Yeoman command. Please use the JHipster CLI. Run ${chalk.red(
+                            'jhipster <command>'
+                        )} instead of ${chalk.red('yo jhipster:<command>')}`
+                    );
+                }
+            },
+
+            initializing() {
+                this.log(`The service ${this.name} is being created.`);
+                const configuration = this.getAllJhipsterConfig(this, true);
+                const blueprintConfiguration = this.getJhipsterAppConfig('generator-jhipster-kotlin');
+                this.baseName = blueprintConfiguration.baseName || configuration.get('baseName');
+                this.packageName = blueprintConfiguration.packageName || configuration.get('packageName');
+                this.packageFolder = blueprintConfiguration.packageFolder || configuration.get('packageFolder');
+                this.databaseType = blueprintConfiguration.databaseType || configuration.get('databaseType');
+            }
+        };
     }
 
     get initializing() {
-        return super._initializing();
+        return this._initializing();
+    }
+
+    _prompting() {
+        return {
+            prompting() {
+                const prompts = [
+                    {
+                        type: 'confirm',
+                        name: 'useInterface',
+                        message: '(1/1) Do you want to use an interface for your service?',
+                        default: false
+                    }
+                ];
+                if (!this.defaultOption) {
+                    const done = this.async();
+                    this.prompt(prompts).then(props => {
+                        this.useInterface = props.useInterface;
+                        done();
+                    });
+                } else {
+                    this.useInterface = true;
+                }
+            }
+        };
     }
 
     get prompting() {
-        return super._prompting();
+        return this._prompting();
+    }
+
+    // Public API method used by the getter and also by Blueprints
+    _default() {
+        return {
+            insight() {
+                statistics.sendSubGenEvent('generator', 'service-kotlin', { interface: this.useInterface });
+            }
+        };
     }
 
     get default() {
-        return super._default();
+        return this._default();
     }
 
     // Public API method used by the getter and also by Blueprints
