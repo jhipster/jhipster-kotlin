@@ -21,23 +21,45 @@ const _ = require('lodash');
 const chalk = require('chalk');
 const BaseGenerator = require('generator-jhipster/generators/generator-base');
 const constants = require('generator-jhipster/generators/generator-constants');
+const statistics = require('generator-jhipster/generators/statistics');
 const prompts = require('./prompts');
 
 const SERVER_MAIN_SRC_DIR = `${constants.MAIN_DIR}kotlin/`;
-const SERVER_TEST_SRC_DIR = constants.SERVER_TEST_SRC_DIR; // TODO: Yet to change this  `${constants.TEST_DIR}kotlin/`;
-
-let useBlueprint;
+const SERVER_TEST_SRC_DIR = `${constants.TEST_DIR}kotlin/`;
 
 module.exports = class extends BaseGenerator {
     constructor(args, opts) {
         super(args, Object.assign({ fromBlueprint: true }, opts));
         this.argument('name', { type: String, required: true });
         this.name = this.options.name;
+
+        // This adds support for a `--from-cli` flag
+        this.option('from-cli', {
+            desc: 'Indicates the command is run from JHipster CLI',
+            type: Boolean,
+            defaults: false
+        });
+        this.option('default', {
+            type: Boolean,
+            default: false,
+            description: 'default option'
+        });
+        this.defaultOption = this.options.default;
     }
 
     // Public API method used by the getter and also by Blueprints
     _initializing() {
         return {
+            validateFromCli() {
+                if (!this.options['from-cli']) {
+                    this.warning(
+                        `Deprecated: JHipster seems to be invoked using Yeoman command. Please use the JHipster CLI. Run ${chalk.red(
+                            'jhipster <command>'
+                        )} instead of ${chalk.red('yo jhipster:<command>')}`
+                    );
+                }
+            },
+
             initializing() {
                 this.log(`The spring-controller ${this.name} is being created.`);
                 const configuration = this.getAllJhipsterConfig(this, true);
@@ -48,16 +70,14 @@ module.exports = class extends BaseGenerator {
                 this.databaseType = blueprintConfiguration.databaseType || configuration.get('databaseType');
                 this.reactiveController = false;
                 this.applicationType = blueprintConfiguration.applicationType || configuration.get('applicationType');
-                if (this.applicationType === 'reactive') {
-                    this.reactiveController = true;
-                }
+                this.reactive = blueprintConfiguration.reactive || configuration.get('reactive');
+                this.reactiveController = this.reactive;
                 this.controllerActions = [];
             }
         };
     }
 
     get initializing() {
-        if (useBlueprint) return;
         return this._initializing();
     }
 
@@ -69,7 +89,6 @@ module.exports = class extends BaseGenerator {
     }
 
     get prompting() {
-        if (useBlueprint) return;
         return this._prompting();
     }
 
@@ -77,14 +96,12 @@ module.exports = class extends BaseGenerator {
     _default() {
         return {
             insight() {
-                const insight = this.insight();
-                insight.trackWithEvent('generator', 'spring-controller');
+                statistics.sendSubGenEvent('generator', 'spring-controller-kotlin');
             }
         };
     }
 
     get default() {
-        if (useBlueprint) return;
         return this._default();
     }
 
@@ -109,22 +126,30 @@ module.exports = class extends BaseGenerator {
                 this.usedMethods = this.usedMethods.sort();
 
                 this.mappingImports = this.usedMethods.map(method => `org.springframework.web.bind.annotation.${method}Mapping`);
-                this.mockRequestImports = this.usedMethods.map(method => `static org.springframework.test.web.servlet.request.MockMvcRequestBuilders.${method.toLowerCase()}`);
+                this.mockRequestImports = this.usedMethods.map(
+                    method => `static org.springframework.test.web.servlet.request.MockMvcRequestBuilders.${method.toLowerCase()}`
+                );
 
-                // IntelliJ optimizes imports after a certain count
-                this.mockRequestImports = this.mockRequestImports.length > 3 ? ['static org.springframework.test.web.servlet.request.MockMvcRequestBuilders.*'] : this.mockRequestImports;
+                this.mockRequestImports =
+                    this.mockRequestImports.length > 3
+                        ? ['static org.springframework.test.web.servlet.request.MockMvcRequestBuilders.*']
+                        : this.mockRequestImports;
 
                 this.mainClass = this.getMainClassName();
 
-                this.controllerActions.forEach((action) => {
+                this.controllerActions.forEach(action => {
                     action.actionPath = _.kebabCase(action.actionName);
                     action.actionNameUF = _.upperFirst(action.actionName);
-                    this.log(chalk.green(`adding ${action.actionMethod} action '${action.actionName}' for /api/${this.apiPrefix}/${action.actionPath}`));
+                    this.log(
+                        chalk.green(
+                            `adding ${action.actionMethod} action '${action.actionName}' for /api/${this.apiPrefix}/${action.actionPath}`
+                        )
+                    );
                 });
 
                 this.template(
-                    `${this.fetchFromInstalledJHipster('spring-controller/templates')}/${SERVER_TEST_SRC_DIR}package/web/rest/ResourceIntTest.java.ejs`,
-                    `${SERVER_TEST_SRC_DIR}${this.packageFolder}/web/rest/${this.controllerClass}IntTest.java`
+                    `${SERVER_TEST_SRC_DIR}package/web/rest/ResourceIntTest.kt.ejs`,
+                    `${SERVER_TEST_SRC_DIR}${this.packageFolder}/web/rest/${this.controllerClass}IntTest.kt`
                 );
                 this.template(
                     `${SERVER_MAIN_SRC_DIR}package/web/rest/Resource.kt.ejs`,

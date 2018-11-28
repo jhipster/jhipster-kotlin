@@ -29,7 +29,6 @@ const SERVER_MAIN_RES_DIR = constants.SERVER_MAIN_RES_DIR;
 const SERVER_TEST_SRC_DIR = constants.SERVER_TEST_SRC_DIR;
 const SERVER_TEST_RES_DIR = constants.SERVER_TEST_RES_DIR;
 
-
 /**
  * The default is to use a file path string. It implies use of the template method.
  * For any other config an object { file:.., method:.., template:.. } can be used
@@ -40,19 +39,33 @@ const serverFiles = {
         ...baseServerFiles.serverBuild,
         {
             condition: generator => generator.buildTool === 'gradle',
-            templates: [
-                { file: 'gradle/kotlin.gradle', useBluePrint: true }
-            ]
+            templates: [{ file: 'gradle/kotlin.gradle', useBluePrint: true }]
         },
         {
             condition: generator => generator.buildTool === 'maven',
             templates: [
                 { file: 'mvnw', method: 'copy', noEjs: true },
                 { file: 'mvnw.cmd', method: 'copy', noEjs: true },
-                { file: '.mvn/wrapper/maven-wrapper.jar', method: 'copy', noEjs: true },
-                { file: '.mvn/wrapper/maven-wrapper.properties', method: 'copy', noEjs: true },
-                { file: '.mvn/wrapper/MavenWrapperDownloader.java', method: 'copy', noEjs: true },
-                { file: 'pom.xml', useBluePrint: true, options: { interpolate: INTERPOLATE_REGEX } }
+                {
+                    file: '.mvn/wrapper/maven-wrapper.jar',
+                    method: 'copy',
+                    noEjs: true
+                },
+                {
+                    file: '.mvn/wrapper/maven-wrapper.properties',
+                    method: 'copy',
+                    noEjs: true
+                },
+                {
+                    file: '.mvn/wrapper/MavenWrapperDownloader.java',
+                    method: 'copy',
+                    noEjs: true
+                },
+                {
+                    file: 'pom.xml',
+                    useBluePrint: true,
+                    options: { interpolate: INTERPOLATE_REGEX }
+                }
             ]
         }
     ],
@@ -69,13 +82,17 @@ const serverFiles = {
                     useBluePrint: true
                 }
             ]
-        },
+        }
     ],
     serverJavaApp: [
         {
             path: SERVER_MAIN_KOTLIN_SRC_DIR,
             templates: [
-                { file: 'package/Application.kt', useBluePrint: true, renameTo: generator => `${generator.javaDir}${generator.mainClass}.kt` }
+                {
+                    file: 'package/Application.kt',
+                    useBluePrint: true,
+                    renameTo: generator => `${generator.javaDir}${generator.mainClass}.kt`
+                }
             ]
         }
     ],
@@ -128,7 +145,10 @@ const serverFiles = {
         {
             path: SERVER_MAIN_SRC_DIR,
             templates: [
-                { file: 'package/config/Constants.java', renameTo: generator => `${generator.javaDir}config/Constants.java` },
+                {
+                    file: 'package/config/Constants.java',
+                    renameTo: generator => `${generator.javaDir}config/Constants.java`
+                },
                 {
                     file: 'package/config/LocaleConfiguration.java',
                     renameTo: generator => `${generator.javaDir}config/LocaleConfiguration.java`
@@ -137,7 +157,10 @@ const serverFiles = {
                     file: 'package/config/MetricsConfiguration.java',
                     renameTo: generator => `${generator.javaDir}config/MetricsConfiguration.java`
                 },
-                { file: 'package/config/WebConfigurer.java', renameTo: generator => `${generator.javaDir}config/WebConfigurer.java` }
+                {
+                    file: 'package/config/WebConfigurer.java',
+                    renameTo: generator => `${generator.javaDir}config/WebConfigurer.java`
+                }
             ]
         },
         {
@@ -297,7 +320,7 @@ function writeFiles() {
     return {
         setUp() {
             this.javaDir = `${this.packageFolder}/`;
-            this.testDir = `${this.packageFolder}/`;            
+            this.testDir = `${this.packageFolder}/`;
 
             // Create Java resource files
             mkdirp(SERVER_MAIN_RES_DIR);
@@ -344,11 +367,11 @@ function writeFilesToDisk(files, generator, returnFiles, prefix) {
     const startTime = new Date();
     // using the fastest method for iterations
     /* eslint-disable */
-    for(const block of Object.keys(files)) {        
-        for(const blockTemplate of files[block]) {
+    for (const block of Object.keys(files)) {
+        for (const blockTemplate of files[block]) {
             if (!blockTemplate.condition || blockTemplate.condition(_this)) {
                 const path = blockTemplate.path || '';
-                for(const templateObj of blockTemplate.templates) {
+                for (const templateObj of blockTemplate.templates) {
                     let templatePath = path;
                     let method = 'template';
                     let useTemplate = false;

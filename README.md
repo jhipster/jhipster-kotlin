@@ -1,4 +1,5 @@
 > ## ⚠️ Status: In Development
+>
 > This project is currently in development. We would love ❤️ to see you to use it and give us your feedback and help in shaping this project 💪
 
 <div align="center">
@@ -19,7 +20,8 @@ This project adds Kotlin to the JHipster application 😎. It is based on JHipst
 
 To generate an application run `jhipster --blueprint kotlin`
 
-## 🚦 What we have now 
+## 🚦 What we have now
+
 (⚠️This list is not tested exhaustively - denotes default options are working.⚠️)
 
 ✅ General App generation
@@ -34,7 +36,7 @@ To generate an application run `jhipster --blueprint kotlin`
 
 🗣 Conversations 🗣 are happening [here](https://jhipster-kotlin.slack.com)
 
-Found an issue 🐞 , let us know [here](https://github.com/jhipster/jhipster-kotlin/issues). 
+Found an issue 🐞 , let us know [here](https://github.com/jhipster/jhipster-kotlin/issues).
 
 Interested in contributing 🎉🎉🎉🎉 , check out our [contributing guide](https://github.com/jhipster/jhipster-kotlin/blob/master/CONTRIBUTING.md) to get started.
 

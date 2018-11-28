@@ -25,7 +25,7 @@ module.exports = class extends ServerGenerator {
     constructor(args, opts) {
         super(args, Object.assign({ fromBlueprint: true }, opts)); // fromBlueprint variable is important
 
-        const jhContext = this.jhipsterContext = this.options.jhipsterContext;
+        const jhContext = (this.jhipsterContext = this.options.jhipsterContext);
 
         if (!jhContext) {
             this.error(`This is a JHipster blueprint and should be used only like ${chalk.yellow('jhipster --blueprint kotlin')}`);
