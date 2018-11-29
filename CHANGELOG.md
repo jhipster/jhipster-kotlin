@@ -1,3 +1,16 @@
+<a name="0.6.0"></a>
+
+# [0.6.0](https://github.com/sendilkumarn/jhipster-kotlin/compare/0.5.0...0.6.0) (2018-11-29)
+
+-   Used base JHipster files to cope up with the changes. 
+-   Updated libraries
+-   Fixed to work along with JHipster master
+-   Fixed both Maven and Gradle builds
+-   Added Spring Service support
+-   Removed Entity generator support
+-   Upgraded Kotlin support to 1.2.51
+-   Upgraded Spring support to 2.0.6
+
 <a name="0.5.0"></a>
 
 # [0.5.0](https://github.com/sendilkumarn/jhipster-kotlin/compare/0.4.0...0.5.0) (2018-08-01)
