@@ -1,6 +1,6 @@
-> ## ⚠️ Status: In Development
+> ## 🛠 Mode: Development
 >
-> This project is currently in development. We would love ❤️ to see you to use it and give us your feedback and help in shaping this project 💪
+> JHipster-Kotlin is currently in development. We encourage you to use it and give us your feedback.
 
 <div align="center">
 	<a href="https://github.com/jhipster/jhipster-kotlin">
@@ -17,27 +17,23 @@
 This project adds Kotlin to the JHipster application 😎. It is based on JHipster Blueprint 🔵.
 
 ## 🚀 How to get started
+Install the package with `npm install -g generator-jhipster-kotlin`
 
-To generate an application run `jhipster --blueprint kotlin`
+And generate the application with `jhipster --blueprint kotlin`
 
 ## 🚦 What we have now
-
-(⚠️This list is not tested exhaustively - denotes default options are working.⚠️)
-
 ✅ General App generation
+
 ✅ Spring Controller
+
 ✅ Spring Service
-⚠️Entity generation ⚠️
 
 ## ❤️ for community
 
-🗣 Conversations 🗣 are happening [here](https://jhipster-kotlin.slack.com)
+Found an issue, let us know [here](https://github.com/jhipster/jhipster-kotlin/issues).
 
-Found an issue 🐞 , let us know [here](https://github.com/jhipster/jhipster-kotlin/issues).
+Interested in contributing, check out our [contributing guide](https://github.com/jhipster/jhipster-kotlin/blob/master/CONTRIBUTING.md) to get started.
 
-Interested in contributing 🎉🎉🎉🎉 , check out our [contributing guide](https://github.com/jhipster/jhipster-kotlin/blob/master/CONTRIBUTING.md) to get started.
-
-With JHipster we can generate a wide range of applications (26000) 😮. Would love ❤️ to get it tested. 🤓
 
 [khipster-image]: https://raw.githubusercontent.com/sendilkumarn/jhipster-kotlin-artwork/master/logo-khipster.png
 [npm-image]: https://badge.fury.io/js/generator-jhipster-kotlin.svg
