@@ -32,8 +32,9 @@ And generate the application with `jhipster --blueprint kotlin`
 
 Found an issue, let us know [here](https://github.com/jhipster/jhipster-kotlin/issues).
 
-Interested in contributing, check out our [contributing guide](https://github.com/jhipster/jhipster-kotlin/blob/master/CONTRIBUTING.md) to get started.
+Interested in contributing, check out our [contributing guide](https://github.com/jhipster/jhipster-kotlin/blob/master/CONTRIBUTING.md) to get started. 
 
+Any questions [sendilkumarn](https://twitter.com/sendilkumarn)
 
 [khipster-image]: https://raw.githubusercontent.com/sendilkumarn/jhipster-kotlin-artwork/master/logo-khipster.png
 [npm-image]: https://badge.fury.io/js/generator-jhipster-kotlin.svg
