@@ -1,3 +1,9 @@
+<a name="0.6.1"></a>
+
+# [0.6.1](https://github.com/sendilkumarn/jhipster-kotlin/compare/0.6.0...0.6.1) (2018-11-29)
+
+-   Used pom.xml from the base library
+
 <a name="0.6.0"></a>
 
 # [0.6.0](https://github.com/sendilkumarn/jhipster-kotlin/compare/0.5.0...0.6.0) (2018-11-29)
