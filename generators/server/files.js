@@ -22,7 +22,6 @@ const constants = require('generator-jhipster/generators/generator-constants');
 const baseServerFiles = require('generator-jhipster/generators/server/files').serverFiles;
 
 /* Constants use throughout */
-const INTERPOLATE_REGEX = constants.INTERPOLATE_REGEX;
 const SERVER_MAIN_SRC_DIR = constants.SERVER_MAIN_SRC_DIR;
 const SERVER_MAIN_KOTLIN_SRC_DIR = `${constants.MAIN_DIR}kotlin/`;
 const SERVER_MAIN_RES_DIR = constants.SERVER_MAIN_RES_DIR;
@@ -40,33 +39,6 @@ const serverFiles = {
         {
             condition: generator => generator.buildTool === 'gradle',
             templates: [{ file: 'gradle/kotlin.gradle', useBluePrint: true }]
-        },
-        {
-            condition: generator => generator.buildTool === 'maven',
-            templates: [
-                { file: 'mvnw', method: 'copy', noEjs: true },
-                { file: 'mvnw.cmd', method: 'copy', noEjs: true },
-                {
-                    file: '.mvn/wrapper/maven-wrapper.jar',
-                    method: 'copy',
-                    noEjs: true
-                },
-                {
-                    file: '.mvn/wrapper/maven-wrapper.properties',
-                    method: 'copy',
-                    noEjs: true
-                },
-                {
-                    file: '.mvn/wrapper/MavenWrapperDownloader.java',
-                    method: 'copy',
-                    noEjs: true
-                },
-                {
-                    file: 'pom.xml',
-                    useBluePrint: true,
-                    options: { interpolate: INTERPOLATE_REGEX }
-                }
-            ]
         }
     ],
     serverResource: [
@@ -348,6 +320,47 @@ function writeFiles() {
                 this.addGradlePlugin('org.jetbrains.kotlin', 'kotlin-allopen', '1.2.51');
 
                 this.applyFromGradleScript('gradle/kotlin');
+            }
+
+            if (this.buildTool === 'maven') {
+                this.addMavenProperty('kotlin.version', '1.2.51');
+                this.addMavenDependency('com.fasterxml.jackson.datatype', 'jackson-datatype-json-org');
+                this.addMavenDependency('org.jetbrains.kotlin', 'kotlin-stdlib-jdk8', '${kotlin.version}');
+                this.addMavenDependency('com.fasterxml.jackson.module', 'jackson-module-kotlin', '2.9.7');
+                this.addMavenDependency('org.jetbrains.kotlin', 'kotlin-reflect', '${kotlin.version}');
+                const other = ` <configuration>
+                    <compilerPlugins>
+                        <plugin>spring</plugin>
+                        <plugin>all-open</plugin>
+                    </compilerPlugins>
+                    <jvmTarget>$\{java.version}</jvmTarget>
+                </configuration>
+        
+                <executions>
+                    <execution>
+                        <id>compile</id>
+                        <goals> <goal>compile</goal> </goals>
+                        <configuration>
+                            <sourceDirs>
+                                <sourceDir>$\{project.basedir}/src/main/kotlin</sourceDir>
+                                <sourceDir>$\{project.basedir}/src/main/java</sourceDir>
+                            </sourceDirs>
+                        </configuration>
+                    </execution>
+        
+                    <execution>
+                        <id>test-compile</id>
+                        <goals> <goal>test-compile</goal> </goals>
+                    </execution>
+                </executions>
+                <dependencies>
+                    <dependency>
+                        <groupId>org.jetbrains.kotlin</groupId>
+                        <artifactId>kotlin-maven-allopen</artifactId>
+                        <version>$\{kotlin.version}</version>
+                    </dependency>
+                </dependencies>`;
+                this.addMavenPlugin('org.jetbrains.kotlin', 'kotlin-maven-plugin', '${kotlin.version}', other);
             }
         }
     };
