@@ -316,14 +316,14 @@ function writeFiles() {
 
         modifyFiles() {
             if (this.buildTool === 'gradle') {
-                this.addGradlePlugin('org.jetbrains.kotlin', 'kotlin-gradle-plugin', '1.2.51');
-                this.addGradlePlugin('org.jetbrains.kotlin', 'kotlin-allopen', '1.2.51');
+                this.addGradlePlugin('org.jetbrains.kotlin', 'kotlin-gradle-plugin', '1.2.71');
+                this.addGradlePlugin('org.jetbrains.kotlin', 'kotlin-allopen', '1.2.71');
 
                 this.applyFromGradleScript('gradle/kotlin');
             }
 
             if (this.buildTool === 'maven') {
-                this.addMavenProperty('kotlin.version', '1.2.51');
+                this.addMavenProperty('kotlin.version', '1.2.71');
                 this.addMavenDependency('com.fasterxml.jackson.datatype', 'jackson-datatype-json-org');
                 this.addMavenDependency('org.jetbrains.kotlin', 'kotlin-stdlib-jdk8', '${kotlin.version}');
                 this.addMavenDependency('com.fasterxml.jackson.module', 'jackson-module-kotlin', '2.9.7');
