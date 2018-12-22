@@ -17,7 +17,6 @@
  * limitations under the License.
  */
 const _ = require('lodash');
-const chalk = require('chalk');
 const BaseGenerator = require('generator-jhipster/generators/generator-base');
 const constants = require('generator-jhipster/generators/generator-constants');
 const statistics = require('generator-jhipster/generators/statistics');
@@ -47,13 +46,7 @@ module.exports = class extends BaseGenerator {
     _initializing() {
         return {
             validateFromCli() {
-                if (!this.options['from-cli']) {
-                    this.warning(
-                        `Deprecated: JHipster seems to be invoked using Yeoman command. Please use the JHipster CLI. Run ${chalk.red(
-                            'jhipster <command>'
-                        )} instead of ${chalk.red('yo jhipster:<command>')}`
-                    );
-                }
+                this.checkInvocationFromCLI();
             },
 
             initializing() {
