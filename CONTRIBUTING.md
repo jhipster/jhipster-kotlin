@@ -2,7 +2,11 @@
 
 ## To run the application in development
 
-### Step 1 👍 : to setup JHipster locally
+### Step 1 👍 : install [yeoman](https://yeoman.io/)
+
+`npm install -g yo | yarn global add yo`
+
+### Step 2 👍 : to setup JHipster locally
 
 `git clone https://github.com/jhipster/generator-jhipster`
 
@@ -14,22 +18,22 @@
 
 ( 🏁 Kudos, you just setup JHipster and linked to it locally )
 
-### Step 2 ✌️ : to setup JHipster-Kotlin generator
+### Step 3 ✌️ : to setup JHipster-Kotlin generator
 
 `git clone https://github.com/jhipster/jhipster-kotlin`
 
 `cd jhipster-kotlin`
 
+`npm link generator-jhipster | yarn link generator-jhipster`
+
 `npm install | yarn`
 
 `npm link | yarn link`
 
-`npm link generator-jhipster | yarn link generator-jhipster`
-
 ( 🏁 Kudos, you just setup JHipster-Kotlin and linked to it locally )
 ( 📝 Note: you are linking the JHipster to JHipster-Kotlin with the final command)
 
-### Step 3 🤟 : before generating your application, go to your application folder
+### Step 4 🤟 : before generating your application, go to your application folder
 
 `yarn link "generator-jhipster" && yarn link "generator-jhipster-kotlin"`
 
