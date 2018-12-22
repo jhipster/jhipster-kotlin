@@ -20,6 +20,7 @@ const mkdirp = require('mkdirp');
 const cleanup = require('generator-jhipster/generators/cleanup');
 const constants = require('generator-jhipster/generators/generator-constants');
 const baseServerFiles = require('generator-jhipster/generators/server/files').serverFiles;
+const kotlinConstants = require('../generator-kotlin-constants');
 
 /* Constants use throughout */
 const SERVER_MAIN_SRC_DIR = constants.SERVER_MAIN_SRC_DIR;
@@ -316,14 +317,14 @@ function writeFiles() {
 
         modifyFiles() {
             if (this.buildTool === 'gradle') {
-                this.addGradlePlugin('org.jetbrains.kotlin', 'kotlin-gradle-plugin', '1.2.71');
-                this.addGradlePlugin('org.jetbrains.kotlin', 'kotlin-allopen', '1.2.71');
+                this.addGradlePlugin('org.jetbrains.kotlin', 'kotlin-gradle-plugin', kotlinConstants.KOTLIN_VERSION);
+                this.addGradlePlugin('org.jetbrains.kotlin', 'kotlin-allopen', kotlinConstants.KOTLIN_VERSION);
 
                 this.applyFromGradleScript('gradle/kotlin');
             }
 
             if (this.buildTool === 'maven') {
-                this.addMavenProperty('kotlin.version', '1.2.71');
+                this.addMavenProperty('kotlin.version', kotlinConstants.KOTLIN_VERSION);
                 this.addMavenDependency('com.fasterxml.jackson.datatype', 'jackson-datatype-json-org');
                 this.addMavenDependency('org.jetbrains.kotlin', 'kotlin-stdlib-jdk8', '${kotlin.version}');
                 this.addMavenDependency('com.fasterxml.jackson.module', 'jackson-module-kotlin', '2.9.7');
