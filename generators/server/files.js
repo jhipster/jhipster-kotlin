@@ -325,11 +325,13 @@ function writeFiles() {
 
             if (this.buildTool === 'maven') {
                 this.addMavenProperty('kotlin.version', kotlinConstants.KOTLIN_VERSION);
+                this.addMavenDependencyManagement('org.jetbrains.kotlin', 'kotlin-stdlib', '${kotlin.version}');
                 this.addMavenDependency('com.fasterxml.jackson.datatype', 'jackson-datatype-json-org');
                 this.addMavenDependency('org.jetbrains.kotlin', 'kotlin-stdlib-jdk8', '${kotlin.version}');
-                this.addMavenDependency('com.fasterxml.jackson.module', 'jackson-module-kotlin', '2.9.7');
+                this.addMavenDependency('com.fasterxml.jackson.module', 'jackson-module-kotlin', kotlinConstants.JACKSON_KOTLIN_VERSION);
                 this.addMavenDependency('org.jetbrains.kotlin', 'kotlin-reflect', '${kotlin.version}');
-                const other = ` <configuration>
+                // NOTE: Add proper indentation of the configuration tag
+                const other = `                <configuration>
                     <compilerPlugins>
                         <plugin>spring</plugin>
                         <plugin>all-open</plugin>
