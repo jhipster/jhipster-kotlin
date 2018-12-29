@@ -1,3 +1,11 @@
+<a name="0.7.0"></a>
+
+# [0.7.0](https://github.com/sendilkumarn/jhipster-kotlin/compare/0.6.1...0.7.0) (2018-12-29)
+
+-  Upgraded Kotlin support to 1.3.11
+-  Improved contribution guidelines
+-  Upgraded JHipster support to 5.7.2 (and master ~beta)
+
 <a name="0.6.1"></a>
 
 # [0.6.1](https://github.com/sendilkumarn/jhipster-kotlin/compare/0.6.0...0.6.1) (2018-11-29)
