@@ -20,26 +20,16 @@ JHI_CLONED=$(init_var "$BUILD_REPOSITORY_LOCALPATH" "$TRAVIS_BUILD_DIR")
 JHI_HOME="$HOME"/generator-jhipster
 
 # folder for test-integration
-if [[ "$JHI_INTEG" == "" ]]; then
-    JHI_INTEG="$JHI_HOME"/test-integration
-fi
+JHI_INTEG="$JHI_HOME"/test-integration
 
 # folder for samples
-if [[ "$JHI_SAMPLES" == "" ]]; then
-    JHI_SAMPLES="$JHI_INTEG"/samples
-fi
+JHI_SAMPLES="$JHI_INTEG"/samples
 
 # folder for scripts
-if [[ "$JHI_SCRIPTS" == "" ]]; then
-    JHI_SCRIPTS="$JHI_INTEG"/scripts
-fi
+JHI_SCRIPTS="$JHI_INTEG"/scripts
 
 # folder for app
-if [[ "$JHI_FOLDER_APP" == "" ]]; then
-    JHI_FOLDER_APP="$HOME"/app
-fi
+JHI_FOLDER_APP="$HOME"/app
 
 # folder for uaa app
-if [[ "$JHI_FOLDER_UAA" == "" ]]; then
-    JHI_FOLDER_UAA="$HOME"/uaa
-fi
+JHI_FOLDER_UAA="$HOME"/uaa

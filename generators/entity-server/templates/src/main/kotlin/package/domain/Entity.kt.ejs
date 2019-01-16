@@ -191,7 +191,7 @@ for (var idx in fields) {
     @Field("<%=fieldNameUnderscored %>")
     <%_ } _%>
     <%_ if (fieldTypeBlobContent !== 'text') { _%>
-    var <%= fieldName %>: <%_ if(fieldType === 'byte[]') { _%>ByteArray<%_ } else if(fieldType==='Integer'){ _%>Int<%_ } else { _%><%= fieldType %><% } %>? = null<%= comma %>
+    var <%= fieldName %>: <%_ if(fieldType === 'byte[]') { _%>ByteArray<%_ } else if(fieldType==='Integer'){ _%>Int<%_ } else { _%><%= fieldType %><% } %>? = null<%_ if (fieldType === 'byte[]' || fieldType === 'ByteBuffer') { _%>,<%_ } else { _%><%= comma %><%_ } %>
     <%_ } else { _%>
     var <%= fieldName %>: String? = null<%= comma %>
     <%_ } _%>
@@ -206,7 +206,7 @@ for (var idx in fields) {
       <%_ if (databaseType === 'mongodb' || databaseType === 'couchbase') { _%>
     @Field("<%=fieldNameUnderscored %>_content_type")
       <%_ } _%>
-    var <%= fieldName %>ContentType: String? = null <%= comma %>
+    var <%= fieldName %>ContentType: String? = null<%= comma %>
 
     <%_ }
     }
@@ -320,11 +320,13 @@ for (var idx in fields) {
     } _%>
     // jhipster-needle-entity-add-field - JHipster will add fields here, do not remove
 ): Serializable {
-    <%_ if (databaseType === 'couchbase') { _%>
+<%_ if (databaseType === 'couchbase') { _%>
+
     @SuppressWarnings("unused")
     @IdPrefix
-    var prefix: String = PREFIX
-    <%_ } _%>
+    private val prefix: String = PREFIX
+<%_ } _%>
+
 <%_
     for (idx in relationships) {
         const relationshipFieldName = relationships[idx].relationshipFieldName;
