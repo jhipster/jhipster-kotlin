@@ -18,11 +18,9 @@
  */
 
 const KOTLIN_VERSION = '1.3.11';
-const JACKSON_KOTLIN_VERSION = '2.9.8';
 
 const constants = {
-    KOTLIN_VERSION,
-    JACKSON_KOTLIN_VERSION
+    KOTLIN_VERSION
 };
 
 module.exports = constants;

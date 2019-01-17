@@ -329,7 +329,6 @@ function writeFiles() {
                 this.addMavenDependencyManagement('org.jetbrains.kotlin', 'kotlin-stdlib-jdk7', '${kotlin.version}');
                 this.addMavenDependency('com.fasterxml.jackson.datatype', 'jackson-datatype-json-org');
                 this.addMavenDependency('org.jetbrains.kotlin', 'kotlin-stdlib-jdk8', '${kotlin.version}');
-                this.addMavenDependency('com.fasterxml.jackson.module', 'jackson-module-kotlin', kotlinConstants.JACKSON_KOTLIN_VERSION);
                 this.addMavenDependency('org.jetbrains.kotlin', 'kotlin-reflect', '${kotlin.version}');
                 this.addMavenDependency(
                     'org.jetbrains.kotlin',
@@ -338,14 +337,7 @@ function writeFiles() {
                     '            <scope>test</scope>'
                 );
                 // NOTE: Add proper indentation of the configuration tag
-                const kotlinOther = `                <configuration>
-                    <compilerPlugins>
-                        <plugin>spring</plugin>
-                        ${this.databaseType === 'sql' ? '<plugin>jpa</plugin>' : ''}
-                    </compilerPlugins>
-                    <jvmTarget>$\{java.version}</jvmTarget>
-                </configuration>
-                <executions>
+                const kotlinOther = `                <executions>
                     <execution>
                         <id>kapt</id>
                         <goals>
@@ -378,8 +370,8 @@ function writeFiles() {
                     <execution>
                         <id>compile</id>
                         <phase>process-sources</phase>
-                        <goals> 
-                            <goal>compile</goal> 
+                        <goals>
+                            <goal>compile</goal>
                         </goals>
                         <configuration>
                             <sourceDirs>
@@ -390,6 +382,7 @@ function writeFiles() {
                     </execution>
                     <execution>
                         <id>test-compile</id>
+                        <phase>process-test-sources</phase>
                         <goals>
                             <goal>test-compile</goal>
                         </goals>
@@ -401,6 +394,29 @@ function writeFiles() {
                         </configuration>
                     </execution>
                 </executions>
+                <configuration>
+                    <jvmTarget>$\{java.version}</jvmTarget>
+                    <javaParameters>true</javaParameters>
+                    <compilerPlugins>
+                        <plugin>spring</plugin>
+                    ${
+                        this.databaseType === 'sql'
+                            ? `<plugin>jpa</plugin>
+                        <plugin>all-open</plugin>`
+                            : ''
+                    }
+                    </compilerPlugins>
+                    ${
+                        this.databaseType === 'sql'
+                            ? `<pluginOptions>
+                        <!-- Each annotation is placed on its own line -->
+                        <option>all-open:annotation=javax.persistence.Entity</option>
+                        <option>all-open:annotation=javax.persistence.MappedSuperclass</option>
+                        <option>all-open:annotation=javax.persistence.Embeddable</option>
+                    </pluginOptions>`
+                            : ''
+                    }
+                </configuration>
                 <dependencies>
                     <dependency>
                         <groupId>org.jetbrains.kotlin</groupId>
@@ -420,10 +436,7 @@ function writeFiles() {
                 this.addMavenPlugin('org.jetbrains.kotlin', 'kotlin-maven-plugin', '${kotlin.version}', kotlinOther);
 
                 removeDefaultMavenCompilerPlugin(this);
-                const defaultCompileOther = `                <configuration>
-                    <proc>none</proc>
-                </configuration>
-                <executions>
+                const defaultCompileOther = `                <executions>
                     <!-- Replacing default-compile as it is treated specially by maven -->
                     <execution>
                         <id>default-compile</id>
@@ -437,15 +450,27 @@ function writeFiles() {
                     <execution>
                         <id>java-compile</id>
                         <phase>compile</phase>
-                        <goals> <goal>compile</goal> </goals>
+                        <goals>
+                            <goal>compile</goal>
+                        </goals>
                     </execution>
                     <execution>
                         <id>java-test-compile</id>
                         <phase>test-compile</phase>
-                        <goals> <goal>testCompile</goal> </goals>
+                        <goals>
+                            <goal>testCompile</goal>
+                        </goals>
                     </execution>
-                </executions>`;
-                this.addMavenPlugin('org.apache.maven.plugins', 'maven-compiler-plugin', null, defaultCompileOther);
+                </executions>
+                <configuration>
+                    <proc>none</proc>
+                </configuration>`;
+                this.addMavenPlugin(
+                    'org.apache.maven.plugins',
+                    'maven-compiler-plugin',
+                    '${maven-compiler-plugin.version}',
+                    defaultCompileOther
+                );
             }
         }
     };
