@@ -1,5 +1,5 @@
 <%#
- Copyright 2013-2018 the original author or authors from the JHipster project.
+ Copyright 2013-2019 the original author or authors from the JHipster project.
 
  This file is part of the JHipster project, see https://www.jhipster.tech/
  for more information.
@@ -21,15 +21,15 @@ package <%=packageName%>.service.mapper
 <%_ if (databaseType === 'sql' || databaseType === 'mongodb') { _%>
 import <%=packageName%>.domain.Authority
 <%_ } _%>
-import <%=packageName%>.domain.User
-import <%=packageName%>.service.dto.UserDTO
+import <%=packageName%>.domain.<%= asEntity('User') %>
+import <%=packageName%>.service.dto.<%= asDto('User') %>
 
 import org.springframework.stereotype.Service
 
 import java.util.*
 
 /**
- * Mapper for the entity User and its DTO called UserDTO.
+ * Mapper for the entity [<%= asEntity('User') %>] and its DTO called [<%= asDto('User') %>].
  *
  * Normal mappers are generated using MapStruct, this one is hand-coded as MapStruct
  * support is still in beta, and requires a manual step with an IDE.
@@ -37,25 +37,25 @@ import java.util.*
 @Service
 class UserMapper {
 
-    fun usersToUserDTOs(users: List<User?>): List<UserDTO> {
+    fun usersToUserDTOs(users: List<<%= asEntity('User') %>?>): List<<%= asDto(User) %>> {
         return users.asSequence()
             .filterNotNull()
             .mapTo(mutableListOf()){this.userToUserDTO(it)}
     }
 
-    fun userToUserDTO(user: User): UserDTO {
-        return UserDTO(user)
+    fun userToUserDTO(user: <%= asEntity('User') %>): <%= asDto(User) %> {
+        return <%= asDto(User) %>(user)
     }
 
-    fun userDTOsToUsers(userDTOs: List<UserDTO?>): List<User> {
+    fun userDTOsToUsers(userDTOs: List<<%= asDto(User) %>?>): List<<%= asEntity('User') %>> {
         return userDTOs.mapNotNullTo(mutableListOf()) { this.userDTOToUser(it) }
     }
 
-    fun userDTOToUser(userDTO: UserDTO?): User? {
+    fun userDTOToUser(userDTO: <%= asDto(User) %>?): <%= asEntity('User') %>? {
         return if (userDTO == null) {
             null
         } else {
-            val user = User()
+            val user = <%= asEntity('User') %>()
             user.id = userDTO.id
             user.login = userDTO.login
             user.firstName = userDTO.firstName
@@ -101,11 +101,11 @@ class UserMapper {
     }
     <%_ } _%>
 
-    fun userFromId(id: <% if (databaseType === 'mongodb' || databaseType === 'couchbase' || databaseType === 'cassandra') { %>String?<% } else { %>Long?<% } %>): User? {
+    fun userFromId(id: <% if (databaseType === 'mongodb' || databaseType === 'couchbase' || databaseType === 'cassandra') { %>String?<% } else { %>Long?<% } %>): <%= asEntity('User') %>? {
         if (id == null) {
             return null
         }
-        val user = User()
+        val user = <%= asEntity('User') %>()
         user.id = id
         return user
     }
