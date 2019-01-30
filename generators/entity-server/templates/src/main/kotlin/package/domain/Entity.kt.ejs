@@ -20,6 +20,8 @@ package <%=packageName%>.domain<%
 let importApiModelProperty = false;
 let importJsonIgnore = false;
 let importJsonIgnoreProperties = false;
+let importSet = false;
+let hasDto = dto === 'mapstruct';
 let isUsingMapsId = false;
 const uniqueEnums = {}; %><%- include imports -%>
 
@@ -101,7 +103,9 @@ import org.springframework.data.couchbase.core.mapping.id.GenerationStrategy.UNI
  */
 <%_ } else { _%>
 <%- formatAsClassJavadoc(javadoc) %>
+    <%_ if (!hasDto) { _%>
 @ApiModel(description = "<%- formatAsApiDescription(javadoc) %>")
+    <%_ }_%>
 <%_ } _%>
 <%_ if (databaseType === 'sql') { _%>
 @Entity
@@ -165,7 +169,7 @@ for (var idx in fields) {
         } _%>
     <%- include ../common/field_validators -%>
     <%_ } _%>
-    <%_ if (typeof fields[idx].javadoc != 'undefined') { _%>
+    <%_ if (!hasDto && typeof fields[idx].javadoc != 'undefined') { _%>
     @ApiModelProperty(value = "<%- formatAsApiDescription(fields[idx].javadoc) %>"<% if (required) { %>, required = true<% } %>)
     <%_ } _%>
     <%_ if (databaseType === 'sql') {
@@ -225,7 +229,9 @@ for (var idx in fields) {
         }
         if (typeof relationships[idx].javadoc != 'undefined') { _%>
 <%- formatAsFieldJavadoc(relationships[idx].javadoc) %>
+            <%_ if (!hasDto) { _%>
     @ApiModelProperty(value = "<%- formatAsApiDescription(relationships[idx].javadoc) %>")
+            <%_ }_%>
     <%_ }
         if (relationshipType === 'one-to-many') {
             if (databaseType === 'sql') {
