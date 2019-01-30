@@ -17,7 +17,7 @@
  * limitations under the License.
  */
 
-const KOTLIN_VERSION = '1.3.11';
+const KOTLIN_VERSION = '1.3.20';
 
 const constants = {
     KOTLIN_VERSION

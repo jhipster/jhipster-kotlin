@@ -38,9 +38,6 @@ module.exports = class extends ServerGenerator {
     }
 
     get initializing() {
-        // Make constants available in templates
-        this.KOTLIN_VERSION = kotlinConstants.KOTLIN_VERSION;
-
         // Here we are not overriding this phase and hence its being handled by JHipster
         return super._initializing();
     }

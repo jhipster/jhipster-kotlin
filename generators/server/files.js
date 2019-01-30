@@ -314,10 +314,11 @@ function writeFiles() {
 
         modifyFiles() {
             if (this.buildTool === 'gradle') {
-                this.addGradlePlugin('org.jetbrains.kotlin', 'kotlin-gradle-plugin', kotlinConstants.KOTLIN_VERSION);
-                this.addGradlePlugin('org.jetbrains.kotlin', 'kotlin-allopen', kotlinConstants.KOTLIN_VERSION);
+                this.addGradleProperty('kotlin_version', kotlinConstants.KOTLIN_VERSION);
+                this.addGradlePlugin('org.jetbrains.kotlin', 'kotlin-gradle-plugin', '${kotlin_version}');
+                this.addGradlePlugin('org.jetbrains.kotlin', 'kotlin-allopen', '${kotlin_version}');
                 if (this.databaseType === 'sql') {
-                    this.addGradlePlugin('org.jetbrains.kotlin', 'kotlin-noarg', kotlinConstants.KOTLIN_VERSION);
+                    this.addGradlePlugin('org.jetbrains.kotlin', 'kotlin-noarg', '${kotlin_version}');
                 }
 
                 this.applyFromGradleScript('gradle/kotlin');
