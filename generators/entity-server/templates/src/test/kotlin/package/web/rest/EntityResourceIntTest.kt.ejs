@@ -151,7 +151,7 @@ import org.springframework.test.web.servlet.result.MockMvcResultMatchers.*
 <%_ } else { _%>
 @SpringBootTest(classes = [<%= mainClass %>::class])
 <%_ } _%>
-class <%= entityClass %>ResourceIntTest <% if (databaseType === 'cassandra') { %>extends AbstractCassandraTest <% } %>{
+class <%= entityClass %>ResourceIntTest <% if (databaseType === 'cassandra') { %>: AbstractCassandraTest() <% } %>{
 
     @Autowired
     private lateinit var <%= entityInstance %>Repository: <%= entityClass %>Repository
@@ -1010,7 +1010,7 @@ class <%= entityClass %>ResourceIntTest <% if (databaseType === 'cassandra') { %
             <% if ( fields.length<1 ) { %>val <%= asEntity(entityInstance) %> = <%= asEntity(entityClass) %>()<% } else { %>
             val <%= asEntity(entityInstance) %> = <%= asEntity(entityClass) %>(<% for (idx in fields) {
                 const comma = (parseInt(idx,10) === (fields.length - 1)) ?  '' : ','; %>
-                <%= fields[idx].fieldName %> = <%='DEFAULT_' + fields[idx].fieldNameUnderscored.toUpperCase()%><%= comma %> <% if ((fields[idx].fieldType === 'byte[]' || fields[idx].fieldType === 'ByteBuffer') && fields[idx].fieldTypeBlobContent !== 'text') { %>
+                <%= fields[idx].fieldName %> = <%='DEFAULT_' + fields[idx].fieldNameUnderscored.toUpperCase()%><%_ if ((fields[idx].fieldType === 'byte[]' || fields[idx].fieldType === 'ByteBuffer') && fields[idx].fieldTypeBlobContent !== 'text') { _%>,<%_ } else { _%><%= comma %><%_ } _%><%_ if ((fields[idx].fieldType === 'byte[]' || fields[idx].fieldType === 'ByteBuffer') && fields[idx].fieldTypeBlobContent !== 'text') { %>
                 <%= fields[idx].fieldName %>ContentType = <%='DEFAULT_' + fields[idx].fieldNameUnderscored.toUpperCase()%>_CONTENT_TYPE<%= comma %><% } %><% } %>
             )<% } %>
             <%_
