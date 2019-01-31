@@ -11,10 +11,10 @@ init_var() {
 }
 
 # uri of repo
-JHI_REPO=$(init_var "$BUILD_REPOSITORY_URI" "$TRAVIS_REPO_SLUG")
+JHI_REPO=$(init_var "$BUILD_REPOSITORYNAME" "$TRAVIS_REPO_SLUG")
 
 # folder where the repo is cloned
-JHI_CLONED=$(init_var "$BUILD_REPOSITORY_LOCALPATH" "$TRAVIS_BUILD_DIR")
+JHI_CLONED=$(init_var "$BUILD_SOURCESDIRECTORY" "$TRAVIS_BUILD_DIR")
 
 # folder where the generator-jhipster is cloned
 JHI_HOME="$HOME"/generator-jhipster
