@@ -1,0 +1,91 @@
+package <%= packageName %>.service.dto;
+
+import java.io.Serializable
+<%_ for (idx in fields) { if (fields[idx].fieldIsEnum === true) { _%>
+import <%= packageName %>.domain.enumeration.<%= fields[idx].fieldType %>
+<%_ } } _%>
+import io.github.jhipster.service.filter.BooleanFilter
+import io.github.jhipster.service.filter.DoubleFilter
+import io.github.jhipster.service.filter.Filter
+import io.github.jhipster.service.filter.FloatFilter
+import io.github.jhipster.service.filter.IntegerFilter;
+import io.github.jhipster.service.filter.LongFilter
+import io.github.jhipster.service.filter.StringFilter
+<%_ if (fieldsContainBigDecimal === true) { _%>
+import io.github.jhipster.service.filter.BigDecimalFilter
+<%_ } _%>
+<%_ if (fieldsContainInstant === true) { _%>
+import io.github.jhipster.service.filter.InstantFilter
+<%_ } _%>
+<%_ if (fieldsContainLocalDate === true) { _%>
+import io.github.jhipster.service.filter.LocalDateFilter
+<%_ } _%>
+<%_ if (fieldsContainZonedDateTime === true) { _%>
+import io.github.jhipster.service.filter.ZonedDateTimeFilter
+<%_ } _%>
+
+<%_
+  const referenceFilterType = '' + pkType + 'Filter';
+  var filterVariables = [{name:'id', type: pkType, filterType:referenceFilterType,fieldInJavaBeanMethod:'Id' } ];
+  var extraFilters = {};
+  fields.forEach((field, index) => {
+    const fieldType = field.fieldType;
+    if (isFilterableType(fieldType)) {
+      var filterType;
+      if (field.fieldIsEnum == true) {
+        filterType = fieldType + 'Filter';
+        extraFilters[fieldType] = {type : filterType, superType: 'Filter<' + fieldType + '>', fieldType:fieldType};
+      } else if (['LocalDate', 'ZonedDateTime', 'Instant', 'String', 'Long', 'Integer', 'Float', 'Double', 'BigDecimal', 'Boolean'].includes(fieldType)) {
+        filterType = fieldType + 'Filter';
+      } else {
+        filterType = 'Filter<' + fieldType + '>';
+      }
+      filterVariables.push( { filterType : filterType,
+            name: field.fieldName,
+            type: fieldType,
+            fieldInJavaBeanMethod: field.fieldInJavaBeanMethod });
+    }
+  });
+  relationships.forEach((relationship, index) => {
+    const relationshipType = relationship.relationshipType;
+    // user has a String PK when using OAuth, so change relationships accordingly
+    let oauthAwareReferenceFilterType = referenceFilterType;
+    if (relationship.otherEntityName === 'user' && authenticationType === 'oauth2') {
+        oauthAwareReferenceFilterType = 'StringFilter';
+    }
+    filterVariables.push({ filterType : oauthAwareReferenceFilterType,
+        name: relationship.relationshipFieldName + 'Id',
+        type: relationshipType,
+        fieldInJavaBeanMethod: relationship.relationshipNameCapitalized + 'Id' });
+  });
+_%>
+/**
+ * Criteria class for the [<%= asEntity(entityClass) %>] entity. This class is used in [<%= entityClass %>Resource] to
+ * receive all the possible filtering options from the Http GET request parameters.
+ * For example the following could be a valid requests:
+ * ```/<%= entityApiUrl %>?id.greaterThan=5&amp;attr1.contains=something&amp;attr2.specified=false```
+ * As Spring is unable to properly convert the types, unless specific [Filter] class are used, we need to use
+ * fix type specific filters.
+ */
+data class <%= entityClass %>Criteria(
+<%_ filterVariables.forEach((filterVariable, index) => {
+        const comma = (index===filterVariables.length-1) ? '' : ',';
+_%>
+
+    var <%= filterVariable.name %>: <%- filterVariable.filterType %>? = null<%= comma %>
+<%_ }) _%>
+): Serializable {
+<%_ Object.keys(extraFilters).forEach((key) => {
+        extraFilter = extraFilters[key]; _%>
+    /**
+     * Class for filtering <%= key %>
+     */
+    class <%= extraFilter.type %>: <%- extraFilter.superType %>() {
+    }
+<%_ }); _%>
+
+    companion object {
+        private const val serialVersionUID: Long = 1L
+    }
+
+}

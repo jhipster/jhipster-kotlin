@@ -1,5 +1,5 @@
 <%#
- Copyright 2013-2018 the original author or authors from the JHipster project.
+ Copyright 2013-2019 the original author or authors from the JHipster project.
 
  This file is part of the JHipster project, see https://www.jhipster.tech/
  for more information.
@@ -19,19 +19,39 @@
 import org.gradle.internal.os.OperatingSystem
 
 apply plugin: 'kotlin' // Required for Kotlin integration
-apply plugin: "kotlin-spring" // See https://kotlinlang.org/docs/reference/compiler-plugins.html#kotlin-spring-compiler-plugin
+apply plugin: 'kotlin-kapt' // Required for annotations processing
+apply plugin: "kotlin-spring" // See https://kotlinlang.org/docs/reference/compiler-plugins.html#spring-support
+<%_ if (databaseType === 'sql') { _%>
+apply plugin: "kotlin-allopen" // See https://kotlinlang.org/docs/reference/compiler-plugins.html#using-in-gradle
+apply plugin: "kotlin-jpa" // See https://kotlinlang.org/docs/reference/compiler-plugins.html#jpa-support
+<%_ } _%>
 
 dependencies {
-    compile "org.jetbrains.kotlin:kotlin-stdlib-jdk8:<%= KOTLIN_VERSION %>"
-    compile "org.jetbrains.kotlin:kotlin-reflect:<%= KOTLIN_VERSION %>"
-    compile "com.fasterxml.jackson.module:jackson-module-kotlin:<%= JACKSON_KOTLIN_VERSION %>"
+    compile "org.jetbrains.kotlin:kotlin-stdlib-jdk8:${kotlin_version}"
+    compile "org.jetbrains.kotlin:kotlin-reflect:${kotlin_version}"
+
+    kapt "org.mapstruct:mapstruct-processor:${mapstruct_version}"
+    <%_ if (databaseType === 'sql') { _%>
+    kapt "org.hibernate:hibernate-jpamodelgen"
+    <%_ } _%>
+
+    testCompile "org.jetbrains.kotlin:kotlin-test-junit:${kotlin_version}"
 }
 
+<%_ if (databaseType === 'sql') { _%>
+allOpen {
+    annotation("javax.persistence.Entity")
+    annotation("javax.persistence.MappedSuperclass")
+    annotation("javax.persistence.Embeddable")
+}
+<%_ } _%>
 
 compileKotlin {
     kotlinOptions {
-    	jvmTarget = "1.8"
-    	freeCompilerArgs = ["-Xjsr305=strict"]
+    	jvmTarget = "<%= JAVA_VERSION %>"
+        javaParameters = true
+// NOTE: Disabled Xjsr305=strict since it causes compilation errors in <EntityName>QueryService.kt classes where Specification.where(null) is used
+//    	freeCompilerArgs = ["-Xjsr305=strict"]
     }
 }
 

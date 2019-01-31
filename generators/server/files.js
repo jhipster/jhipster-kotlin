@@ -1,5 +1,5 @@
 /**
- * Copyright 2013-2018 the original author or authors from the JHipster project.
+ * Copyright 2013-2019 the original author or authors from the JHipster project.
  *
  * This file is part of the JHipster project, see https://www.jhipster.tech/
  * for more information.
@@ -16,6 +16,7 @@
  * See the License for the specific language governing permissions and
  * limitations under the License.
  */
+const path = require('path');
 const mkdirp = require('mkdirp');
 const cleanup = require('generator-jhipster/generators/cleanup');
 const constants = require('generator-jhipster/generators/generator-constants');
@@ -125,10 +126,6 @@ const serverFiles = {
                 {
                     file: 'package/config/LocaleConfiguration.java',
                     renameTo: generator => `${generator.javaDir}config/LocaleConfiguration.java`
-                },
-                {
-                    file: 'package/config/MetricsConfiguration.java',
-                    renameTo: generator => `${generator.javaDir}config/MetricsConfiguration.java`
                 },
                 {
                     file: 'package/config/WebConfigurer.java',
@@ -317,8 +314,12 @@ function writeFiles() {
 
         modifyFiles() {
             if (this.buildTool === 'gradle') {
-                this.addGradlePlugin('org.jetbrains.kotlin', 'kotlin-gradle-plugin', kotlinConstants.KOTLIN_VERSION);
-                this.addGradlePlugin('org.jetbrains.kotlin', 'kotlin-allopen', kotlinConstants.KOTLIN_VERSION);
+                this.addGradleProperty('kotlin_version', kotlinConstants.KOTLIN_VERSION);
+                this.addGradlePlugin('org.jetbrains.kotlin', 'kotlin-gradle-plugin', '${kotlin_version}');
+                this.addGradlePlugin('org.jetbrains.kotlin', 'kotlin-allopen', '${kotlin_version}');
+                if (this.databaseType === 'sql') {
+                    this.addGradlePlugin('org.jetbrains.kotlin', 'kotlin-noarg', '${kotlin_version}');
+                }
 
                 this.applyFromGradleScript('gradle/kotlin');
             }
@@ -326,23 +327,53 @@ function writeFiles() {
             if (this.buildTool === 'maven') {
                 this.addMavenProperty('kotlin.version', kotlinConstants.KOTLIN_VERSION);
                 this.addMavenDependencyManagement('org.jetbrains.kotlin', 'kotlin-stdlib', '${kotlin.version}');
+                this.addMavenDependencyManagement('org.jetbrains.kotlin', 'kotlin-stdlib-jdk7', '${kotlin.version}');
                 this.addMavenDependency('com.fasterxml.jackson.datatype', 'jackson-datatype-json-org');
                 this.addMavenDependency('org.jetbrains.kotlin', 'kotlin-stdlib-jdk8', '${kotlin.version}');
-                this.addMavenDependency('com.fasterxml.jackson.module', 'jackson-module-kotlin', kotlinConstants.JACKSON_KOTLIN_VERSION);
                 this.addMavenDependency('org.jetbrains.kotlin', 'kotlin-reflect', '${kotlin.version}');
+                this.addMavenDependency(
+                    'org.jetbrains.kotlin',
+                    'kotlin-test-junit',
+                    '${kotlin.version}',
+                    '            <scope>test</scope>'
+                );
                 // NOTE: Add proper indentation of the configuration tag
-                const other = `                <configuration>
-                    <compilerPlugins>
-                        <plugin>spring</plugin>
-                        <plugin>all-open</plugin>
-                    </compilerPlugins>
-                    <jvmTarget>$\{java.version}</jvmTarget>
-                </configuration>
-        
-                <executions>
+                const kotlinOther = `                <executions>
+                    <execution>
+                        <id>kapt</id>
+                        <goals>
+                            <goal>kapt</goal>
+                        </goals>
+                        <configuration>
+                            <sourceDirs>
+                                <sourceDir>$\{project.basedir}/src/main/kotlin</sourceDir>
+                                <sourceDir>$\{project.basedir}/src/main/java</sourceDir>
+                            </sourceDirs>
+                            <annotationProcessorPaths>
+                                <path>
+                                    <groupId>org.mapstruct</groupId>
+                                    <artifactId>mapstruct-processor</artifactId>
+                                    <version>$\{mapstruct.version}</version>
+                                </path>
+                                ${
+                                    this.databaseType === 'sql'
+                                        ? `<!-- For JPA static metamodel generation -->
+                                <path>
+                                    <groupId>org.hibernate</groupId>
+                                    <artifactId>hibernate-jpamodelgen</artifactId>
+                                    <version>$\{hibernate.version}</version>
+                                </path>`
+                                        : ''
+                                }
+                            </annotationProcessorPaths>
+                        </configuration>
+                    </execution>
                     <execution>
                         <id>compile</id>
-                        <goals> <goal>compile</goal> </goals>
+                        <phase>process-sources</phase>
+                        <goals>
+                            <goal>compile</goal>
+                        </goals>
                         <configuration>
                             <sourceDirs>
                                 <sourceDir>$\{project.basedir}/src/main/kotlin</sourceDir>
@@ -350,20 +381,97 @@ function writeFiles() {
                             </sourceDirs>
                         </configuration>
                     </execution>
-        
                     <execution>
                         <id>test-compile</id>
-                        <goals> <goal>test-compile</goal> </goals>
+                        <phase>process-test-sources</phase>
+                        <goals>
+                            <goal>test-compile</goal>
+                        </goals>
+                        <configuration>
+                            <sourceDirs>
+                                <sourceDir>$\{project.basedir}/src/test/kotlin</sourceDir>
+                                <sourceDir>$\{project.basedir}/src/test/java</sourceDir>
+                            </sourceDirs>
+                        </configuration>
                     </execution>
                 </executions>
+                <configuration>
+                    <jvmTarget>$\{java.version}</jvmTarget>
+                    <javaParameters>true</javaParameters>
+                    <compilerPlugins>
+                        <plugin>spring</plugin>
+                    ${
+                        this.databaseType === 'sql'
+                            ? `<plugin>jpa</plugin>
+                        <plugin>all-open</plugin>`
+                            : ''
+                    }
+                    </compilerPlugins>
+                    ${
+                        this.databaseType === 'sql'
+                            ? `<pluginOptions>
+                        <!-- Each annotation is placed on its own line -->
+                        <option>all-open:annotation=javax.persistence.Entity</option>
+                        <option>all-open:annotation=javax.persistence.MappedSuperclass</option>
+                        <option>all-open:annotation=javax.persistence.Embeddable</option>
+                    </pluginOptions>`
+                            : ''
+                    }
+                </configuration>
                 <dependencies>
                     <dependency>
                         <groupId>org.jetbrains.kotlin</groupId>
                         <artifactId>kotlin-maven-allopen</artifactId>
                         <version>$\{kotlin.version}</version>
                     </dependency>
+                    ${
+                        this.databaseType === 'sql'
+                            ? `<dependency>
+                        <groupId>org.jetbrains.kotlin</groupId>
+                        <artifactId>kotlin-maven-noarg</artifactId>
+                        <version>$\{kotlin.version}</version>
+                    </dependency>`
+                            : ''
+                    }
                 </dependencies>`;
-                this.addMavenPlugin('org.jetbrains.kotlin', 'kotlin-maven-plugin', '${kotlin.version}', other);
+                this.addMavenPlugin('org.jetbrains.kotlin', 'kotlin-maven-plugin', '${kotlin.version}', kotlinOther);
+
+                removeDefaultMavenCompilerPlugin(this);
+                const defaultCompileOther = `                <executions>
+                    <!-- Replacing default-compile as it is treated specially by maven -->
+                    <execution>
+                        <id>default-compile</id>
+                        <phase>none</phase>
+                    </execution>
+                    <!-- Replacing default-testCompile as it is treated specially by maven -->
+                    <execution>
+                        <id>default-testCompile</id>
+                        <phase>none</phase>
+                    </execution>
+                    <execution>
+                        <id>java-compile</id>
+                        <phase>compile</phase>
+                        <goals>
+                            <goal>compile</goal>
+                        </goals>
+                    </execution>
+                    <execution>
+                        <id>java-test-compile</id>
+                        <phase>test-compile</phase>
+                        <goals>
+                            <goal>testCompile</goal>
+                        </goals>
+                    </execution>
+                </executions>
+                <configuration>
+                    <proc>none</proc>
+                </configuration>`;
+                this.addMavenPlugin(
+                    'org.apache.maven.plugins',
+                    'maven-compiler-plugin',
+                    '${maven-compiler-plugin.version}',
+                    defaultCompileOther
+                );
             }
         }
     };
@@ -439,7 +547,29 @@ function writeFilesToDisk(files, generator, returnFiles, prefix) {
     return filesOut;
 }
 
+/**
+ * remove the default <maven-compiler-plugin> configuration from pom.xml.
+ */
+function removeDefaultMavenCompilerPlugin(generator) {
+    const _this = generator || this;
+
+    const fullPath = path.join(process.cwd(), 'pom.xml');
+    const artifactId = 'maven-compiler-plugin';
+
+    const xml = _this.fs.read(fullPath).toString();
+
+    const cheerio = require('cheerio');
+    const $ = cheerio.load(xml, {xmlMode: true});
+
+    $(`build > plugins > plugin > artifactId:contains('${artifactId}')`).parent().remove();
+
+    const modifiedXml = $.xml();
+
+    _this.fs.write(fullPath, modifiedXml);
+}
+
 module.exports = {
     writeFiles,
+    writeFilesToDisk,
     serverFiles
 };

@@ -1,0 +1,90 @@
+<%#
+ Copyright 2013-2019 the original author or authors from the JHipster project.
+
+ This file is part of the JHipster project, see https://www.jhipster.tech/
+ for more information.
+
+ Licensed under the Apache License, Version 2.0 (the "License");
+ you may not use this file except in compliance with the License.
+ You may obtain a copy of the License at
+
+      http://www.apache.org/licenses/LICENSE-2.0
+
+ Unless required by applicable law or agreed to in writing, software
+ distributed under the License is distributed on an "AS IS" BASIS,
+ WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
+ See the License for the specific language governing permissions and
+ limitations under the License.
+-%>
+    <%_
+    const instanceType = (dto === 'mapstruct') ? asDto(entityClass) : asEntity(entityClass);
+    // const instanceName = (dto === 'mapstruct') ? asDto(entityInstance) : asEntity(entityInstance);
+    const mapper = entityInstance + 'Mapper';
+    const entityListToDtoListReference = mapper + '.' + 'toDto';
+    const entityToDtoReference = mapper + '::'+ 'toDto';
+    if (jpaMetamodelFiltering) {  %>
+    fun getAll<%= entityClassPlural %>(criteria: <%= entityClass %>Criteria<% if (pagination != 'no') { %>, pageable: Pageable<% } %>): ResponseEntity<MutableList<<%= instanceType %>>> {
+        log.debug("REST request to get <%= entityClassPlural %> by criteria: {}", criteria)
+    <%_ if (pagination === 'no') { _%>
+        val entityList = <%= entityInstance %>QueryService.findByCriteria(criteria)
+        return ResponseEntity.ok().body(entityList)
+    <%_ } else { _%>
+        val page = <%= entityInstance %>QueryService.findByCriteria(criteria, pageable)
+        val headers = PaginationUtil.generatePaginationHttpHeaders(page, "/api/<%= entityApiUrl %>")
+        return ResponseEntity.ok().headers(headers).body(page.content)
+    <%_ } _%>
+    }
+
+    /**
+    * GET  /<%= entityApiUrl %>/count : count all the <%= entityInstancePlural %>.
+    *
+    * @param criteria the criterias which the requested entities should match.
+    * @return the ResponseEntity with status 200 (OK) and the count in body.
+    */
+    @GetMapping("/<%= entityApiUrl %>/count")
+    fun count<%= entityClassPlural %>(criteria: <%= entityClass %>Criteria): ResponseEntity<Long> {
+        log.debug("REST request to count <%= entityClassPlural %> by criteria: {}", criteria)
+        return ResponseEntity.ok().body(<%= entityInstance %>QueryService.countByCriteria(criteria))
+    }
+<% } else { %>
+    <%_ if (pagination === 'no') { _%>
+    fun getAll<%= entityClassPlural %>(<% if (fieldsContainNoOwnerOneToOne) { %>@RequestParam(required = false) filter: String?<% } %><% if (fieldsContainOwnerManyToMany && fieldsContainNoOwnerOneToOne) { %>,<% } %><% if (fieldsContainOwnerManyToMany) { %>@RequestParam(required = false, defaultValue = "false") eagerload: Boolean<% }%>): MutableList<<%= instanceType %>> {<%- include('get_all_stream_template', {viaService: viaService}); -%>
+        log.debug("REST request to get all <%= entityClassPlural %>")<% if (viaService) { %>
+        return <%= entityInstance %>Service.findAll()<% } else if (dto === 'mapstruct') { %>
+        val <%= entityInstancePlural %> = <%= entityInstance %>Repository.<% if (fieldsContainOwnerManyToMany) { %>findAllWithEagerRelationships<% } else { %>findAll<% } %>()
+        return <%= entityListToDtoListReference %>(<%= entityInstancePlural %>)<% } else { %>
+        return <%= entityInstance %>Repository.<% if (fieldsContainOwnerManyToMany) { %>findAllWithEagerRelationships<% } else { %>findAll<% } %>()<% } %>
+    <%_ } if (pagination !== 'no') { _%>
+    fun getAll<%= entityClassPlural %>(pageable: Pageable<% if (fieldsContainNoOwnerOneToOne) { %>, @RequestParam(required = false) filter: String?<% } %><% if (fieldsContainOwnerManyToMany) { %>, @RequestParam(required = false, defaultValue = "false") eagerload: Boolean<% } %>): ResponseEntity<MutableList<<%= instanceType %>>> {<%- include('get_all_stream_template', {viaService: viaService}); -%>
+        log.debug("REST request to get a page of <%= entityClassPlural %>")
+    <%_ if (viaService) { _%>
+        <%_ if (fieldsContainOwnerManyToMany) { _%>
+        val page: Page<<%= instanceType %>>
+        if (eagerload) {
+            page = <%= entityInstance %>Service.findAllWithEagerRelationships(pageable)
+        } else {
+            page = <%= entityInstance %>Service.findAll(pageable)
+        }
+        val headers = PaginationUtil.generatePaginationHttpHeaders(page, String.format("/api/<%= entityApiUrl %>?eagerload=%b", eagerload))
+        <%_ } else { _%>
+        val page = <%= entityInstance %>Service.findAll(pageable)
+        val headers = PaginationUtil.generatePaginationHttpHeaders(page, "/api/<%= entityApiUrl %>")
+        <%_ } _%>
+    <%_ } else { _%>
+        <%_ if (fieldsContainOwnerManyToMany) { _%>
+        val page: Page<<%= instanceType %>>
+        if (eagerload) {
+            page = <%= entityInstance %>Repository.findAllWithEagerRelationships(pageable)<% if (dto === 'mapstruct') {%>.map(<%= entityToDtoReference %>)<% } %>
+        } else {
+            page = <%= entityInstance %>Repository.findAll(pageable)<% if (dto !== 'mapstruct') { %>;<% } else { %>.map(<%= entityToDtoReference %>)<% } %>
+        }
+        val headers = PaginationUtil.generatePaginationHttpHeaders(page, String.format("/api/<%= entityApiUrl %>?eagerload=%b", eagerload))
+        <%_ } else { _%>
+        val page = <%= entityInstance %>Repository.findAll(pageable)<% if (dto !== 'mapstruct') { %>;<% } else { %>.map(<%= entityToDtoReference %>)<% } %>
+        val headers = PaginationUtil.generatePaginationHttpHeaders(page, "/api/<%= entityApiUrl %>")
+        <%_ } _%>
+    <%_ } _%>
+        return ResponseEntity.ok().headers(headers).body(page.content)
+    <%_ } _%>
+    }
+<%_ } _%>
