@@ -205,15 +205,17 @@ const serverFiles = {
         },
         {
             condition: generator => generator.databaseType === 'couchbase',
-            path: SERVER_MAIN_SRC_DIR,
+            path: SERVER_MAIN_KOTLIN_SRC_DIR,
             templates: [
                 {
-                    file: 'package/repository/N1qlCouchbaseRepository.java',
-                    renameTo: generator => `${generator.javaDir}repository/N1qlCouchbaseRepository.java`
+                    file: 'package/repository/N1qlCouchbaseRepository.kt',
+                    renameTo: generator => `${generator.javaDir}repository/N1qlCouchbaseRepository.kt`,
+                    useBluePrint: true
                 },
                 {
-                    file: 'package/repository/CustomN1qlCouchbaseRepository.java',
-                    renameTo: generator => `${generator.javaDir}repository/CustomN1qlCouchbaseRepository.java`
+                    file: 'package/repository/CustomN1qlCouchbaseRepository.kt',
+                    renameTo: generator => `${generator.javaDir}repository/CustomN1qlCouchbaseRepository.kt`,
+                    useBluePrint: true
                 }
             ]
         },
@@ -398,16 +400,17 @@ function writeFiles() {
                 <configuration>
                     <jvmTarget>$\{java.version}</jvmTarget>
                     <javaParameters>true</javaParameters>
+                    <args>
+                        <arg>-Xjvm-default=enable</arg>
+                    </args>
                     <compilerPlugins>
-                        <plugin>spring</plugin>
-                    ${
-                        this.databaseType === 'sql'
-                            ? `<plugin>jpa</plugin>
+                        <plugin>spring</plugin>${
+                            this.databaseType === 'sql'
+                                ? `<plugin>jpa</plugin>
                         <plugin>all-open</plugin>`
-                            : ''
-                    }
-                    </compilerPlugins>
-                    ${
+                                : ''
+                        }
+                    </compilerPlugins>${
                         this.databaseType === 'sql'
                             ? `<pluginOptions>
                         <!-- Each annotation is placed on its own line -->

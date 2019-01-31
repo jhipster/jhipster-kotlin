@@ -25,20 +25,21 @@ import org.springframework.data.repository.NoRepositoryBean
 import java.io.Serializable
 
 /**
- * Couchbase specific [org.springframework.data.repository.Repository] interface uses N1QL for all requests
+ * Couchbase specific [org.springframework.data.repository.Repository] interface uses N1QL for all requests.
  */
 @NoRepositoryBean
 interface N1qlCouchbaseRepository<T, ID : Serializable> : CouchbasePagingAndSortingRepository<T, ID> {
 
     @Query("#{#n1ql.selectEntity} WHERE #{#n1ql.filter}")
-    override fun findAll(): List<T>
+    override fun findAll(): MutableList<T>
 
     @Query("SELECT count(*) FROM #{#n1ql.bucket} WHERE #{#n1ql.filter}")
     override fun count(): Long
 
     @Query("DELETE FROM #{#n1ql.bucket} WHERE #{#n1ql.filter} returning #{#n1ql.fields}")
-    fun removeAll(): T
+    fun removeAll(): T?
 
+    @JvmDefault
     override fun deleteAll() {
         removeAll()
     }
