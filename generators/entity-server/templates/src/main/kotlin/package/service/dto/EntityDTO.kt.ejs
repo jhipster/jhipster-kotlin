@@ -16,8 +16,18 @@
  See the License for the specific language governing permissions and
  limitations under the License.
 -%>
-package <%=packageName%>.service.dto
-
+package <%=packageName%>.service.dto<%
+let importApiModelProperty = false;
+let importJsonIgnore = false;
+let importJsonIgnoreProperties = false;
+let importSet = false;
+const uniqueEnums = {};
+%><%- include ../../domain/imports -%>
+<%_ if (typeof javadoc != 'undefined') { _%>
+import io.swagger.annotations.ApiModel
+<%_ } if (importApiModelProperty === true) { _%>
+import io.swagger.annotations.ApiModelProperty
+<%_ } _%>
 <%_ if (fieldsContainInstant) { _%>
 import java.time.Instant
 <%_ } _%>
@@ -61,10 +71,17 @@ _%>
 /**
  * A DTO for the [<%= entityClass %>] entity.
  */
+<%_ if (typeof javadoc !== 'undefined') { _%>
+@ApiModel(description = "<%- formatAsApiDescription(javadoc) %>")
+<%_ } _%>
 data class <%= asDto(entityClass) %> (
 
     var id: <%= pkType %>? = null,
     <%_ for (idx in fields) {
+        if (typeof fields[idx].javadoc !== 'undefined') { _%>
+<%- formatAsFieldJavadoc(fields[idx].javadoc) %>
+        <%_ }
+            let required = false;
             const fieldValidate = fields[idx].fieldValidate;
             const fieldValidateRules = fields[idx].fieldValidateRules;
             const fieldValidateRulesMinlength = fields[idx].fieldValidateRulesMinlength;
@@ -80,11 +97,13 @@ data class <%= asDto(entityClass) %> (
             const comma = ((parseInt(idx, 10) === (fields.length - 1)) && mappedRels.length<1 ) ?  '' : ',';_%>
 
     <%_ if (fieldValidate === true) {
-            let required = false;
-            if (fieldValidate === true && fieldValidateRules.includes('required')) {
+            if (fieldValidateRules.includes('required')) {
                 required = true;
             } _%>
     <%- include ../../common/field_validators -%>
+    <%_ } _%>
+    <%_ if (typeof fields[idx].javadoc != 'undefined') { _%>
+    @ApiModelProperty(value = "<%- formatAsApiDescription(fields[idx].javadoc) %>"<% if (required) { %>, required = true<% } %>)
     <%_ } _%>
     <%_ if (fieldType === 'byte[]' && databaseType === 'sql') { _%>
     @Lob
@@ -105,8 +124,12 @@ data class <%= asDto(entityClass) %> (
         const otherEntityNameCapitalized = relationship.otherEntityNameCapitalized;
         const otherEntityFieldCapitalized = relationship.otherEntityFieldCapitalized;
         const ownerSide = relationship.ownerSide;
-        var comma = index === (mappedRels.length - 1) ?  '' : ',';_%>
-    <%_ if (relationshipType === 'many-to-many' && ownerSide === true) { _%>
+        var comma = index === (mappedRels.length - 1) ?  '' : ',';
+        if (typeof relationship.javadoc != 'undefined') { _%>
+<%- formatAsFieldJavadoc(relationship.javadoc) %>
+    @ApiModelProperty(value = "<%- formatAsApiDescription(relationship.javadoc) %>")
+    <%_ }
+        if (relationshipType === 'many-to-many' && ownerSide === true) { _%>
 
     var <%= relationshipFieldNamePlural %>: MutableSet<<%= asDto(otherEntityNameCapitalized) %>> = mutableSetOf()<%= comma %>
     <%_ } else if (relationshipType === 'many-to-one' || (relationshipType === 'one-to-one' && ownerSide === true)) {
