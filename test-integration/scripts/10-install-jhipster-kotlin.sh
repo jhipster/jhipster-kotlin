@@ -77,11 +77,16 @@ fi
 #-------------------------------------------------------------------------------
 # Override config
 #-------------------------------------------------------------------------------
+echo JHI_SCRIPTS="$JHI_SCRIPTS"
+echo KOTLIN_JHI_SCRIPTS="$KOTLIN_JHI_SCRIPTS"
+echo JHI_CLONED="$JHI_CLONED"
+echo JHI_HOME="$JHI_HOME"
 
 # replace 00-init-env.sh
 cp "$KOTLIN_JHI_SCRIPTS"/00-init-env.sh "$JHI_SCRIPTS"/
 
 # copy all samples
+
 cp -R "$JHI_CLONED"/test-integration/samples-kotlin/* "$JHI_HOME"/test-integration/samples/
 
 #-------------------------------------------------------------------------------
