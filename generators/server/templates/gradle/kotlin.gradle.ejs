@@ -36,22 +36,19 @@ dependencies {
     <%_ } _%>
 
     testCompile "org.jetbrains.kotlin:kotlin-test-junit:${kotlin_version}"
-}
+}<%_ if (databaseType === 'sql') { %>
 
-<%_ if (databaseType === 'sql') { _%>
 allOpen {
     annotation("javax.persistence.Entity")
     annotation("javax.persistence.MappedSuperclass")
     annotation("javax.persistence.Embeddable")
-}
-<%_ } _%>
+}<%_ } %>
 
 compileKotlin {
     kotlinOptions {
     	jvmTarget = "<%= JAVA_VERSION %>"
-        javaParameters = true
-// NOTE: Disabled Xjsr305=strict since it causes compilation errors in <EntityName>QueryService.kt classes where Specification.where(null) is used
-//    	freeCompilerArgs = ["-Xjsr305=strict"]
+        javaParameters = true<%_ if (databaseType === 'couchbase') { %>
+    	freeCompilerArgs = ["-Xjvm-default=enable"]<%_ } %>
     }
 }
 

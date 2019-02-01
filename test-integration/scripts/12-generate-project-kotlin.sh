@@ -41,6 +41,7 @@ else
     cd "$JHI_FOLDER_APP"
     npm link generator-jhipster-kotlin
     jhipster --force --no-insight --skip-checks --with-entities --skip-git --skip-commit-hook --from-cli --blueprint kotlin
+
 fi
 
 #-------------------------------------------------------------------------------
