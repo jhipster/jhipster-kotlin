@@ -24,6 +24,7 @@ const utils = require('generator-jhipster/generators/utils');
 const constants = require('generator-jhipster/generators/generator-constants');
 const baseServerFiles = require('generator-jhipster/generators/entity-server/files').serverFiles;
 const writeFilesToDisk = require('../server/files').writeFilesToDisk;
+const NeedleServerChacheKt = require('./needle-server-cache-kt');
 
 /* Constants use throughout */
 const INTERPOLATE_REGEX = constants.INTERPOLATE_REGEX;
@@ -222,8 +223,10 @@ function writeFiles() {
                 }
                 this.addChangelogToLiquibase(`${this.changelogDate}_added_entity_${this.entityClass}`);
 
+                const serverCacheKt = new NeedleServerChacheKt(this);
+
                 if (['ehcache', 'infinispan'].includes(this.cacheProvider) && this.enableHibernateCache) {
-                    this.addEntityToCache(
+                    serverCacheKt.addEntityToCache(
                         this.asEntity(this.entityClass),
                         this.relationships,
                         this.packageName,

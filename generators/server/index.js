@@ -19,7 +19,6 @@
 /* eslint-disable consistent-return */
 const chalk = require('chalk');
 const ServerGenerator = require('generator-jhipster/generators/server');
-const kotlinConstants = require('../generator-kotlin-constants');
 const writeFiles = require('./files').writeFiles;
 
 module.exports = class extends ServerGenerator {
