@@ -92,10 +92,12 @@ class WebConfigurerTest {
         webConfigurer.onStartup(servletContext)
 
         <%_ if (!skipClient) { _%>
-        verify<MockServletContext>(servletContext).addFilter(ArgumentMatchers.eq("cachingHttpHeadersFilter"), any(CachingHttpHeadersFilter::class.java))
+        verify<MockServletContext>(servletContext)
+            .addFilter(ArgumentMatchers.eq("cachingHttpHeadersFilter"), any(CachingHttpHeadersFilter::class.java))
         <%_ } _%>
         <%_ if (devDatabaseType === 'h2Disk' || devDatabaseType === 'h2Memory') { _%>
-        verify<MockServletContext>(servletContext, never()).addServlet(ArgumentMatchers.eq("H2Console"), any(WebServlet::class.java))
+        verify<MockServletContext>(servletContext, never())
+            .addServlet(ArgumentMatchers.eq("H2Console"), any(WebServlet::class.java))
         <%_ } _%>
     }
 
@@ -106,15 +108,18 @@ class WebConfigurerTest {
         webConfigurer.onStartup(servletContext)
 
         <%_ if (!skipClient) { _%>
-       verify<MockServletContext>(servletContext, never()).addFilter(ArgumentMatchers.eq("cachingHttpHeadersFilter"), any(CachingHttpHeadersFilter::class.java))
+        verify<MockServletContext>(servletContext, never())
+            .addFilter(ArgumentMatchers.eq("cachingHttpHeadersFilter"), any(CachingHttpHeadersFilter::class.java))
          <%_ } _%>
         <%_ if (devDatabaseType === 'h2Disk' || devDatabaseType === 'h2Memory') { _%>
-        verify<MockServletContext>(servletContext).addServlet(ArgumentMatchers.eq("H2Console"), any(WebServlet::class.java))
+        verify<MockServletContext>(servletContext)
+            .addServlet(ArgumentMatchers.eq("H2Console"), any(WebServlet::class.java))
         <%_ } _%>
     }
 
     @Test
     fun testCustomizeServletContainer() {
+        props.http.setVersion(JHipsterProperties.Http.Version.V_1_1)
         env.setActiveProfiles(JHipsterConstants.SPRING_PROFILE_PRODUCTION)
         val container = UndertowServletWebServerFactory()
         webConfigurer.customize(container)
