@@ -1,0 +1,643 @@
+<%#
+ Copyright 2013-2019 the original author or authors from the JHipster project.
+
+ This file is part of the JHipster project, see https://www.jhipster.tech/
+ for more information.
+
+ Licensed under the Apache License, Version 2.0 (the "License");
+ you may not use this file except in compliance with the License.
+ You may obtain a copy of the License at
+
+      http://www.apache.org/licenses/LICENSE-2.0
+
+ Unless required by applicable law or agreed to in writing, software
+ distributed under the License is distributed on an "AS IS" BASIS,
+ WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
+ See the License for the specific language governing permissions and
+ limitations under the License.
+-%>
+package <%=packageName%>.config
+
+<%_ if (cacheProvider === 'ehcache') { _%>
+import java.time.Duration
+
+import org.ehcache.config.builders.*
+import org.ehcache.jsr107.Eh107Configuration
+
+    <%_ if (enableHibernateCache) { _%>
+import io.github.jhipster.config.jcache.BeanClassLoaderAwareJCacheRegionFactory
+    <%_ } _%>
+import io.github.jhipster.config.JHipsterProperties
+
+<%_ } _%>
+<%_ if (cacheProvider === 'hazelcast') { _%>
+import io.github.jhipster.config.JHipsterConstants
+import io.github.jhipster.config.JHipsterProperties
+
+import com.hazelcast.config.*
+import com.hazelcast.core.HazelcastInstance
+import com.hazelcast.core.Hazelcast
+
+import org.slf4j.LoggerFactory
+    <%_ if (serviceDiscoveryType === 'eureka' || serviceDiscoveryType === 'consul') { _%>
+import org.springframework.beans.factory.annotation.Autowired
+    <%_ } _%>
+<%_ } _%>
+<%_ if (cacheProvider === 'ehcache') { _%>
+import org.springframework.boot.autoconfigure.cache.JCacheManagerCustomizer
+<%_ } _%>
+<%_ if (cacheProvider === 'hazelcast') { _%>
+    <%_ if (serviceDiscoveryType === 'eureka' || serviceDiscoveryType === 'consul') { _%>
+import org.springframework.boot.autoconfigure.web.ServerProperties
+    <%_ } _%>
+
+import org.springframework.cache.CacheManager
+<%_ } _%>
+<%_ if (cacheProvider === 'memcached') { _%>
+import <%=packageName%>.repository.UserRepository
+
+import org.slf4j.LoggerFactory
+import org.springframework.cache.CacheManager
+<%_ } _%>
+import org.springframework.cache.annotation.EnableCaching
+<%_ if (cacheProvider !== 'memcached') { _%>
+    <%_ if (serviceDiscoveryType === 'eureka' || serviceDiscoveryType === 'consul') { _%>
+import org.springframework.cloud.client.discovery.DiscoveryClient
+import org.springframework.cloud.client.serviceregistry.Registration
+    <%_ } _%>
+<%_ } _%>
+<%_ if (cacheProvider === 'memcached') { _%>
+import org.springframework.cache.support.NoOpCacheManager
+<%_ } _%>
+import org.springframework.context.annotation.*
+<%_ if (cacheProvider === 'hazelcast') { _%>
+import org.springframework.core.env.Environment
+
+import javax.annotation.PreDestroy
+<%_ } _%>
+<%_ if (cacheProvider === 'infinispan') { _%>
+import org.infinispan.configuration.cache.CacheMode
+import org.infinispan.configuration.cache.ConfigurationBuilder
+import org.infinispan.configuration.global.GlobalConfigurationBuilder
+import infinispan.autoconfigure.embedded.InfinispanCacheConfigurer
+import infinispan.autoconfigure.embedded.InfinispanGlobalConfigurer
+import org.slf4j.LoggerFactory
+import io.github.jhipster.config.JHipsterProperties
+import java.util.concurrent.TimeUnit
+import org.infinispan.eviction.EvictionType
+import org.infinispan.manager.EmbeddedCacheManager
+import org.infinispan.transaction.TransactionMode
+import infinispan.autoconfigure.embedded.InfinispanEmbeddedCacheManagerAutoConfiguration
+import org.infinispan.jcache.embedded.ConfigurationAdapter
+import org.infinispan.jcache.embedded.JCache
+import org.infinispan.jcache.embedded.JCacheManager
+import javax.cache.Caching
+import javax.cache.spi.CachingProvider
+import java.net.URI
+    <%_ if (serviceDiscoveryType === 'eureka' || serviceDiscoveryType === 'consul') { _%>
+import org.springframework.beans.factory.annotation.Autowired
+import org.infinispan.remoting.transport.jgroups.JGroupsTransport
+import org.jgroups.Channel
+import org.jgroups.JChannel
+import org.jgroups.PhysicalAddress
+import org.jgroups.protocols.*
+import org.jgroups.protocols.pbcast.GMS
+import org.jgroups.protocols.pbcast.NAKACK2
+import org.jgroups.protocols.pbcast.STABLE
+import org.jgroups.stack.IpAddress
+import org.jgroups.stack.ProtocolStack
+import java.net.InetAddress
+import org.springframework.beans.factory.BeanInitializationException
+    <%_ } _%>
+<%_ } _%>
+<%_ if (cacheProvider === 'memcached') { _%>
+
+import com.google.code.ssm.CacheFactory
+import com.google.code.ssm.config.DefaultAddressProvider
+import com.google.code.ssm.providers.xmemcached.MemcacheClientFactoryImpl
+import com.google.code.ssm.spring.SSMCache
+import com.google.code.ssm.spring.SSMCacheManager
+
+import io.github.jhipster.config.JHipsterProperties
+<%_ } _%>
+
+@Configuration
+@EnableCaching
+<%_ if (cacheProvider === 'infinispan') { _%>
+@Import(InfinispanEmbeddedCacheManagerAutoConfiguration::class)
+<%_ } _%>
+class CacheConfiguration<%_ if (cacheProvider === 'ehcache') { _%>(jHipsterProperties: JHipsterProperties)<%_ } %><%_ if (cacheProvider === 'hazelcast') { %>(private val env: Environment<%_ if (serviceDiscoveryType === 'eureka' || serviceDiscoveryType === 'consul') { %>,
+    private val serverProperties: ServerProperties,
+    private val discoveryClient: DiscoveryClient)<%_ } } %> {
+    <%_ if (cacheProvider === 'ehcache') { _%>
+
+    private val jcacheConfiguration: javax.cache.configuration.Configuration<Any, Any>
+
+    init {
+        <%_ if (enableHibernateCache) { _%>
+        BeanClassLoaderAwareJCacheRegionFactory.setBeanClassLoader(this.javaClass.classLoader)
+        <%_ } _%>
+        val ehcache = jHipsterProperties.cache.ehcache
+
+        jcacheConfiguration = Eh107Configuration.fromEhcacheCacheConfiguration(
+            CacheConfigurationBuilder.newCacheConfigurationBuilder(Any::class.java, Any::class.java,
+                ResourcePoolsBuilder.heap(ehcache.maxEntries))
+                .withExpiry(ExpiryPolicyBuilder.timeToLiveExpiration(Duration.ofSeconds(ehcache.timeToLiveSeconds.toLong())))
+                .build())
+    }
+
+    @Bean
+    fun cacheManagerCustomizer(): JCacheManagerCustomizer {
+        return JCacheManagerCustomizer { cm ->
+            <%_ if (authenticationType === 'oauth2' && applicationType === 'microservice') { _%>
+            cm.createCache("oAuth2Authentication", jcacheConfiguration)
+            <%_ } _%>
+            <%_ if (!skipUserManagement || authenticationType === 'oauth2') { _%>
+            cm.createCache(<%=packageName%>.repository<% if (reactive) { %>.reactive<% } %>.UserRepository.USERS_BY_LOGIN_CACHE, jcacheConfiguration)
+            cm.createCache(<%=packageName%>.repository<% if (reactive) { %>.reactive<% } %>.UserRepository.USERS_BY_EMAIL_CACHE, jcacheConfiguration)
+                <%_ if (enableHibernateCache) { _%>
+            cm.createCache(<%=packageName%>.domain.<%= asEntity('User') %>::class.java.name, jcacheConfiguration)
+            cm.createCache(<%=packageName%>.domain.Authority::class.java.name, jcacheConfiguration)
+            cm.createCache(<%=packageName%>.domain.<%= asEntity('User') %>::class.java.name + ".authorities", jcacheConfiguration)
+                    <%_ if (authenticationType === 'session') { _%>
+            cm.createCache(<%=packageName%>.domain.PersistentToken::class.java.name, jcacheConfiguration)
+            cm.createCache(<%=packageName%>.domain.<%= asEntity('User') %>::class.java.name + ".persistentTokens", jcacheConfiguration)
+                    <%_ } _%>
+                <%_ } _%>
+            <%_ } _%>
+            // jhipster-needle-ehcache-add-entry
+        }
+    }
+    <%_ } _%>
+    <%_ if (cacheProvider === 'hazelcast') { _%>
+
+    private val log = LoggerFactory.getLogger(CacheConfiguration::class.java)
+        <%_ if (serviceDiscoveryType === 'eureka' || serviceDiscoveryType === 'consul') { _%>
+
+    private var registration: Registration? = null
+
+    @Autowired(required = false)
+    fun setRegistration(registration: Registration) {
+        this.registration = registration
+    }
+
+        <%_ } _%>
+
+    @PreDestroy
+    fun destroy() {
+        log.info("Closing Cache Manager")
+        Hazelcast.shutdownAll()
+    }
+
+    @Bean
+    fun cacheManager(hazelcastInstance: HazelcastInstance): CacheManager {
+        log.debug("Starting HazelcastCacheManager")
+        return com.hazelcast.spring.cache.HazelcastCacheManager(hazelcastInstance)
+    }
+
+    @Bean
+    fun hazelcastInstance(jHipsterProperties: JHipsterProperties): HazelcastInstance {
+        log.debug("Configuring Hazelcast")
+        val hazelCastInstance = Hazelcast.getHazelcastInstanceByName("<%=baseName%>")
+        if (hazelCastInstance != null) {
+            log.debug("Hazelcast already initialized")
+            return hazelCastInstance
+        }
+        val config = Config()
+        config.instanceName = "<%=baseName%>"
+        <%_ if (serviceDiscoveryType === 'eureka' || serviceDiscoveryType === 'consul') { _%>
+        config.networkConfig.join.multicastConfig.isEnabled = false
+        if (registration == null) {
+            log.warn("No discovery service is set up, Hazelcast cannot create a cluster.")
+        } else {
+            // The serviceId is by default the application's name,
+            // see the "spring.application.name" standard Spring property
+            val serviceId = registration!!.serviceId
+            log.debug("Configuring Hazelcast clustering for instanceId: {}", serviceId)
+            // In development, everything goes through 127.0.0.1, with a different port
+            if (env.acceptsProfiles(JHipsterConstants.SPRING_PROFILE_DEVELOPMENT)) {
+                log.debug("Application is running with the \"dev\" profile, Hazelcast " + "cluster will only work with localhost instances")
+
+                System.setProperty("hazelcast.local.localAddress", "127.0.0.1")
+                config.networkConfig.port = serverProperties.port!! + 5701
+                config.networkConfig.join.tcpIpConfig.isEnabled = true
+                for (instance in discoveryClient.getInstances(serviceId)) {
+                    val clusterMember = "127.0.0.1:" + (instance.port + 5701)
+                    log.debug("Adding Hazelcast (dev) cluster member {}", clusterMember)
+                    config.networkConfig.join.tcpIpConfig.addMember(clusterMember)
+                }
+            } else { // Production configuration, one host per instance all using port 5701
+                config.networkConfig.port = 5701
+                config.networkConfig.join.tcpIpConfig.isEnabled = true
+                for (instance in discoveryClient.getInstances(serviceId)) {
+                    val clusterMember = instance.host + ":5701"
+                    log.debug("Adding Hazelcast (prod) cluster member {}", clusterMember)
+                    config.networkConfig.join.tcpIpConfig.addMember(clusterMember)
+                }
+            }
+        }
+        <%_ } else { _%>
+        config.networkConfig.port = 5701
+        config.networkConfig.portAutoIncrement = true
+
+        // In development, remove multicast auto-configuration
+        if (env.acceptsProfiles(JHipsterConstants.SPRING_PROFILE_DEVELOPMENT)) {
+            System.setProperty("hazelcast.local.localAddress", "127.0.0.1")
+
+            config.networkConfig.join.awsConfig.enabled = false
+            config.networkConfig.join.multicastConfig.enabled = false
+            config.networkConfig.join.tcpIpConfig.enabled = false
+        }
+        <%_ } _%>
+        config.mapConfigs["default"] = initializeDefaultMapConfig(jHipsterProperties)
+
+        // Full reference is available at: http://docs.hazelcast.org/docs/management-center/3.9/manual/html/Deploying_and_Starting.html
+        config.managementCenterConfig = initializeDefaultManagementCenterConfig(jHipsterProperties)
+        <%_ if (enableHibernateCache) { _%>
+        config.mapConfigs["io.github.jhipster.travis.domain.*"] = initializeDomainMapConfig(jHipsterProperties)
+        <%_ } _%>
+        return Hazelcast.newHazelcastInstance(config)
+    }
+
+    private fun initializeDefaultManagementCenterConfig(jHipsterProperties: JHipsterProperties): ManagementCenterConfig {
+        val managementCenterConfig = ManagementCenterConfig()
+        managementCenterConfig.isEnabled = jHipsterProperties.cache.hazelcast.managementCenter.isEnabled
+        managementCenterConfig.url = jHipsterProperties.cache.hazelcast.managementCenter.url
+        managementCenterConfig.updateInterval = jHipsterProperties.cache.hazelcast.managementCenter.updateInterval
+        return managementCenterConfig
+    }
+
+    private fun initializeDefaultMapConfig(jHipsterProperties: JHipsterProperties): MapConfig {
+        val mapConfig = MapConfig()
+
+        /*
+        Number of backups. If 1 is set as the backup-count for example,
+        then all entries of the map will be copied to another JVM for
+        fail-safety. Valid numbers are 0 (no backup), 1, 2, 3.
+        */
+        mapConfig.backupCount = jHipsterProperties.cache.hazelcast.backupCount
+
+        /*
+        Valid values are:
+        NONE (no eviction),
+        LRU (Least Recently Used),
+        LFU (Least Frequently Used).
+        NONE is the default.
+        */
+        mapConfig.evictionPolicy = EvictionPolicy.LRU
+
+        /*
+        Maximum size of the map. When max size is reached,
+        map is evicted based on the policy defined.
+        Any integer between 0 and Integer.MAX_VALUE. 0 means
+        Integer.MAX_VALUE. Default is 0.
+        */
+        mapConfig.maxSizeConfig = MaxSizeConfig(0, MaxSizeConfig.MaxSizePolicy.USED_HEAP_SIZE)
+
+        return mapConfig
+    }
+    <%_ if (cacheProvider === 'hazelcast') { _%>
+
+    private fun initializeDomainMapConfig(jHipsterProperties: JHipsterProperties): MapConfig {
+        val mapConfig = MapConfig()
+        mapConfig.timeToLiveSeconds = jHipsterProperties.cache.hazelcast.timeToLiveSeconds
+        return mapConfig
+    }
+    <%_ } _%>
+    <%_ } _%>
+    <%_ if (cacheProvider === 'infinispan') { _%>
+
+    private val log = LoggerFactory.getLogger(CacheConfiguration::class.java)
+        <%_ if (serviceDiscoveryType === 'eureka' || serviceDiscoveryType === 'consul') { _%>
+
+    @Autowired(required = false)
+    var discoveryClient: DiscoveryClient?
+
+    @Autowired(required = false)
+    var registration: Registration?
+        <%_ } _%>
+
+    /**
+     * Inject a [GlobalConfiguration][org.infinispan.configuration.global.GlobalConfiguration] for Infinispan cache.
+     *
+     *
+     * If a service discovery solution is enabled (JHipster Registry or Consul),
+     * then the host list will be populated from the service discovery.
+     *
+     *
+     *
+     * If the service discovery is not enabled, host discovery will be based on
+     * the default transport settings defined in the 'config-file' packaged within
+     * the Jar. The 'config-file' can be overridden using the application property
+     * *jhipster.cache.infinispan.config-file*
+     *
+     *
+     *
+     * If no service discovery is defined, you have the choice of 'config-file'
+     * based on the underlying platform for hosts discovery. Infinispan
+     * supports discovery natively for most of the platforms like Kubernetes/OpenShift,
+     * AWS, Azure and Google.
+     *
+     */
+    @Bean
+    fun globalConfiguration(jHipsterProperties: JHipsterProperties): InfinispanGlobalConfigurer {
+        log.info("Defining Infinispan Global Configuration")
+        <%_ if (serviceDiscoveryType === 'eureka' || serviceDiscoveryType === 'consul') { _%>
+            if (this.registration == null) { // if registry is not defined, use native discovery
+                log.warn("No discovery service is set up, Infinispan will use default discovery for cluster formation")
+                return InfinispanGlobalConfigurer {
+                    GlobalConfigurationBuilder
+                        .defaultClusteredBuilder().transport().defaultTransport()
+                        .addProperty("configurationFile", jHipsterProperties.cache.infinispan.configFile)
+                        .clusterName("infinispan-<%=baseName%>-cluster").globalJmxStatistics()
+                        .enabled(jHipsterProperties.cache.infinispan.isStatsEnabled)
+                        .allowDuplicateDomains(true).build()
+                }
+            }
+            return InfinispanGlobalConfigurer {
+                GlobalConfigurationBuilder
+                    .defaultClusteredBuilder().transport().transport(JGroupsTransport(getTransportChannel()))
+                    .clusterName("infinispan-<%=baseName%>-cluster").globalJmxStatistics()
+                    .enabled(jHipsterProperties.cache.infinispan.isStatsEnabled)
+                    .allowDuplicateDomains(true).build()
+            }
+        <%_ } else { _%>
+            return InfinispanGlobalConfigurer {
+                GlobalConfigurationBuilder
+                    .defaultClusteredBuilder().transport().defaultTransport()
+                    .addProperty("configurationFile", jHipsterProperties.cache.infinispan.configFile)
+                    .clusterName("infinispan-<%=baseName%>-cluster").globalJmxStatistics()
+                    .enabled(jHipsterProperties.cache.infinispan.isStatsEnabled)
+                    .allowDuplicateDomains(true).build()
+            }
+        <%_ } _%>
+    }
+
+    /**
+     * Initialize cache configuration for Hibernate L2 cache and Spring Cache.
+     *
+     *
+     * There are three different modes: local, distributed and replicated, and L2 cache options are pre-configured.
+     *
+     *
+     *
+     * It supports both jCache and Spring cache abstractions.
+     *
+     *
+     * Usage:
+     *
+     * 1. jCache: `@CacheResult(cacheName = "dist-app-data")` - for creating a distributed cache. In a similar way other cache names and options can be used
+     * 2. Spring Cache: `@Cacheable(value = "repl-app-data")` - for creating a replicated cache. In a similar way other cache names and options can be used
+     * 3. Cache manager can also be injected through DI/CDI and data can be manipulated using Infinispan APIs,
+     * ```
+     *      @Autowired (or) @Inject
+     *      private lateinit val cacheManager: EmbeddedCacheManager
+     *
+     *      fun cacheSample(){
+     *          cacheManager.getCache("dist-app-data")["hi"] = "there"
+     *      }
+     * ```
+     */
+    @Bean
+    fun cacheConfigurer(jHipsterProperties: JHipsterProperties): InfinispanCacheConfigurer {
+        log.info("Defining {} configuration", "app-data for local, replicated and distributed modes")
+        val cacheInfo = jHipsterProperties.cache.infinispan
+
+        return InfinispanCacheConfigurer { manager ->
+            // initialize application cache
+            manager.defineConfiguration("local-app-data", ConfigurationBuilder().clustering().cacheMode(CacheMode.LOCAL)
+                .jmxStatistics().enabled(cacheInfo.isStatsEnabled)
+                .eviction().type(EvictionType.COUNT).size(cacheInfo.local.maxEntries).expiration()
+                .lifespan(cacheInfo.local.timeToLiveSeconds, TimeUnit.MINUTES).build())
+            manager.defineConfiguration("dist-app-data", ConfigurationBuilder()
+                .clustering().cacheMode(CacheMode.DIST_SYNC).hash().numOwners(cacheInfo.distributed.instanceCount)
+                .jmxStatistics().enabled(cacheInfo.isStatsEnabled).eviction()
+                .type(EvictionType.COUNT).size(cacheInfo.distributed.maxEntries).expiration().lifespan(cacheInfo.distributed
+                    .timeToLiveSeconds, TimeUnit.MINUTES).build())
+            manager.defineConfiguration("repl-app-data", ConfigurationBuilder().clustering().cacheMode(CacheMode.REPL_SYNC)
+                .jmxStatistics().enabled(cacheInfo.isStatsEnabled)
+                .eviction().type(EvictionType.COUNT).size(cacheInfo.replicated
+                    .maxEntries).expiration().lifespan(cacheInfo.replicated.timeToLiveSeconds, TimeUnit.MINUTES).build())
+
+            // initialize Hibernate L2 cache
+            manager.defineConfiguration("entity", ConfigurationBuilder().clustering().cacheMode(CacheMode.INVALIDATION_SYNC)
+                .jmxStatistics().enabled(cacheInfo.isStatsEnabled)
+                .locking().concurrencyLevel(1000).lockAcquisitionTimeout(15000).build())
+            manager.defineConfiguration("replicated-entity", ConfigurationBuilder().clustering().cacheMode(CacheMode.REPL_SYNC)
+                .jmxStatistics().enabled(cacheInfo.isStatsEnabled)
+                .locking().concurrencyLevel(1000).lockAcquisitionTimeout(15000).build())
+            manager.defineConfiguration("local-query", ConfigurationBuilder().clustering().cacheMode(CacheMode.LOCAL)
+                .jmxStatistics().enabled(cacheInfo.isStatsEnabled)
+                .locking().concurrencyLevel(1000).lockAcquisitionTimeout(15000).build())
+            manager.defineConfiguration("replicated-query", ConfigurationBuilder().clustering().cacheMode(CacheMode.REPL_ASYNC)
+                .jmxStatistics().enabled(cacheInfo.isStatsEnabled)
+                .locking().concurrencyLevel(1000).lockAcquisitionTimeout(15000).build())
+            manager.defineConfiguration("timestamps", ConfigurationBuilder().clustering().cacheMode(CacheMode.REPL_ASYNC)
+                .jmxStatistics().enabled(cacheInfo.isStatsEnabled)
+                .locking().concurrencyLevel(1000).lockAcquisitionTimeout(15000).build())
+            manager.defineConfiguration("pending-puts", ConfigurationBuilder().clustering().cacheMode(CacheMode.LOCAL)
+                .jmxStatistics().enabled(cacheInfo.isStatsEnabled)
+                .simpleCache(true).transaction().transactionMode(TransactionMode.NON_TRANSACTIONAL).expiration().maxIdle(60000).build())
+
+            cacheManager = manager
+        }
+    }
+
+    /**
+     * Instance of [JCacheManager] with cache being managed by the underlying Infinispan layer. This helps to record stats
+     * info if enabled and the same is accessible through MBX:javax.cache,type=CacheStatistics.
+     *
+     * jCache stats are at instance level. If you need stats at clustering level, then it needs to be retrieved from MBX:org.infinispan
+     *
+     */
+    @Bean
+    fun getJCacheManager(cacheManager: EmbeddedCacheManager, jHipsterProperties: JHipsterProperties): JCacheManager {
+        return InfinispanJCacheManager(Caching.getCachingProvider().defaultURI, cacheManager,
+            Caching.getCachingProvider(), jHipsterProperties)
+    }
+
+    internal inner class InfinispanJCacheManager(uri: URI, cacheManager: EmbeddedCacheManager, provider: CachingProvider,
+                                                 jHipsterProperties: JHipsterProperties) : JCacheManager(uri, cacheManager, provider) {
+
+        init {
+            // register individual caches to make the stats info available.
+            <%_ if (authenticationType === 'oauth2' && applicationType === 'microservice') { _%>
+            registerPredefinedCache("oAuth2Authentication", JCache(
+                cacheManager.getCache<Any, Any>("oAuth2Authentication").advancedCache, this,
+                ConfigurationAdapter.create()))
+            <%_ } _%>
+            <%_ if (!skipUserManagement || (authenticationType === 'oauth2' && applicationType !== 'microservice')) { _%>
+            registerPredefinedCache(<%=packageName%>.repository.UserRepository.USERS_BY_LOGIN_CACHE, JCache(
+                cacheManager.getCache<Any, Any>(<%=packageName%>.repository.UserRepository.USERS_BY_LOGIN_CACHE).advancedCache, this,
+                ConfigurationAdapter.create()))
+            registerPredefinedCache(<%=packageName%>.repository.UserRepository.USERS_BY_EMAIL_CACHE, JCache(
+                cacheManager.getCache<Any, Any>(<%=packageName%>.repository.UserRepository.USERS_BY_EMAIL_CACHE).advancedCache, this,
+                ConfigurationAdapter.create()))
+                <%_ if (enableHibernateCache) { _%>
+            registerPredefinedCache(<%=packageName%>.domain.<%= asEntity('User') %>::class.java.name, JCache(
+                cacheManager.getCache<Any, Any>(<%=packageName%>.domain.<%= asEntity('User') %>::class.java.name).advancedCache, this,
+                ConfigurationAdapter.create()))
+            registerPredefinedCache(<%=packageName%>.domain.Authority::class.java.name, JCache(
+                cacheManager.getCache<Any, Any>(<%=packageName%>.domain.Authority::class.java.name).advancedCache, this,
+                ConfigurationAdapter.create()))
+            registerPredefinedCache(<%=packageName%>.domain.<%= asEntity('User') %>::class.java.name + ".authorities", JCache(
+                cacheManager.getCache<Any, Any>(<%=packageName%>.domain.<%= asEntity('User') %>::class.java.name + ".authorities").advancedCache, this,
+                ConfigurationAdapter.create()))
+                    <%_ if (authenticationType === 'session') { _%>
+            registerPredefinedCache(<%=packageName%>.domain.PersistentToken::class.java.name, JCache(
+                cacheManager.getCache<Any, Any>(<%=packageName%>.domain.PersistentToken::class.java.name).advancedCache, this,
+                ConfigurationAdapter.create()))
+            registerPredefinedCache(<%=packageName%>.domain.<%= asEntity('User') %>::class.java.name + ".persistentTokens", JCache(
+                cacheManager.getCache<Any, Any>(<%=packageName%>.domain.<%= asEntity('User') %>::class.java.name + ".persistentTokens").advancedCache, this,
+                ConfigurationAdapter.create()))
+                    <%_ } _%>
+                <%_ } _%>
+            <%_ } _%>
+            // jhipster-needle-infinispan-add-entry
+            if (jHipsterProperties.cache.infinispan.isStatsEnabled) {
+                for (cacheName in cacheManager.cacheNames) {
+                    enableStatistics(cacheName, true)
+                }
+            }
+        }
+    }
+
+        <%_ if (serviceDiscoveryType === 'eureka' || serviceDiscoveryType === 'consul') { _%>
+    /**
+     * TCP channel with the host details populated from the service discovery
+     * (JHipster Registry or Consul).
+     *
+     * MPING multicast is replaced with TCPPING with the host details discovered
+     * from registry and sends only unicast messages to the host list.
+     */
+    private fun getTransportChannel(): Channel {
+        val channel = JChannel(false)
+        val initialHosts = mutableListOf<<PhysicalAddress>>()
+        try {
+            for (instance in discoveryClient.getInstances(registration.getServiceId())) {
+                val clusterMember = instance.getHost() + ":7800"
+                log.debug("Adding Infinispan cluster member {}", clusterMember)
+                initialHosts.add(IpAddress(clusterMember))
+            }
+            val tcp = TCP()
+            tcp.setBindAddress(InetAddress.getLocalHost())
+            tcp.setBindPort(7800)
+            tcp.setThreadPoolMinThreads(2)
+            tcp.setThreadPoolMaxThreads(30)
+            tcp.setThreadPoolQueueEnabled(false)
+            tcp.setThreadPoolKeepAliveTime(60000)
+            tcp.setOOBThreadPoolMinThreads(2)
+            tcp.setOOBThreadPoolMaxThreads(200)
+            tcp.setOOBThreadPoolKeepAliveTime(60000)
+            tcp.setOOBThreadPoolQueueEnabled(false)
+
+            val tcpping = TCPPING()
+            initialHosts.add(IpAddress(InetAddress.getLocalHost(), 7800))
+            tcpping.setInitialHosts(initialHosts)
+            tcpping.setErgonomics(false)
+            tcpping.setPortRange(10)
+            tcpping.sendCacheInformation()
+
+            val nakack = NAKACK2()
+            nakack.setUseMcastXmit(false)
+            nakack.setDiscardDeliveredMsgs(false)
+
+            val merge = MERGE3()
+            merge.setMinInterval(10000)
+            merge.setMaxInterval(30000)
+
+            val fd = FD_ALL()
+            fd.setTimeout(60000)
+            fd.setInterval(15000)
+            fd.setTimeoutCheckInterval(5000)
+
+            val stack = ProtocolStack()
+            // Order shouldn't be changed
+            stack
+                .addProtocol(tcp)
+                .addProtocol(tcpping)
+                .addProtocol(merge)
+                .addProtocol(FD_SOCK())
+                .addProtocol(fd)
+                .addProtocol(VERIFY_SUSPECT())
+                .addProtocol(nakack)
+                .addProtocol(UNICAST3())
+                .addProtocol(STABLE())
+                .addProtocol(GMS())
+                .addProtocol(MFC())
+                .addProtocol(FRAG2())
+            channel.setProtocolStack(stack)
+            stack.init()
+        } catch (e: Exception) {
+            throw BeanInitializationException("Cache (Infinispan protocol stack) configuration failed", e)
+        }
+        return channel
+    }
+        <%_ } _%>
+
+    companion object {
+        // Initialize the cache in a non Spring-managed bean
+        @JvmField
+        var cacheManager: EmbeddedCacheManager? = null
+    }
+
+    <%_ } _%>
+    <%_ if (cacheProvider === 'memcached') { _%>
+
+    private val log = LoggerFactory.getLogger(CacheConfiguration::class.java)
+
+    @Throws(Exception::class)
+    @Bean
+    fun memcachedCacheManager(jHipsterProperties: JHipsterProperties, caches: List<CacheFactory>): CacheManager {
+
+        if (!jHipsterProperties.cache.memcached.enabled) {
+            // Note that Memcached cannot work with Spring Boot devtools
+            // So it should be disabled in development mode
+            log.debug("Memcached is disabled")
+            return NoOpCacheManager()
+        }
+        log.debug("Starting Memcached configuration")
+        val cacheManager = SSMCacheManager()
+        val ssmCaches = mutableListOf<SSMCache>()
+        for (cache in caches) {
+            val ssmCache = SSMCache(cache.getObject(), jHipsterProperties.cache.memcached.expiration,false)
+
+            ssmCaches.add(ssmCache)
+        }
+        cacheManager.caches = ssmCaches
+        return cacheManager
+    }
+
+    @Bean
+    fun usersByLoginCache(jHipsterProperties: JHipsterProperties): CacheFactory {
+        return createCache(UserRepository.USERS_BY_LOGIN_CACHE, jHipsterProperties)
+    }
+
+    @Bean
+    fun usersByEmailCache(jHipsterProperties: JHipsterProperties): CacheFactory {
+        return createCache(UserRepository.USERS_BY_EMAIL_CACHE, jHipsterProperties)
+    }
+
+    private fun createCache(cacheName: String,jHipsterProperties: JHipsterProperties): CacheFactory{
+        if (!jHipsterProperties.cache.memcached.enabled) {
+            // Note that Memcached cannot work with Spring Boot devtools
+            // So it should be disabled in development mode
+            return null
+        }
+        val defaultCache = CacheFactory()
+        defaultCache.cacheName = cacheName
+        defaultCache.cacheClientFactory = MemcacheClientFactoryImpl()
+
+        val addressProvider = DefaultAddressProvider()
+        addressProvider.address = jHipsterProperties.cache.memcached.servers
+        defaultCache.addressProvider = addressProvider
+
+        val cacheConfiguration = com.google.code.ssm.providers.CacheConfiguration()
+        cacheConfiguration.consistentHashing = true
+        cacheConfiguration.useBinaryProtocol = jHipsterProperties.cache.memcached.useBinaryProtocol
+        defaultCache.configuration = cacheConfiguration
+
+        return defaultCache
+    }
+    <%_ } _%>
+}

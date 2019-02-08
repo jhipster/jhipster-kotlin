@@ -16,15 +16,19 @@
  See the License for the specific language governing permissions and
  limitations under the License.
 -%>
-package <%=packageName%>.config
+package <%=packageName%>.config.metrics
 
-import org.springframework.boot.context.properties.ConfigurationProperties
+import com.datastax.driver.core.Session
+import org.springframework.boot.actuate.health.HealthIndicator
+import org.springframework.context.annotation.Bean
+import org.springframework.context.annotation.Configuration
 
-/**
- * Properties specific to <%= humanizedBaseName %>.
- *
- * Properties are configured in the `application.yml` file.
- * See [io.github.jhipster.config.JHipsterProperties] for a good example.
- */
-@ConfigurationProperties(prefix = "application", ignoreUnknownFields = false)
-class ApplicationProperties
+@Configuration
+class JHipsterHealthIndicatorConfiguration(private val session: Session) {
+
+    @Bean
+    fun cassandraHealthIndicator(): HealthIndicator {
+        return CassandraHealthIndicator(session)
+    }
+
+}

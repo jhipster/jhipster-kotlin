@@ -1,0 +1,331 @@
+<%#
+ Copyright 2013-2019 the original author or authors from the JHipster project.
+
+ This file is part of the JHipster project, see https://www.jhipster.tech/
+ for more information.
+
+ Licensed under the Apache License, Version 2.0 (the "License");
+ you may not use this file except in compliance with the License.
+ You may obtain a copy of the License at
+
+      http://www.apache.org/licenses/LICENSE-2.0
+
+ Unless required by applicable law or agreed to in writing, software
+ distributed under the License is distributed on an "AS IS" BASIS,
+ WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
+ See the License for the specific language governing permissions and
+ limitations under the License.
+-%>
+package <%=packageName%>.config
+
+import io.github.jhipster.config.JHipsterConstants
+<%_ if (devDatabaseType === 'h2Disk' || devDatabaseType === 'h2Memory') { _%>
+import io.github.jhipster.config.h2.H2ConfigurationHelper
+<%_ } _%>
+<%_ if (databaseType === 'mongodb') { _%>
+import com.github.mongobee.Mongobee
+import com.mongodb.MongoClient
+<%_ } _%>
+<%_ if (databaseType === 'couchbase') { _%>
+
+import com.couchbase.client.java.Bucket
+import com.github.couchmove.Couchmove
+import <%=packageName%>.repository.CustomN1qlCouchbaseRepository
+import org.apache.commons.codec.binary.Base64
+<%_ } _%>
+<%_ if (databaseType === 'mongodb') { _%>
+import io.github.jhipster.domain.util.JSR310DateConverters.DateToZonedDateTimeConverter
+import io.github.jhipster.domain.util.JSR310DateConverters.ZonedDateTimeToDateConverter
+<%_ } _%>
+import org.slf4j.LoggerFactory
+<%_ if (databaseType === 'mongodb') { _%>
+import org.springframework.boot.autoconfigure.mongo.MongoAutoConfiguration
+import org.springframework.boot.autoconfigure.mongo.MongoProperties
+    <%_ if (reactive) { _%>
+import org.springframework.boot.autoconfigure.mongo.MongoReactiveAutoConfiguration
+    <%_ } _%>
+<%_ } _%>
+<%_ if (databaseType === 'couchbase') { _%>
+import org.springframework.boot.autoconfigure.couchbase.CouchbaseAutoConfiguration
+<%_ } _%>
+import org.springframework.context.annotation.Bean
+import org.springframework.context.annotation.Configuration
+<%_ if (databaseType === 'mongodb' || databaseType === 'couchbase') { _%>
+import org.springframework.context.annotation.Import
+<%_ } _%>
+<%_ if ((searchEngine === 'elasticsearch' || reactive) && databaseType === 'mongodb') { _%>
+import org.springframework.context.annotation.ComponentScan.Filter
+import org.springframework.context.annotation.FilterType
+<%_ } _%>
+<%_ if (databaseType === 'mongodb' || databaseType === 'couchbase' || devDatabaseType === 'h2Disk' || devDatabaseType === 'h2Memory') { _%>
+import org.springframework.context.annotation.Profile<% } %><% if (databaseType === 'mongodb' || databaseType === 'couchbase') { %>
+import org.springframework.core.convert.converter.Converter<% } %>
+<%_ if (searchEngine === 'elasticsearch') { _%>
+import org.springframework.data.elasticsearch.repository.config.EnableElasticsearchRepositories
+<%_ } _%>
+<%_ if (databaseType === 'mongodb') { _%>
+import org.springframework.data.mongodb.config.EnableMongoAuditing
+import org.springframework.data.mongodb.core.MongoTemplate
+import org.springframework.data.mongodb.core.convert.MongoCustomConversions
+import org.springframework.data.mongodb.core.mapping.event.ValidatingMongoEventListener
+    <%_ if (searchEngine === 'elasticsearch' || reactive) { _%>
+import org.springframework.data.mongodb.repository.MongoRepository
+    <%_ } _%>
+import org.springframework.data.mongodb.repository.config.EnableMongoRepositories
+    <%_ if (reactive) { _%>
+import org.springframework.data.mongodb.repository.config.EnableReactiveMongoRepositories
+    <%_ } _%>
+<%_ } _%>
+<%_ if (databaseType === 'couchbase') { _%>
+import org.springframework.data.convert.ReadingConverter
+import org.springframework.data.convert.WritingConverter
+import org.springframework.data.couchbase.config.BeanNames
+import org.springframework.data.couchbase.core.convert.CouchbaseCustomConversions
+import org.springframework.data.couchbase.core.mapping.event.ValidatingCouchbaseEventListener
+import org.springframework.data.couchbase.repository.auditing.EnableCouchbaseAuditing
+import org.springframework.data.couchbase.repository.config.EnableCouchbaseRepositories
+    <%_ if (reactive) { _%>
+import org.springframework.data.couchbase.repository.config.EnableReactiveCouchbaseRepositories
+    <%_ } _%>
+import org.springframework.util.StringUtils<% } %><% if (databaseType === 'mongodb' || databaseType === 'couchbase') { %>
+import org.springframework.validation.beanvalidation.LocalValidatorFactoryBean<% } %>
+<%_ if (databaseType === 'sql') { _%>
+    <%_ if (devDatabaseType === 'h2Disk' || devDatabaseType === 'h2Memory') { _%>
+import org.springframework.core.env.Environment
+    <%_ } _%>
+import org.springframework.data.jpa.repository.config.EnableJpaAuditing
+import org.springframework.data.jpa.repository.config.EnableJpaRepositories
+import org.springframework.transaction.annotation.EnableTransactionManagement
+
+<%_ if (devDatabaseType === 'h2Disk' || devDatabaseType === 'h2Memory') { _%>
+import java.sql.SQLException
+<%_ } } _%>
+<%_ if (databaseType === 'couchbase') { _%>
+
+import java.math.BigDecimal
+import java.math.BigInteger
+import java.time.ZoneId
+import java.time.ZonedDateTime
+import java.util.Date
+<%_ } _%>
+
+@Configuration
+<%_ if (databaseType === 'sql') { _%>
+@EnableJpaRepositories("<%=packageName%>.repository")
+@EnableJpaAuditing(auditorAwareRef = "springSecurityAuditorAware")
+@EnableTransactionManagement
+<%_ } _%>
+<%_ if (searchEngine === 'elasticsearch') { _%>
+@EnableElasticsearchRepositories("<%=packageName%>.repository.search")
+<%_ } _%>
+<%_ if (databaseType === 'mongodb') { _%>
+    <%_ if (searchEngine === 'elasticsearch' || reactive) { _%>
+@EnableMongoRepositories(basePackages = ["<%=packageName%>.repository"], includeFilters = [Filter(type = FilterType.ASSIGNABLE_TYPE, value = [MongoRepository::class])])
+    <%_ } else { _%>
+@EnableMongoRepositories("<%=packageName%>.repository")
+    <%_ } _%>
+    <%_ if (reactive) { _%>
+@EnableReactiveMongoRepositories("<%=packageName%>.repository.reactive")
+    <%_ } _%>
+<%_ } _%>
+<%_ if (databaseType === 'mongodb' || databaseType === 'couchbase') { _%>
+@Profile("!" + JHipsterConstants.SPRING_PROFILE_CLOUD)
+<%_ } _%>
+<%_ if (databaseType === 'mongodb') { _%>
+    <%_ if (reactive) { _%>
+@Import(value = [MongoAutoConfiguration::class, MongoReactiveAutoConfiguration::class])
+    <%_ } else { _%>
+@Import(value = [MongoAutoConfiguration::class])
+    <%_ } _%>
+@EnableMongoAuditing(auditorAwareRef = "springSecurityAuditorAware")
+<%_ } _%>
+<%_ if (databaseType === 'couchbase') { _%>
+@EnableCouchbaseRepositories(repositoryBaseClass = CustomN1qlCouchbaseRepository::class, basePackages = ["<%=packageName%>.repository"])
+    <%_ if (reactive) { _%>
+@EnableReactiveCouchbaseRepositories("<%=packageName%>.repository.reactive")
+    <%_ } _%>
+@Import(value = [CouchbaseAutoConfiguration::class])
+@EnableCouchbaseAuditing(auditorAwareRef = "springSecurityAuditorAware")
+<%_ } _%>
+class DatabaseConfiguration<%_ if (databaseType === 'sql' && (devDatabaseType === 'h2Disk' || devDatabaseType === 'h2Memory') ) { _%>(private val env: Environment)<%_ } %> {
+
+    private val log = LoggerFactory.getLogger(DatabaseConfiguration::class.java)
+<%_ if (databaseType === 'sql') { _%>
+    <%_ if (devDatabaseType === 'h2Disk' || devDatabaseType === 'h2Memory') { _%>
+
+    /**
+     * Open the TCP port for the H2 database, so it is available remotely.
+     *
+     * @return the H2 database TCP server
+     * @throws SQLException if the server failed to start
+     */
+    @Throws(SQLException::class)
+    @Bean(initMethod = "start", destroyMethod = "stop")
+    @Profile(JHipsterConstants.SPRING_PROFILE_DEVELOPMENT)
+    fun h2TCPServer(): Any {
+        val port = getValidPortForH2()
+        log.debug("H2 database is available on port {}", port)
+        return H2ConfigurationHelper.createServer(port)
+    }
+
+    private fun getValidPortForH2(): String {
+        var port = Integer.parseInt(env.getProperty("server.port"))
+        if (port < 10000) {
+            port += 10000
+        } else {
+            if (port < 63536) {
+                port += 2000
+            } else {
+                port -= 2000
+            }
+        }
+        return port.toString()
+    }
+    <%_ } _%>
+<%_ } _%>
+<%_ if (databaseType === 'mongodb') { _%>
+
+    @Bean
+    fun validatingMongoEventListener(): ValidatingMongoEventListener {
+        return ValidatingMongoEventListener(validator())
+    }<% } %><% if (databaseType === 'couchbase') { %>
+
+    @Bean
+    fun validatingCouchbaseEventListener(): ValidatingCouchbaseEventListener {
+        return ValidatingCouchbaseEventListener(validator())
+    }<% } %><% if (databaseType === 'mongodb' || databaseType === 'couchbase') { %>
+
+    @Bean
+    fun validator(): LocalValidatorFactoryBean {
+        return LocalValidatorFactoryBean()
+    }<% } if (databaseType === 'mongodb') { %>
+
+    @Bean
+    fun customConversions(): MongoCustomConversions {
+        val converters = mutableListOf<Converter<*, *>>()
+        converters.add(DateToZonedDateTimeConverter.INSTANCE)
+        converters.add(ZonedDateTimeToDateConverter.INSTANCE)
+        return MongoCustomConversions(converters)
+    }
+
+    @Bean
+    fun mongobee(mongoClient: MongoClient, mongoTemplate: MongoTemplate, mongoProperties: MongoProperties): Mongobee {
+        log.debug("Configuring Mongobee")
+        val mongobee = Mongobee(mongoClient)
+        mongobee.setDbName(mongoProperties.mongoClientDatabase)
+        mongobee.setMongoTemplate(mongoTemplate)
+        // package to scan for migrations
+        mongobee.setChangeLogsScanPackage("io.github.jhipster.travis.config.dbmigrations")
+        mongobee.isEnabled = true
+        return mongobee
+    }<% } %><% if (databaseType === 'couchbase') { %>
+
+    @Bean(name = [BeanNames.COUCHBASE_CUSTOM_CONVERSIONS])
+    fun customConversions(): CouchbaseCustomConversions {
+        val converters = mutableListOf<Converter<*, *>>()
+        converters.add(ZonedDateTimeToLongConverter.INSTANCE)
+        converters.add(NumberToLocalDateTimeConverter.INSTANCE)
+        converters.add(BigIntegerToStringConverter.INSTANCE)
+        converters.add(StringToBigIntegerConverter.INSTANCE)
+        converters.add(BigDecimalToStringConverter.INSTANCE)
+        converters.add(StringToBigDecimalConverter.INSTANCE)
+        converters.add(StringToByteConverter.INSTANCE)
+        return CouchbaseCustomConversions(converters)
+    }
+
+    @Bean
+    fun couchmove(couchbaseBucket: Bucket): Couchmove {
+        log.debug("Configuring Couchmove")
+        val couchMove = Couchmove(couchbaseBucket, "config/couchmove/changelog")
+        couchMove.migrate()
+        return couchMove
+    }
+
+    /**
+     * Simple singleton to convert [ZonedDateTime]s to their [Long] representation.
+     */
+    @WritingConverter
+    enum class ZonedDateTimeToLongConverter : Converter<ZonedDateTime, Long> {
+
+        INSTANCE;
+
+        override fun convert(source: ZonedDateTime): Long? {
+            return Date.from(source.toInstant()).time
+        }
+    }
+
+    /**
+     * Simple singleton to convert from [Number] [BigDecimal] representation.
+     */
+    @ReadingConverter
+    enum class NumberToLocalDateTimeConverter : Converter<Number, ZonedDateTime> {
+
+        INSTANCE;
+
+        override fun convert(source: Number): ZonedDateTime? {
+            return ZonedDateTime.ofInstant(Date(source.toLong()).toInstant(), ZoneId.systemDefault())
+        }
+
+    }
+
+    /**
+     * Simple singleton to convert [BigDecimal]s to their [String] representation.
+     */
+    @WritingConverter
+    enum class BigDecimalToStringConverter : Converter<BigDecimal, String> {
+        INSTANCE;
+
+        override fun convert(source: BigDecimal): String? {
+            return source.toString()
+        }
+    }
+
+    /**
+     * Simple singleton to convert from [String] [BigDecimal] representation.
+     */
+    @ReadingConverter
+    enum class StringToBigDecimalConverter : Converter<String, BigDecimal> {
+        INSTANCE;
+
+        override fun convert(source: String): BigDecimal? {
+            return if (StringUtils.hasText(source)) BigDecimal(source) else null
+        }
+    }
+
+    /**
+     * Simple singleton to convert [BigInteger]s to their [String] representation.
+     */
+    @WritingConverter
+    enum class BigIntegerToStringConverter : Converter<BigInteger, String> {
+        INSTANCE;
+
+        override fun convert(source: BigInteger): String? {
+            return source.toString()
+        }
+    }
+
+    /**
+     * Simple singleton to convert from [String] [BigInteger] representation.
+     */
+    @ReadingConverter
+    enum class StringToBigIntegerConverter : Converter<String, BigInteger> {
+        INSTANCE;
+
+        override fun convert(source: String): BigInteger? {
+            return if (StringUtils.hasText(source)) BigInteger(source) else null
+        }
+    }
+
+    /**
+     * Simple singleton to convert from [String] [byte[]] representation.
+     */
+    @ReadingConverter
+    enum class StringToByteConverter : Converter<String, ByteArray> {
+        INSTANCE;
+
+        override fun convert(source: String): ByteArray? {
+            return Base64.decodeBase64(source)
+        }
+    }
+<%_ } _%>
+}

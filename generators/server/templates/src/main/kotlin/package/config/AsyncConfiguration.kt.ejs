@@ -37,22 +37,22 @@ import java.util.concurrent.Executors
 @Configuration
 @EnableAsync
 @EnableScheduling
-class AsyncConfiguration(private val jHipsterProperties: JHipsterProperties): AsyncConfigurer, SchedulingConfigurer {
+class AsyncConfiguration(private val jHipsterProperties: JHipsterProperties) : AsyncConfigurer, SchedulingConfigurer {
 
-    private val log = LoggerFactory.getLogger(this.javaClass)
+    private val log = LoggerFactory.getLogger(AsyncConfiguration::class.java)
 
-    @Bean(name = arrayOf("taskExecutor"))
+    @Bean(name = ["taskExecutor"])
     override fun getAsyncExecutor(): Executor {
         log.debug("Creating Async Task Executor")
         val executor = ThreadPoolTaskExecutor()
         executor.corePoolSize = jHipsterProperties.async.corePoolSize
         executor.maxPoolSize = jHipsterProperties.async.maxPoolSize
         executor.setQueueCapacity(jHipsterProperties.async.queueCapacity)
-        executor.setThreadNamePrefix("<%= dasherizedBaseName %>-Executor-")
+        executor.threadNamePrefix = "<%= dasherizedBaseName %>-Executor-"
         return ExceptionHandlingAsyncTaskExecutor(executor)
     }
 
-    override fun getAsyncUncaughtExceptionHandler(): AsyncUncaughtExceptionHandler  {
+    override fun getAsyncUncaughtExceptionHandler(): AsyncUncaughtExceptionHandler {
         return SimpleAsyncUncaughtExceptionHandler()
     }
 
@@ -62,6 +62,6 @@ class AsyncConfiguration(private val jHipsterProperties: JHipsterProperties): As
 
     @Bean
     fun scheduledTaskExecutor(): Executor {
-        return Executors.newScheduledThreadPool(jHipsterProperties.getAsync().getCorePoolSize())
+        return Executors.newScheduledThreadPool(jHipsterProperties.async.corePoolSize)
     }
 }
