@@ -40,7 +40,7 @@ import org.apache.commons.codec.binary.Base64
 import io.github.jhipster.domain.util.JSR310DateConverters.DateToZonedDateTimeConverter
 import io.github.jhipster.domain.util.JSR310DateConverters.ZonedDateTimeToDateConverter
 <%_ } _%>
-<%_ if (databaseType === 'mongodb' || (databaseType==='sql' && (devDatabaseType === 'h2Disk' || devDatabaseType === 'h2Memory'))) { _%>
+<%_ if (databaseType === 'mongodb' || databaseType === 'couchbase' || (databaseType==='sql' && (devDatabaseType === 'h2Disk' || devDatabaseType === 'h2Memory'))) { _%>
 import org.slf4j.LoggerFactory
 <%_ } _%>
 <%_ if (databaseType === 'mongodb') { _%>
@@ -53,7 +53,7 @@ import org.springframework.boot.autoconfigure.mongo.MongoReactiveAutoConfigurati
 <%_ if (databaseType === 'couchbase') { _%>
 import org.springframework.boot.autoconfigure.couchbase.CouchbaseAutoConfiguration
 <%_ } _%>
-<%_ if (databaseType === 'mongodb' || (databaseType==='sql' && (devDatabaseType === 'h2Disk' || devDatabaseType === 'h2Memory'))) { _%>
+<%_ if (databaseType === 'mongodb' || databaseType === 'couchbase' || (databaseType==='sql' && (devDatabaseType === 'h2Disk' || devDatabaseType === 'h2Memory'))) { _%>
 import org.springframework.context.annotation.Bean
 <%_ } _%>
 import org.springframework.context.annotation.Configuration
@@ -154,7 +154,7 @@ import java.util.Date
 @Import(value = [CouchbaseAutoConfiguration::class])
 @EnableCouchbaseAuditing(auditorAwareRef = "springSecurityAuditorAware")
 <%_ } _%>
-class DatabaseConfiguration<%_ if (databaseType === 'sql' && (devDatabaseType === 'h2Disk' || devDatabaseType === 'h2Memory') ) { _%>(private val env: Environment) { <%_ } else if (databaseType === 'couchbase') { %> {<% } %>
+class DatabaseConfiguration<%_ if (databaseType === 'sql' && (devDatabaseType === 'h2Disk' || devDatabaseType === 'h2Memory') ) { _%>(private val env: Environment) { <%_ } else if (databaseType === 'mongodb' || databaseType === 'couchbase') { %> {<% } %>
 <%_ if (databaseType === 'sql' && (devDatabaseType === 'h2Disk' || devDatabaseType === 'h2Memory')) { _%>
 
     private val log = LoggerFactory.getLogger(DatabaseConfiguration::class.java)
@@ -187,11 +187,12 @@ class DatabaseConfiguration<%_ if (databaseType === 'sql' && (devDatabaseType ==
         }
         return port.toString()
     }
-}
 <%_ } _%>
-<%_ if (databaseType === 'mongodb') { _%>
+<%_ if (databaseType === 'mongodb' || databaseType === 'couchbase') { _%>
 
     private val log = LoggerFactory.getLogger(DatabaseConfiguration::class.java)
+<%_ } _%>
+<%_ if (databaseType === 'mongodb') { _%>
 
     @Bean
     fun validatingMongoEventListener(): ValidatingMongoEventListener {
@@ -335,5 +336,7 @@ class DatabaseConfiguration<%_ if (databaseType === 'sql' && (devDatabaseType ==
             return Base64.decodeBase64(source)
         }
     }
+<%_ } _%>
+<% if (databaseType === 'mongodb' || databaseType === 'couchbase' || (databaseType === 'sql' && (devDatabaseType === 'h2Disk' || devDatabaseType === 'h2Memory'))) { %>
 }
 <%_ } _%>
