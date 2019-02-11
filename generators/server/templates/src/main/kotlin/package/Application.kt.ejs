@@ -27,6 +27,7 @@ import <%=packageName%>.config.DefaultProfileUtil
 import io.github.jhipster.config.JHipsterConstants
 
 import org.slf4j.LoggerFactory
+import org.springframework.beans.factory.InitializingBean
 import org.springframework.boot.runApplication
 import org.springframework.boot.autoconfigure.SpringBootApplication
 <%_ if (databaseType === 'sql') { _%>
@@ -45,7 +46,6 @@ import org.springframework.context.annotation.FilterType
 <%_ } _%>
 import org.springframework.core.env.Environment
 
-import javax.annotation.PostConstruct
 import java.net.InetAddress
 import java.net.UnknownHostException
 
@@ -62,7 +62,7 @@ import java.net.UnknownHostException
 <%_ if (applicationType === 'gateway'  && serviceDiscoveryType) { _%>
 @EnableZuulProxy
 <%_ } _%>
-class <%= mainClass %>(private val env: Environment) {
+class <%= mainClass %>(private val env: Environment) : InitializingBean {
 
     private val log = LoggerFactory.getLogger(<%= mainClass %>::class.java)
 
@@ -73,8 +73,8 @@ class <%= mainClass %>(private val env: Environment) {
      * <p>
      * You can find more information on how profiles work with JHipster on <a href="https://www.jhipster.tech/profiles/">https://www.jhipster.tech/profiles/</a>.
      */
-    @PostConstruct
-    fun initApplication() {
+    @Throws(Exception::class)
+    override fun afterPropertiesSet() {
         val activeProfiles = env.activeProfiles
         if (activeProfiles.contains(JHipsterConstants.SPRING_PROFILE_DEVELOPMENT) && activeProfiles.contains(JHipsterConstants.SPRING_PROFILE_PRODUCTION)) {
             log.error("You have misconfigured your application! It should not run " +
@@ -97,7 +97,7 @@ class <%= mainClass %>(private val env: Environment) {
             val env = runApplication<<%= mainClass %>>(*args) {
                 DefaultProfileUtil.addDefaultProfile(this)
             }.environment
-            logApplicationStartup(env);
+            logApplicationStartup(env)
         }
 
         @JvmStatic
@@ -111,11 +111,11 @@ class <%= mainClass %>(private val env: Environment) {
             val serverPort = env.getProperty("server.port")
             var contextPath = env.getProperty("server.servlet.context-path")
             if (contextPath.isNullOrBlank()) {
-                contextPath = "/";
+                contextPath = "/"
             }
-            var hostAddress = "localhost";
+            var hostAddress = "localhost"
             try {
-                hostAddress = InetAddress.getLocalHost().getHostAddress()
+                hostAddress = InetAddress.getLocalHost().hostAddress
             } catch (e: UnknownHostException) {
                 log.warn("The host name could not be determined, using `localhost` as fallback")
             }
@@ -132,7 +132,7 @@ class <%= mainClass %>(private val env: Environment) {
                 hostAddress,
                 serverPort,
                 contextPath,
-                env.activeProfiles);
+                env.activeProfiles)
             <%_ if (serviceDiscoveryType && (applicationType === 'microservice' || applicationType === 'gateway' || applicationType === 'uaa')) { _%>
 
             var configServerStatus = env.getProperty("configserver.status")

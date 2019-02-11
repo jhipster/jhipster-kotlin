@@ -790,6 +790,11 @@ const serverFiles = {
                     useBluePrint: true
                 },
                 {
+                    file: 'package/config/lazy/LazyInitBeanFactoryPostProcessor.kt',
+                    renameTo: generator => `${generator.javaDir}config/lazy/LazyInitBeanFactoryPostProcessor.kt`,
+                    useBluePrint: true
+                },
+                {
                     file: 'package/config/DefaultProfileUtil.kt',
                     renameTo: generator => `${generator.javaDir}config/DefaultProfileUtil.kt`,
                     useBluePrint: true
@@ -1024,11 +1029,6 @@ const serverFiles = {
                     useBluePrint: true
                 }
             ]
-        },
-        {
-            condition: generator => generator.databaseType === 'cassandra',
-            path: SERVER_TEST_RES_DIR,
-            templates: ['cassandra-random-port.yml']
         },
         {
             condition: generator => generator.databaseType === 'couchbase',
@@ -1306,6 +1306,16 @@ function writeFiles() {
                                     <groupId>org.hibernate</groupId>
                                     <artifactId>hibernate-jpamodelgen</artifactId>
                                     <version>$\{hibernate.version}</version>
+                                </path>
+                                <path>
+                                    <groupId>javax.xml.bind</groupId>
+                                    <artifactId>jaxb-api</artifactId>
+                                    <version>$\{jaxb-api.version}</version>
+                                </path>
+                                <path>
+                                    <groupId>com.sun.xml.bind</groupId>
+                                    <artifactId>jaxb-impl</artifactId>
+                                    <version>$\{jaxb-impl.version}</version>
                                 </path>`
                                         : ''
                                 }

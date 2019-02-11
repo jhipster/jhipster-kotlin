@@ -114,7 +114,7 @@ class <%= serviceClassName %> (
         return <%= entityInstance %>Repository.<% if (fieldsContainOwnerManyToMany === true) { %>findAllWithEagerRelationships<% } else { %>findAll<% } %>()<% if (dto === 'mapstruct') { %>
             .mapTo(mutableListOf(), <%= entityToDtoReference %>)<% } %>
         <%_ } else { _%>
-        return <%= entityInstance %>Repository.findAll(pageable)<% if (dto !== 'mapstruct') { %>;<% } else { %>
+        return <%= entityInstance %>Repository.findAll(pageable)<% if (dto === 'mapstruct') { %>
             .map(<%= entityToDtoReference %>)<% } %>
         <%_ } _%>
     }
@@ -161,7 +161,8 @@ class <%= serviceClassName %> (
      * @param id the id of the entity.
      */
     <% if (service === 'serviceImpl') { %>override <% } %>fun delete(id: <%= pkType %>) {
-        log.debug("Request to delete <%= entityClass %> : {}", id)<%- include('../../common/delete_template', {viaService: viaService}); -%>
+        log.debug("Request to delete <%= entityClass %> : {}", id)
+<%- include('../../common/delete_template', {viaService: viaService}); -%>
     }
     <%_ if (searchEngine === 'elasticsearch') { _%>
 

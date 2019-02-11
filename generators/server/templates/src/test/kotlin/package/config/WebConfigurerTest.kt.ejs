@@ -25,9 +25,6 @@ import io.github.jhipster.web.filter.CachingHttpHeadersFilter
 <%_ } _%>
 import io.undertow.Undertow
 import io.undertow.UndertowOptions
-<%_ if (!skipClient) { _%>
-import org.apache.commons.io.FilenameUtils
-<%_ } %>
 <%_ if (devDatabaseType === 'h2Disk' || devDatabaseType === 'h2Memory') { _%>
 import org.h2.server.web.WebServlet
 <%_ } _%>
@@ -42,6 +39,9 @@ import org.springframework.test.web.servlet.setup.MockMvcBuilders
 import org.xnio.OptionMap
 
 import javax.servlet.*
+<%_ if (!skipClient) { _%>
+import java.io.File
+<%_ } _%>
 import java.util.*
 
 import org.assertj.core.api.Assertions.assertThat
@@ -119,7 +119,6 @@ class WebConfigurerTest {
 
     @Test
     fun testCustomizeServletContainer() {
-        props.http.setVersion(JHipsterProperties.Http.Version.V_1_1)
         env.setActiveProfiles(JHipsterConstants.SPRING_PROFILE_PRODUCTION)
         val container = UndertowServletWebServerFactory()
         webConfigurer.customize(container)
@@ -128,7 +127,7 @@ class WebConfigurerTest {
         assertThat(container.mimeMappings.get("json")).isEqualTo("text/html;charset=utf-8")
         <%_ if (!skipClient) { _%>
         if (container.documentRoot != null) {
-            assertThat(container.documentRoot.path).isEqualTo(FilenameUtils.separatorsToSystem("<%= BUILD_DIR %>www"))
+            assertThat(container.documentRoot.path).isEqualTo(File("<%= CLIENT_DIST_DIR %>"))
         }
         <%_ } _%>
 

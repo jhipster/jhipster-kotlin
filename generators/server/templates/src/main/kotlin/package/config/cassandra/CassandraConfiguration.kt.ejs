@@ -27,6 +27,7 @@ import io.github.jhipster.config.JHipsterConstants
 import org.slf4j.LoggerFactory
 import org.springframework.beans.factory.annotation.Autowired
 import org.springframework.beans.factory.annotation.Value
+import org.springframework.beans.factory.InitializingBean;
 import org.springframework.boot.autoconfigure.cassandra.CassandraProperties
 import org.springframework.boot.autoconfigure.cassandra.ClusterBuilderCustomizer
 <%_ if (applicationType === 'gateway' && databaseType !== 'cassandra') { _%>
@@ -40,7 +41,6 @@ import org.springframework.data.cassandra.core.convert.CassandraCustomConversion
 import org.springframework.data.convert.ReadingConverter
 import org.springframework.data.convert.WritingConverter
 
-import javax.annotation.PostConstruct
 import java.time.ZoneId
 import java.time.ZoneOffset
 import java.time.ZonedDateTime
@@ -49,7 +49,7 @@ import java.util.Date
 @Configuration<% if (applicationType === 'gateway' && databaseType !== 'cassandra') { %>
 @ConditionalOnProperty("jhipster.gateway.rate-limiting.enabled")<% } %>
 @Profile(JHipsterConstants.SPRING_PROFILE_DEVELOPMENT, JHipsterConstants.SPRING_PROFILE_PRODUCTION)
-class CassandraConfiguration {
+class CassandraConfiguration : InitializingBean {
 
     @Value("\${spring.data.cassandra.protocolVersion:V4}")
     private lateinit var protocolVersion: ProtocolVersion
@@ -62,8 +62,7 @@ class CassandraConfiguration {
     @Autowired
     private lateinit var cluster: Cluster
 
-    @PostConstruct
-    fun postConstruct() {
+    override fun afterPropertiesSet() {
         val tupleType = cluster.metadata.newTupleType(DataType.timestamp(), DataType.varchar())
 
         cluster.configuration.codecRegistry

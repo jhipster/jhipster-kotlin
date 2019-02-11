@@ -18,13 +18,11 @@
 -%>
 package <%=packageName%>.config
 
+import <%=packageName%>.AbstractCassandraTest
 import <%=packageName%>.config.cassandra.CassandraConfiguration
 
 import io.github.jhipster.config.JHipsterConstants
 
-import org.apache.cassandra.config.DatabaseDescriptor
-import org.slf4j.Logger
-import org.slf4j.LoggerFactory
 import org.springframework.boot.autoconfigure.cassandra.CassandraProperties
 import org.springframework.context.annotation.Configuration
 import org.springframework.context.annotation.Profile
@@ -33,25 +31,12 @@ import org.springframework.context.annotation.Profile
 @Profile(JHipsterConstants.SPRING_PROFILE_TEST)
 class CassandraTestConfiguration : CassandraConfiguration() {
 
-    private val log = LoggerFactory.getLogger(CassandraTestConfiguration::class.java)
-
     /**
-     * Override how to get the port to connect to the Cassandra cluster
-     * When deployed, the port is read by properties
-     * For the tests we need to read the port dynamically to discover on which random port Cassandra-unit has started the
-     * embedded cluster
-     * @param properties
-     * @return
+     * Override how to get the port to connect to the Cassandra cluster.
+     *
+     * This uses the TestContainers API to get the mapped port in Docker.
      */
     override fun getPort(properties: CassandraProperties): Int {
-        val port = properties.port
-        if (port == 0) {
-            // random port for the tests
-            val randomPort = DatabaseDescriptor.getNativeTransportPort()
-            log.info("Starting the cassandra cluster connection to a random port for the tests: {}", randomPort)
-            return randomPort
-        } else {
-            return port
-        }
+        return AbstractCassandraTest.CASSANDRA_CONTAINER.getMappedPort(AbstractCassandraTest.CASSANDRA_TEST_PORT)
     }
 }

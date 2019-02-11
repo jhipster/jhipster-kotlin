@@ -31,6 +31,7 @@ import io.github.jhipster.security.*
 
 <%_ if (authenticationType !== 'oauth2' && !skipUserManagement) { _%>
 import org.springframework.beans.factory.BeanInitializationException
+import org.springframework.beans.factory.InitializingBean
 <%_ } _%>
 import org.springframework.context.annotation.Bean
 import org.springframework.context.annotation.Configuration
@@ -87,10 +88,6 @@ import org.springframework.security.web.authentication.UsernamePasswordAuthentic
 import org.springframework.web.filter.CorsFilter
 <%_ } _%>
 import org.zalando.problem.spring.web.advice.security.SecurityProblemSupport
-<%_ if (authenticationType !== 'oauth2' && !skipUserManagement) { _%>
-
-import javax.annotation.PostConstruct
-<%_ } _%>
 
 @Configuration
 <%_ if (authenticationType === 'oauth2') { _%>
@@ -120,11 +117,11 @@ class SecurityConfiguration(
     private val corsFilter: CorsFilter,
     <%_ } _%>
     private val problemSupport: SecurityProblemSupport
-) : <% if (authenticationType === 'oauth2' && applicationType === 'microservice') { %>ResourceServer<% } else { %>WebSecurity<% } %>ConfigurerAdapter() {
+) : <% if (authenticationType === 'oauth2' && applicationType === 'microservice') { %>ResourceServer<% } else { %>WebSecurity<% } %>ConfigurerAdapter()<% if (authenticationType !== 'oauth2' && !skipUserManagement) { %>, InitializingBean<% } %> {
     <%_ if (authenticationType !== 'oauth2' && !skipUserManagement) { _%>
 
-    @PostConstruct
-    fun init() {
+    @Throws(Exception::class)
+    override fun afterPropertiesSet() {
         try {
             authenticationManagerBuilder
                 .userDetailsService(userDetailsService)

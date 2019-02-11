@@ -20,14 +20,13 @@ package <%=packageName%>.config
 
 import io.github.jhipster.config.JHipsterProperties
 
-import com.codahale.metrics.JmxReporter
-import com.codahale.metrics.JvmAttributeGaugeSet
 import com.codahale.metrics.MetricRegistry
 import com.codahale.metrics.Slf4jReporter
 import com.codahale.metrics.health.HealthCheckRegistry
 <%_ if (['ehcache', 'infinispan'].includes(cacheProvider)) { _%>
 import com.codahale.metrics.jcache.JCacheGaugeSet
 <%_ } _%>
+import com.codahale.metrics.jmx.*
 import com.codahale.metrics.jvm.*
 import com.ryantenney.metrics.spring.config.annotation.EnableMetrics
 import com.ryantenney.metrics.spring.config.annotation.MetricsConfigurerAdapter
@@ -42,13 +41,13 @@ import org.slf4j.MarkerFactory
 <%_ if (databaseType === 'sql') { _%>
 import org.springframework.beans.factory.annotation.Autowired
 <%_ } _%>
+import org.springframework.beans.factory.InitializingBean
 import org.springframework.boot.web.servlet.ServletContextInitializer
 <%_ if (['ehcache', 'infinispan'].includes(cacheProvider)) { _%>
 import org.springframework.cache.CacheManager
 <%_ } _%>
 import org.springframework.context.annotation.*
 
-import javax.annotation.PostConstruct
 import javax.servlet.ServletContext
 import java.lang.management.ManagementFactory
 import java.util.concurrent.TimeUnit
@@ -59,7 +58,7 @@ import java.util.concurrent.TimeUnit
  * The cacheManager is injected here to force its initialization, so the [JCacheGaugeSet] will be correctly created below.
  */
 constructor(private val jHipsterProperties: JHipsterProperties, cacheManager: CacheManager
-) : MetricsConfigurerAdapter(), ServletContextInitializer {
+) : MetricsConfigurerAdapter(), InitializingBean, ServletContextInitializer {
 
     private val log = LoggerFactory.getLogger(MetricsConfiguration::class.java)
 
@@ -97,8 +96,8 @@ constructor(private val jHipsterProperties: JHipsterProperties, cacheManager: Ca
         return healthCheckRegistry
     }
 
-    @PostConstruct
-    fun init() {
+    @Throws(Exception::class)
+    override fun afterPropertiesSet() {
         log.debug("Registering JVM gauges")
         metricRegistry.register(PROP_METRIC_REG_JVM_MEMORY, MemoryUsageGaugeSet())
         metricRegistry.register(PROP_METRIC_REG_JVM_GARBAGE, GarbageCollectorMetricSet())
