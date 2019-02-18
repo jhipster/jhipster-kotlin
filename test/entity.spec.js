@@ -34,10 +34,7 @@ describe('JHipster generator for entity', () => {
                             ]
                         ])
                         .inTmpDir(dir => {
-                            fse.copySync(
-                                path.join(__dirname, '../node_modules/generator-jhipster/test/templates/default-elasticsearch'),
-                                dir
-                            );
+                            fse.copySync(path.join(__dirname, '../test/templates/default-elasticsearch'), dir);
                         })
                         .withArguments(['foo'])
                         .withPrompts({
@@ -52,7 +49,6 @@ describe('JHipster generator for entity', () => {
 
                 it('does creates search files', () => {
                     assert.file(`${SERVER_MAIN_SRC_DIR}com/mycompany/myapp/repository/search/FooSearchRepository.kt`);
-                    // assert.file(`${SERVER_MAIN_SRC_DIR}com/mycompany/myapp/repository/search/FooSearchRepository.kt`);
                     assert.file(expectedFiles.server);
                     assert.file(expectedFiles.gatling);
                 });
@@ -981,7 +977,7 @@ describe('JHipster generator for entity', () => {
                             ]
                         ])
                         .inTmpDir(dir => {
-                            fse.copySync(path.join(__dirname, '../node_modules/generator-jhipster/test/templates/default-ng2'), dir);
+                            fse.copySync(path.join(__dirname, '../test/templates/default-ng2'), dir);
                             fse.copySync(
                                 path.join(__dirname, '../test/templates/export-jdl/.jhipster/Country.json'),
                                 path.join(dir, '.jhipster/Foo.json')
