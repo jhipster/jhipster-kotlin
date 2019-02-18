@@ -35,7 +35,6 @@ describe('JHipster generator for entity', () => {
                         ])
                         .inTmpDir(dir => {
                             fse.copySync(
-                                // path.join(__dirname, '../node_modules/generator-jhipster/test/templates/default-elasticsearch'),
                                 path.join(__dirname, '../node_modules/generator-jhipster/test/templates/default-elasticsearch'),
                                 dir
                             );
@@ -84,10 +83,7 @@ describe('JHipster generator for entity', () => {
                             ]
                         ])
                         .inTmpDir(dir => {
-                            fse.copySync(
-                                path.join(__dirname, '../node_modules/generator-jhipster/test/templates/entity-dto-suffixes'),
-                                dir
-                            );
+                            fse.copySync(path.join(__dirname, '../test/templates/entity-dto-suffixes'), dir);
                         })
                         .withArguments(['foo'])
                         .withPrompts({
@@ -150,10 +146,7 @@ describe('JHipster generator for entity', () => {
                             ]
                         ])
                         .inTmpDir(dir => {
-                            fse.copySync(
-                                path.join(__dirname, '../node_modules/generator-jhipster/test/templates/entity-dto-suffixes'),
-                                dir
-                            );
+                            fse.copySync(path.join(__dirname, '../test/templates/entity-dto-suffixes'), dir);
                         })
                         .withArguments(['foo'])
                         .withPrompts({
@@ -216,7 +209,7 @@ describe('JHipster generator for entity', () => {
                             ]
                         ])
                         .inTmpDir(dir => {
-                            fse.copySync(path.join(__dirname, '../node_modules/generator-jhipster/test/templates/default-ng2'), dir);
+                            fse.copySync(path.join(__dirname, '../test/templates/default-ng2'), dir);
                         })
                         .withArguments(['foo'])
                         .withPrompts({
@@ -259,7 +252,7 @@ describe('JHipster generator for entity', () => {
                             ]
                         ])
                         .inTmpDir(dir => {
-                            fse.copySync(path.join(__dirname, '../node_modules/generator-jhipster/test/templates/default-ng2'), dir);
+                            fse.copySync(path.join(__dirname, '../test/templates/default-ng2'), dir);
                         })
                         .withArguments(['foo'])
                         .withPrompts({
@@ -302,7 +295,7 @@ describe('JHipster generator for entity', () => {
                             ]
                         ])
                         .inTmpDir(dir => {
-                            fse.copySync(path.join(__dirname, '../node_modules/generator-jhipster/test/templates/default-ng2'), dir);
+                            fse.copySync(path.join(__dirname, '../test/templates/default-ng2'), dir);
                         })
                         .withArguments(['foo'])
                         .withPrompts({
@@ -345,7 +338,7 @@ describe('JHipster generator for entity', () => {
                             ]
                         ])
                         .inTmpDir(dir => {
-                            fse.copySync(path.join(__dirname, '../node_modules/generator-jhipster/test/templates/default-ng2'), dir);
+                            fse.copySync(path.join(__dirname, '../test/templates/default-ng2'), dir);
                         })
                         .withArguments(['foo'])
                         .withPrompts({
@@ -392,7 +385,7 @@ describe('JHipster generator for entity', () => {
                             ]
                         ])
                         .inTmpDir(dir => {
-                            fse.copySync(path.join(__dirname, '../node_modules/generator-jhipster/test/templates/default-ng2'), dir);
+                            fse.copySync(path.join(__dirname, '../test/templates/default-ng2'), dir);
                         })
                         .withArguments(['foo'])
                         .withPrompts({
@@ -440,7 +433,7 @@ describe('JHipster generator for entity', () => {
                             ]
                         ])
                         .inTmpDir(dir => {
-                            fse.copySync(path.join(__dirname, '../node_modules/generator-jhipster/test/templates/default-ng2'), dir);
+                            fse.copySync(path.join(__dirname, '../test/templates/default-ng2'), dir);
                         })
                         .withArguments(['foo'])
                         .withOptions({ 'angular-suffix': 'management' })
@@ -485,7 +478,7 @@ describe('JHipster generator for entity', () => {
                             ]
                         ])
                         .inTmpDir(dir => {
-                            fse.copySync(path.join(__dirname, '../node_modules/generator-jhipster/test/templates/default-ng2'), dir);
+                            fse.copySync(path.join(__dirname, '../test/templates/default-ng2'), dir);
                         })
                         .withArguments(['foo'])
                         .withOptions({ 'client-root-folder': 'test-root' })
@@ -530,7 +523,7 @@ describe('JHipster generator for entity', () => {
                             ]
                         ])
                         .inTmpDir(dir => {
-                            fse.copySync(path.join(__dirname, '../node_modules/generator-jhipster/test/templates/default-ng2'), dir);
+                            fse.copySync(path.join(__dirname, '../test/templates/default-ng2'), dir);
                         })
                         .withArguments(['foo'])
                         .withOptions({ 'client-root-folder': 'test-root' })
@@ -578,7 +571,7 @@ describe('JHipster generator for entity', () => {
                             ]
                         ])
                         .inTmpDir(dir => {
-                            fse.copySync(path.join(__dirname, '../node_modules/generator-jhipster/test/templates/noi18n'), dir);
+                            fse.copySync(path.join(__dirname, '../test/templates/noi18n'), dir);
                         })
                         .withArguments(['foo'])
                         .withPrompts({
@@ -624,7 +617,7 @@ describe('JHipster generator for entity', () => {
                             ]
                         ])
                         .inTmpDir(dir => {
-                            fse.copySync(path.join(__dirname, '../node_modules/generator-jhipster/test/templates/all-languages'), dir);
+                            fse.copySync(path.join(__dirname, '../test/templates/all-languages'), dir);
                         })
                         .withArguments(['foo'])
                         .withPrompts({
@@ -667,7 +660,7 @@ describe('JHipster generator for entity', () => {
                             ]
                         ])
                         .inTmpDir(dir => {
-                            fse.copySync(path.join(__dirname, '../node_modules/generator-jhipster/test/templates/all-languages'), dir);
+                            fse.copySync(path.join(__dirname, '../test/templates/all-languages'), dir);
                         })
                         .withArguments(['foo'])
                         .withOptions({ 'client-root-folder': 'test-root' })
@@ -714,10 +707,7 @@ describe('JHipster generator for entity', () => {
                             ]
                         ])
                         .inTmpDir(dir => {
-                            fse.copySync(
-                                path.join(__dirname, '../node_modules/generator-jhipster/test/templates/default-microservice'),
-                                dir
-                            );
+                            fse.copySync(path.join(__dirname, '../test/templates/default-microservice'), dir);
                         })
                         .withArguments(['foo'])
                         .withOptions({ 'client-root-folder': 'test-root' })
@@ -761,10 +751,7 @@ describe('JHipster generator for entity', () => {
                             ]
                         ])
                         .inTmpDir(dir => {
-                            fse.copySync(
-                                path.join(__dirname, '../node_modules/generator-jhipster/test/templates/default-microservice'),
-                                dir
-                            );
+                            fse.copySync(path.join(__dirname, '../test/templates/default-microservice'), dir);
                         })
                         .withArguments(['foo'])
                         .withPrompts({
@@ -810,10 +797,7 @@ describe('JHipster generator for entity', () => {
                             ]
                         ])
                         .inTmpDir(dir => {
-                            fse.copySync(
-                                path.join(__dirname, '../node_modules/generator-jhipster/test/templates/mongodb-with-relations'),
-                                dir
-                            );
+                            fse.copySync(path.join(__dirname, '../test/templates/mongodb-with-relations'), dir);
                         })
                         .withArguments(['foo'])
                         .withPrompts({
@@ -856,7 +840,7 @@ describe('JHipster generator for entity', () => {
                             ]
                         ])
                         .inTmpDir(dir => {
-                            fse.copySync(path.join(__dirname, '../node_modules/generator-jhipster/test/templates/default-gateway'), dir);
+                            fse.copySync(path.join(__dirname, '../test/templates/default-gateway'), dir);
                         })
                         .withPrompts({
                             useMicroserviceJson: true,
@@ -905,7 +889,7 @@ describe('JHipster generator for entity', () => {
                             ]
                         ])
                         .inTmpDir(dir => {
-                            fse.copySync(path.join(__dirname, '../node_modules/generator-jhipster/test/templates/default-gateway'), dir);
+                            fse.copySync(path.join(__dirname, '../test/templates/default-gateway'), dir);
                         })
                         .withArguments(['foo'])
                         .withPrompts({
@@ -949,7 +933,7 @@ describe('JHipster generator for entity', () => {
                             ]
                         ])
                         .inTmpDir(dir => {
-                            fse.copySync(path.join(__dirname, '../node_modules/generator-jhipster/test/templates/default-gateway'), dir);
+                            fse.copySync(path.join(__dirname, '../test/templates/default-gateway'), dir);
                         })
                         .withArguments(['baz'])
                         .withPrompts({
@@ -999,7 +983,7 @@ describe('JHipster generator for entity', () => {
                         .inTmpDir(dir => {
                             fse.copySync(path.join(__dirname, '../node_modules/generator-jhipster/test/templates/default-ng2'), dir);
                             fse.copySync(
-                                path.join(__dirname, '../node_modules/generator-jhipster/test/templates/export-jdl/.jhipster/Country.json'),
+                                path.join(__dirname, '../test/templates/export-jdl/.jhipster/Country.json'),
                                 path.join(dir, '.jhipster/Foo.json')
                             );
                         })
@@ -1043,15 +1027,9 @@ describe('JHipster generator for entity', () => {
                             ]
                         ])
                         .inTmpDir(dir => {
+                            fse.copySync(path.join(__dirname, '../test/templates/default-microservice'), dir);
                             fse.copySync(
-                                path.join(__dirname, '../node_modules/generator-jhipster/test/templates/default-microservice'),
-                                dir
-                            );
-                            fse.copySync(
-                                path.join(
-                                    __dirname,
-                                    '../node_modules/generator-jhipster/test/templates/export-jdl/.jhipster/Employee.json'
-                                ),
+                                path.join(__dirname, '../test/templates/export-jdl/.jhipster/Employee.json'),
                                 path.join(dir, '.jhipster/Foo.json')
                             );
                         })

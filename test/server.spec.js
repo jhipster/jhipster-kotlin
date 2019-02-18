@@ -1,8 +1,8 @@
 const path = require('path');
 const assert = require('yeoman-assert');
 const helpers = require('yeoman-test');
-const getFilesForOptions = require('generator-jhipster/test/utils/utils').getFilesForOptions;
 const angularfiles = require('generator-jhipster/generators/client/files-angular').files;
+const getFilesForOptions = require('./utils/utils').getFilesForOptions;
 const expectedFiles = require('./utils/expected-files');
 
 describe('JHipster server generator', () => {
