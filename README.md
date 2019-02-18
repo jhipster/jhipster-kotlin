@@ -17,11 +17,13 @@
 This project adds Kotlin to the JHipster application 😎. It is based on JHipster Blueprint 🔵.
 
 ## 🚀 How to get started
+
 Install the package with `npm install -g generator-jhipster-kotlin`
 
 And generate the application with `jhipster --blueprint kotlin`
 
 ## 🚦 What we have now
+
 ✅ General App generation
 
 ✅ Spring Controller
@@ -32,7 +34,7 @@ And generate the application with `jhipster --blueprint kotlin`
 
 Found an issue, let us know [here](https://github.com/jhipster/jhipster-kotlin/issues).
 
-Interested in contributing, check out our [contributing guide](https://github.com/jhipster/jhipster-kotlin/blob/master/CONTRIBUTING.md) to get started. 
+Interested in contributing, check out our [contributing guide](https://github.com/jhipster/jhipster-kotlin/blob/master/CONTRIBUTING.md) to get started.
 
 Any questions [sendilkumarn](https://twitter.com/sendilkumarn)
 

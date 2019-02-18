@@ -25,7 +25,7 @@ const SERVER_MAIN_SRC_DIR = `${constants.MAIN_DIR}kotlin/`;
 
 module.exports = class extends BaseGenerator {
     constructor(args, opts) {
-        super(args, Object.assign({ fromBlueprint: true }, opts));
+        super(args, { fromBlueprint: true, ...opts });
         this.argument('name', { type: String, required: true });
         this.name = this.options.name;
 

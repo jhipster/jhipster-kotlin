@@ -21,6 +21,7 @@ const mkdirp = require('mkdirp');
 const cleanup = require('generator-jhipster/generators/cleanup');
 const constants = require('generator-jhipster/generators/generator-constants');
 const baseServerFiles = require('generator-jhipster/generators/server/files').serverFiles;
+const cheerio = require('cheerio');
 const kotlinConstants = require('../generator-kotlin-constants');
 
 /* Constants use throughout */
@@ -1251,6 +1252,7 @@ const serverFiles = {
     ...baseServerFiles.serverResource.serverJavaUserManagement
 };
 
+/* eslint-disable no-template-curly-in-string */
 function writeFiles() {
     return {
         setUp() {
@@ -1539,7 +1541,6 @@ function removeDefaultMavenCompilerPlugin(generator) {
 
     const xml = _this.fs.read(fullPath).toString();
 
-    const cheerio = require('cheerio');
     const $ = cheerio.load(xml, { xmlMode: true });
 
     $(`build > plugins > plugin > artifactId:contains('${artifactId}')`)
