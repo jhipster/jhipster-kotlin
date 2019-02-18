@@ -142,8 +142,8 @@ module.exports = class extends BaseGenerator {
                 });
 
                 this.template(
-                    `${SERVER_TEST_SRC_DIR}package/web/rest/ResourceIntTest.kt.ejs`,
-                    `${SERVER_TEST_SRC_DIR}${this.packageFolder}/web/rest/${this.controllerClass}IntTest.kt`
+                    `${SERVER_TEST_SRC_DIR}package/web/rest/ResourceIT.kt.ejs`,
+                    `${SERVER_TEST_SRC_DIR}${this.packageFolder}/web/rest/${this.controllerClass}IT.kt`
                 );
                 this.template(
                     `${SERVER_MAIN_SRC_DIR}package/web/rest/Resource.kt.ejs`,

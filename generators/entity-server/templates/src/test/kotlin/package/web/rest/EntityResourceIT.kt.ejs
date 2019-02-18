@@ -151,7 +151,7 @@ import org.springframework.test.web.servlet.result.MockMvcResultMatchers.*
 <%_ } else { _%>
 @SpringBootTest(classes = [<%= mainClass %>::class])
 <%_ } _%>
-class <%= entityClass %>ResourceIntTest <% if (databaseType === 'cassandra') { %>: AbstractCassandraTest() <% } %>{
+class <%= entityClass %>ResourceIT <% if (databaseType === 'cassandra') { %>: AbstractCassandraTest() <% } %>{
 
     @Autowired
     private lateinit var <%= entityInstance %>Repository: <%= entityClass %>Repository
@@ -533,7 +533,7 @@ class <%= entityClass %>ResourceIntTest <% if (databaseType === 'cassandra') { %
     @Transactional<% } %>
     fun getAll<%= entityClassPlural %>By<%= relationship.relationshipNameCapitalized %>IsEqualToSomething() {
         // Initialize the database
-        val <%= relationship.relationshipFieldName %> = <%= relationship.otherEntityNameCapitalized %>ResourceIntTest.createEntity(em)
+        val <%= relationship.relationshipFieldName %> = <%= relationship.otherEntityNameCapitalized %>ResourceIT.createEntity(em)
         em.persist(<%= relationship.relationshipFieldName %>)
         em.flush()
 <%_ if (relationship.relationshipType === 'many-to-many' || relationship.relationshipType === 'one-to-many') { _%>
@@ -845,7 +845,7 @@ class <%= entityClass %>ResourceIntTest <% if (databaseType === 'cassandra') { %
     <%_
         let oldSource = '';
         try {
-            oldSource = this.fs.readFileSync(this.SERVER_TEST_SRC_DIR + packageFolder + '/web/rest/' + entityClass + 'ResourceIntTest.kt', 'utf8');
+            oldSource = this.fs.readFileSync(this.SERVER_TEST_SRC_DIR + packageFolder + '/web/rest/' + entityClass + 'ResourceIT.kt', 'utf8');
         } catch (e) {}
     _%>
         <%_ for (idx in fields) {
@@ -936,7 +936,7 @@ class <%= entityClass %>ResourceIntTest <% if (databaseType === 'cassandra') { %
                     updatedTextString = updatedTextString + "B";
                     log(this.chalkRed('Randomly generated first and second test values for entity "' + entityClass +
                         '" field "' + fields[idx].fieldName + '" with pattern "' + fields[idx].fieldValidateRulesPattern +
-                        '" in file "' + entityClass + 'ResourceIntTest" where equal, added symbol "B" to second value.'));
+                        '" in file "' + entityClass + 'ResourceIT" where equal, added symbol "B" to second value.'));
                 }
             }_%>
 
@@ -1026,7 +1026,7 @@ class <%= entityClass %>ResourceIntTest <% if (databaseType === 'cassandra') { %
                 if (relationshipValidate !== null && relationshipValidate === true || mapsIdUse === true) { _%>
             // Add required entity
                 <%_ if (alreadyGeneratedEntities.indexOf(otherEntityName) === -1) { _%>
-            val <%= otherEntityName %> = <%= otherEntityNameCapitalized %>ResourceIntTest.createEntity(<% if (databaseType === 'sql') { %>em<% } %>)
+            val <%= otherEntityName %> = <%= otherEntityNameCapitalized %>ResourceIT.createEntity(<% if (databaseType === 'sql') { %>em<% } %>)
                     <%_ if (databaseType === 'sql') { _%>
             em.persist(<%= otherEntityName %>)
             em.flush()

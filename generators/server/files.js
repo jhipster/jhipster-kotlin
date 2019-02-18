@@ -937,6 +937,22 @@ const serverFiles = {
             ]
         },
         {
+            condition: generator => generator.reactive && generator.databaseType === 'couchbase',
+            path: SERVER_MAIN_SRC_DIR,
+            templates: [
+                {
+                    file: 'package/repository/reactive/ReactiveN1qlCouchbaseRepository.java',
+                    renameTo: generator =>
+                        `${generator.javaDir}repository/${generator.reactiveRepository}ReactiveN1qlCouchbaseRepository.java`
+                },
+                {
+                    file: 'package/repository/reactive/CustomReactiveN1qlCouchbaseRepository.java',
+                    renameTo: generator =>
+                        `${generator.javaDir}repository/${generator.reactiveRepository}CustomReactiveN1qlCouchbaseRepository.java`
+                }
+            ]
+        },
+        {
             condition: generator => generator.websocket === 'spring-websocket',
             path: SERVER_MAIN_KOTLIN_SRC_DIR,
             templates: [
@@ -1014,8 +1030,8 @@ const serverFiles = {
             path: SERVER_TEST_SRC_KOTLIN_DIR,
             templates: [
                 {
-                    file: 'package/CassandraKeyspaceUnitTest.kt',
-                    renameTo: generator => `${generator.testDir}CassandraKeyspaceUnitTest.kt`,
+                    file: 'package/CassandraKeyspaceIT.kt',
+                    renameTo: generator => `${generator.testDir}CassandraKeyspaceIT.kt`,
                     useBluePrint: true
                 },
                 {
@@ -1024,8 +1040,8 @@ const serverFiles = {
                     useBluePrint: true
                 },
                 {
-                    file: 'package/config/CassandraTestConfiguration.kt',
-                    renameTo: generator => `${generator.testDir}config/CassandraTestConfiguration.kt`,
+                    file: 'package/config/CassandraConfigurationIT.kt',
+                    renameTo: generator => `${generator.testDir}config/CassandraConfigurationIT.kt`,
                     useBluePrint: true
                 }
             ]
@@ -1035,8 +1051,8 @@ const serverFiles = {
             path: SERVER_TEST_SRC_KOTLIN_DIR,
             templates: [
                 {
-                    file: 'package/config/DatabaseTestConfiguration.kt',
-                    renameTo: generator => `${generator.testDir}config/DatabaseTestConfiguration.kt`,
+                    file: 'package/config/DatabaseConfigurationIT.kt',
+                    renameTo: generator => `${generator.testDir}config/DatabaseConfigurationIT.kt`,
                     useBluePrint: true
                 }
             ]
@@ -1046,20 +1062,26 @@ const serverFiles = {
             templates: [
                 { file: 'package/web/rest/TestUtil.java', renameTo: generator => `${generator.testDir}web/rest/TestUtil.java` },
                 {
-                    file: 'package/web/rest/LogsResourceIntTest.java',
-                    renameTo: generator => `${generator.testDir}web/rest/LogsResourceIntTest.java`
+                    file: 'package/web/rest/LogsResourceIT.java',
+                    renameTo: generator => `${generator.testDir}web/rest/LogsResourceIT.java`
                 },
                 {
-                    file: 'package/web/rest/errors/ExceptionTranslatorIntTest.java',
-                    renameTo: generator => `${generator.testDir}web/rest/errors/ExceptionTranslatorIntTest.java`
+                    file: 'package/web/rest/errors/ExceptionTranslatorIT.java',
+                    renameTo: generator => `${generator.testDir}web/rest/errors/ExceptionTranslatorIT.java`
                 },
                 {
                     file: 'package/web/rest/errors/ExceptionTranslatorTestController.java',
                     renameTo: generator => `${generator.testDir}web/rest/errors/ExceptionTranslatorTestController.java`
-                },
+                }
+            ]
+        },
+        {
+            condition: generator => !generator.skipClient,
+            path: SERVER_TEST_SRC_DIR,
+            templates: [
                 {
-                    file: 'package/web/rest/util/PaginationUtilUnitTest.java',
-                    renameTo: generator => `${generator.testDir}web/rest/util/PaginationUtilUnitTest.java`
+                    file: 'package/web/rest/ClientForwardControllerIT.java',
+                    renameTo: generator => `${generator.testDir}web/rest/ClientForwardControllerIT.java`
                 }
             ]
         },
@@ -1068,8 +1090,8 @@ const serverFiles = {
             path: SERVER_TEST_SRC_KOTLIN_DIR,
             templates: [
                 {
-                    file: 'package/config/timezone/HibernateTimeZoneTest.kt',
-                    renameTo: generator => `${generator.testDir}config/timezone/HibernateTimeZoneTest.kt`,
+                    file: 'package/config/timezone/HibernateTimeZoneIT.kt',
+                    renameTo: generator => `${generator.testDir}config/timezone/HibernateTimeZoneIT.kt`,
                     useBluePrint: true
                 }
             ]
@@ -1175,8 +1197,8 @@ const serverFiles = {
             path: SERVER_TEST_SRC_DIR,
             templates: [
                 {
-                    file: 'package/web/rest/LogoutResourceIntTest.java',
-                    renameTo: generator => `${generator.testDir}web/rest/LogoutResourceIntTest.java`
+                    file: 'package/web/rest/LogoutResourceIT.java',
+                    renameTo: generator => `${generator.testDir}web/rest/LogoutResourceIT.java`
                 }
             ]
         },
@@ -1202,7 +1224,7 @@ const serverFiles = {
             path: SERVER_TEST_SRC_DIR,
             templates: [
                 // Create Cucumber test files
-                { file: 'package/cucumber/CucumberTest.java', renameTo: generator => `${generator.testDir}cucumber/CucumberTest.java` },
+                { file: 'package/cucumber/CucumberIT.java', renameTo: generator => `${generator.testDir}cucumber/CucumberIT.java` },
                 {
                     file: 'package/cucumber/stepdefs/StepDefs.java',
                     renameTo: generator => `${generator.testDir}cucumber/stepdefs/StepDefs.java`
@@ -1220,8 +1242,8 @@ const serverFiles = {
             templates: [
                 // Create auth config test files
                 {
-                    file: 'package/security/DomainUserDetailsServiceIntTest.java',
-                    renameTo: generator => `${generator.testDir}security/DomainUserDetailsServiceIntTest.java`
+                    file: 'package/security/DomainUserDetailsServiceIT.java',
+                    renameTo: generator => `${generator.testDir}security/DomainUserDetailsServiceIT.java`
                 }
             ]
         }
