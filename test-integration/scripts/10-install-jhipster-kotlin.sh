@@ -70,8 +70,6 @@ else
     npm ci
     npm link
 
-    cd "$JHI_CLONED"/
-    npm link generator-jhipster
 fi
 
 #-------------------------------------------------------------------------------
@@ -90,6 +88,7 @@ cp -R "$JHI_CLONED"/test-integration/samples-kotlin/* "$JHI_HOME"/test-integrati
 cd "$JHI_CLONED"/
 npm ci
 npm link
+npm link generator-jhipster
 
 # npm run lint
 # npm test
