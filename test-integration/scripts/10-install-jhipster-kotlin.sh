@@ -89,9 +89,9 @@ cp -R "$JHI_CLONED"/test-integration/samples-kotlin/* "$JHI_HOME"/test-integrati
 # Install JHipster Kotlin
 #-------------------------------------------------------------------------------
 cd "$JHI_CLONED"/
+npm link generator-jhipster
 npm ci
 npm link
-npm link generator-jhipster
 
 # npm run lint
 # npm test
