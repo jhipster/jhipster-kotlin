@@ -685,10 +685,10 @@ const expectedFiles = {
     cucumber: [
         `${TEST_DIR}features/user/user.feature`,
         `${TEST_DIR}features/gitkeep`,
-        `${SERVER_TEST_SRC_DIR_JAVA}com/mycompany/myapp/cucumber/CucumberContextConfiguration.java`,
-        `${SERVER_TEST_SRC_DIR_JAVA}com/mycompany/myapp/cucumber/stepdefs/UserStepDefs.java`,
-        `${SERVER_TEST_SRC_DIR_JAVA}com/mycompany/myapp/cucumber/stepdefs/StepDefs.java`,
-        `${SERVER_TEST_SRC_DIR_JAVA}com/mycompany/myapp/cucumber/CucumberIT.java`
+        `${SERVER_TEST_SRC_DIR_KOTLIN}com/mycompany/myapp/cucumber/CucumberContextConfiguration.kt`,
+        `${SERVER_TEST_SRC_DIR_KOTLIN}com/mycompany/myapp/cucumber/stepdefs/UserStepDefs.kt`,
+        `${SERVER_TEST_SRC_DIR_KOTLIN}com/mycompany/myapp/cucumber/stepdefs/StepDefs.kt`,
+        `${SERVER_TEST_SRC_DIR_KOTLIN}com/mycompany/myapp/cucumber/CucumberIT.kt`
     ],
 
     eureka: [

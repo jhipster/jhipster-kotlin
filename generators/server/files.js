@@ -1229,20 +1229,30 @@ const serverFiles = {
         },
         {
             condition: generator => generator.cucumberTests,
-            path: SERVER_TEST_SRC_DIR,
+            path: SERVER_TEST_SRC_KOTLIN_DIR,
             templates: [
                 // Create Cucumber test files
-                { file: 'package/cucumber/CucumberIT.java', renameTo: generator => `${generator.testDir}cucumber/CucumberIT.java` },
                 {
-                    file: 'package/cucumber/stepdefs/StepDefs.java',
-                    renameTo: generator => `${generator.testDir}cucumber/stepdefs/StepDefs.java`
+                    file: 'package/cucumber/CucumberIT.kt',
+                    renameTo: generator => `${generator.testDir}cucumber/CucumberIT.kt`,
+                    useBluePrint: true
                 },
                 {
-                    file: 'package/cucumber/CucumberContextConfiguration.java',
-                    renameTo: generator => `${generator.testDir}cucumber/CucumberContextConfiguration.java`
+                    file: 'package/cucumber/stepdefs/StepDefs.kt',
+                    useBluePrint: true,
+                    renameTo: generator => `${generator.testDir}cucumber/stepdefs/StepDefs.kt`
                 },
-                { file: '../features/gitkeep', noEjs: true }
+                {
+                    file: 'package/cucumber/CucumberContextConfiguration.kt',
+                    renameTo: generator => `${generator.testDir}cucumber/CucumberContextConfiguration.kt`,
+                    useBluePrint: true
+                }
             ]
+        },
+        {
+            condition: generator => generator.cucumberTests,
+            path: SERVER_TEST_SRC_DIR,
+            templates: [{ file: '../features/gitkeep', noEjs: true }]
         },
         {
             condition: generator => !shouldSkipUserManagement(generator) && generator.authenticationType !== 'oauth2',
@@ -1618,14 +1628,19 @@ const serverFiles = {
         },
         {
             condition: generator => !generator.skipUserManagement && generator.cucumberTests,
-            path: SERVER_TEST_SRC_DIR,
+            path: SERVER_TEST_SRC_KOTLIN_DIR,
             templates: [
                 {
-                    file: 'package/cucumber/stepdefs/UserStepDefs.java',
-                    renameTo: generator => `${generator.testDir}cucumber/stepdefs/UserStepDefs.java`
-                },
-                '../features/user/user.feature'
+                    file: 'package/cucumber/stepdefs/UserStepDefs.kt',
+                    renameTo: generator => `${generator.testDir}cucumber/stepdefs/UserStepDefs.kt`,
+                    useBluePrint: true
+                }
             ]
+        },
+        {
+            condition: generator => !generator.skipUserManagement && generator.cucumberTests,
+            path: SERVER_TEST_SRC_DIR,
+            templates: ['../features/user/user.feature']
         },
         {
             condition: generator => !generator.skipUserManagement,
