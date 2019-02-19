@@ -301,6 +301,17 @@ const serverFiles = {
         },
         {
             condition: generator => !shouldSkipUserManagement(generator) && generator.authenticationType === 'session',
+            path: SERVER_MAIN_KOTLIN_SRC_DIR,
+            templates: [
+                {
+                    file: 'package/repository/PersistentTokenRepository.kt',
+                    renameTo: generator => `${generator.javaDir}repository/PersistentTokenRepository.kt`,
+                    useBluePrint: true
+                }
+            ]
+        },
+        {
+            condition: generator => !shouldSkipUserManagement(generator) && generator.authenticationType === 'session',
             path: SERVER_MAIN_SRC_DIR,
             templates: [
                 {
@@ -310,10 +321,6 @@ const serverFiles = {
                 {
                     file: 'package/domain/PersistentToken.java',
                     renameTo: generator => `${generator.javaDir}domain/PersistentToken.java`
-                },
-                {
-                    file: 'package/repository/PersistentTokenRepository.java',
-                    renameTo: generator => `${generator.javaDir}repository/PersistentTokenRepository.java`
                 }
             ]
         },
