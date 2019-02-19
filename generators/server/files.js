@@ -1100,20 +1100,16 @@ const serverFiles = {
                     file: 'package/config/timezone/HibernateTimeZoneIT.kt',
                     renameTo: generator => `${generator.testDir}config/timezone/HibernateTimeZoneIT.kt`,
                     useBluePrint: true
-                }
-            ]
-        },
-        {
-            condition: generator => generator.databaseType === 'sql',
-            path: SERVER_TEST_SRC_DIR,
-            templates: [
-                {
-                    file: 'package/repository/timezone/DateTimeWrapper.java',
-                    renameTo: generator => `${generator.testDir}repository/timezone/DateTimeWrapper.java`
                 },
                 {
-                    file: 'package/repository/timezone/DateTimeWrapperRepository.java',
-                    renameTo: generator => `${generator.testDir}repository/timezone/DateTimeWrapperRepository.java`
+                    file: 'package/repository/timezone/DateTimeWrapper.kt',
+                    renameTo: generator => `${generator.testDir}repository/timezone/DateTimeWrapper.kt`,
+                    useBluePrint: true
+                },
+                {
+                    file: 'package/repository/timezone/DateTimeWrapperRepository.kt',
+                    renameTo: generator => `${generator.testDir}repository/timezone/DateTimeWrapperRepository.kt`,
+                    useBluePrint: true
                 }
             ]
         },
@@ -1304,6 +1300,16 @@ const serverFiles = {
                     file: 'package/service/mapper/UserMapper.kt',
                     renameTo: generator => `${generator.javaDir}service/mapper/UserMapper.kt`,
                     useBluePrint: true
+                },
+                {
+                    file: 'package/repository/UserRepository.kt',
+                    renameTo: generator => `${generator.javaDir}repository/UserRepository.kt`,
+                    useBluePrint: true
+                },
+                {
+                    file: 'package/repository/AuthorityRepository.kt',
+                    renameTo: generator => `${generator.javaDir}repository/AuthorityRepository.kt`,
+                    useBluePrint: true
                 }
             ]
         },
@@ -1316,14 +1322,6 @@ const serverFiles = {
                     renameTo: generator => `${generator.javaDir}domain/${generator.asEntity('User')}.java`
                 },
                 { file: 'package/domain/Authority.java', renameTo: generator => `${generator.javaDir}domain/Authority.java` },
-                {
-                    file: 'package/repository/UserRepository.java',
-                    renameTo: generator => `${generator.javaDir}repository/UserRepository.java`
-                },
-                {
-                    file: 'package/repository/AuthorityRepository.java',
-                    renameTo: generator => `${generator.javaDir}repository/AuthorityRepository.java`
-                },
                 { file: 'package/web/rest/UserResource.java', renameTo: generator => `${generator.javaDir}web/rest/UserResource.java` },
                 {
                     file: 'package/web/rest/vm/ManagedUserVM.java',
@@ -1386,22 +1384,24 @@ const serverFiles = {
         {
             condition: generator =>
                 generator.skipUserManagement && generator.authenticationType === 'oauth2' && generator.searchEngine === 'elasticsearch',
-            path: SERVER_MAIN_SRC_DIR,
+            path: SERVER_MAIN_KOTLIN_SRC_DIR,
             templates: [
                 {
-                    file: 'package/repository/search/UserSearchRepository.java',
-                    renameTo: generator => `${generator.javaDir}repository/search/UserSearchRepository.java`
+                    file: 'package/repository/search/UserSearchRepository.kt',
+                    renameTo: generator => `${generator.javaDir}repository/search/UserSearchRepository.kt`,
+                    useBluePrint: true
                 }
             ]
         },
         {
             condition: generator =>
                 generator.skipUserManagement && generator.authenticationType === 'oauth2' && generator.searchEngine === 'elasticsearch',
-            path: SERVER_TEST_SRC_DIR,
+            path: SERVER_TEST_SRC_KOTLIN_DIR,
             templates: [
                 {
-                    file: 'package/repository/search/UserSearchRepositoryMockConfiguration.java',
-                    renameTo: generator => `${generator.testDir}repository/search/UserSearchRepositoryMockConfiguration.java`
+                    file: 'package/repository/search/UserSearchRepositoryMockConfiguration.kt',
+                    renameTo: generator => `${generator.testDir}repository/search/UserSearchRepositoryMockConfiguration.kt`,
+                    useBluePrint: true
                 }
             ]
         },
@@ -1412,6 +1412,21 @@ const serverFiles = {
                 ['sql', 'mongodb'].includes(generator.databaseType),
             path: SERVER_MAIN_KOTLIN_SRC_DIR,
             templates: [
+                {
+                    file: 'package/repository/CustomAuditEventRepository.kt',
+                    renameTo: generator => `${generator.javaDir}repository/CustomAuditEventRepository.kt`,
+                    useBluePrint: true
+                },
+                {
+                    file: 'package/repository/AuthorityRepository.kt',
+                    renameTo: generator => `${generator.javaDir}repository/AuthorityRepository.kt`,
+                    useBluePrint: true
+                },
+                {
+                    file: 'package/repository/PersistenceAuditEventRepository.kt',
+                    renameTo: generator => `${generator.javaDir}repository/PersistenceAuditEventRepository.kt`,
+                    useBluePrint: true
+                },
                 {
                     file: 'package/service/AuditEventService.kt',
                     renameTo: generator => `${generator.javaDir}service/AuditEventService.kt`,
@@ -1426,19 +1441,21 @@ const serverFiles = {
                 ['sql', 'mongodb'].includes(generator.databaseType),
             path: SERVER_MAIN_SRC_DIR,
             templates: [
-                {
-                    file: 'package/repository/CustomAuditEventRepository.java',
-                    renameTo: generator => `${generator.javaDir}repository/CustomAuditEventRepository.java`
-                },
-                {
-                    file: 'package/repository/AuthorityRepository.java',
-                    renameTo: generator => `${generator.javaDir}repository/AuthorityRepository.java`
-                },
-                {
-                    file: 'package/repository/PersistenceAuditEventRepository.java',
-                    renameTo: generator => `${generator.javaDir}repository/PersistenceAuditEventRepository.java`
-                },
                 { file: 'package/web/rest/AuditResource.java', renameTo: generator => `${generator.javaDir}web/rest/AuditResource.java` }
+            ]
+        },
+        {
+            condition: generator =>
+                generator.skipUserManagement &&
+                generator.authenticationType === 'oauth2' &&
+                ['sql', 'mongodb'].includes(generator.databaseType),
+            path: SERVER_TEST_SRC_KOTLIN_DIR,
+            templates: [
+                {
+                    file: 'package/repository/CustomAuditEventRepositoryIT.kt',
+                    renameTo: generator => `${generator.testDir}repository/CustomAuditEventRepositoryIT.kt`,
+                    useBluePrint: true
+                }
             ]
         },
         {
@@ -1448,10 +1465,6 @@ const serverFiles = {
                 ['sql', 'mongodb'].includes(generator.databaseType),
             path: SERVER_TEST_SRC_DIR,
             templates: [
-                {
-                    file: 'package/repository/CustomAuditEventRepositoryIT.java',
-                    renameTo: generator => `${generator.testDir}repository/CustomAuditEventRepositoryIT.java`
-                },
                 {
                     file: 'package/web/rest/AuditResourceIT.java',
                     renameTo: generator => `${generator.testDir}web/rest/AuditResourceIT.java`
@@ -1472,6 +1485,21 @@ const serverFiles = {
             path: SERVER_MAIN_KOTLIN_SRC_DIR,
             templates: [
                 {
+                    file: 'package/repository/CustomAuditEventRepository.kt',
+                    renameTo: generator => `${generator.javaDir}repository/CustomAuditEventRepository.kt`,
+                    useBluePrint: true
+                },
+                {
+                    file: 'package/repository/AuthorityRepository.kt',
+                    renameTo: generator => `${generator.javaDir}repository/${generator.reactiveRepository}AuthorityRepository.kt`,
+                    useBluePrint: true
+                },
+                {
+                    file: 'package/repository/PersistenceAuditEventRepository.kt',
+                    renameTo: generator => `${generator.javaDir}repository/PersistenceAuditEventRepository.kt`,
+                    useBluePrint: true
+                },
+                {
                     file: 'package/service/AuditEventService.kt',
                     renameTo: generator => `${generator.javaDir}service/AuditEventService.kt`,
                     useBluePrint: true
@@ -1483,18 +1511,6 @@ const serverFiles = {
             path: SERVER_MAIN_SRC_DIR,
             templates: [
                 { file: 'package/domain/Authority.java', renameTo: generator => `${generator.javaDir}domain/Authority.java` },
-                {
-                    file: 'package/repository/CustomAuditEventRepository.java',
-                    renameTo: generator => `${generator.javaDir}repository/CustomAuditEventRepository.java`
-                },
-                {
-                    file: 'package/repository/AuthorityRepository.java',
-                    renameTo: generator => `${generator.javaDir}repository/${generator.reactiveRepository}AuthorityRepository.java`
-                },
-                {
-                    file: 'package/repository/PersistenceAuditEventRepository.java',
-                    renameTo: generator => `${generator.javaDir}repository/PersistenceAuditEventRepository.java`
-                },
                 { file: 'package/web/rest/AuditResource.java', renameTo: generator => `${generator.javaDir}web/rest/AuditResource.java` }
             ]
         },
@@ -1502,6 +1518,11 @@ const serverFiles = {
             condition: generator => !generator.skipUserManagement,
             path: SERVER_MAIN_KOTLIN_SRC_DIR,
             templates: [
+                {
+                    file: 'package/repository/UserRepository.kt',
+                    renameTo: generator => `${generator.javaDir}repository/${generator.reactiveRepository}UserRepository.kt`,
+                    useBluePrint: true
+                },
                 /* User management java service files */
                 {
                     file: 'package/service/UserService.kt',
@@ -1539,10 +1560,6 @@ const serverFiles = {
                     file: 'package/domain/User.java',
                     renameTo: generator => `${generator.javaDir}domain/${generator.asEntity('User')}.java`
                 },
-                {
-                    file: 'package/repository/UserRepository.java',
-                    renameTo: generator => `${generator.javaDir}repository/${generator.reactiveRepository}UserRepository.java`
-                },
 
                 /* User management java web files */
                 {
@@ -1562,21 +1579,23 @@ const serverFiles = {
         },
         {
             condition: generator => !generator.skipUserManagement && generator.searchEngine === 'elasticsearch',
-            path: SERVER_MAIN_SRC_DIR,
+            path: SERVER_MAIN_KOTLIN_SRC_DIR,
             templates: [
                 {
-                    file: 'package/repository/search/UserSearchRepository.java',
-                    renameTo: generator => `${generator.javaDir}repository/search/UserSearchRepository.java`
+                    file: 'package/repository/search/UserSearchRepository.kt',
+                    renameTo: generator => `${generator.javaDir}repository/search/UserSearchRepository.kt`,
+                    useBluePrint: true
                 }
             ]
         },
         {
             condition: generator => !generator.skipUserManagement && generator.searchEngine === 'elasticsearch',
-            path: SERVER_TEST_SRC_DIR,
+            path: SERVER_TEST_SRC_KOTLIN_DIR,
             templates: [
                 {
-                    file: 'package/repository/search/UserSearchRepositoryMockConfiguration.java',
-                    renameTo: generator => `${generator.testDir}repository/search/UserSearchRepositoryMockConfiguration.java`
+                    file: 'package/repository/search/UserSearchRepositoryMockConfiguration.kt',
+                    renameTo: generator => `${generator.testDir}repository/search/UserSearchRepositoryMockConfiguration.kt`,
+                    useBluePrint: true
                 }
             ]
         },
@@ -1618,11 +1637,12 @@ const serverFiles = {
         },
         {
             condition: generator => !generator.skipUserManagement && ['sql', 'mongodb', 'couchbase'].includes(generator.databaseType),
-            path: SERVER_TEST_SRC_DIR,
+            path: SERVER_TEST_SRC_KOTLIN_DIR,
             templates: [
                 {
-                    file: 'package/repository/CustomAuditEventRepositoryIT.java',
-                    renameTo: generator => `${generator.testDir}repository/CustomAuditEventRepositoryIT.java`
+                    file: 'package/repository/CustomAuditEventRepositoryIT.kt',
+                    renameTo: generator => `${generator.testDir}repository/CustomAuditEventRepositoryIT.kt`,
+                    useBluePrint: true
                 }
             ]
         },

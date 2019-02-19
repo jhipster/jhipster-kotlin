@@ -183,7 +183,6 @@ const expectedFiles = {
         `${SERVER_MAIN_SRC_DIR_JAVA}com/mycompany/myapp/domain/package-info.java`,
         `${SERVER_MAIN_SRC_DIR_JAVA}com/mycompany/myapp/domain/AbstractAuditingEntity.java`,
         `${SERVER_MAIN_SRC_DIR_JAVA}com/mycompany/myapp/domain/PersistentAuditEvent.java`,
-        `${SERVER_MAIN_SRC_DIR_JAVA}com/mycompany/myapp/repository/package-info.java`,
         `${SERVER_MAIN_SRC_DIR_JAVA}com/mycompany/myapp/security/package-info.java`,
         `${SERVER_MAIN_SRC_DIR_JAVA}com/mycompany/myapp/security/AuthoritiesConstants.java`,
         `${SERVER_MAIN_SRC_DIR_JAVA}com/mycompany/myapp/security/SecurityUtils.java`,
@@ -217,10 +216,10 @@ const expectedFiles = {
         `${SERVER_MAIN_RES_DIR}templates/mail/passwordResetEmail.html`,
         `${SERVER_MAIN_SRC_DIR_JAVA}com/mycompany/myapp/domain/Authority.java`,
         `${SERVER_MAIN_SRC_DIR_JAVA}com/mycompany/myapp/domain/User.java`,
-        `${SERVER_MAIN_SRC_DIR_JAVA}com/mycompany/myapp/repository/AuthorityRepository.java`,
-        `${SERVER_MAIN_SRC_DIR_JAVA}com/mycompany/myapp/repository/CustomAuditEventRepository.java`,
-        `${SERVER_MAIN_SRC_DIR_JAVA}com/mycompany/myapp/repository/PersistenceAuditEventRepository.java`,
-        `${SERVER_MAIN_SRC_DIR_JAVA}com/mycompany/myapp/repository/UserRepository.java`,
+        `${SERVER_MAIN_SRC_DIR_KOTLIN}com/mycompany/myapp/repository/AuthorityRepository.kt`,
+        `${SERVER_MAIN_SRC_DIR_KOTLIN}com/mycompany/myapp/repository/CustomAuditEventRepository.kt`,
+        `${SERVER_MAIN_SRC_DIR_KOTLIN}com/mycompany/myapp/repository/PersistenceAuditEventRepository.kt`,
+        `${SERVER_MAIN_SRC_DIR_KOTLIN}com/mycompany/myapp/repository/UserRepository.kt`,
         `${SERVER_MAIN_SRC_DIR_JAVA}com/mycompany/myapp/security/DomainUserDetailsService.java`,
         `${SERVER_MAIN_SRC_DIR_JAVA}com/mycompany/myapp/security/UserNotActivatedException.java`,
         `${SERVER_MAIN_SRC_DIR_KOTLIN}com/mycompany/myapp/service/AuditEventService.kt`,
@@ -240,7 +239,8 @@ const expectedFiles = {
         `${SERVER_TEST_SRC_DIR_JAVA}com/mycompany/myapp/web/rest/UserResourceIT.java`,
         `${SERVER_TEST_SRC_DIR_KOTLIN}com/mycompany/myapp/service/UserServiceIT.kt`,
         `${SERVER_TEST_SRC_DIR_KOTLIN}com/mycompany/myapp/service/mapper/UserMapperIT.kt`,
-        `${SERVER_TEST_SRC_DIR_KOTLIN}com/mycompany/myapp/service/MailServiceIT.kt`
+        `${SERVER_TEST_SRC_DIR_KOTLIN}com/mycompany/myapp/service/MailServiceIT.kt`,
+        `${SERVER_TEST_SRC_DIR_KOTLIN}com/mycompany/myapp/repository/CustomAuditEventRepositoryIT.kt`
     ],
 
     infinispan: [`${SERVER_MAIN_SRC_DIR_KOTLIN}com/mycompany/myapp/config/CacheFactoryConfiguration.kt`],
@@ -546,7 +546,7 @@ const expectedFiles = {
 
     session: [
         `${SERVER_MAIN_SRC_DIR_JAVA}com/mycompany/myapp/domain/PersistentToken.java`,
-        `${SERVER_MAIN_SRC_DIR_JAVA}com/mycompany/myapp/repository/PersistentTokenRepository.java`,
+        `${SERVER_MAIN_SRC_DIR_KOTLIN}com/mycompany/myapp/repository/PersistentTokenRepository.kt`,
         `${SERVER_MAIN_SRC_DIR_JAVA}com/mycompany/myapp/security/PersistentTokenRememberMeServices.java`,
         `${CLIENT_MAIN_SRC_DIR}app/account/sessions/sessions.component.html`,
         `${CLIENT_MAIN_SRC_DIR}app/account/sessions/sessions.component.ts`,
@@ -635,6 +635,12 @@ const expectedFiles = {
         `${SERVER_MAIN_SRC_DIR_KOTLIN}com/mycompany/myapp/config/LiquibaseConfiguration.kt`
     ],
 
+    hibernateTimeZoneConfig: [
+        `${SERVER_TEST_SRC_DIR_KOTLIN}com/mycompany/myapp/config/timezone/HibernateTimeZoneIT.kt`,
+        `${SERVER_TEST_SRC_DIR_KOTLIN}com/mycompany/myapp/repository/timezone/DateTimeWrapper.kt`,
+        `${SERVER_TEST_SRC_DIR_KOTLIN}com/mycompany/myapp/repository/timezone/DateTimeWrapperRepository.kt`
+    ],
+
     hazelcast: [`${DOCKER_DIR}hazelcast-management-center.yml`],
 
     mongodb: [
@@ -678,8 +684,8 @@ const expectedFiles = {
 
     elasticsearch: [
         `${DOCKER_DIR}elasticsearch.yml`,
-        `${SERVER_MAIN_SRC_DIR_JAVA}com/mycompany/myapp/repository/search/UserSearchRepository.java`,
-        `${SERVER_TEST_SRC_DIR_JAVA}com/mycompany/myapp/repository/search/UserSearchRepositoryMockConfiguration.java`
+        `${SERVER_MAIN_SRC_DIR_KOTLIN}com/mycompany/myapp/repository/search/UserSearchRepository.kt`,
+        `${SERVER_TEST_SRC_DIR_KOTLIN}com/mycompany/myapp/repository/search/UserSearchRepositoryMockConfiguration.kt`
     ],
 
     cucumber: [

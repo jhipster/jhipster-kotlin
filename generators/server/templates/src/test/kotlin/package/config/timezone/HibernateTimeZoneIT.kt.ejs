@@ -105,8 +105,8 @@ class HibernateTimeZoneIT {
         val resultSet = jdbcTemplate.queryForRowSet(request)
         val expectedValue = dateTimeWrapper
             .localDateTime
-            .atZone(ZoneId.systemDefault())
-            .format(dateTimeFormatter)
+            ?.atZone(ZoneId.systemDefault())
+            ?.format(dateTimeFormatter)
 
         assertThatDateStoredValueIsEqualToInsertDateValueOnGMTTimeZone(resultSet, expectedValue)
     }
@@ -120,7 +120,7 @@ class HibernateTimeZoneIT {
         val resultSet = jdbcTemplate.queryForRowSet(request)
         val expectedValue = dateTimeWrapper
             .offsetDateTime
-            .format(dateTimeFormatter)
+            ?.format(dateTimeFormatter)
 
         assertThatDateStoredValueIsEqualToInsertDateValueOnGMTTimeZone(resultSet, expectedValue)
     }
@@ -134,7 +134,7 @@ class HibernateTimeZoneIT {
         val resultSet = jdbcTemplate.queryForRowSet(request)
         val expectedValue = dateTimeWrapper
             .zonedDateTime
-            .format(dateTimeFormatter)
+            ?.format(dateTimeFormatter)
 
         assertThatDateStoredValueIsEqualToInsertDateValueOnGMTTimeZone(resultSet, expectedValue)
     }
@@ -148,9 +148,9 @@ class HibernateTimeZoneIT {
         val resultSet = jdbcTemplate.queryForRowSet(request)
         val expectedValue = dateTimeWrapper
             .localTime
-            .atDate(LocalDate.of(1970, Month.JANUARY, 1))
-            .atZone(ZoneId.systemDefault())
-            .format(timeFormatter)
+            ?.atDate(LocalDate.of(1970, Month.JANUARY, 1))
+            ?.atZone(ZoneId.systemDefault())
+            ?.format(timeFormatter)
 
         assertThatDateStoredValueIsEqualToInsertDateValueOnGMTTimeZone(resultSet, expectedValue)
     }
@@ -164,10 +164,10 @@ class HibernateTimeZoneIT {
         val resultSet = jdbcTemplate.queryForRowSet(request)
         val expectedValue = dateTimeWrapper
             .offsetTime
-            .toLocalTime()
-            .atDate(LocalDate.of(1970, Month.JANUARY, 1))
-            .atZone(ZoneId.systemDefault())
-            .format(timeFormatter)
+            ?.toLocalTime()
+            ?.atDate(LocalDate.of(1970, Month.JANUARY, 1))
+            ?.atZone(ZoneId.systemDefault())
+            ?.format(timeFormatter)
 
         assertThatDateStoredValueIsEqualToInsertDateValueOnGMTTimeZone(resultSet, expectedValue)
     }
@@ -181,7 +181,7 @@ class HibernateTimeZoneIT {
         val resultSet = jdbcTemplate.queryForRowSet(request)
         val expectedValue = dateTimeWrapper
             .localDate
-            .format(dateFormatter)
+            ?.format(dateFormatter)
 
         assertThatDateStoredValueIsEqualToInsertDateValueOnGMTTimeZone(resultSet, expectedValue)
     }
@@ -190,7 +190,7 @@ class HibernateTimeZoneIT {
         return format("SELECT %s FROM <%= jhiTablePrefix %>_date_time_wrapper where id=%d", fieldName, id)
     }
 
-    private fun assertThatDateStoredValueIsEqualToInsertDateValueOnGMTTimeZone(sqlRowSet: SqlRowSet, expectedValue: String) {
+    private fun assertThatDateStoredValueIsEqualToInsertDateValueOnGMTTimeZone(sqlRowSet: SqlRowSet, expectedValue: String?) {
         while (sqlRowSet.next()) {
             val dbValue = sqlRowSet.getString(1)
 

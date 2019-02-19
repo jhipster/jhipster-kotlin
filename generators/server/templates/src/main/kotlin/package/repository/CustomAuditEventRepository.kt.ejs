@@ -35,8 +35,10 @@ import java.time.Instant
  * An implementation of Spring Boot's AuditEventRepository.
  */
 @Repository
-class CustomAuditEventRepository(private val persistenceAuditEventRepository: PersistenceAuditEventRepository,
-                                 private val auditEventConverter: AuditEventConverter) : AuditEventRepository {
+class CustomAuditEventRepository(
+    private val persistenceAuditEventRepository: PersistenceAuditEventRepository,
+    private val auditEventConverter: AuditEventConverter
+) : AuditEventRepository {
 
     private val log = LoggerFactory.getLogger(javaClass)
 
@@ -62,12 +64,12 @@ class CustomAuditEventRepository(private val persistenceAuditEventRepository: Pe
     /**
      * Truncate event data that might exceed column length.
      */
-    private fun truncate(data: MutableMap<String, String>?): MutableMap<String, String> {
-        val results = mutableMapOf<String, String>()
+    private fun truncate(data: Map<String, String?>?): MutableMap<String, String?> {
+        val results = mutableMapOf<String, String?>()
 
         if (data != null) {
             for (entry in data.entries) {
-                var value: String = entry.value
+                var value: String? = entry.value
                 if (value != null) {
                     val length = value.length
                     if (length > EVENT_DATA_COLUMN_MAX_LENGTH) {
@@ -84,7 +86,7 @@ class CustomAuditEventRepository(private val persistenceAuditEventRepository: Pe
 
     companion object {
 
-        const val AUTHORIZATION_FAILURE = "AUTHORIZATION_FAILURE"
+        private const val AUTHORIZATION_FAILURE = "AUTHORIZATION_FAILURE"
 
         /**
          * Should be the same as in Liquibase migration.

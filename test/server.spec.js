@@ -49,6 +49,8 @@ describe('JHipster server generator', () => {
             assert.file(expectedFiles.server);
             assert.file(expectedFiles.jwtServer);
             assert.file(expectedFiles.maven);
+            assert.file(expectedFiles.mysql);
+            assert.file(expectedFiles.hibernateTimeZoneConfig);
             assert.noFile(
                 getFilesForOptions(
                     angularfiles,

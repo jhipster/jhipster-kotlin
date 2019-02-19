@@ -17,6 +17,7 @@
  limitations under the License.
 -%>
 package <%=packageName%>.repository
+
 <% if (databaseType === 'cassandra') { %>
 import com.datastax.driver.core.*
 import com.datastax.driver.mapping.Mapper
@@ -34,14 +35,12 @@ import javax.validation.ConstraintViolation
 import javax.validation.ConstraintViolationException
 import javax.validation.Validator
 
-import java.util.ArrayList<% } %>
-import java.util.List
+<% } %>
 <%_ if (databaseType === 'cassandra') { _%>
 import java.util.Optional
-import java.util.Set
 <%_ } _%>
 <% if (databaseType === 'couchbase') { %>
-import static <%=packageName%>.config.Constants.ID_DELIMITER
+import <%=packageName%>.config.Constants.ID_DELIMITER
 <% } %>
 <% if (databaseType === 'sql') { %>/**
  * Spring Data JPA repository for the PersistentToken entity.
@@ -73,88 +72,82 @@ interface PersistentTokenRepository: <% if (databaseType === 'sql') { %>JpaRepos
 
 }<% } else if (databaseType === 'cassandra') { %>
 @Repository
-public class PersistentTokenRepository {
+class PersistentTokenRepository (private val session: Session, private val validator: Validator) {
 
-    private final Session session;
+    private val mapper: Mapper<PersistentToken>
 
-    private final Validator validator;
+    private val findPersistentTokenSeriesByUserIdStmt: PreparedStatement
 
-    Mapper<PersistentToken> mapper;
+    private val insertPersistentTokenSeriesByUserIdStmt: PreparedStatement
 
-    private PreparedStatement findPersistentTokenSeriesByUserIdStmt;
+    private val insertPersistentTokenStmt: PreparedStatement
 
-    private PreparedStatement insertPersistentTokenSeriesByUserIdStmt;
+    private val deletePersistentTokenSeriesByUserIdStmt: PreparedStatement
 
-    private PreparedStatement insertPersistentTokenStmt;
-
-    private PreparedStatement deletePersistentTokenSeriesByUserIdStmt;
-
-    public PersistentTokenRepository(Session session, Validator validator) {
-        this.session = session;
-        this.validator = validator;
-        mapper = new MappingManager(session).mapper(PersistentToken.class);
+    init {
+        mapper = MappingManager(session).mapper(PersistentToken.javaClass)
 
         findPersistentTokenSeriesByUserIdStmt = session.prepare(
             "SELECT persistent_token_series " +
             "FROM persistent_token_by_user " +
-            "WHERE user_id = :user_id");
+            "WHERE user_id = :user_id")
 
         insertPersistentTokenSeriesByUserIdStmt = session.prepare(
             "INSERT INTO persistent_token_by_user (user_id, persistent_token_series) " +
                 "VALUES (:user_id, :persistent_token_series) " +
-                "USING TTL 2592000"); // 30 days
+                "USING TTL 2592000") // 30 days
 
         insertPersistentTokenStmt = session.prepare(
             "INSERT INTO persistent_token (series, token_date, user_agent, token_value, login, user_id, ip_address) " +
                 "VALUES (:series, :token_date, :user_agent, :token_value, :login, :user_id, :ip_address) " +
-                "USING TTL 2592000"); // 30 days
+                "USING TTL 2592000") // 30 days
 
         deletePersistentTokenSeriesByUserIdStmt = session.prepare(
             "DELETE FROM persistent_token_by_user WHERE user_id = :user_id AND persistent_token_series = :persistent_token_series"
-        );
+        )
     }
 
-    public Optional<PersistentToken> findById(String presentedSeries) {
-        return Optional.ofNullable(mapper.get(presentedSeries));
+    fun findById(presentedSeries: String): Optional<PersistentToken> {
+        return Optional.ofNullable(mapper.get(presentedSeries))
     }
 
-    public List<PersistentToken> findByUser(<%= asEntity('User') %> user) {
-        BoundStatement stmt = findPersistentTokenSeriesByUserIdStmt.bind();
-        stmt.setString("user_id", user.getId());
-        ResultSet rs = session.execute(stmt);
-        List<PersistentToken> persistentTokens = new ArrayList<>();
+    fun findByUser( user: <%= asEntity('User') %>): MutableList<PersistentToken> {
+        val stmt = findPersistentTokenSeriesByUserIdStmt.bind()
+        stmt.setString("user_id", user.id)
+        val rs = session.execute(stmt)
+        val persistentTokens = mutableListOf<PersistentToken>()
         rs.all().stream()
-            .map(row -> row.getString("persistent_token_series"))
-            .map(token -> mapper.get(token))
-            .forEach(persistentTokens::add);
+            .map { row -> row.getString("persistent_token_series") }
+            .map { token -> mapper.get(token) }
+            .forEach(persistentTokens::add)
 
-        return persistentTokens;
+        return persistentTokens
     }
 
-    public void save(PersistentToken token) {
-        Set<ConstraintViolation<PersistentToken>> violations = validator.validate(token);
+    fun save(token: PersistentToken) {
+        val violations = validator.validate(token)
         if (violations != null && !violations.isEmpty()) {
-            throw new ConstraintViolationException(violations);
+            throw ConstraintViolationException(violations)
         }
-        BatchStatement batch = new BatchStatement();
+        val batch = new BatchStatement()
         batch.add(insertPersistentTokenStmt.bind()
-            .setString("series", token.getSeries())
-            .setTimestamp("token_date", token.getTokenDate())
-            .setString("user_agent", token.getUserAgent())
-            .setString("token_value", token.getTokenValue())
-            .setString("login", token.getLogin())
-            .setString("user_id", token.getUserId())
-            .setString("ip_address", token.getIpAddress()));
+            .setString("series", token.series)
+            .setTimestamp("token_date", token.tokenDate)
+            .setString("user_agent", token.userAgent)
+            .setString("token_value", token.tokenValue)
+            .setString("login", token.login)
+            .setString("user_id", token.userId)
+            .setString("ip_address", token.ipAddress));
         batch.add(insertPersistentTokenSeriesByUserIdStmt.bind()
-            .setString("user_id", token.getUserId())
-            .setString("persistent_token_series", token.getSeries()));
-        session.execute(batch);
+            .setString("user_id", token.userId)
+            .setString("persistent_token_series", token.series))
+        session.execute(batch)
     }
 
-    public void delete(PersistentToken token) {
-        mapper.delete(token);
+    fun delete(token: PersistentToken) {
+        mapper.delete(token)
         session.execute(deletePersistentTokenSeriesByUserIdStmt.bind()
-            .setString("user_id", token.getUserId())
-            .setString("persistent_token_series", token.getSeries()));
+            .setString("user_id", token.userId)
+            .setString("persistent_token_series", token.series)))
     }
 }<% } %>

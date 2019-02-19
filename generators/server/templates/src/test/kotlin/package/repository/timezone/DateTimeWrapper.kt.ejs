@@ -1,0 +1,86 @@
+<%#
+ Copyright 2013-2019 the original author or authors from the JHipster project.
+
+ This file is part of the JHipster project, see https://www.jhipster.tech/
+ for more information.
+
+ Licensed under the Apache License, Version 2.0 (the "License");
+ you may not use this file except in compliance with the License.
+ You may obtain a copy of the License at
+
+      http://www.apache.org/licenses/LICENSE-2.0
+
+ Unless required by applicable law or agreed to in writing, software
+ distributed under the License is distributed on an "AS IS" BASIS,
+ WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
+ See the License for the specific language governing permissions and
+ limitations under the License.
+-%>
+package <%= packageName %>.repository.timezone
+
+import javax.persistence.*
+import java.io.Serializable
+import java.time.*
+import java.util.Objects
+
+@Entity
+@Table(name = "<%= jhiTablePrefix %>_date_time_wrapper")
+class DateTimeWrapper(
+    @Id
+    <%_ if (prodDatabaseType === 'mysql' || prodDatabaseType === 'mariadb') { _%>
+    @GeneratedValue(strategy = GenerationType.IDENTITY)
+    <%_ } else { _%>
+    @GeneratedValue(strategy = GenerationType.SEQUENCE, generator = "sequenceGenerator")
+    @SequenceGenerator(name = "sequenceGenerator")
+    <%_ } _%>
+    var id: Long? = null,
+
+    @Column(name = "instant")
+    var instant: Instant? = null,
+
+    @Column(name = "local_date_time")
+    var localDateTime: LocalDateTime? = null,
+
+    @Column(name = "offset_date_time")
+    var offsetDateTime: OffsetDateTime? = null,
+
+    @Column(name = "zoned_date_time")
+    var zonedDateTime: ZonedDateTime? = null,
+
+    @Column(name = "local_time")
+    var localTime: LocalTime? = null,
+
+    @Column(name = "offset_time")
+    var offsetTime: OffsetTime? = null,
+
+    @Column(name = "local_date")
+    var localDate: LocalDate? = null
+
+) : Serializable {
+
+    override fun equals(other: Any?): Boolean {
+        if (this === other) return true
+        if (other !is DateTimeWrapper) return false
+        if (other.id == null || id == null) return false
+
+        return Objects.equals(id, other.id)
+    }
+
+    override fun hashCode(): Int {
+        return Objects.hashCode(id)
+    }
+
+    override fun toString(): String {
+        return "TimeZoneTest{" +
+            "id=" + id +
+            ", instant=" + instant +
+            ", localDateTime=" + localDateTime +
+            ", offsetDateTime=" + offsetDateTime +
+            ", zonedDateTime=" + zonedDateTime +
+            '}'.toString()
+    }
+
+    companion object {
+        private const val serialVersionUID = 1L
+    }
+}
