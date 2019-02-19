@@ -117,16 +117,6 @@ const serverFiles = {
             ]
         },
         {
-            condition: generator => generator.databaseType === 'mongodb',
-            path: SERVER_MAIN_SRC_DIR,
-            templates: [
-                {
-                    file: 'package/config/dbmigrations/package-info.java',
-                    renameTo: generator => `${generator.javaDir}config/dbmigrations/package-info.java`
-                }
-            ]
-        },
-        {
             condition: generator =>
                 generator.databaseType === 'mongodb' &&
                 (!generator.skipUserManagement || (generator.skipUserManagement && generator.authenticationType === 'oauth2')),
@@ -1025,7 +1015,19 @@ const serverFiles = {
     ],
     ...baseServerFiles.serverResource.serverJavaDomain,
     ...baseServerFiles.serverResource.serverJavaPackageInfo,
-    ...baseServerFiles.serverResource.serverJavaService,
+    serverJavaService: [
+        {
+            condition: generator => !generator.skipUserManagement,
+            path: SERVER_MAIN_KOTLIN_SRC_DIR,
+            templates: [
+                {
+                    file: 'package/service/util/RandomUtil.kt',
+                    renameTo: generator => `${generator.javaDir}service/util/RandomUtil.kt`,
+                    useBluePrint: true
+                }
+            ]
+        }
+    ],
     ...baseServerFiles.serverResource.serverJavaWebError,
     ...baseServerFiles.serverResource.serverJavaWeb,
     ...baseServerFiles.serverResource.serverJavaWebsocket,
@@ -1254,7 +1256,422 @@ const serverFiles = {
             ]
         }
     ],
-    ...baseServerFiles.serverResource.serverJavaUserManagement
+    serverJavaUserManagement: [
+        {
+            condition: generator =>
+                (generator.skipUserManagement &&
+                    generator.authenticationType === 'oauth2' &&
+                    generator.applicationType !== 'microservice') ||
+                (!generator.skipUserManagement && generator.databaseType === 'sql'),
+            path: SERVER_MAIN_RES_DIR,
+            templates: ['config/liquibase/data/user.csv']
+        },
+        {
+            condition: generator =>
+                (generator.skipUserManagement &&
+                    generator.authenticationType === 'oauth2' &&
+                    generator.applicationType !== 'microservice' &&
+                    generator.databaseType === 'sql') ||
+                (!generator.skipUserManagement && generator.databaseType === 'sql'),
+            path: SERVER_MAIN_RES_DIR,
+            templates: ['config/liquibase/data/authority.csv', 'config/liquibase/data/user_authority.csv']
+        },
+        {
+            condition: generator => generator.skipUserManagement && generator.authenticationType === 'oauth2',
+            path: SERVER_MAIN_KOTLIN_SRC_DIR,
+            templates: [
+                {
+                    file: 'package/service/UserService.kt',
+                    renameTo: generator => `${generator.javaDir}service/UserService.kt`,
+                    useBluePrint: true
+                },
+                {
+                    file: 'package/service/dto/UserDTO.kt',
+                    renameTo: generator => `${generator.javaDir}service/dto/${generator.asDto('User')}.kt`,
+                    useBluePrint: true
+                },
+                {
+                    file: 'package/service/mapper/UserMapper.kt',
+                    renameTo: generator => `${generator.javaDir}service/mapper/UserMapper.kt`,
+                    useBluePrint: true
+                }
+            ]
+        },
+        {
+            condition: generator => generator.skipUserManagement && generator.authenticationType === 'oauth2',
+            path: SERVER_MAIN_SRC_DIR,
+            templates: [
+                {
+                    file: 'package/domain/User.java',
+                    renameTo: generator => `${generator.javaDir}domain/${generator.asEntity('User')}.java`
+                },
+                { file: 'package/domain/Authority.java', renameTo: generator => `${generator.javaDir}domain/Authority.java` },
+                {
+                    file: 'package/repository/UserRepository.java',
+                    renameTo: generator => `${generator.javaDir}repository/UserRepository.java`
+                },
+                {
+                    file: 'package/repository/AuthorityRepository.java',
+                    renameTo: generator => `${generator.javaDir}repository/AuthorityRepository.java`
+                },
+                { file: 'package/web/rest/UserResource.java', renameTo: generator => `${generator.javaDir}web/rest/UserResource.java` },
+                {
+                    file: 'package/web/rest/vm/ManagedUserVM.java',
+                    renameTo: generator => `${generator.javaDir}web/rest/vm/ManagedUserVM.java`
+                }
+            ]
+        },
+        {
+            condition: generator =>
+                generator.skipUserManagement &&
+                generator.authenticationType === 'oauth2' &&
+                ['monolith', 'gateway'].includes(generator.applicationType),
+            path: SERVER_MAIN_SRC_DIR,
+            templates: [
+                {
+                    file: 'package/web/rest/AccountResource.java',
+                    renameTo: generator => `${generator.javaDir}web/rest/AccountResource.java`
+                }
+            ]
+        },
+        {
+            condition: generator => generator.skipUserManagement && generator.authenticationType === 'oauth2',
+            path: SERVER_TEST_SRC_KOTLIN_DIR,
+            templates: [
+                {
+                    file: 'package/service/UserServiceIT.kt',
+                    renameTo: generator => `${generator.testDir}service/UserServiceIT.kt`,
+                    useBluePrint: true
+                },
+                {
+                    file: 'package/service/mapper/UserMapperIT.kt',
+                    renameTo: generator => `${generator.testDir}service/mapper/UserMapperIT.kt`,
+                    useBluePrint: true
+                }
+            ]
+        },
+        {
+            condition: generator => generator.skipUserManagement && generator.authenticationType === 'oauth2',
+            path: SERVER_TEST_SRC_DIR,
+            templates: [
+                {
+                    file: 'package/web/rest/UserResourceIT.java',
+                    renameTo: generator => `${generator.testDir}web/rest/UserResourceIT.java`
+                }
+            ]
+        },
+        {
+            condition: generator =>
+                generator.skipUserManagement &&
+                generator.authenticationType === 'oauth2' &&
+                ['monolith', 'gateway'].includes(generator.applicationType),
+            path: SERVER_TEST_SRC_DIR,
+            templates: [
+                {
+                    file: 'package/web/rest/AccountResourceIT.java',
+                    renameTo: generator => `${generator.testDir}web/rest/AccountResourceIT.java`
+                }
+            ]
+        },
+        {
+            condition: generator =>
+                generator.skipUserManagement && generator.authenticationType === 'oauth2' && generator.searchEngine === 'elasticsearch',
+            path: SERVER_MAIN_SRC_DIR,
+            templates: [
+                {
+                    file: 'package/repository/search/UserSearchRepository.java',
+                    renameTo: generator => `${generator.javaDir}repository/search/UserSearchRepository.java`
+                }
+            ]
+        },
+        {
+            condition: generator =>
+                generator.skipUserManagement && generator.authenticationType === 'oauth2' && generator.searchEngine === 'elasticsearch',
+            path: SERVER_TEST_SRC_DIR,
+            templates: [
+                {
+                    file: 'package/repository/search/UserSearchRepositoryMockConfiguration.java',
+                    renameTo: generator => `${generator.testDir}repository/search/UserSearchRepositoryMockConfiguration.java`
+                }
+            ]
+        },
+        {
+            condition: generator =>
+                generator.skipUserManagement &&
+                generator.authenticationType === 'oauth2' &&
+                ['sql', 'mongodb'].includes(generator.databaseType),
+            path: SERVER_MAIN_KOTLIN_SRC_DIR,
+            templates: [
+                {
+                    file: 'package/service/AuditEventService.kt',
+                    renameTo: generator => `${generator.javaDir}service/AuditEventService.kt`,
+                    useBluePrint: true
+                }
+            ]
+        },
+        {
+            condition: generator =>
+                generator.skipUserManagement &&
+                generator.authenticationType === 'oauth2' &&
+                ['sql', 'mongodb'].includes(generator.databaseType),
+            path: SERVER_MAIN_SRC_DIR,
+            templates: [
+                {
+                    file: 'package/repository/CustomAuditEventRepository.java',
+                    renameTo: generator => `${generator.javaDir}repository/CustomAuditEventRepository.java`
+                },
+                {
+                    file: 'package/repository/AuthorityRepository.java',
+                    renameTo: generator => `${generator.javaDir}repository/AuthorityRepository.java`
+                },
+                {
+                    file: 'package/repository/PersistenceAuditEventRepository.java',
+                    renameTo: generator => `${generator.javaDir}repository/PersistenceAuditEventRepository.java`
+                },
+                { file: 'package/web/rest/AuditResource.java', renameTo: generator => `${generator.javaDir}web/rest/AuditResource.java` }
+            ]
+        },
+        {
+            condition: generator =>
+                generator.skipUserManagement &&
+                generator.authenticationType === 'oauth2' &&
+                ['sql', 'mongodb'].includes(generator.databaseType),
+            path: SERVER_TEST_SRC_DIR,
+            templates: [
+                {
+                    file: 'package/repository/CustomAuditEventRepositoryIT.java',
+                    renameTo: generator => `${generator.testDir}repository/CustomAuditEventRepositoryIT.java`
+                },
+                {
+                    file: 'package/web/rest/AuditResourceIT.java',
+                    renameTo: generator => `${generator.testDir}web/rest/AuditResourceIT.java`
+                }
+            ]
+        },
+        {
+            condition: generator => !generator.skipUserManagement,
+            path: SERVER_MAIN_RES_DIR,
+            templates: [
+                'templates/mail/activationEmail.html',
+                'templates/mail/creationEmail.html',
+                'templates/mail/passwordResetEmail.html'
+            ]
+        },
+        {
+            condition: generator => !generator.skipUserManagement && ['sql', 'mongodb', 'couchbase'].includes(generator.databaseType),
+            path: SERVER_MAIN_KOTLIN_SRC_DIR,
+            templates: [
+                {
+                    file: 'package/service/AuditEventService.kt',
+                    renameTo: generator => `${generator.javaDir}service/AuditEventService.kt`,
+                    useBluePrint: true
+                }
+            ]
+        },
+        {
+            condition: generator => !generator.skipUserManagement && ['sql', 'mongodb', 'couchbase'].includes(generator.databaseType),
+            path: SERVER_MAIN_SRC_DIR,
+            templates: [
+                { file: 'package/domain/Authority.java', renameTo: generator => `${generator.javaDir}domain/Authority.java` },
+                {
+                    file: 'package/repository/CustomAuditEventRepository.java',
+                    renameTo: generator => `${generator.javaDir}repository/CustomAuditEventRepository.java`
+                },
+                {
+                    file: 'package/repository/AuthorityRepository.java',
+                    renameTo: generator => `${generator.javaDir}repository/${generator.reactiveRepository}AuthorityRepository.java`
+                },
+                {
+                    file: 'package/repository/PersistenceAuditEventRepository.java',
+                    renameTo: generator => `${generator.javaDir}repository/PersistenceAuditEventRepository.java`
+                },
+                { file: 'package/web/rest/AuditResource.java', renameTo: generator => `${generator.javaDir}web/rest/AuditResource.java` }
+            ]
+        },
+        {
+            condition: generator => !generator.skipUserManagement,
+            path: SERVER_MAIN_KOTLIN_SRC_DIR,
+            templates: [
+                /* User management java service files */
+                {
+                    file: 'package/service/UserService.kt',
+                    renameTo: generator => `${generator.javaDir}service/UserService.kt`,
+                    useBluePrint: true
+                },
+                {
+                    file: 'package/service/MailService.kt',
+                    renameTo: generator => `${generator.javaDir}service/MailService.kt`,
+                    useBluePrint: true
+                },
+                {
+                    file: 'package/service/dto/UserDTO.kt',
+                    renameTo: generator => `${generator.javaDir}service/dto/${generator.asDto('User')}.kt`,
+                    useBluePrint: true
+                },
+                {
+                    file: 'package/service/dto/PasswordChangeDTO.kt',
+                    renameTo: generator => `${generator.javaDir}service/dto/PasswordChangeDTO.kt`,
+                    useBluePrint: true
+                },
+                {
+                    file: 'package/service/mapper/UserMapper.kt',
+                    renameTo: generator => `${generator.javaDir}service/mapper/UserMapper.kt`,
+                    useBluePrint: true
+                }
+            ]
+        },
+        {
+            condition: generator => !generator.skipUserManagement,
+            path: SERVER_MAIN_SRC_DIR,
+            templates: [
+                /* User management java domain files */
+                {
+                    file: 'package/domain/User.java',
+                    renameTo: generator => `${generator.javaDir}domain/${generator.asEntity('User')}.java`
+                },
+                {
+                    file: 'package/repository/UserRepository.java',
+                    renameTo: generator => `${generator.javaDir}repository/${generator.reactiveRepository}UserRepository.java`
+                },
+
+                /* User management java web files */
+                {
+                    file: 'package/web/rest/vm/ManagedUserVM.java',
+                    renameTo: generator => `${generator.javaDir}web/rest/vm/ManagedUserVM.java`
+                },
+                {
+                    file: 'package/web/rest/AccountResource.java',
+                    renameTo: generator => `${generator.javaDir}web/rest/AccountResource.java`
+                },
+                { file: 'package/web/rest/UserResource.java', renameTo: generator => `${generator.javaDir}web/rest/UserResource.java` },
+                {
+                    file: 'package/web/rest/vm/KeyAndPasswordVM.java',
+                    renameTo: generator => `${generator.javaDir}web/rest/vm/KeyAndPasswordVM.java`
+                }
+            ]
+        },
+        {
+            condition: generator => !generator.skipUserManagement && generator.searchEngine === 'elasticsearch',
+            path: SERVER_MAIN_SRC_DIR,
+            templates: [
+                {
+                    file: 'package/repository/search/UserSearchRepository.java',
+                    renameTo: generator => `${generator.javaDir}repository/search/UserSearchRepository.java`
+                }
+            ]
+        },
+        {
+            condition: generator => !generator.skipUserManagement && generator.searchEngine === 'elasticsearch',
+            path: SERVER_TEST_SRC_DIR,
+            templates: [
+                {
+                    file: 'package/repository/search/UserSearchRepositoryMockConfiguration.java',
+                    renameTo: generator => `${generator.testDir}repository/search/UserSearchRepositoryMockConfiguration.java`
+                }
+            ]
+        },
+        {
+            condition: generator => generator.authenticationType === 'jwt',
+            path: SERVER_TEST_SRC_DIR,
+            templates: [
+                {
+                    file: 'package/security/jwt/TokenProviderTest.java',
+                    renameTo: generator => `${generator.testDir}security/jwt/TokenProviderTest.java`
+                },
+                {
+                    file: 'package/security/jwt/JWTFilterTest.java',
+                    renameTo: generator => `${generator.testDir}security/jwt/JWTFilterTest.java`
+                }
+            ]
+        },
+        {
+            condition: generator => !generator.skipUserManagement && generator.authenticationType === 'jwt',
+            path: SERVER_TEST_SRC_DIR,
+            templates: [
+                {
+                    file: 'package/web/rest/UserJWTControllerIT.java',
+                    renameTo: generator => `${generator.testDir}web/rest/UserJWTControllerIT.java`
+                }
+            ]
+        },
+        {
+            // TODO : add tests for reactive
+            condition: generator =>
+                !generator.reactive && !generator.skipUserManagement && ['sql', 'mongodb', 'couchbase'].includes(generator.databaseType),
+            path: SERVER_TEST_SRC_DIR,
+            templates: [
+                {
+                    file: 'package/web/rest/AuditResourceIT.java',
+                    renameTo: generator => `${generator.testDir}web/rest/AuditResourceIT.java`
+                }
+            ]
+        },
+        {
+            condition: generator => !generator.skipUserManagement && ['sql', 'mongodb', 'couchbase'].includes(generator.databaseType),
+            path: SERVER_TEST_SRC_DIR,
+            templates: [
+                {
+                    file: 'package/repository/CustomAuditEventRepositoryIT.java',
+                    renameTo: generator => `${generator.testDir}repository/CustomAuditEventRepositoryIT.java`
+                }
+            ]
+        },
+        {
+            condition: generator => !generator.skipUserManagement && generator.cucumberTests,
+            path: SERVER_TEST_SRC_DIR,
+            templates: [
+                {
+                    file: 'package/cucumber/stepdefs/UserStepDefs.java',
+                    renameTo: generator => `${generator.testDir}cucumber/stepdefs/UserStepDefs.java`
+                },
+                '../features/user/user.feature'
+            ]
+        },
+        {
+            condition: generator => !generator.skipUserManagement,
+            path: SERVER_TEST_RES_DIR,
+            templates: [
+                /* User management java test files */
+                'templates/mail/testEmail.html',
+                'i18n/messages_en.properties'
+            ]
+        },
+        {
+            condition: generator => !generator.skipUserManagement,
+            path: SERVER_TEST_SRC_KOTLIN_DIR,
+            templates: [
+                {
+                    file: 'package/service/MailServiceIT.kt',
+                    renameTo: generator => `${generator.testDir}service/MailServiceIT.kt`,
+                    useBluePrint: true
+                },
+                {
+                    file: 'package/service/UserServiceIT.kt',
+                    renameTo: generator => `${generator.testDir}service/UserServiceIT.kt`,
+                    useBluePrint: true
+                },
+                {
+                    file: 'package/service/mapper/UserMapperIT.kt',
+                    renameTo: generator => `${generator.testDir}service/mapper/UserMapperIT.kt`,
+                    useBluePrint: true
+                }
+            ]
+        },
+        {
+            condition: generator => !generator.skipUserManagement,
+            path: SERVER_TEST_SRC_DIR,
+            templates: [
+                {
+                    file: 'package/web/rest/AccountResourceIT.java',
+                    renameTo: generator => `${generator.testDir}web/rest/AccountResourceIT.java`
+                },
+                {
+                    file: 'package/web/rest/UserResourceIT.java',
+                    renameTo: generator => `${generator.testDir}web/rest/UserResourceIT.java`
+                }
+            ]
+        }
+    ]
 };
 
 /* eslint-disable no-template-curly-in-string */
