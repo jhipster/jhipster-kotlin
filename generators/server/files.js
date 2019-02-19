@@ -391,6 +391,21 @@ const serverFiles = {
                     file: 'package/config/apidoc/GatewaySwaggerResourcesProvider.kt',
                     renameTo: generator => `${generator.javaDir}config/apidoc/GatewaySwaggerResourcesProvider.kt`,
                     useBluePrint: true
+                },
+                {
+                    file: 'package/gateway/ratelimiting/RateLimitingFilter.kt',
+                    renameTo: generator => `${generator.javaDir}gateway/ratelimiting/RateLimitingFilter.kt`,
+                    useBluePrint: true
+                },
+                {
+                    file: 'package/gateway/accesscontrol/AccessControlFilter.kt',
+                    renameTo: generator => `${generator.javaDir}gateway/accesscontrol/AccessControlFilter.kt`,
+                    useBluePrint: true
+                },
+                {
+                    file: 'package/gateway/responserewriting/SwaggerBasePathRewritingFilter.kt',
+                    renameTo: generator => `${generator.javaDir}gateway/responserewriting/SwaggerBasePathRewritingFilter.kt`,
+                    useBluePrint: true
                 }
             ]
         },
@@ -398,18 +413,6 @@ const serverFiles = {
             condition: generator => generator.applicationType === 'gateway' && generator.serviceDiscoveryType,
             path: SERVER_MAIN_SRC_DIR,
             templates: [
-                {
-                    file: 'package/gateway/ratelimiting/RateLimitingFilter.java',
-                    renameTo: generator => `${generator.javaDir}gateway/ratelimiting/RateLimitingFilter.java`
-                },
-                {
-                    file: 'package/gateway/accesscontrol/AccessControlFilter.java',
-                    renameTo: generator => `${generator.javaDir}gateway/accesscontrol/AccessControlFilter.java`
-                },
-                {
-                    file: 'package/gateway/responserewriting/SwaggerBasePathRewritingFilter.java',
-                    renameTo: generator => `${generator.javaDir}gateway/responserewriting/SwaggerBasePathRewritingFilter.java`
-                },
                 { file: 'package/web/rest/vm/RouteVM.java', renameTo: generator => `${generator.javaDir}web/rest/vm/RouteVM.java` },
                 {
                     file: 'package/web/rest/GatewayResource.java',
@@ -420,11 +423,12 @@ const serverFiles = {
         {
             condition: generator =>
                 generator.applicationType === 'gateway' && generator.authenticationType === 'jwt' && generator.serviceDiscoveryType,
-            path: SERVER_MAIN_SRC_DIR,
+            path: SERVER_MAIN_KOTLIN_SRC_DIR,
             templates: [
                 {
-                    file: 'package/gateway/TokenRelayFilter.java',
-                    renameTo: generator => `${generator.javaDir}gateway/TokenRelayFilter.java`
+                    file: 'package/gateway/TokenRelayFilter.kt',
+                    renameTo: generator => `${generator.javaDir}gateway/TokenRelayFilter.kt`,
+                    useBluePrint: true
                 }
             ]
         },
@@ -1134,12 +1138,13 @@ const serverFiles = {
         },
         {
             condition: generator => generator.applicationType === 'gateway' && generator.serviceDiscoveryType,
-            path: SERVER_TEST_SRC_DIR,
+            path: SERVER_TEST_SRC_KOTLIN_DIR,
             templates: [
                 // Create Gateway tests files
                 {
-                    file: 'package/gateway/responserewriting/SwaggerBasePathRewritingFilterTest.java',
-                    renameTo: generator => `${generator.testDir}gateway/responserewriting/SwaggerBasePathRewritingFilterTest.java`
+                    file: 'package/gateway/responserewriting/SwaggerBasePathRewritingFilterTest.kt',
+                    renameTo: generator => `${generator.testDir}gateway/responserewriting/SwaggerBasePathRewritingFilterTest.kt`,
+                    useBluePrint: true
                 }
             ]
         },
