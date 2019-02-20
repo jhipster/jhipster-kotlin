@@ -109,7 +109,7 @@ _%><%- include('../../common/inject_template', {viaService: viaService, construc
 
     private val log = LoggerFactory.getLogger(this.javaClass)
 
-    @Value("\${spring.application.name:JHIPSTER}")
+    @Value("\${jhipster.clientApp.name}")
     private var applicationName: String? = null
     <%_ let entityName = entityInstance;
     if (clientRootFolder && !skipUiGrouping) {
@@ -140,7 +140,7 @@ _%><%- include('../../common/inject_template', {viaService: viaService, construc
         <%_ } _%>
 <%- include('../../common/save_template', {asEntity, asDto, viaService: viaService, returnDirectly: false, isUsingMapsId: isUsingMapsId, mapsIdAssoc: mapsIdAssoc, isController: true}); -%>
         return ResponseEntity.created(URI("/api/<%= entityApiUrl %>/" + result.id))
-            .headers(HeaderUtil.createEntityCreationAlert(applicationName, ENTITY_NAME, result.id.toString()))
+            .headers(HeaderUtil.createEntityCreationAlert(applicationName, <%= enableTranslation %>, ENTITY_NAME, result.id.toString()))
             .body(result)
     }
 
@@ -167,7 +167,7 @@ _%><%- include('../../common/inject_template', {viaService: viaService, construc
         <%_ } _%>
 <%- include('../../common/save_template', {asEntity, asDto, viaService: viaService, returnDirectly: false, isUsingMapsId: false, mapsIdAssoc: mapsIdAssoc}); -%>
         return ResponseEntity.ok()
-            .headers(HeaderUtil.createEntityUpdateAlert(applicationName, ENTITY_NAME, <%= instanceName %>.id.toString()))
+            .headers(HeaderUtil.createEntityUpdateAlert(applicationName, <%= enableTranslation %>, ENTITY_NAME, <%= instanceName %>.id.toString()))
             .body(result)
     }
 
@@ -228,7 +228,7 @@ _%><%- include('../../common/inject_template', {viaService: viaService, construc
     fun delete<%= entityClass %>(@PathVariable id: <%= pkType %>): ResponseEntity<Void> {
         log.debug("REST request to delete <%= entityClass %> : {}", id)
 <%- include('../../common/delete_template', {viaService: viaService}); -%>
-        return ResponseEntity.ok().headers(HeaderUtil.createEntityDeletionAlert(applicationName, ENTITY_NAME, id<% if (pkType !== 'String') { %>.toString()<% } %>)).build()
+        return ResponseEntity.ok().headers(HeaderUtil.createEntityDeletionAlert(applicationName, <%= enableTranslation %>, ENTITY_NAME, id<% if (pkType !== 'String') { %>.toString()<% } %>)).build()
     }<% if (searchEngine === 'elasticsearch') { %>
 
     /**
