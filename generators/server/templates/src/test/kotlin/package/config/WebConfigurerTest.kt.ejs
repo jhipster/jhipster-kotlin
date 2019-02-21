@@ -23,8 +23,6 @@ import io.github.jhipster.config.JHipsterProperties
 <%_ if (!skipClient) { _%>
 import io.github.jhipster.web.filter.CachingHttpHeadersFilter
 <%_ } _%>
-import io.undertow.Undertow
-import io.undertow.UndertowOptions
 <%_ if (devDatabaseType === 'h2Disk' || devDatabaseType === 'h2Memory') { _%>
 import org.h2.server.web.WebServlet
 <%_ } _%>
@@ -36,7 +34,6 @@ import org.springframework.mock.env.MockEnvironment
 import org.springframework.mock.web.MockServletContext
 import org.springframework.test.util.ReflectionTestUtils
 import org.springframework.test.web.servlet.setup.MockMvcBuilders
-import org.xnio.OptionMap
 
 import javax.servlet.*
 <%_ if (!skipClient) { _%>
@@ -130,22 +127,6 @@ class WebConfigurerTest {
             assertThat(container.documentRoot).isEqualTo(File("<%= CLIENT_DIST_DIR %>"))
         }
         <%_ } _%>
-
-        val builder = Undertow.builder()
-        container.builderCustomizers.forEach { c -> c.customize(builder) }
-        val serverOptions = ReflectionTestUtils.getField(builder, "serverOptions") as OptionMap.Builder
-        assertNull(serverOptions.map.get(UndertowOptions.ENABLE_HTTP2))
-    }
-
-    @Test
-    fun testUndertowHttp2Enabled() {
-        props.http.setVersion(JHipsterProperties.Http.Version.V_2_0)
-        val container = UndertowServletWebServerFactory()
-        webConfigurer.customize(container)
-        val builder = Undertow.builder()
-        container.builderCustomizers.forEach { c -> c.customize(builder) }
-        val serverOptions = ReflectionTestUtils.getField(builder, "serverOptions") as OptionMap.Builder
-        assertThat(serverOptions.map.get(UndertowOptions.ENABLE_HTTP2)).isTrue()
     }
 
     @Test
