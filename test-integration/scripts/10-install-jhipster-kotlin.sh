@@ -86,6 +86,9 @@ cp -R "$JHI_CLONED"/test-integration/samples-kotlin/* "$JHI_HOME"/test-integrati
 # Install JHipster Kotlin
 #-------------------------------------------------------------------------------
 cd "$JHI_CLONED"/
+#TODO: Execute mocha tests once https://github.com/jhipster/generator-jhipster/pull/9316 is merged/resolved in generator-jhipster
+# npm test
+
 npm ci
 npm link
 npm link generator-jhipster
