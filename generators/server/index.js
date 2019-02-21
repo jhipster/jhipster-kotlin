@@ -20,6 +20,7 @@
 const chalk = require('chalk');
 const ServerGenerator = require('generator-jhipster/generators/server');
 const writeFiles = require('./files').writeFiles;
+const kotlinConstants = require('../generator-kotlin-constants');
 
 module.exports = class extends ServerGenerator {
     constructor(args, opts) {
@@ -37,8 +38,13 @@ module.exports = class extends ServerGenerator {
     }
 
     get initializing() {
-        // Here we are not overriding this phase and hence its being handled by JHipster
-        return super._initializing();
+        const phaseFromJHipster = super._initializing();
+        const myCustomPhaseSteps = {
+            setupConstants() {
+                this.MOCKITO_KOTLIN_VERSION = kotlinConstants.MOCKITO_KOTLIN_VERSION;
+            }
+        };
+        return Object.assign(phaseFromJHipster, myCustomPhaseSteps);
     }
 
     get prompting() {

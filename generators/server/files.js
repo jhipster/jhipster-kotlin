@@ -300,6 +300,16 @@ const serverFiles = {
             ]
         },
         {
+            condition: generator => !shouldSkipUserManagement(generator) && generator.applicationType === 'uaa',
+            path: SERVER_MAIN_SRC_DIR,
+            templates: [
+                {
+                    file: 'package/security/IatTokenEnhancer.java',
+                    renameTo: generator => `${generator.javaDir}security/IatTokenEnhancer.java`
+                }
+            ]
+        },
+        {
             condition: generator => !shouldSkipUserManagement(generator) && generator.authenticationType === 'session',
             path: SERVER_MAIN_KOTLIN_SRC_DIR,
             templates: [
@@ -361,15 +371,17 @@ const serverFiles = {
         },
         {
             condition: generator => !shouldSkipUserManagement(generator) && generator.authenticationType === 'jwt',
-            path: SERVER_MAIN_SRC_DIR,
+            path: SERVER_MAIN_KOTLIN_SRC_DIR,
             templates: [
                 {
-                    file: 'package/web/rest/vm/LoginVM.java',
-                    renameTo: generator => `${generator.javaDir}web/rest/vm/LoginVM.java`
+                    file: 'package/web/rest/vm/LoginVM.kt',
+                    renameTo: generator => `${generator.javaDir}web/rest/vm/LoginVM.kt`,
+                    useBluePrint: true
                 },
                 {
-                    file: 'package/web/rest/UserJWTController.java',
-                    renameTo: generator => `${generator.javaDir}web/rest/UserJWTController.java`
+                    file: 'package/web/rest/UserJWTController.kt',
+                    renameTo: generator => `${generator.javaDir}web/rest/UserJWTController.kt`,
+                    useBluePrint: true
                 }
             ]
         }
@@ -403,17 +415,16 @@ const serverFiles = {
                     file: 'package/gateway/responserewriting/SwaggerBasePathRewritingFilter.kt',
                     renameTo: generator => `${generator.javaDir}gateway/responserewriting/SwaggerBasePathRewritingFilter.kt`,
                     useBluePrint: true
-                }
-            ]
-        },
-        {
-            condition: generator => generator.applicationType === 'gateway' && generator.serviceDiscoveryType,
-            path: SERVER_MAIN_SRC_DIR,
-            templates: [
-                { file: 'package/web/rest/vm/RouteVM.java', renameTo: generator => `${generator.javaDir}web/rest/vm/RouteVM.java` },
+                },
                 {
-                    file: 'package/web/rest/GatewayResource.java',
-                    renameTo: generator => `${generator.javaDir}web/rest/GatewayResource.java`
+                    file: 'package/web/rest/vm/RouteVM.kt',
+                    renameTo: generator => `${generator.javaDir}web/rest/vm/RouteVM.kt`,
+                    useBluePrint: true
+                },
+                {
+                    file: 'package/web/rest/GatewayResource.kt',
+                    renameTo: generator => `${generator.javaDir}web/rest/GatewayResource.kt`,
+                    useBluePrint: true
                 }
             ]
         },
@@ -442,17 +453,29 @@ const serverFiles = {
         },
         {
             condition: generator => generator.applicationType === 'gateway' && generator.authenticationType === 'uaa',
+            path: SERVER_MAIN_KOTLIN_SRC_DIR,
+            templates: [
+                {
+                    file: 'package/web/rest/AuthResource.kt',
+                    renameTo: generator => `${generator.javaDir}web/rest/AuthResource.kt`,
+                    useBluePrint: true
+                },
+                {
+                    file: 'package/web/filter/RefreshTokenFilter.kt',
+                    renameTo: generator => `${generator.javaDir}web/filter/RefreshTokenFilter.kt`,
+                    useBluePrint: true
+                },
+                {
+                    file: 'package/web/filter/RefreshTokenFilterConfigurer.kt',
+                    renameTo: generator => `${generator.javaDir}web/filter/RefreshTokenFilterConfigurer.kt`,
+                    useBluePrint: true
+                }
+            ]
+        },
+        {
+            condition: generator => generator.applicationType === 'gateway' && generator.authenticationType === 'uaa',
             path: SERVER_MAIN_SRC_DIR,
             templates: [
-                { file: 'package/web/rest/AuthResource.java', renameTo: generator => `${generator.javaDir}web/rest/AuthResource.java` },
-                {
-                    file: 'package/web/filter/RefreshTokenFilter.java',
-                    renameTo: generator => `${generator.javaDir}web/filter/RefreshTokenFilter.java`
-                },
-                {
-                    file: 'package/web/filter/RefreshTokenFilterConfigurer.java',
-                    renameTo: generator => `${generator.javaDir}web/filter/RefreshTokenFilterConfigurer.java`
-                },
                 {
                     file: 'package/security/oauth2/CookieCollection.java',
                     renameTo: generator => `${generator.javaDir}security/oauth2/CookieCollection.java`
@@ -518,11 +541,12 @@ const serverFiles = {
             condition: generator =>
                 generator.authenticationType === 'oauth2' &&
                 (generator.applicationType === 'monolith' || generator.applicationType === 'gateway'),
-            path: SERVER_MAIN_SRC_DIR,
+            path: SERVER_MAIN_KOTLIN_SRC_DIR,
             templates: [
                 {
-                    file: 'package/web/rest/LogoutResource.java',
-                    renameTo: generator => `${generator.javaDir}web/rest/LogoutResource.java`
+                    file: 'package/web/rest/LogoutResource.kt',
+                    renameTo: generator => `${generator.javaDir}web/rest/LogoutResource.kt`,
+                    useBluePrint: true
                 }
             ]
         }
@@ -940,17 +964,19 @@ const serverFiles = {
         },
         {
             condition: generator => generator.reactive && generator.databaseType === 'couchbase',
-            path: SERVER_MAIN_SRC_DIR,
+            path: SERVER_MAIN_KOTLIN_SRC_DIR,
             templates: [
                 {
-                    file: 'package/repository/reactive/ReactiveN1qlCouchbaseRepository.java',
+                    file: 'package/repository/reactive/ReactiveN1qlCouchbaseRepository.kt',
                     renameTo: generator =>
-                        `${generator.javaDir}repository/${generator.reactiveRepository}ReactiveN1qlCouchbaseRepository.java`
+                        `${generator.javaDir}repository/${generator.reactiveRepository}ReactiveN1qlCouchbaseRepository.kt`,
+                    useBluePrint: true
                 },
                 {
-                    file: 'package/repository/reactive/CustomReactiveN1qlCouchbaseRepository.java',
+                    file: 'package/repository/reactive/CustomReactiveN1qlCouchbaseRepository.kt',
                     renameTo: generator =>
-                        `${generator.javaDir}repository/${generator.reactiveRepository}CustomReactiveN1qlCouchbaseRepository.java`
+                        `${generator.javaDir}repository/${generator.reactiveRepository}CustomReactiveN1qlCouchbaseRepository.kt`,
+                    useBluePrint: true
                 }
             ]
         },
@@ -1035,9 +1061,109 @@ const serverFiles = {
             ]
         }
     ],
-    ...baseServerFiles.serverResource.serverJavaWebError,
-    ...baseServerFiles.serverResource.serverJavaWeb,
-    ...baseServerFiles.serverResource.serverJavaWebsocket,
+    serverJavaWebError: [
+        {
+            path: SERVER_MAIN_KOTLIN_SRC_DIR,
+            templates: [
+                {
+                    file: 'package/web/rest/errors/InternalServerErrorException.kt',
+                    renameTo: generator => `${generator.javaDir}web/rest/errors/InternalServerErrorException.kt`,
+                    useBluePrint: true
+                },
+                {
+                    file: 'package/web/rest/errors/BadRequestAlertException.kt',
+                    renameTo: generator => `${generator.javaDir}web/rest/errors/BadRequestAlertException.kt`,
+                    useBluePrint: true
+                },
+                {
+                    file: 'package/web/rest/errors/CustomParameterizedException.kt',
+                    renameTo: generator => `${generator.javaDir}web/rest/errors/CustomParameterizedException.kt`,
+                    useBluePrint: true
+                },
+                {
+                    file: 'package/web/rest/errors/EmailAlreadyUsedException.kt',
+                    renameTo: generator => `${generator.javaDir}web/rest/errors/EmailAlreadyUsedException.kt`,
+                    useBluePrint: true
+                },
+                {
+                    file: 'package/web/rest/errors/EmailNotFoundException.kt',
+                    renameTo: generator => `${generator.javaDir}web/rest/errors/EmailNotFoundException.kt`,
+                    useBluePrint: true
+                },
+                {
+                    file: 'package/web/rest/errors/ErrorConstants.kt',
+                    renameTo: generator => `${generator.javaDir}web/rest/errors/ErrorConstants.kt`,
+                    useBluePrint: true
+                },
+                {
+                    file: 'package/web/rest/errors/ExceptionTranslator.kt',
+                    renameTo: generator => `${generator.javaDir}web/rest/errors/ExceptionTranslator.kt`,
+                    useBluePrint: true
+                },
+                {
+                    file: 'package/web/rest/errors/FieldErrorVM.kt',
+                    renameTo: generator => `${generator.javaDir}web/rest/errors/FieldErrorVM.kt`,
+                    useBluePrint: true
+                },
+                {
+                    file: 'package/web/rest/errors/InvalidPasswordException.kt',
+                    renameTo: generator => `${generator.javaDir}web/rest/errors/InvalidPasswordException.kt`,
+                    useBluePrint: true
+                },
+                {
+                    file: 'package/web/rest/errors/LoginAlreadyUsedException.kt',
+                    renameTo: generator => `${generator.javaDir}web/rest/errors/LoginAlreadyUsedException.kt`,
+                    useBluePrint: true
+                }
+            ]
+        }
+    ],
+    serverJavaWeb: [
+        {
+            path: SERVER_MAIN_KOTLIN_SRC_DIR,
+            templates: [
+                {
+                    file: 'package/web/rest/vm/LoggerVM.kt',
+                    renameTo: generator => `${generator.javaDir}web/rest/vm/LoggerVM.kt`,
+                    useBluePrint: true
+                },
+                {
+                    file: 'package/web/rest/LogsResource.kt',
+                    renameTo: generator => `${generator.javaDir}web/rest/LogsResource.kt`,
+                    useBluePrint: true
+                }
+            ]
+        },
+        {
+            condition: generator => !generator.skipClient,
+            path: SERVER_MAIN_KOTLIN_SRC_DIR,
+            templates: [
+                {
+                    file: 'package/web/rest/ClientForwardController.kt',
+                    renameTo: generator => `${generator.javaDir}web/rest/ClientForwardController.kt`,
+                    useBluePrint: true
+                }
+            ]
+        }
+    ],
+    serverJavaWebsocket: [
+        {
+            condition: generator => generator.websocket === 'spring-websocket',
+            path: SERVER_MAIN_KOTLIN_SRC_DIR,
+            templates: [
+                {
+                    file: 'package/web/websocket/ActivityService.kt',
+                    renameTo: generator => `${generator.javaDir}web/websocket/ActivityService.kt`,
+                    useBluePrint: true
+                },
+                {
+                    file: 'package/web/websocket/dto/ActivityDTO.kt',
+                    renameTo: generator => `${generator.javaDir}web/websocket/dto/ActivityDTO.kt`,
+                    useBluePrint: true
+                }
+            ]
+        }
+    ],
     serverTestFw: [
         {
             condition: generator => generator.databaseType === 'cassandra',
@@ -1072,30 +1198,38 @@ const serverFiles = {
             ]
         },
         {
-            path: SERVER_TEST_SRC_DIR,
+            path: SERVER_TEST_SRC_KOTLIN_DIR,
             templates: [
-                { file: 'package/web/rest/TestUtil.java', renameTo: generator => `${generator.testDir}web/rest/TestUtil.java` },
                 {
-                    file: 'package/web/rest/LogsResourceIT.java',
-                    renameTo: generator => `${generator.testDir}web/rest/LogsResourceIT.java`
+                    file: 'package/web/rest/TestUtil.kt',
+                    renameTo: generator => `${generator.testDir}web/rest/TestUtil.kt`,
+                    useBluePrint: true
                 },
                 {
-                    file: 'package/web/rest/errors/ExceptionTranslatorIT.java',
-                    renameTo: generator => `${generator.testDir}web/rest/errors/ExceptionTranslatorIT.java`
+                    file: 'package/web/rest/LogsResourceIT.kt',
+                    renameTo: generator => `${generator.testDir}web/rest/LogsResourceIT.kt`,
+                    useBluePrint: true
                 },
                 {
-                    file: 'package/web/rest/errors/ExceptionTranslatorTestController.java',
-                    renameTo: generator => `${generator.testDir}web/rest/errors/ExceptionTranslatorTestController.java`
+                    file: 'package/web/rest/errors/ExceptionTranslatorIT.kt',
+                    renameTo: generator => `${generator.testDir}web/rest/errors/ExceptionTranslatorIT.kt`,
+                    useBluePrint: true
+                },
+                {
+                    file: 'package/web/rest/errors/ExceptionTranslatorTestController.kt',
+                    renameTo: generator => `${generator.testDir}web/rest/errors/ExceptionTranslatorTestController.kt`,
+                    useBluePrint: true
                 }
             ]
         },
         {
             condition: generator => !generator.skipClient,
-            path: SERVER_TEST_SRC_DIR,
+            path: SERVER_TEST_SRC_KOTLIN_DIR,
             templates: [
                 {
-                    file: 'package/web/rest/ClientForwardControllerIT.java',
-                    renameTo: generator => `${generator.testDir}web/rest/ClientForwardControllerIT.java`
+                    file: 'package/web/rest/ClientForwardControllerIT.kt',
+                    renameTo: generator => `${generator.testDir}web/rest/ClientForwardControllerIT.kt`,
+                    useBluePrint: true
                 }
             ]
         },
@@ -1205,11 +1339,12 @@ const serverFiles = {
             condition: generator =>
                 generator.authenticationType === 'oauth2' &&
                 (generator.applicationType === 'monolith' || generator.applicationType === 'gateway'),
-            path: SERVER_TEST_SRC_DIR,
+            path: SERVER_TEST_SRC_KOTLIN_DIR,
             templates: [
                 {
-                    file: 'package/web/rest/LogoutResourceIT.java',
-                    renameTo: generator => `${generator.testDir}web/rest/LogoutResourceIT.java`
+                    file: 'package/web/rest/LogoutResourceIT.kt',
+                    renameTo: generator => `${generator.testDir}web/rest/LogoutResourceIT.kt`,
+                    useBluePrint: true
                 }
             ]
         },
@@ -1317,6 +1452,16 @@ const serverFiles = {
                     file: 'package/repository/AuthorityRepository.kt',
                     renameTo: generator => `${generator.javaDir}repository/AuthorityRepository.kt`,
                     useBluePrint: true
+                },
+                {
+                    file: 'package/web/rest/UserResource.kt',
+                    renameTo: generator => `${generator.javaDir}web/rest/UserResource.kt`,
+                    useBluePrint: true
+                },
+                {
+                    file: 'package/web/rest/vm/ManagedUserVM.kt',
+                    renameTo: generator => `${generator.javaDir}web/rest/vm/ManagedUserVM.kt`,
+                    useBluePrint: true
                 }
             ]
         },
@@ -1328,12 +1473,7 @@ const serverFiles = {
                     file: 'package/domain/User.java',
                     renameTo: generator => `${generator.javaDir}domain/${generator.asEntity('User')}.java`
                 },
-                { file: 'package/domain/Authority.java', renameTo: generator => `${generator.javaDir}domain/Authority.java` },
-                { file: 'package/web/rest/UserResource.java', renameTo: generator => `${generator.javaDir}web/rest/UserResource.java` },
-                {
-                    file: 'package/web/rest/vm/ManagedUserVM.java',
-                    renameTo: generator => `${generator.javaDir}web/rest/vm/ManagedUserVM.java`
-                }
+                { file: 'package/domain/Authority.java', renameTo: generator => `${generator.javaDir}domain/Authority.java` }
             ]
         },
         {
@@ -1341,11 +1481,12 @@ const serverFiles = {
                 generator.skipUserManagement &&
                 generator.authenticationType === 'oauth2' &&
                 ['monolith', 'gateway'].includes(generator.applicationType),
-            path: SERVER_MAIN_SRC_DIR,
+            path: SERVER_MAIN_KOTLIN_SRC_DIR,
             templates: [
                 {
-                    file: 'package/web/rest/AccountResource.java',
-                    renameTo: generator => `${generator.javaDir}web/rest/AccountResource.java`
+                    file: 'package/web/rest/AccountResource.kt',
+                    renameTo: generator => `${generator.javaDir}web/rest/AccountResource.kt`,
+                    useBluePrint: true
                 }
             ]
         },
@@ -1362,16 +1503,11 @@ const serverFiles = {
                     file: 'package/service/mapper/UserMapperIT.kt',
                     renameTo: generator => `${generator.testDir}service/mapper/UserMapperIT.kt`,
                     useBluePrint: true
-                }
-            ]
-        },
-        {
-            condition: generator => generator.skipUserManagement && generator.authenticationType === 'oauth2',
-            path: SERVER_TEST_SRC_DIR,
-            templates: [
+                },
                 {
-                    file: 'package/web/rest/UserResourceIT.java',
-                    renameTo: generator => `${generator.testDir}web/rest/UserResourceIT.java`
+                    file: 'package/web/rest/UserResourceIT.kt',
+                    renameTo: generator => `${generator.testDir}web/rest/UserResourceIT.kt`,
+                    useBluePrint: true
                 }
             ]
         },
@@ -1380,11 +1516,12 @@ const serverFiles = {
                 generator.skipUserManagement &&
                 generator.authenticationType === 'oauth2' &&
                 ['monolith', 'gateway'].includes(generator.applicationType),
-            path: SERVER_TEST_SRC_DIR,
+            path: SERVER_TEST_SRC_KOTLIN_DIR,
             templates: [
                 {
-                    file: 'package/web/rest/AccountResourceIT.java',
-                    renameTo: generator => `${generator.testDir}web/rest/AccountResourceIT.java`
+                    file: 'package/web/rest/AccountResourceIT.kt',
+                    renameTo: generator => `${generator.testDir}web/rest/AccountResourceIT.kt`,
+                    useBluePrint: true
                 }
             ]
         },
@@ -1438,17 +1575,12 @@ const serverFiles = {
                     file: 'package/service/AuditEventService.kt',
                     renameTo: generator => `${generator.javaDir}service/AuditEventService.kt`,
                     useBluePrint: true
+                },
+                {
+                    file: 'package/web/rest/AuditResource.kt',
+                    renameTo: generator => `${generator.javaDir}web/rest/AuditResource.kt`,
+                    useBluePrint: true
                 }
-            ]
-        },
-        {
-            condition: generator =>
-                generator.skipUserManagement &&
-                generator.authenticationType === 'oauth2' &&
-                ['sql', 'mongodb'].includes(generator.databaseType),
-            path: SERVER_MAIN_SRC_DIR,
-            templates: [
-                { file: 'package/web/rest/AuditResource.java', renameTo: generator => `${generator.javaDir}web/rest/AuditResource.java` }
             ]
         },
         {
@@ -1462,19 +1594,11 @@ const serverFiles = {
                     file: 'package/repository/CustomAuditEventRepositoryIT.kt',
                     renameTo: generator => `${generator.testDir}repository/CustomAuditEventRepositoryIT.kt`,
                     useBluePrint: true
-                }
-            ]
-        },
-        {
-            condition: generator =>
-                generator.skipUserManagement &&
-                generator.authenticationType === 'oauth2' &&
-                ['sql', 'mongodb'].includes(generator.databaseType),
-            path: SERVER_TEST_SRC_DIR,
-            templates: [
+                },
                 {
-                    file: 'package/web/rest/AuditResourceIT.java',
-                    renameTo: generator => `${generator.testDir}web/rest/AuditResourceIT.java`
+                    file: 'package/web/rest/AuditResourceIT.kt',
+                    renameTo: generator => `${generator.testDir}web/rest/AuditResourceIT.kt`,
+                    useBluePrint: true
                 }
             ]
         },
@@ -1510,16 +1634,18 @@ const serverFiles = {
                     file: 'package/service/AuditEventService.kt',
                     renameTo: generator => `${generator.javaDir}service/AuditEventService.kt`,
                     useBluePrint: true
+                },
+                {
+                    file: 'package/web/rest/AuditResource.kt',
+                    renameTo: generator => `${generator.javaDir}web/rest/AuditResource.kt`,
+                    useBluePrint: true
                 }
             ]
         },
         {
             condition: generator => !generator.skipUserManagement && ['sql', 'mongodb', 'couchbase'].includes(generator.databaseType),
             path: SERVER_MAIN_SRC_DIR,
-            templates: [
-                { file: 'package/domain/Authority.java', renameTo: generator => `${generator.javaDir}domain/Authority.java` },
-                { file: 'package/web/rest/AuditResource.java', renameTo: generator => `${generator.javaDir}web/rest/AuditResource.java` }
-            ]
+            templates: [{ file: 'package/domain/Authority.java', renameTo: generator => `${generator.javaDir}domain/Authority.java` }]
         },
         {
             condition: generator => !generator.skipUserManagement,
@@ -1541,6 +1667,8 @@ const serverFiles = {
                     renameTo: generator => `${generator.javaDir}service/MailService.kt`,
                     useBluePrint: true
                 },
+
+                /* User management java web files */
                 {
                     file: 'package/service/dto/UserDTO.kt',
                     renameTo: generator => `${generator.javaDir}service/dto/${generator.asDto('User')}.kt`,
@@ -1549,6 +1677,26 @@ const serverFiles = {
                 {
                     file: 'package/service/dto/PasswordChangeDTO.kt',
                     renameTo: generator => `${generator.javaDir}service/dto/PasswordChangeDTO.kt`,
+                    useBluePrint: true
+                },
+                {
+                    file: 'package/web/rest/vm/ManagedUserVM.kt',
+                    renameTo: generator => `${generator.javaDir}web/rest/vm/ManagedUserVM.kt`,
+                    useBluePrint: true
+                },
+                {
+                    file: 'package/web/rest/AccountResource.kt',
+                    renameTo: generator => `${generator.javaDir}web/rest/AccountResource.kt`,
+                    useBluePrint: true
+                },
+                {
+                    file: 'package/web/rest/UserResource.kt',
+                    renameTo: generator => `${generator.javaDir}web/rest/UserResource.kt`,
+                    useBluePrint: true
+                },
+                {
+                    file: 'package/web/rest/vm/KeyAndPasswordVM.kt',
+                    renameTo: generator => `${generator.javaDir}web/rest/vm/KeyAndPasswordVM.kt`,
                     useBluePrint: true
                 },
                 {
@@ -1566,21 +1714,6 @@ const serverFiles = {
                 {
                     file: 'package/domain/User.java',
                     renameTo: generator => `${generator.javaDir}domain/${generator.asEntity('User')}.java`
-                },
-
-                /* User management java web files */
-                {
-                    file: 'package/web/rest/vm/ManagedUserVM.java',
-                    renameTo: generator => `${generator.javaDir}web/rest/vm/ManagedUserVM.java`
-                },
-                {
-                    file: 'package/web/rest/AccountResource.java',
-                    renameTo: generator => `${generator.javaDir}web/rest/AccountResource.java`
-                },
-                { file: 'package/web/rest/UserResource.java', renameTo: generator => `${generator.javaDir}web/rest/UserResource.java` },
-                {
-                    file: 'package/web/rest/vm/KeyAndPasswordVM.java',
-                    renameTo: generator => `${generator.javaDir}web/rest/vm/KeyAndPasswordVM.java`
                 }
             ]
         },
@@ -1622,11 +1755,12 @@ const serverFiles = {
         },
         {
             condition: generator => !generator.skipUserManagement && generator.authenticationType === 'jwt',
-            path: SERVER_TEST_SRC_DIR,
+            path: SERVER_TEST_SRC_KOTLIN_DIR,
             templates: [
                 {
-                    file: 'package/web/rest/UserJWTControllerIT.java',
-                    renameTo: generator => `${generator.testDir}web/rest/UserJWTControllerIT.java`
+                    file: 'package/web/rest/UserJWTControllerIT.kt',
+                    renameTo: generator => `${generator.testDir}web/rest/UserJWTControllerIT.kt`,
+                    useBluePrint: true
                 }
             ]
         },
@@ -1634,11 +1768,12 @@ const serverFiles = {
             // TODO : add tests for reactive
             condition: generator =>
                 !generator.reactive && !generator.skipUserManagement && ['sql', 'mongodb', 'couchbase'].includes(generator.databaseType),
-            path: SERVER_TEST_SRC_DIR,
+            path: SERVER_TEST_SRC_KOTLIN_DIR,
             templates: [
                 {
-                    file: 'package/web/rest/AuditResourceIT.java',
-                    renameTo: generator => `${generator.testDir}web/rest/AuditResourceIT.java`
+                    file: 'package/web/rest/AuditResourceIT.kt',
+                    renameTo: generator => `${generator.testDir}web/rest/AuditResourceIT.kt`,
+                    useBluePrint: true
                 }
             ]
         },
@@ -1696,20 +1831,16 @@ const serverFiles = {
                     file: 'package/service/mapper/UserMapperIT.kt',
                     renameTo: generator => `${generator.testDir}service/mapper/UserMapperIT.kt`,
                     useBluePrint: true
-                }
-            ]
-        },
-        {
-            condition: generator => !generator.skipUserManagement,
-            path: SERVER_TEST_SRC_DIR,
-            templates: [
-                {
-                    file: 'package/web/rest/AccountResourceIT.java',
-                    renameTo: generator => `${generator.testDir}web/rest/AccountResourceIT.java`
                 },
                 {
-                    file: 'package/web/rest/UserResourceIT.java',
-                    renameTo: generator => `${generator.testDir}web/rest/UserResourceIT.java`
+                    file: 'package/web/rest/AccountResourceIT.kt',
+                    renameTo: generator => `${generator.testDir}web/rest/AccountResourceIT.kt`,
+                    useBluePrint: true
+                },
+                {
+                    file: 'package/web/rest/UserResourceIT.kt',
+                    renameTo: generator => `${generator.testDir}web/rest/UserResourceIT.kt`,
+                    useBluePrint: true
                 }
             ]
         }
@@ -1767,6 +1898,12 @@ function writeFiles() {
                     'org.jetbrains.kotlin',
                     'kotlin-test-junit',
                     '${kotlin.version}',
+                    '            <scope>test</scope>'
+                );
+                this.addMavenDependency(
+                    'com.nhaarman.mockitokotlin2',
+                    'mockito-kotlin',
+                    kotlinConstants.MOCKITO_KOTLIN_VERSION,
                     '            <scope>test</scope>'
                 );
                 // NOTE: Add proper indentation of the configuration tag

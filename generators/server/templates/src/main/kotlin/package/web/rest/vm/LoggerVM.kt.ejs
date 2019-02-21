@@ -16,21 +16,32 @@
  See the License for the specific language governing permissions and
  limitations under the License.
 -%>
-package <%=packageName%>.config
+package <%=packageName%>.web.rest.vm
+
+import ch.qos.logback.classic.Logger
 
 /**
- * Application constants.
+ * View Model object for storing a Logback logger.
  */
-object Constants {
+class LoggerVM {
 
-    // Regex for acceptable logins
-    const val LOGIN_REGEX = "^[_.@A-Za-z0-9-]*\$"
+    var name: String? = null
 
-    const val SYSTEM_ACCOUNT = "system"
-    const val ANONYMOUS_USER = "anonymoususer"
-    const val DEFAULT_LANGUAGE = "<%= nativeLanguage %>"
-    <% if (databaseType === 'couchbase') { %>
-    const val ID_DELIMITER = "__"
-    <% } %>
+    var level: String? = null
 
+    constructor(logger: Logger) {
+        this.name = logger.name
+        this.level = logger.effectiveLevel.toString()
+    }
+
+    constructor() {
+        // Empty public constructor used by Jackson.
+    }
+
+    override fun toString(): String {
+        return "LoggerVM{" +
+            "name='" + name + '\''.toString() +
+            ", level='" + level + '\''.toString() +
+            '}'.toString()
+    }
 }

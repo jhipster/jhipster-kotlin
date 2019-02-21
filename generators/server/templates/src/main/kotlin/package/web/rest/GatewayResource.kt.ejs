@@ -20,11 +20,7 @@ package <%=packageName%>.web.rest
 
 import <%=packageName%>.web.rest.vm.RouteVM
 
-import java.util.ArrayList
-import java.util.List
-
 import org.springframework.cloud.client.discovery.DiscoveryClient
-import org.springframework.cloud.netflix.zuul.filters.Route
 import org.springframework.cloud.netflix.zuul.filters.RouteLocator
 import org.springframework.http.*
 import org.springframework.security.access.annotation.Secured
@@ -46,15 +42,14 @@ class GatewayResource(private val routeLocator: RouteLocator, private val discov
     @GetMapping("/routes")
     @Secured(AuthoritiesConstants.ADMIN)
     fun activeRoutes(): ResponseEntity<List<RouteVM>> {
-        val routes = routeLocator.routes
-        val routeVMs = ArrayList<RouteVM>()
-        routes.forEach { route ->
-            val routeVM = RouteVM()
-            routeVM.path = route.fullPath
-            routeVM.serviceId = route.id
-            routeVM.serviceInstances = discoveryClient.getInstances(route.location)
-            routeVMs.add(routeVM)
-        }
+        val routeVMs =
+            routeLocator.routes.mapNotNull { route ->
+                val routeVM = RouteVM()
+                routeVM.path = route.fullPath
+                routeVM.serviceId = route.id
+                routeVM.serviceInstances = discoveryClient.getInstances(route.location)
+                routeVM
+            }
         return ResponseEntity(routeVMs, HttpStatus.OK)
     }
 }

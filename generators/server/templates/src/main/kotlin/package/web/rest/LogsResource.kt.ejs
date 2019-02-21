@@ -37,14 +37,12 @@ import reactor.core.publisher.Flux
 class LogsResource {
 
     @GetMapping("/logs")
-    fun getList(): <% if (reactive) { %>Flux<% } else { %>kotlin.collections.List<% } %><LoggerVM> {
+    fun getList(): <% if (reactive) { %>Flux<% } else { %>List<% } %><LoggerVM> {
         val context = LoggerFactory.getILoggerFactory() as LoggerContext
         <%_ if (reactive) { _%>
-        return Flux.fromIterable(context.getLoggerList())
-            .map{ LoggerVM(it) }
+        return Flux.fromIterable(context.getLoggerList()) .map{ LoggerVM(it) }
         <%_ } else { _%>
-        return context.loggerList
-            .map{ LoggerVM(it) }
+        return context.loggerList.map { LoggerVM(it) }
          <%_ } _%>
     }
 

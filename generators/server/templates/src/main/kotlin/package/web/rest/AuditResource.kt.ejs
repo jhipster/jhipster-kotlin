@@ -19,27 +19,24 @@
 package <%=packageName%>.web.rest
 
 import <%=packageName%>.service.AuditEventService
-import <%=packageName%>.web.rest.util.PaginationUtil
 
+import io.github.jhipster.web.util.PaginationUtil
 import io.github.jhipster.web.util.ResponseUtil
 import org.springframework.boot.actuate.audit.AuditEvent
-import org.springframework.data.domain.Page
 import org.springframework.data.domain.Pageable
-import org.springframework.http.HttpHeaders
 import org.springframework.http.HttpStatus
 import org.springframework.http.ResponseEntity
 import org.springframework.web.bind.annotation.*
 
 import java.time.LocalDate
 import java.time.ZoneId
-import java.util.List
 
 /**
  * REST controller for getting the audit events.
  */
 @RestController
 @RequestMapping("/management/audits")
-class AuditResource (private val auditEventService: AuditEventService) {
+class AuditResource(private val auditEventService: AuditEventService) {
 
     /**
      * GET /audits : get a page of AuditEvents.
@@ -48,7 +45,7 @@ class AuditResource (private val auditEventService: AuditEventService) {
      * @return the ResponseEntity with status 200 (OK) and the list of AuditEvents in body
      */
     @GetMapping
-    fun getAll(pageable: Pageable): ResponseEntity<MutableList<AuditEvent>> {
+    fun getAll(pageable: Pageable): ResponseEntity<List<AuditEvent>> {
         val page = auditEventService.findAll(pageable)
         val headers = PaginationUtil.generatePaginationHttpHeaders(page, "/management/audits")
         return ResponseEntity(page.content, headers, HttpStatus.OK)
@@ -62,11 +59,11 @@ class AuditResource (private val auditEventService: AuditEventService) {
      * @param pageable the pagination information
      * @return the ResponseEntity with status 200 (OK) and the list of AuditEvents in body
      */
-    @GetMapping(params = arrayOf("fromDate", "toDate"))
+    @GetMapping(params = ["fromDate", "toDate"])
     fun getByDates(
         @RequestParam(value = "fromDate") fromDate: LocalDate,
         @RequestParam(value = "toDate") toDate: LocalDate,
-        pageable: Pageable): ResponseEntity<MutableList<AuditEvent>> {
+        pageable: Pageable): ResponseEntity<List<AuditEvent>> {
 
         val page = auditEventService.findByDates(
             fromDate.atStartOfDay(ZoneId.systemDefault()).toInstant(),

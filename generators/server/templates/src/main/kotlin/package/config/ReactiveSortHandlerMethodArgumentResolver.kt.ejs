@@ -198,12 +198,13 @@ class ReactiveSortHandlerMethodArgumentResolver : SyncHandlerMethodArgumentResol
 
             val elements = part.split(delimiter.toRegex()).dropLastWhile { it.isEmpty() }.toTypedArray()
 
-            val direction = if (elements.size == 0)
+            val direction = if (elements.isEmpty()) {
                 Optional.empty()
-            else
+            } else {
                 Direction.fromOptionalString(elements[elements.size - 1])
+            }
 
-            val lastIndex = direction.map { it -> elements.size - 1 }.orElseGet { elements.size }
+            val lastIndex = direction.map { elements.size - 1 }.orElseGet { elements.size }
 
             for (i in 0 until lastIndex) {
                 toOrder(elements[i], direction).ifPresent { allOrders.add(it) }
