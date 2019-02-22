@@ -41,12 +41,15 @@ import org.springframework.boot.web.server.*
 import org.springframework.boot.web.servlet.ServletContextInitializer
 import org.springframework.boot.web.servlet.server.ConfigurableServletWebServerFactory
 <%_ } _%>
-<%_ if (reactive) { _%>
+<%_ if (reactive && !skipClient) { _%>
 import org.springframework.boot.autoconfigure.web.reactive.ResourceHandlerRegistrationCustomizer
 <%_ } _%>
 import org.springframework.context.annotation.Bean
 import org.springframework.context.annotation.Configuration
 <%_ if (reactive) { _%>
+    <%_ if (!skipClient) { _%>
+import org.springframework.context.annotation.Profile
+    <%_ } _%>
 import org.springframework.core.annotation.Order
 <%_ } _%>
 <%_ if (!reactive) { _%>
@@ -54,8 +57,7 @@ import org.springframework.core.env.Environment
 import org.springframework.core.env.Profiles
 import org.springframework.http.MediaType
 <%_ } _%>
-<%_ if (reactive) { _%>
-import org.springframework.http.server.reactive.ServerHttpResponse
+<%_ if (reactive && !skipClient) { _%>
 import org.springframework.security.web.server.util.matcher.ServerWebExchangeMatcher
 import org.springframework.security.web.server.util.matcher.ServerWebExchangeMatchers
 <%_ } _%>
@@ -67,16 +69,25 @@ import org.springframework.web.filter.CorsFilter
 import org.springframework.web.cors.reactive.CorsWebFilter
 import org.springframework.web.cors.reactive.UrlBasedCorsConfigurationSource
 import org.springframework.web.reactive.config.WebFluxConfigurer
+    <%_ if (!skipClient) { _%>
+import org.springframework.web.reactive.function.server.HandlerFunction
 import org.springframework.web.reactive.function.server.RouterFunction
 import org.springframework.web.reactive.function.server.ServerResponse
+    <%_ } _%>
 import org.springframework.web.reactive.result.method.annotation.ArgumentResolverConfigurer
+    <%_ if (!skipClient) { _%>
 import org.springframework.web.server.ServerWebExchange
+    <%_ } _%>
 import org.springframework.web.server.WebExceptionHandler
+    <%_ if (!skipClient) { _%>
 import org.springframework.web.server.WebFilter
 import org.springframework.web.server.WebFilterChain
+    <%_ } _%>
 import org.zalando.problem.spring.webflux.advice.ProblemExceptionHandler
 import org.zalando.problem.spring.webflux.advice.ProblemHandling
+    <%_ if (!skipClient) { _%>
 import reactor.core.publisher.Mono
+    <%_ } _%>
 <%_ } _%>
 <%_ if (!reactive) { _%>
 
@@ -246,36 +257,36 @@ class WebConfigurer(
     @Bean
     fun index(): RouterFunction<ServerResponse> {
         // Redirect "/" to "/index.html"
-        return route(GET("/"), req -> ServerResponse.temporaryRedirect(URI.create("index.html")).build())
+        return route(GET("/"), HandlerFunction { ServerResponse.temporaryRedirect(URI.create("index.html")).build() })
     }
 
     @Bean
     fun registrationCustomizer(): ResourceHandlerRegistrationCustomizer {
         // Disable built-in cache control to use our custom filter instead
-        return registration -> registration.setCacheControl(null)
+        return ResourceHandlerRegistrationCustomizer { registration -> registration.setCacheControl(null)}
     }
 
     @Bean
     @Profile(JHipsterConstants.SPRING_PROFILE_PRODUCTION)
     fun cachingHttpHeadersFilter() : CachingHttpHeadersFilter {
         // Use a cache filter that only match selected paths
-        return CachingHttpHeadersFilter(TimeUnit.DAYS.toMillis(jHipsterProperties.http.cache.timeToLiveInDays))
+        return CachingHttpHeadersFilter(TimeUnit.DAYS.toMillis(jHipsterProperties.http.cache.timeToLiveInDays.toLong()))
     }
 
     /**
      * This filter is used in production, to put HTTP cache headers with a long expiration time.
      */
-    class CachingHttpHeadersFilter(private vasl cacheTimeToLive: Long) : WebFilter {
+    class CachingHttpHeadersFilter(private val cacheTimeToLive: Long) : WebFilter {
 
         override fun filter(exchange: ServerWebExchange, chain: WebFilterChain): Mono<Void> {
             return ServerWebExchangeMatchers.pathMatchers("/i18n/**", "/content/**", "/app/**")
                 .matches(exchange)
                 .filter(ServerWebExchangeMatcher.MatchResult::isMatch)
-                .doOnNext { matchResult ->
-                    val response = exchange.getResponse()
-                    response.getHeaders().setCacheControl("max-age=" + cacheTimeToLive + ", public")
-                    response.getHeaders().setPragma("cache")
-                    response.getHeaders().setExpires(cacheTimeToLive + System.currentTimeMillis())
+                .doOnNext {
+                    val response = exchange.response
+                    response.headers.cacheControl = "max-age=$cacheTimeToLive, public"
+                    response.headers.pragma = "cache"
+                    response.headers.expires = cacheTimeToLive + System.currentTimeMillis()
                 }
                 .then(chain.filter(exchange))
         }
