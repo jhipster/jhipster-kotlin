@@ -302,7 +302,7 @@ class UserResource(
      * DELETE /users/:login : delete the "login" User.
      *
      * @param login the login of the user to delete
-     * @return the ResponseEntity with status 200 (OK)
+     * @return the ResponseEntity with status 204 (NO_CONTENT)
      */
     @DeleteMapping("/users/{login:" + Constants.LOGIN_REGEX + "}")
     @PreAuthorize("hasRole(\"" + AuthoritiesConstants.ADMIN + "\")")
@@ -310,12 +310,13 @@ class UserResource(
     fun deleteUser(@PathVariable login: String): ResponseEntity<Void> {
         log.debug("REST request to delete User: {}", login)
         userService.deleteUser(login)
-        return ResponseEntity.ok().headers(HeaderUtil.createAlert(applicationName, <% if (enableTranslation) {%> "userManagement.deleted"<% } else { %> "A user is deleted with identifier $login"<% } %>, login)).build()
+        return ResponseEntity.noContent().headers(HeaderUtil.createAlert(applicationName, <% if (enableTranslation) {%> "userManagement.deleted"<% } else { %> "A user is deleted with identifier $login"<% } %>, login)).build()
     <%_ } else { _%>
+    @ResponseStatus(code = HttpStatus.NO_CONTENT)
     fun deleteUser(@PathVariable login: String): Mono<ResponseEntity<Void>> {
         log.debug("REST request to delete User: {}", login)
         return userService.deleteUser(login)
-            .map { ResponseEntity.ok().headers(HeaderUtil.createAlert(applicationName, "userManagement.deleted", login)).build<Void>() }
+            .map { ResponseEntity.noContent().headers(HeaderUtil.createAlert(applicationName, "userManagement.deleted", login)).build<Void>() }
     <%_ } _%>
     }
 <%_ } _%>

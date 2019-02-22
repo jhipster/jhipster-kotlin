@@ -815,12 +815,16 @@ class UserService(
             if (details["langKey"] != null) {
                 user.langKey = details["langKey"] as String
             } else if (details["locale"] != null) {
-                val locale = details["locale"] as String
-                if (locale.contains("-")) {
-                  user.langKey = locale.substring(0, locale.indexOf('-'))
-                } else if (locale.contains("_")) {
-                  user.langKey = locale.substring(0, locale.indexOf('_'))
+                // For the locale issue, we suggest you adjust the format based on the OAuth server.
+                // Here we can't cater for all the use-cases, see:
+                // https://github.com/jhipster/generator-jhipster/issues/7866
+                // for the en_US or en_** issue.
+                // Since JHipter only have one "en" language, we will handle it here, for other languages, please handle it accordingly.
+                var locale = details["locale"] as String
+                if (locale.startsWith("en_") || locale.startsWith("en-")) {
+                    locale = "en"
                 }
+                user.langKey = locale.toLowerCase()
             }
             if (details["picture"] != null) {
                 user.imageUrl = details["picture"] as String

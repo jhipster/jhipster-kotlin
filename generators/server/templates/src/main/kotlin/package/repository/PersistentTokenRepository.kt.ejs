@@ -33,7 +33,7 @@ import org.springframework.stereotype.Repository
 import javax.validation.ConstraintViolationException
 import javax.validation.Validator
 <% } %>
-<%_ if (databaseType === 'cassandra') { _%>
+<%_ if (databaseType === 'cassandra' || databaseType === 'couchbase') { _%>
 
 import java.util.Optional
 <%_ } _%>
@@ -52,12 +52,12 @@ import <%=packageName%>.config.Constants.ID_DELIMITER
  */<% } %><% if (databaseType === 'sql' || databaseType === 'mongodb' || databaseType === 'couchbase') { %>
 interface PersistentTokenRepository: <% if (databaseType === 'sql') { %>JpaRepository<% } %><% if (databaseType === 'mongodb') { %>MongoRepository<% } %><% if (databaseType === 'couchbase') { %>N1qlCouchbaseRepository<% } %><PersistentToken, String> {
 <% if (databaseType === 'couchbase') { %>
-    fun findBySeries(series: String): PersistentToken {
-        return findOne(PersistentToken.PREFIX + ID_DELIMITER + series)
+    fun findBySeries(series: String): Optional<PersistentToken> {
+        return findById(PersistentToken.PREFIX + ID_DELIMITER + series)
     }
 
     fun deleteBySeries(series: String) {
-        delete(PersistentToken.PREFIX + ID_DELIMITER + series)
+        deleteById(PersistentToken.PREFIX + ID_DELIMITER + series)
     }
 
     fun findByUser(user: User): List<PersistentToken> {
