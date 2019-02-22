@@ -20,7 +20,6 @@ package <%=packageName%>.repository
 
 <% if (databaseType === 'cassandra') { %>
 import com.datastax.driver.core.*
-import com.datastax.driver.mapping.Mapper
 import com.datastax.driver.mapping.MappingManager<% } %>
 import <%=packageName%>.domain.PersistentToken
 import <%=packageName%>.domain.<%= asEntity('User') %><% if (databaseType !== 'cassandra') { %>
@@ -31,15 +30,15 @@ import org.springframework.data.mongodb.repository.MongoRepository
 <% } %><% if (databaseType === 'cassandra') { %>
 import org.springframework.stereotype.Repository
 
-import javax.validation.ConstraintViolation
 import javax.validation.ConstraintViolationException
 import javax.validation.Validator
-
 <% } %>
 <%_ if (databaseType === 'cassandra') { _%>
+
 import java.util.Optional
 <%_ } _%>
 <% if (databaseType === 'couchbase') { %>
+
 import <%=packageName%>.config.Constants.ID_DELIMITER
 <% } %>
 <% if (databaseType === 'sql') { %>/**
@@ -74,38 +73,27 @@ interface PersistentTokenRepository: <% if (databaseType === 'sql') { %>JpaRepos
 @Repository
 class PersistentTokenRepository (private val session: Session, private val validator: Validator) {
 
-    private val mapper: Mapper<PersistentToken>
+    private val mapper = MappingManager(session).mapper(PersistentToken::class.java)
 
-    private val findPersistentTokenSeriesByUserIdStmt: PreparedStatement
+    private val findPersistentTokenSeriesByUserIdStmt = session.prepare(
+        "SELECT persistent_token_series " +
+        "FROM persistent_token_by_user " +
+        "WHERE user_id = :user_id")
 
-    private val insertPersistentTokenSeriesByUserIdStmt: PreparedStatement
+    private val insertPersistentTokenSeriesByUserIdStmt = session.prepare(
+        "INSERT INTO persistent_token_by_user (user_id, persistent_token_series) " +
+            "VALUES (:user_id, :persistent_token_series) " +
+            "USING TTL 2592000")// 30 days
 
-    private val insertPersistentTokenStmt: PreparedStatement
 
-    private val deletePersistentTokenSeriesByUserIdStmt: PreparedStatement
+    private val insertPersistentTokenStmt = session.prepare(
+        "INSERT INTO persistent_token (series, token_date, user_agent, token_value, login, user_id, ip_address) " +
+            "VALUES (:series, :token_date, :user_agent, :token_value, :login, :user_id, :ip_address) " +
+            "USING TTL 2592000")// 30 days
 
-    init {
-        mapper = MappingManager(session).mapper(PersistentToken.javaClass)
-
-        findPersistentTokenSeriesByUserIdStmt = session.prepare(
-            "SELECT persistent_token_series " +
-            "FROM persistent_token_by_user " +
-            "WHERE user_id = :user_id")
-
-        insertPersistentTokenSeriesByUserIdStmt = session.prepare(
-            "INSERT INTO persistent_token_by_user (user_id, persistent_token_series) " +
-                "VALUES (:user_id, :persistent_token_series) " +
-                "USING TTL 2592000") // 30 days
-
-        insertPersistentTokenStmt = session.prepare(
-            "INSERT INTO persistent_token (series, token_date, user_agent, token_value, login, user_id, ip_address) " +
-                "VALUES (:series, :token_date, :user_agent, :token_value, :login, :user_id, :ip_address) " +
-                "USING TTL 2592000") // 30 days
-
-        deletePersistentTokenSeriesByUserIdStmt = session.prepare(
-            "DELETE FROM persistent_token_by_user WHERE user_id = :user_id AND persistent_token_series = :persistent_token_series"
-        )
-    }
+    private val deletePersistentTokenSeriesByUserIdStmt = session.prepare(
+        "DELETE FROM persistent_token_by_user WHERE user_id = :user_id AND persistent_token_series = :persistent_token_series"
+    )
 
     fun findById(presentedSeries: String): Optional<PersistentToken> {
         return Optional.ofNullable(mapper.get(presentedSeries))
@@ -115,13 +103,12 @@ class PersistentTokenRepository (private val session: Session, private val valid
         val stmt = findPersistentTokenSeriesByUserIdStmt.bind()
         stmt.setString("user_id", user.id)
         val rs = session.execute(stmt)
-        val persistentTokens = mutableListOf<PersistentToken>()
-        rs.all().stream()
-            .map { row -> row.getString("persistent_token_series") }
-            .map { token -> mapper.get(token) }
-            .forEach(persistentTokens::add)
-
-        return persistentTokens
+        return rs.all().asSequence()
+            .map { row ->
+                val token = row.getString("persistent_token_series")
+                mapper.get(token)
+            }
+            .toMutableList()
     }
 
     fun save(token: PersistentToken) {
@@ -129,7 +116,7 @@ class PersistentTokenRepository (private val session: Session, private val valid
         if (violations != null && !violations.isEmpty()) {
             throw ConstraintViolationException(violations)
         }
-        val batch = new BatchStatement()
+        val batch = BatchStatement()
         batch.add(insertPersistentTokenStmt.bind()
             .setString("series", token.series)
             .setTimestamp("token_date", token.tokenDate)
@@ -137,7 +124,7 @@ class PersistentTokenRepository (private val session: Session, private val valid
             .setString("token_value", token.tokenValue)
             .setString("login", token.login)
             .setString("user_id", token.userId)
-            .setString("ip_address", token.ipAddress));
+            .setString("ip_address", token.ipAddress))
         batch.add(insertPersistentTokenSeriesByUserIdStmt.bind()
             .setString("user_id", token.userId)
             .setString("persistent_token_series", token.series))
@@ -148,6 +135,6 @@ class PersistentTokenRepository (private val session: Session, private val valid
         mapper.delete(token)
         session.execute(deletePersistentTokenSeriesByUserIdStmt.bind()
             .setString("user_id", token.userId)
-            .setString("persistent_token_series", token.series)))
+            .setString("persistent_token_series", token.series))
     }
 }<% } %>
