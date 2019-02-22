@@ -77,10 +77,6 @@ import javax.persistence.EntityManager
 <%_ if (databaseType !== 'cassandra') { _%>
 import java.time.Instant
 <%_ } _%>
-<%_ if (databaseType === 'cassandra' || databaseType === 'couchbase') { _%>
-import java.util.stream.Collectors
-import java.util.stream.Stream
-<%_ } _%>
 <%_ if (databaseType === 'cassandra' || (authenticationType === 'oauth2' && databaseType !== 'couchbase')) { _%>
 import java.util.UUID
 <%_ } _%>
@@ -98,7 +94,9 @@ import org.springframework.test.web.servlet.request.MockMvcRequestBuilders.*
 import org.springframework.test.web.servlet.result.MockMvcResultMatchers.*
 <%_ } _%>
 import kotlin.test.assertNotNull
+<%_ if (cacheManagerIsAvailable === true) { _%>
 import kotlin.test.assertNull
+<%_ } _%>
 
 /**
  * Integration tests for the [UserResource] REST controller.
@@ -451,7 +449,7 @@ class UserResourceIT <% if (databaseType === 'cassandra') { %>: AbstractCassandr
         <%_ } _%>
         <%_ if (cacheManagerIsAvailable === true) { _%>
 
-        assertNull(cacheManager.getCache(UserRepository.USERS_BY_LOGIN_CACHE)!!.get(user.login))
+        assertNull(cacheManager.getCache(UserRepository.USERS_BY_LOGIN_CACHE)!!.get(user.login!!))
         <%_ } _%>
 
         // Get the user
@@ -459,7 +457,7 @@ class UserResourceIT <% if (databaseType === 'cassandra') { %>: AbstractCassandr
         restUserMockMvc.perform(get("/api/users/{login}", user.login))
             .andExpect(status().isOk)
             .andExpect(content().contentType(MediaType.APPLICATION_JSON_UTF8_VALUE))
-            .andExpect(jsonPath("\$.login").value(user.login))
+            .andExpect(jsonPath("\$.login").value(user.login!!))
             .andExpect(jsonPath("\$.firstName").value(DEFAULT_FIRSTNAME))
             .andExpect(jsonPath("\$.lastName").value(DEFAULT_LASTNAME))
             .andExpect(jsonPath("\$.email").value(DEFAULT_EMAIL))
@@ -482,7 +480,7 @@ class UserResourceIT <% if (databaseType === 'cassandra') { %>: AbstractCassandr
         <%_ } _%>
         <%_ if (cacheManagerIsAvailable === true) { _%>
 
-        assertNotNull(cacheManager.getCache(UserRepository.USERS_BY_LOGIN_CACHE)!!.get(user.login))
+        assertNotNull(cacheManager.getCache(UserRepository.USERS_BY_LOGIN_CACHE)!!.get(user.login!!))
         <%_ } _%>
     }
 
@@ -803,7 +801,7 @@ class UserResourceIT <% if (databaseType === 'cassandra') { %>: AbstractCassandr
         <%_ } _%>
         <%_ if (cacheManagerIsAvailable === true) { _%>
 
-        assertNull(cacheManager.getCache(UserRepository.USERS_BY_LOGIN_CACHE)!!.get(user.login))
+        assertNull(cacheManager.getCache(UserRepository.USERS_BY_LOGIN_CACHE)!!.get(user.login!!))
         <%_ } _%>
 
         // Validate the database is empty
@@ -918,7 +916,7 @@ class UserResourceIT <% if (databaseType === 'cassandra') { %>: AbstractCassandr
         authorities.add(authority)
         user.authorities = authorities
         <%_ } else { _%>
-        user.setAuthorities(Stream.of(AuthoritiesConstants.USER).collect(Collectors.toSet()))
+        user.authorities = mutableSetOf(AuthoritiesConstants.USER)
         <%_ } _%>
 
         val userDTO = userMapper.userToUserDTO(user)

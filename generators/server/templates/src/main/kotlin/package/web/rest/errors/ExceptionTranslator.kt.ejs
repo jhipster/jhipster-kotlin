@@ -39,7 +39,6 @@ import org.springframework.web.context.request.NativeWebRequest
 <%_ } _%>
 import org.zalando.problem.DefaultProblem
 import org.zalando.problem.Problem
-import org.zalando.problem.ProblemBuilder
 import org.zalando.problem.Status
 import org.zalando.problem.spring.web<% if (reactive) { %>flux<% } %>.advice.ProblemHandling
 import org.zalando.problem.violations.ConstraintViolationProblem
@@ -128,7 +127,7 @@ _%>
     override fun handleBindingResult(ex: WebExchangeBindException, request: <%= requestClass %>): <%- returnType %>  {
     <%_ } _%>
         val result = ex.bindingResult
-        val fieldErrors = result.fieldErrors.map { f -> FieldErrorVM(f.objectName, f.field, f.code) }
+        val fieldErrors = result.fieldErrors.map { FieldErrorVM(it.objectName, it.field, it.code) }
 
         val problem = Problem.builder()
             .withType(ErrorConstants.CONSTRAINT_VIOLATION_TYPE)

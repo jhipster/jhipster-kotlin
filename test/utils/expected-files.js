@@ -179,9 +179,8 @@ const expectedFiles = {
         `${SERVER_MAIN_SRC_DIR_KOTLIN}com/mycompany/myapp/config/SecurityConfiguration.kt`,
         `${SERVER_MAIN_SRC_DIR_KOTLIN}com/mycompany/myapp/config/WebConfigurer.kt`,
         `${SERVER_MAIN_SRC_DIR_KOTLIN}com/mycompany/myapp/config/audit/AuditEventConverter.kt`,
-        `${SERVER_MAIN_SRC_DIR_JAVA}com/mycompany/myapp/domain/package-info.java`,
-        `${SERVER_MAIN_SRC_DIR_JAVA}com/mycompany/myapp/domain/AbstractAuditingEntity.java`,
-        `${SERVER_MAIN_SRC_DIR_JAVA}com/mycompany/myapp/domain/PersistentAuditEvent.java`,
+        `${SERVER_MAIN_SRC_DIR_KOTLIN}com/mycompany/myapp/domain/AbstractAuditingEntity.kt`,
+        `${SERVER_MAIN_SRC_DIR_KOTLIN}com/mycompany/myapp/domain/PersistentAuditEvent.kt`,
         `${SERVER_MAIN_SRC_DIR_JAVA}com/mycompany/myapp/security/package-info.java`,
         `${SERVER_MAIN_SRC_DIR_JAVA}com/mycompany/myapp/security/AuthoritiesConstants.java`,
         `${SERVER_MAIN_SRC_DIR_JAVA}com/mycompany/myapp/security/SecurityUtils.java`,
@@ -212,8 +211,8 @@ const expectedFiles = {
         `${SERVER_MAIN_RES_DIR}config/liquibase/data/user_authority.csv`,
         `${SERVER_MAIN_RES_DIR}templates/mail/activationEmail.html`,
         `${SERVER_MAIN_RES_DIR}templates/mail/passwordResetEmail.html`,
-        `${SERVER_MAIN_SRC_DIR_JAVA}com/mycompany/myapp/domain/Authority.java`,
-        `${SERVER_MAIN_SRC_DIR_JAVA}com/mycompany/myapp/domain/User.java`,
+        `${SERVER_MAIN_SRC_DIR_KOTLIN}com/mycompany/myapp/domain/Authority.kt`,
+        `${SERVER_MAIN_SRC_DIR_KOTLIN}com/mycompany/myapp/domain/User.kt`,
         `${SERVER_MAIN_SRC_DIR_KOTLIN}com/mycompany/myapp/repository/AuthorityRepository.kt`,
         `${SERVER_MAIN_SRC_DIR_KOTLIN}com/mycompany/myapp/repository/CustomAuditEventRepository.kt`,
         `${SERVER_MAIN_SRC_DIR_KOTLIN}com/mycompany/myapp/repository/PersistenceAuditEventRepository.kt`,
@@ -543,7 +542,7 @@ const expectedFiles = {
     ],
 
     session: [
-        `${SERVER_MAIN_SRC_DIR_JAVA}com/mycompany/myapp/domain/PersistentToken.java`,
+        `${SERVER_MAIN_SRC_DIR_KOTLIN}com/mycompany/myapp/domain/PersistentToken.kt`,
         `${SERVER_MAIN_SRC_DIR_KOTLIN}com/mycompany/myapp/repository/PersistentTokenRepository.kt`,
         `${SERVER_MAIN_SRC_DIR_JAVA}com/mycompany/myapp/security/PersistentTokenRememberMeServices.java`,
         `${CLIENT_MAIN_SRC_DIR}app/account/sessions/sessions.component.html`,
@@ -569,7 +568,7 @@ const expectedFiles = {
 
     oauth2: [
         `${SERVER_MAIN_SRC_DIR_KOTLIN}com/mycompany/myapp/config/SecurityConfiguration.kt`,
-        `${SERVER_MAIN_SRC_DIR_JAVA}com/mycompany/myapp/domain/User.java`,
+        `${SERVER_MAIN_SRC_DIR_KOTLIN}com/mycompany/myapp/domain/User.kt`,
         `${SERVER_MAIN_SRC_DIR_KOTLIN}com/mycompany/myapp/web/rest/AccountResource.kt`,
         `${DOCKER_DIR}keycloak.yml`
     ],

@@ -1,0 +1,191 @@
+<%#
+ Copyright 2013-2019 the original author or authors from the JHipster project.
+
+ This file is part of the JHipster project, see https://www.jhipster.tech/
+ for more information.
+
+ Licensed under the Apache License, Version 2.0 (the "License");
+ you may not use this file except in compliance with the License.
+ You may obtain a copy of the License at
+
+      http://www.apache.org/licenses/LICENSE-2.0
+
+ Unless required by applicable law or agreed to in writing, software
+ distributed under the License is distributed on an "AS IS" BASIS,
+ WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
+ See the License for the specific language governing permissions and
+ limitations under the License.
+-%>
+package <%=packageName%>.domain
+
+<%_ if (databaseType === 'cassandra') { _%>
+import com.datastax.driver.mapping.annotations.*
+<%_ } _%>
+import com.fasterxml.jackson.annotation.JsonIgnore
+<%_ if (enableHibernateCache) { _%>
+import org.hibernate.annotations.Cache
+import org.hibernate.annotations.CacheConcurrencyStrategy
+<%_ } _%>
+<%_ if (databaseType === 'mongodb') { _%>
+import org.springframework.data.annotation.Id
+import org.springframework.data.mongodb.core.mapping.DBRef
+import org.springframework.data.mongodb.core.mapping.Document
+<%_ } _%>
+<%_ if (databaseType === 'couchbase') { _%>
+import org.springframework.data.annotation.Id
+import org.springframework.data.couchbase.core.mapping.Document
+import org.springframework.data.couchbase.core.mapping.id.GeneratedValue
+import org.springframework.data.couchbase.core.mapping.id.IdAttribute
+import org.springframework.data.couchbase.core.mapping.id.IdPrefix
+<%_ } _%>
+
+<%_ if (databaseType === 'sql') { _%>
+import javax.persistence.*
+<%_ } _%>
+import javax.validation.constraints.NotNull
+import javax.validation.constraints.Size
+
+import java.io.Serializable
+<%_ if (databaseType === 'sql' || databaseType === 'mongodb' || databaseType === 'couchbase') { _%>
+import java.time.LocalDate
+<%_ } _%>
+import java.util.Objects
+<%_ if (databaseType === 'cassandra') { _%>
+import java.util.Date
+<%_ } _%>
+<%_ if (databaseType === 'couchbase') { _%>
+
+import <%=packageName%>.config.Constants.ID_DELIMITER
+import org.springframework.data.couchbase.core.mapping.id.GenerationStrategy.USE_ATTRIBUTES
+<%_ } _%>
+
+/**
+ * Persistent tokens are used by Spring Security to automatically log in users.
+ *
+ * @see <%=packageName%>.security.PersistentTokenRememberMeServices
+ */
+<%_ if (databaseType === 'sql') { _%>
+@Entity
+@Table(name = "<%= jhiTablePrefix %>_persistent_token")
+<%_ } _%>
+<%_ if (enableHibernateCache) { if (cacheProvider === 'infinispan') { _%>
+@Cache(usage = CacheConcurrencyStrategy.READ_WRITE)
+<%_ } else { _%>
+@Cache(usage = CacheConcurrencyStrategy.NONSTRICT_READ_WRITE)
+<%_ } } _%>
+<%_ if (databaseType === 'mongodb') { _%>
+@Document(collection = "<%= jhiTablePrefix %>_persistent_token")
+<%_ } _%>
+<%_ if (databaseType === 'couchbase') { _%>
+@Document
+<%_ } _%>
+<%_ if (databaseType === 'cassandra') { _%>
+@Table(name = "persistent_token")
+<%_ } _%>
+class PersistentToken @JvmOverloads constructor(
+<%_ if (databaseType === 'couchbase') { _%>
+
+    @Id
+    @GeneratedValue(strategy = USE_ATTRIBUTES, delimiter = ID_DELIMITER)
+    var id: String? = null,
+
+    @IdAttribute
+<%_ } _%>
+<%_ if (databaseType === 'sql' || databaseType === 'mongodb')  { _%>
+    @Id
+<%_ } _%>
+<%_ if (databaseType === 'cassandra') { _%>
+    @PartitionKey
+<%_ } _%>
+    var series: String? = null,
+
+    @JsonIgnore
+    @field:NotNull<% if (databaseType === 'sql') { %>
+    @Column(name = "token_value", nullable = false)<% } %><% if (databaseType === 'cassandra') { %>
+    @Column(name = "token_value")<% } %>
+    var tokenValue: String? = null,
+
+    <% if (databaseType === 'sql') { %>
+    @Column(name = "token_date")
+    var tokenDate: LocalDate? = null,<% } %><% if (databaseType === 'mongodb' || databaseType === 'couchbase') { %>
+    var tokenDate: LocalDate? = null,<% } %><% if (databaseType === 'cassandra') { %>
+    @Column(name = "token_date")
+    var tokenDate: Date? = null,<% } %>
+
+    //an IPV6 address max length is 39 characters
+    @field:Size(min = 0, max = 39)<% if (databaseType === 'sql') { %>
+    @Column(name = "ip_address", length = 39)<% } %><% if (databaseType === 'cassandra') { %>
+    @Column(name = "ip_address")<% } %>
+    var ipAddress: String? = null,
+
+    userAgent: String? = null,
+    <%_ if (databaseType === 'cassandra' || databaseType === 'couchbase') { _%>
+
+    var login: String? = null,
+    <%_ } _%>
+    <%_ if (databaseType === 'cassandra') { _%>
+
+    @Column(name = "user_id")
+    var userId: String? = null
+    <%_ } _%>
+    <%_ if (databaseType === 'sql' || databaseType === 'mongodb') { _%>
+
+    @JsonIgnore
+        <%_ if (databaseType === 'sql') { _%>
+    @ManyToOne
+        <%_ } _%>
+        <%_ if (databaseType === 'mongodb') { _%>
+    @DBRef
+        <%_ } _%>
+    var user: <%= asEntity('User') %>? = null
+    <%_ } _%>
+
+) : Serializable {
+<%_ if (databaseType === 'couchbase') { _%>
+
+    @SuppressWarnings("unused")
+    @IdPrefix
+    private var prefix: String = PREFIX
+<%_ } _%>
+
+<%_ if (databaseType === 'sql' || databaseType === 'cassandra') { _%>
+    @Column(name = "user_agent")
+<%_ } _%>
+    var userAgent: String? = userAgent
+        set(userAgent) {
+            field = when {
+                userAgent != null && userAgent.length >= MAX_USER_AGENT_LEN -> userAgent.substring(0, MAX_USER_AGENT_LEN - 1)
+                else -> userAgent
+            }
+        }
+
+    override fun equals(other: Any?): Boolean {
+        if (this === other) return true
+        if (other !is PersistentToken) return false
+
+        return Objects.equals(series, other.series)
+    }
+
+    override fun hashCode(): Int {
+        return series!!.hashCode()
+    }
+
+    override fun toString(): String {
+        return "PersistentToken{" +
+            "series='$series', " +
+            "tokenValue='$tokenValue', " +
+            "tokenDate=$tokenDate, " +
+            "ipAddress='$ipAddress', " +
+            "userAgent='${this.userAgent}'" +
+            "}"
+    }
+
+    companion object {
+        private const val serialVersionUID = 1L
+
+        private const val MAX_USER_AGENT_LEN = 255
+        <%_ if (databaseType === 'couchbase') { _%>
+        const val PREFIX = "token"
+        <%_ } _%>
+    }
+}

@@ -144,7 +144,7 @@ class UserService(
     fun completePasswordReset(newPassword: String, key: String): <% if (reactive) { %>Mono<% } else { %>Optional<% } %><<%= asEntity('User') %>> {
         log.debug("Reset user password for reset key {}", key)
         return userRepository.findOneByResetKey(key)
-            .filter { user -> user.resetDate.isAfter(Instant.now().minusSeconds(86400)) }
+            .filter { user -> user.resetDate?.isAfter(Instant.now().minusSeconds(86400)) ?: false }
             .<% if (reactive) { %>flatMap<% } else { %>map<% } %> { user ->
                 user.password = passwordEncoder.encode(newPassword)
                 user.resetKey = null
@@ -167,7 +167,7 @@ class UserService(
 
     fun requestPasswordReset(mail: String): <% if (reactive) { %>Mono<% } else { %>Optional<% } %><<%= asEntity('User') %>> {
         return userRepository.findOneByEmailIgnoreCase(mail)
-            .filter(<%= asEntity('User') %>::getActivated)
+            .filter(<%= asEntity('User') %>::activated)
             .<% if (reactive) { %>flatMap<% } else { %>map<% } %> { user ->
                 user.resetKey = RandomUtil.generateResetKey()
                 user.resetDate = Instant.now()
@@ -344,7 +344,7 @@ class UserService(
         }
         <%_ } _%>
         <%_ if (databaseType === 'cassandra' || databaseType === 'couchbase') { _%>
-        user.authorities = userDTO.authorities
+        user.authorities = userDTO.authorities?.toMutableSet() ?: mutableSetOf()
         <%_ } _%>
         userRepository.save(user)<% if (searchEngine === 'elasticsearch') { %>
         userSearchRepository.save(user)<% } %>
@@ -357,7 +357,7 @@ class UserService(
         return Flux.fromIterable(Optional.ofNullable(userDTO.authorities).orElse(mutableSetOf()))
             .flatMap<Authority>(authorityRepository::findById)
             <%_ if (databaseType === 'couchbase') { _%>
-            .map(Authority::getName)
+            .map(Authority::name)
             <%_ } _%>
             .doOnNext { authority -> user.authorities.add(authority) }
             .then(createUser(user))
@@ -380,13 +380,13 @@ class UserService(
      * @param imageUrl image URL of user
      <%_ } _%>
      */
-    fun updateUser(firstName: String, lastName: String, email: String, langKey: String<% if (databaseType === 'mongodb' || databaseType === 'couchbase' || databaseType === 'sql') { %>, imageUrl: String<% } %>)<% if (reactive) { %>: Mono<Void><% } %> {
+    fun updateUser(firstName: String?, lastName: String?, email: String?, langKey: String?<% if (databaseType === 'mongodb' || databaseType === 'couchbase' || databaseType === 'sql') { %>, imageUrl: String?<% } %>)<% if (reactive) { %>: Mono<Void><% } %> {
         <% if (reactive) { %>return <% } %>SecurityUtils.getCurrentUserLogin()
             .flatMap(userRepository::findOneByLogin)
             .<% if (reactive) { %>flatMap<% } else { %>ifPresent<% } %> { user ->
                 user.firstName = firstName
                 user.lastName = lastName
-                user.email = email.toLowerCase()
+                user.email = email?.toLowerCase()
                 user.langKey = langKey
                 <%_ if (databaseType === 'mongodb' || databaseType === 'couchbase' || databaseType === 'sql') { _%>
                 user.imageUrl = imageUrl
@@ -452,7 +452,7 @@ class UserService(
                 val managedAuthorities = user.authorities
                 managedAuthorities.clear()
                 <%_ } else { // Cassandra & Couchbase _%>
-                user.authorities = userDTO.authorities
+                user.authorities = userDTO.authorities?.toMutableSet() ?: mutableSetOf()
                 <%_ } _%>
         <%_ if (!reactive) { _%>
                 <%_ if (databaseType === 'sql' || databaseType === 'mongodb') { _%>
@@ -632,7 +632,7 @@ class UserService(
         persistentTokenRepository.findByTokenDateBefore(now.minusMonths(1)).forEach { token ->
             log.debug("Deleting token {}", token.series)<% if (databaseType === 'sql') { %>
             val user = token.user
-            user.persistentTokens.remove(token)<% } %>
+            user?.persistentTokens?.remove(token)<% } %>
             persistentTokenRepository.delete(token)
         }
     }
@@ -675,7 +675,7 @@ class UserService(
      * @return a list of all the authorities
      */
     fun getAuthorities(): <% if (reactive) { %>Flux<% } else { %>MutableList<% } %><String> {
-        return authorityRepository.findAll()<% if (!reactive) { %>.asSequence().mapTo(mutableListOf(), Authority::getName)<% } else { %>.map(Authority::getName)<% } %>
+        return authorityRepository.findAll()<% if (!reactive) { %>.asSequence().map { it.name }.filterNotNullTo(mutableListOf())<% } else { %>.map(Authority::name)<% } %>
     }
     <%_ } _%>
     <%_ if (authenticationType === 'oauth2') { _%>
@@ -698,7 +698,7 @@ class UserService(
         // convert Authorities to GrantedAuthorities
         val grantedAuthorities = userAuthorities.asSequence()
         <%_ if (databaseType !== 'couchbase') { _%>
-            .map(Authority::getName)
+            .map(Authority::name)
         <%_ } _%>
             .mapTo(mutableSetOf()) { SimpleGrantedAuthority(it) }
 
@@ -714,7 +714,7 @@ class UserService(
         // save authorities in to sync user roles/groups between IdP and JHipster's local database
         val dbAuthorities = getAuthorities()
         <%_ if (databaseType !== 'couchbase') { _%>
-        val userAuthorities = user.authorities.asSequence().mapTo(mutableListOf(), Authority::getName)
+        val userAuthorities = user.authorities.asSequence().mapTo(mutableListOf(), Authority::name)
         <%_ } else { _%>
         val userAuthorities = user.authorities
         <%_ } _%>
@@ -727,7 +727,7 @@ class UserService(
             }
         }
         // save account in to sync users between IdP and JHipster's local database
-        val existingUser = userRepository.findOneByLogin(user.login)
+        val existingUser = userRepository.findOneByLogin(user.login!!)
         if (existingUser.isPresent) {
             // if IdP sends last updated information, use it to determine if an update should happen
             if (details["updated_at"] != null) {
@@ -755,8 +755,8 @@ class UserService(
     <%_ if (cacheManagerIsAvailable === true) { _%>
 
     private fun clearUserCaches(user: <%= asEntity('User') %>) {
-        cacheManager.getCache(UserRepository.USERS_BY_LOGIN_CACHE)?.evict(user.login)
-        cacheManager.getCache(UserRepository.USERS_BY_EMAIL_CACHE)?.evict(user.email)
+        cacheManager.getCache(UserRepository.USERS_BY_LOGIN_CACHE)?.evict(user.login!!)
+        cacheManager.getCache(UserRepository.USERS_BY_EMAIL_CACHE)?.evict(user.email!!)
     }
     <%_ } _%>
     <%_ if (authenticationType === 'oauth2') { _%>

@@ -205,7 +205,7 @@ class UserServiceIT <% if (databaseType === 'cassandra') { %>: AbstractCassandra
         var maybeUser = userService.requestPasswordReset("invalid.login@localhost")<% if (reactive) { %>.blockOptional()<% } %>
         assertThat(maybeUser).isNotPresent
 
-        maybeUser = userService.requestPasswordReset(user.email)<% if (reactive) { %>.blockOptional()<% } %>
+        maybeUser = userService.requestPasswordReset(user.email!!)<% if (reactive) { %>.blockOptional()<% } %>
         assertThat(maybeUser).isPresent
         assertThat(maybeUser.orElse(null).email).isEqualTo(user.email)
         assertThat(maybeUser.orElse(null).resetDate).isNotNull()
@@ -220,7 +220,7 @@ class UserServiceIT <% if (databaseType === 'cassandra') { %>: AbstractCassandra
         user.activated = false
         userRepository.save<% if (databaseType === 'sql') { %>AndFlush<% } %>(user)<% if (reactive) { %>.block()<% } %>
 
-        val maybeUser = userService.requestPasswordReset(user.login)<% if (reactive) { %>.blockOptional()<% } %>
+        val maybeUser = userService.requestPasswordReset(user.login!!)<% if (reactive) { %>.blockOptional()<% } %>
         assertThat(maybeUser).isNotPresent
         userRepository.delete(user)<% if (reactive) { %>.block()<% } %>
     }
@@ -237,7 +237,7 @@ class UserServiceIT <% if (databaseType === 'cassandra') { %>: AbstractCassandra
         user.resetKey = resetKey
         userRepository.save<% if (databaseType === 'sql') { %>AndFlush<% } %>(user)<% if (reactive) { %>.block()<% } %>
 
-        val maybeUser = userService.completePasswordReset("johndoe2", user.resetKey)<% if (reactive) { %>.blockOptional()<% } %>
+        val maybeUser = userService.completePasswordReset("johndoe2", user.resetKey!!)<% if (reactive) { %>.blockOptional()<% } %>
         assertThat(maybeUser).isNotPresent
         userRepository.delete(user)<% if (reactive) { %>.block()<% } %>
     }
@@ -253,7 +253,7 @@ class UserServiceIT <% if (databaseType === 'cassandra') { %>: AbstractCassandra
         user.resetKey = "1234"
         userRepository.save<% if (databaseType === 'sql') { %>AndFlush<% } %>(user)<% if (reactive) { %>.block()<% } %>
 
-        val maybeUser = userService.completePasswordReset("johndoe2", user.resetKey)<% if (reactive) { %>.blockOptional()<% } %>
+        val maybeUser = userService.completePasswordReset("johndoe2", user.resetKey!!)<% if (reactive) { %>.blockOptional()<% } %>
         assertThat(maybeUser).isNotPresent
         userRepository.delete(user)<% if (reactive) { %>.block()<% } %>
     }
@@ -271,7 +271,7 @@ class UserServiceIT <% if (databaseType === 'cassandra') { %>: AbstractCassandra
         user.resetKey = resetKey
         userRepository.save<% if (databaseType === 'sql') { %>AndFlush<% } %>(user)<% if (reactive) { %>.block()<% } %>
 
-        val maybeUser = userService.completePasswordReset("johndoe2", user.resetKey)<% if (reactive) { %>.blockOptional()<% } %>
+        val maybeUser = userService.completePasswordReset("johndoe2", user.resetKey!!)<% if (reactive) { %>.blockOptional()<% } %>
         assertThat(maybeUser).isPresent
         assertThat(maybeUser.orElse(null).resetDate).isNull()
         assertThat(maybeUser.orElse(null).resetKey).isNull()

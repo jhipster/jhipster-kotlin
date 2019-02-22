@@ -275,7 +275,7 @@ class UserRepository(private val session: Session, private val validator: Valida
                 session.execute(deleteByLoginStmt.bind().setString("login", oldUser.login))
             }
             if (!StringUtils.isEmpty(oldUser.email) && !oldUser.email.equals(user.email, ignoreCase=true)) {
-                session.execute(deleteByEmailStmt.bind().setString("email", oldUser.email.toLowerCase()))
+                session.execute(deleteByEmailStmt.bind().setString("email", oldUser.email!!.toLowerCase()))
             }
         }
         val batch = BatchStatement()
@@ -294,7 +294,7 @@ class UserRepository(private val session: Session, private val validator: Valida
             .setString("login", user.login)
             .setString("id", user.id))
         batch.add(insertByEmailStmt.bind()
-            .setString("email", user.email.toLowerCase())
+            .setString("email", user.email!!.toLowerCase())
             .setString("id", user.id))
         session.execute(batch)
         return user
@@ -310,7 +310,7 @@ class UserRepository(private val session: Session, private val validator: Valida
             batch.add(deleteByResetKeyStmt.bind().setString("reset_key", user.resetKey))
         }
         batch.add(deleteByLoginStmt.bind().setString("login", user.login))
-        batch.add(deleteByEmailStmt.bind().setString("email", user.email.toLowerCase()))
+        batch.add(deleteByEmailStmt.bind().setString("email", user.email!!.toLowerCase()))
         session.execute(batch)
     }
 
