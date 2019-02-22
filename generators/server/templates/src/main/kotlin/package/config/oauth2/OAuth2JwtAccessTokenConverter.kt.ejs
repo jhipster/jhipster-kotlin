@@ -74,15 +74,15 @@ class OAuth2JwtAccessTokenConverter(
      * @return true, if we could fetch it; false, if we could not.
      */
     private fun tryCreateSignatureVerifier(): Boolean {
-        val t = System.currentTimeMillis()
-        if (t - lastKeyFetchTimestamp < oAuth2Properties.signatureVerification.publicKeyRefreshRateLimit) {
+        val time = System.currentTimeMillis()
+        if (time - lastKeyFetchTimestamp < oAuth2Properties.signatureVerification.publicKeyRefreshRateLimit) {
             return false
         }
         try {
-            val verifier = signatureVerifierClient.signatureVerifier
+            val verifier = signatureVerifierClient.getSignatureVerifier()
             if (verifier != null) {
                 setVerifier(verifier)
-                lastKeyFetchTimestamp = t
+                lastKeyFetchTimestamp = time
                 log.debug("Public key retrieved from OAuth2 server to create SignatureVerifier")
                 return true
             }

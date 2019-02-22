@@ -176,61 +176,64 @@ const serverFiles = {
         {
             condition: generator =>
                 generator.databaseType === 'sql' || generator.databaseType === 'mongodb' || generator.databaseType === 'couchbase',
-            path: SERVER_MAIN_SRC_DIR,
+            path: SERVER_MAIN_KOTLIN_SRC_DIR,
             templates: [
                 {
-                    file: 'package/security/SpringSecurityAuditorAware.java',
-                    renameTo: generator => `${generator.javaDir}security/SpringSecurityAuditorAware.java`
+                    file: 'package/security/SpringSecurityAuditorAware.kt',
+                    renameTo: generator => `${generator.javaDir}security/SpringSecurityAuditorAware.kt`,
+                    useBluePrint: true
                 }
             ]
         },
         {
-            path: SERVER_MAIN_SRC_DIR,
+            path: SERVER_MAIN_KOTLIN_SRC_DIR,
             templates: [
                 {
-                    file: 'package/security/SecurityUtils.java',
-                    renameTo: generator => `${generator.javaDir}security/SecurityUtils.java`
+                    file: 'package/security/SecurityUtils.kt',
+                    renameTo: generator => `${generator.javaDir}security/SecurityUtils.kt`,
+                    useBluePrint: true
                 },
                 {
-                    file: 'package/security/AuthoritiesConstants.java',
-                    renameTo: generator => `${generator.javaDir}security/AuthoritiesConstants.java`
-                },
-                {
-                    file: 'package/security/package-info.java',
-                    renameTo: generator => `${generator.javaDir}security/package-info.java`
+                    file: 'package/security/AuthoritiesConstants.kt',
+                    renameTo: generator => `${generator.javaDir}security/AuthoritiesConstants.kt`,
+                    useBluePrint: true
                 }
             ]
         },
         {
-            path: SERVER_TEST_SRC_DIR,
+            path: SERVER_TEST_SRC_KOTLIN_DIR,
             templates: [
                 {
-                    file: 'package/security/SecurityUtilsUnitTest.java',
-                    renameTo: generator => `${generator.testDir}security/SecurityUtilsUnitTest.java`
+                    file: 'package/security/SecurityUtilsUnitTest.kt',
+                    renameTo: generator => `${generator.testDir}security/SecurityUtilsUnitTest.kt`,
+                    useBluePrint: true
                 }
             ]
         },
         {
             condition: generator => generator.authenticationType === 'jwt',
-            path: SERVER_MAIN_SRC_DIR,
+            path: SERVER_MAIN_KOTLIN_SRC_DIR,
             templates: [
                 {
-                    file: 'package/security/jwt/TokenProvider.java',
-                    renameTo: generator => `${generator.javaDir}security/jwt/TokenProvider.java`
+                    file: 'package/security/jwt/TokenProvider.kt',
+                    renameTo: generator => `${generator.javaDir}security/jwt/TokenProvider.kt`,
+                    useBluePrint: true
                 },
                 {
-                    file: 'package/security/jwt/JWTFilter.java',
-                    renameTo: generator => `${generator.javaDir}security/jwt/JWTFilter.java`
+                    file: 'package/security/jwt/JWTFilter.kt',
+                    renameTo: generator => `${generator.javaDir}security/jwt/JWTFilter.kt`,
+                    useBluePrint: true
                 }
             ]
         },
         {
             condition: generator => generator.authenticationType === 'jwt' && !generator.reactive,
-            path: SERVER_MAIN_SRC_DIR,
+            path: SERVER_MAIN_KOTLIN_SRC_DIR,
             templates: [
                 {
-                    file: 'package/security/jwt/JWTConfigurer.java',
-                    renameTo: generator => `${generator.javaDir}security/jwt/JWTConfigurer.java`
+                    file: 'package/security/jwt/JWTConfigurer.kt',
+                    renameTo: generator => `${generator.javaDir}security/jwt/JWTConfigurer.kt`,
+                    useBluePrint: true
                 }
             ]
         },
@@ -286,26 +289,11 @@ const serverFiles = {
                     file: 'package/config/UaaProperties.kt',
                     renameTo: generator => `${generator.javaDir}config/UaaProperties.kt`,
                     useBluePrint: true
-                }
-            ]
-        },
-        {
-            condition: generator => !shouldSkipUserManagement(generator) && generator.applicationType === 'uaa',
-            path: SERVER_MAIN_SRC_DIR,
-            templates: [
+                },
                 {
-                    file: 'package/security/IatTokenEnhancer.java',
-                    renameTo: generator => `${generator.javaDir}security/IatTokenEnhancer.java`
-                }
-            ]
-        },
-        {
-            condition: generator => !shouldSkipUserManagement(generator) && generator.applicationType === 'uaa',
-            path: SERVER_MAIN_SRC_DIR,
-            templates: [
-                {
-                    file: 'package/security/IatTokenEnhancer.java',
-                    renameTo: generator => `${generator.javaDir}security/IatTokenEnhancer.java`
+                    file: 'package/security/IatTokenEnhancer.kt',
+                    renameTo: generator => `${generator.javaDir}security/IatTokenEnhancer.kt`,
+                    useBluePrint: true
                 }
             ]
         },
@@ -322,16 +310,11 @@ const serverFiles = {
                     file: 'package/repository/PersistentTokenRepository.kt',
                     renameTo: generator => `${generator.javaDir}repository/PersistentTokenRepository.kt`,
                     useBluePrint: true
-                }
-            ]
-        },
-        {
-            condition: generator => !shouldSkipUserManagement(generator) && generator.authenticationType === 'session',
-            path: SERVER_MAIN_SRC_DIR,
-            templates: [
+                },
                 {
-                    file: 'package/security/PersistentTokenRememberMeServices.java',
-                    renameTo: generator => `${generator.javaDir}security/PersistentTokenRememberMeServices.java`
+                    file: 'package/security/PersistentTokenRememberMeServices.kt',
+                    renameTo: generator => `${generator.javaDir}security/PersistentTokenRememberMeServices.kt`,
+                    useBluePrint: true
                 }
             ]
         },
@@ -343,30 +326,27 @@ const serverFiles = {
                     file: 'package/config/OAuth2Configuration.kt',
                     renameTo: generator => `${generator.javaDir}config/OAuth2Configuration.kt`,
                     useBluePrint: true
-                }
-            ]
-        },
-        {
-            condition: generator => !shouldSkipUserManagement(generator) && generator.authenticationType === 'oauth2',
-            path: SERVER_MAIN_SRC_DIR,
-            templates: [
+                },
                 {
-                    file: 'package/security/OAuth2AuthenticationSuccessHandler.java',
-                    renameTo: generator => `${generator.javaDir}security/OAuth2AuthenticationSuccessHandler.java`
+                    file: 'package/security/OAuth2AuthenticationSuccessHandler.kt',
+                    renameTo: generator => `${generator.javaDir}security/OAuth2AuthenticationSuccessHandler.kt`,
+                    useBluePrint: true
                 }
             ]
         },
         {
             condition: generator => !shouldSkipUserManagement(generator) && generator.authenticationType !== 'oauth2',
-            path: SERVER_MAIN_SRC_DIR,
+            path: SERVER_MAIN_KOTLIN_SRC_DIR,
             templates: [
                 {
-                    file: 'package/security/DomainUserDetailsService.java',
-                    renameTo: generator => `${generator.javaDir}security/DomainUserDetailsService.java`
+                    file: 'package/security/DomainUserDetailsService.kt',
+                    renameTo: generator => `${generator.javaDir}security/DomainUserDetailsService.kt`,
+                    useBluePrint: true
                 },
                 {
-                    file: 'package/security/UserNotActivatedException.java',
-                    renameTo: generator => `${generator.javaDir}security/UserNotActivatedException.java`
+                    file: 'package/security/UserNotActivatedException.kt',
+                    renameTo: generator => `${generator.javaDir}security/UserNotActivatedException.kt`,
+                    useBluePrint: true
                 }
             ]
         },
@@ -446,17 +426,6 @@ const serverFiles = {
             path: SERVER_MAIN_KOTLIN_SRC_DIR,
             templates: [
                 {
-                    file: 'package/config/oauth2/OAuth2AuthenticationConfiguration.kt',
-                    renameTo: generator => `${generator.javaDir}config/oauth2/OAuth2AuthenticationConfiguration.kt`,
-                    useBluePrint: true
-                }
-            ]
-        },
-        {
-            condition: generator => generator.applicationType === 'gateway' && generator.authenticationType === 'uaa',
-            path: SERVER_MAIN_KOTLIN_SRC_DIR,
-            templates: [
-                {
                     file: 'package/web/rest/AuthResource.kt',
                     renameTo: generator => `${generator.javaDir}web/rest/AuthResource.kt`,
                     useBluePrint: true
@@ -470,48 +439,56 @@ const serverFiles = {
                     file: 'package/web/filter/RefreshTokenFilterConfigurer.kt',
                     renameTo: generator => `${generator.javaDir}web/filter/RefreshTokenFilterConfigurer.kt`,
                     useBluePrint: true
-                }
-            ]
-        },
-        {
-            condition: generator => generator.applicationType === 'gateway' && generator.authenticationType === 'uaa',
-            path: SERVER_MAIN_SRC_DIR,
-            templates: [
-                {
-                    file: 'package/security/oauth2/CookieCollection.java',
-                    renameTo: generator => `${generator.javaDir}security/oauth2/CookieCollection.java`
                 },
                 {
-                    file: 'package/security/oauth2/CookiesHttpServletRequestWrapper.java',
-                    renameTo: generator => `${generator.javaDir}security/oauth2/CookiesHttpServletRequestWrapper.java`
+                    file: 'package/config/oauth2/OAuth2AuthenticationConfiguration.kt',
+                    renameTo: generator => `${generator.javaDir}config/oauth2/OAuth2AuthenticationConfiguration.kt`,
+                    useBluePrint: true
                 },
                 {
-                    file: 'package/security/oauth2/CookieTokenExtractor.java',
-                    renameTo: generator => `${generator.javaDir}security/oauth2/CookieTokenExtractor.java`
+                    file: 'package/security/oauth2/CookieCollection.kt',
+                    renameTo: generator => `${generator.javaDir}security/oauth2/CookieCollection.kt`,
+                    useBluePrint: true
                 },
                 {
-                    file: 'package/security/oauth2/OAuth2AuthenticationService.java',
-                    renameTo: generator => `${generator.javaDir}security/oauth2/OAuth2AuthenticationService.java`
+                    file: 'package/security/oauth2/CookiesHttpServletRequestWrapper.kt',
+                    renameTo: generator => `${generator.javaDir}security/oauth2/CookiesHttpServletRequestWrapper.kt`,
+                    useBluePrint: true
                 },
                 {
-                    file: 'package/security/oauth2/OAuth2CookieHelper.java',
-                    renameTo: generator => `${generator.javaDir}security/oauth2/OAuth2CookieHelper.java`
+                    file: 'package/security/oauth2/CookieTokenExtractor.kt',
+                    renameTo: generator => `${generator.javaDir}security/oauth2/CookieTokenExtractor.kt`,
+                    useBluePrint: true
                 },
                 {
-                    file: 'package/security/oauth2/OAuth2Cookies.java',
-                    renameTo: generator => `${generator.javaDir}security/oauth2/OAuth2Cookies.java`
+                    file: 'package/security/oauth2/OAuth2AuthenticationService.kt',
+                    renameTo: generator => `${generator.javaDir}security/oauth2/OAuth2AuthenticationService.kt`,
+                    useBluePrint: true
                 },
                 {
-                    file: 'package/security/oauth2/OAuth2TokenEndpointClient.java',
-                    renameTo: generator => `${generator.javaDir}security/oauth2/OAuth2TokenEndpointClient.java`
+                    file: 'package/security/oauth2/OAuth2CookieHelper.kt',
+                    renameTo: generator => `${generator.javaDir}security/oauth2/OAuth2CookieHelper.kt`,
+                    useBluePrint: true
                 },
                 {
-                    file: 'package/security/oauth2/OAuth2TokenEndpointClientAdapter.java',
-                    renameTo: generator => `${generator.javaDir}security/oauth2/OAuth2TokenEndpointClientAdapter.java`
+                    file: 'package/security/oauth2/OAuth2Cookies.kt',
+                    renameTo: generator => `${generator.javaDir}security/oauth2/OAuth2Cookies.kt`,
+                    useBluePrint: true
                 },
                 {
-                    file: 'package/security/oauth2/UaaTokenEndpointClient.java',
-                    renameTo: generator => `${generator.javaDir}security/oauth2/UaaTokenEndpointClient.java`
+                    file: 'package/security/oauth2/OAuth2TokenEndpointClient.kt',
+                    renameTo: generator => `${generator.javaDir}security/oauth2/OAuth2TokenEndpointClient.kt`,
+                    useBluePrint: true
+                },
+                {
+                    file: 'package/security/oauth2/OAuth2TokenEndpointClientAdapter.kt',
+                    renameTo: generator => `${generator.javaDir}security/oauth2/OAuth2TokenEndpointClientAdapter.kt`,
+                    useBluePrint: true
+                },
+                {
+                    file: 'package/security/oauth2/UaaTokenEndpointClient.kt',
+                    renameTo: generator => `${generator.javaDir}security/oauth2/UaaTokenEndpointClient.kt`,
+                    useBluePrint: true
                 }
             ]
         },
@@ -524,17 +501,11 @@ const serverFiles = {
                     file: 'package/config/OAuth2Configuration.kt',
                     renameTo: generator => `${generator.javaDir}config/OAuth2Configuration.kt`,
                     useBluePrint: true
-                }
-            ]
-        },
-        {
-            condition: generator =>
-                generator.applicationType === 'gateway' && generator.authenticationType === 'oauth2' && generator.serviceDiscoveryType,
-            path: SERVER_MAIN_SRC_DIR,
-            templates: [
+                },
                 {
-                    file: 'package/security/OAuth2AuthenticationSuccessHandler.java',
-                    renameTo: generator => `${generator.javaDir}security/OAuth2AuthenticationSuccessHandler.java`
+                    file: 'package/security/OAuth2AuthenticationSuccessHandler.kt',
+                    renameTo: generator => `${generator.javaDir}security/OAuth2AuthenticationSuccessHandler.kt`,
+                    useBluePrint: true
                 }
             ]
         },
@@ -573,27 +544,16 @@ const serverFiles = {
                     file: 'package/config/oauth2/OAuth2JwtAccessTokenConverter.kt',
                     renameTo: generator => `${generator.javaDir}config/oauth2/OAuth2JwtAccessTokenConverter.kt`,
                     useBluePrint: true
-                }
-            ]
-        },
-        {
-            condition: generator =>
-                !(
-                    generator.applicationType !== 'microservice' &&
-                    !(
-                        generator.applicationType === 'gateway' &&
-                        (generator.authenticationType === 'uaa' || generator.authenticationType === 'oauth2')
-                    )
-                ) && generator.authenticationType === 'uaa',
-            path: SERVER_MAIN_SRC_DIR,
-            templates: [
-                {
-                    file: 'package/security/oauth2/OAuth2SignatureVerifierClient.java',
-                    renameTo: generator => `${generator.javaDir}security/oauth2/OAuth2SignatureVerifierClient.java`
                 },
                 {
-                    file: 'package/security/oauth2/UaaSignatureVerifierClient.java',
-                    renameTo: generator => `${generator.javaDir}security/oauth2/UaaSignatureVerifierClient.java`
+                    file: 'package/security/oauth2/OAuth2SignatureVerifierClient.kt',
+                    renameTo: generator => `${generator.javaDir}security/oauth2/OAuth2SignatureVerifierClient.kt`,
+                    useBluePrint: true
+                },
+                {
+                    file: 'package/security/oauth2/UaaSignatureVerifierClient.kt',
+                    renameTo: generator => `${generator.javaDir}security/oauth2/UaaSignatureVerifierClient.kt`,
+                    useBluePrint: true
                 }
             ]
         },
@@ -690,19 +650,22 @@ const serverFiles = {
                         (generator.authenticationType === 'uaa' || generator.authenticationType === 'oauth2')
                     )
                 ) && generator.authenticationType === 'oauth2',
-            path: SERVER_MAIN_SRC_DIR,
+            path: SERVER_MAIN_KOTLIN_SRC_DIR,
             templates: [
                 {
-                    file: 'package/security/oauth2/AuthorizationHeaderUtil.java',
-                    renameTo: generator => `${generator.javaDir}security/oauth2/AuthorizationHeaderUtil.java`
+                    file: 'package/security/oauth2/AuthorizationHeaderUtil.kt',
+                    renameTo: generator => `${generator.javaDir}security/oauth2/AuthorizationHeaderUtil.kt`,
+                    useBluePrint: true
                 },
                 {
-                    file: 'package/security/oauth2/SimplePrincipalExtractor.java',
-                    renameTo: generator => `${generator.javaDir}security/oauth2/SimplePrincipalExtractor.java`
+                    file: 'package/security/oauth2/SimplePrincipalExtractor.kt',
+                    renameTo: generator => `${generator.javaDir}security/oauth2/SimplePrincipalExtractor.kt`,
+                    useBluePrint: true
                 },
                 {
-                    file: 'package/security/oauth2/SimpleAuthoritiesExtractor.java',
-                    renameTo: generator => `${generator.javaDir}security/oauth2/SimpleAuthoritiesExtractor.java`
+                    file: 'package/security/oauth2/SimpleAuthoritiesExtractor.kt',
+                    renameTo: generator => `${generator.javaDir}security/oauth2/SimpleAuthoritiesExtractor.kt`,
+                    useBluePrint: true
                 }
             ]
         },
@@ -711,11 +674,12 @@ const serverFiles = {
                 generator.applicationType === 'microservice' &&
                 generator.authenticationType === 'oauth2' &&
                 generator.cacheProvider !== 'no',
-            path: SERVER_MAIN_SRC_DIR,
+            path: SERVER_MAIN_KOTLIN_SRC_DIR,
             templates: [
                 {
-                    file: 'package/security/oauth2/CachedUserInfoTokenServices.java',
-                    renameTo: generator => `${generator.javaDir}security/oauth2/CachedUserInfoTokenServices.java`
+                    file: 'package/security/oauth2/CachedUserInfoTokenServices.kt',
+                    renameTo: generator => `${generator.javaDir}security/oauth2/CachedUserInfoTokenServices.kt`,
+                    useBluePrint: true
                 }
             ]
         },
@@ -1318,38 +1282,37 @@ const serverFiles = {
                     file: 'package/config/SecurityBeanOverrideConfiguration.kt',
                     renameTo: generator => `${generator.testDir}config/SecurityBeanOverrideConfiguration.kt`,
                     useBluePrint: true
-                }
-            ]
-        },
-        {
-            condition: generator => generator.authenticationType === 'uaa',
-            path: SERVER_TEST_SRC_DIR,
-            templates: [
+                },
                 {
-                    file: 'package/security/OAuth2TokenMockUtil.java',
-                    renameTo: generator => `${generator.testDir}security/OAuth2TokenMockUtil.java`
+                    file: 'package/security/OAuth2TokenMockUtil.kt',
+                    renameTo: generator => `${generator.testDir}security/OAuth2TokenMockUtil.kt`,
+                    useBluePrint: true
                 }
             ]
         },
         {
             condition: generator => generator.authenticationType === 'uaa' && generator.applicationType === 'gateway',
-            path: SERVER_TEST_SRC_DIR,
+            path: SERVER_TEST_SRC_KOTLIN_DIR,
             templates: [
                 {
-                    file: 'package/security/oauth2/OAuth2CookieHelperTest.java',
-                    renameTo: generator => `${generator.testDir}security/oauth2/OAuth2CookieHelperTest.java`
+                    file: 'package/security/oauth2/OAuth2CookieHelperTest.kt',
+                    renameTo: generator => `${generator.testDir}security/oauth2/OAuth2CookieHelperTest.kt`,
+                    useBluePrint: true
                 },
                 {
-                    file: 'package/security/oauth2/OAuth2AuthenticationServiceTest.java',
-                    renameTo: generator => `${generator.testDir}security/oauth2/OAuth2AuthenticationServiceTest.java`
+                    file: 'package/security/oauth2/OAuth2AuthenticationServiceTest.kt',
+                    renameTo: generator => `${generator.testDir}security/oauth2/OAuth2AuthenticationServiceTest.kt`,
+                    useBluePrint: true
                 },
                 {
-                    file: 'package/security/oauth2/CookieTokenExtractorTest.java',
-                    renameTo: generator => `${generator.testDir}security/oauth2/CookieTokenExtractorTest.java`
+                    file: 'package/security/oauth2/CookieTokenExtractorTest.kt',
+                    renameTo: generator => `${generator.testDir}security/oauth2/CookieTokenExtractorTest.kt`,
+                    useBluePrint: true
                 },
                 {
-                    file: 'package/security/oauth2/CookieCollectionTest.java',
-                    renameTo: generator => `${generator.testDir}security/oauth2/CookieCollectionTest.java`
+                    file: 'package/security/oauth2/CookieCollectionTest.kt',
+                    renameTo: generator => `${generator.testDir}security/oauth2/CookieCollectionTest.kt`,
+                    useBluePrint: true
                 }
             ]
         },
@@ -1412,12 +1375,13 @@ const serverFiles = {
         },
         {
             condition: generator => !shouldSkipUserManagement(generator) && generator.authenticationType !== 'oauth2',
-            path: SERVER_TEST_SRC_DIR,
+            path: SERVER_TEST_SRC_KOTLIN_DIR,
             templates: [
                 // Create auth config test files
                 {
-                    file: 'package/security/DomainUserDetailsServiceIT.java',
-                    renameTo: generator => `${generator.testDir}security/DomainUserDetailsServiceIT.java`
+                    file: 'package/security/DomainUserDetailsServiceIT.kt',
+                    renameTo: generator => `${generator.testDir}security/DomainUserDetailsServiceIT.kt`,
+                    useBluePrint: true
                 }
             ]
         }
@@ -1668,6 +1632,7 @@ const serverFiles = {
             condition: generator => !generator.skipUserManagement,
             path: SERVER_MAIN_KOTLIN_SRC_DIR,
             templates: [
+                /* User management java domain files */
                 {
                     file: 'package/domain/User.kt',
                     renameTo: generator => `${generator.javaDir}domain/${generator.asEntity('User')}.kt`,
@@ -1678,6 +1643,7 @@ const serverFiles = {
                     renameTo: generator => `${generator.javaDir}repository/${generator.reactiveRepository}UserRepository.kt`,
                     useBluePrint: true
                 },
+
                 /* User management java service files */
                 {
                     file: 'package/service/UserService.kt',
@@ -1752,15 +1718,17 @@ const serverFiles = {
         },
         {
             condition: generator => generator.authenticationType === 'jwt',
-            path: SERVER_TEST_SRC_DIR,
+            path: SERVER_TEST_SRC_KOTLIN_DIR,
             templates: [
                 {
-                    file: 'package/security/jwt/TokenProviderTest.java',
-                    renameTo: generator => `${generator.testDir}security/jwt/TokenProviderTest.java`
+                    file: 'package/security/jwt/TokenProviderTest.kt',
+                    renameTo: generator => `${generator.testDir}security/jwt/TokenProviderTest.kt`,
+                    useBluePrint: true
                 },
                 {
-                    file: 'package/security/jwt/JWTFilterTest.java',
-                    renameTo: generator => `${generator.testDir}security/jwt/JWTFilterTest.java`
+                    file: 'package/security/jwt/JWTFilterTest.kt',
+                    renameTo: generator => `${generator.testDir}security/jwt/JWTFilterTest.kt`,
+                    useBluePrint: true
                 }
             ]
         },

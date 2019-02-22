@@ -1,0 +1,57 @@
+<%#
+ Copyright 2013-2019 the original author or authors from the JHipster project.
+
+ This file is part of the JHipster project, see https://jhipster.github.io/
+ for more information.
+
+ Licensed under the Apache License, Version 2.0 (the "License");
+ you may not use this file except in compliance with the License.
+ You may obtain a copy of the License at
+
+      http://www.apache.org/licenses/LICENSE-2.0
+
+ Unless required by applicable law or agreed to in writing, software
+ distributed under the License is distributed on an "AS IS" BASIS,
+ WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
+ See the License for the specific language governing permissions and
+ limitations under the License.
+-%>
+package <%=packageName%>.security.oauth2
+
+import <%=packageName%>.config.oauth2.OAuth2Properties
+import io.github.jhipster.config.JHipsterProperties
+import org.springframework.beans.factory.annotation.Qualifier
+import org.springframework.http.HttpHeaders
+import org.springframework.stereotype.Component
+import org.springframework.util.Base64Utils
+import org.springframework.util.MultiValueMap
+import org.springframework.web.client.RestTemplate
+
+import java.nio.charset.StandardCharsets
+
+/**
+ * Client talking to UAA's token endpoint to do different OAuth2 grants.
+ */
+@Component
+class UaaTokenEndpointClient(
+    @Qualifier("loadBalancedRestTemplate") restTemplate: RestTemplate,
+    jHipsterProperties: JHipsterProperties,
+    oAuth2Properties: OAuth2Properties
+) : OAuth2TokenEndpointClientAdapter(restTemplate, jHipsterProperties, oAuth2Properties), OAuth2TokenEndpointClient {
+
+    /**
+     * @return a Basic authorization header to be used to talk to UAA.
+     */
+    protected val authorizationHeader: String
+        get() {
+            val clientId = getClientId()
+            val clientSecret = getClientSecret()
+            val authorization = "$clientId:$clientSecret"
+            return "Basic " + Base64Utils.encodeToString(authorization.toByteArray(StandardCharsets.UTF_8))
+        }
+
+    override fun addAuthentication(reqHeaders: HttpHeaders, formParams: MultiValueMap<String, String>) {
+        reqHeaders.add("Authorization", authorizationHeader)
+    }
+
+}

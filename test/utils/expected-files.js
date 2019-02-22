@@ -6,7 +6,6 @@ const CLIENT_TEST_SRC_DIR = constants.CLIENT_TEST_SRC_DIR;
 
 const SERVER_MAIN_SRC_DIR_JAVA = constants.SERVER_MAIN_SRC_DIR;
 const SERVER_MAIN_RES_DIR = constants.SERVER_MAIN_RES_DIR;
-const SERVER_TEST_SRC_DIR_JAVA = constants.SERVER_TEST_SRC_DIR;
 const SERVER_TEST_RES_DIR = constants.SERVER_TEST_RES_DIR;
 const DOCKER_DIR = constants.DOCKER_DIR;
 const SERVER_MAIN_SRC_DIR_KOTLIN = `${constants.MAIN_DIR}kotlin/`;
@@ -181,10 +180,9 @@ const expectedFiles = {
         `${SERVER_MAIN_SRC_DIR_KOTLIN}com/mycompany/myapp/config/audit/AuditEventConverter.kt`,
         `${SERVER_MAIN_SRC_DIR_KOTLIN}com/mycompany/myapp/domain/AbstractAuditingEntity.kt`,
         `${SERVER_MAIN_SRC_DIR_KOTLIN}com/mycompany/myapp/domain/PersistentAuditEvent.kt`,
-        `${SERVER_MAIN_SRC_DIR_JAVA}com/mycompany/myapp/security/package-info.java`,
-        `${SERVER_MAIN_SRC_DIR_JAVA}com/mycompany/myapp/security/AuthoritiesConstants.java`,
-        `${SERVER_MAIN_SRC_DIR_JAVA}com/mycompany/myapp/security/SecurityUtils.java`,
-        `${SERVER_MAIN_SRC_DIR_JAVA}com/mycompany/myapp/security/SpringSecurityAuditorAware.java`,
+        `${SERVER_MAIN_SRC_DIR_KOTLIN}com/mycompany/myapp/security/AuthoritiesConstants.kt`,
+        `${SERVER_MAIN_SRC_DIR_KOTLIN}com/mycompany/myapp/security/SecurityUtils.kt`,
+        `${SERVER_MAIN_SRC_DIR_KOTLIN}com/mycompany/myapp/security/SpringSecurityAuditorAware.kt`,
         `${SERVER_MAIN_SRC_DIR_KOTLIN}com/mycompany/myapp/web/rest/errors/BadRequestAlertException.kt`,
         `${SERVER_MAIN_SRC_DIR_KOTLIN}com/mycompany/myapp/web/rest/errors/CustomParameterizedException.kt`,
         `${SERVER_MAIN_SRC_DIR_KOTLIN}com/mycompany/myapp/web/rest/errors/InternalServerErrorException.kt`,
@@ -196,7 +194,7 @@ const expectedFiles = {
         `${SERVER_MAIN_SRC_DIR_KOTLIN}com/mycompany/myapp/web/rest/errors/LoginAlreadyUsedException.kt`,
         `${SERVER_MAIN_SRC_DIR_KOTLIN}com/mycompany/myapp/web/rest/vm/LoggerVM.kt`,
         `${SERVER_MAIN_SRC_DIR_KOTLIN}com/mycompany/myapp/web/rest/LogsResource.kt`,
-        `${SERVER_TEST_SRC_DIR_JAVA}com/mycompany/myapp/security/SecurityUtilsUnitTest.java`,
+        `${SERVER_TEST_SRC_DIR_KOTLIN}com/mycompany/myapp/security/SecurityUtilsUnitTest.kt`,
         `${SERVER_TEST_SRC_DIR_KOTLIN}com/mycompany/myapp/web/rest/LogsResourceIT.kt`,
         `${SERVER_TEST_SRC_DIR_KOTLIN}com/mycompany/myapp/web/rest/TestUtil.kt`,
         `${SERVER_TEST_SRC_DIR_KOTLIN}com/mycompany/myapp/web/rest/errors/ExceptionTranslatorIT.kt`,
@@ -217,8 +215,8 @@ const expectedFiles = {
         `${SERVER_MAIN_SRC_DIR_KOTLIN}com/mycompany/myapp/repository/CustomAuditEventRepository.kt`,
         `${SERVER_MAIN_SRC_DIR_KOTLIN}com/mycompany/myapp/repository/PersistenceAuditEventRepository.kt`,
         `${SERVER_MAIN_SRC_DIR_KOTLIN}com/mycompany/myapp/repository/UserRepository.kt`,
-        `${SERVER_MAIN_SRC_DIR_JAVA}com/mycompany/myapp/security/DomainUserDetailsService.java`,
-        `${SERVER_MAIN_SRC_DIR_JAVA}com/mycompany/myapp/security/UserNotActivatedException.java`,
+        `${SERVER_MAIN_SRC_DIR_KOTLIN}com/mycompany/myapp/security/DomainUserDetailsService.kt`,
+        `${SERVER_MAIN_SRC_DIR_KOTLIN}com/mycompany/myapp/security/UserNotActivatedException.kt`,
         `${SERVER_MAIN_SRC_DIR_KOTLIN}com/mycompany/myapp/service/AuditEventService.kt`,
         `${SERVER_MAIN_SRC_DIR_KOTLIN}com/mycompany/myapp/service/MailService.kt`,
         `${SERVER_MAIN_SRC_DIR_KOTLIN}com/mycompany/myapp/service/UserService.kt`,
@@ -544,7 +542,7 @@ const expectedFiles = {
     session: [
         `${SERVER_MAIN_SRC_DIR_KOTLIN}com/mycompany/myapp/domain/PersistentToken.kt`,
         `${SERVER_MAIN_SRC_DIR_KOTLIN}com/mycompany/myapp/repository/PersistentTokenRepository.kt`,
-        `${SERVER_MAIN_SRC_DIR_JAVA}com/mycompany/myapp/security/PersistentTokenRememberMeServices.java`,
+        `${SERVER_MAIN_SRC_DIR_KOTLIN}com/mycompany/myapp/security/PersistentTokenRememberMeServices.kt`,
         `${CLIENT_MAIN_SRC_DIR}app/account/sessions/sessions.component.html`,
         `${CLIENT_MAIN_SRC_DIR}app/account/sessions/sessions.component.ts`,
         `${CLIENT_MAIN_SRC_DIR}app/account/sessions/sessions.route.ts`,
@@ -554,11 +552,11 @@ const expectedFiles = {
     ],
 
     jwtServer: [
-        `${SERVER_MAIN_SRC_DIR_JAVA}com/mycompany/myapp/security/jwt/JWTConfigurer.java`,
-        `${SERVER_MAIN_SRC_DIR_JAVA}com/mycompany/myapp/security/jwt/JWTFilter.java`,
-        `${SERVER_MAIN_SRC_DIR_JAVA}com/mycompany/myapp/security/jwt/TokenProvider.java`,
-        `${SERVER_TEST_SRC_DIR_JAVA}com/mycompany/myapp/security/jwt/JWTFilterTest.java`,
-        `${SERVER_TEST_SRC_DIR_JAVA}com/mycompany/myapp/security/jwt/TokenProviderTest.java`
+        `${SERVER_MAIN_SRC_DIR_KOTLIN}com/mycompany/myapp/security/jwt/JWTConfigurer.kt`,
+        `${SERVER_MAIN_SRC_DIR_KOTLIN}com/mycompany/myapp/security/jwt/JWTFilter.kt`,
+        `${SERVER_MAIN_SRC_DIR_KOTLIN}com/mycompany/myapp/security/jwt/TokenProvider.kt`,
+        `${SERVER_TEST_SRC_DIR_KOTLIN}com/mycompany/myapp/security/jwt/JWTFilterTest.kt`,
+        `${SERVER_TEST_SRC_DIR_KOTLIN}com/mycompany/myapp/security/jwt/TokenProviderTest.kt`
     ],
 
     jwtClient: [
@@ -583,9 +581,9 @@ const expectedFiles = {
         `${SERVER_MAIN_SRC_DIR_KOTLIN}com/mycompany/myapp/config/UaaWebSecurityConfiguration.kt`,
         `${SERVER_MAIN_SRC_DIR_KOTLIN}com/mycompany/myapp/config/UaaConfiguration.kt`,
         `${SERVER_MAIN_SRC_DIR_KOTLIN}com/mycompany/myapp/config/UaaProperties.kt`,
-        `${SERVER_MAIN_SRC_DIR_JAVA}com/mycompany/myapp/security/IatTokenEnhancer.java`,
+        `${SERVER_MAIN_SRC_DIR_KOTLIN}com/mycompany/myapp/security/IatTokenEnhancer.kt`,
         `${SERVER_TEST_SRC_DIR_KOTLIN}com/mycompany/myapp/config/SecurityBeanOverrideConfiguration.kt`,
-        `${SERVER_TEST_SRC_DIR_JAVA}com/mycompany/myapp/security/OAuth2TokenMockUtil.java`
+        `${SERVER_TEST_SRC_DIR_KOTLIN}com/mycompany/myapp/security/OAuth2TokenMockUtil.kt`
     ],
 
     gateway: [
@@ -612,21 +610,21 @@ const expectedFiles = {
         `${SERVER_MAIN_SRC_DIR_KOTLIN}com/mycompany/myapp/web/filter/RefreshTokenFilter.kt`,
         `${SERVER_MAIN_SRC_DIR_KOTLIN}com/mycompany/myapp/web/filter/RefreshTokenFilterConfigurer.kt`,
         `${SERVER_MAIN_SRC_DIR_KOTLIN}com/mycompany/myapp/config/oauth2/OAuth2AuthenticationConfiguration.kt`,
-        `${SERVER_MAIN_SRC_DIR_JAVA}com/mycompany/myapp/security/oauth2/CookieCollection.java`,
-        `${SERVER_MAIN_SRC_DIR_JAVA}com/mycompany/myapp/security/oauth2/CookiesHttpServletRequestWrapper.java`,
-        `${SERVER_MAIN_SRC_DIR_JAVA}com/mycompany/myapp/security/oauth2/CookieTokenExtractor.java`,
-        `${SERVER_MAIN_SRC_DIR_JAVA}com/mycompany/myapp/security/oauth2/OAuth2AuthenticationService.java`,
-        `${SERVER_MAIN_SRC_DIR_JAVA}com/mycompany/myapp/security/oauth2/OAuth2CookieHelper.java`,
-        `${SERVER_MAIN_SRC_DIR_JAVA}com/mycompany/myapp/security/oauth2/OAuth2Cookies.java`,
-        `${SERVER_MAIN_SRC_DIR_JAVA}com/mycompany/myapp/security/oauth2/OAuth2TokenEndpointClient.java`,
-        `${SERVER_MAIN_SRC_DIR_JAVA}com/mycompany/myapp/security/oauth2/OAuth2TokenEndpointClientAdapter.java`,
-        `${SERVER_MAIN_SRC_DIR_JAVA}com/mycompany/myapp/security/oauth2/UaaTokenEndpointClient.java`,
+        `${SERVER_MAIN_SRC_DIR_KOTLIN}com/mycompany/myapp/security/oauth2/CookieCollection.kt`,
+        `${SERVER_MAIN_SRC_DIR_KOTLIN}com/mycompany/myapp/security/oauth2/CookiesHttpServletRequestWrapper.kt`,
+        `${SERVER_MAIN_SRC_DIR_KOTLIN}com/mycompany/myapp/security/oauth2/CookieTokenExtractor.kt`,
+        `${SERVER_MAIN_SRC_DIR_KOTLIN}com/mycompany/myapp/security/oauth2/OAuth2AuthenticationService.kt`,
+        `${SERVER_MAIN_SRC_DIR_KOTLIN}com/mycompany/myapp/security/oauth2/OAuth2CookieHelper.kt`,
+        `${SERVER_MAIN_SRC_DIR_KOTLIN}com/mycompany/myapp/security/oauth2/OAuth2Cookies.kt`,
+        `${SERVER_MAIN_SRC_DIR_KOTLIN}com/mycompany/myapp/security/oauth2/OAuth2TokenEndpointClient.kt`,
+        `${SERVER_MAIN_SRC_DIR_KOTLIN}com/mycompany/myapp/security/oauth2/OAuth2TokenEndpointClientAdapter.kt`,
+        `${SERVER_MAIN_SRC_DIR_KOTLIN}com/mycompany/myapp/security/oauth2/UaaTokenEndpointClient.kt`,
         `${SERVER_TEST_SRC_DIR_KOTLIN}com/mycompany/myapp/config/SecurityBeanOverrideConfiguration.kt`,
-        `${SERVER_TEST_SRC_DIR_JAVA}com/mycompany/myapp/security/OAuth2TokenMockUtil.java`,
-        `${SERVER_TEST_SRC_DIR_JAVA}com/mycompany/myapp/security/oauth2/OAuth2CookieHelperTest.java`,
-        `${SERVER_TEST_SRC_DIR_JAVA}com/mycompany/myapp/security/oauth2/OAuth2AuthenticationServiceTest.java`,
-        `${SERVER_TEST_SRC_DIR_JAVA}com/mycompany/myapp/security/oauth2/CookieTokenExtractorTest.java`,
-        `${SERVER_TEST_SRC_DIR_JAVA}com/mycompany/myapp/security/oauth2/CookieCollectionTest.java`
+        `${SERVER_TEST_SRC_DIR_KOTLIN}com/mycompany/myapp/security/OAuth2TokenMockUtil.kt`,
+        `${SERVER_TEST_SRC_DIR_KOTLIN}com/mycompany/myapp/security/oauth2/OAuth2CookieHelperTest.kt`,
+        `${SERVER_TEST_SRC_DIR_KOTLIN}com/mycompany/myapp/security/oauth2/OAuth2AuthenticationServiceTest.kt`,
+        `${SERVER_TEST_SRC_DIR_KOTLIN}com/mycompany/myapp/security/oauth2/CookieTokenExtractorTest.kt`,
+        `${SERVER_TEST_SRC_DIR_KOTLIN}com/mycompany/myapp/security/oauth2/CookieCollectionTest.kt`
     ],
 
     feignConfig: [

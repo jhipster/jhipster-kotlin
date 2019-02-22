@@ -1,0 +1,119 @@
+<%#
+ Copyright 2013-2019 the original author or authors from the JHipster project.
+
+ This file is part of the JHipster project, see https://jhipster.github.io/
+ for more information.
+
+ Licensed under the Apache License, Version 2.0 (the "License");
+ you may not use this file except in compliance with the License.
+ You may obtain a copy of the License at
+
+      http://www.apache.org/licenses/LICENSE-2.0
+
+ Unless required by applicable law or agreed to in writing, software
+ distributed under the License is distributed on an "AS IS" BASIS,
+ WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
+ See the License for the specific language governing permissions and
+ limitations under the License.
+-%>
+package <%=packageName%>.security.oauth2
+
+import <%=packageName%>.config.oauth2.OAuth2Properties
+import io.github.jhipster.config.JHipsterProperties
+import org.slf4j.LoggerFactory
+import org.springframework.http.HttpEntity
+import org.springframework.http.HttpHeaders
+import org.springframework.http.HttpStatus
+import org.springframework.http.MediaType
+import org.springframework.security.oauth2.common.OAuth2AccessToken
+import org.springframework.security.oauth2.common.exceptions.InvalidClientException
+import org.springframework.util.LinkedMultiValueMap
+import org.springframework.util.MultiValueMap
+import org.springframework.web.client.HttpClientErrorException
+import org.springframework.web.client.RestTemplate
+
+/**
+ * Default base class for an OAuth2TokenEndpointClient.
+ * Individual implementations for a particular OAuth2 provider can use this as a starting point.
+ */
+abstract class OAuth2TokenEndpointClientAdapter(
+    private val restTemplate: RestTemplate,
+    private val jHipsterProperties: JHipsterProperties,
+    private val oAuth2Properties: OAuth2Properties
+) : OAuth2TokenEndpointClient {
+
+    private val log = LoggerFactory.getLogger(OAuth2TokenEndpointClientAdapter::class.java)
+
+    /**
+     * Sends a password grant to the token endpoint.
+     *
+     * @param username the username to authenticate.
+     * @param password his password.
+     * @return the access token.
+     */
+    override fun sendPasswordGrant(username: String, password: String): OAuth2AccessToken {
+        val reqHeaders = HttpHeaders()
+        reqHeaders.contentType = MediaType.APPLICATION_FORM_URLENCODED
+        val formParams = LinkedMultiValueMap<String, String>()
+        formParams.set("username", username)
+        formParams.set("password", password)
+        formParams.set("grant_type", "password")
+        addAuthentication(reqHeaders, formParams)
+        val entity = HttpEntity<MultiValueMap<String, String>>(formParams, reqHeaders)
+        log.debug("contacting OAuth2 token endpoint to login user: {}", username)
+        val responseEntity = restTemplate.postForEntity(getTokenEndpoint(), entity, OAuth2AccessToken::class.java)
+        if (responseEntity.statusCode != HttpStatus.OK) {
+            log.debug("failed to authenticate user with OAuth2 token endpoint, status: {}", responseEntity.statusCodeValue)
+            throw HttpClientErrorException(responseEntity.statusCode)
+        }
+        return responseEntity.body!!
+    }
+
+    /**
+     * Sends a refresh grant to the token endpoint using the current refresh token to obtain new tokens.
+     *
+     * @param refreshTokenValue the refresh token to use to obtain new tokens.
+     * @return the new, refreshed access token.
+     */
+    override fun sendRefreshGrant(refreshTokenValue: String): OAuth2AccessToken {
+        val params = LinkedMultiValueMap<String, String>()
+        params.add("grant_type", "refresh_token")
+        params.add("refresh_token", refreshTokenValue)
+        val headers = HttpHeaders()
+        addAuthentication(headers, params)
+        val entity = HttpEntity<MultiValueMap<String, String>>(params, headers)
+        log.debug("contacting OAuth2 token endpoint to refresh OAuth2 JWT tokens")
+        val responseEntity = restTemplate.postForEntity(getTokenEndpoint(), entity,
+            OAuth2AccessToken::class.java)
+        if (responseEntity.statusCode != HttpStatus.OK) {
+            log.debug("failed to refresh tokens: {}", responseEntity.statusCodeValue)
+            throw HttpClientErrorException(responseEntity.statusCode)
+        }
+        val accessToken = responseEntity.body!!
+        log.info("refreshed OAuth2 JWT cookies using refresh_token grant")
+        return accessToken
+    }
+
+    protected abstract fun addAuthentication(reqHeaders: HttpHeaders, formParams: MultiValueMap<String, String>)
+
+    protected fun getClientSecret(): String{
+        return oAuth2Properties.webClientConfiguration.secret
+            ?: throw InvalidClientException("no client-secret configured in application properties")
+    }
+
+    protected fun getClientId(): String{
+        return oAuth2Properties.webClientConfiguration.clientId
+            ?: throw InvalidClientException("no client-id configured in application properties")
+    }
+
+    /**
+     * Returns the configured OAuth2 token endpoint URI.
+     *
+     * @return the OAuth2 token endpoint URI.
+     */
+    private fun getTokenEndpoint(): String {
+        return jHipsterProperties.security.clientAuthorization.accessTokenUri
+            ?: throw InvalidClientException("no token endpoint configured in application properties")
+    }
+
+}

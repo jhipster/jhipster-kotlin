@@ -1,0 +1,79 @@
+<%#
+ Copyright 2013-2019 the original author or authors from the JHipster project.
+
+ This file is part of the JHipster project, see https://www.jhipster.tech/
+ for more information.
+
+ Licensed under the Apache License, Version 2.0 (the "License");
+ you may not use this file except in compliance with the License.
+ You may obtain a copy of the License at
+
+      http://www.apache.org/licenses/LICENSE-2.0
+
+ Unless required by applicable law or agreed to in writing, software
+ distributed under the License is distributed on an "AS IS" BASIS,
+ WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
+ See the License for the specific language governing permissions and
+ limitations under the License.
+-%>
+package <%=packageName%>.security
+
+import org.slf4j.LoggerFactory
+import org.springframework.security.core.Authentication
+import org.springframework.security.web.DefaultRedirectStrategy
+import org.springframework.security.web.WebAttributes
+import org.springframework.security.web.authentication.AuthenticationSuccessHandler
+
+import javax.servlet.http.HttpServletRequest
+import javax.servlet.http.HttpServletResponse
+import java.io.IOException
+
+import <%=packageName%>.config.OAuth2Configuration.Companion.SAVED_LOGIN_ORIGIN_URI
+
+/**
+ * AuthenticationSuccessHandler that looks for a saved login origin and redirects to it if it exists.
+ */
+class OAuth2AuthenticationSuccessHandler : AuthenticationSuccessHandler {
+
+    private val log = LoggerFactory.getLogger(OAuth2AuthenticationSuccessHandler::class.java)
+
+    private val redirectStrategy = DefaultRedirectStrategy()
+
+    @Throws(IOException::class)
+    override fun onAuthenticationSuccess(request: HttpServletRequest, response: HttpServletResponse,
+                                         authentication: Authentication) {
+
+        handle(request, response)
+        clearAuthenticationAttributes(request)
+    }
+
+    @Throws(IOException::class)
+    private fun handle(request: HttpServletRequest, response: HttpServletResponse) {
+
+        val targetUrl = determineTargetUrl(request)
+
+        if (response.isCommitted) {
+            log.error("Response has already been committed. Unable to redirect to $targetUrl")
+            return
+        }
+
+        redirectStrategy.sendRedirect(request, response, targetUrl)
+    }
+
+    private fun determineTargetUrl(request: HttpServletRequest): String {
+        val savedReferrer = request.session.getAttribute(SAVED_LOGIN_ORIGIN_URI)
+        return if (savedReferrer != null) {
+            val savedLoginOrigin = request.session.getAttribute(SAVED_LOGIN_ORIGIN_URI).toString()
+            log.debug("Redirecting to saved login origin URI: {}", savedLoginOrigin)
+            request.session.removeAttribute(SAVED_LOGIN_ORIGIN_URI)
+            savedLoginOrigin
+        } else {
+            "/"
+        }
+    }
+
+    private fun clearAuthenticationAttributes(request: HttpServletRequest) {
+        val session = request.getSession(false) ?: return
+        session.removeAttribute(WebAttributes.AUTHENTICATION_EXCEPTION)
+    }
+}
