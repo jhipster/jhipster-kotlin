@@ -39,12 +39,12 @@ import java.util.UUID
 <%_ } _%>
 
 /**
- * Service Interface for managing [<%= entityClass %>].
+ * Service Interface for managing [<% if (dto === 'mapstruct') { %><%= packageName %>.domain.<% } %><%= asEntity(entityClass) %>].
  */
 interface <%= entityClass %>Service {
 
     /**
-     * Save a [<%= entityInstance %>].
+     * Save a <%= entityInstance %>.
      *
      * @param <%= instanceName %> the entity to save.
      * @return the persisted entity.
@@ -60,7 +60,7 @@ interface <%= entityClass %>Service {
     fun findAll(<% if (pagination !== 'no') { %>pageable: Pageable<% } %>): <% if (pagination !== 'no') { %>Page<<%= instanceType %><% } else { %>MutableList<<%= instanceType %><% } %>>
 <% for (idx in relationships) { if (relationships[idx].relationshipType === 'one-to-one' && relationships[idx].ownerSide !== true) { -%>
     /**
-     * Get all the [<%= asDto(entityClass) %>] where <%= relationships[idx].relationshipNameCapitalized %> is null.
+     * Get all the [<%= asDto(entityClass) %>] where <%= relationships[idx].relationshipNameCapitalized %> is `null`.
      *
      * @return the list of entities.
      */
@@ -69,7 +69,7 @@ interface <%= entityClass %>Service {
 
     <%_ if (fieldsContainOwnerManyToMany === true) { _%>
     /**
-     * Get all the [<%= entityClass %>] with eager load of many-to-many relationships.
+     * Get all the <%= entityInstancePlural %> with eager load of many-to-many relationships.
      *
      * @return the list of entities.
      */
@@ -79,13 +79,13 @@ interface <%= entityClass %>Service {
     <%_ if (reactiveRepositories) { _%>
     /**
      * Get all the <%= entityInstancePlural %>.
-     * @return the Flux of entities.
+     * @return the [Flux] of entities.
      */
     fun findAllAsFlux(): Flux<<%= instanceType %>>
 
     <%_ } _%>
     /**
-     * Get the "id" [<%= entityInstance %>].
+     * Get the "id" <%= entityInstance %>.
      *
      * @param id the id of the entity.
      * @return the entity.
@@ -93,14 +93,14 @@ interface <%= entityClass %>Service {
     fun findOne(id: <%= pkType %>): Optional<<%= instanceType %>>
 
     /**
-     * Delete the "id" [<%= entityInstance %>].
+     * Delete the "id" <%= entityInstance %>.
      *
      * @param id the id of the entity.
      */
     fun delete(id: <%= pkType %>)<% if (searchEngine === 'elasticsearch') { %>
 
     /**
-     * Search for the [<%= entityInstance %>] corresponding to the query.
+     * Search for the <%= entityInstance %> corresponding to the query.
      *
      * @param query the query of the search.
      * <% if (pagination !== 'no') { %>

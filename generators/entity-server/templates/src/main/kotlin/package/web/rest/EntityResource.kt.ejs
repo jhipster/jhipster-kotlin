@@ -95,7 +95,7 @@ import org.elasticsearch.index.query.QueryBuilders.*
 <% } %>
 
 /**
- * REST controller for managing [<%= entityClass %>].
+ * REST controller for managing [<%= packageName %>.domain.<%= asEntity(entityClass) %>].
  */
 @RestController
 @RequestMapping("/api")<% if (databaseType === 'sql' && isUsingMapsId === true && !viaService) { %>
@@ -117,10 +117,10 @@ _%><%- include('../../common/inject_template', {viaService: viaService, construc
     } _%>
 
     /**
-     * POST  /<%= entityApiUrl %> : Create a new [<%= entityInstance %>].
+     * `POST  /<%= entityApiUrl %>` : Create a new <%= entityInstance %>.
      *
      * @param <%= instanceName %> the <%= instanceName %> to create.
-     * @return the ResponseEntity with status 201 (Created) and with body the new <%= instanceName %>, or with status 400 (Bad Request) if the <%= entityInstance %> has already an ID.
+     * @return the [ResponseEntity] with status `201 (Created)` and with body the new <%= instanceName %>, or with status `400 (Bad Request)` if the <%= entityInstance %> has already an ID.
      * @throws URISyntaxException if the Location URI syntax is incorrect.
      */
     @PostMapping("/<%= entityApiUrl %>")
@@ -145,12 +145,12 @@ _%><%- include('../../common/inject_template', {viaService: viaService, construc
     }
 
     /**
-     * PUT  /<%= entityApiUrl %> : Updates an existing [<%= entityInstance %>].
+     * `PUT  /<%= entityApiUrl %>` : Updates an existing <%= entityInstance %>.
      *
      * @param <%= instanceName %> the <%= instanceName %> to update.
-     * @return the ResponseEntity with status 200 (OK) and with body the updated <%= instanceName %>,
-     * or with status 400 (Bad Request) if the <%= instanceName %> is not valid,
-     * or with status 500 (Internal Server Error) if the <%= instanceName %> couldn't be updated.
+     * @return the [ResponseEntity] with status `200 (OK)` and with body the updated <%= instanceName %>,
+     * or with status `400 (Bad Request)` if the <%= instanceName %> is not valid,
+     * or with status `500 (Internal Server Error)` if the <%= instanceName %> couldn't be updated.
      * @throws URISyntaxException if the Location URI syntax is incorrect.
      */
     @PutMapping("/<%= entityApiUrl %>")
@@ -172,13 +172,13 @@ _%><%- include('../../common/inject_template', {viaService: viaService, construc
     }
 
     /**
-     * GET  /<%= entityApiUrl %> : get all the <%= entityInstancePlural %>.
+     * `GET  /<%= entityApiUrl %>` : get all the <%= entityInstancePlural %>.
      *<% if (pagination !== 'no') { %>
      * @param pageable the pagination information.<% } if (!jpaMetamodelFiltering && fieldsContainOwnerManyToMany) { %>
      * @param eagerload flag to eager load entities from relationships (This is applicable for many-to-many).<% } if (jpaMetamodelFiltering) { %>
      * @param criteria the criteria which the requested entities should match.<% } else if (fieldsContainNoOwnerOneToOne) { %>
      * @param filter the filter of the request.<% } %>
-     * @return the ResponseEntity with status 200 (OK) and the list of <%= entityInstancePlural %> in body.
+     * @return the [ResponseEntity] with status `200 (OK)` and the list of <%= entityInstancePlural %> in body.
      */
     @GetMapping("/<%= entityApiUrl %>")<%_ if (databaseType === 'sql' && isUsingMapsId === true && !viaService) { %>
     @Transactional(readOnly = true)<%_ } _%>
@@ -186,8 +186,8 @@ _%><%- include('../../common/inject_template', {viaService: viaService, construc
 
     <%_ if (reactiveRepositories) { _%>
     /**
-     * GET  /<%= entityApiUrl %> : get all the <%= entityInstancePlural %> as a stream.
-     * @return the Flux of <%= entityInstancePlural %>.
+     * `GET  /<%= entityApiUrl %>` : get all the <%= entityInstancePlural %> as a stream.
+     * @return the [Flux] of <%= entityInstancePlural %>.
      */
     @GetMapping(value = ["/<%= entityApiUrl %>"], produces = [MediaType.APPLICATION_STREAM_JSON_VALUE])
     <%_ if (databaseType === 'sql' && isUsingMapsId === true && !viaService) { _%>
@@ -204,10 +204,10 @@ _%><%- include('../../common/inject_template', {viaService: viaService, construc
 
     <%_ } _%>
     /**
-     * GET  /<%= entityApiUrl %>/:id : get the "id" <%= entityInstance %>.
+     * `GET  /<%= entityApiUrl %>/:id` : get the "id" <%= entityInstance %>.
      *
      * @param id the id of the <%= instanceName %> to retrieve.
-     * @return the ResponseEntity with status 200 (OK) and with body the <%= instanceName %>, or with status 404 (Not Found).
+     * @return the [ResponseEntity] with status `200 (OK)` and with body the <%= instanceName %>, or with status `404 (Not Found)`.
      */
     @GetMapping("/<%= entityApiUrl %>/{id}")
     <%_ if (databaseType === 'sql' && isUsingMapsId === true && !viaService) { _%>
@@ -219,10 +219,10 @@ _%><%- include('../../common/inject_template', {viaService: viaService, construc
     }
 
     /**
-     * DELETE  /<%= entityApiUrl %>/:id : delete the "id" <%= entityInstance %>.
+     * `DELETE  /<%= entityApiUrl %>/:id` : delete the "id" <%= entityInstance %>.
      *
      * @param id the id of the <%= instanceName %> to delete.
-     * @return the ResponseEntity with status 204 (NO_CONTENT).
+     * @return the [ResponseEntity] with status `204 (NO_CONTENT)`.
      */
     @DeleteMapping("/<%= entityApiUrl %>/{id}")
     fun delete<%= entityClass %>(@PathVariable id: <%= pkType %>): ResponseEntity<Void> {
@@ -232,7 +232,7 @@ _%><%- include('../../common/inject_template', {viaService: viaService, construc
     }<% if (searchEngine === 'elasticsearch') { %>
 
     /**
-     * SEARCH  /_search/<%= entityApiUrl %>?query=:query : search for the <%= entityInstance %> corresponding
+     * `SEARCH  /_search/<%= entityApiUrl %>?query=:query` : search for the <%= entityInstance %> corresponding
      * to the query.
      *
      * @param query the query of the <%= entityInstance %> search.<% if (pagination !== 'no') { %>
