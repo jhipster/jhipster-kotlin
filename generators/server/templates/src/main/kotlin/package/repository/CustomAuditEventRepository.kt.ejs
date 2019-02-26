@@ -22,6 +22,7 @@ import <%=packageName%>.config.Constants
 import <%=packageName%>.config.audit.AuditEventConverter
 import <%=packageName%>.domain.PersistentAuditEvent
 
+import org.slf4j.Logger
 import org.slf4j.LoggerFactory
 import org.springframework.boot.actuate.audit.AuditEvent
 import org.springframework.boot.actuate.audit.AuditEventRepository
@@ -40,7 +41,7 @@ class CustomAuditEventRepository(
     private val auditEventConverter: AuditEventConverter
 ) : AuditEventRepository {
 
-    private val log = LoggerFactory.getLogger(javaClass)
+    private val log: Logger = LoggerFactory.getLogger(javaClass)
 
     override fun find(principal: String, after: Instant, type: String): List<AuditEvent> {
         val persistentAuditEvents = persistenceAuditEventRepository.findByPrincipalAndAuditEventDateAfterAndAuditEventType(principal, after, type)
@@ -91,6 +92,6 @@ class CustomAuditEventRepository(
         /**
          * Should be the same as in Liquibase migration.
          */
-        const val EVENT_DATA_COLUMN_MAX_LENGTH = 255
+        const val EVENT_DATA_COLUMN_MAX_LENGTH: Int = 255
     }
 }

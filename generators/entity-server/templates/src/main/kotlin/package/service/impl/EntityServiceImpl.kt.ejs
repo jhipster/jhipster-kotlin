@@ -54,6 +54,7 @@ import <%= packageName %>.repository.search.<%= entityClass %>SearchRepository
 import <%= packageName %>.service.dto.<%= asDto(entityClass) %>
 import <%= packageName %>.service.mapper.<%= entityClass %>Mapper
 <%_ } _%>
+import org.slf4j.Logger
 import org.slf4j.LoggerFactory
 
 <%_ if (pagination !== 'no' || fieldsContainOwnerManyToMany === true) { _%>
@@ -86,7 +87,7 @@ class <%= serviceClassName %> (
 <%- include('../../common/inject_template', {asEntity, asDto, viaService: viaService, constructorName: serviceClassName, queryService: false, isUsingMapsId: isUsingMapsId, mapsIdAssoc: mapsIdAssoc, isController: false}); -%>
 )<% if (service === 'serviceImpl') { %>: <%= entityClass %>Service<% } %> {
 
-    val log = LoggerFactory.getLogger(<%= serviceClassName %>::class.java)
+    val log: Logger = LoggerFactory.getLogger(<%= serviceClassName %>::class.java)
 
     /**
      * Save a <%= entityInstance %>.
@@ -138,7 +139,7 @@ class <%= serviceClassName %> (
      * @return the list of entities.
      */
     <% if (service === 'serviceImpl') { %>override <% } %>fun findAllWithEagerRelationships(pageable: Pageable): Page<<%= instanceType %>> {
-        return <%= entityInstance %>Repository.findAllWithEagerRelationships(pageable)<% if (dto !== 'mapstruct') { %>;<% } else { %>.map(<%= entityToDtoReference %>)<% } %>
+        return <%= entityInstance %>Repository.findAllWithEagerRelationships(pageable)<% if (dto !== 'mapstruct') { %><% } else { %>.map(<%= entityToDtoReference %>)<% } %>
     }
     <% } %>
 <%- include('../../common/get_filtered_template', {asEntity, asDto}); -%>
@@ -181,7 +182,7 @@ class <%= serviceClassName %> (
         log.debug("Request to search <%= entityClassPlural %> for query {}", query)<%- include('../../common/search_stream_template', {viaService: viaService}); -%>
         <%_ } else { _%>
         log.debug("Request to search for a page of <%= entityClassPlural %> for query {}", query)
-        return <%= entityInstance %>SearchRepository.search(queryStringQuery(query), pageable)<%_ if (dto !== 'mapstruct') { _%>;<% } else { %>
+        return <%= entityInstance %>SearchRepository.search(queryStringQuery(query), pageable)<%_ if (dto !== 'mapstruct') { _%><% } else { %>
             .map(<%= entityToDtoReference %>)
         <%_ } } _%>
     }

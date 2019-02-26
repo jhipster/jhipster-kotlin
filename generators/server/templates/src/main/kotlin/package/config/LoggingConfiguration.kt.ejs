@@ -34,6 +34,7 @@ import ch.qos.logback.core.spi.FilterReply
 import net.logstash.logback.appender.LogstashTcpSocketAppender
 import net.logstash.logback.encoder.LogstashEncoder
 import net.logstash.logback.stacktrace.ShortenedThrowableConverter
+import org.slf4j.Logger
 import org.slf4j.LoggerFactory
 import org.springframework.beans.factory.annotation.Value
 <%_ if (serviceDiscoveryType === "eureka") { _%>
@@ -58,7 +59,7 @@ class LoggingConfiguration(@param:Value("\${spring.application.name}") private v
     <% if (serviceDiscoveryType === "consul") { %> private val consulRegistration: ConsulRegistration,<% } %><% if (serviceDiscoveryType && (applicationType === 'microservice' || applicationType === 'gateway' || applicationType === 'uaa')) { %> @Value("\${info.project.version:}") private val version: String,<% } %>
                            private val jHipsterProperties: JHipsterProperties) {
 
-    private val log = LoggerFactory.getLogger(LoggingConfiguration::class.java)
+    private val log: Logger = LoggerFactory.getLogger(LoggingConfiguration::class.java)
 
     private val context = LoggerFactory.getILoggerFactory() as LoggerContext
 
@@ -88,13 +89,12 @@ class LoggingConfiguration(@param:Value("\${spring.application.name}") private v
         var optionalFields = ""
         <%_ if (serviceDiscoveryType === 'consul') { _%>
         if (consulRegistration != null) {
-            optionalFields = "\"instance_id\":\"" + consulRegistration.getInstanceId() + "\","
+            optionalFields = "\"instance_id\":\"$consulRegistration.getInstanceId()\","
         }
         <%_ } _%>
-        val customFields = "{\"app_name\":\"" + appName + "\",\"app_port\":\"" + serverPort + "\"," +
-            optionalFields + "\"version\":\"" + version + "\"}"
+        val customFields = "{\"app_name\":\"$appName\",\"app_port\":\"$serverPort\",$optionalFields\"version\":\"$version\"}"
         <%_ } else { _%>
-        val customFields = "{\"app_name\":\"" + appName + "\",\"app_port\":\"" + serverPort + "\"}"
+        val customFields = "{\"app_name\":\"$appName\",\"app_port\":\"$serverPort\"}"
         <%_ } _%>
 
         // More documentation is available at: https://github.com/logstash/logstash-logback-encoder

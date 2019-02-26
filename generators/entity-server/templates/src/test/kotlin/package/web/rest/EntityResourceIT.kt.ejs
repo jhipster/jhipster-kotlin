@@ -88,6 +88,8 @@ import org.springframework.beans.factory.annotation.Autowired
 import org.springframework.boot.test.context.SpringBootTest
 <%_ if (searchEngine === 'elasticsearch' && pagination !== 'no' || fieldsContainOwnerManyToMany) { _%>
 import org.springframework.data.domain.PageImpl
+<%_ } _%>
+<%_ if (searchEngine === 'elasticsearch' && pagination !== 'no') { _%>
 import org.springframework.data.domain.PageRequest
 <%_ } _%>
 import org.springframework.data.web.PageableHandlerMethodArgumentResolver
@@ -113,18 +115,16 @@ import java.time.ZonedDateTime
 import java.time.ZoneOffset<% } %><% if (fieldsContainLocalDate === true || fieldsContainZonedDateTime === true) { %>
 import java.time.ZoneId<% } %><% if (fieldsContainInstant === true) { %>
 import java.time.temporal.ChronoUnit<% } %>
-<%_ if (fieldsContainOwnerManyToMany) { _%>
-import java.util.ArrayList
-<%_ } _%>
 <%_ if (searchEngine === 'elasticsearch') { _%>
 import java.util.Collections
 <%_ } _%>
-<% if (databaseType === 'cassandra') { %>
+<%_ if (databaseType === 'cassandra') { _%>
 import java.util.UUID<% } %>
 <%_ if (databaseType === 'couchbase') { _%>
     import <%= packageName %>.web.rest.TestUtil.mockAuthentication
 <%_ } _%>
-<% if (fieldsContainZonedDateTime === true) { %>
+<%_ if (fieldsContainZonedDateTime === true) { _%>
+
 import <%=packageName%>.web.rest.TestUtil.sameInstant<% } %>
 import <%=packageName%>.web.rest.TestUtil.createFormattingConversionService
 import org.assertj.core.api.Assertions.assertThat
@@ -270,7 +270,7 @@ class <%= entityClass %>ResourceIT <% if (databaseType === 'cassandra') { %>: Ab
         val <%= entityInstance %>List = <%= entityInstance %>Repository.findAll()
         assertThat(<%= entityInstance %>List).hasSize(databaseSizeBeforeCreate + 1)
         <%_ if ( fields.length>0  || searchEngine === 'elasticsearch') { _%>
-        val test<%= entityClass %> = <%= entityInstance %>List.get(<%= entityInstance %>List.size - 1)
+        val test<%= entityClass %> = <%= entityInstance %>List[<%= entityInstance %>List.size - 1]
         <%_ } _%>
         <%_ for (idx in fields) { if (fields[idx].fieldType === 'ZonedDateTime') { _%>
         assertThat(test<%= entityClass %>.<%=fields[idx].fieldName%>).isEqualTo(<%='DEFAULT_' + fields[idx].fieldNameUnderscored.toUpperCase()%>)
@@ -371,10 +371,10 @@ class <%= entityClass %>ResourceIT <% if (databaseType === 'cassandra') { %>: Ab
     fun getAll<%= entityClassPlural %>WithEagerRelationshipsIsEnabled() {
         <%_ if (service !== 'no') { _%>
         val <%= entityInstance %>Resource = <%= entityClass %>Resource(<%= entityInstance %>ServiceMock<% if (jpaMetamodelFiltering) { %>, <%= entityInstance %>QueryService<% } %>)
-        `when`(<%= entityInstance %>ServiceMock.findAllWithEagerRelationships(any())).thenReturn(PageImpl(ArrayList()))
+        `when`(<%= entityInstance %>ServiceMock.findAllWithEagerRelationships(any())).thenReturn(PageImpl(mutableListOf()))
         <%_ } else { _%>
         val <%= entityInstance %>Resource = <%= entityClass %>Resource(<%= entityInstance %>RepositoryMock<% if (dto === 'mapstruct') { %>, <%= entityInstance %>Mapper<% } %><% if (searchEngine === 'elasticsearch') { %>, mock<%= entityClass %>SearchRepository<% } %><% if (jpaMetamodelFiltering) { %>, <%= entityInstance %>QueryService<% } %>)
-        `when`(<%= entityInstance %>RepositoryMock.findAllWithEagerRelationships(any())).thenReturn(PageImpl(ArrayList()))
+        `when`(<%= entityInstance %>RepositoryMock.findAllWithEagerRelationships(any())).thenReturn(PageImpl(mutableListOf()))
         <%_ } _%>
 
         val rest<%= entityClass %>MockMvc = MockMvcBuilders.standaloneSetup(<%= entityInstance %>Resource)
@@ -397,10 +397,10 @@ class <%= entityClass %>ResourceIT <% if (databaseType === 'cassandra') { %>: Ab
     fun getAll<%= entityClassPlural %>WithEagerRelationshipsIsNotEnabled() {
         <%_ if (service !== 'no') { _%>
         val <%= entityInstance %>Resource = <%= entityClass %>Resource(<%= entityInstance %>ServiceMock<% if (jpaMetamodelFiltering) { %>, <%= entityInstance %>QueryService<% } %>)
-            `when`(<%= entityInstance %>ServiceMock.findAllWithEagerRelationships(any())).thenReturn( PageImpl( ArrayList()))
+            `when`(<%= entityInstance %>ServiceMock.findAllWithEagerRelationships(any())).thenReturn( PageImpl( mutableListOf()))
         <%_ } else { _%>
         val <%= entityInstance %>Resource = <%= entityClass %>Resource(<%= entityInstance %>RepositoryMock<% if (dto === 'mapstruct') { %>, <%= entityInstance %>Mapper<% } %><% if (searchEngine === 'elasticsearch') { %>, mock<%= entityClass %>SearchRepository<% } %><% if (jpaMetamodelFiltering) { %>, <%= entityInstance %>QueryService<% } %>)
-            `when`(<%= entityInstance %>RepositoryMock.findAllWithEagerRelationships(any())).thenReturn( PageImpl( ArrayList()))
+            `when`(<%= entityInstance %>RepositoryMock.findAllWithEagerRelationships(any())).thenReturn( PageImpl( mutableListOf()))
         <%_ } _%>
             val rest<%= entityClass %>MockMvc = MockMvcBuilders.standaloneSetup(<%= entityInstance %>Resource)
             .setCustomArgumentResolvers(pageableArgumentResolver)
@@ -509,7 +509,7 @@ class <%= entityClass %>ResourceIT <% if (databaseType === 'cassandra') { %>: Ab
         default<%= entityClass %>ShouldBeFound("<%= searchBy.fieldName %>.greaterOrEqualThan=$<%= defaultValue %>")
 
         // Get all the <%= entityInstance %>List where <%= searchBy.fieldName %> greater than or equals to <%= biggerValue %>
-        default<%= entityClass %>ShouldNotBeFound("<%= searchBy.fieldName %>.greaterOrEqualThan=${<%= biggerValue %>}")
+        default<%= entityClass %>ShouldNotBeFound("<%= searchBy.fieldName %>.greaterOrEqualThan=$<%= biggerValue %>")
     }
 
     @Test<% if (databaseType === 'sql') { %>
@@ -522,7 +522,7 @@ class <%= entityClass %>ResourceIT <% if (databaseType === 'cassandra') { %>: Ab
         default<%= entityClass %>ShouldNotBeFound("<%= searchBy.fieldName %>.lessThan=$<%= defaultValue %>")
 
         // Get all the <%= entityInstance %>List where <%= searchBy.fieldName %> less than or equals to <%= biggerValue %>
-        default<%= entityClass %>ShouldBeFound("<%= searchBy.fieldName %>.lessThan=${<%= biggerValue %>}")
+        default<%= entityClass %>ShouldBeFound("<%= searchBy.fieldName %>.lessThan=$<%= biggerValue %>")
     }
 
 <%_         } _%>
@@ -559,7 +559,7 @@ class <%= entityClass %>ResourceIT <% if (databaseType === 'cassandra') { %>: Ab
      * Executes the search, and checks that the default entity is returned
      */
     private fun default<%= entityClass %>ShouldBeFound(filter: String) {
-        rest<%= entityClass %>MockMvc.perform(get("/api/<%= entityApiUrl %>?sort=id,desc&" + filter))
+        rest<%= entityClass %>MockMvc.perform(get("/api/<%= entityApiUrl %>?sort=id,desc&$filter"))
             .andExpect(status().isOk)
             .andExpect(content().contentType(MediaType.APPLICATION_JSON_UTF8_VALUE))
             .andExpect(jsonPath("$.[*].id").value(hasItem(<%= asEntity(entityInstance) %>.id?.toInt())))<% fields.forEach((field) => { %>
@@ -579,14 +579,14 @@ class <%= entityClass %>ResourceIT <% if (databaseType === 'cassandra') { %>: Ab
      * Executes the search, and checks that the default entity is not returned
      */
     private fun default<%= entityClass %>ShouldNotBeFound(filter: String) {
-        rest<%= entityClass %>MockMvc.perform(get("/api/<%= entityApiUrl %>?sort=id,desc&" + filter))
+        rest<%= entityClass %>MockMvc.perform(get("/api/<%= entityApiUrl %>?sort=id,desc&$filter"))
             .andExpect(status().isOk)
             .andExpect(content().contentType(MediaType.APPLICATION_JSON_UTF8_VALUE))
             .andExpect(jsonPath("$").isArray)
             .andExpect(jsonPath("$").isEmpty)
 
         // Check, that the count call also returns 0
-        rest<%= entityClass %>MockMvc.perform(get("/api/<%= entityApiUrl %>/count?sort=id,desc&" + filter))
+        rest<%= entityClass %>MockMvc.perform(get("/api/<%= entityApiUrl %>/count?sort=id,desc&$filter"))
             .andExpect(status().isOk)
             .andExpect(content().contentType(MediaType.APPLICATION_JSON_UTF8_VALUE))
             .andExpect(content().string("0"))
@@ -689,7 +689,7 @@ class <%= entityClass %>ResourceIT <% if (databaseType === 'cassandra') { %>: Ab
         // Validate the <%= entityClass %> in the database
         val <%= entityInstance %>List = <%= entityInstance %>Repository.findAll()
         assertThat(<%= entityInstance %>List).hasSize(databaseSizeBeforeUpdate)
-        val test<%= entityClass %> = <%= entityInstance %>List.get(<%= entityInstance %>List.size - 1)
+        val test<%= entityClass %> = <%= entityInstance %>List[<%= entityInstance %>List.size - 1]
         <%_ for (idx in fields) { if (fields[idx].fieldType === 'ZonedDateTime') { _%>
         assertThat(test<%= entityClass %>.<%=fields[idx].fieldName%>).isEqualTo(<%='UPDATED_' + fields[idx].fieldNameUnderscored.toUpperCase()%>)
         <%_ } else if ((fields[idx].fieldType === 'byte[]' || fields[idx].fieldType === 'ByteBuffer') && fields[idx].fieldTypeBlobContent !== 'text') { _%>

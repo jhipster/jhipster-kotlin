@@ -32,14 +32,12 @@ import org.springframework.boot.web.embedded.undertow.UndertowServletWebServerFa
 import org.springframework.http.HttpHeaders
 import org.springframework.mock.env.MockEnvironment
 import org.springframework.mock.web.MockServletContext
-import org.springframework.test.util.ReflectionTestUtils
 import org.springframework.test.web.servlet.setup.MockMvcBuilders
 
 import javax.servlet.*
 <%_ if (!skipClient) { _%>
 import java.io.File
 <%_ } _%>
-import java.util.*
 
 import org.assertj.core.api.Assertions.assertThat
 import org.mockito.ArgumentMatchers
@@ -51,7 +49,6 @@ import org.springframework.test.web.servlet.request.MockMvcRequestBuilders.optio
 import org.springframework.test.web.servlet.result.MockMvcResultMatchers.header
 import org.springframework.test.web.servlet.result.MockMvcResultMatchers.status
 import org.springframework.test.web.servlet.setup.StandaloneMockMvcBuilder
-import kotlin.test.assertNull
 
 /**
  * Unit tests for the [WebConfigurer] class.
@@ -131,7 +128,7 @@ class WebConfigurerTest {
     @Throws(Exception::class)
     fun testCorsFilterOnApiPath() {
         props.cors.allowedOrigins = listOf("*")
-        props.cors.allowedMethods = Arrays.asList("GET", "POST", "PUT", "DELETE")
+        props.cors.allowedMethods = listOf("GET", "POST", "PUT", "DELETE")
         props.cors.allowedHeaders = listOf("*")
         props.cors.maxAge = 1800L
         props.cors.allowCredentials = true
@@ -162,7 +159,7 @@ class WebConfigurerTest {
     @Throws(Exception::class)
     fun testCorsFilterOnOtherPath() {
         props.cors.allowedOrigins = listOf("*")
-        props.cors.allowedMethods = Arrays.asList("GET", "POST", "PUT", "DELETE")
+        props.cors.allowedMethods = listOf("GET", "POST", "PUT", "DELETE")
         props.cors.allowedHeaders = listOf("*")
         props.cors.maxAge = 1800L
         props.cors.allowCredentials = true
@@ -197,7 +194,7 @@ class WebConfigurerTest {
     @Test
     @Throws(Exception::class)
     fun testCorsFilterDeactivated2() {
-        props.cors.allowedOrigins = ArrayList()
+        props.cors.allowedOrigins = mutableListOf()
 
         val mockMvc = MockMvcBuilders.standaloneSetup(WebConfigurerTestController())
             .addFilters<StandaloneMockMvcBuilder>(webConfigurer.corsFilter())
