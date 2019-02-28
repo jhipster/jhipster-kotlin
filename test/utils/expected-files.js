@@ -4,12 +4,11 @@ const TEST_DIR = constants.TEST_DIR;
 const CLIENT_MAIN_SRC_DIR = constants.CLIENT_MAIN_SRC_DIR;
 const CLIENT_TEST_SRC_DIR = constants.CLIENT_TEST_SRC_DIR;
 
-const SERVER_MAIN_SRC_DIR_JAVA = constants.SERVER_MAIN_SRC_DIR;
 const SERVER_MAIN_RES_DIR = constants.SERVER_MAIN_RES_DIR;
 const SERVER_TEST_RES_DIR = constants.SERVER_TEST_RES_DIR;
 const DOCKER_DIR = constants.DOCKER_DIR;
-const SERVER_MAIN_SRC_DIR_KOTLIN = `${constants.MAIN_DIR}kotlin/`;
-const SERVER_TEST_SRC_DIR_KOTLIN = `${constants.TEST_DIR}kotlin/`;
+const SERVER_MAIN_SRC_DIR = `${constants.MAIN_DIR}kotlin/`;
+const SERVER_TEST_SRC_DIR = `${constants.TEST_DIR}kotlin/`;
 
 const expectedFiles = {
     entity: {
@@ -123,11 +122,11 @@ const expectedFiles = {
         ],
         server: [
             '.jhipster/Foo.json',
-            `${SERVER_MAIN_SRC_DIR_KOTLIN}com/mycompany/myapp/domain/Foo.kt`,
-            `${SERVER_MAIN_SRC_DIR_KOTLIN}com/mycompany/myapp/repository/FooRepository.kt`,
-            `${SERVER_MAIN_SRC_DIR_KOTLIN}com/mycompany/myapp/web/rest/FooResource.kt`,
+            `${SERVER_MAIN_SRC_DIR}com/mycompany/myapp/domain/Foo.kt`,
+            `${SERVER_MAIN_SRC_DIR}com/mycompany/myapp/repository/FooRepository.kt`,
+            `${SERVER_MAIN_SRC_DIR}com/mycompany/myapp/web/rest/FooResource.kt`,
             // SERVER_MAIN_RES_DIR + 'config/liquibase/changelog/20160120213555_added_entity_Foo.xml',
-            `${SERVER_TEST_SRC_DIR_KOTLIN}com/mycompany/myapp/web/rest/FooResourceIT.kt`
+            `${SERVER_TEST_SRC_DIR}com/mycompany/myapp/web/rest/FooResourceIT.kt`
         ],
         gatling: [`${TEST_DIR}gatling/user-files/simulations/FooGatlingTest.scala`]
     },
@@ -162,43 +161,43 @@ const expectedFiles = {
         `${SERVER_MAIN_RES_DIR}config/liquibase/changelog/00000000000000_initial_schema.xml`,
         `${SERVER_MAIN_RES_DIR}config/liquibase/master.xml`,
         `${SERVER_MAIN_RES_DIR}i18n/messages.properties`,
-        `${SERVER_MAIN_SRC_DIR_KOTLIN}com/mycompany/myapp/JhipsterApp.kt`,
-        `${SERVER_MAIN_SRC_DIR_KOTLIN}com/mycompany/myapp/aop/logging/LoggingAspect.kt`,
-        `${SERVER_MAIN_SRC_DIR_KOTLIN}com/mycompany/myapp/config/lazy/LazyInitBeanFactoryPostProcessor.kt`,
-        `${SERVER_MAIN_SRC_DIR_KOTLIN}com/mycompany/myapp/config/ApplicationProperties.kt`,
-        `${SERVER_MAIN_SRC_DIR_KOTLIN}com/mycompany/myapp/config/AsyncConfiguration.kt`,
-        `${SERVER_MAIN_SRC_DIR_KOTLIN}com/mycompany/myapp/config/CacheConfiguration.kt`,
-        `${SERVER_MAIN_SRC_DIR_KOTLIN}com/mycompany/myapp/config/Constants.kt`,
-        `${SERVER_MAIN_SRC_DIR_KOTLIN}com/mycompany/myapp/config/CloudDatabaseConfiguration.kt`,
-        `${SERVER_MAIN_SRC_DIR_KOTLIN}com/mycompany/myapp/config/DatabaseConfiguration.kt`,
-        `${SERVER_MAIN_SRC_DIR_KOTLIN}com/mycompany/myapp/config/DateTimeFormatConfiguration.kt`,
-        `${SERVER_MAIN_SRC_DIR_KOTLIN}com/mycompany/myapp/config/JacksonConfiguration.kt`,
-        `${SERVER_MAIN_SRC_DIR_KOTLIN}com/mycompany/myapp/config/LocaleConfiguration.kt`,
-        `${SERVER_MAIN_SRC_DIR_KOTLIN}com/mycompany/myapp/config/LoggingAspectConfiguration.kt`,
-        `${SERVER_MAIN_SRC_DIR_KOTLIN}com/mycompany/myapp/config/SecurityConfiguration.kt`,
-        `${SERVER_MAIN_SRC_DIR_KOTLIN}com/mycompany/myapp/config/WebConfigurer.kt`,
-        `${SERVER_MAIN_SRC_DIR_KOTLIN}com/mycompany/myapp/config/audit/AuditEventConverter.kt`,
-        `${SERVER_MAIN_SRC_DIR_KOTLIN}com/mycompany/myapp/domain/AbstractAuditingEntity.kt`,
-        `${SERVER_MAIN_SRC_DIR_KOTLIN}com/mycompany/myapp/domain/PersistentAuditEvent.kt`,
-        `${SERVER_MAIN_SRC_DIR_KOTLIN}com/mycompany/myapp/security/AuthoritiesConstants.kt`,
-        `${SERVER_MAIN_SRC_DIR_KOTLIN}com/mycompany/myapp/security/SecurityUtils.kt`,
-        `${SERVER_MAIN_SRC_DIR_KOTLIN}com/mycompany/myapp/security/SpringSecurityAuditorAware.kt`,
-        `${SERVER_MAIN_SRC_DIR_KOTLIN}com/mycompany/myapp/web/rest/errors/BadRequestAlertException.kt`,
-        `${SERVER_MAIN_SRC_DIR_KOTLIN}com/mycompany/myapp/web/rest/errors/CustomParameterizedException.kt`,
-        `${SERVER_MAIN_SRC_DIR_KOTLIN}com/mycompany/myapp/web/rest/errors/InternalServerErrorException.kt`,
-        `${SERVER_MAIN_SRC_DIR_KOTLIN}com/mycompany/myapp/web/rest/errors/EmailAlreadyUsedException.kt`,
-        `${SERVER_MAIN_SRC_DIR_KOTLIN}com/mycompany/myapp/web/rest/errors/ErrorConstants.kt`,
-        `${SERVER_MAIN_SRC_DIR_KOTLIN}com/mycompany/myapp/web/rest/errors/ExceptionTranslator.kt`,
-        `${SERVER_MAIN_SRC_DIR_KOTLIN}com/mycompany/myapp/web/rest/errors/FieldErrorVM.kt`,
-        `${SERVER_MAIN_SRC_DIR_KOTLIN}com/mycompany/myapp/web/rest/errors/InvalidPasswordException.kt`,
-        `${SERVER_MAIN_SRC_DIR_KOTLIN}com/mycompany/myapp/web/rest/errors/LoginAlreadyUsedException.kt`,
-        `${SERVER_MAIN_SRC_DIR_KOTLIN}com/mycompany/myapp/web/rest/vm/LoggerVM.kt`,
-        `${SERVER_MAIN_SRC_DIR_KOTLIN}com/mycompany/myapp/web/rest/LogsResource.kt`,
-        `${SERVER_TEST_SRC_DIR_KOTLIN}com/mycompany/myapp/security/SecurityUtilsUnitTest.kt`,
-        `${SERVER_TEST_SRC_DIR_KOTLIN}com/mycompany/myapp/web/rest/LogsResourceIT.kt`,
-        `${SERVER_TEST_SRC_DIR_KOTLIN}com/mycompany/myapp/web/rest/TestUtil.kt`,
-        `${SERVER_TEST_SRC_DIR_KOTLIN}com/mycompany/myapp/web/rest/errors/ExceptionTranslatorIT.kt`,
-        `${SERVER_TEST_SRC_DIR_KOTLIN}com/mycompany/myapp/web/rest/errors/ExceptionTranslatorTestController.kt`,
+        `${SERVER_MAIN_SRC_DIR}com/mycompany/myapp/JhipsterApp.kt`,
+        `${SERVER_MAIN_SRC_DIR}com/mycompany/myapp/aop/logging/LoggingAspect.kt`,
+        `${SERVER_MAIN_SRC_DIR}com/mycompany/myapp/config/lazy/LazyInitBeanFactoryPostProcessor.kt`,
+        `${SERVER_MAIN_SRC_DIR}com/mycompany/myapp/config/ApplicationProperties.kt`,
+        `${SERVER_MAIN_SRC_DIR}com/mycompany/myapp/config/AsyncConfiguration.kt`,
+        `${SERVER_MAIN_SRC_DIR}com/mycompany/myapp/config/CacheConfiguration.kt`,
+        `${SERVER_MAIN_SRC_DIR}com/mycompany/myapp/config/Constants.kt`,
+        `${SERVER_MAIN_SRC_DIR}com/mycompany/myapp/config/CloudDatabaseConfiguration.kt`,
+        `${SERVER_MAIN_SRC_DIR}com/mycompany/myapp/config/DatabaseConfiguration.kt`,
+        `${SERVER_MAIN_SRC_DIR}com/mycompany/myapp/config/DateTimeFormatConfiguration.kt`,
+        `${SERVER_MAIN_SRC_DIR}com/mycompany/myapp/config/JacksonConfiguration.kt`,
+        `${SERVER_MAIN_SRC_DIR}com/mycompany/myapp/config/LocaleConfiguration.kt`,
+        `${SERVER_MAIN_SRC_DIR}com/mycompany/myapp/config/LoggingAspectConfiguration.kt`,
+        `${SERVER_MAIN_SRC_DIR}com/mycompany/myapp/config/SecurityConfiguration.kt`,
+        `${SERVER_MAIN_SRC_DIR}com/mycompany/myapp/config/WebConfigurer.kt`,
+        `${SERVER_MAIN_SRC_DIR}com/mycompany/myapp/config/audit/AuditEventConverter.kt`,
+        `${SERVER_MAIN_SRC_DIR}com/mycompany/myapp/domain/AbstractAuditingEntity.kt`,
+        `${SERVER_MAIN_SRC_DIR}com/mycompany/myapp/domain/PersistentAuditEvent.kt`,
+        `${SERVER_MAIN_SRC_DIR}com/mycompany/myapp/security/AuthoritiesConstants.kt`,
+        `${SERVER_MAIN_SRC_DIR}com/mycompany/myapp/security/SecurityUtils.kt`,
+        `${SERVER_MAIN_SRC_DIR}com/mycompany/myapp/security/SpringSecurityAuditorAware.kt`,
+        `${SERVER_MAIN_SRC_DIR}com/mycompany/myapp/web/rest/errors/BadRequestAlertException.kt`,
+        `${SERVER_MAIN_SRC_DIR}com/mycompany/myapp/web/rest/errors/CustomParameterizedException.kt`,
+        `${SERVER_MAIN_SRC_DIR}com/mycompany/myapp/web/rest/errors/InternalServerErrorException.kt`,
+        `${SERVER_MAIN_SRC_DIR}com/mycompany/myapp/web/rest/errors/EmailAlreadyUsedException.kt`,
+        `${SERVER_MAIN_SRC_DIR}com/mycompany/myapp/web/rest/errors/ErrorConstants.kt`,
+        `${SERVER_MAIN_SRC_DIR}com/mycompany/myapp/web/rest/errors/ExceptionTranslator.kt`,
+        `${SERVER_MAIN_SRC_DIR}com/mycompany/myapp/web/rest/errors/FieldErrorVM.kt`,
+        `${SERVER_MAIN_SRC_DIR}com/mycompany/myapp/web/rest/errors/InvalidPasswordException.kt`,
+        `${SERVER_MAIN_SRC_DIR}com/mycompany/myapp/web/rest/errors/LoginAlreadyUsedException.kt`,
+        `${SERVER_MAIN_SRC_DIR}com/mycompany/myapp/web/rest/vm/LoggerVM.kt`,
+        `${SERVER_MAIN_SRC_DIR}com/mycompany/myapp/web/rest/LogsResource.kt`,
+        `${SERVER_TEST_SRC_DIR}com/mycompany/myapp/security/SecurityUtilsUnitTest.kt`,
+        `${SERVER_TEST_SRC_DIR}com/mycompany/myapp/web/rest/LogsResourceIT.kt`,
+        `${SERVER_TEST_SRC_DIR}com/mycompany/myapp/web/rest/TestUtil.kt`,
+        `${SERVER_TEST_SRC_DIR}com/mycompany/myapp/web/rest/errors/ExceptionTranslatorIT.kt`,
+        `${SERVER_TEST_SRC_DIR}com/mycompany/myapp/web/rest/errors/ExceptionTranslatorTestController.kt`,
         `${SERVER_TEST_RES_DIR}config/application.yml`,
         `${SERVER_TEST_RES_DIR}logback.xml`
     ],
@@ -209,38 +208,38 @@ const expectedFiles = {
         `${SERVER_MAIN_RES_DIR}config/liquibase/data/user_authority.csv`,
         `${SERVER_MAIN_RES_DIR}templates/mail/activationEmail.html`,
         `${SERVER_MAIN_RES_DIR}templates/mail/passwordResetEmail.html`,
-        `${SERVER_MAIN_SRC_DIR_KOTLIN}com/mycompany/myapp/domain/Authority.kt`,
-        `${SERVER_MAIN_SRC_DIR_KOTLIN}com/mycompany/myapp/domain/User.kt`,
-        `${SERVER_MAIN_SRC_DIR_KOTLIN}com/mycompany/myapp/repository/AuthorityRepository.kt`,
-        `${SERVER_MAIN_SRC_DIR_KOTLIN}com/mycompany/myapp/repository/CustomAuditEventRepository.kt`,
-        `${SERVER_MAIN_SRC_DIR_KOTLIN}com/mycompany/myapp/repository/PersistenceAuditEventRepository.kt`,
-        `${SERVER_MAIN_SRC_DIR_KOTLIN}com/mycompany/myapp/repository/UserRepository.kt`,
-        `${SERVER_MAIN_SRC_DIR_KOTLIN}com/mycompany/myapp/security/DomainUserDetailsService.kt`,
-        `${SERVER_MAIN_SRC_DIR_KOTLIN}com/mycompany/myapp/security/UserNotActivatedException.kt`,
-        `${SERVER_MAIN_SRC_DIR_KOTLIN}com/mycompany/myapp/service/AuditEventService.kt`,
-        `${SERVER_MAIN_SRC_DIR_KOTLIN}com/mycompany/myapp/service/MailService.kt`,
-        `${SERVER_MAIN_SRC_DIR_KOTLIN}com/mycompany/myapp/service/UserService.kt`,
-        `${SERVER_MAIN_SRC_DIR_KOTLIN}com/mycompany/myapp/service/util/RandomUtil.kt`,
-        `${SERVER_MAIN_SRC_DIR_KOTLIN}com/mycompany/myapp/service/dto/UserDTO.kt`,
-        `${SERVER_MAIN_SRC_DIR_KOTLIN}com/mycompany/myapp/service/dto/PasswordChangeDTO.kt`,
-        `${SERVER_MAIN_SRC_DIR_KOTLIN}com/mycompany/myapp/service/mapper/UserMapper.kt`,
-        `${SERVER_MAIN_SRC_DIR_KOTLIN}com/mycompany/myapp/web/rest/AccountResource.kt`,
-        `${SERVER_MAIN_SRC_DIR_KOTLIN}com/mycompany/myapp/web/rest/AuditResource.kt`,
-        `${SERVER_MAIN_SRC_DIR_KOTLIN}com/mycompany/myapp/web/rest/UserResource.kt`,
-        `${SERVER_MAIN_SRC_DIR_KOTLIN}com/mycompany/myapp/web/rest/vm/KeyAndPasswordVM.kt`,
-        `${SERVER_MAIN_SRC_DIR_KOTLIN}com/mycompany/myapp/web/rest/vm/ManagedUserVM.kt`,
-        `${SERVER_TEST_SRC_DIR_KOTLIN}com/mycompany/myapp/web/rest/AccountResourceIT.kt`,
-        `${SERVER_TEST_SRC_DIR_KOTLIN}com/mycompany/myapp/web/rest/AuditResourceIT.kt`,
-        `${SERVER_TEST_SRC_DIR_KOTLIN}com/mycompany/myapp/web/rest/UserResourceIT.kt`,
-        `${SERVER_TEST_SRC_DIR_KOTLIN}com/mycompany/myapp/service/UserServiceIT.kt`,
-        `${SERVER_TEST_SRC_DIR_KOTLIN}com/mycompany/myapp/service/mapper/UserMapperIT.kt`,
-        `${SERVER_TEST_SRC_DIR_KOTLIN}com/mycompany/myapp/service/MailServiceIT.kt`,
-        `${SERVER_TEST_SRC_DIR_KOTLIN}com/mycompany/myapp/repository/CustomAuditEventRepositoryIT.kt`
+        `${SERVER_MAIN_SRC_DIR}com/mycompany/myapp/domain/Authority.kt`,
+        `${SERVER_MAIN_SRC_DIR}com/mycompany/myapp/domain/User.kt`,
+        `${SERVER_MAIN_SRC_DIR}com/mycompany/myapp/repository/AuthorityRepository.kt`,
+        `${SERVER_MAIN_SRC_DIR}com/mycompany/myapp/repository/CustomAuditEventRepository.kt`,
+        `${SERVER_MAIN_SRC_DIR}com/mycompany/myapp/repository/PersistenceAuditEventRepository.kt`,
+        `${SERVER_MAIN_SRC_DIR}com/mycompany/myapp/repository/UserRepository.kt`,
+        `${SERVER_MAIN_SRC_DIR}com/mycompany/myapp/security/DomainUserDetailsService.kt`,
+        `${SERVER_MAIN_SRC_DIR}com/mycompany/myapp/security/UserNotActivatedException.kt`,
+        `${SERVER_MAIN_SRC_DIR}com/mycompany/myapp/service/AuditEventService.kt`,
+        `${SERVER_MAIN_SRC_DIR}com/mycompany/myapp/service/MailService.kt`,
+        `${SERVER_MAIN_SRC_DIR}com/mycompany/myapp/service/UserService.kt`,
+        `${SERVER_MAIN_SRC_DIR}com/mycompany/myapp/service/util/RandomUtil.kt`,
+        `${SERVER_MAIN_SRC_DIR}com/mycompany/myapp/service/dto/UserDTO.kt`,
+        `${SERVER_MAIN_SRC_DIR}com/mycompany/myapp/service/dto/PasswordChangeDTO.kt`,
+        `${SERVER_MAIN_SRC_DIR}com/mycompany/myapp/service/mapper/UserMapper.kt`,
+        `${SERVER_MAIN_SRC_DIR}com/mycompany/myapp/web/rest/AccountResource.kt`,
+        `${SERVER_MAIN_SRC_DIR}com/mycompany/myapp/web/rest/AuditResource.kt`,
+        `${SERVER_MAIN_SRC_DIR}com/mycompany/myapp/web/rest/UserResource.kt`,
+        `${SERVER_MAIN_SRC_DIR}com/mycompany/myapp/web/rest/vm/KeyAndPasswordVM.kt`,
+        `${SERVER_MAIN_SRC_DIR}com/mycompany/myapp/web/rest/vm/ManagedUserVM.kt`,
+        `${SERVER_TEST_SRC_DIR}com/mycompany/myapp/web/rest/AccountResourceIT.kt`,
+        `${SERVER_TEST_SRC_DIR}com/mycompany/myapp/web/rest/AuditResourceIT.kt`,
+        `${SERVER_TEST_SRC_DIR}com/mycompany/myapp/web/rest/UserResourceIT.kt`,
+        `${SERVER_TEST_SRC_DIR}com/mycompany/myapp/service/UserServiceIT.kt`,
+        `${SERVER_TEST_SRC_DIR}com/mycompany/myapp/service/mapper/UserMapperIT.kt`,
+        `${SERVER_TEST_SRC_DIR}com/mycompany/myapp/service/MailServiceIT.kt`,
+        `${SERVER_TEST_SRC_DIR}com/mycompany/myapp/repository/CustomAuditEventRepositoryIT.kt`
     ],
 
-    infinispan: [`${SERVER_MAIN_SRC_DIR_KOTLIN}com/mycompany/myapp/config/CacheFactoryConfiguration.kt`],
+    infinispan: [`${SERVER_MAIN_SRC_DIR}com/mycompany/myapp/config/CacheFactoryConfiguration.kt`],
 
-    memcached: [`${SERVER_MAIN_SRC_DIR_KOTLIN}com/mycompany/myapp/config/CacheConfiguration.kt`, `${DOCKER_DIR}memcached.yml`],
+    memcached: [`${SERVER_MAIN_SRC_DIR}com/mycompany/myapp/config/CacheConfiguration.kt`, `${DOCKER_DIR}memcached.yml`],
 
     gatling: [`${TEST_DIR}gatling/conf/gatling.conf`],
 
@@ -540,9 +539,9 @@ const expectedFiles = {
     ],
 
     session: [
-        `${SERVER_MAIN_SRC_DIR_KOTLIN}com/mycompany/myapp/domain/PersistentToken.kt`,
-        `${SERVER_MAIN_SRC_DIR_KOTLIN}com/mycompany/myapp/repository/PersistentTokenRepository.kt`,
-        `${SERVER_MAIN_SRC_DIR_KOTLIN}com/mycompany/myapp/security/PersistentTokenRememberMeServices.kt`,
+        `${SERVER_MAIN_SRC_DIR}com/mycompany/myapp/domain/PersistentToken.kt`,
+        `${SERVER_MAIN_SRC_DIR}com/mycompany/myapp/repository/PersistentTokenRepository.kt`,
+        `${SERVER_MAIN_SRC_DIR}com/mycompany/myapp/security/PersistentTokenRememberMeServices.kt`,
         `${CLIENT_MAIN_SRC_DIR}app/account/sessions/sessions.component.html`,
         `${CLIENT_MAIN_SRC_DIR}app/account/sessions/sessions.component.ts`,
         `${CLIENT_MAIN_SRC_DIR}app/account/sessions/sessions.route.ts`,
@@ -552,11 +551,11 @@ const expectedFiles = {
     ],
 
     jwtServer: [
-        `${SERVER_MAIN_SRC_DIR_KOTLIN}com/mycompany/myapp/security/jwt/JWTConfigurer.kt`,
-        `${SERVER_MAIN_SRC_DIR_KOTLIN}com/mycompany/myapp/security/jwt/JWTFilter.kt`,
-        `${SERVER_MAIN_SRC_DIR_KOTLIN}com/mycompany/myapp/security/jwt/TokenProvider.kt`,
-        `${SERVER_TEST_SRC_DIR_KOTLIN}com/mycompany/myapp/security/jwt/JWTFilterTest.kt`,
-        `${SERVER_TEST_SRC_DIR_KOTLIN}com/mycompany/myapp/security/jwt/TokenProviderTest.kt`
+        `${SERVER_MAIN_SRC_DIR}com/mycompany/myapp/security/jwt/JWTConfigurer.kt`,
+        `${SERVER_MAIN_SRC_DIR}com/mycompany/myapp/security/jwt/JWTFilter.kt`,
+        `${SERVER_MAIN_SRC_DIR}com/mycompany/myapp/security/jwt/TokenProvider.kt`,
+        `${SERVER_TEST_SRC_DIR}com/mycompany/myapp/security/jwt/JWTFilterTest.kt`,
+        `${SERVER_TEST_SRC_DIR}com/mycompany/myapp/security/jwt/TokenProviderTest.kt`
     ],
 
     jwtClient: [
@@ -565,39 +564,39 @@ const expectedFiles = {
     ],
 
     oauth2: [
-        `${SERVER_MAIN_SRC_DIR_KOTLIN}com/mycompany/myapp/config/SecurityConfiguration.kt`,
-        `${SERVER_MAIN_SRC_DIR_KOTLIN}com/mycompany/myapp/domain/User.kt`,
-        `${SERVER_MAIN_SRC_DIR_KOTLIN}com/mycompany/myapp/web/rest/AccountResource.kt`,
+        `${SERVER_MAIN_SRC_DIR}com/mycompany/myapp/config/SecurityConfiguration.kt`,
+        `${SERVER_MAIN_SRC_DIR}com/mycompany/myapp/domain/User.kt`,
+        `${SERVER_MAIN_SRC_DIR}com/mycompany/myapp/web/rest/AccountResource.kt`,
         `${DOCKER_DIR}keycloak.yml`
     ],
 
-    messageBroker: [`${SERVER_MAIN_SRC_DIR_KOTLIN}com/mycompany/myapp/config/MessagingConfiguration.kt`, `${DOCKER_DIR}kafka.yml`],
+    messageBroker: [`${SERVER_MAIN_SRC_DIR}com/mycompany/myapp/config/MessagingConfiguration.kt`, `${DOCKER_DIR}kafka.yml`],
 
     swaggerCodegen: [`${SERVER_MAIN_RES_DIR}swagger/api.yml`],
 
     swaggerCodegenGradle: ['gradle/swagger.gradle'],
 
     uaa: [
-        `${SERVER_MAIN_SRC_DIR_KOTLIN}com/mycompany/myapp/config/UaaWebSecurityConfiguration.kt`,
-        `${SERVER_MAIN_SRC_DIR_KOTLIN}com/mycompany/myapp/config/UaaConfiguration.kt`,
-        `${SERVER_MAIN_SRC_DIR_KOTLIN}com/mycompany/myapp/config/UaaProperties.kt`,
-        `${SERVER_MAIN_SRC_DIR_KOTLIN}com/mycompany/myapp/security/IatTokenEnhancer.kt`,
-        `${SERVER_TEST_SRC_DIR_KOTLIN}com/mycompany/myapp/config/SecurityBeanOverrideConfiguration.kt`,
-        `${SERVER_TEST_SRC_DIR_KOTLIN}com/mycompany/myapp/security/OAuth2TokenMockUtil.kt`
+        `${SERVER_MAIN_SRC_DIR}com/mycompany/myapp/config/UaaWebSecurityConfiguration.kt`,
+        `${SERVER_MAIN_SRC_DIR}com/mycompany/myapp/config/UaaConfiguration.kt`,
+        `${SERVER_MAIN_SRC_DIR}com/mycompany/myapp/config/UaaProperties.kt`,
+        `${SERVER_MAIN_SRC_DIR}com/mycompany/myapp/security/IatTokenEnhancer.kt`,
+        `${SERVER_TEST_SRC_DIR}com/mycompany/myapp/config/SecurityBeanOverrideConfiguration.kt`,
+        `${SERVER_TEST_SRC_DIR}com/mycompany/myapp/security/OAuth2TokenMockUtil.kt`
     ],
 
     gateway: [
         `${SERVER_MAIN_RES_DIR}config/bootstrap.yml`,
         `${SERVER_MAIN_RES_DIR}config/bootstrap-prod.yml`,
         `${SERVER_TEST_RES_DIR}config/bootstrap.yml`,
-        `${SERVER_MAIN_SRC_DIR_KOTLIN}com/mycompany/myapp/config/GatewayConfiguration.kt`,
-        `${SERVER_MAIN_SRC_DIR_KOTLIN}com/mycompany/myapp/config/apidoc/GatewaySwaggerResourcesProvider.kt`,
-        `${SERVER_MAIN_SRC_DIR_KOTLIN}com/mycompany/myapp/gateway/ratelimiting/RateLimitingFilter.kt`,
-        `${SERVER_MAIN_SRC_DIR_KOTLIN}com/mycompany/myapp/gateway/accesscontrol/AccessControlFilter.kt`,
-        `${SERVER_MAIN_SRC_DIR_KOTLIN}com/mycompany/myapp/gateway/responserewriting/SwaggerBasePathRewritingFilter.kt`,
-        `${SERVER_MAIN_SRC_DIR_KOTLIN}com/mycompany/myapp/web/rest/vm/RouteVM.kt`,
-        `${SERVER_MAIN_SRC_DIR_KOTLIN}com/mycompany/myapp/web/rest/GatewayResource.kt`,
-        `${SERVER_TEST_SRC_DIR_KOTLIN}com/mycompany/myapp/gateway/responserewriting/SwaggerBasePathRewritingFilterTest.kt`,
+        `${SERVER_MAIN_SRC_DIR}com/mycompany/myapp/config/GatewayConfiguration.kt`,
+        `${SERVER_MAIN_SRC_DIR}com/mycompany/myapp/config/apidoc/GatewaySwaggerResourcesProvider.kt`,
+        `${SERVER_MAIN_SRC_DIR}com/mycompany/myapp/gateway/ratelimiting/RateLimitingFilter.kt`,
+        `${SERVER_MAIN_SRC_DIR}com/mycompany/myapp/gateway/accesscontrol/AccessControlFilter.kt`,
+        `${SERVER_MAIN_SRC_DIR}com/mycompany/myapp/gateway/responserewriting/SwaggerBasePathRewritingFilter.kt`,
+        `${SERVER_MAIN_SRC_DIR}com/mycompany/myapp/web/rest/vm/RouteVM.kt`,
+        `${SERVER_MAIN_SRC_DIR}com/mycompany/myapp/web/rest/GatewayResource.kt`,
+        `${SERVER_TEST_SRC_DIR}com/mycompany/myapp/gateway/responserewriting/SwaggerBasePathRewritingFilterTest.kt`,
         `${CLIENT_MAIN_SRC_DIR}app/admin/gateway/gateway.component.ts`,
         `${CLIENT_MAIN_SRC_DIR}app/admin/gateway/gateway.route.ts`,
         `${CLIENT_MAIN_SRC_DIR}app/admin/gateway/gateway.component.html`,
@@ -605,38 +604,38 @@ const expectedFiles = {
     ],
 
     gatewayWithUaa: [
-        `${SERVER_MAIN_SRC_DIR_KOTLIN}com/mycompany/myapp/config/CacheConfiguration.kt`,
-        `${SERVER_MAIN_SRC_DIR_KOTLIN}com/mycompany/myapp/web/rest/AuthResource.kt`,
-        `${SERVER_MAIN_SRC_DIR_KOTLIN}com/mycompany/myapp/web/filter/RefreshTokenFilter.kt`,
-        `${SERVER_MAIN_SRC_DIR_KOTLIN}com/mycompany/myapp/web/filter/RefreshTokenFilterConfigurer.kt`,
-        `${SERVER_MAIN_SRC_DIR_KOTLIN}com/mycompany/myapp/config/oauth2/OAuth2AuthenticationConfiguration.kt`,
-        `${SERVER_MAIN_SRC_DIR_KOTLIN}com/mycompany/myapp/security/oauth2/CookieCollection.kt`,
-        `${SERVER_MAIN_SRC_DIR_KOTLIN}com/mycompany/myapp/security/oauth2/CookiesHttpServletRequestWrapper.kt`,
-        `${SERVER_MAIN_SRC_DIR_KOTLIN}com/mycompany/myapp/security/oauth2/CookieTokenExtractor.kt`,
-        `${SERVER_MAIN_SRC_DIR_KOTLIN}com/mycompany/myapp/security/oauth2/OAuth2AuthenticationService.kt`,
-        `${SERVER_MAIN_SRC_DIR_KOTLIN}com/mycompany/myapp/security/oauth2/OAuth2CookieHelper.kt`,
-        `${SERVER_MAIN_SRC_DIR_KOTLIN}com/mycompany/myapp/security/oauth2/OAuth2Cookies.kt`,
-        `${SERVER_MAIN_SRC_DIR_KOTLIN}com/mycompany/myapp/security/oauth2/OAuth2TokenEndpointClient.kt`,
-        `${SERVER_MAIN_SRC_DIR_KOTLIN}com/mycompany/myapp/security/oauth2/OAuth2TokenEndpointClientAdapter.kt`,
-        `${SERVER_MAIN_SRC_DIR_KOTLIN}com/mycompany/myapp/security/oauth2/UaaTokenEndpointClient.kt`,
-        `${SERVER_TEST_SRC_DIR_KOTLIN}com/mycompany/myapp/config/SecurityBeanOverrideConfiguration.kt`,
-        `${SERVER_TEST_SRC_DIR_KOTLIN}com/mycompany/myapp/security/OAuth2TokenMockUtil.kt`,
-        `${SERVER_TEST_SRC_DIR_KOTLIN}com/mycompany/myapp/security/oauth2/OAuth2CookieHelperTest.kt`,
-        `${SERVER_TEST_SRC_DIR_KOTLIN}com/mycompany/myapp/security/oauth2/OAuth2AuthenticationServiceTest.kt`,
-        `${SERVER_TEST_SRC_DIR_KOTLIN}com/mycompany/myapp/security/oauth2/CookieTokenExtractorTest.kt`,
-        `${SERVER_TEST_SRC_DIR_KOTLIN}com/mycompany/myapp/security/oauth2/CookieCollectionTest.kt`
+        `${SERVER_MAIN_SRC_DIR}com/mycompany/myapp/config/CacheConfiguration.kt`,
+        `${SERVER_MAIN_SRC_DIR}com/mycompany/myapp/web/rest/AuthResource.kt`,
+        `${SERVER_MAIN_SRC_DIR}com/mycompany/myapp/web/filter/RefreshTokenFilter.kt`,
+        `${SERVER_MAIN_SRC_DIR}com/mycompany/myapp/web/filter/RefreshTokenFilterConfigurer.kt`,
+        `${SERVER_MAIN_SRC_DIR}com/mycompany/myapp/config/oauth2/OAuth2AuthenticationConfiguration.kt`,
+        `${SERVER_MAIN_SRC_DIR}com/mycompany/myapp/security/oauth2/CookieCollection.kt`,
+        `${SERVER_MAIN_SRC_DIR}com/mycompany/myapp/security/oauth2/CookiesHttpServletRequestWrapper.kt`,
+        `${SERVER_MAIN_SRC_DIR}com/mycompany/myapp/security/oauth2/CookieTokenExtractor.kt`,
+        `${SERVER_MAIN_SRC_DIR}com/mycompany/myapp/security/oauth2/OAuth2AuthenticationService.kt`,
+        `${SERVER_MAIN_SRC_DIR}com/mycompany/myapp/security/oauth2/OAuth2CookieHelper.kt`,
+        `${SERVER_MAIN_SRC_DIR}com/mycompany/myapp/security/oauth2/OAuth2Cookies.kt`,
+        `${SERVER_MAIN_SRC_DIR}com/mycompany/myapp/security/oauth2/OAuth2TokenEndpointClient.kt`,
+        `${SERVER_MAIN_SRC_DIR}com/mycompany/myapp/security/oauth2/OAuth2TokenEndpointClientAdapter.kt`,
+        `${SERVER_MAIN_SRC_DIR}com/mycompany/myapp/security/oauth2/UaaTokenEndpointClient.kt`,
+        `${SERVER_TEST_SRC_DIR}com/mycompany/myapp/config/SecurityBeanOverrideConfiguration.kt`,
+        `${SERVER_TEST_SRC_DIR}com/mycompany/myapp/security/OAuth2TokenMockUtil.kt`,
+        `${SERVER_TEST_SRC_DIR}com/mycompany/myapp/security/oauth2/OAuth2CookieHelperTest.kt`,
+        `${SERVER_TEST_SRC_DIR}com/mycompany/myapp/security/oauth2/OAuth2AuthenticationServiceTest.kt`,
+        `${SERVER_TEST_SRC_DIR}com/mycompany/myapp/security/oauth2/CookieTokenExtractorTest.kt`,
+        `${SERVER_TEST_SRC_DIR}com/mycompany/myapp/security/oauth2/CookieCollectionTest.kt`
     ],
 
     feignConfig: [
-        `${SERVER_MAIN_SRC_DIR_KOTLIN}com/mycompany/myapp/config/FeignConfiguration.kt`,
-        `${SERVER_MAIN_SRC_DIR_JAVA}com/mycompany/myapp/client/UserFeignClientInterceptor.java`
+        `${SERVER_MAIN_SRC_DIR}com/mycompany/myapp/config/FeignConfiguration.kt`,
+        `${SERVER_MAIN_SRC_DIR}com/mycompany/myapp/client/UserFeignClientInterceptor.kt`
     ],
 
     microservice: [
         `${SERVER_MAIN_RES_DIR}static/index.html`,
-        `${SERVER_MAIN_SRC_DIR_KOTLIN}com/mycompany/myapp/config/SecurityConfiguration.kt`,
-        `${SERVER_MAIN_SRC_DIR_KOTLIN}com/mycompany/myapp/config/FeignConfiguration.kt`,
-        `${SERVER_MAIN_SRC_DIR_JAVA}com/mycompany/myapp/client/UserFeignClientInterceptor.java`,
+        `${SERVER_MAIN_SRC_DIR}com/mycompany/myapp/config/SecurityConfiguration.kt`,
+        `${SERVER_MAIN_SRC_DIR}com/mycompany/myapp/config/FeignConfiguration.kt`,
+        `${SERVER_MAIN_SRC_DIR}com/mycompany/myapp/client/UserFeignClientInterceptor.kt`,
         'package.json'
     ],
 
@@ -644,30 +643,30 @@ const expectedFiles = {
 
     dockerServices: [`${DOCKER_DIR}app.yml`, `${DOCKER_DIR}Dockerfile`, `${DOCKER_DIR}sonar.yml`],
 
-    mysql: [`${SERVER_MAIN_SRC_DIR_KOTLIN}com/mycompany/myapp/config/LiquibaseConfiguration.kt`, `${DOCKER_DIR}mysql.yml`],
+    mysql: [`${SERVER_MAIN_SRC_DIR}com/mycompany/myapp/config/LiquibaseConfiguration.kt`, `${DOCKER_DIR}mysql.yml`],
 
-    mariadb: [`${SERVER_MAIN_SRC_DIR_KOTLIN}com/mycompany/myapp/config/LiquibaseConfiguration.kt`, `${DOCKER_DIR}mariadb.yml`],
+    mariadb: [`${SERVER_MAIN_SRC_DIR}com/mycompany/myapp/config/LiquibaseConfiguration.kt`, `${DOCKER_DIR}mariadb.yml`],
 
-    mssql: [`${SERVER_MAIN_SRC_DIR_KOTLIN}com/mycompany/myapp/config/LiquibaseConfiguration.kt`, `${DOCKER_DIR}mssql.yml`],
+    mssql: [`${SERVER_MAIN_SRC_DIR}com/mycompany/myapp/config/LiquibaseConfiguration.kt`, `${DOCKER_DIR}mssql.yml`],
 
-    postgresql: [`${SERVER_MAIN_SRC_DIR_KOTLIN}com/mycompany/myapp/config/LiquibaseConfiguration.kt`, `${DOCKER_DIR}postgresql.yml`],
+    postgresql: [`${SERVER_MAIN_SRC_DIR}com/mycompany/myapp/config/LiquibaseConfiguration.kt`, `${DOCKER_DIR}postgresql.yml`],
 
     liquibase: [
         `${SERVER_MAIN_RES_DIR}config/liquibase/master.xml`,
         `${SERVER_MAIN_RES_DIR}config/liquibase/changelog/00000000000000_initial_schema.xml`,
-        `${SERVER_MAIN_SRC_DIR_KOTLIN}com/mycompany/myapp/config/LiquibaseConfiguration.kt`
+        `${SERVER_MAIN_SRC_DIR}com/mycompany/myapp/config/LiquibaseConfiguration.kt`
     ],
 
     hibernateTimeZoneConfig: [
-        `${SERVER_TEST_SRC_DIR_KOTLIN}com/mycompany/myapp/config/timezone/HibernateTimeZoneIT.kt`,
-        `${SERVER_TEST_SRC_DIR_KOTLIN}com/mycompany/myapp/repository/timezone/DateTimeWrapper.kt`,
-        `${SERVER_TEST_SRC_DIR_KOTLIN}com/mycompany/myapp/repository/timezone/DateTimeWrapperRepository.kt`
+        `${SERVER_TEST_SRC_DIR}com/mycompany/myapp/config/timezone/HibernateTimeZoneIT.kt`,
+        `${SERVER_TEST_SRC_DIR}com/mycompany/myapp/repository/timezone/DateTimeWrapper.kt`,
+        `${SERVER_TEST_SRC_DIR}com/mycompany/myapp/repository/timezone/DateTimeWrapperRepository.kt`
     ],
 
     hazelcast: [`${DOCKER_DIR}hazelcast-management-center.yml`],
 
     mongodb: [
-        `${SERVER_MAIN_SRC_DIR_KOTLIN}com/mycompany/myapp/config/dbmigrations/InitialSetupMigration.kt`,
+        `${SERVER_MAIN_SRC_DIR}com/mycompany/myapp/config/dbmigrations/InitialSetupMigration.kt`,
         `${DOCKER_DIR}mongodb.yml`,
         `${DOCKER_DIR}mongodb-cluster.yml`,
         `${DOCKER_DIR}mongodb/MongoDB.Dockerfile`,
@@ -675,9 +674,9 @@ const expectedFiles = {
     ],
 
     couchbase: [
-        `${SERVER_MAIN_SRC_DIR_KOTLIN}com/mycompany/myapp/repository/N1qlCouchbaseRepository.kt`,
-        `${SERVER_MAIN_SRC_DIR_KOTLIN}com/mycompany/myapp/repository/CustomN1qlCouchbaseRepository.kt`,
-        `${SERVER_TEST_SRC_DIR_KOTLIN}com/mycompany/myapp/config/DatabaseConfigurationIT.kt`,
+        `${SERVER_MAIN_SRC_DIR}com/mycompany/myapp/repository/N1qlCouchbaseRepository.kt`,
+        `${SERVER_MAIN_SRC_DIR}com/mycompany/myapp/repository/CustomN1qlCouchbaseRepository.kt`,
+        `${SERVER_TEST_SRC_DIR}com/mycompany/myapp/config/DatabaseConfigurationIT.kt`,
         `${SERVER_MAIN_RES_DIR}config/couchmove/changelog/V0__create_indexes.n1ql`,
         `${SERVER_MAIN_RES_DIR}config/couchmove/changelog/V0.1__initial_setup/ROLE_ADMIN.json`,
         `${SERVER_MAIN_RES_DIR}config/couchmove/changelog/V0.1__initial_setup/ROLE_USER.json`,
@@ -707,17 +706,17 @@ const expectedFiles = {
 
     elasticsearch: [
         `${DOCKER_DIR}elasticsearch.yml`,
-        `${SERVER_MAIN_SRC_DIR_KOTLIN}com/mycompany/myapp/repository/search/UserSearchRepository.kt`,
-        `${SERVER_TEST_SRC_DIR_KOTLIN}com/mycompany/myapp/repository/search/UserSearchRepositoryMockConfiguration.kt`
+        `${SERVER_MAIN_SRC_DIR}com/mycompany/myapp/repository/search/UserSearchRepository.kt`,
+        `${SERVER_TEST_SRC_DIR}com/mycompany/myapp/repository/search/UserSearchRepositoryMockConfiguration.kt`
     ],
 
     cucumber: [
         `${TEST_DIR}features/user/user.feature`,
         `${TEST_DIR}features/gitkeep`,
-        `${SERVER_TEST_SRC_DIR_KOTLIN}com/mycompany/myapp/cucumber/CucumberContextConfiguration.kt`,
-        `${SERVER_TEST_SRC_DIR_KOTLIN}com/mycompany/myapp/cucumber/stepdefs/UserStepDefs.kt`,
-        `${SERVER_TEST_SRC_DIR_KOTLIN}com/mycompany/myapp/cucumber/stepdefs/StepDefs.kt`,
-        `${SERVER_TEST_SRC_DIR_KOTLIN}com/mycompany/myapp/cucumber/CucumberIT.kt`
+        `${SERVER_TEST_SRC_DIR}com/mycompany/myapp/cucumber/CucumberContextConfiguration.kt`,
+        `${SERVER_TEST_SRC_DIR}com/mycompany/myapp/cucumber/stepdefs/UserStepDefs.kt`,
+        `${SERVER_TEST_SRC_DIR}com/mycompany/myapp/cucumber/stepdefs/StepDefs.kt`,
+        `${SERVER_TEST_SRC_DIR}com/mycompany/myapp/cucumber/CucumberIT.kt`
     ],
 
     eureka: [
