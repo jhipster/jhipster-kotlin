@@ -17,7 +17,7 @@
  * limitations under the License.
  */
 
-const KOTLIN_VERSION = '1.3.20';
+const KOTLIN_VERSION = '1.3.21';
 const MOCKITO_KOTLIN_VERSION = '2.1.0';
 
 const constants = {
