@@ -27,6 +27,7 @@ import org.springframework.data.domain.Pageable
 import org.springframework.http.HttpStatus
 import org.springframework.http.ResponseEntity
 import org.springframework.web.bind.annotation.*
+import javax.servlet.http.HttpServletRequest
 
 import java.time.LocalDate
 import java.time.ZoneId
@@ -45,9 +46,9 @@ class AuditResource(private val auditEventService: AuditEventService) {
      * @return the `ResponseEntity` with status `200 (OK)` and the list of `AuditEvent`s in body.
      */
     @GetMapping
-    fun getAll(pageable: Pageable): ResponseEntity<List<AuditEvent>> {
+    fun getAll(request: HttpServletRequest, pageable: Pageable): ResponseEntity<List<AuditEvent>> {
         val page = auditEventService.findAll(pageable)
-        val headers = PaginationUtil.generatePaginationHttpHeaders(page, "/management/audits")
+        val headers = PaginationUtil.generatePaginationHttpHeaders(request, page)
         return ResponseEntity(page.content, headers, HttpStatus.OK)
     }
 
@@ -63,13 +64,14 @@ class AuditResource(private val auditEventService: AuditEventService) {
     fun getByDates(
         @RequestParam(value = "fromDate") fromDate: LocalDate,
         @RequestParam(value = "toDate") toDate: LocalDate,
+        request: HttpServletRequest,
         pageable: Pageable): ResponseEntity<List<AuditEvent>> {
 
         val page = auditEventService.findByDates(
             fromDate.atStartOfDay(ZoneId.systemDefault()).toInstant(),
             toDate.atStartOfDay(ZoneId.systemDefault()).plusDays(1).toInstant(),
             pageable)
-        val headers = PaginationUtil.generatePaginationHttpHeaders(page, "/management/audits")
+        val headers = PaginationUtil.generatePaginationHttpHeaders(request, page)
         return ResponseEntity(page.content, headers, HttpStatus.OK)
     }
 
