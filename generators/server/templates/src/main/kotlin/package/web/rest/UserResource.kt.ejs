@@ -145,7 +145,7 @@ class UserResource(
         <%_ if (!reactive) { _%>
         } else if (userRepository.findOneByLogin(userDTO.login!!.toLowerCase()).isPresent) {
             throw LoginAlreadyUsedException()
-        } else if (userRepository.findOneByEmailIgnoreCase(userDTO.email!!).isPresent) {
+        } else if (userRepository.findOneByEmailIgnoreCase(userDTO.email).isPresent) {
             throw EmailAlreadyUsedException()
         } else {
             val newUser = userService.createUser(userDTO)
@@ -162,7 +162,7 @@ class UserResource(
                 if (loginExists!!) {
                     throw LoginAlreadyUsedException()
                 }
-                userRepository.findOneByEmailIgnoreCase(userDTO.email!!)
+                userRepository.findOneByEmailIgnoreCase(userDTO.email)
             }
             .hasElement()
             .flatMap { emailExists ->
@@ -197,7 +197,7 @@ class UserResource(
     <%_ if (!reactive) { _%>
     fun updateUser(@Valid @RequestBody userDTO: <%= asDto('User') %>): ResponseEntity<<%= asDto('User') %>> {
         log.debug("REST request to update User : {}", userDTO)
-        var existingUser = userRepository.findOneByEmailIgnoreCase(userDTO.email!!)
+        var existingUser = userRepository.findOneByEmailIgnoreCase(userDTO.email)
         if (existingUser.isPresent && existingUser.get().id != userDTO.id) {
             throw EmailAlreadyUsedException()
         }
@@ -212,7 +212,7 @@ class UserResource(
     <%_ } else { _%>
     fun updateUser(@Valid @RequestBody userDTO: <%= asDto('User') %>) : Mono<ResponseEntity<<%= asDto('User') %>>> {
         log.debug("REST request to update User : {}", userDTO)
-        return userRepository.findOneByEmailIgnoreCase(userDTO.email!!)
+        return userRepository.findOneByEmailIgnoreCase(userDTO.email)
             .filter { user -> user.id != userDTO.id }
             .hasElement()
             .flatMap { emailExists ->
