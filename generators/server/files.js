@@ -575,42 +575,31 @@ const serverFiles = {
                     file: 'package/config/FeignConfiguration.kt',
                     renameTo: generator => `${generator.javaDir}config/FeignConfiguration.kt`,
                     useBluePrint: true
-                }
-            ]
-        },
-        {
-            condition: generator =>
-                !generator.reactive &&
-                !(
-                    generator.applicationType !== 'microservice' &&
-                    !(
-                        generator.applicationType === 'gateway' &&
-                        (generator.authenticationType === 'uaa' || generator.authenticationType === 'oauth2')
-                    )
-                ) &&
-                generator.applicationType === 'microservice' &&
-                generator.authenticationType === 'uaa',
-            path: SERVER_MAIN_SRC_DIR,
-            templates: [
-                {
-                    file: 'package/client/AuthorizedFeignClient.java',
-                    renameTo: generator => `${generator.javaDir}client/AuthorizedFeignClient.java`
                 },
                 {
-                    file: 'package/client/OAuth2InterceptedFeignConfiguration.java',
-                    renameTo: generator => `${generator.javaDir}client/OAuth2InterceptedFeignConfiguration.java`
+                    file: 'package/client/AuthorizedFeignClient.kt',
+                    renameTo: generator => `${generator.javaDir}client/AuthorizedFeignClient.kt`,
+                    useBluePrint: true
                 },
                 {
-                    file: 'package/client/AuthorizedUserFeignClient.java',
-                    renameTo: generator => `${generator.javaDir}client/AuthorizedUserFeignClient.java`
+                    file: 'package/client/OAuth2InterceptedFeignConfiguration.kt',
+                    renameTo: generator => `${generator.javaDir}client/OAuth2InterceptedFeignConfiguration.kt`,
+                    useBluePrint: true
                 },
                 {
-                    file: 'package/client/OAuth2_UserFeignClientInterceptor.java',
-                    renameTo: generator => `${generator.javaDir}client/UserFeignClientInterceptor.java`
+                    file: 'package/client/AuthorizedUserFeignClient.kt',
+                    renameTo: generator => `${generator.javaDir}client/AuthorizedUserFeignClient.kt`,
+                    useBluePrint: true
                 },
                 {
-                    file: 'package/client/OAuth2UserClientFeignConfiguration.java',
-                    renameTo: generator => `${generator.javaDir}client/OAuth2UserClientFeignConfiguration.java`
+                    file: 'package/client/OAuth2_UserFeignClientInterceptor.kt',
+                    renameTo: generator => `${generator.javaDir}client/UserFeignClientInterceptor.kt`,
+                    useBluePrint: true
+                },
+                {
+                    file: 'package/client/OAuth2UserClientFeignConfiguration.kt',
+                    renameTo: generator => `${generator.javaDir}client/OAuth2UserClientFeignConfiguration.kt`,
+                    useBluePrint: true
                 }
             ]
         },
@@ -625,19 +614,11 @@ const serverFiles = {
                     file: 'package/config/FeignConfiguration.kt',
                     renameTo: generator => `${generator.javaDir}config/FeignConfiguration.kt`,
                     useBluePrint: true
-                }
-            ]
-        },
-        {
-            condition: generator =>
-                !generator.reactive &&
-                (generator.applicationType === 'microservice' || generator.applicationType === 'gateway') &&
-                generator.authenticationType === 'jwt',
-            path: SERVER_MAIN_SRC_DIR,
-            templates: [
+                },
                 {
-                    file: 'package/client/JWT_UserFeignClientInterceptor.java',
-                    renameTo: generator => `${generator.javaDir}client/UserFeignClientInterceptor.java`
+                    file: 'package/client/JWT_UserFeignClientInterceptor.kt',
+                    renameTo: generator => `${generator.javaDir}client/UserFeignClientInterceptor.kt`,
+                    useBluePrint: true
                 }
             ]
         },
@@ -695,29 +676,24 @@ const serverFiles = {
                     useBluePrint: true
                 },
                 {
+                    file: 'package/client/AuthorizedFeignClient.kt',
+                    renameTo: generator => `${generator.javaDir}client/AuthorizedFeignClient.kt`,
+                    useBluePrint: true
+                },
+                {
+                    file: 'package/client/OAuth2InterceptedFeignConfiguration.kt',
+                    renameTo: generator => `${generator.javaDir}client/OAuth2InterceptedFeignConfiguration.kt`,
+                    useBluePrint: true
+                },
+                {
                     file: 'package/config/OAuth2TokenServicesConfiguration.kt',
                     renameTo: generator => `${generator.javaDir}config/OAuth2TokenServicesConfiguration.kt`,
                     useBluePrint: true
-                }
-            ]
-        },
-        {
-            condition: generator =>
-                generator.authenticationType === 'oauth2' &&
-                (generator.applicationType === 'microservice' || generator.applicationType === 'gateway'),
-            path: SERVER_MAIN_SRC_DIR,
-            templates: [
-                {
-                    file: 'package/client/AuthorizedFeignClient.java',
-                    renameTo: generator => `${generator.javaDir}client/AuthorizedFeignClient.java`
                 },
                 {
-                    file: 'package/client/OAuth2InterceptedFeignConfiguration.java',
-                    renameTo: generator => `${generator.javaDir}client/OAuth2InterceptedFeignConfiguration.java`
-                },
-                {
-                    file: 'package/client/TokenRelayRequestInterceptor.java',
-                    renameTo: generator => `${generator.javaDir}client/TokenRelayRequestInterceptor.java`
+                    file: 'package/client/TokenRelayRequestInterceptor.kt',
+                    renameTo: generator => `${generator.javaDir}client/TokenRelayRequestInterceptor.kt`,
+                    useBluePrint: true
                 }
             ]
         },
@@ -1279,13 +1255,13 @@ const serverFiles = {
             path: SERVER_TEST_SRC_KOTLIN_DIR,
             templates: [
                 {
-                    file: 'package/config/SecurityBeanOverrideConfiguration.kt',
-                    renameTo: generator => `${generator.testDir}config/SecurityBeanOverrideConfiguration.kt`,
+                    file: 'package/security/OAuth2TokenMockUtil.kt',
+                    renameTo: generator => `${generator.testDir}security/OAuth2TokenMockUtil.kt`,
                     useBluePrint: true
                 },
                 {
-                    file: 'package/security/OAuth2TokenMockUtil.kt',
-                    renameTo: generator => `${generator.testDir}security/OAuth2TokenMockUtil.kt`,
+                    file: 'package/config/SecurityBeanOverrideConfiguration.kt',
+                    renameTo: generator => `${generator.testDir}config/SecurityBeanOverrideConfiguration.kt`,
                     useBluePrint: true
                 }
             ]
