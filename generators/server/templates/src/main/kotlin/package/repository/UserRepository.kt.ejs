@@ -101,7 +101,7 @@ interface UserRepository : <% if (databaseType === 'sql') { %>JpaRepository<<%= 
     @Cacheable(cacheNames = [USERS_BY_EMAIL_CACHE])
         <%_ } _%>
     <%_ } _%>
-    fun findOneByEmailIgnoreCase(email: String): <% if (reactive) { %>Mono<% } else { %>Optional<% } %><<%= asEntity('User') %>>
+    fun findOneByEmailIgnoreCase(email: String?): <% if (reactive) { %>Mono<% } else { %>Optional<% } %><<%= asEntity('User') %>>
 
     <%_ if (databaseType === 'couchbase') { _%>
         <%_ if (cacheManagerIsAvailable === true) { _%>
@@ -239,9 +239,9 @@ class UserRepository(private val session: Session, private val validator: Valida
     <%_ if (cacheManagerIsAvailable === true) { _%>
     @Cacheable(cacheNames = [USERS_BY_EMAIL_CACHE])
     <%_ } _%>
-    fun findOneByEmailIgnoreCase(email: String): Optional<<%= asEntity('User') %>> {
+    fun findOneByEmailIgnoreCase(email: String?): Optional<<%= asEntity('User') %>> {
         val stmt = findOneByEmailStmt.bind()
-        stmt.setString("email", email.toLowerCase())
+        stmt.setString("email", email?.toLowerCase())
         return findOneFromIndex(stmt)
     }
 

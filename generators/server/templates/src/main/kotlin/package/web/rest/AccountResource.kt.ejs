@@ -219,7 +219,7 @@ class AccountResource(
     <%_ if (!reactive) { _%>
     fun saveAccount(@Valid @RequestBody userDTO: <%= asDto('User') %>) {
         val userLogin = SecurityUtils.getCurrentUserLogin().orElseThrow { InternalServerErrorException("Current user login not found") }
-        val existingUser = userRepository.findOneByEmailIgnoreCase(userDTO.email!!)
+        val existingUser = userRepository.findOneByEmailIgnoreCase(userDTO.email)
         if (existingUser.isPresent && !existingUser.get().login.equals(userLogin, ignoreCase = true)) {
             throw EmailAlreadyUsedException()
         }
@@ -227,14 +227,14 @@ class AccountResource(
         if (!user.isPresent) {
             throw InternalServerErrorException("User could not be found")
         }
-        userService.updateUser(userDTO.firstName!!, userDTO.lastName!!, userDTO.email!!,
-            userDTO.langKey!!<% if (databaseType === 'mongodb' || databaseType === 'couchbase' || databaseType === 'sql') { %>, userDTO.imageUrl!!<% } %>)
+        userService.updateUser(userDTO.firstName, userDTO.lastName, userDTO.email,
+            userDTO.langKey<% if (databaseType === 'mongodb' || databaseType === 'couchbase' || databaseType === 'sql') { %>, userDTO.imageUrl<% } %>)
     <%_ } else { _%>
     fun saveAccount(@Valid @RequestBody userDTO: <%= asDto('User') %>): Mono<Void> {
         return SecurityUtils.getCurrentUserLogin()
             .switchIfEmpty(Mono.error(InternalServerErrorException("Current user login not found")))
             .flatMap { userLogin ->
-                userRepository.findOneByEmailIgnoreCase(userDTO.email!!)
+                userRepository.findOneByEmailIgnoreCase(userDTO.email)
                     .filter { existingUser -> !existingUser.login.equals(userLogin, ignoreCase = true) }
                     .hasElement()
                     .flatMap { emailExists ->
@@ -246,8 +246,8 @@ class AccountResource(
             }
             .switchIfEmpty(Mono.error(InternalServerErrorException("User could not be found")))
             .flatMap {
-                userService.updateUser(userDTO.firstName!!, userDTO.lastName!!, userDTO.email!!,
-                    userDTO.langKey!!, userDTO.imageUrl!!)
+                userService.updateUser(userDTO.firstName, userDTO.lastName, userDTO.email,
+                    userDTO.langKey, userDTO.imageUrl)
             }
     <%_ } _%>
     }
