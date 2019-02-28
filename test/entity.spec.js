@@ -593,7 +593,7 @@ describe('JHipster generator for entity', () => {
             describe('no dto, no service, no pagination', () => {
                 beforeEach(done => {
                     helpers
-                        .run('generator-jhipster/generators/entity')
+                        .run(require.resolve('generator-jhipster/generators/entity'))
                         .withOptions({
                             'from-cli': true,
                             skipInstall: true,
