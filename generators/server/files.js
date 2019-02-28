@@ -1845,12 +1845,15 @@ function writeFiles() {
                 if (this.databaseType === 'sql') {
                     this.addGradlePlugin('org.jetbrains.kotlin', 'kotlin-noarg', '${kotlin_version}');
                 }
+                this.addGradlePlugin('org.jlleitschuh.gradle', 'ktlint-gradle', kotlinConstants.KTLINT_GRADLE_VERSION);
 
                 this.applyFromGradleScript('gradle/kotlin');
             }
 
             if (this.buildTool === 'maven') {
                 this.addMavenProperty('kotlin.version', kotlinConstants.KOTLIN_VERSION);
+                this.addMavenProperty('ktlint.version', kotlinConstants.KTLINT_VERSION);
+                this.addMavenProperty('maven-antrun-plugin.version', kotlinConstants.MAVEN_ANTRUN_VERSION);
                 this.addMavenDependencyManagement('org.jetbrains.kotlin', 'kotlin-stdlib', '${kotlin.version}');
                 this.addMavenDependencyManagement('org.jetbrains.kotlin', 'kotlin-stdlib-jdk7', '${kotlin.version}');
                 this.addMavenDependency('com.fasterxml.jackson.datatype', 'jackson-datatype-json-org');
@@ -2018,6 +2021,49 @@ function writeFiles() {
                     '${maven-compiler-plugin.version}',
                     defaultCompileOther
                 );
+
+                const antRunOther = `                    <executions>
+                        <execution>
+                            <id>ktlint</id>
+                            <phase>verify</phase>
+                            <configuration>
+                                <target name="ktlint">
+                                    <java taskname="ktlint" dir="$\{basedir}" fork="true" failonerror="true"
+                                          classpathref="maven.plugin.classpath" classname="com.github.shyiko.ktlint.Main">
+                                        <arg value="src/**/*.kt"/>
+                                        <!-- to generate report in checkstyle format prepend following args: -->
+                                        <!--<arg value="&#45;&#45;reporter=plain"/>-->
+                                        <!--<arg value="&#45;&#45;reporter=checkstyle,output=$\{project.build.directory}/ktlint.xml"/>-->
+                                        <!-- see https://github.com/shyiko/ktlint#usage for more -->
+                                    </java>
+                                </target>
+                            </configuration>
+                            <goals><goal>run</goal></goals>
+                        </execution>
+                        <execution>
+                            <id>ktlint-format</id>
+                            <configuration>
+                                <target name="ktlint">
+                                    <java taskname="ktlint" dir="$\{basedir}" fork="true" failonerror="true"
+                                          classpathref="maven.plugin.classpath" classname="com.github.shyiko.ktlint.Main">
+                                        <arg value="-F"/>
+                                        <arg value="src/**/*.kt"/>
+                                    </java>
+                                </target>
+                            </configuration>
+                            <goals><goal>run</goal></goals>
+                        </execution>
+                    </executions>
+                    <dependencies>
+                        <dependency>
+                            <groupId>com.github.shyiko</groupId>
+                            <artifactId>ktlint</artifactId>
+                            <version>$\{ktlint.version}</version>
+                        </dependency>
+                        <!-- additional 3rd party ruleset(s) can be specified here -->
+                    </dependencies>
+`;
+                this.addMavenPlugin('org.apache.maven.plugins', 'maven-antrun-plugin', '${maven-antrun-plugin.version}', antRunOther);
             }
         }
     };
