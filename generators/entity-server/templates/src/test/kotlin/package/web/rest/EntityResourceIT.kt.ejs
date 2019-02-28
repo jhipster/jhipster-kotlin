@@ -498,7 +498,6 @@ class <%= entityClass %>ResourceIT <% if (databaseType === 'cassandra') { %>: Ab
                   biggerValue = '{' + defaultValue + ' + 1}';
               }
             _%>
-
     @Test<% if (databaseType === 'sql') { %>
     @Transactional<% } %>
     fun getAll<%= entityClassPlural %>By<%= searchBy.fieldInJavaBeanMethod %>IsGreaterThanOrEqualToSomething() {
@@ -524,7 +523,6 @@ class <%= entityClass %>ResourceIT <% if (databaseType === 'cassandra') { %>: Ab
         // Get all the <%= entityInstance %>List where <%= searchBy.fieldName %> less than or equals to <%= biggerValue %>
         default<%= entityClass %>ShouldBeFound("<%= searchBy.fieldName %>.lessThan=$<%= biggerValue %>")
     }
-
 <%_         } _%>
 <%_     }); _%>
 <%_ relationships.forEach((relationship) => { _%>
@@ -551,10 +549,10 @@ class <%= entityClass %>ResourceIT <% if (databaseType === 'cassandra') { %>: Ab
         default<%= entityClass %>ShouldBeFound("<%= relationship.relationshipFieldName %>Id.equals=$<%= relationship.relationshipFieldName %>Id")
 
         // Get all the <%= entityInstance %>List where <%= relationship.relationshipFieldName %> equals to <%= relationship.relationshipFieldName %>Id + 1
-        default<%= entityClass %>ShouldNotBeFound("<%= relationship.relationshipFieldName %>Id.equals=${<%= relationship.relationshipFieldName %>Id?.plus(1)}" )
+        default<%= entityClass %>ShouldNotBeFound("<%= relationship.relationshipFieldName %>Id.equals=${<%= relationship.relationshipFieldName %>Id?.plus(1)}")
     }
-
 <%_ }); _%>
+
     /**
      * Executes the search, and checks that the default entity is returned
      */
@@ -591,7 +589,6 @@ class <%= entityClass %>ResourceIT <% if (databaseType === 'cassandra') { %>: Ab
             .andExpect(content().contentType(MediaType.APPLICATION_JSON_UTF8_VALUE))
             .andExpect(content().string("0"))
     }
-
 <%_  } _%>
 <%_ if (reactiveRepositories) { _%>
 
@@ -841,7 +838,6 @@ class <%= entityClass %>ResourceIT <% if (databaseType === 'cassandra') { %>: Ab
     <%_ } _%>
 
     companion object {
-
     <%_
         let oldSource = '';
         try {
@@ -980,8 +976,8 @@ class <%= entityClass %>ResourceIT <% if (databaseType === 'cassandra') { %>: Ab
         private val <%=updatedValueName %>: ZonedDateTime = ZonedDateTime.now(ZoneId.systemDefault()).withNano(0)
         <%_ } else if (fieldType === 'Boolean') { _%>
 
-        private const val <%=defaultValueName %>:Boolean = false
-        private const val <%=updatedValueName %>:Boolean = true
+        private const val <%=defaultValueName %>: Boolean = false
+        private const val <%=updatedValueName %>: Boolean = true
         <%_ } else if ((fieldType === 'byte[]' || fieldType === 'ByteBuffer') && fieldTypeBlobContent !== 'text') { _%>
 
         <%_ if (databaseType !== 'cassandra') { _%>
@@ -1007,7 +1003,9 @@ class <%= entityClass %>ResourceIT <% if (databaseType === 'cassandra') { %>: Ab
          */
          @JvmStatic
         fun createEntity(<% if (databaseType === 'sql' && relationships.length>0 ) { %>em: EntityManager<% } %>): <%= asEntity(entityClass) %> {
-            <% if ( fields.length<1 ) { %>val <%= asEntity(entityInstance) %> = <%= asEntity(entityClass) %>()<% } else { %>
+<%_ if ( fields.length<1 ) { _%>
+            val <%= asEntity(entityInstance) %> = <%= asEntity(entityClass) %>()
+<%_ } else { _%>
             val <%= asEntity(entityInstance) %> = <%= asEntity(entityClass) %>(<% for (idx in fields) {
                 const comma = (parseInt(idx,10) === (fields.length - 1)) ?  '' : ','; %>
                 <%= fields[idx].fieldName %> = <%='DEFAULT_' + fields[idx].fieldNameUnderscored.toUpperCase()%><%_ if ((fields[idx].fieldType === 'byte[]' || fields[idx].fieldType === 'ByteBuffer') && fields[idx].fieldTypeBlobContent !== 'text') { _%>,<%_ } else { _%><%= comma %><%_ } _%><%_ if ((fields[idx].fieldType === 'byte[]' || fields[idx].fieldType === 'ByteBuffer') && fields[idx].fieldTypeBlobContent !== 'text') { %>
@@ -1044,6 +1042,5 @@ class <%= entityClass %>ResourceIT <% if (databaseType === 'cassandra') { %>: Ab
             <%_ } } _%>
             return <%= asEntity(entityInstance) %>
         }
-
     }
 }

@@ -38,8 +38,8 @@ import org.springframework.data.cassandra.repository.CassandraRepository
 <%_ } _%>
 import org.springframework.stereotype.Repository
 <%_ if (databaseType === 'sql' || databaseType === 'mongodb') { _%>
-
 <%_ if (fieldsContainOwnerManyToMany) { _%>
+
 import java.util.Optional
     <%_ } _%>
 <%_ } _%>
@@ -53,7 +53,7 @@ import java.util.UUID
  */
 @SuppressWarnings("unused")
 @Repository
-interface <%=entityClass%>Repository: <% if (databaseType === 'sql') { %>JpaRepository<% } %><% if (databaseType === 'mongodb') { %>MongoRepository<% } %><% if (databaseType === 'cassandra') { %>CassandraRepository<% } %><% if (databaseType === 'couchbase') { %>N1qlCouchbaseRepository<% } %><<%= asEntity(entityClass) %>, <%= pkType %>><% if (jpaMetamodelFiltering) { %>, JpaSpecificationExecutor<<%= asEntity(entityClass) %>><% } %> {
+interface <%=entityClass%>Repository : <% if (databaseType === 'sql') { %>JpaRepository<% } %><% if (databaseType === 'mongodb') { %>MongoRepository<% } %><% if (databaseType === 'cassandra') { %>CassandraRepository<% } %><% if (databaseType === 'couchbase') { %>N1qlCouchbaseRepository<% } %><<%= asEntity(entityClass) %>, <%= pkType %>><% if (jpaMetamodelFiltering) { %>, JpaSpecificationExecutor<<%= asEntity(entityClass) %>><% } %> {
     <%_ for (idx in relationships) {
         if (relationships[idx].relationshipType === 'many-to-one' && relationships[idx].otherEntityName === 'user' && databaseType === 'sql') { _%>
 
@@ -77,6 +77,7 @@ interface <%=entityClass%>Repository: <% if (databaseType === 'sql') { %>JpaRepo
     fun findOneWithEagerRelationships(@Param("id") id: <%= pkType %>): Optional<<%= asEntity(entityClass) %>>
     <%_
         } else if (databaseType === 'mongodb')  { _%>
+
     @Query("{}")
     fun findAllWithEagerRelationships(pageable: Pageable): Page<<%= asEntity(entityClass) %>>
 
@@ -87,5 +88,4 @@ interface <%=entityClass%>Repository: <% if (databaseType === 'sql') { %>JpaRepo
     fun findOneWithEagerRelationships(id: <%= pkType %>): Optional<<%= asEntity(entityClass) %>>
     <%_ }
     } _%>
-
 }

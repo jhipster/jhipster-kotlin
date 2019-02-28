@@ -33,8 +33,7 @@ import org.mapstruct.*
       if (!existingMappings.includes(relationships[idx].otherEntityNameCapitalized) && asEntity(relationships[idx].otherEntityNameCapitalized) !== entityClass) {
           existingMappings.push(relationships[idx].otherEntityNameCapitalized);
       } } } %><%= existingMappings.map(otherEntityNameCapitalized => otherEntityNameCapitalized + 'Mapper::class').join(', ') %>])
-interface <%= entityClass %>Mapper: EntityMapper<<%= asDto(entityClass) %>, <%= asEntity(entityClass) %>> {
-
+interface <%= entityClass %>Mapper : EntityMapper<<%= asDto(entityClass) %>, <%= asEntity(entityClass) %>> {
 <%_
 // entity -> DTO mapping
 var mappedRelsEnt = [];
@@ -44,8 +43,9 @@ relationships.forEach( (relationship) => {
     }
 });
 var renMapAnotEnt = mappedRelsEnt.length > 0; //Render Mapping Annotation during Entity to DTO conversion?
-_%>
-    <% if(renMapAnotEnt === true) { %>@Mappings (<% } %>
+if(renMapAnotEnt === true) { _%>
+    @Mappings(
+<%_ } _%>
 <%_
 // entity -> DTO mapping
 mappedRelsEnt.forEach( (relationship, index) => {
@@ -66,7 +66,6 @@ _%>
     )
     override fun toDto(entity: <%= asEntity(entityClass) %>): <%= asDto(entityClass) %>
     <%_ } _%>
-
 <%_
 // DTO -> entity mapping
 var renMapAnotDto = false;  //Render Mapping Annotation during DTO to Entity conversion?
@@ -80,9 +79,8 @@ for (idx in relationships) {
         renMapAnotDto = true;
         break;
     }
-}
-_%>
-    <% if(renMapAnotDto === true) { %>@Mappings (<% } %>
+} if(renMapAnotDto === true) { _%>
+    @Mappings(<% } %>
 <%_
 // var hasOAuthUser = false; // if OAuthuser, use a String id in fromId() method
 for (idx in relationships) {

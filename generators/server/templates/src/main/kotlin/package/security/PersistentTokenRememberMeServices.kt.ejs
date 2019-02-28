@@ -22,8 +22,8 @@ import <%=packageName%>.domain.PersistentToken
 import <%=packageName%>.repository.PersistentTokenRepository
 import <%=packageName%>.repository.UserRepository
 import <%=packageName%>.service.util.RandomUtil
-
 <%_ if (databaseType === 'cassandra') { _%>
+
 import com.datastax.driver.core.exceptions.DriverException
 <%_ } _%>
 
@@ -96,8 +96,11 @@ class PersistentTokenRememberMeServices(
         upgradedTokenCache = PersistentTokenCache(UPGRADED_TOKEN_VALIDITY_MILLIS)
     }
 
-    override fun processAutoLoginCookie(cookieTokens: Array<String>, request: HttpServletRequest,
-                                        response: HttpServletResponse): UserDetails {
+    override fun processAutoLoginCookie(
+        cookieTokens: Array<String>,
+        request: HttpServletRequest,
+        response: HttpServletResponse
+    ): UserDetails {
 
         synchronized(this) { // prevent 2 authentication requests from the same user in parallel
             var login: String? = null
@@ -245,7 +248,7 @@ class PersistentTokenRememberMeServices(
     }
 
     private fun addCookie(token: PersistentToken, request: HttpServletRequest, response: HttpServletResponse) {
-        setCookie( arrayOf(token.series, token.tokenValue), TOKEN_VALIDITY_SECONDS, request, response)
+        setCookie(arrayOf(token.series, token.tokenValue), TOKEN_VALIDITY_SECONDS, request, response)
     }
 
     private class UpgradedRememberMeToken

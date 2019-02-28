@@ -24,7 +24,6 @@ let importSet = false;
 let hasDto = dto === 'mapstruct';
 let isUsingMapsId = false;
 const uniqueEnums = {}; %><%- include imports -%>
-
 <%_ for (idx in relationships) {
         isUsingMapsId = relationships[idx].useJPADerivedIdentifier;
         if ( isUsingMapsId === true) {
@@ -126,7 +125,7 @@ import org.springframework.data.couchbase.core.mapping.id.GenerationStrategy.UNI
 <%_ } if (searchEngine === 'elasticsearch') { _%>
 @org.springframework.data.elasticsearch.annotations.Document(indexName = "<%= entityInstance.toLowerCase() %>")
 <%_ } _%>
-class <%= asEntity(entityClass) %> (
+class <%= asEntity(entityClass) %>(
 
     @Id
     <%_ if (databaseType === 'sql' && isUsingMapsId === false) { _%>
@@ -173,26 +172,26 @@ for (var idx in fields) {
     <%_ if (!hasDto && typeof fields[idx].javadoc != 'undefined') { _%>
     @ApiModelProperty(value = "<%- formatAsApiDescription(fields[idx].javadoc) %>"<% if (required) { %>, required = true<% } %>)
     <%_ } _%>
-    <%_ if (databaseType === 'sql') {
-        if (fields[idx].fieldIsEnum) { _%>
+    <%_ if (databaseType === 'sql') { _%>
+        <%_ if (fields[idx].fieldIsEnum) { _%>
     @Enumerated(EnumType.STRING)
-        <%_ }
-        if (fieldType === 'byte[]') { _%>
+        <%_ }  _%>
+        <%_ if (fieldType === 'byte[]') { _%>
     @Lob
-        <%_ }
-        if (['Instant', 'ZonedDateTime', 'LocalDate'].includes(fieldType)) { _%>
+        <%_ }  _%>
+        <%_if (['Instant', 'ZonedDateTime', 'LocalDate'].includes(fieldType)) { _%>
     @Column(name = "<%-fieldNameAsDatabaseColumn %>"<% if (required) { %>, nullable = false<% } %><% if (unique) { %>, unique = true<% } %>)
         <%_ } else if (fieldType === 'BigDecimal') { _%>
     @Column(name = "<%-fieldNameAsDatabaseColumn %>", precision = 21, scale = 2<% if (required) { %>, nullable = false<% } %><% if (unique) { %>, unique = true<% } %>)
         <%_ } else { _%>
     @Column(name = "<%-fieldNameAsDatabaseColumn %>"<% if (fieldValidate === true) { %><% if (fieldValidateRules.includes('maxlength')) { %>, length = <%= fieldValidateRulesMaxlength %><% } %><% if (required) { %>, nullable = false<% } %><% if (unique) { %>, unique = true<% } %><% } %>)
-        <%_ }
-    } _%>
+        <%_ } _%>
+    <%_ } _%>
     <%_ if (databaseType === 'mongodb' || databaseType === 'couchbase') { _%>
     @Field("<%=fieldNameUnderscored %>")
     <%_ } _%>
     <%_ if (fieldTypeBlobContent !== 'text') { _%>
-    var <%= fieldName %>: <%_ if(fieldType === 'byte[]') { _%>ByteArray<%_ } else if(fieldType==='Integer'){ _%>Int<%_ } else { _%><%= fieldType %><% } %>? = null<%_ if (fieldType === 'byte[]' || fieldType === 'ByteBuffer') { _%>,<%_ } else { _%><%= comma %><%_ } %>
+    var <%= fieldName %>: <% if(fieldType === 'byte[]') { _%>ByteArray<%_ } else if(fieldType==='Integer'){ _%>Int<%_ } else { _%><%= fieldType %><% } %>? = null<%_ if (fieldType === 'byte[]' || fieldType === 'ByteBuffer') { _%>,<%_ } else { _%><%= comma %><%_ } %>
     <%_ } else { _%>
     var <%= fieldName %>: String? = null<%= comma %>
     <%_ } _%>
@@ -209,8 +208,8 @@ for (var idx in fields) {
       <%_ } _%>
     var <%= fieldName %>ContentType: String? = null<%= comma %>
 
+    <%_ } _%>
     <%_ }
-    }
     for (idx in relationships) {
         const otherEntityRelationshipName = relationships[idx].otherEntityRelationshipName;
         const otherEntityRelationshipNamePlural = relationships[idx].otherEntityRelationshipNamePlural;
@@ -320,14 +319,13 @@ for (var idx in fields) {
     <%_ }
     } _%>
     // jhipster-needle-entity-add-field - JHipster will add fields here, do not remove
-): Serializable {
+) : Serializable {
 <%_ if (databaseType === 'couchbase') { _%>
 
     @SuppressWarnings("unused")
     @IdPrefix
     private val prefix: String = PREFIX
 <%_ } _%>
-
 <%_
     for (idx in relationships) {
         const relationshipFieldName = relationships[idx].relationshipFieldName;
