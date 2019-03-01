@@ -2022,47 +2022,51 @@ function writeFiles() {
                     defaultCompileOther
                 );
 
-                const antRunOther = `                    <executions>
-                        <execution>
-                            <id>ktlint</id>
-                            <phase>verify</phase>
-                            <configuration>
-                                <target name="ktlint">
-                                    <java taskname="ktlint" dir="$\{basedir}" fork="true" failonerror="true"
-                                          classpathref="maven.plugin.classpath" classname="com.github.shyiko.ktlint.Main">
-                                        <arg value="src/**/*.kt"/>
-                                        <!-- to generate report in checkstyle format prepend following args: -->
-                                        <!--<arg value="&#45;&#45;reporter=plain"/>-->
-                                        <!--<arg value="&#45;&#45;reporter=checkstyle,output=$\{project.build.directory}/ktlint.xml"/>-->
-                                        <!-- see https://github.com/shyiko/ktlint#usage for more -->
-                                    </java>
-                                </target>
-                            </configuration>
-                            <goals><goal>run</goal></goals>
-                        </execution>
-                        <execution>
-                            <id>ktlint-format</id>
-                            <configuration>
-                                <target name="ktlint">
-                                    <java taskname="ktlint" dir="$\{basedir}" fork="true" failonerror="true"
-                                          classpathref="maven.plugin.classpath" classname="com.github.shyiko.ktlint.Main">
-                                        <arg value="-F"/>
-                                        <arg value="src/**/*.kt"/>
-                                    </java>
-                                </target>
-                            </configuration>
-                            <goals><goal>run</goal></goals>
-                        </execution>
-                    </executions>
-                    <dependencies>
-                        <dependency>
-                            <groupId>com.github.shyiko</groupId>
-                            <artifactId>ktlint</artifactId>
-                            <version>$\{ktlint.version}</version>
-                        </dependency>
-                        <!-- additional 3rd party ruleset(s) can be specified here -->
-                    </dependencies>
-`;
+                const antRunOther = `                <executions>
+                    <execution>
+                        <id>ktlint-format</id>
+                        <phase>validate</phase>
+                        <configuration>
+                            <target name="ktlint">
+                                <java taskname="ktlint" dir="$\{basedir}" fork="true" failonerror="false"
+                                      classpathref="maven.plugin.classpath" classname="com.github.shyiko.ktlint.Main">
+                                    <arg value="-F"/>
+                                    <arg value="src/**/*.kt"/>
+                                </java>
+                            </target>
+                        </configuration>
+                        <goals>
+                            <goal>run</goal>
+                        </goals>
+                    </execution>
+                    <execution>
+                        <id>ktlint</id>
+                        <phase>validate</phase>
+                        <configuration>
+                            <target name="ktlint">
+                                <java taskname="ktlint" dir="$\{basedir}" fork="true" failonerror="false"
+                                      classpathref="maven.plugin.classpath" classname="com.github.shyiko.ktlint.Main">
+                                    <arg value="src/**/*.kt"/>
+                                    <!-- to generate report in checkstyle format prepend following args: -->
+                                    <!--<arg value="&#45;&#45;reporter=plain"/>-->
+                                    <!--<arg value="&#45;&#45;reporter=checkstyle,output=$\{project.build.directory}/ktlint.xml"/>-->
+                                    <!-- see https://github.com/shyiko/ktlint#usage for more -->
+                                </java>
+                            </target>
+                        </configuration>
+                        <goals>
+                            <goal>run</goal>
+                        </goals>
+                    </execution>
+                </executions>
+                <dependencies>
+                    <dependency>
+                        <groupId>com.github.shyiko</groupId>
+                        <artifactId>ktlint</artifactId>
+                        <version>$\{ktlint.version}</version>
+                    </dependency>
+                    <!-- additional 3rd party ruleset(s) can be specified here -->
+                </dependencies>`;
                 this.addMavenPlugin('org.apache.maven.plugins', 'maven-antrun-plugin', '${maven-antrun-plugin.version}', antRunOther);
             }
         }
