@@ -18,6 +18,7 @@
  */
 /* eslint-disable consistent-return */
 const chalk = require('chalk');
+const shelljs = require('shelljs');
 const ServerGenerator = require('generator-jhipster/generators/server');
 const writeFiles = require('./files').writeFiles;
 const kotlinConstants = require('../generator-kotlin-constants');
@@ -64,8 +65,34 @@ module.exports = class extends ServerGenerator {
     }
 
     get writing() {
-        // The writing phase is completely overriden
+        // The writing phase is completely overridden
         return writeFiles();
+    }
+
+    get install() {
+        const phaseFromJHipster = super._install();
+        const myCustomPhaseSteps = {
+            lintFiles() {
+                // Execute the ktlint format command through either Maven or gradle
+                let command;
+                if (this.buildTool === 'gradle') {
+                    command = './gradlew ktlintFormat';
+                } else if (this.buildTool === 'maven') {
+                    command = './mvnw antrun:run@ktlint-format';
+                }
+                if (command) {
+                    const startTime = new Date();
+                    this.info('Running ktlint...');
+                    const exitCode = shelljs.exec(command, { silent: this.silent }).code;
+                    if (exitCode === 0) {
+                        this.info(`Finished formatting Kotlin files in : ${new Date() - startTime}ms`);
+                    } else {
+                        this.warning('Something went wrong while running ktlint formatter...');
+                    }
+                }
+            }
+        };
+        return Object.assign(phaseFromJHipster, myCustomPhaseSteps);
     }
 
     get end() {
