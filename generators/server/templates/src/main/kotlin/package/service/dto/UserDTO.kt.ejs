@@ -74,10 +74,14 @@ open class <%= asDto('User') %>(
 
 ) {
     constructor(user: <%= asEntity('User') %>) :
-        this(user.id, user.login, user.firstName, user.lastName, user.email,
-            <% if (databaseType === 'sql' || databaseType === 'mongodb' || databaseType === 'couchbase') { %>user.imageUrl,<% } %> user.activated, user.langKey,
-            <% if (databaseType === 'mongodb' || databaseType === 'couchbase' || databaseType === 'sql') { %>user.createdBy, user.createdDate, user.lastModifiedBy, user.lastModifiedDate,<%_ } %>
-            <% if (databaseType === 'mongodb' || databaseType === 'sql') { %>user.authorities.map { it.name }.filterNotNullTo(mutableSetOf())<% } else { %>user.authorities<% } %>)
+        this(
+            user.id, user.login, user.firstName, user.lastName, user.email,
+            <% if (databaseType === 'sql' || databaseType === 'mongodb' || databaseType === 'couchbase') { %>user.imageUrl, <% } %>user.activated, user.langKey,
+            <%_ if (databaseType === 'mongodb' || databaseType === 'couchbase' || databaseType === 'sql') { _%>
+            user.createdBy, user.createdDate, user.lastModifiedBy, user.lastModifiedDate,
+            <%_ } _%>
+            <% if (databaseType === 'mongodb' || databaseType === 'sql') { %>user.authorities.map { it.name }.filterNotNullTo(mutableSetOf())<% } else { %>user.authorities<% } %>
+        )
 
     fun isActivated(): Boolean = activated
 
