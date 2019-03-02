@@ -181,12 +181,16 @@ class PersistentTokenRememberMeServices(
         if (rememberMeCookie != null && rememberMeCookie.isNotEmpty()) {
             try {
                 val cookieTokens = decodeCookie(rememberMeCookie)
+                <%_ if (databaseType === 'cassandra') { _%>
+                getPersistentToken(cookieTokens)
+                <%_ } else { _%>
                 val token = getPersistentToken(cookieTokens)
-                <%_ if (databaseType === 'sql') { _%>
+                    <%_ if (databaseType === 'sql') { _%>
                 persistentTokenRepository.deleteById(token.series!!)
-                <%_ } _%>
-                <%_ if (databaseType === 'mongodb' || databaseType === 'couchbase') { _%>
+                    <%_ } _%>
+                    <%_ if (databaseType === 'mongodb' || databaseType === 'couchbase') { _%>
                 persistentTokenRepository.delete(token)
+                    <%_ } _%>
                 <%_ } _%>
             } catch (ice: InvalidCookieException) {
                 log.info("Invalid cookie, no persistent token could be deleted", ice)
