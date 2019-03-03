@@ -2041,7 +2041,6 @@ function writeFiles() {
                     </execution>
                     <execution>
                         <id>ktlint</id>
-                        <phase>validate</phase>
                         <configuration>
                             <target name="ktlint">
                                 <java taskname="ktlint" dir="$\{basedir}" fork="true" failonerror="false"
