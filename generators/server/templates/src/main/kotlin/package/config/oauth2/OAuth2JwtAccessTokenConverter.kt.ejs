@@ -54,9 +54,9 @@ class OAuth2JwtAccessTokenConverter(
      */
     override fun decode(token: String): Map<String, Any> {
         try {
-            //check if our public key and thus SignatureVerifier have expired
+            // check if our public key and thus SignatureVerifier have expired
             val ttl = oAuth2Properties.signatureVerification.ttl
-            if (ttl > 0 && System.currentTimeMillis() - lastKeyFetchTimestamp > ttl) {
+            if (ttl != null && ttl > 0 && System.currentTimeMillis() - lastKeyFetchTimestamp > ttl) {
                 throw InvalidTokenException("public key expired")
             }
             return super.decode(token)
@@ -75,7 +75,7 @@ class OAuth2JwtAccessTokenConverter(
      */
     private fun tryCreateSignatureVerifier(): Boolean {
         val time = System.currentTimeMillis()
-        if (time - lastKeyFetchTimestamp < oAuth2Properties.signatureVerification.publicKeyRefreshRateLimit) {
+        if (time - lastKeyFetchTimestamp < oAuth2Properties.signatureVerification.publicKeyRefreshRateLimit ?: 0) {
             return false
         }
         try {

@@ -40,7 +40,20 @@ import org.springframework.transaction.annotation.Transactional
 import io.github.jhipster.service.QueryService
 
 import <%=packageName%>.domain.<%= asEntity(entityClass) %>
-import <%=packageName%>.domain.* // for static metamodels
+import <%=packageName%>.domain.<%= asEntity(entityClass) %>_
+<%_
+    var mappedRelsTypes = [];
+    relationships.forEach((relationship) => {
+        var relType = asEntity(relationship.otherEntityNameCapitalized);
+        if (!mappedRelsTypes.includes(relType)) {
+            mappedRelsTypes.push(relType);
+        }
+    });
+    mappedRelsTypes.sort();
+    mappedRelsTypes.forEach((relType) => {
+_%>
+import <%=packageName%>.domain.<%= relType %>_
+<%_ }); _%>
 import <%=packageName%>.repository.<%= entityClass %>Repository<% if (searchEngine === 'elasticsearch') { %>
 import <%=packageName%>.repository.search.<%= entityClass %>SearchRepository<% } %>
 import <%=packageName%>.service.dto.<%= entityClass %>Criteria

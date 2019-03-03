@@ -19,7 +19,8 @@
 package <%=packageName%>.repository
 
 <%_ if (databaseType === 'cassandra') { _%>
-import com.datastax.driver.core.*
+import com.datastax.driver.core.BatchStatement
+import com.datastax.driver.core.Session
 import com.datastax.driver.mapping.MappingManager
 
 <%_ } _%>
@@ -83,19 +84,21 @@ class PersistentTokenRepository (private val session: Session, private val valid
 
     private val findPersistentTokenSeriesByUserIdStmt = session.prepare(
         "SELECT persistent_token_series " +
-        "FROM persistent_token_by_user " +
-        "WHERE user_id = :user_id")
+            "FROM persistent_token_by_user " +
+            "WHERE user_id = :user_id"
+    )
 
     private val insertPersistentTokenSeriesByUserIdStmt = session.prepare(
         "INSERT INTO persistent_token_by_user (user_id, persistent_token_series) " +
             "VALUES (:user_id, :persistent_token_series) " +
-            "USING TTL 2592000")// 30 days
-
+            "USING TTL 2592000"
+    ) // 30 days
 
     private val insertPersistentTokenStmt = session.prepare(
         "INSERT INTO persistent_token (series, token_date, user_agent, token_value, login, user_id, ip_address) " +
             "VALUES (:series, :token_date, :user_agent, :token_value, :login, :user_id, :ip_address) " +
-            "USING TTL 2592000")// 30 days
+            "USING TTL 2592000"
+    ) // 30 days
 
     private val deletePersistentTokenSeriesByUserIdStmt = session.prepare(
         "DELETE FROM persistent_token_by_user WHERE user_id = :user_id AND persistent_token_series = :persistent_token_series"
@@ -123,24 +126,30 @@ class PersistentTokenRepository (private val session: Session, private val valid
             throw ConstraintViolationException(violations)
         }
         val batch = BatchStatement()
-        batch.add(insertPersistentTokenStmt.bind()
-            .setString("series", token.series)
-            .setTimestamp("token_date", token.tokenDate)
-            .setString("user_agent", token.userAgent)
-            .setString("token_value", token.tokenValue)
-            .setString("login", token.login)
-            .setString("user_id", token.userId)
-            .setString("ip_address", token.ipAddress))
-        batch.add(insertPersistentTokenSeriesByUserIdStmt.bind()
-            .setString("user_id", token.userId)
-            .setString("persistent_token_series", token.series))
+        batch.add(
+            insertPersistentTokenStmt.bind()
+                .setString("series", token.series)
+                .setTimestamp("token_date", token.tokenDate)
+                .setString("user_agent", token.userAgent)
+                .setString("token_value", token.tokenValue)
+                .setString("login", token.login)
+                .setString("user_id", token.userId)
+                .setString("ip_address", token.ipAddress)
+        )
+        batch.add(
+            insertPersistentTokenSeriesByUserIdStmt.bind()
+                .setString("user_id", token.userId)
+                .setString("persistent_token_series", token.series)
+        )
         session.execute(batch)
     }
 
     fun delete(token: PersistentToken) {
         mapper.delete(token)
-        session.execute(deletePersistentTokenSeriesByUserIdStmt.bind()
-            .setString("user_id", token.userId)
-            .setString("persistent_token_series", token.series))
+        session.execute(
+            deletePersistentTokenSeriesByUserIdStmt.bind()
+                .setString("user_id", token.userId)
+                .setString("persistent_token_series", token.series)
+        )
     }
 }<% } %>

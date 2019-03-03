@@ -21,9 +21,10 @@ package <%=packageName%>.repository<% if (reactive) { %>.reactive<% } %>
 import <%=packageName%>.domain.<%= asEntity('User') %>
 
 <%_ if (databaseType === 'cassandra') { _%>
-import com.datastax.driver.core.*
+import com.datastax.driver.core.BatchStatement
+import com.datastax.driver.core.BoundStatement
+import com.datastax.driverMapper.core.Session
     <%_ if (!reactive) { _%>
-import com.datastax.driver.mapping.Mapper
 import com.datastax.driver.mapping.MappingManager
     <%_ } else { _%>
 import com.datastax.driver.core.querybuilder.Insert
@@ -190,60 +191,73 @@ class UserRepository(
     private val findOneByActivationKeyStmt = session.prepare(
         "SELECT id " +
             "FROM user_by_activation_key " +
-            "WHERE activation_key = :activation_key")<% if(reactive) { %>.block()<% } %>
+            "WHERE activation_key = :activation_key"
+    )<% if(reactive) { %>.block()<% } %>
 
     private val findOneByResetKeyStmt = session.prepare(
         "SELECT id " +
             "FROM user_by_reset_key " +
-            "WHERE reset_key = :reset_key")<% if(reactive) { %>.block()<% } %>
+            "WHERE reset_key = :reset_key"
+    )<% if(reactive) { %>.block()<% } %>
 
     private val insertByActivationKeyStmt = session.prepare(
         "INSERT INTO user_by_activation_key (activation_key, id) " +
-            "VALUES (:activation_key, :id)")<% if(reactive) { %>.block()<% } %>
+            "VALUES (:activation_key, :id)"
+   )<% if(reactive) { %>.block()<% } %>
 
     private val insertByResetKeyStmt = session.prepare(
         "INSERT INTO user_by_reset_key (reset_key, id) " +
-            "VALUES (:reset_key, :id)")<% if(reactive) { %>.block()<% } %>
+            "VALUES (:reset_key, :id)"
+    )<% if(reactive) { %>.block()<% } %>
 
     <%_ if(reactive) { _%>
     private val deleteByIdStmt = session.prepare(
         "DELETE FROM user " +
-                "WHERE id = :id").block()
+                "WHERE id = :id"
+    ).block()
 
     <%_ } _%>
     private val deleteByActivationKeyStmt = session.prepare(
         "DELETE FROM user_by_activation_key " +
-            "WHERE activation_key = :activation_key")<% if(reactive) { %>.block()<% } %>
+            "WHERE activation_key = :activation_key"
+    )<% if(reactive) { %>.block()<% } %>
 
     private val deleteByResetKeyStmt = session.prepare(
         "DELETE FROM user_by_reset_key " +
-            "WHERE reset_key = :reset_key")<% if(reactive) { %>.block()<% } %>
+            "WHERE reset_key = :reset_key"
+    )<% if(reactive) { %>.block()<% } %>
 
     private val findOneByLoginStmt = session.prepare(
         "SELECT id " +
             "FROM user_by_login " +
-            "WHERE login = :login")<% if(reactive) { %>.block()<% } %>
+            "WHERE login = :login"
+    )<% if(reactive) { %>.block()<% } %>
 
     private val insertByLoginStmt = session.prepare(
         "INSERT INTO user_by_login (login, id) " +
-            "VALUES (:login, :id)")<% if(reactive) { %>.block()<% } %>
+            "VALUES (:login, :id)"
+    )<% if(reactive) { %>.block()<% } %>
 
     private val deleteByLoginStmt = session.prepare(
         "DELETE FROM user_by_login " +
-            "WHERE login = :login")<% if(reactive) { %>.block()<% } %>
+            "WHERE login = :login"
+    )<% if(reactive) { %>.block()<% } %>
 
     private val findOneByEmailStmt = session.prepare(
         "SELECT id " +
             "FROM user_by_email " +
-            "WHERE email     = :email")<% if(reactive) { %>.block()<% } %>
+            "WHERE email     = :email"
+    )<% if(reactive) { %>.block()<% } %>
 
     private val insertByEmailStmt = session.prepare(
         "INSERT INTO user_by_email (email, id) " +
-            "VALUES (:email, :id)")<% if(reactive) { %>.block()<% } %>
+            "VALUES (:email, :id)"
+    )<% if(reactive) { %>.block()<% } %>
 
     private val deleteByEmailStmt = session.prepare(
         "DELETE FROM user_by_email " +
-            "WHERE email = :email")<% if(reactive) { %>.block()<% } %>
+            "WHERE email = :email"
+    )<% if(reactive) { %>.block()<% } %>
 
     private val truncateStmt = session.prepare("TRUNCATE user")<% if(reactive) { %>.block()<% } %>
 
@@ -330,28 +344,36 @@ class UserRepository(
             if (!StringUtils.isEmpty(oldUser.login) && oldUser.login != user.login) {
                 session.execute(deleteByLoginStmt.bind().setString("login", oldUser.login))
             }
-            if (!StringUtils.isEmpty(oldUser.email) && !oldUser.email.equals(user.email, ignoreCase=true)) {
+            if (!StringUtils.isEmpty(oldUser.email) && !oldUser.email.equals(user.email, ignoreCase = true)) {
                 session.execute(deleteByEmailStmt.bind().setString("email", oldUser.email!!.toLowerCase()))
             }
         }
         val batch = BatchStatement()
         batch.add(mapper.saveQuery(user))
         if (!StringUtils.isEmpty(user.activationKey)) {
-            batch.add(insertByActivationKeyStmt.bind()
-                .setString("activation_key", user.activationKey)
-                .setString("id", user.id))
+            batch.add(
+                insertByActivationKeyStmt.bind()
+                    .setString("activation_key", user.activationKey)
+                    .setString("id", user.id)
+            )
         }
         if (!StringUtils.isEmpty(user.resetKey)) {
-            batch.add(insertByResetKeyStmt.bind()
-                .setString("reset_key", user.resetKey)
-                .setString("id", user.id))
+            batch.add(
+                insertByResetKeyStmt.bind()
+                    .setString("reset_key", user.resetKey)
+                    .setString("id", user.id)
+            )
         }
-        batch.add(insertByLoginStmt.bind()
-            .setString("login", user.login)
-            .setString("id", user.id))
-        batch.add(insertByEmailStmt.bind()
-            .setString("email", user.email!!.toLowerCase())
-            .setString("id", user.id))
+        batch.add(
+            insertByLoginStmt.bind()
+                .setString("login", user.login)
+                .setString("id", user.id)
+        )
+        batch.add(
+            insertByEmailStmt.bind()
+                .setString("email", user.email!!.toLowerCase())
+                .setString("id", user.id)
+        )
         session.execute(batch)
         return user
         <%_ } else { // reactive _%>

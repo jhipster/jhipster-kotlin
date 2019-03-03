@@ -62,13 +62,17 @@ class OAuth2CookieHelper(private val oAuth2Properties: OAuth2Properties) {
     /**
      * Create cookies using the provided values.
      *
-     * @param request     the request we are handling.
+     * @param request the request we are handling.
      * @param accessToken the access token and enclosed refresh token for our cookies.
-     * @param rememberMe  whether the user had originally checked "remember me".
-     * @param result      will get the resulting cookies set.
+     * @param rememberMe whether the user had originally checked "remember me".
+     * @param result will get the resulting cookies set.
      */
-    fun createCookies(request: HttpServletRequest, accessToken: OAuth2AccessToken, rememberMe: Boolean,
-                      result: OAuth2Cookies) {
+    fun createCookies(
+        request: HttpServletRequest,
+        accessToken: OAuth2AccessToken,
+        rememberMe: Boolean,
+        result: OAuth2Cookies
+    ) {
         val domain = getCookieDomain(request)
         log.debug("creating cookies for domain {}", domain)
         val accessTokenCookie = Cookie(ACCESS_TOKEN_COOKIE, accessToken.value)
@@ -97,13 +101,13 @@ class OAuth2CookieHelper(private val oAuth2Properties: OAuth2Properties) {
         val value = refreshToken.value
         if (rememberMe) {
             name = REFRESH_TOKEN_COOKIE
-            //get expiration in seconds from the token's "exp" claim
+            // get expiration in seconds from the token's "exp" claim
             val exp = getClaim(refreshToken.value, AccessTokenConverter.EXP, Integer::class.java)
             if (exp != null) {
                 val now = (System.currentTimeMillis() / 1000L).toInt()
                 maxAge = exp.toInt() - now
                 log.debug("refresh token valid for another {} secs", maxAge)
-                //let cookie expire a bit earlier than the token to avoid race conditions
+                // let cookie expire a bit earlier than the token to avoid race conditions
                 maxAge -= REFRESH_TOKEN_EXPIRATION_WINDOW_SECS.toInt()
             }
         }
@@ -122,29 +126,28 @@ class OAuth2CookieHelper(private val oAuth2Properties: OAuth2Properties) {
      * @return true, if the session is expired.
      */
     fun isSessionExpired(refreshCookie: Cookie): Boolean {
-        if (isRememberMe(refreshCookie)) {       //no session expiration for "remember me"
+        if (isRememberMe(refreshCookie)) { // no session expiration for "remember me"
             return false
         }
-        //read non-remember-me session length in secs
+        // read non-remember-me session length in secs
         val validity = oAuth2Properties.webClientConfiguration.sessionTimeoutInSeconds
-        if (validity < 0) {           //no session expiration configured
+        if (validity == null || validity < 0) { // no session expiration configured
             return false
         }
-        val iat = getClaim(refreshCookie.value, "iat", Integer::class.java)
-            ?: //token creating timestamp in secs is missing, session does not expire
-            return false
+        // token creating timestamp in secs is missing, session does not expire
+        val iat = getClaim(refreshCookie.value, "iat", Integer::class.java) ?: return false
         val now = (System.currentTimeMillis() / 1000L).toInt()
         val sessionDuration = now - iat.toInt()
         log.debug("session duration {} secs, will timeout at {}", sessionDuration, validity)
-        return sessionDuration > validity //session has expired
+        return sessionDuration > validity // session has expired
     }
 
     /**
      * Retrieve the given claim from the given token.
      *
      * @param refreshToken the JWT token to examine.
-     * @param claimName    name of the claim to get.
-     * @param clazz        the [Class] we expect to find there.
+     * @param claimName name of the claim to get.
+     * @param clazz the [Class] we expect to find there.
      * @return the desired claim.
      * @throws InvalidTokenException if we cannot find the claim in the token or it is of wrong type.
      */
@@ -162,14 +165,14 @@ class OAuth2CookieHelper(private val oAuth2Properties: OAuth2Properties) {
     /**
      * Set cookie properties of access and refresh tokens.
      *
-     * @param cookie   the cookie to modify.
+     * @param cookie the cookie to modify.
      * @param isSecure whether it is coming from a secure request.
-     * @param domain   the domain for which the cookie is valid. If `null`, then will fall back to default.
+     * @param domain the domain for which the cookie is valid. If `null`, then will fall back to default.
      */
     private fun setCookieProperties(cookie: Cookie, isSecure: Boolean, domain: String?) {
         cookie.isHttpOnly = true
         cookie.path = "/"
-        cookie.secure = isSecure       //if the request comes per HTTPS set the secure option on the cookie
+        cookie.secure = isSecure // if the request comes per HTTPS set the secure option on the cookie
         if (domain != null) {
             cookie.domain = domain
         }
@@ -178,7 +181,7 @@ class OAuth2CookieHelper(private val oAuth2Properties: OAuth2Properties) {
     /**
      * Logs the user out by clearing all cookies.
      *
-     * @param httpServletRequest  the request containing the Cookies.
+     * @param httpServletRequest the request containing the Cookies.
      * @param httpServletResponse the response used to clear them.
      */
     fun clearCookies(httpServletRequest: HttpServletRequest, httpServletResponse: HttpServletResponse) {
@@ -188,8 +191,12 @@ class OAuth2CookieHelper(private val oAuth2Properties: OAuth2Properties) {
         }
     }
 
-    private fun clearCookie(httpServletRequest: HttpServletRequest, httpServletResponse: HttpServletResponse,
-                            domain: String?, cookieName: String) {
+    private fun clearCookie(
+        httpServletRequest: HttpServletRequest,
+        httpServletResponse: HttpServletResponse,
+        domain: String?,
+        cookieName: String
+    ) {
         val cookie = Cookie(cookieName, "")
         setCookieProperties(cookie, httpServletRequest.isSecure, domain)
         cookie.maxAge = 0
@@ -287,7 +294,7 @@ class OAuth2CookieHelper(private val oAuth2Properties: OAuth2Properties) {
         /**
          * Get a cookie by name from the given servlet request.
          *
-         * @param request    the request containing the cookie.
+         * @param request the request containing the cookie.
          * @param cookieName the case-sensitive name of the cookie to get.
          * @return the resulting [Cookie]; or `null`, if not found.
          */
