@@ -7,14 +7,15 @@ const expectedFiles = require('./utils/expected-files');
 
 describe('JHipster server generator', () => {
     describe('generate server', () => {
-        beforeEach(done => {
+        before(done => {
             helpers
                 .run('generator-jhipster/generators/server')
                 .withOptions({
                     'from-cli': true,
                     skipInstall: true,
                     blueprint: 'kotlin',
-                    skipChecks: true
+                    skipChecks: true,
+                    'skip-ktlint-format': true
                 })
                 .withGenerators([
                     [

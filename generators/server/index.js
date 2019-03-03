@@ -34,6 +34,14 @@ module.exports = class extends ServerGenerator {
         }
 
         this.configOptions = jhContext.configOptions || {};
+
+        // This adds support for a `--skip-ktlint-format` flag
+        this.option('skip-ktlint-format', {
+            desc: 'Indicates to skip formatting using ktlint',
+            type: Boolean,
+            defaults: false
+        });
+
         // This sets up options for this sub generator and is being reused from JHipster
         jhContext.setupServerOptions(this, jhContext);
     }
@@ -73,6 +81,11 @@ module.exports = class extends ServerGenerator {
         const phaseFromJHipster = super._install();
         const myCustomPhaseSteps = {
             lintFiles() {
+                if (this.options['skip-ktlint-format']) {
+                    this.log('Skipping ktlint format...');
+                    return;
+                }
+
                 // Execute the ktlint format command through either Maven or gradle
                 let command;
                 if (this.buildTool === 'gradle') {

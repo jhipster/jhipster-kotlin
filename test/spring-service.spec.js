@@ -8,7 +8,7 @@ const SERVER_MAIN_SRC_DIR = `${constants.MAIN_DIR}kotlin/`;
 
 describe('JHipster generator service', () => {
     describe('creates service without interface', () => {
-        beforeEach(done => {
+        before(done => {
             helpers
                 .run(require.resolve('../generators/spring-service'))
                 .withOptions({
@@ -37,7 +37,7 @@ describe('JHipster generator service', () => {
     });
 
     describe('creates service with interface', () => {
-        beforeEach(done => {
+        before(done => {
             helpers
                 .run(require.resolve('../generators/spring-service'))
                 .withOptions({
@@ -65,7 +65,7 @@ describe('JHipster generator service', () => {
     });
 
     describe('creates service with --default flag', () => {
-        beforeEach(done => {
+        before(done => {
             helpers
                 .run(require.resolve('../generators/spring-service'))
                 .withOptions({
