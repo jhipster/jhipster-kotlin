@@ -298,9 +298,15 @@ const serverFiles = {
             ]
         },
         {
-            condition: generator => !shouldSkipUserManagement(generator) && generator.authenticationType === 'session',
+            condition: generator =>
+                !shouldSkipUserManagement(generator) && generator.authenticationType === 'session' && !generator.reactive,
             path: SERVER_MAIN_KOTLIN_SRC_DIR,
             templates: [
+                {
+                    file: 'package/security/PersistentTokenRememberMeServices.kt',
+                    renameTo: generator => `${generator.javaDir}security/PersistentTokenRememberMeServices.kt`,
+                    useBluePrint: true
+                },
                 {
                     file: 'package/domain/PersistentToken.kt',
                     renameTo: generator => `${generator.javaDir}domain/PersistentToken.kt`,
@@ -309,11 +315,6 @@ const serverFiles = {
                 {
                     file: 'package/repository/PersistentTokenRepository.kt',
                     renameTo: generator => `${generator.javaDir}repository/PersistentTokenRepository.kt`,
-                    useBluePrint: true
-                },
-                {
-                    file: 'package/security/PersistentTokenRememberMeServices.kt',
-                    renameTo: generator => `${generator.javaDir}security/PersistentTokenRememberMeServices.kt`,
                     useBluePrint: true
                 }
             ]
@@ -736,9 +737,15 @@ const serverFiles = {
             templates: [
                 {
                     file: 'package/Application.kt',
-                    useBluePrint: true,
-                    renameTo: generator => `${generator.javaDir}${generator.mainClass}.kt`
-                },
+                    renameTo: generator => `${generator.javaDir}${generator.mainClass}.kt`,
+                    useBluePrint: true
+                }
+            ]
+        },
+        {
+            condition: generator => !generator.reactive,
+            path: SERVER_MAIN_KOTLIN_SRC_DIR,
+            templates: [
                 {
                     file: 'package/ApplicationWebXml.kt',
                     renameTo: generator => `${generator.javaDir}ApplicationWebXml.kt`,
@@ -1093,7 +1100,7 @@ const serverFiles = {
             ]
         },
         {
-            condition: generator => !generator.skipClient,
+            condition: generator => !generator.skipClient && !generator.reactive,
             path: SERVER_MAIN_KOTLIN_SRC_DIR,
             templates: [
                 {
@@ -1181,7 +1188,7 @@ const serverFiles = {
             ]
         },
         {
-            condition: generator => !generator.skipClient,
+            condition: generator => !generator.skipClient && !generator.reactive,
             path: SERVER_TEST_SRC_KOTLIN_DIR,
             templates: [
                 {

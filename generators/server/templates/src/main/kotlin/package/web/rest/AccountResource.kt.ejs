@@ -78,7 +78,7 @@ class AccountResource(private val userService: UserService) {
     }
 }
 <%_ } else { _%>
-<%_ if (authenticationType === 'session') { _%>
+<%_ if (authenticationType === 'session' && !reactive) { _%>
 import <%=packageName%>.domain.PersistentToken
 import <%=packageName%>.repository.PersistentTokenRepository
 <%_ } _%>
@@ -105,7 +105,7 @@ import reactor.core.publisher.Mono
 import javax.servlet.http.HttpServletRequest
 <%_ } _%>
 import javax.validation.Valid
-<%_ if (authenticationType === 'session') { _%>
+<%_ if (authenticationType === 'session' && !reactive) { _%>
 import java.io.UnsupportedEncodingException
 import java.net.URLDecoder
 <%_ } _%>
@@ -121,7 +121,7 @@ import java.security.Principal
 class AccountResource(
     private val userRepository: UserRepository,
     private val userService: UserService,
-    private val mailService: MailService<% if (authenticationType === 'session') { %>,
+    private val mailService: MailService<% if (authenticationType === 'session' && !reactive) { %>,
     private val persistentTokenRepository: PersistentTokenRepository<%_ } %>
 ) {
 
@@ -262,7 +262,7 @@ class AccountResource(
             throw InvalidPasswordException()
         }
         <% if (reactive) { %>return <% } %>userService.changePassword(passwordChangeDto.currentPassword!!, passwordChangeDto.newPassword!!)
-    }<% if (authenticationType === 'session') { %>
+    }<% if (authenticationType === 'session' && !reactive) { %>
 
     /**
      * GET  /account/sessions : get the current open sessions.

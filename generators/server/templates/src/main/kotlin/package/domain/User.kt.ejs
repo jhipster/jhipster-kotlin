@@ -39,6 +39,9 @@ import org.springframework.data.couchbase.core.mapping.id.GeneratedValue
 import org.springframework.data.couchbase.core.mapping.id.IdAttribute
 import org.springframework.data.couchbase.core.mapping.id.IdPrefix
 <%_ } _%>
+<%_ if (searchEngine === 'elasticsearch') { _%>
+import org.springframework.data.elasticsearch.annotations.FieldType
+<%_ } _%>
 
 <%_ if (databaseType === 'sql') { _%>
 import javax.persistence.*
@@ -78,6 +81,9 @@ class <%= asEntity('User') %> @JvmOverloads constructor(
     @GeneratedValue(strategy = GenerationType.SEQUENCE, generator = "sequenceGenerator")
     @SequenceGenerator(name = "sequenceGenerator")
     <%_ } _%>
+    <%_ if (searchEngine === 'elasticsearch') { _%>
+    @org.springframework.data.elasticsearch.annotations.Field(type = FieldType.Keyword)
+    <%_ } _%>
     var id: <% if (authenticationType === 'oauth2') { %>String?<% } else { %>Long?<% } %> = null,
 <%_ } else { _%>
 <%_ if (databaseType === 'mongodb' || databaseType === 'couchbase') { _%>
@@ -85,6 +91,9 @@ class <%= asEntity('User') %> @JvmOverloads constructor(
     @Id<% } %><% if (databaseType === 'couchbase') { %>
     @GeneratedValue(strategy = USE_ATTRIBUTES, delimiter = ID_DELIMITER)<% } %><% if (databaseType === 'cassandra') { %>
     @PartitionKey<% } %>
+    <%_ if (searchEngine === 'elasticsearch') { _%>
+    @org.springframework.data.elasticsearch.annotations.Field(type = FieldType.Keyword)
+    <%_ } _%>
     var id: String? = null,
 <%_ } _%>
 

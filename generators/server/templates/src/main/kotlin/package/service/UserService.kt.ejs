@@ -25,7 +25,7 @@ import <%=packageName%>.domain.Authority
 import <%=packageName%>.domain.<%= asEntity('User') %>
 <%_ if (databaseType === 'sql' || databaseType === 'mongodb' || databaseType === 'couchbase') { _%>
 import <%=packageName%>.repository<% if (reactive) { %>.reactive<% } %>.AuthorityRepository
-    <%_ if (authenticationType === 'session') { _%>
+    <%_ if (authenticationType === 'session' && !reactive) { _%>
 import <%=packageName%>.repository.PersistentTokenRepository
     <%_ } _%>
 <%_ } _%>
@@ -75,7 +75,7 @@ import reactor.core.publisher.Flux
 import reactor.core.publisher.Mono
 <%_ } _%>
 
-<%_ if ((databaseType === 'sql' || databaseType === 'mongodb' || databaseType === 'couchbase') && authenticationType === 'session') { _%>
+<%_ if ((databaseType === 'sql' || databaseType === 'mongodb' || databaseType === 'couchbase') && authenticationType === 'session' && !reactive) { _%>
 import java.time.LocalDate
 <%_ } _%>
 import java.time.Instant
@@ -96,7 +96,7 @@ import java.util.stream.Stream
 class UserService(
     private val userRepository: UserRepository<%_ if (authenticationType !== 'oauth2') { _%>,
     private val passwordEncoder: PasswordEncoder<%_ } if (searchEngine === 'elasticsearch') { _%>,
-    private val userSearchRepository: UserSearchRepository<%_ } if (databaseType === 'sql' || databaseType === 'mongodb' || databaseType === 'couchbase') { if (authenticationType === 'session') { _%>,
+    private val userSearchRepository: UserSearchRepository<%_ } if (databaseType === 'sql' || databaseType === 'mongodb' || databaseType === 'couchbase') { if (authenticationType === 'session' && !reactive) { _%>,
     private val persistentTokenRepository: PersistentTokenRepository<%_ } _%>,
     private val authorityRepository: AuthorityRepository<%_ } if (cacheManagerIsAvailable === true) { _%>,
     private val cacheManager: CacheManager
@@ -613,7 +613,7 @@ class UserService(
     fun getUserWithAuthorities(): <% if (reactive) { %>Mono<% } else { %>Optional<% } %><<%= asEntity('User') %>> {
         return SecurityUtils.getCurrentUserLogin().flatMap(userRepository::findOne<% if (databaseType === 'sql') { %>WithAuthorities<% } %>ByLogin)
     }
-    <%_ if ((databaseType === 'sql' || databaseType === 'mongodb' || databaseType === 'couchbase') && authenticationType === 'session') { _%>
+    <%_ if ((databaseType === 'sql' || databaseType === 'mongodb' || databaseType === 'couchbase') && authenticationType === 'session' && !reactive) { _%>
 
     /**
      * Persistent Token are used for providing automatic authentication, they should be automatically deleted after
