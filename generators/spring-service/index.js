@@ -52,11 +52,10 @@ module.exports = class extends BaseGenerator {
             initializing() {
                 this.log(`The service ${this.name} is being created.`);
                 const configuration = this.getAllJhipsterConfig(this, true);
-                const blueprintConfiguration = this.getJhipsterAppConfig('generator-jhipster-kotlin');
-                this.baseName = blueprintConfiguration.baseName || configuration.get('baseName');
-                this.packageName = blueprintConfiguration.packageName || configuration.get('packageName');
-                this.packageFolder = blueprintConfiguration.packageFolder || configuration.get('packageFolder');
-                this.databaseType = blueprintConfiguration.databaseType || configuration.get('databaseType');
+                this.baseName = configuration.get('baseName');
+                this.packageName = configuration.get('packageName');
+                this.packageFolder = configuration.get('packageFolder');
+                this.databaseType = configuration.get('databaseType');
             }
         };
     }
