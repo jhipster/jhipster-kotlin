@@ -55,12 +55,13 @@ import org.springframework.beans.factory.annotation.Value
 import org.springframework.data.domain.PageImpl
     <%_ } _%>
 import org.springframework.data.domain.Pageable
-import javax.servlet.http.HttpServletRequest
 <%_ } _%>
 import org.springframework.http.HttpStatus
 import org.springframework.http.ResponseEntity
 import org.springframework.security.access.prepost.PreAuthorize
+import org.springframework.util.MultiValueMap
 import org.springframework.web.bind.annotation.*
+import org.springframework.web.util.UriComponentsBuilder
 <%_ if (reactive) { _%>
 import org.springframework.web.server.ResponseStatusException
 import reactor.core.publisher.Flux
@@ -248,15 +249,15 @@ class UserResource(
     @GetMapping("/users")
     <%_ if (databaseType === 'sql' || databaseType === 'mongodb' || databaseType === 'couchbase') { _%>
         <%_ if (!reactive) { _%>
-    fun getAllUsers(request: HttpServletRequest, pageable: Pageable): ResponseEntity<List<<%= asDto('User') %>>> {
+    fun getAllUsers(@RequestParam queryParams: MultiValueMap<String, String>, uriBuilder: UriComponentsBuilder, pageable: Pageable): ResponseEntity<List<<%= asDto('User') %>>> {
         val page = userService.getAllManagedUsers(pageable)
-        val headers = PaginationUtil.generatePaginationHttpHeaders(request, page)
+        val headers = PaginationUtil.generatePaginationHttpHeaders(uriBuilder.queryParams(queryParams), page)
         return ResponseEntity(page.content, headers, HttpStatus.OK)
         <%_ } else { _%>
-    fun getAllUsers(request: HttpServletRequest, pageable: Pageable): Mono<ResponseEntity<Flux<<%= asDto('User') %>>>> {
+    fun getAllUsers(@RequestParam queryParams: MultiValueMap<String, String>, uriBuilder: UriComponentsBuilder, pageable: Pageable): Mono<ResponseEntity<Flux<<%= asDto('User') %>>>> {
         return userService.countManagedUsers()
             .map { total -> PageImpl(mutableListOf<<%= asDto('User') %>>(), pageable, total!!) }
-            .map { page -> PaginationUtil.generatePaginationHttpHeaders(request, page) }
+            .map { page -> PaginationUtil.generatePaginationHttpHeaders(uriBuilder.queryParams(queryParams), page) }
             .map { headers -> ResponseEntity.ok().headers(headers).body(userService.getAllManagedUsers(pageable)) }
         <%_ } _%>
     }
@@ -271,9 +272,8 @@ class UserResource(
         return userService.getAuthorities()<% if (reactive) { %>.collectList()<% } %>
     }
     <%_ } else { // Cassandra _%>
-    fun getAllUsers(): ResponseEntity<List<<%= asDto('User') %>>> {
-        val userDTOs = userService.getAllManagedUsers()
-        return ResponseEntity(userDTOs, HttpStatus.OK)
+    fun getAllUsers(): <% if (reactive) { %>Flux<% } else { %>List<% } %><<%= asDto('User') %>> {
+        return userService.getAllManagedUsers()
     }
     <%_ } _%>
 
