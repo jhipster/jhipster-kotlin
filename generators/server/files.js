@@ -320,17 +320,35 @@ const serverFiles = {
             ]
         },
         {
-            condition: generator => !shouldSkipUserManagement(generator) && generator.authenticationType === 'oauth2',
+            condition: generator =>
+                generator.authenticationType === 'oauth2' && ['monolith', 'gateway'].includes(generator.applicationType),
             path: SERVER_MAIN_KOTLIN_SRC_DIR,
             templates: [
                 {
-                    file: 'package/config/OAuth2Configuration.kt',
-                    renameTo: generator => `${generator.javaDir}config/OAuth2Configuration.kt`,
+                    file: 'package/security/oauth2/AuthRedirectController.kt',
+                    renameTo: generator => `${generator.javaDir}security/oauth2/AuthRedirectController.kt`,
                     useBluePrint: true
-                },
+                }
+            ]
+        },
+        {
+            condition: generator => generator.authenticationType === 'oauth2',
+            path: SERVER_MAIN_KOTLIN_SRC_DIR,
+            templates: [
                 {
-                    file: 'package/security/OAuth2AuthenticationSuccessHandler.kt',
-                    renameTo: generator => `${generator.javaDir}security/OAuth2AuthenticationSuccessHandler.kt`,
+                    file: 'package/security/oauth2/AudienceValidator.kt',
+                    renameTo: generator => `${generator.javaDir}security/oauth2/AudienceValidator.kt`,
+                    useBluePrint: true
+                }
+            ]
+        },
+        {
+            condition: generator => generator.authenticationType === 'oauth2',
+            path: SERVER_TEST_SRC_KOTLIN_DIR,
+            templates: [
+                {
+                    file: 'package/security/oauth2/AudienceValidatorTest.kt',
+                    renameTo: generator => `${generator.javaDir}security/oauth2/AudienceValidatorTest.kt`,
                     useBluePrint: true
                 }
             ]
@@ -495,23 +513,6 @@ const serverFiles = {
         },
         {
             condition: generator =>
-                generator.applicationType === 'gateway' && generator.authenticationType === 'oauth2' && generator.serviceDiscoveryType,
-            path: SERVER_MAIN_KOTLIN_SRC_DIR,
-            templates: [
-                {
-                    file: 'package/config/OAuth2Configuration.kt',
-                    renameTo: generator => `${generator.javaDir}config/OAuth2Configuration.kt`,
-                    useBluePrint: true
-                },
-                {
-                    file: 'package/security/OAuth2AuthenticationSuccessHandler.kt',
-                    renameTo: generator => `${generator.javaDir}security/OAuth2AuthenticationSuccessHandler.kt`,
-                    useBluePrint: true
-                }
-            ]
-        },
-        {
-            condition: generator =>
                 generator.authenticationType === 'oauth2' &&
                 (generator.applicationType === 'monolith' || generator.applicationType === 'gateway'),
             path: SERVER_MAIN_KOTLIN_SRC_DIR,
@@ -624,43 +625,12 @@ const serverFiles = {
             ]
         },
         {
-            condition: generator =>
-                !(
-                    generator.applicationType !== 'microservice' &&
-                    !(
-                        generator.applicationType === 'gateway' &&
-                        (generator.authenticationType === 'uaa' || generator.authenticationType === 'oauth2')
-                    )
-                ) && generator.authenticationType === 'oauth2',
+            condition: generator => generator.authenticationType === 'oauth2' && generator.applicationType === 'gateway',
             path: SERVER_MAIN_KOTLIN_SRC_DIR,
             templates: [
                 {
-                    file: 'package/security/oauth2/AuthorizationHeaderUtil.kt',
-                    renameTo: generator => `${generator.javaDir}security/oauth2/AuthorizationHeaderUtil.kt`,
-                    useBluePrint: true
-                },
-                {
-                    file: 'package/security/oauth2/SimplePrincipalExtractor.kt',
-                    renameTo: generator => `${generator.javaDir}security/oauth2/SimplePrincipalExtractor.kt`,
-                    useBluePrint: true
-                },
-                {
-                    file: 'package/security/oauth2/SimpleAuthoritiesExtractor.kt',
-                    renameTo: generator => `${generator.javaDir}security/oauth2/SimpleAuthoritiesExtractor.kt`,
-                    useBluePrint: true
-                }
-            ]
-        },
-        {
-            condition: generator =>
-                generator.applicationType === 'microservice' &&
-                generator.authenticationType === 'oauth2' &&
-                generator.cacheProvider !== 'no',
-            path: SERVER_MAIN_KOTLIN_SRC_DIR,
-            templates: [
-                {
-                    file: 'package/security/oauth2/CachedUserInfoTokenServices.kt',
-                    renameTo: generator => `${generator.javaDir}security/oauth2/CachedUserInfoTokenServices.kt`,
+                    file: 'package/security/oauth2/AuthorizationHeaderFilter.kt',
+                    renameTo: generator => `${generator.javaDir}security/oauth2/AuthorizationHeaderFilter.kt`,
                     useBluePrint: true
                 }
             ]
@@ -671,6 +641,11 @@ const serverFiles = {
                 (generator.applicationType === 'microservice' || generator.applicationType === 'gateway'),
             path: SERVER_MAIN_KOTLIN_SRC_DIR,
             templates: [
+                {
+                    file: 'package/security/oauth2/AuthorizationHeaderUtil.kt',
+                    renameTo: generator => `${generator.javaDir}security/oauth2/AuthorizationHeaderUtil.kt`,
+                    useBluePrint: true
+                },
                 {
                     file: 'package/config/FeignConfiguration.kt',
                     renameTo: generator => `${generator.javaDir}config/FeignConfiguration.kt`,
@@ -687,11 +662,6 @@ const serverFiles = {
                     useBluePrint: true
                 },
                 {
-                    file: 'package/config/OAuth2TokenServicesConfiguration.kt',
-                    renameTo: generator => `${generator.javaDir}config/OAuth2TokenServicesConfiguration.kt`,
-                    useBluePrint: true
-                },
-                {
                     file: 'package/client/TokenRelayRequestInterceptor.kt',
                     renameTo: generator => `${generator.javaDir}client/TokenRelayRequestInterceptor.kt`,
                     useBluePrint: true
@@ -699,20 +669,12 @@ const serverFiles = {
             ]
         },
         {
-            condition: generator =>
-                !(
-                    generator.applicationType !== 'microservice' &&
-                    !(
-                        generator.applicationType === 'gateway' &&
-                        (generator.authenticationType === 'uaa' || generator.authenticationType === 'oauth2')
-                    )
-                ) &&
-                (generator.authenticationType === 'oauth2' && generator.applicationType === 'gateway'),
+            condition: generator => generator.authenticationType === 'oauth2',
             path: SERVER_MAIN_KOTLIN_SRC_DIR,
             templates: [
                 {
-                    file: 'package/config/OAuth2SsoConfiguration.kt',
-                    renameTo: generator => `${generator.javaDir}config/OAuth2SsoConfiguration.kt`,
+                    file: 'package/config/SecurityConfiguration.kt',
+                    renameTo: generator => `${generator.javaDir}config/SecurityConfiguration.kt`,
                     useBluePrint: true
                 }
             ]

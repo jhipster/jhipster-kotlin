@@ -23,6 +23,9 @@ import io.github.jhipster.config.JHipsterConstants
 import org.springframework.beans.BeansException
 import org.springframework.beans.factory.config.BeanFactoryPostProcessor
 import org.springframework.beans.factory.config.ConfigurableListableBeanFactory
+<%_ if (authenticationType === 'oauth2' && applicationType === 'gateway') { _%>
+import org.springframework.cloud.netflix.zuul.ZuulFilterInitializer
+<%_ } _%>
 import org.springframework.context.annotation.Profile
 import org.springframework.stereotype.Component
 
@@ -36,7 +39,9 @@ import org.springframework.stereotype.Component
  */
 @Component
 @Profile(JHipsterConstants.SPRING_PROFILE_DEVELOPMENT)
-class LazyInitBeanFactoryPostProcessor(private var exclusionList: Array<Class<*>>? = null) : BeanFactoryPostProcessor {
+class LazyInitBeanFactoryPostProcessor(
+    private var exclusionList: Array<Class<*>>? = <% if (authenticationType === 'oauth2' && applicationType === 'gateway') { %>arrayOf(ZuulFilterInitializer::class.java)<% } else { %>null<% } %>
+) : BeanFactoryPostProcessor {
 
     @Throws(BeansException::class)
     override fun postProcessBeanFactory(beanFactory: ConfigurableListableBeanFactory) {

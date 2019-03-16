@@ -59,11 +59,7 @@ import org.springframework.scheduling.annotation.Scheduled
     <%_ } _%>
 <%_ } _%>
 <%_ if (authenticationType === 'oauth2') { _%>
-import org.springframework.security.authentication.UsernamePasswordAuthenticationToken
-import org.springframework.security.core.GrantedAuthority
-import org.springframework.security.core.authority.SimpleGrantedAuthority
-import org.springframework.security.core.context.SecurityContextHolder
-import org.springframework.security.oauth2.provider.OAuth2Authentication
+import org.springframework.security.oauth2.client.authentication.OAuth2AuthenticationToken
 <%_ } _%>
 <%_ if (authenticationType !== 'oauth2') { _%>
 import org.springframework.security.crypto.password.PasswordEncoder
@@ -383,11 +379,11 @@ class UserService(
      * Update basic information (first name, last name, email, language) for the current user.
      *
      * @param firstName first name of user.
-     * @param lastName last name of user.
-     * @param email email id of user.
-     * @param langKey language key.
+     * @param lastName  last name of user.
+     * @param email     email id of user.
+     * @param langKey   language key.
      <%_ if (databaseType === 'mongodb' || databaseType === 'sql' || databaseType === 'couchbase') { _%>
-     * @param imageUrl image URL of user.
+     * @param imageUrl  image URL of user.
      <%_ } _%>
      */
     fun updateUser(firstName: String?, lastName: String?, email: String?, langKey: String?<% if (databaseType === 'mongodb' || databaseType === 'couchbase' || databaseType === 'sql') { %>, imageUrl: String?<% } %>)<% if (reactive) { %>: Mono<Void><% } %> {
@@ -704,26 +700,16 @@ class UserService(
      * @return the user from the authentication.
      */
     @SuppressWarnings("unchecked")
-    fun getUserFromAuthentication(authentication: OAuth2Authentication): <%= asDto('User') %> {
-        val oauth2AuthenticationDetails = authentication.details // should be an OAuth2AuthenticationDetails
-        val details = authentication.userAuthentication.details as Map<String, Any>
-        val user = getUser(details)
-        val userAuthorities = extractAuthorities(authentication, details)
-        user.authorities = userAuthorities
-
-        // convert Authorities to GrantedAuthorities
-        val grantedAuthorities = userAuthorities.asSequence()
-        <%_ if (databaseType !== 'couchbase') { _%>
-            .map(Authority::name)
-        <%_ } _%>
-            .mapTo(mutableSetOf()) { SimpleGrantedAuthority(it) }
-
-        val token = getToken(details, user, grantedAuthorities)
-        val auth = OAuth2Authentication(authentication.oAuth2Request, token)
-        auth.details = oauth2AuthenticationDetails // must be present in a gateway for TokenRelayFilter to work
-        SecurityContextHolder.getContext().authentication = auth
-
-        return <%= asDto('User') %>(syncUserWithIdP(details, user))
+    fun getUserFromAuthentication(authToken: OAuth2AuthenticationToken): <%= asDto('User') %> {
+        val attributes = authToken.principal.attributes
+        val user = getUser(attributes)
+        user.authorities = authToken.authorities.asSequence()
+            .map { authority ->
+                val auth = Authority()
+                auth.name = authority.authority
+                auth
+            }.toHashSet()
+        return <%= asDto('User') %>(syncUserWithIdP(attributes, user))
     }
 
     private fun syncUserWithIdP(details: Map<String, Any>, user: <%= asEntity('User') %>): <%= asEntity('User') %> {
@@ -734,7 +720,7 @@ class UserService(
         <%_ } else { _%>
         val userAuthorities = user.authorities
         <%_ } _%>
-        for ( authority in userAuthorities) {
+        for (authority in userAuthorities) {
             if (!dbAuthorities.contains(authority)) {
                 log.debug("Saving authority '{}' in local database", authority)
                 val authorityToSave = Authority()
@@ -778,34 +764,6 @@ class UserService(
     <%_ if (authenticationType === 'oauth2') { _%>
 
     companion object {
-
-        @JvmStatic
-        private fun getToken(details: Map<String, Any>, user: <%= asEntity('User') %>, grantedAuthorities: Set<GrantedAuthority>): UsernamePasswordAuthenticationToken {
-            // create UserDetails so #{principal.username} works
-            val userDetails = org.springframework.security.core.userdetails.User(user.login, "N/A", grantedAuthorities)
-            // update Spring Security Authorities to match groups claim from IdP
-            val token = UsernamePasswordAuthenticationToken( userDetails, "N/A", grantedAuthorities)
-            token.details = details
-            return token
-        }
-
-        @JvmStatic
-        private fun extractAuthorities(authentication: OAuth2Authentication, details: Map<String, Any>): MutableSet<<% if (databaseType === 'couchbase') { %>String<% } else { %>Authority<% } %>> {
-            val userAuthorities : MutableSet<<% if (databaseType === 'couchbase') { %>String<% } else { %>Authority<% } %>>
-            // get roles from details
-            if (details["roles"] != null) {
-                userAuthorities = extractAuthorities(details["roles"] as List<String>)
-                // if roles don't exist, try groups
-            } else if (details["groups"] != null) {
-                userAuthorities = extractAuthorities(details["groups"] as List<String>)
-            } else {
-                userAuthorities = authoritiesFromStringStream(
-                    authentication.authorities.stream()
-                        .map(GrantedAuthority::getAuthority)
-                )
-            }
-            return userAuthorities
-        }
 
         @JvmStatic
         private fun getUser(details: Map<String, Any>): <%= asEntity('User') %> {
@@ -852,24 +810,6 @@ class UserService(
             user.activated = true
             return user
         }
-
-        @JvmStatic
-        private fun extractAuthorities(values: List<String>): MutableSet<<% if (databaseType === 'couchbase') { %>String<% } else { %>Authority<% } %>> {
-            return authoritiesFromStringStream(
-                values.stream().filter { role -> role.startsWith("ROLE_") }
-            )
-        }
-
-        @JvmStatic
-        private fun authoritiesFromStringStream(strings: Stream<String>): MutableSet<<% if (databaseType === 'couchbase') { %>String<% } else { %>Authority<% } %>> {
-            return strings<% if (databaseType !== 'couchbase') { %>
-                        .map { string ->
-                            val auth = Authority()
-                            auth.name = string
-                            auth
-                        }<% } %>.collect(Collectors.toSet())
-        }
-
     }
     <%_ } _%>
 }

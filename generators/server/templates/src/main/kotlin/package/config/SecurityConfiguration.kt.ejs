@@ -37,7 +37,6 @@ import org.springframework.beans.factory.BeanInitializationException
 import org.springframework.beans.factory.InitializingBean
 <%_ } _%>
 import org.springframework.context.annotation.Bean
-import org.springframework.context.annotation.Configuration
 import org.springframework.context.annotation.Import
 <%_ if (authenticationType !== 'uaa' && !(applicationType === 'microservice' && authenticationType === 'oauth2')) { _%>
 import org.springframework.http.HttpMethod
@@ -51,12 +50,8 @@ import org.springframework.security.config.annotation.web.builders.HttpSecurity
 <%_ if (authenticationType !== 'uaa' && !(applicationType === 'microservice' && authenticationType === 'oauth2')) { _%>
 import org.springframework.security.config.annotation.web.builders.WebSecurity
 <%_ } _%>
-<%_ if (authenticationType !== 'oauth2') { _%>
 import org.springframework.security.config.annotation.web.configuration.EnableWebSecurity
-<%_ } _%>
-<%_ if (authenticationType !== 'oauth2' || applicationType !== 'microservice') { _%>
 import org.springframework.security.config.annotation.web.configuration.WebSecurityConfigurerAdapter
-<%_ } _%>
 <%_ if (authenticationType === 'jwt' || (authenticationType === 'oauth2' && applicationType === 'microservice')) { _%>
 import org.springframework.security.config.http.SessionCreationPolicy
 <%_ } _%>
@@ -66,13 +61,21 @@ import org.springframework.security.crypto.bcrypt.BCryptPasswordEncoder
 import org.springframework.security.crypto.password.PasswordEncoder
 <%_ } _%>
 <%_ if (authenticationType === 'oauth2') { _%>
-import org.springframework.security.oauth2.client.OAuth2ClientContext
-import org.springframework.security.oauth2.client.OAuth2RestTemplate
-import org.springframework.security.oauth2.client.resource.OAuth2ProtectedResourceDetails
-    <%_ if (applicationType === 'microservice') { _%>
-import org.springframework.security.oauth2.config.annotation.web.configuration.EnableResourceServer
-import org.springframework.security.oauth2.config.annotation.web.configuration.ResourceServerConfigurerAdapter
+import <%= packageName %>.security.oauth2.AudienceValidator
+import org.springframework.security.oauth2.core.DelegatingOAuth2TokenValidator
+import org.springframework.security.oauth2.jwt.JwtDecoder
+import org.springframework.security.oauth2.jwt.JwtDecoders
+import org.springframework.security.oauth2.jwt.JwtValidators
+import org.springframework.security.oauth2.jwt.NimbusJwtDecoderJwkSupport
+    <%_ if (applicationType === 'gateway') { _%>
+import <%=packageName%>.security.oauth2.AuthorizationHeaderFilter
+import <%=packageName%>.security.oauth2.AuthorizationHeaderUtil
     <%_ } _%>
+import org.springframework.beans.factory.annotation.Value
+import org.springframework.security.core.GrantedAuthority
+import org.springframework.security.core.authority.SimpleGrantedAuthority
+import org.springframework.security.core.authority.mapping.GrantedAuthoritiesMapper
+import org.springframework.security.oauth2.core.oidc.user.OidcUserAuthority
 <%_ } _%>
 <%_ if (authenticationType === 'session') { _%>
 import org.springframework.security.web.authentication.RememberMeServices
@@ -80,7 +83,6 @@ import org.springframework.security.web.csrf.CookieCsrfTokenRepository
 import org.springframework.security.web.csrf.CsrfFilter
 <%_ } _%>
 <%_ if (authenticationType === 'oauth2' && applicationType !== 'microservice') { _%>
-import org.springframework.boot.autoconfigure.security.oauth2.client.EnableOAuth2Sso
 import org.springframework.security.web.csrf.CookieCsrfTokenRepository
 import org.springframework.security.web.csrf.CsrfFilter
 <%_ } _%>
@@ -92,16 +94,7 @@ import org.springframework.web.filter.CorsFilter
 <%_ } _%>
 import org.zalando.problem.spring.web.advice.security.SecurityProblemSupport
 
-@Configuration
-<%_ if (authenticationType === 'oauth2') { _%>
-    <%_ if (['monolith', 'gateway'].includes(applicationType)) { _%>
-@EnableOAuth2Sso
-    <%_ } else { _%>
-@EnableResourceServer
-    <%_ } _%>
-<%_ } else { _%>
 @EnableWebSecurity
-<%_ } _%>
 @EnableGlobalMethodSecurity(prePostEnabled = true, securedEnabled = true)
 @Import(SecurityProblemSupport::class)
 class SecurityConfiguration(
@@ -120,7 +113,12 @@ class SecurityConfiguration(
     private val corsFilter: CorsFilter,
     <%_ } _%>
     private val problemSupport: SecurityProblemSupport
-) : <% if (authenticationType === 'oauth2' && applicationType === 'microservice') { %>ResourceServer<% } else { %>WebSecurity<% } %>ConfigurerAdapter()<% if (authenticationType !== 'oauth2' && !skipUserManagement) { %>, InitializingBean<% } %> {
+) : WebSecurityConfigurerAdapter()<% if (authenticationType !== 'oauth2' && !skipUserManagement) { %>, InitializingBean<% } %> {
+    <%_ if (authenticationType === 'oauth2') { _%>
+
+    @Value("\${spring.security.oauth2.client.provider.oidc.issuer-uri}")
+    private lateinit var issuerUri: String
+    <%_ } _%>
     <%_ if (authenticationType !== 'oauth2' && !skipUserManagement) { _%>
 
     @Throws(Exception::class)
@@ -203,7 +201,9 @@ class SecurityConfiguration(
                 <%_ } _%>
             <%_ } _%>
             .exceptionHandling()
+            <%_ if (authenticationType !== 'oauth2') { _%>
             .authenticationEntryPoint(problemSupport)
+            <%_ } _%>
             .accessDeniedHandler(problemSupport)<% if (authenticationType === 'session') { %>
         .and()
             .rememberMe()
@@ -240,6 +240,10 @@ class SecurityConfiguration(
             .antMatchers("/api/account/reset-password/finish").permitAll()
             <%_ } _%>
             .antMatchers("/api/**").authenticated()
+            <%_ if (authenticationType === 'oauth2') { _%>
+            .antMatchers("/authorize").authenticated()
+            .antMatchers("/api/auth-info").permitAll()
+            <%_ } _%>
             <%_ if (websocket === 'spring-websocket') { _%>
             .antMatchers("/websocket/tracker").hasAuthority(AuthoritiesConstants.ADMIN)
             .antMatchers("/websocket/**").permitAll()
@@ -247,9 +251,18 @@ class SecurityConfiguration(
             .antMatchers("/management/health").permitAll()
             .antMatchers("/management/info").permitAll()
             .antMatchers("/management/prometheus").permitAll()
-            .antMatchers("/management/**").hasAuthority(AuthoritiesConstants.ADMIN)<% if (authenticationType === 'jwt') { %>
+            .antMatchers("/management/**").hasAuthority(AuthoritiesConstants.ADMIN)
+        <%_ if (authenticationType === 'jwt') { _%>
         .and()
-            .apply(securityConfigurerAdapter())<% } %>
+            .apply(securityConfigurerAdapter())
+        <%_ } else if (authenticationType === 'oauth2') { _%>
+            <%_ if (['monolith', 'gateway'].includes(applicationType)) { _%>
+        .and()
+            .oauth2Login()
+            <%_ } _%>
+        .and()
+            .oauth2ResourceServer().jwt()
+        <%_ } _%>
     }
     <%_ if (authenticationType === 'jwt') { _%>
 
@@ -260,16 +273,55 @@ class SecurityConfiguration(
     <%_ if (authenticationType === 'oauth2') { _%>
 
     /**
-     * This [OAuth2RestTemplate] is only used by AuthorizationHeaderUtil that is currently used by [TokenRelayRequestInterceptor].
+     * Map authorities from "groups" or "roles" claim in ID Token.
      *
-     * @param oAuth2ProtectedResourceDetails the resource details.
-     * @return the [OAuth2RestTemplate].
+     * @return a [GrantedAuthoritiesMapper] that maps groups from
+     * the IdP to Spring Security Authorities.
      */
+    @Suppress("UNCHECKED_CAST")
     @Bean
-    fun oAuth2RestTemplate(oAuth2ProtectedResourceDetails: OAuth2ProtectedResourceDetails,
-                           oAuth2ClientContext: OAuth2ClientContext): OAuth2RestTemplate {
-        return OAuth2RestTemplate(oAuth2ProtectedResourceDetails, oAuth2ClientContext)
+    fun userAuthoritiesMapper(): GrantedAuthoritiesMapper {
+        return GrantedAuthoritiesMapper { authorities ->
+            val mappedAuthorities = mutableSetOf<GrantedAuthority>()
+
+            authorities.forEach { authority ->
+                val oidcUserAuthority = authority as OidcUserAuthority
+                val userInfo = oidcUserAuthority.userInfo
+                var groups = userInfo.claims["groups"] as Collection<String>?
+                if (groups == null) {
+                    groups = userInfo.claims.get("roles") as Collection<String>?
+                }
+                groups?.let {
+                    mappedAuthorities.addAll(
+                        it.asSequence()
+                            .filter { group -> group.startsWith("ROLE_") }
+                            .map { a -> SimpleGrantedAuthority(a) }
+                    )
+                }
+            }
+            mappedAuthorities
+        }
     }
+
+    @Bean
+    fun jwtDecoder(): JwtDecoder {
+        val jwtDecoder = JwtDecoders.fromOidcIssuerLocation(issuerUri) as NimbusJwtDecoderJwkSupport
+
+        val audienceValidator = AudienceValidator()
+        val withIssuer = JwtValidators.createDefaultWithIssuer(issuerUri)
+        val withAudience = DelegatingOAuth2TokenValidator(withIssuer, audienceValidator)
+
+        jwtDecoder.setJwtValidator(withAudience)
+
+        return jwtDecoder
+    }
+        <%_ if (applicationType === 'gateway') { _%>
+
+    @Bean
+    fun authHeaderFilter(headerUtil: AuthorizationHeaderUtil): AuthorizationHeaderFilter {
+        return AuthorizationHeaderFilter(headerUtil)
+    }
+        <%_ } _%>
     <%_ } _%>
 }
 <%_ } _%>

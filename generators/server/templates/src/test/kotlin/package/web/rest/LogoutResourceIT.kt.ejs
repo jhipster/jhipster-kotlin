@@ -19,27 +19,32 @@
 package <%=packageName%>.web.rest
 
 import <%=packageName%>.<%= mainClass %>
+import <%=packageName%>.security.AuthoritiesConstants
 import org.junit.Before
 import org.junit.Test
 import org.junit.runner.RunWith
 import org.springframework.beans.factory.annotation.Autowired
-import org.springframework.beans.factory.annotation.Value
-import org.springframework.boot.autoconfigure.security.oauth2.resource.UserInfoRestTemplateFactory
 import org.springframework.boot.test.context.SpringBootTest
 import org.springframework.http.MediaType
-import org.springframework.http.converter.json.MappingJackson2HttpMessageConverter
-import org.springframework.security.oauth2.client.OAuth2RestTemplate
-import org.springframework.security.oauth2.common.DefaultOAuth2AccessToken
+import org.springframework.security.core.GrantedAuthority
+import org.springframework.security.core.authority.SimpleGrantedAuthority
+import org.springframework.security.core.context.SecurityContextHolder
+import org.springframework.security.oauth2.client.authentication.OAuth2AuthenticationToken
+import org.springframework.security.oauth2.client.registration.ClientRegistrationRepository
+import org.springframework.security.oauth2.core.oidc.OidcIdToken
+import org.springframework.security.oauth2.core.oidc.user.DefaultOidcUser
+import org.springframework.security.web.servletapi.SecurityContextHolderAwareRequestFilter
 import org.springframework.test.context.junit4.SpringRunner
 import org.springframework.test.web.servlet.MockMvc
+import org.springframework.test.web.servlet.setup.MockMvcBuilders
+import org.springframework.web.context.WebApplicationContext
+
+import java.time.Instant
+
 import org.springframework.test.web.servlet.request.MockMvcRequestBuilders.post
 import org.springframework.test.web.servlet.result.MockMvcResultMatchers.content
 import org.springframework.test.web.servlet.result.MockMvcResultMatchers.jsonPath
 import org.springframework.test.web.servlet.result.MockMvcResultMatchers.status
-import org.springframework.test.web.servlet.setup.MockMvcBuilders
-
-import org.mockito.Mockito.mock
-import org.mockito.Mockito.`when`
 
 /**
  * Integration tests for the [LogoutResource] REST controller.
@@ -49,24 +54,31 @@ import org.mockito.Mockito.`when`
 class LogoutResourceIT {
 
     @Autowired
-    private lateinit var jacksonMessageConverter: MappingJackson2HttpMessageConverter
+    private lateinit var registrations: ClientRegistrationRepository
 
-    @Value("\${security.oauth2.client.access-token-uri}")
-    private lateinit var accessTokenUri: String
+    @Autowired
+    private lateinit var context: WebApplicationContext
 
     private lateinit var restLogoutMockMvc: MockMvc
 
     @Before
     fun before() {
-        val logoutResource = LogoutResource(restTemplateFactory(), accessTokenUri)
-        this.restLogoutMockMvc = MockMvcBuilders.standaloneSetup(logoutResource)
-            .setMessageConverters(jacksonMessageConverter).build()
+        val claims = mutableMapOf<String, Any>()
+        claims["groups"] = "ROLE_USER"
+        claims["sub"] = 123
+        val idToken = OidcIdToken(ID_TOKEN, Instant.now(), Instant.now().plusSeconds(60), claims)
+        SecurityContextHolder.getContext().authentication = authenticationToken(idToken)
+        val authInjector = SecurityContextHolderAwareRequestFilter()
+        authInjector.afterPropertiesSet()
+
+        restLogoutMockMvc = MockMvcBuilders.webAppContextSetup(this.context).build()
     }
 
     @Test
     @Throws(Exception::class)
     fun getLogoutInformation() {
-        val logoutUrl = accessTokenUri.replace("token", "logout")
+        val logoutUrl = this.registrations.findByRegistrationId("oidc").providerDetails
+            .configurationMetadata["end_session_endpoint"].toString()
         restLogoutMockMvc.perform(post("/api/logout"))
             .andExpect(status().isOk)
             .andExpect(content().contentType(MediaType.APPLICATION_JSON_UTF8_VALUE))
@@ -74,15 +86,11 @@ class LogoutResourceIT {
             .andExpect(jsonPath("\$.idToken").value(ID_TOKEN))
     }
 
-    private fun restTemplateFactory(): UserInfoRestTemplateFactory {
-        val factory = mock(UserInfoRestTemplateFactory::class.java)
-        val idToken = mutableMapOf<String, Any>()
-        idToken["id_token"] = ID_TOKEN
-        val token = DefaultOAuth2AccessToken("my-fun-token")
-        token.additionalInformation = idToken
-        `when`(factory.userInfoRestTemplate).thenReturn(mock(OAuth2RestTemplate::class.java))
-        `when`(factory.userInfoRestTemplate.accessToken).thenReturn(token)
-        return factory
+    private fun authenticationToken(idToken: OidcIdToken): OAuth2AuthenticationToken {
+        val authorities = mutableListOf<GrantedAuthority>()
+        authorities.add(SimpleGrantedAuthority(AuthoritiesConstants.USER))
+        val user = DefaultOidcUser(authorities, idToken)
+        return OAuth2AuthenticationToken(user, authorities, "oidc")
     }
 
     companion object {

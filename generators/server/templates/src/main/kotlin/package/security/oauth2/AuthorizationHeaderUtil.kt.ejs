@@ -20,36 +20,28 @@ package <%=packageName%>.security.oauth2
 
 import java.util.Optional
 
-import org.springframework.security.oauth2.client.OAuth2RestTemplate
-import org.springframework.security.oauth2.client.http.AccessTokenRequiredException
-import org.springframework.security.oauth2.client.resource.UserRedirectRequiredException
-import org.springframework.security.oauth2.common.OAuth2AccessToken
+import org.springframework.security.core.context.SecurityContextHolder
+import org.springframework.security.oauth2.client.OAuth2AuthorizedClient
+import org.springframework.security.oauth2.client.OAuth2AuthorizedClientService
+import org.springframework.security.oauth2.client.authentication.OAuth2AuthenticationToken
+import org.springframework.security.oauth2.core.OAuth2AccessToken
 import org.springframework.stereotype.Component
 
 @Component
-class AuthorizationHeaderUtil(private val oAuth2RestTemplate: OAuth2RestTemplate) {
+class AuthorizationHeaderUtil(private val clientService: OAuth2AuthorizedClientService) {
 
-    fun getAuthorizationHeaderFromOAuth2Context(): Optional<String> {
-        val previousAccessToken = oAuth2RestTemplate.oAuth2ClientContext.accessToken
-        if (previousAccessToken == null) {
-            return Optional.empty()
-        } else {
-            val accessToken: OAuth2AccessToken
-            try {
-                // Get the token from OAuth2ClientContext and refresh it if necessary
-                accessToken = oAuth2RestTemplate.accessToken
-            } catch (e: UserRedirectRequiredException) {
-                // It's a refresh failure (because previous token wasn't null)
-                // If it's an AJAX Request, this sends a 401 error
-                throw AccessTokenRequiredException("Refreshing access token failed", null)
-            }
+    fun getAuthorizationHeader(): Optional<String> {
+        val authentication = SecurityContextHolder.getContext().authentication
+        val oauthToken = authentication as OAuth2AuthenticationToken
+        val client: OAuth2AuthorizedClient = clientService.loadAuthorizedClient(
+            oauthToken.authorizedClientRegistrationId,
+            oauthToken.name
+        )
 
-            var tokenType = accessToken.tokenType
-            if (tokenType.isNullOrBlank()) {
-                tokenType = OAuth2AccessToken.BEARER_TYPE
-            }
-            val authorizationHeaderValue = "$tokenType ${accessToken.value}"
-            return Optional.of(authorizationHeaderValue)
-        }
+        val accessToken: OAuth2AccessToken = client.accessToken ?: return Optional.empty()
+
+        val tokenType = accessToken.tokenType.value
+        val authorizationHeaderValue = "$tokenType ${accessToken.tokenValue}"
+        return Optional.of(authorizationHeaderValue)
     }
 }
