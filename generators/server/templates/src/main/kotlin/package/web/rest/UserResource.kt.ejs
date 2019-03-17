@@ -55,12 +55,22 @@ import org.springframework.beans.factory.annotation.Value
 import org.springframework.data.domain.PageImpl
     <%_ } _%>
 import org.springframework.data.domain.Pageable
-import javax.servlet.http.HttpServletRequest
 <%_ } _%>
 import org.springframework.http.HttpStatus
 import org.springframework.http.ResponseEntity
 import org.springframework.security.access.prepost.PreAuthorize
-import org.springframework.web.bind.annotation.*
+import org.springframework.util.MultiValueMap
+import org.springframework.web.bind.annotation.DeleteMapping
+import org.springframework.web.bind.annotation.GetMapping
+import org.springframework.web.bind.annotation.PathVariable
+import org.springframework.web.bind.annotation.PostMapping
+import org.springframework.web.bind.annotation.PutMapping
+import org.springframework.web.bind.annotation.RequestBody
+import org.springframework.web.bind.annotation.RequestMapping
+import org.springframework.web.bind.annotation.RequestParam
+import org.springframework.web.bind.annotation.ResponseStatus
+import org.springframework.web.bind.annotation.RestController
+import org.springframework.web.util.UriComponentsBuilder
 <%_ if (reactive) { _%>
 import org.springframework.web.server.ResponseStatusException
 import reactor.core.publisher.Flux
@@ -76,7 +86,7 @@ import java.net.URISyntaxException
 import java.util.stream.Collectors
 import java.util.stream.StreamSupport
 
-import org.elasticsearch.index.query.QueryBuilders.*
+import org.elasticsearch.index.query.QueryBuilders.queryStringQuery
 <%_ } _%>
 
 /**
@@ -151,7 +161,7 @@ class UserResource(
             val newUser = userService.createUser(userDTO)
             mailService.sendCreationEmail(newUser)
             return ResponseEntity.created(URI("/api/users/" + newUser.login))
-                .headers(HeaderUtil.createAlert(applicationName, <% if (enableTranslation) {%> "userManagement.created"<% } else { %> "A user is created with identifier $newUser.login"<% } %>, newUser.login))
+                .headers(HeaderUtil.createAlert(applicationName, <% if (enableTranslation) {%>"userManagement.created"<% } else { %> "A user is created with identifier $newUser.login"<% } %>, newUser.login))
                 .body(newUser)
         }
         <%_ } else { _%>
@@ -174,7 +184,7 @@ class UserResource(
             .doOnSuccess(mailService::sendCreationEmail)
             .map { user ->
                 try {
-                    ResponseEntity.created(URI("/api/users/$user.getlogin"))
+                    ResponseEntity.created(URI("/api/users/" + user.login))
                         .headers(HeaderUtil.createAlert(applicationName, "userManagement.created", user.login))
                         .body(user)
                 } catch (e: URISyntaxException) {
@@ -248,15 +258,15 @@ class UserResource(
     @GetMapping("/users")
     <%_ if (databaseType === 'sql' || databaseType === 'mongodb' || databaseType === 'couchbase') { _%>
         <%_ if (!reactive) { _%>
-    fun getAllUsers(request: HttpServletRequest, pageable: Pageable): ResponseEntity<List<<%= asDto('User') %>>> {
+    fun getAllUsers(@RequestParam queryParams: MultiValueMap<String, String>, uriBuilder: UriComponentsBuilder, pageable: Pageable): ResponseEntity<List<<%= asDto('User') %>>> {
         val page = userService.getAllManagedUsers(pageable)
-        val headers = PaginationUtil.generatePaginationHttpHeaders(request, page)
+        val headers = PaginationUtil.generatePaginationHttpHeaders(uriBuilder.queryParams(queryParams), page)
         return ResponseEntity(page.content, headers, HttpStatus.OK)
         <%_ } else { _%>
-    fun getAllUsers(request: HttpServletRequest, pageable: Pageable): Mono<ResponseEntity<Flux<<%= asDto('User') %>>>> {
+    fun getAllUsers(@RequestParam queryParams: MultiValueMap<String, String>, uriBuilder: UriComponentsBuilder, pageable: Pageable): Mono<ResponseEntity<Flux<<%= asDto('User') %>>>> {
         return userService.countManagedUsers()
             .map { total -> PageImpl(mutableListOf<<%= asDto('User') %>>(), pageable, total!!) }
-            .map { page -> PaginationUtil.generatePaginationHttpHeaders(request, page) }
+            .map { page -> PaginationUtil.generatePaginationHttpHeaders(uriBuilder.queryParams(queryParams), page) }
             .map { headers -> ResponseEntity.ok().headers(headers).body(userService.getAllManagedUsers(pageable)) }
         <%_ } _%>
     }
@@ -271,9 +281,8 @@ class UserResource(
         return userService.getAuthorities()<% if (reactive) { %>.collectList()<% } %>
     }
     <%_ } else { // Cassandra _%>
-    fun getAllUsers(): ResponseEntity<List<<%= asDto('User') %>>> {
-        val userDTOs = userService.getAllManagedUsers()
-        return ResponseEntity(userDTOs, HttpStatus.OK)
+    fun getAllUsers(): <% if (reactive) { %>Flux<% } else { %>List<% } %><<%= asDto('User') %>> {
+        return userService.getAllManagedUsers()
     }
     <%_ } _%>
 
@@ -312,7 +321,7 @@ class UserResource(
     fun deleteUser(@PathVariable login: String): ResponseEntity<Void> {
         log.debug("REST request to delete User: {}", login)
         userService.deleteUser(login)
-        return ResponseEntity.noContent().headers(HeaderUtil.createAlert(applicationName, <% if (enableTranslation) {%> "userManagement.deleted"<% } else { %> "A user is deleted with identifier $login"<% } %>, login)).build()
+        return ResponseEntity.noContent().headers(HeaderUtil.createAlert(applicationName, <% if (enableTranslation) {%>"userManagement.deleted"<% } else { %> "A user is deleted with identifier $login"<% } %>, login)).build()
     <%_ } else { _%>
     @ResponseStatus(code = HttpStatus.NO_CONTENT)
     fun deleteUser(@PathVariable login: String): Mono<ResponseEntity<Void>> {

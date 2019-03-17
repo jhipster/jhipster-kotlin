@@ -17,7 +17,285 @@ const TEST_DIR = constants.TEST_DIR;
 describe('JHipster generator', () => {
     context('Default configuration with', () => {
         describe('AngularX', () => {
-            beforeEach(done => {
+            before(done => {
+                helpers
+                    .run('generator-jhipster/generators/app')
+                    .withOptions({
+                        'from-cli': true,
+                        skipInstall: true,
+                        skipChecks: true,
+                        jhiPrefix: 'test',
+                        blueprint: 'kotlin',
+                        'skip-ktlint-format': true
+                    })
+                    .withGenerators([
+                        [
+                            require('../generators/server/index.js'), // eslint-disable-line global-require
+                            'jhipster-kotlin:server',
+                            path.join(__dirname, '../generators/server/index.js')
+                        ]
+                    ])
+                    .withPrompts({
+                        baseName: 'jhipster',
+                        clientFramework: 'angularX',
+                        packageName: 'com.mycompany.myapp',
+                        packageFolder: 'com/mycompany/myapp',
+                        serviceDiscoveryType: false,
+                        authenticationType: 'jwt',
+                        cacheProvider: 'ehcache',
+                        enableHibernateCache: true,
+                        databaseType: 'sql',
+                        devDatabaseType: 'h2Memory',
+                        prodDatabaseType: 'mysql',
+                        enableTranslation: true,
+                        nativeLanguage: 'en',
+                        languages: ['fr'],
+                        buildTool: 'maven',
+                        rememberMeKey: '5c37379956bd1242f5636c8cb322c2966ad81277',
+                        skipClient: false,
+                        skipUserManagement: false,
+                        serverSideOptions: []
+                    })
+                    .on('end', done);
+            });
+
+            it('creates expected default files for angularX', () => {
+                assert.file(expectedFiles.common);
+                assert.file(expectedFiles.server);
+                assert.file(expectedFiles.userManagementServer);
+                assert.file(expectedFiles.jwtServer);
+                assert.file(expectedFiles.maven);
+                assert.file(expectedFiles.dockerServices);
+                assert.file(expectedFiles.mysql);
+                assert.file(expectedFiles.hibernateTimeZoneConfig);
+                assert.file(
+                    getFilesForOptions(angularFiles, {
+                        enableTranslation: true,
+                        serviceDiscoveryType: false,
+                        authenticationType: 'jwt',
+                        testFrameworks: []
+                    })
+                );
+            });
+            it('contains clientFramework with angularX value', () => {
+                assert.fileContent('.yo-rc.json', /"clientFramework": "angularX"/);
+            });
+            it('contains correct custom prefix when specified', () => {
+                assert.fileContent('angular.json', /"prefix": "test"/);
+            });
+            it('generates a README with no undefined value', () => {
+                assert.noFileContent('README.md', /undefined/);
+            });
+            it('uses correct prettier formatting', () => {
+                // tabWidth = 2 (see generators/common/templates/.prettierrc.ejs)
+                assert.fileContent('webpack/webpack.dev.js', / {2}devtool:/);
+                assert.fileContent('tsconfig.json', / {2}"compilerOptions":/);
+            });
+        });
+
+        describe('React', () => {
+            before(done => {
+                helpers
+                    .run('generator-jhipster/generators/app')
+                    .withOptions({
+                        'from-cli': true,
+                        skipInstall: true,
+                        skipChecks: true,
+                        jhiPrefix: 'test',
+                        experimental: true,
+                        blueprint: 'kotlin',
+                        'skip-ktlint-format': true
+                    })
+                    .withGenerators([
+                        [
+                            require('../generators/server/index.js'), // eslint-disable-line global-require
+                            'jhipster-kotlin:server',
+                            path.join(__dirname, '../generators/server/index.js')
+                        ]
+                    ])
+                    .withPrompts({
+                        baseName: 'jhipster',
+                        clientFramework: 'react',
+                        packageName: 'com.mycompany.myapp',
+                        packageFolder: 'com/mycompany/myapp',
+                        serviceDiscoveryType: false,
+                        authenticationType: 'jwt',
+                        cacheProvider: 'ehcache',
+                        enableHibernateCache: true,
+                        databaseType: 'sql',
+                        devDatabaseType: 'h2Memory',
+                        prodDatabaseType: 'mysql',
+                        enableTranslation: true,
+                        nativeLanguage: 'en',
+                        languages: ['fr'],
+                        buildTool: 'maven',
+                        rememberMeKey: '5c37379956bd1242f5636c8cb322c2966ad81277',
+                        skipClient: false,
+                        skipUserManagement: false,
+                        serverSideOptions: []
+                    })
+                    .on('end', done);
+            });
+
+            it('creates expected default files for react', () => {
+                assert.file(expectedFiles.common);
+                assert.file(expectedFiles.server);
+                assert.file(expectedFiles.userManagementServer);
+                assert.file(expectedFiles.jwtServer);
+                assert.file(expectedFiles.maven);
+                assert.file(expectedFiles.dockerServices);
+                assert.file(expectedFiles.mysql);
+                assert.file(expectedFiles.hibernateTimeZoneConfig);
+                assert.file(
+                    getFilesForOptions(reactFiles, {
+                        enableTranslation: true,
+                        serviceDiscoveryType: false,
+                        authenticationType: 'jwt',
+                        testFrameworks: []
+                    })
+                );
+            });
+            it('contains clientFramework with react value', () => {
+                assert.fileContent('.yo-rc.json', /"clientFramework": "react"/);
+            });
+            it('uses correct prettier formatting', () => {
+                // tabWidth = 2 (see generators/common/templates/.prettierrc.ejs)
+                assert.fileContent('webpack/webpack.dev.js', / {2}devtool:/);
+                assert.fileContent('tsconfig.json', / {2}"compilerOptions":/);
+            });
+        });
+
+        describe('using npm flag', () => {
+            before(done => {
+                helpers
+                    .run('generator-jhipster/generators/app')
+                    .withOptions({
+                        'from-cli': true,
+                        skipInstall: true,
+                        skipChecks: true,
+                        npm: true,
+                        blueprint: 'kotlin',
+                        'skip-ktlint-format': true
+                    })
+                    .withGenerators([
+                        [
+                            require('../generators/server/index.js'), // eslint-disable-line global-require
+                            'jhipster-kotlin:server',
+                            path.join(__dirname, '../generators/server/index.js')
+                        ]
+                    ])
+                    .withPrompts({
+                        baseName: 'jhipster',
+                        packageName: 'com.mycompany.myapp',
+                        packageFolder: 'com/mycompany/myapp',
+                        clientFramework: 'angularX',
+                        serviceDiscoveryType: false,
+                        authenticationType: 'jwt',
+                        cacheProvider: 'ehcache',
+                        enableHibernateCache: true,
+                        databaseType: 'sql',
+                        devDatabaseType: 'h2Memory',
+                        prodDatabaseType: 'mysql',
+                        enableTranslation: true,
+                        nativeLanguage: 'en',
+                        languages: ['fr'],
+                        buildTool: 'maven',
+                        rememberMeKey: '5c37379956bd1242f5636c8cb322c2966ad81277',
+                        skipClient: false,
+                        skipUserManagement: false,
+                        serverSideOptions: []
+                    })
+                    .on('end', done);
+            });
+
+            it('creates expected default files', () => {
+                assert.file(expectedFiles.common);
+                assert.file(expectedFiles.server);
+                assert.file(expectedFiles.userManagementServer);
+                assert.file(expectedFiles.jwtServer);
+                assert.file(expectedFiles.maven);
+                assert.file(expectedFiles.dockerServices);
+                assert.file(expectedFiles.mysql);
+                assert.file(expectedFiles.hibernateTimeZoneConfig);
+                assert.file(
+                    getFilesForOptions(angularFiles, {
+                        enableTranslation: true,
+                        serviceDiscoveryType: false,
+                        authenticationType: 'jwt',
+                        testFrameworks: []
+                    })
+                );
+            });
+            it('contains clientPackageManager with npm value', () => {
+                assert.fileContent('.yo-rc.json', /"clientPackageManager": "npm"/);
+            });
+            it('contains install-node-and-npm in pom.xml', () => {
+                assert.fileContent('pom.xml', /install-node-and-npm/);
+            });
+        });
+
+        describe('Gradle', () => {
+            before(done => {
+                helpers
+                    .run('generator-jhipster/generators/app')
+                    .withOptions({
+                        'from-cli': true,
+                        skipInstall: true,
+                        skipChecks: true,
+                        blueprint: 'kotlin',
+                        'skip-ktlint-format': true
+                    })
+                    .withGenerators([
+                        [
+                            require('../generators/server/index.js'), // eslint-disable-line global-require
+                            'jhipster-kotlin:server',
+                            path.join(__dirname, '../generators/server/index.js')
+                        ]
+                    ])
+                    .withPrompts({
+                        baseName: 'jhipster',
+                        packageName: 'com.mycompany.myapp',
+                        packageFolder: 'com/mycompany/myapp',
+                        clientFramework: 'angularX',
+                        serviceDiscoveryType: false,
+                        authenticationType: 'jwt',
+                        cacheProvider: 'ehcache',
+                        enableHibernateCache: true,
+                        databaseType: 'sql',
+                        devDatabaseType: 'h2Memory',
+                        prodDatabaseType: 'mysql',
+                        enableTranslation: true,
+                        nativeLanguage: 'en',
+                        languages: ['fr'],
+                        buildTool: 'gradle',
+                        rememberMeKey: '5c37379956bd1242f5636c8cb322c2966ad81277',
+                        serverSideOptions: []
+                    })
+                    .on('end', done);
+            });
+
+            it('creates expected default files for gradle', () => {
+                assert.file(expectedFiles.common);
+                assert.file(expectedFiles.server);
+                assert.file(expectedFiles.userManagementServer);
+                assert.file(expectedFiles.jwtServer);
+                assert.file(expectedFiles.gradle);
+                assert.file(expectedFiles.dockerServices);
+                assert.file(expectedFiles.mysql);
+                assert.file(expectedFiles.hibernateTimeZoneConfig);
+                assert.file(
+                    getFilesForOptions(angularFiles, {
+                        enableTranslation: true,
+                        serviceDiscoveryType: false,
+                        authenticationType: 'jwt',
+                        testFrameworks: []
+                    })
+                );
+            });
+        });
+
+        describe('Maven with ktlint-format', () => {
+            before(done => {
                 helpers
                     .run('generator-jhipster/generators/app')
                     .withOptions({
@@ -94,151 +372,8 @@ describe('JHipster generator', () => {
             });
         });
 
-        describe('React', () => {
-            beforeEach(done => {
-                helpers
-                    .run('generator-jhipster/generators/app')
-                    .withOptions({
-                        'from-cli': true,
-                        skipInstall: true,
-                        skipChecks: true,
-                        jhiPrefix: 'test',
-                        experimental: true,
-                        blueprint: 'kotlin'
-                    })
-                    .withGenerators([
-                        [
-                            require('../generators/server/index.js'), // eslint-disable-line global-require
-                            'jhipster-kotlin:server',
-                            path.join(__dirname, '../generators/server/index.js')
-                        ]
-                    ])
-                    .withPrompts({
-                        baseName: 'jhipster',
-                        clientFramework: 'react',
-                        packageName: 'com.mycompany.myapp',
-                        packageFolder: 'com/mycompany/myapp',
-                        serviceDiscoveryType: false,
-                        authenticationType: 'jwt',
-                        cacheProvider: 'ehcache',
-                        enableHibernateCache: true,
-                        databaseType: 'sql',
-                        devDatabaseType: 'h2Memory',
-                        prodDatabaseType: 'mysql',
-                        useSass: false,
-                        enableTranslation: true,
-                        nativeLanguage: 'en',
-                        languages: ['fr'],
-                        buildTool: 'maven',
-                        rememberMeKey: '5c37379956bd1242f5636c8cb322c2966ad81277',
-                        skipClient: false,
-                        skipUserManagement: false,
-                        serverSideOptions: []
-                    })
-                    .on('end', done);
-            });
-
-            it('creates expected default files for react', () => {
-                assert.file(expectedFiles.common);
-                assert.file(expectedFiles.server);
-                assert.file(expectedFiles.userManagementServer);
-                assert.file(expectedFiles.jwtServer);
-                assert.file(expectedFiles.maven);
-                assert.file(expectedFiles.dockerServices);
-                assert.file(expectedFiles.mysql);
-                assert.file(expectedFiles.hibernateTimeZoneConfig);
-                assert.file(
-                    getFilesForOptions(reactFiles, {
-                        useSass: false,
-                        enableTranslation: true,
-                        serviceDiscoveryType: false,
-                        authenticationType: 'jwt',
-                        testFrameworks: []
-                    })
-                );
-            });
-            it('contains clientFramework with react value', () => {
-                assert.fileContent('.yo-rc.json', /"clientFramework": "react"/);
-            });
-            it('uses correct prettier formatting', () => {
-                // tabWidth = 2 (see generators/common/templates/.prettierrc.ejs)
-                assert.fileContent('webpack/webpack.dev.js', / {2}devtool:/);
-                assert.fileContent('tsconfig.json', / {2}"compilerOptions":/);
-            });
-        });
-
-        describe('using npm flag', () => {
-            beforeEach(done => {
-                helpers
-                    .run('generator-jhipster/generators/app')
-                    .withOptions({
-                        'from-cli': true,
-                        skipInstall: true,
-                        skipChecks: true,
-                        npm: true,
-                        blueprint: 'kotlin'
-                    })
-                    .withGenerators([
-                        [
-                            require('../generators/server/index.js'), // eslint-disable-line global-require
-                            'jhipster-kotlin:server',
-                            path.join(__dirname, '../generators/server/index.js')
-                        ]
-                    ])
-                    .withPrompts({
-                        baseName: 'jhipster',
-                        packageName: 'com.mycompany.myapp',
-                        packageFolder: 'com/mycompany/myapp',
-                        clientFramework: 'angularX',
-                        serviceDiscoveryType: false,
-                        authenticationType: 'jwt',
-                        cacheProvider: 'ehcache',
-                        enableHibernateCache: true,
-                        databaseType: 'sql',
-                        devDatabaseType: 'h2Memory',
-                        prodDatabaseType: 'mysql',
-                        useSass: false,
-                        enableTranslation: true,
-                        nativeLanguage: 'en',
-                        languages: ['fr'],
-                        buildTool: 'maven',
-                        rememberMeKey: '5c37379956bd1242f5636c8cb322c2966ad81277',
-                        skipClient: false,
-                        skipUserManagement: false,
-                        serverSideOptions: []
-                    })
-                    .on('end', done);
-            });
-
-            it('creates expected default files', () => {
-                assert.file(expectedFiles.common);
-                assert.file(expectedFiles.server);
-                assert.file(expectedFiles.userManagementServer);
-                assert.file(expectedFiles.jwtServer);
-                assert.file(expectedFiles.maven);
-                assert.file(expectedFiles.dockerServices);
-                assert.file(expectedFiles.mysql);
-                assert.file(expectedFiles.hibernateTimeZoneConfig);
-                assert.file(
-                    getFilesForOptions(angularFiles, {
-                        useSass: false,
-                        enableTranslation: true,
-                        serviceDiscoveryType: false,
-                        authenticationType: 'jwt',
-                        testFrameworks: []
-                    })
-                );
-            });
-            it('contains clientPackageManager with npm value', () => {
-                assert.fileContent('.yo-rc.json', /"clientPackageManager": "npm"/);
-            });
-            it('contains install-node-and-npm in pom.xml', () => {
-                assert.fileContent('pom.xml', /install-node-and-npm/);
-            });
-        });
-
-        describe('Gradle', () => {
-            beforeEach(done => {
+        describe('Gradle with ktlint-format', () => {
+            before(done => {
                 helpers
                     .run('generator-jhipster/generators/app')
                     .withOptions({
@@ -266,7 +401,6 @@ describe('JHipster generator', () => {
                         databaseType: 'sql',
                         devDatabaseType: 'h2Memory',
                         prodDatabaseType: 'mysql',
-                        useSass: false,
                         enableTranslation: true,
                         nativeLanguage: 'en',
                         languages: ['fr'],
@@ -288,7 +422,6 @@ describe('JHipster generator', () => {
                 assert.file(expectedFiles.hibernateTimeZoneConfig);
                 assert.file(
                     getFilesForOptions(angularFiles, {
-                        useSass: false,
                         enableTranslation: true,
                         serviceDiscoveryType: false,
                         authenticationType: 'jwt',
@@ -301,14 +434,15 @@ describe('JHipster generator', () => {
 
     context('Application with DB option', () => {
         describe('mariadb', () => {
-            beforeEach(done => {
+            before(done => {
                 helpers
                     .run('generator-jhipster/generators/app')
                     .withOptions({
                         'from-cli': true,
                         skipInstall: true,
                         skipChecks: true,
-                        blueprint: 'kotlin'
+                        blueprint: 'kotlin',
+                        'skip-ktlint-format': true
                     })
                     .withGenerators([
                         [
@@ -329,7 +463,6 @@ describe('JHipster generator', () => {
                         databaseType: 'sql',
                         devDatabaseType: 'h2Disk',
                         prodDatabaseType: 'mariadb',
-                        useSass: false,
                         enableTranslation: true,
                         nativeLanguage: 'en',
                         languages: ['fr'],
@@ -353,7 +486,6 @@ describe('JHipster generator', () => {
                 assert.file(expectedFiles.hibernateTimeZoneConfig);
                 assert.file(
                     getFilesForOptions(angularFiles, {
-                        useSass: false,
                         enableTranslation: true,
                         serviceDiscoveryType: false,
                         authenticationType: 'jwt',
@@ -365,14 +497,15 @@ describe('JHipster generator', () => {
         });
 
         describe('mongodb', () => {
-            beforeEach(done => {
+            before(done => {
                 helpers
                     .run('generator-jhipster/generators/app')
                     .withOptions({
                         'from-cli': true,
                         skipInstall: true,
                         skipChecks: true,
-                        blueprint: 'kotlin'
+                        blueprint: 'kotlin',
+                        'skip-ktlint-format': true
                     })
                     .withGenerators([
                         [
@@ -393,7 +526,6 @@ describe('JHipster generator', () => {
                         databaseType: 'mongodb',
                         devDatabaseType: 'mongodb',
                         prodDatabaseType: 'mongodb',
-                        useSass: false,
                         enableTranslation: true,
                         nativeLanguage: 'en',
                         languages: ['fr'],
@@ -417,14 +549,15 @@ describe('JHipster generator', () => {
         });
 
         describe('couchbase', () => {
-            beforeEach(done => {
+            before(done => {
                 helpers
                     .run('generator-jhipster/generators/app')
                     .withOptions({
                         'from-cli': true,
                         skipInstall: true,
                         skipChecks: true,
-                        blueprint: 'kotlin'
+                        blueprint: 'kotlin',
+                        'skip-ktlint-format': true
                     })
                     .withGenerators([
                         [
@@ -445,7 +578,6 @@ describe('JHipster generator', () => {
                         databaseType: 'couchbase',
                         devDatabaseType: 'couchbase',
                         prodDatabaseType: 'couchbase',
-                        useSass: false,
                         enableTranslation: true,
                         nativeLanguage: 'en',
                         languages: ['fr'],
@@ -469,14 +601,15 @@ describe('JHipster generator', () => {
         });
 
         describe('mssql', () => {
-            beforeEach(done => {
+            before(done => {
                 helpers
                     .run('generator-jhipster/generators/app')
                     .withOptions({
                         'from-cli': true,
                         skipInstall: true,
                         skipChecks: true,
-                        blueprint: 'kotlin'
+                        blueprint: 'kotlin',
+                        'skip-ktlint-format': true
                     })
                     .withGenerators([
                         [
@@ -497,7 +630,6 @@ describe('JHipster generator', () => {
                         databaseType: 'sql',
                         devDatabaseType: 'mssql',
                         prodDatabaseType: 'mssql',
-                        useSass: false,
                         enableTranslation: true,
                         nativeLanguage: 'en',
                         languages: ['fr'],
@@ -523,14 +655,15 @@ describe('JHipster generator', () => {
         });
 
         describe('cassandra', () => {
-            beforeEach(done => {
+            before(done => {
                 helpers
                     .run('generator-jhipster/generators/app')
                     .withOptions({
                         'from-cli': true,
                         skipInstall: true,
                         skipChecks: true,
-                        blueprint: 'kotlin'
+                        blueprint: 'kotlin',
+                        'skip-ktlint-format': true
                     })
                     .withGenerators([
                         [
@@ -551,7 +684,6 @@ describe('JHipster generator', () => {
                         databaseType: 'cassandra',
                         devDatabaseType: 'cassandra',
                         prodDatabaseType: 'cassandra',
-                        useSass: false,
                         enableTranslation: true,
                         nativeLanguage: 'en',
                         languages: ['fr'],
@@ -575,14 +707,15 @@ describe('JHipster generator', () => {
         });
 
         describe('cassandra no i18n', () => {
-            beforeEach(done => {
+            before(done => {
                 helpers
                     .run('generator-jhipster/generators/app')
                     .withOptions({
                         'from-cli': true,
                         skipInstall: true,
                         skipChecks: true,
-                        blueprint: 'kotlin'
+                        blueprint: 'kotlin',
+                        'skip-ktlint-format': true
                     })
                     .withGenerators([
                         [
@@ -603,7 +736,6 @@ describe('JHipster generator', () => {
                         databaseType: 'cassandra',
                         devDatabaseType: 'cassandra',
                         prodDatabaseType: 'cassandra',
-                        useSass: false,
                         enableTranslation: false,
                         buildTool: 'maven',
                         rememberMeKey: '5c37379956bd1242f5636c8cb322c2966ad81277',
@@ -622,14 +754,15 @@ describe('JHipster generator', () => {
         });
 
         describe('postgresql and elasticsearch', () => {
-            beforeEach(done => {
+            before(done => {
                 helpers
                     .run('generator-jhipster/generators/app')
                     .withOptions({
                         'from-cli': true,
                         skipInstall: true,
                         skipChecks: true,
-                        blueprint: 'kotlin'
+                        blueprint: 'kotlin',
+                        'skip-ktlint-format': true
                     })
                     .withGenerators([
                         [
@@ -650,7 +783,6 @@ describe('JHipster generator', () => {
                         databaseType: 'sql',
                         devDatabaseType: 'postgresql',
                         prodDatabaseType: 'postgresql',
-                        useSass: false,
                         enableTranslation: true,
                         nativeLanguage: 'en',
                         languages: ['fr'],
@@ -672,14 +804,15 @@ describe('JHipster generator', () => {
         });
 
         describe('no database', () => {
-            beforeEach(done => {
+            before(done => {
                 helpers
                     .run('generator-jhipster/generators/app')
                     .withOptions({
                         'from-cli': true,
                         skipInstall: true,
                         skipChecks: true,
-                        blueprint: 'kotlin'
+                        blueprint: 'kotlin',
+                        'skip-ktlint-format': true
                     })
                     .withGenerators([
                         [
@@ -700,7 +833,6 @@ describe('JHipster generator', () => {
                         databaseType: 'no',
                         devDatabaseType: 'no',
                         prodDatabaseType: 'no',
-                        useSass: false,
                         enableTranslation: true,
                         nativeLanguage: 'en',
                         languages: ['fr'],
@@ -727,14 +859,15 @@ describe('JHipster generator', () => {
 
     context('Application with other options', () => {
         describe('oauth2', () => {
-            beforeEach(done => {
+            before(done => {
                 helpers
                     .run('generator-jhipster/generators/app')
                     .withOptions({
                         'from-cli': true,
                         skipInstall: true,
                         skipChecks: true,
-                        blueprint: 'kotlin'
+                        blueprint: 'kotlin',
+                        'skip-ktlint-format': true
                     })
                     .withGenerators([
                         [
@@ -755,7 +888,6 @@ describe('JHipster generator', () => {
                         databaseType: 'sql',
                         devDatabaseType: 'h2Memory',
                         prodDatabaseType: 'mysql',
-                        useSass: false,
                         enableTranslation: true,
                         nativeLanguage: 'en',
                         languages: ['fr'],
@@ -777,14 +909,15 @@ describe('JHipster generator', () => {
         });
 
         describe('oauth2 + elasticsearch', () => {
-            beforeEach(done => {
+            before(done => {
                 helpers
                     .run('generator-jhipster/generators/app')
                     .withOptions({
                         'from-cli': true,
                         skipInstall: true,
                         skipChecks: true,
-                        blueprint: 'kotlin'
+                        blueprint: 'kotlin',
+                        'skip-ktlint-format': true
                     })
                     .withGenerators([
                         [
@@ -805,7 +938,6 @@ describe('JHipster generator', () => {
                         databaseType: 'sql',
                         devDatabaseType: 'h2Memory',
                         prodDatabaseType: 'mysql',
-                        useSass: false,
                         enableTranslation: true,
                         nativeLanguage: 'en',
                         languages: ['fr'],
@@ -825,14 +957,15 @@ describe('JHipster generator', () => {
         });
 
         describe('oauth2 + mongodb', () => {
-            beforeEach(done => {
+            before(done => {
                 helpers
                     .run('generator-jhipster/generators/app')
                     .withOptions({
                         'from-cli': true,
                         skipInstall: true,
                         skipChecks: true,
-                        blueprint: 'kotlin'
+                        blueprint: 'kotlin',
+                        'skip-ktlint-format': true
                     })
                     .withGenerators([
                         [
@@ -853,7 +986,6 @@ describe('JHipster generator', () => {
                         databaseType: 'mongodb',
                         devDatabaseType: 'mongodb',
                         prodDatabaseType: 'mongodb',
-                        useSass: false,
                         enableTranslation: true,
                         nativeLanguage: 'en',
                         languages: ['fr'],
@@ -871,14 +1003,15 @@ describe('JHipster generator', () => {
         });
 
         describe('hazelcast', () => {
-            beforeEach(done => {
+            before(done => {
                 helpers
                     .run('generator-jhipster/generators/app')
                     .withOptions({
                         'from-cli': true,
                         skipInstall: true,
                         skipChecks: true,
-                        blueprint: 'kotlin'
+                        blueprint: 'kotlin',
+                        'skip-ktlint-format': true
                     })
                     .withGenerators([
                         [
@@ -899,7 +1032,6 @@ describe('JHipster generator', () => {
                         databaseType: 'sql',
                         devDatabaseType: 'h2Memory',
                         prodDatabaseType: 'mysql',
-                        useSass: false,
                         enableTranslation: true,
                         nativeLanguage: 'en',
                         languages: ['fr'],
@@ -920,14 +1052,15 @@ describe('JHipster generator', () => {
         });
 
         describe('Infinispan', () => {
-            beforeEach(done => {
+            before(done => {
                 helpers
                     .run('generator-jhipster/generators/app')
                     .withOptions({
                         'from-cli': true,
                         skipInstall: true,
                         skipChecks: true,
-                        blueprint: 'kotlin'
+                        blueprint: 'kotlin',
+                        'skip-ktlint-format': true
                     })
                     .withGenerators([
                         [
@@ -948,7 +1081,6 @@ describe('JHipster generator', () => {
                         databaseType: 'sql',
                         devDatabaseType: 'h2Memory',
                         prodDatabaseType: 'mysql',
-                        useSass: false,
                         enableTranslation: true,
                         nativeLanguage: 'en',
                         languages: ['fr'],
@@ -970,14 +1102,15 @@ describe('JHipster generator', () => {
         });
 
         describe('Infinispan and Eureka', () => {
-            beforeEach(done => {
+            before(done => {
                 helpers
                     .run('generator-jhipster/generators/app')
                     .withOptions({
                         'from-cli': true,
                         skipInstall: true,
                         skipChecks: true,
-                        blueprint: 'kotlin'
+                        blueprint: 'kotlin',
+                        'skip-ktlint-format': true
                     })
                     .withGenerators([
                         [
@@ -998,7 +1131,6 @@ describe('JHipster generator', () => {
                         databaseType: 'sql',
                         devDatabaseType: 'h2Memory',
                         prodDatabaseType: 'mysql',
-                        useSass: false,
                         enableTranslation: true,
                         nativeLanguage: 'en',
                         languages: ['fr'],
@@ -1021,14 +1153,15 @@ describe('JHipster generator', () => {
         });
 
         describe('Memcached', () => {
-            beforeEach(done => {
+            before(done => {
                 helpers
                     .run('generator-jhipster/generators/app')
                     .withOptions({
                         'from-cli': true,
                         skipInstall: true,
                         skipChecks: true,
-                        blueprint: 'kotlin'
+                        blueprint: 'kotlin',
+                        'skip-ktlint-format': true
                     })
                     .withGenerators([
                         [
@@ -1049,7 +1182,6 @@ describe('JHipster generator', () => {
                         databaseType: 'sql',
                         devDatabaseType: 'h2Memory',
                         prodDatabaseType: 'mysql',
-                        useSass: false,
                         enableTranslation: true,
                         nativeLanguage: 'en',
                         languages: ['fr'],
@@ -1071,14 +1203,15 @@ describe('JHipster generator', () => {
         });
 
         describe('Messaging with Kafka configuration', () => {
-            beforeEach(done => {
+            before(done => {
                 helpers
                     .run('generator-jhipster/generators/app')
                     .withOptions({
                         'from-cli': true,
                         skipInstall: true,
                         skipChecks: true,
-                        blueprint: 'kotlin'
+                        blueprint: 'kotlin',
+                        'skip-ktlint-format': true
                     })
                     .withGenerators([
                         [
@@ -1104,7 +1237,6 @@ describe('JHipster generator', () => {
                         searchEngine: false,
                         buildTool: 'maven',
                         rememberMeKey: '5c37379956bd1242f5636c8cb322c2966ad81277',
-                        useSass: false,
                         applicationType: 'monolith',
                         testFrameworks: ['gatling'],
                         jhiPrefix: 'jhi',
@@ -1129,14 +1261,15 @@ describe('JHipster generator', () => {
         });
 
         describe('API first using OpenAPI-generator (maven)', () => {
-            beforeEach(done => {
+            before(done => {
                 helpers
                     .run('generator-jhipster/generators/app')
                     .withOptions({
                         'from-cli': true,
                         skipInstall: true,
                         skipChecks: true,
-                        blueprint: 'kotlin'
+                        blueprint: 'kotlin',
+                        'skip-ktlint-format': true
                     })
                     .withGenerators([
                         [
@@ -1162,7 +1295,6 @@ describe('JHipster generator', () => {
                         searchEngine: false,
                         buildTool: 'maven',
                         rememberMeKey: '5c37379956bd1242f5636c8cb322c2966ad81277',
-                        useSass: false,
                         applicationType: 'monolith',
                         testFrameworks: ['gatling'],
                         jhiPrefix: 'jhi',
@@ -1190,14 +1322,15 @@ describe('JHipster generator', () => {
         });
 
         describe('API first using OpenAPI-generator (gradle)', () => {
-            beforeEach(done => {
+            before(done => {
                 helpers
                     .run('generator-jhipster/generators/app')
                     .withOptions({
                         'from-cli': true,
                         skipInstall: true,
                         skipChecks: true,
-                        blueprint: 'kotlin'
+                        blueprint: 'kotlin',
+                        'skip-ktlint-format': true
                     })
                     .withGenerators([
                         [
@@ -1223,7 +1356,6 @@ describe('JHipster generator', () => {
                         searchEngine: false,
                         buildTool: 'gradle',
                         rememberMeKey: '5c37379956bd1242f5636c8cb322c2966ad81277',
-                        useSass: false,
                         applicationType: 'monolith',
                         testFrameworks: ['gatling'],
                         jhiPrefix: 'jhi',
@@ -1252,14 +1384,15 @@ describe('JHipster generator', () => {
 
     context('Application names', () => {
         describe('package names', () => {
-            beforeEach(done => {
+            before(done => {
                 helpers
                     .run('generator-jhipster/generators/app')
                     .withOptions({
                         'from-cli': true,
                         skipInstall: true,
                         skipChecks: true,
-                        blueprint: 'kotlin'
+                        blueprint: 'kotlin',
+                        'skip-ktlint-format': true
                     })
                     .withGenerators([
                         [
@@ -1280,7 +1413,6 @@ describe('JHipster generator', () => {
                         databaseType: 'sql',
                         devDatabaseType: 'h2Memory',
                         prodDatabaseType: 'mysql',
-                        useSass: false,
                         enableTranslation: true,
                         nativeLanguage: 'en',
                         languages: ['fr'],
@@ -1299,14 +1431,15 @@ describe('JHipster generator', () => {
         });
 
         describe('bad application name for java', () => {
-            beforeEach(done => {
+            before(done => {
                 helpers
                     .run('generator-jhipster/generators/app')
                     .withOptions({
                         'from-cli': true,
                         skipInstall: true,
                         skipChecks: true,
-                        blueprint: 'kotlin'
+                        blueprint: 'kotlin',
+                        'skip-ktlint-format': true
                     })
                     .withGenerators([
                         [
@@ -1327,7 +1460,6 @@ describe('JHipster generator', () => {
                         databaseType: 'sql',
                         devDatabaseType: 'h2Memory',
                         prodDatabaseType: 'mysql',
-                        useSass: false,
                         enableTranslation: true,
                         nativeLanguage: 'en',
                         languages: ['fr'],
@@ -1348,14 +1480,15 @@ describe('JHipster generator', () => {
         });
 
         describe('application names', () => {
-            beforeEach(done => {
+            before(done => {
                 helpers
                     .run('generator-jhipster/generators/app')
                     .withOptions({
                         'from-cli': true,
                         skipInstall: true,
                         skipChecks: true,
-                        blueprint: 'kotlin'
+                        blueprint: 'kotlin',
+                        'skip-ktlint-format': true
                     })
                     .withGenerators([
                         [
@@ -1376,7 +1509,6 @@ describe('JHipster generator', () => {
                         databaseType: 'sql',
                         devDatabaseType: 'h2Memory',
                         prodDatabaseType: 'mysql',
-                        useSass: false,
                         enableTranslation: true,
                         nativeLanguage: 'en',
                         languages: ['fr'],
@@ -1396,14 +1528,15 @@ describe('JHipster generator', () => {
 
     context('i18n', () => {
         describe('no i18n', () => {
-            beforeEach(done => {
+            before(done => {
                 helpers
                     .run('generator-jhipster/generators/app')
                     .withOptions({
                         'from-cli': true,
                         skipInstall: true,
                         skipChecks: true,
-                        blueprint: 'kotlin'
+                        blueprint: 'kotlin',
+                        'skip-ktlint-format': true
                     })
                     .withGenerators([
                         [
@@ -1424,7 +1557,6 @@ describe('JHipster generator', () => {
                         databaseType: 'sql',
                         devDatabaseType: 'h2Memory',
                         prodDatabaseType: 'mysql',
-                        useSass: false,
                         enableTranslation: false,
                         buildTool: 'maven',
                         rememberMeKey: '5c37379956bd1242f5636c8cb322c2966ad81277',
@@ -1440,14 +1572,15 @@ describe('JHipster generator', () => {
         });
 
         describe('with RTL support', () => {
-            beforeEach(done => {
+            before(done => {
                 helpers
                     .run('generator-jhipster/generators/app')
                     .withOptions({
                         'from-cli': true,
                         skipInstall: true,
                         skipChecks: true,
-                        blueprint: 'kotlin'
+                        blueprint: 'kotlin',
+                        'skip-ktlint-format': true
                     })
                     .withGenerators([
                         [
@@ -1468,7 +1601,6 @@ describe('JHipster generator', () => {
                         databaseType: 'sql',
                         devDatabaseType: 'h2Memory',
                         prodDatabaseType: 'mysql',
-                        useSass: false,
                         enableTranslation: true,
                         nativeLanguage: 'en',
                         languages: ['ar-ly'],
@@ -1485,7 +1617,6 @@ describe('JHipster generator', () => {
                 assert.file(expectedFiles.i18nRtl);
                 assert.file(
                     getFilesForOptions(angularFiles, {
-                        useSass: false,
                         enableTranslation: true,
                         serviceDiscoveryType: false,
                         authenticationType: 'jwt',
@@ -1501,14 +1632,15 @@ describe('JHipster generator', () => {
 
     context('Auth options', () => {
         describe('JWT authentication', () => {
-            beforeEach(done => {
+            before(done => {
                 helpers
                     .run('generator-jhipster/generators/app')
                     .withOptions({
                         'from-cli': true,
                         skipInstall: true,
                         skipChecks: true,
-                        blueprint: 'kotlin'
+                        blueprint: 'kotlin',
+                        'skip-ktlint-format': true
                     })
                     .withGenerators([
                         [
@@ -1529,7 +1661,6 @@ describe('JHipster generator', () => {
                         databaseType: 'sql',
                         devDatabaseType: 'h2Memory',
                         prodDatabaseType: 'mysql',
-                        useSass: false,
                         enableTranslation: true,
                         nativeLanguage: 'en',
                         languages: ['fr'],
@@ -1544,7 +1675,6 @@ describe('JHipster generator', () => {
                 assert.file(expectedFiles.jwtServer);
                 assert.file(
                     getFilesForOptions(angularFiles, {
-                        useSass: false,
                         enableTranslation: true,
                         serviceDiscoveryType: false,
                         authenticationType: 'jwt',
@@ -1555,14 +1685,15 @@ describe('JHipster generator', () => {
         });
 
         describe('HTTP session authentication', () => {
-            beforeEach(done => {
+            before(done => {
                 helpers
                     .run('generator-jhipster/generators/app')
                     .withOptions({
                         'from-cli': true,
                         skipInstall: true,
                         skipChecks: true,
-                        blueprint: 'kotlin'
+                        blueprint: 'kotlin',
+                        'skip-ktlint-format': true
                     })
                     .withGenerators([
                         [
@@ -1583,7 +1714,6 @@ describe('JHipster generator', () => {
                         databaseType: 'sql',
                         devDatabaseType: 'h2Memory',
                         prodDatabaseType: 'mysql',
-                        useSass: false,
                         enableTranslation: true,
                         nativeLanguage: 'en',
                         languages: ['fr'],
@@ -1598,7 +1728,6 @@ describe('JHipster generator', () => {
                 assert.file(expectedFiles.session);
                 assert.file(
                     getFilesForOptions(angularFiles, {
-                        useSass: false,
                         enableTranslation: true,
                         serviceDiscoveryType: false,
                         authenticationType: 'session',
@@ -1611,14 +1740,15 @@ describe('JHipster generator', () => {
 
     context('Testing options', () => {
         describe('Protractor tests', () => {
-            beforeEach(done => {
+            before(done => {
                 helpers
                     .run('generator-jhipster/generators/app')
                     .withOptions({
                         'from-cli': true,
                         skipInstall: true,
                         skipChecks: true,
-                        blueprint: 'kotlin'
+                        blueprint: 'kotlin',
+                        'skip-ktlint-format': true
                     })
                     .withGenerators([
                         [
@@ -1644,7 +1774,6 @@ describe('JHipster generator', () => {
                         searchEngine: false,
                         buildTool: 'maven',
                         rememberMeKey: '5c37379956bd1242f5636c8cb322c2966ad81277',
-                        useSass: false,
                         applicationType: 'monolith',
                         testFrameworks: ['protractor'],
                         jhiPrefix: 'jhi',
@@ -1663,7 +1792,6 @@ describe('JHipster generator', () => {
                 assert.file(expectedFiles.hibernateTimeZoneConfig);
                 assert.file(
                     getFilesForOptions(angularFiles, {
-                        useSass: false,
                         enableTranslation: true,
                         serviceDiscoveryType: false,
                         authenticationType: 'jwt',
@@ -1675,14 +1803,15 @@ describe('JHipster generator', () => {
         });
 
         describe('Cucumber tests', () => {
-            beforeEach(done => {
+            before(done => {
                 helpers
                     .run('generator-jhipster/generators/app')
                     .withOptions({
                         'from-cli': true,
                         skipInstall: true,
                         skipChecks: true,
-                        blueprint: 'kotlin'
+                        blueprint: 'kotlin',
+                        'skip-ktlint-format': true
                     })
                     .withGenerators([
                         [
@@ -1708,7 +1837,6 @@ describe('JHipster generator', () => {
                         searchEngine: false,
                         buildTool: 'maven',
                         rememberMeKey: '5c37379956bd1242f5636c8cb322c2966ad81277',
-                        useSass: false,
                         applicationType: 'monolith',
                         testFrameworks: ['cucumber'],
                         jhiPrefix: 'jhi',
@@ -1733,7 +1861,7 @@ describe('JHipster generator', () => {
 
     context('App with skip client', () => {
         describe('Maven', () => {
-            beforeEach(done => {
+            before(done => {
                 helpers
                     .run('generator-jhipster/generators/app')
                     .withOptions({
@@ -1741,7 +1869,8 @@ describe('JHipster generator', () => {
                         skipInstall: true,
                         skipChecks: true,
                         skipClient: true,
-                        blueprint: 'kotlin'
+                        blueprint: 'kotlin',
+                        'skip-ktlint-format': true
                     })
                     .withGenerators([
                         [
@@ -1782,7 +1911,6 @@ describe('JHipster generator', () => {
                     getFilesForOptions(
                         angularFiles,
                         {
-                            useSass: false,
                             enableTranslation: true,
                             serviceDiscoveryType: false,
                             authenticationType: 'session',
@@ -1804,7 +1932,7 @@ describe('JHipster generator', () => {
         });
 
         describe('Gradle', () => {
-            beforeEach(done => {
+            before(done => {
                 helpers
                     .run('generator-jhipster/generators/app')
                     .withOptions({
@@ -1812,7 +1940,8 @@ describe('JHipster generator', () => {
                         skipInstall: true,
                         skipChecks: true,
                         skipClient: true,
-                        blueprint: 'kotlin'
+                        blueprint: 'kotlin',
+                        'skip-ktlint-format': true
                     })
                     .withGenerators([
                         [
@@ -1853,7 +1982,6 @@ describe('JHipster generator', () => {
                     getFilesForOptions(
                         angularFiles,
                         {
-                            useSass: false,
                             enableTranslation: true,
                             serviceDiscoveryType: false,
                             authenticationType: 'jwt',
@@ -1873,16 +2001,17 @@ describe('JHipster generator', () => {
 
     context('App with skip client and skip user management', () => {
         describe('Maven', () => {
-            beforeEach(done => {
+            before(done => {
                 helpers
                     .run('generator-jhipster/generators/app')
                     .withOptions({
                         'from-cli': true,
                         skipInstall: true,
-                        skipChecks: true,
                         skipClient: true,
                         skipUserManagement: true,
-                        blueprint: 'kotlin'
+                        skipChecks: true,
+                        blueprint: 'kotlin',
+                        'skip-ktlint-format': true
                     })
                     .withGenerators([
                         [
@@ -1925,14 +2054,15 @@ describe('JHipster generator', () => {
 
     context('Eureka', () => {
         describe('gateway with eureka', () => {
-            beforeEach(done => {
+            before(done => {
                 helpers
                     .run('generator-jhipster/generators/app')
                     .withOptions({
                         'from-cli': true,
                         skipInstall: true,
                         skipChecks: true,
-                        blueprint: 'kotlin'
+                        blueprint: 'kotlin',
+                        'skip-ktlint-format': true
                     })
                     .withGenerators([
                         [
@@ -1954,7 +2084,6 @@ describe('JHipster generator', () => {
                         databaseType: 'sql',
                         devDatabaseType: 'h2Memory',
                         prodDatabaseType: 'mysql',
-                        useSass: false,
                         enableTranslation: true,
                         nativeLanguage: 'en',
                         languages: ['fr'],
@@ -1975,14 +2104,15 @@ describe('JHipster generator', () => {
         });
 
         describe('microservice with eureka', () => {
-            beforeEach(done => {
+            before(done => {
                 helpers
                     .run('generator-jhipster/generators/app')
                     .withOptions({
                         'from-cli': true,
                         skipInstall: true,
                         skipChecks: true,
-                        blueprint: 'kotlin'
+                        blueprint: 'kotlin',
+                        'skip-ktlint-format': true
                     })
                     .withGenerators([
                         [
@@ -2003,7 +2133,6 @@ describe('JHipster generator', () => {
                         databaseType: 'sql',
                         devDatabaseType: 'mysql',
                         prodDatabaseType: 'mysql',
-                        useSass: false,
                         enableTranslation: true,
                         nativeLanguage: 'en',
                         languages: ['fr'],
@@ -2025,14 +2154,15 @@ describe('JHipster generator', () => {
         });
 
         describe('monolith with eureka', () => {
-            beforeEach(done => {
+            before(done => {
                 helpers
                     .run('generator-jhipster/generators/app')
                     .withOptions({
                         'from-cli': true,
                         skipInstall: true,
                         skipChecks: true,
-                        blueprint: 'kotlin'
+                        blueprint: 'kotlin',
+                        'skip-ktlint-format': true
                     })
                     .withGenerators([
                         [
@@ -2053,7 +2183,6 @@ describe('JHipster generator', () => {
                         databaseType: 'sql',
                         devDatabaseType: 'h2Memory',
                         prodDatabaseType: 'mysql',
-                        useSass: false,
                         enableTranslation: true,
                         nativeLanguage: 'en',
                         languages: ['fr'],
@@ -2077,14 +2206,15 @@ describe('JHipster generator', () => {
         });
 
         describe('microservice with gradle and eureka', () => {
-            beforeEach(done => {
+            before(done => {
                 helpers
                     .run('generator-jhipster/generators/app')
                     .withOptions({
                         'from-cli': true,
                         skipInstall: true,
                         skipChecks: true,
-                        blueprint: 'kotlin'
+                        blueprint: 'kotlin',
+                        'skip-ktlint-format': true
                     })
                     .withGenerators([
                         [
@@ -2105,7 +2235,6 @@ describe('JHipster generator', () => {
                         databaseType: 'sql',
                         devDatabaseType: 'h2Memory',
                         prodDatabaseType: 'mysql',
-                        useSass: false,
                         enableTranslation: true,
                         nativeLanguage: 'en',
                         languages: ['fr'],
@@ -2130,14 +2259,15 @@ describe('JHipster generator', () => {
         });
 
         describe('UAA server with Eureka', () => {
-            beforeEach(done => {
+            before(done => {
                 helpers
                     .run('generator-jhipster/generators/app')
                     .withOptions({
                         'from-cli': true,
                         skipInstall: true,
                         skipChecks: true,
-                        blueprint: 'kotlin'
+                        blueprint: 'kotlin',
+                        'skip-ktlint-format': true
                     })
                     .withGenerators([
                         [
@@ -2158,7 +2288,6 @@ describe('JHipster generator', () => {
                         databaseType: 'sql',
                         devDatabaseType: 'mysql',
                         prodDatabaseType: 'mysql',
-                        useSass: false,
                         enableTranslation: true,
                         nativeLanguage: 'en',
                         languages: ['fr'],
@@ -2178,14 +2307,15 @@ describe('JHipster generator', () => {
         });
 
         describe('UAA gateway with eureka', () => {
-            beforeEach(done => {
+            before(done => {
                 helpers
                     .run('generator-jhipster/generators/app')
                     .withOptions({
                         'from-cli': true,
                         skipInstall: true,
                         skipChecks: true,
-                        blueprint: 'kotlin'
+                        blueprint: 'kotlin',
+                        'skip-ktlint-format': true
                     })
                     .withGenerators([
                         [
@@ -2210,7 +2340,6 @@ describe('JHipster generator', () => {
                         databaseType: 'sql',
                         devDatabaseType: 'mysql',
                         prodDatabaseType: 'mysql',
-                        useSass: false,
                         enableTranslation: true,
                         nativeLanguage: 'en',
                         languages: ['fr'],
@@ -2234,14 +2363,15 @@ describe('JHipster generator', () => {
 
     context('Consul', () => {
         describe('gateway with consul', () => {
-            beforeEach(done => {
+            before(done => {
                 helpers
                     .run('generator-jhipster/generators/app')
                     .withOptions({
                         'from-cli': true,
                         skipInstall: true,
                         skipChecks: true,
-                        blueprint: 'kotlin'
+                        blueprint: 'kotlin',
+                        'skip-ktlint-format': true
                     })
                     .withGenerators([
                         [
@@ -2263,7 +2393,6 @@ describe('JHipster generator', () => {
                         databaseType: 'sql',
                         devDatabaseType: 'h2Memory',
                         prodDatabaseType: 'mysql',
-                        useSass: false,
                         enableTranslation: true,
                         nativeLanguage: 'en',
                         languages: ['fr'],
@@ -2283,14 +2412,15 @@ describe('JHipster generator', () => {
         });
 
         describe('microservice with consul', () => {
-            beforeEach(done => {
+            before(done => {
                 helpers
                     .run('generator-jhipster/generators/app')
                     .withOptions({
                         'from-cli': true,
                         skipInstall: true,
                         skipChecks: true,
-                        blueprint: 'kotlin'
+                        blueprint: 'kotlin',
+                        'skip-ktlint-format': true
                     })
                     .withGenerators([
                         [
@@ -2311,7 +2441,6 @@ describe('JHipster generator', () => {
                         databaseType: 'sql',
                         devDatabaseType: 'mysql',
                         prodDatabaseType: 'mysql',
-                        useSass: false,
                         enableTranslation: true,
                         nativeLanguage: 'en',
                         languages: ['fr'],
@@ -2334,14 +2463,15 @@ describe('JHipster generator', () => {
 
     context('No Service Discovery', () => {
         describe('gateway with no service discovery', () => {
-            beforeEach(done => {
+            before(done => {
                 helpers
                     .run('generator-jhipster/generators/app')
                     .withOptions({
                         'from-cli': true,
                         skipInstall: true,
                         skipChecks: true,
-                        blueprint: 'kotlin'
+                        blueprint: 'kotlin',
+                        'skip-ktlint-format': true
                     })
                     .withGenerators([
                         [
@@ -2363,7 +2493,6 @@ describe('JHipster generator', () => {
                         databaseType: 'sql',
                         devDatabaseType: 'h2Memory',
                         prodDatabaseType: 'mysql',
-                        useSass: false,
                         enableTranslation: true,
                         nativeLanguage: 'en',
                         languages: ['fr'],
@@ -2414,7 +2543,6 @@ describe('JHipster generator', () => {
                         databaseType: 'sql',
                         devDatabaseType: 'h2Memory',
                         prodDatabaseType: 'mysql',
-                        useSass: false,
                         enableTranslation: true,
                         nativeLanguage: 'en',
                         languages: ['fr'],
@@ -2434,14 +2562,15 @@ describe('JHipster generator', () => {
         });
 
         describe('microservice with no service discovery', () => {
-            beforeEach(done => {
+            before(done => {
                 helpers
                     .run('generator-jhipster/generators/app')
                     .withOptions({
                         'from-cli': true,
                         skipInstall: true,
                         skipChecks: true,
-                        blueprint: 'kotlin'
+                        blueprint: 'kotlin',
+                        'skip-ktlint-format': true
                     })
                     .withGenerators([
                         [
@@ -2462,7 +2591,6 @@ describe('JHipster generator', () => {
                         databaseType: 'sql',
                         devDatabaseType: 'mysql',
                         prodDatabaseType: 'mysql',
-                        useSass: false,
                         enableTranslation: true,
                         nativeLanguage: 'en',
                         languages: ['fr'],

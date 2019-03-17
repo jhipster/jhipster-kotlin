@@ -19,7 +19,8 @@ describe('JHipster generator for entity', () => {
                             'from-cli': true,
                             skipInstall: true,
                             blueprint: 'kotlin',
-                            skipChecks: true
+                            skipChecks: true,
+                            'skip-ktlint-format': true
                         })
                         .withGenerators([
                             [
@@ -64,7 +65,8 @@ describe('JHipster generator for entity', () => {
                             'from-cli': true,
                             skipInstall: true,
                             blueprint: 'kotlin',
-                            skipChecks: true
+                            skipChecks: true,
+                            'skip-ktlint-format': true
                         })
                         .withGenerators([
                             [
@@ -104,17 +106,17 @@ describe('JHipster generator for entity', () => {
 
                     assert.fileContent(
                         `${SERVER_MAIN_SRC_DIR}com/mycompany/myapp/repository/FooRepository.kt`,
-                        'interface FooRepository: '
+                        'interface FooRepository : '
                     );
 
                     assert.fileContent(
                         `${SERVER_MAIN_SRC_DIR}com/mycompany/myapp/domain/FooXXX.kt`,
-                        /.+^class FooXXX \($.*^\): Serializable {$.*/gms
+                        /.+^class FooXXX\($.*^\) : Serializable {$.*/gms
                     );
 
                     assert.fileContent(
                         `${SERVER_MAIN_SRC_DIR}com/mycompany/myapp/service/dto/FooYYY.kt`,
-                        /.+^data class FooYYY \($.*^\): Serializable {$.*/gms
+                        /.+^data class FooYYY\($.*^\) : Serializable {$.*/gms
                     );
                 });
             });
@@ -127,7 +129,8 @@ describe('JHipster generator for entity', () => {
                             'from-cli': true,
                             skipInstall: true,
                             blueprint: 'kotlin',
-                            skipChecks: true
+                            skipChecks: true,
+                            'skip-ktlint-format': true
                         })
                         .withGenerators([
                             [
@@ -170,12 +173,12 @@ describe('JHipster generator for entity', () => {
 
                     assert.fileContent(
                         `${SERVER_MAIN_SRC_DIR}com/mycompany/myapp/repository/FooRepository.kt`,
-                        'interface FooRepository: '
+                        'interface FooRepository : '
                     );
 
                     assert.fileContent(
                         `${SERVER_MAIN_SRC_DIR}com/mycompany/myapp/domain/FooXXX.kt`,
-                        /.+^class FooXXX \($.*^\): Serializable {$.*/gms
+                        /.+^class FooXXX\($.*^\) : Serializable {$.*/gms
                     );
                 });
             });
@@ -190,7 +193,8 @@ describe('JHipster generator for entity', () => {
                             'from-cli': true,
                             skipInstall: true,
                             blueprint: 'kotlin',
-                            skipChecks: true
+                            skipChecks: true,
+                            'skip-ktlint-format': true
                         })
                         .withGenerators([
                             [
@@ -233,7 +237,8 @@ describe('JHipster generator for entity', () => {
                             'from-cli': true,
                             skipInstall: true,
                             blueprint: 'kotlin',
-                            skipChecks: true
+                            skipChecks: true,
+                            'skip-ktlint-format': true
                         })
                         .withGenerators([
                             [
@@ -276,7 +281,8 @@ describe('JHipster generator for entity', () => {
                             'from-cli': true,
                             skipInstall: true,
                             blueprint: 'kotlin',
-                            skipChecks: true
+                            skipChecks: true,
+                            'skip-ktlint-format': true
                         })
                         .withGenerators([
                             [
@@ -319,7 +325,8 @@ describe('JHipster generator for entity', () => {
                             'from-cli': true,
                             skipInstall: true,
                             blueprint: 'kotlin',
-                            skipChecks: true
+                            skipChecks: true,
+                            'skip-ktlint-format': true
                         })
                         .withGenerators([
                             [
@@ -366,7 +373,8 @@ describe('JHipster generator for entity', () => {
                             'from-cli': true,
                             skipInstall: true,
                             blueprint: 'kotlin',
-                            skipChecks: true
+                            skipChecks: true,
+                            'skip-ktlint-format': true
                         })
                         .withGenerators([
                             [
@@ -414,7 +422,8 @@ describe('JHipster generator for entity', () => {
                             'from-cli': true,
                             skipInstall: true,
                             blueprint: 'kotlin',
-                            skipChecks: true
+                            skipChecks: true,
+                            'skip-ktlint-format': true
                         })
                         .withGenerators([
                             [
@@ -459,7 +468,8 @@ describe('JHipster generator for entity', () => {
                             'from-cli': true,
                             skipInstall: true,
                             blueprint: 'kotlin',
-                            skipChecks: true
+                            skipChecks: true,
+                            'skip-ktlint-format': true
                         })
                         .withGenerators([
                             [
@@ -504,7 +514,8 @@ describe('JHipster generator for entity', () => {
                             'from-cli': true,
                             skipInstall: true,
                             blueprint: 'kotlin',
-                            skipChecks: true
+                            skipChecks: true,
+                            'skip-ktlint-format': true
                         })
                         .withGenerators([
                             [
@@ -552,7 +563,8 @@ describe('JHipster generator for entity', () => {
                             'from-cli': true,
                             skipInstall: true,
                             blueprint: 'kotlin',
-                            skipChecks: true
+                            skipChecks: true,
+                            'skip-ktlint-format': true
                         })
                         .withGenerators([
                             [
@@ -598,7 +610,8 @@ describe('JHipster generator for entity', () => {
                             'from-cli': true,
                             skipInstall: true,
                             blueprint: 'kotlin',
-                            skipChecks: true
+                            skipChecks: true,
+                            'skip-ktlint-format': true
                         })
                         .withGenerators([
                             [
@@ -641,7 +654,8 @@ describe('JHipster generator for entity', () => {
                             'from-cli': true,
                             skipInstall: true,
                             blueprint: 'kotlin',
-                            skipChecks: true
+                            skipChecks: true,
+                            'skip-ktlint-format': true
                         })
                         .withGenerators([
                             [
@@ -688,7 +702,8 @@ describe('JHipster generator for entity', () => {
                             'from-cli': true,
                             skipInstall: true,
                             blueprint: 'kotlin',
-                            skipChecks: true
+                            skipChecks: true,
+                            'skip-ktlint-format': true
                         })
                         .withGenerators([
                             [
@@ -732,7 +747,8 @@ describe('JHipster generator for entity', () => {
                             'from-cli': true,
                             skipInstall: true,
                             blueprint: 'kotlin',
-                            skipChecks: true
+                            skipChecks: true,
+                            'skip-ktlint-format': true
                         })
                         .withGenerators([
                             [
@@ -778,7 +794,8 @@ describe('JHipster generator for entity', () => {
                             'from-cli': true,
                             skipInstall: true,
                             blueprint: 'kotlin',
-                            skipChecks: true
+                            skipChecks: true,
+                            'skip-ktlint-format': true
                         })
                         .withGenerators([
                             [
@@ -821,7 +838,8 @@ describe('JHipster generator for entity', () => {
                             'from-cli': true,
                             skipInstall: true,
                             blueprint: 'kotlin',
-                            skipChecks: true
+                            skipChecks: true,
+                            'skip-ktlint-format': true
                         })
                         .withGenerators([
                             [
@@ -870,7 +888,8 @@ describe('JHipster generator for entity', () => {
                             'from-cli': true,
                             skipInstall: true,
                             blueprint: 'kotlin',
-                            skipChecks: true
+                            skipChecks: true,
+                            'skip-ktlint-format': true
                         })
                         .withGenerators([
                             [
@@ -914,7 +933,8 @@ describe('JHipster generator for entity', () => {
                             'from-cli': true,
                             skipInstall: true,
                             blueprint: 'kotlin',
-                            skipChecks: true
+                            skipChecks: true,
+                            'skip-ktlint-format': true
                         })
                         .withGenerators([
                             [
@@ -962,7 +982,8 @@ describe('JHipster generator for entity', () => {
                             'from-cli': true,
                             skipInstall: true,
                             blueprint: 'kotlin',
-                            skipChecks: true
+                            skipChecks: true,
+                            'skip-ktlint-format': true
                         })
                         .withGenerators([
                             [
@@ -1008,7 +1029,8 @@ describe('JHipster generator for entity', () => {
                             'from-cli': true,
                             skipInstall: true,
                             blueprint: 'kotlin',
-                            skipChecks: true
+                            skipChecks: true,
+                            'skip-ktlint-format': true
                         })
                         .withGenerators([
                             [

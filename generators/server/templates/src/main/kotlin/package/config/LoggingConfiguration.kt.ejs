@@ -54,9 +54,13 @@ import org.springframework.context.annotation.Configuration
 @ConditionalOnConsulEnabled
 @RefreshScope
 <%_ } _%>
-class LoggingConfiguration(@param:Value("\${spring.application.name}") private val appName: String, @param:Value("\${server.port}") private val serverPort: String,
-    <% if (serviceDiscoveryType === "consul") { %> private val consulRegistration: ConsulRegistration,<% } %><% if (serviceDiscoveryType && (applicationType === 'microservice' || applicationType === 'gateway' || applicationType === 'uaa')) { %> @Value("\${info.project.version:}") private val version: String,<% } %>
-                           private val jHipsterProperties: JHipsterProperties) {
+class LoggingConfiguration(
+    @param:Value("\${spring.application.name}") private val appName: String,
+    @param:Value("\${server.port}") private val serverPort: String,<%_ if (serviceDiscoveryType === "consul") { %>
+    private val consulRegistration: ConsulRegistration,<%_ } if (serviceDiscoveryType && (applicationType === 'microservice' || applicationType === 'gateway' || applicationType === 'uaa')) { %>
+    @Value("\${info.project.version:}") private val version: String,<%_ } %>
+    private val jHipsterProperties: JHipsterProperties
+) {
 
     private val log = LoggerFactory.getLogger(LoggingConfiguration::class.java)
 
@@ -181,5 +185,4 @@ class LoggingConfiguration(@param:Value("\${spring.application.name}") private v
 
         private const val ASYNC_LOGSTASH_APPENDER_NAME = "ASYNC_LOGSTASH"
     }
-
 }

@@ -24,7 +24,7 @@ import <%=packageName%>.service.dto.<%= asDto('User') %>
 import <%=packageName%>.web.rest.errors.InternalServerErrorException
 
 import org.slf4j.LoggerFactory
-import org.springframework.security.oauth2.provider.OAuth2Authentication
+import org.springframework.security.oauth2.client.authentication.OAuth2AuthenticationToken
 import org.springframework.web.bind.annotation.GetMapping
 import org.springframework.web.bind.annotation.RequestMapping
 import org.springframework.web.bind.annotation.RestController
@@ -63,12 +63,12 @@ class AccountResource(private val userService: UserService) {
     @GetMapping("/account")
     @SuppressWarnings("unchecked")
     fun getAccount(principal: Principal?): <%= asDto('User') %> {
-        if (principal != null) {
-            if (principal is OAuth2Authentication) {
-                return userService.getUserFromAuthentication(principal)
+        return if (principal != null) {
+            if (principal is OAuth2AuthenticationToken) {
+                userService.getUserFromAuthentication(principal)
             } else {
                 // Allow Spring Security Test to be used to mock users in the database
-                return userService.getUserWithAuthorities()
+                userService.getUserWithAuthorities()
                     .map { <%= asDto('User') %>(it) }
                     .orElseThrow { InternalServerErrorException("User could not be found") }
             }
@@ -78,7 +78,7 @@ class AccountResource(private val userService: UserService) {
     }
 }
 <%_ } else { _%>
-<%_ if (authenticationType === 'session') { _%>
+<%_ if (authenticationType === 'session' && !reactive) { _%>
 import <%=packageName%>.domain.PersistentToken
 import <%=packageName%>.repository.PersistentTokenRepository
 <%_ } _%>
@@ -88,14 +88,26 @@ import <%=packageName%>.service.MailService
 import <%=packageName%>.service.UserService
 import <%=packageName%>.service.dto.PasswordChangeDTO
 import <%=packageName%>.service.dto.<%= asDto('User') %>
-import <%=packageName%>.web.rest.errors.*
+import <%=packageName%>.web.rest.errors.EmailAlreadyUsedException
+import <%=packageName%>.web.rest.errors.EmailNotFoundException
+import <%=packageName%>.web.rest.errors.InternalServerErrorException
+import <%=packageName%>.web.rest.errors.InvalidPasswordException
+import <%=packageName%>.web.rest.errors.LoginAlreadyUsedException
 import <%=packageName%>.web.rest.vm.KeyAndPasswordVM
 import <%=packageName%>.web.rest.vm.ManagedUserVM
 
 import org.apache.commons.lang3.StringUtils
 import org.slf4j.LoggerFactory
 import org.springframework.http.HttpStatus
-import org.springframework.web.bind.annotation.*
+import org.springframework.web.bind.annotation.DeleteMapping
+import org.springframework.web.bind.annotation.GetMapping
+import org.springframework.web.bind.annotation.PathVariable
+import org.springframework.web.bind.annotation.PostMapping
+import org.springframework.web.bind.annotation.RequestBody
+import org.springframework.web.bind.annotation.RequestMapping
+import org.springframework.web.bind.annotation.RequestParam
+import org.springframework.web.bind.annotation.ResponseStatus
+import org.springframework.web.bind.annotation.RestController
 <%_ if (reactive) { _%>
 import org.springframework.web.server.ServerWebExchange
 import reactor.core.publisher.Mono
@@ -105,7 +117,7 @@ import reactor.core.publisher.Mono
 import javax.servlet.http.HttpServletRequest
 <%_ } _%>
 import javax.validation.Valid
-<%_ if (authenticationType === 'session') { _%>
+<%_ if (authenticationType === 'session' && !reactive) { _%>
 import java.io.UnsupportedEncodingException
 import java.net.URLDecoder
 <%_ } _%>
@@ -121,7 +133,7 @@ import java.security.Principal
 class AccountResource(
     private val userRepository: UserRepository,
     private val userService: UserService,
-    private val mailService: MailService<% if (authenticationType === 'session') { %>,
+    private val mailService: MailService<% if (authenticationType === 'session' && !reactive) { %>,
     private val persistentTokenRepository: PersistentTokenRepository<%_ } %>
 ) {
 
@@ -216,7 +228,8 @@ class AccountResource(
     @PostMapping("/account")
     <%_ if (!reactive) { _%>
     fun saveAccount(@Valid @RequestBody userDTO: <%= asDto('User') %>) {
-        val userLogin = SecurityUtils.getCurrentUserLogin().orElseThrow { InternalServerErrorException("Current user login not found") }
+        val userLogin = SecurityUtils.getCurrentUserLogin()
+            .orElseThrow { InternalServerErrorException("Current user login not found") }
         val existingUser = userRepository.findOneByEmailIgnoreCase(userDTO.email)
         if (existingUser.isPresent && !existingUser.get().login.equals(userLogin, ignoreCase = true)) {
             throw EmailAlreadyUsedException()
@@ -225,8 +238,10 @@ class AccountResource(
         if (!user.isPresent) {
             throw InternalServerErrorException("User could not be found")
         }
-        userService.updateUser(userDTO.firstName, userDTO.lastName, userDTO.email,
-            userDTO.langKey<% if (databaseType === 'mongodb' || databaseType === 'couchbase' || databaseType === 'sql') { %>, userDTO.imageUrl<% } %>)
+        userService.updateUser(
+            userDTO.firstName, userDTO.lastName, userDTO.email,
+            userDTO.langKey<% if (['sql', 'mongodb', 'couchbase'].includes(databaseType)) { %>, userDTO.imageUrl<% } %>
+        )
     <%_ } else { _%>
     fun saveAccount(@Valid @RequestBody userDTO: <%= asDto('User') %>): Mono<Void> {
         return SecurityUtils.getCurrentUserLogin()
@@ -244,8 +259,9 @@ class AccountResource(
             }
             .switchIfEmpty(Mono.error(InternalServerErrorException("User could not be found")))
             .flatMap {
-                userService.updateUser(userDTO.firstName, userDTO.lastName, userDTO.email,
-                    userDTO.langKey, userDTO.imageUrl)
+                userService.updateUser(
+                    userDTO.firstName, userDTO.lastName, userDTO.email, userDTO.langKey<% if (['sql', 'mongodb', 'couchbase'].includes(databaseType)) { %>, userDTO.imageUrl<% } %>
+                )
             }
     <%_ } _%>
     }
@@ -262,7 +278,7 @@ class AccountResource(
             throw InvalidPasswordException()
         }
         <% if (reactive) { %>return <% } %>userService.changePassword(passwordChangeDto.currentPassword!!, passwordChangeDto.newPassword!!)
-    }<% if (authenticationType === 'session') { %>
+    }<% if (authenticationType === 'session' && !reactive) { %>
 
     /**
      * GET  /account/sessions : get the current open sessions.
@@ -303,9 +319,9 @@ class AccountResource(
             .flatMap(userRepository::findOneByLogin)
             .ifPresent { u ->
                 persistentTokenRepository.findByUser(u).stream()
-                    .filter { persistentToken -> StringUtils.equals(persistentToken.series, decodedSeries) } <% if (databaseType === 'sql' || databaseType === 'mongodb') { %>
-                    .findAny().ifPresent { persistentTokenRepository.deleteById(decodedSeries) } <% } else if (databaseType === 'couchbase'){ %>
-                .findAny().ifPresent { persistentTokenRepository.deleteBySeries(decodedSeries) } <% } else { %>
+                    .filter { persistentToken -> StringUtils.equals(persistentToken.series, decodedSeries) }<% if (databaseType === 'sql' || databaseType === 'mongodb') { %>
+                    .findAny().ifPresent { persistentTokenRepository.deleteById(decodedSeries) }<% } else if (databaseType === 'couchbase'){ %>
+                .findAny().ifPresent { persistentTokenRepository.deleteBySeries(decodedSeries) }<% } else { %>
                     .findAny().ifPresent(persistentTokenRepository::delete)<% } %>
             }
     }<% } %>
@@ -319,10 +335,10 @@ class AccountResource(
     @PostMapping(path = ["/account/reset-password/init"])
     <%_ if (!reactive) { _%>
     fun requestPasswordReset(@RequestBody mail: String) {
-       mailService.sendPasswordResetMail(
-           userService.requestPasswordReset(mail)
+        mailService.sendPasswordResetMail(
+            userService.requestPasswordReset(mail)
                 .orElseThrow<EmailNotFoundException> { EmailNotFoundException() }
-       )
+        )
     <%_ } else { _%>
     fun requestPasswordReset(@RequestBody mail: String): Mono<Void> {
         return userService.requestPasswordReset(mail)

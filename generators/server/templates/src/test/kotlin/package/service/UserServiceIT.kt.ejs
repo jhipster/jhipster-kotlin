@@ -23,11 +23,11 @@ import <%= packageName %>.AbstractCassandraTest
 <%_ } _%>
 import <%= packageName %>.<%= mainClass %>
 import <%= packageName %>.config.Constants
-<%_ if ((databaseType === 'sql' || databaseType === 'mongodb' || databaseType === 'couchbase') && authenticationType === 'session') { _%>
+<%_ if ((databaseType === 'sql' || databaseType === 'mongodb' || databaseType === 'couchbase') && authenticationType === 'session' && !reactive) { _%>
 import <%= packageName %>.domain.PersistentToken
 <%_ } _%>
 import <%= packageName %>.domain.<%= asEntity('User') %>
-<%_ if ((databaseType === 'sql' || databaseType === 'mongodb' || databaseType === 'couchbase') && authenticationType === 'session') { _%>
+<%_ if ((databaseType === 'sql' || databaseType === 'mongodb' || databaseType === 'couchbase') && authenticationType === 'session' && !reactive) { _%>
 import <%= packageName %>.repository.PersistentTokenRepository
 <%_ } _%>
 <%_ if (searchEngine === 'elasticsearch') { _%>
@@ -63,8 +63,9 @@ import org.springframework.data.domain.PageRequest
 import org.springframework.security.authentication.UsernamePasswordAuthenticationToken
 import org.springframework.security.core.GrantedAuthority
 import org.springframework.security.core.authority.SimpleGrantedAuthority
-import org.springframework.security.oauth2.provider.OAuth2Authentication
-import org.springframework.security.oauth2.provider.OAuth2Request
+import org.springframework.security.oauth2.client.authentication.OAuth2AuthenticationToken
+import org.springframework.security.oauth2.core.user.DefaultOAuth2User
+import org.springframework.security.oauth2.core.user.OAuth2User
 <%_ } _%>
 <%_ if (databaseType === 'couchbase') { _%>
 import org.springframework.security.test.context.support.WithAnonymousUser
@@ -81,7 +82,7 @@ import java.time.temporal.ChronoUnit
 <%_ if (databaseType === 'sql') { _%>
 import java.time.temporal.TemporalAccessor
 <%_ } _%>
-<%_ if ((databaseType === 'sql' || databaseType === 'mongodb' || databaseType === 'couchbase') && authenticationType === 'session') { _%>
+<%_ if ((databaseType === 'sql' || databaseType === 'mongodb' || databaseType === 'couchbase') && authenticationType === 'session' && !reactive) { _%>
 import java.time.LocalDate
 <%_ } _%>
 <%_ if (databaseType === 'sql') { _%>
@@ -113,7 +114,7 @@ import kotlin.test.assertNotNull
 @Transactional<% } %>
 class UserServiceIT <% if (databaseType === 'cassandra') { %>: AbstractCassandraTest() <% } %>{
 
-    <%_ if ((databaseType === 'sql' || databaseType === 'mongodb' || databaseType === 'couchbase') && authenticationType === 'session') { _%>
+    <%_ if ((databaseType === 'sql' || databaseType === 'mongodb' || databaseType === 'couchbase') && authenticationType === 'session' && !reactive) { _%>
     @Autowired
     private lateinit var persistentTokenRepository: PersistentTokenRepository
 
@@ -149,7 +150,7 @@ class UserServiceIT <% if (databaseType === 'cassandra') { %>: AbstractCassandra
         <%_ if (databaseType === 'couchbase') { _%>
         mockAuthentication()
         <%_ } _%>
-        <%_ if ((databaseType === 'sql' || databaseType === 'mongodb' || databaseType === 'couchbase') && authenticationType === 'session') { _%>
+        <%_ if ((databaseType === 'sql' || databaseType === 'mongodb' || databaseType === 'couchbase') && authenticationType === 'session' && !reactive) { _%>
         persistentTokenRepository.deleteAll()
         <%_ } _%>
         <%_ if (databaseType !== 'sql') { _%>
@@ -177,7 +178,7 @@ class UserServiceIT <% if (databaseType === 'cassandra') { %>: AbstractCassandra
         auditingHandler.setDateTimeProvider(dateTimeProvider)
         <%_ } _%>
     }
-    <%_ if ((databaseType === 'sql' || databaseType === 'mongodb' || databaseType === 'couchbase') && authenticationType === 'session') { _%>
+    <%_ if ((databaseType === 'sql' || databaseType === 'mongodb' || databaseType === 'couchbase') && authenticationType === 'session' && !reactive) { _%>
 
     @Test
     <%_ if (databaseType === 'sql') { _%>
@@ -308,7 +309,7 @@ class UserServiceIT <% if (databaseType === 'cassandra') { %>: AbstractCassandra
         <%_ } _%>
     }
     <%_ } _%>
-    <%_ if ((databaseType === 'sql' || databaseType === 'mongodb' || databaseType === 'couchbase') && authenticationType === 'session') { _%>
+    <%_ if ((databaseType === 'sql' || databaseType === 'mongodb' || databaseType === 'couchbase') && authenticationType === 'session' && !reactive) { _%>
 
     private fun generateUserToken(user: <%= asEntity('User') %>, tokenSeries: String, localDate: LocalDate) {
         val token = PersistentToken()
@@ -342,12 +343,11 @@ class UserServiceIT <% if (databaseType === 'cassandra') { %>: AbstractCassandra
             .collectList().block()<% } %>
         assertNotNull(allManagedUsers)
         assertThat(allManagedUsers<% if (!reactive) { %>.content<% } %>.stream()<% } %><% if (databaseType === 'cassandra') { %>
-        val allManagedUsers = userService.getAllManagedUsers()
+        val allManagedUsers = userService.getAllManagedUsers()<% if (reactive) { %>.collectList().block()<% } %>
         assertThat(allManagedUsers.stream()<% } %>
             .noneMatch { user -> Constants.ANONYMOUS_USER == user.login })
             .isTrue()
     }
-
     <%_ if (authenticationType !== 'oauth2' && (databaseType === 'sql' || databaseType === 'mongodb' || databaseType === 'couchbase')) { _%>
 
     @Test
@@ -378,8 +378,8 @@ class UserServiceIT <% if (databaseType === 'cassandra') { %>: AbstractCassandra
         <%_ } _%>
     }
     <%_ } _%>
-
     <%_ if (authenticationType === 'oauth2') { _%>
+
     @Test
     <%_ if (databaseType === 'sql') { _%>
     @Transactional
@@ -397,31 +397,30 @@ class UserServiceIT <% if (databaseType === 'cassandra') { %>: AbstractCassandra
         userDetails["picture"] = user.imageUrl
         userDetails["locale"] = "en_US"
 
-        var authentication = createMockOAuth2AuthenticationWithDetails(userDetails)
+        var authentication = createMockOAuth2AuthenticationToken(userDetails)
 
         var userDTO = userService.getUserFromAuthentication(authentication)
 
         assertThat(userDTO.langKey).isEqualTo("en")
 
         userDetails["locale"] = "it-IT"
-        authentication = createMockOAuth2AuthenticationWithDetails(userDetails)
+        authentication = createMockOAuth2AuthenticationToken(userDetails)
 
         userDTO = userService.getUserFromAuthentication(authentication)
 
         assertThat(userDTO.langKey).isEqualTo("it-it")
     }
 
-    private fun createMockOAuth2AuthenticationWithDetails(userDetails: Map<String, Any?>): OAuth2Authentication {
+    private fun createMockOAuth2AuthenticationToken(userDetails: Map<String, Any?>): OAuth2AuthenticationToken {
         val scopes = mutableSetOf<String>()
 
         val authorities = mutableListOf<GrantedAuthority>()
         authorities.add(SimpleGrantedAuthority(AuthoritiesConstants.ANONYMOUS))
         val usernamePasswordAuthenticationToken = UsernamePasswordAuthenticationToken(Constants.ANONYMOUS_USER, Constants.ANONYMOUS_USER, authorities)
         usernamePasswordAuthenticationToken.details = userDetails
+        val user = DefaultOAuth2User(authorities, userDetails, "preferred_username")
 
-        val authRequest = OAuth2Request(null, "testClient", null, true, scopes, null, null, null, null)
-
-        return OAuth2Authentication(authRequest, usernamePasswordAuthenticationToken)
+        return OAuth2AuthenticationToken(user, authorities, "oidc")
     }
     <%_ } _%>
 }

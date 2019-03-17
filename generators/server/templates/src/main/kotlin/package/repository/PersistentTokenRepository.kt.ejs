@@ -18,29 +18,37 @@
 -%>
 package <%=packageName%>.repository
 
-<% if (databaseType === 'cassandra') { %>
-import com.datastax.driver.core.*
-import com.datastax.driver.mapping.MappingManager<% } %>
+<%_ if (databaseType === 'cassandra') { _%>
+import com.datastax.driver.core.BatchStatement
+import com.datastax.driver.core.Session
+import com.datastax.driver.mapping.MappingManager
+
+<%_ } _%>
 import <%=packageName%>.domain.PersistentToken
-import <%=packageName%>.domain.<%= asEntity('User') %><% if (databaseType !== 'cassandra') { %>
-import java.time.LocalDate<% } %><% if (databaseType === 'sql') { %>
+import <%=packageName%>.domain.<%= asEntity('User') %>
+<%_ if (databaseType !== 'cassandra') { _%>
+import java.time.LocalDate
+<%_ } _%>
+<%_ if (databaseType === 'sql') { _%>
 import org.springframework.data.jpa.repository.JpaRepository
-<% } %><% if (databaseType === 'mongodb') { %>
+<%_ } _%>
+<%_ if (databaseType === 'mongodb') { _%>
 import org.springframework.data.mongodb.repository.MongoRepository
-<% } %><% if (databaseType === 'cassandra') { %>
+<%_ } if (databaseType === 'cassandra') { _%>
 import org.springframework.stereotype.Repository
 
 import javax.validation.ConstraintViolationException
 import javax.validation.Validator
-<% } %>
+<%_ } _%>
 <%_ if (databaseType === 'cassandra' || databaseType === 'couchbase') { _%>
 
 import java.util.Optional
 <%_ } _%>
-<% if (databaseType === 'couchbase') { %>
+<%_ if (databaseType === 'couchbase') { _%>
 
 import <%=packageName%>.config.Constants.ID_DELIMITER
-<% } %>
+<%_ } _%>
+
 <% if (databaseType === 'sql') { %>/**
  * Spring Data JPA repository for the [PersistentToken] entity.
  */<% } %><% if (databaseType === 'mongodb') { %>/**
@@ -50,7 +58,7 @@ import <%=packageName%>.config.Constants.ID_DELIMITER
  */<% } %><% if (databaseType === 'cassandra') { %>/**
  * Cassandra repository for the [PersistentToken] entity.
  */<% } %><% if (databaseType === 'sql' || databaseType === 'mongodb' || databaseType === 'couchbase') { %>
-interface PersistentTokenRepository: <% if (databaseType === 'sql') { %>JpaRepository<% } %><% if (databaseType === 'mongodb') { %>MongoRepository<% } %><% if (databaseType === 'couchbase') { %>N1qlCouchbaseRepository<% } %><PersistentToken, String> {
+interface PersistentTokenRepository : <% if (databaseType === 'sql') { %>JpaRepository<% } %><% if (databaseType === 'mongodb') { %>MongoRepository<% } %><% if (databaseType === 'couchbase') { %>N1qlCouchbaseRepository<% } %><PersistentToken, String> {
 <% if (databaseType === 'couchbase') { %>
     fun findBySeries(series: String): Optional<PersistentToken> {
         return findById(PersistentToken.PREFIX + ID_DELIMITER + series)
@@ -68,7 +76,6 @@ interface PersistentTokenRepository: <% if (databaseType === 'sql') { %>JpaRepos
     fun findByUser(user: User): List<PersistentToken><% } %>
 
     fun findByTokenDateBefore(localDate: LocalDate): List<PersistentToken>
-
 }<% } else if (databaseType === 'cassandra') { %>
 @Repository
 class PersistentTokenRepository (private val session: Session, private val validator: Validator) {
@@ -77,19 +84,21 @@ class PersistentTokenRepository (private val session: Session, private val valid
 
     private val findPersistentTokenSeriesByUserIdStmt = session.prepare(
         "SELECT persistent_token_series " +
-        "FROM persistent_token_by_user " +
-        "WHERE user_id = :user_id")
+            "FROM persistent_token_by_user " +
+            "WHERE user_id = :user_id"
+    )
 
     private val insertPersistentTokenSeriesByUserIdStmt = session.prepare(
         "INSERT INTO persistent_token_by_user (user_id, persistent_token_series) " +
             "VALUES (:user_id, :persistent_token_series) " +
-            "USING TTL 2592000")// 30 days
-
+            "USING TTL 2592000"
+    ) // 30 days
 
     private val insertPersistentTokenStmt = session.prepare(
         "INSERT INTO persistent_token (series, token_date, user_agent, token_value, login, user_id, ip_address) " +
             "VALUES (:series, :token_date, :user_agent, :token_value, :login, :user_id, :ip_address) " +
-            "USING TTL 2592000")// 30 days
+            "USING TTL 2592000"
+    ) // 30 days
 
     private val deletePersistentTokenSeriesByUserIdStmt = session.prepare(
         "DELETE FROM persistent_token_by_user WHERE user_id = :user_id AND persistent_token_series = :persistent_token_series"
@@ -117,24 +126,30 @@ class PersistentTokenRepository (private val session: Session, private val valid
             throw ConstraintViolationException(violations)
         }
         val batch = BatchStatement()
-        batch.add(insertPersistentTokenStmt.bind()
-            .setString("series", token.series)
-            .setTimestamp("token_date", token.tokenDate)
-            .setString("user_agent", token.userAgent)
-            .setString("token_value", token.tokenValue)
-            .setString("login", token.login)
-            .setString("user_id", token.userId)
-            .setString("ip_address", token.ipAddress))
-        batch.add(insertPersistentTokenSeriesByUserIdStmt.bind()
-            .setString("user_id", token.userId)
-            .setString("persistent_token_series", token.series))
+        batch.add(
+            insertPersistentTokenStmt.bind()
+                .setString("series", token.series)
+                .setTimestamp("token_date", token.tokenDate)
+                .setString("user_agent", token.userAgent)
+                .setString("token_value", token.tokenValue)
+                .setString("login", token.login)
+                .setString("user_id", token.userId)
+                .setString("ip_address", token.ipAddress)
+        )
+        batch.add(
+            insertPersistentTokenSeriesByUserIdStmt.bind()
+                .setString("user_id", token.userId)
+                .setString("persistent_token_series", token.series)
+        )
         session.execute(batch)
     }
 
     fun delete(token: PersistentToken) {
         mapper.delete(token)
-        session.execute(deletePersistentTokenSeriesByUserIdStmt.bind()
-            .setString("user_id", token.userId)
-            .setString("persistent_token_series", token.series))
+        session.execute(
+            deletePersistentTokenSeriesByUserIdStmt.bind()
+                .setString("user_id", token.userId)
+                .setString("persistent_token_series", token.series)
+        )
     }
 }<% } %>

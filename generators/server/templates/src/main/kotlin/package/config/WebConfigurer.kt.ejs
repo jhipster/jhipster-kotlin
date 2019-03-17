@@ -32,12 +32,15 @@ import io.github.jhipster.config.h2.H2ConfigurationHelper
     <%_ if (!skipClient) { _%>
 import io.github.jhipster.web.filter.CachingHttpHeadersFilter
     <%_ } _%>
-import io.undertow.UndertowOptions
+<%_ } _%>
+<%_ if (reactive && !skipClient) { _%>
+import io.github.jhipster.web.filter.reactive.CachingHttpHeadersFilter
 <%_ } _%>
 import org.slf4j.LoggerFactory
 <%_ if (!reactive) { _%>
-import org.springframework.boot.web.embedded.undertow.UndertowBuilderCustomizer
-import org.springframework.boot.web.server.*
+import org.springframework.boot.web.server.MimeMappings
+import org.springframework.boot.web.server.WebServerFactory
+import org.springframework.boot.web.server.WebServerFactoryCustomizer
 import org.springframework.boot.web.servlet.ServletContextInitializer
 import org.springframework.boot.web.servlet.server.ConfigurableServletWebServerFactory
 <%_ } _%>
@@ -91,15 +94,17 @@ import reactor.core.publisher.Mono
 <%_ } _%>
 <%_ if (!reactive) { _%>
 
-import javax.servlet.*
+import javax.servlet.DispatcherType
+import javax.servlet.ServletContext
+import javax.servlet.ServletException
 <%_ if (!skipClient) { _%>
 import java.io.File
 import java.io.UnsupportedEncodingException
-<%_ } _%>
+    <%_ } _%>
 import java.nio.charset.StandardCharsets
-<%_ if (!skipClient) { _%>
+    <%_ if (!skipClient) { _%>
 import java.nio.file.Paths
-<%_ } _%>
+    <%_ } _%>
 import java.util.EnumSet
     <%_ if (!skipClient) { _%>
 
@@ -272,25 +277,6 @@ class WebConfigurer(
         // Use a cache filter that only match selected paths
         return CachingHttpHeadersFilter(TimeUnit.DAYS.toMillis(jHipsterProperties.http.cache.timeToLiveInDays.toLong()))
     }
-
-    /**
-     * This filter is used in production, to put HTTP cache headers with a long expiration time.
-     */
-    class CachingHttpHeadersFilter(private val cacheTimeToLive: Long) : WebFilter {
-
-        override fun filter(exchange: ServerWebExchange, chain: WebFilterChain): Mono<Void> {
-            return ServerWebExchangeMatchers.pathMatchers("/i18n/**", "/content/**", "/app/**")
-                .matches(exchange)
-                .filter(ServerWebExchangeMatcher.MatchResult::isMatch)
-                .doOnNext {
-                    val response = exchange.response
-                    response.headers.cacheControl = "max-age=$cacheTimeToLive, public"
-                    response.headers.pragma = "cache"
-                    response.headers.expires = cacheTimeToLive + System.currentTimeMillis()
-                }
-                .then(chain.filter(exchange))
-        }
-    }
         <%_ } _%>
     <%_ } _%>
     <%_ if (devDatabaseType === 'h2Disk' || devDatabaseType === 'h2Memory') { _%>
@@ -303,5 +289,4 @@ class WebConfigurer(
         H2ConfigurationHelper.initH2Console(servletContext)
     }
     <%_ } _%>
-
 }

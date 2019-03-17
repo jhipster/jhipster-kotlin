@@ -90,8 +90,13 @@ import org.assertj.core.api.Assertions.assertThat
 import org.hamcrest.Matchers.hasItems
     <%_ } _%>
 import org.hamcrest.Matchers.hasItem
-import org.springframework.test.web.servlet.request.MockMvcRequestBuilders.*
-import org.springframework.test.web.servlet.result.MockMvcResultMatchers.*
+import org.springframework.test.web.servlet.request.MockMvcRequestBuilders.delete
+import org.springframework.test.web.servlet.request.MockMvcRequestBuilders.get
+import org.springframework.test.web.servlet.request.MockMvcRequestBuilders.post
+import org.springframework.test.web.servlet.request.MockMvcRequestBuilders.put
+import org.springframework.test.web.servlet.result.MockMvcResultMatchers.content
+import org.springframework.test.web.servlet.result.MockMvcResultMatchers.jsonPath
+import org.springframework.test.web.servlet.result.MockMvcResultMatchers.status
 <%_ } _%>
 import kotlin.test.assertNotNull
 <%_ if (cacheManagerIsAvailable === true) { _%>
@@ -310,7 +315,7 @@ class UserResourceIT <% if (databaseType === 'cassandra') { %>: AbstractCassandr
             .collectList().block()!!<% } %>.size
 
         val managedUserVM = ManagedUserVM()
-        managedUserVM.login = DEFAULT_LOGIN// this login should already be used
+        managedUserVM.login = DEFAULT_LOGIN // this login should already be used
         managedUserVM.password = DEFAULT_PASSWORD
         managedUserVM.firstName = DEFAULT_FIRSTNAME
         managedUserVM.lastName = DEFAULT_LASTNAME
@@ -360,7 +365,7 @@ class UserResourceIT <% if (databaseType === 'cassandra') { %>: AbstractCassandr
         managedUserVM.password = DEFAULT_PASSWORD
         managedUserVM.firstName = DEFAULT_FIRSTNAME
         managedUserVM.lastName = DEFAULT_LASTNAME
-        managedUserVM.email = DEFAULT_EMAIL// this email should already be used
+        managedUserVM.email = DEFAULT_EMAIL // this email should already be used
         managedUserVM.activated = true
         <%_ if (databaseType !== 'cassandra') { _%>
         managedUserVM.imageUrl = DEFAULT_IMAGEURL
@@ -429,7 +434,9 @@ class UserResourceIT <% if (databaseType === 'cassandra') { %>: AbstractCassandr
         assertThat(foundUser.firstName).isEqualTo(DEFAULT_FIRSTNAME)
         assertThat(foundUser.lastName).isEqualTo(DEFAULT_LASTNAME)
         assertThat(foundUser.email).isEqualTo(DEFAULT_EMAIL)
+        <%_ if (databaseType !== 'cassandra') { _%>
         assertThat(foundUser.imageUrl).isEqualTo(DEFAULT_IMAGEURL)
+        <%_ } _%>
         assertThat(foundUser.langKey).isEqualTo(DEFAULT_LANGKEY)
         <%_ } _%>
     }
@@ -475,7 +482,9 @@ class UserResourceIT <% if (databaseType === 'cassandra') { %>: AbstractCassandr
             .jsonPath("\$.firstName").isEqualTo(DEFAULT_FIRSTNAME)
             .jsonPath("\$.lastName").isEqualTo(DEFAULT_LASTNAME)
             .jsonPath("\$.email").isEqualTo(DEFAULT_EMAIL)
+            <%_ if (databaseType !== 'cassandra') { _%>
             .jsonPath("\$.imageUrl").isEqualTo(DEFAULT_IMAGEURL)
+            <%_ } _%>
             .jsonPath("\$.langKey").isEqualTo(DEFAULT_LANGKEY)
         <%_ } _%>
         <%_ if (cacheManagerIsAvailable === true) { _%>
@@ -675,7 +684,7 @@ class UserResourceIT <% if (databaseType === 'cassandra') { %>: AbstractCassandr
         managedUserVM.password = updatedUser.password
         managedUserVM.firstName = updatedUser.firstName
         managedUserVM.lastName = updatedUser.lastName
-        managedUserVM.email = "jhipster@localhost"// this email should already be used by anotherUser
+        managedUserVM.email = "jhipster@localhost" // this email should already be used by anotherUser
         managedUserVM.activated = updatedUser.activated
         <%_ if (databaseType !== 'cassandra') { _%>
         managedUserVM.imageUrl = updatedUser.imageUrl
@@ -740,7 +749,7 @@ class UserResourceIT <% if (databaseType === 'cassandra') { %>: AbstractCassandr
 
         val managedUserVM = ManagedUserVM()
         managedUserVM.id = updatedUser.id
-        managedUserVM.login = "jhipster"// this login should already be used by anotherUser
+        managedUserVM.login = "jhipster" // this login should already be used by anotherUser
         managedUserVM.password = updatedUser.password
         managedUserVM.firstName = updatedUser.firstName
         managedUserVM.lastName = updatedUser.lastName

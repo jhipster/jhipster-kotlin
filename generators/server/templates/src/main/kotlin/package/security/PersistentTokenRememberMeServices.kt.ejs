@@ -22,8 +22,8 @@ import <%=packageName%>.domain.PersistentToken
 import <%=packageName%>.repository.PersistentTokenRepository
 import <%=packageName%>.repository.UserRepository
 import <%=packageName%>.service.util.RandomUtil
-
 <%_ if (databaseType === 'cassandra') { _%>
+
 import com.datastax.driver.core.exceptions.DriverException
 <%_ } _%>
 
@@ -35,7 +35,10 @@ import org.springframework.dao.DataAccessException<%}%>
 import org.springframework.security.core.Authentication
 import org.springframework.security.core.userdetails.UserDetails
 import org.springframework.security.core.userdetails.UsernameNotFoundException
-import org.springframework.security.web.authentication.rememberme.*
+import org.springframework.security.web.authentication.rememberme.AbstractRememberMeServices
+import org.springframework.security.web.authentication.rememberme.CookieTheftException
+import org.springframework.security.web.authentication.rememberme.InvalidCookieException
+import org.springframework.security.web.authentication.rememberme.RememberMeAuthenticationException
 import org.springframework.stereotype.Service
 
 import javax.servlet.http.HttpServletRequest
@@ -96,8 +99,11 @@ class PersistentTokenRememberMeServices(
         upgradedTokenCache = PersistentTokenCache(UPGRADED_TOKEN_VALIDITY_MILLIS)
     }
 
-    override fun processAutoLoginCookie(cookieTokens: Array<String>, request: HttpServletRequest,
-                                        response: HttpServletResponse): UserDetails {
+    override fun processAutoLoginCookie(
+        cookieTokens: Array<String>,
+        request: HttpServletRequest,
+        response: HttpServletResponse
+    ): UserDetails {
 
         synchronized(this) { // prevent 2 authentication requests from the same user in parallel
             var login: String? = null
@@ -178,12 +184,16 @@ class PersistentTokenRememberMeServices(
         if (rememberMeCookie != null && rememberMeCookie.isNotEmpty()) {
             try {
                 val cookieTokens = decodeCookie(rememberMeCookie)
+                <%_ if (databaseType === 'cassandra') { _%>
+                getPersistentToken(cookieTokens)
+                <%_ } else { _%>
                 val token = getPersistentToken(cookieTokens)
-                <%_ if (databaseType === 'sql') { _%>
+                    <%_ if (databaseType === 'sql') { _%>
                 persistentTokenRepository.deleteById(token.series!!)
-                <%_ } _%>
-                <%_ if (databaseType === 'mongodb' || databaseType === 'couchbase') { _%>
+                    <%_ } _%>
+                    <%_ if (databaseType === 'mongodb' || databaseType === 'couchbase') { _%>
                 persistentTokenRepository.delete(token)
+                    <%_ } _%>
                 <%_ } _%>
             } catch (ice: InvalidCookieException) {
                 log.info("Invalid cookie, no persistent token could be deleted", ice)
@@ -245,7 +255,7 @@ class PersistentTokenRememberMeServices(
     }
 
     private fun addCookie(token: PersistentToken, request: HttpServletRequest, response: HttpServletResponse) {
-        setCookie( arrayOf(token.series, token.tokenValue), TOKEN_VALIDITY_SECONDS, request, response)
+        setCookie(arrayOf(token.series, token.tokenValue), TOKEN_VALIDITY_SECONDS, request, response)
     }
 
     private class UpgradedRememberMeToken

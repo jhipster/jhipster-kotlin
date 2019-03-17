@@ -4,13 +4,11 @@ const helpers = require('yeoman-test');
 const fse = require('fs-extra');
 const constants = require('generator-jhipster/generators/generator-constants');
 
-const SERVER_MAIN_SRC_DIR_JAVA = constants.SERVER_MAIN_SRC_DIR;
-
-const SERVER_MAIN_SRC_DIR_KOTLIN = `${constants.MAIN_DIR}kotlin/`;
+const SERVER_MAIN_SRC_DIR = `${constants.MAIN_DIR}kotlin/`;
 
 describe('JHipster generator service', () => {
     describe('creates service without interface', () => {
-        beforeEach(done => {
+        before(done => {
             helpers
                 .run(require.resolve('../generators/spring-service'))
                 .withOptions({
@@ -30,20 +28,16 @@ describe('JHipster generator service', () => {
         });
 
         it('creates service file', () => {
-            assert.file([`${SERVER_MAIN_SRC_DIR_KOTLIN}com/mycompany/myapp/service/FooService.kt`]);
+            assert.file([`${SERVER_MAIN_SRC_DIR}com/mycompany/myapp/service/FooService.kt`]);
         });
 
         it('doesnt create interface', () => {
-            assert.noFile([`${SERVER_MAIN_SRC_DIR_KOTLIN}com/mycompany/myapp/service/impl/FooServiceImpl.kt`]);
-        });
-
-        it('doesnt create java service file', () => {
-            assert.noFile([`${SERVER_MAIN_SRC_DIR_JAVA}`]);
+            assert.noFile([`${SERVER_MAIN_SRC_DIR}com/mycompany/myapp/service/impl/FooServiceImpl.kt`]);
         });
     });
 
     describe('creates service with interface', () => {
-        beforeEach(done => {
+        before(done => {
             helpers
                 .run(require.resolve('../generators/spring-service'))
                 .withOptions({
@@ -64,18 +58,14 @@ describe('JHipster generator service', () => {
 
         it('creates service file', () => {
             assert.file([
-                `${SERVER_MAIN_SRC_DIR_KOTLIN}com/mycompany/myapp/service/FooService.kt`,
-                `${SERVER_MAIN_SRC_DIR_KOTLIN}com/mycompany/myapp/service/impl/FooServiceImpl.kt`
+                `${SERVER_MAIN_SRC_DIR}com/mycompany/myapp/service/FooService.kt`,
+                `${SERVER_MAIN_SRC_DIR}com/mycompany/myapp/service/impl/FooServiceImpl.kt`
             ]);
-        });
-
-        it('doesnt create java files', () => {
-            assert.noFile([`${SERVER_MAIN_SRC_DIR_JAVA}`]);
         });
     });
 
     describe('creates service with --default flag', () => {
-        beforeEach(done => {
+        before(done => {
             helpers
                 .run(require.resolve('../generators/spring-service'))
                 .withOptions({
@@ -94,13 +84,9 @@ describe('JHipster generator service', () => {
 
         it('creates service file', () => {
             assert.file([
-                `${SERVER_MAIN_SRC_DIR_KOTLIN}com/mycompany/myapp/service/FooService.kt`,
-                `${SERVER_MAIN_SRC_DIR_KOTLIN}com/mycompany/myapp/service/impl/FooServiceImpl.kt`
+                `${SERVER_MAIN_SRC_DIR}com/mycompany/myapp/service/FooService.kt`,
+                `${SERVER_MAIN_SRC_DIR}com/mycompany/myapp/service/impl/FooServiceImpl.kt`
             ]);
-        });
-
-        it('doesnt create java files', () => {
-            assert.noFile([`${SERVER_MAIN_SRC_DIR_JAVA}`]);
         });
     });
 });
