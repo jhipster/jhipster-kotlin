@@ -107,7 +107,7 @@ import org.springframework.validation.Validator
 <% if (databaseType === 'sql') { %>
 import javax.persistence.EntityManager<% } %><% if (fieldsContainBigDecimal === true) { %>
 import java.math.BigDecimal<% } %><% if (fieldsContainBlob === true && databaseType === 'cassandra') { %>
-import java.nio.ByteBuffer<% } %><% if (reactiveRepositories) { %>
+import java.nio.ByteBuffer<% } %><% if (reactiveRepositories || fieldsContainDuration === true) { %>
 import java.time.Duration<% } %><% if (fieldsContainLocalDate === true) { %>
 import java.time.LocalDate<% } %><% if (fieldsContainInstant === true || fieldsContainZonedDateTime === true) { %>
 import java.time.Instant<% } %><% if (fieldsContainZonedDateTime === true) { %>
@@ -989,6 +989,10 @@ class <%= entityClass %>ResourceIT <% if (databaseType === 'cassandra') { %>: Ab
 
         private val <%=defaultValueName %>: ZonedDateTime = ZonedDateTime.ofInstant(Instant.ofEpochMilli(0L), ZoneOffset.UTC)
         private val <%=updatedValueName %>: ZonedDateTime = ZonedDateTime.now(ZoneId.systemDefault()).withNano(0)
+        <%_ } else if (fieldType === 'Duration') { _%>
+
+        private val <%=defaultValueName %>: Duration = Duration.ofHours(6)
+        private val <%=updatedValueName %>: Duration = Duration.ofHours(12)
         <%_ } else if (fieldType === 'Boolean') { _%>
 
         private const val <%=defaultValueName %>: Boolean = false
