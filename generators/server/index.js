@@ -17,6 +17,8 @@
  * limitations under the License.
  */
 /* eslint-disable consistent-return */
+const os = require('os');
+
 const chalk = require('chalk');
 const shelljs = require('shelljs');
 const ServerGenerator = require('generator-jhipster/generators/server');
@@ -88,10 +90,11 @@ module.exports = class extends ServerGenerator {
 
                 // Execute the ktlint format command through either Maven or gradle
                 let command;
+                const prefix = os.platform() === 'win32' ? '' : './';
                 if (this.buildTool === 'gradle') {
-                    command = './gradlew ktlintFormat';
+                    command = `${prefix}gradlew ktlintFormat`;
                 } else if (this.buildTool === 'maven') {
-                    command = './mvnw antrun:run@ktlint-format';
+                    command = `${prefix}mvnw antrun:run@ktlint-format`;
                 }
                 if (command) {
                     const startTime = new Date();
