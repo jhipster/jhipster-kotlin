@@ -298,9 +298,15 @@ const serverFiles = {
             ]
         },
         {
-            condition: generator => !shouldSkipUserManagement(generator) && generator.authenticationType === 'session',
+            condition: generator =>
+                !shouldSkipUserManagement(generator) && generator.authenticationType === 'session' && !generator.reactive,
             path: SERVER_MAIN_KOTLIN_SRC_DIR,
             templates: [
+                {
+                    file: 'package/security/PersistentTokenRememberMeServices.kt',
+                    renameTo: generator => `${generator.javaDir}security/PersistentTokenRememberMeServices.kt`,
+                    useBluePrint: true
+                },
                 {
                     file: 'package/domain/PersistentToken.kt',
                     renameTo: generator => `${generator.javaDir}domain/PersistentToken.kt`,
@@ -310,26 +316,39 @@ const serverFiles = {
                     file: 'package/repository/PersistentTokenRepository.kt',
                     renameTo: generator => `${generator.javaDir}repository/PersistentTokenRepository.kt`,
                     useBluePrint: true
-                },
+                }
+            ]
+        },
+        {
+            condition: generator =>
+                generator.authenticationType === 'oauth2' && ['monolith', 'gateway'].includes(generator.applicationType),
+            path: SERVER_MAIN_KOTLIN_SRC_DIR,
+            templates: [
                 {
-                    file: 'package/security/PersistentTokenRememberMeServices.kt',
-                    renameTo: generator => `${generator.javaDir}security/PersistentTokenRememberMeServices.kt`,
+                    file: 'package/security/oauth2/AuthRedirectController.kt',
+                    renameTo: generator => `${generator.javaDir}security/oauth2/AuthRedirectController.kt`,
                     useBluePrint: true
                 }
             ]
         },
         {
-            condition: generator => !shouldSkipUserManagement(generator) && generator.authenticationType === 'oauth2',
+            condition: generator => generator.authenticationType === 'oauth2',
             path: SERVER_MAIN_KOTLIN_SRC_DIR,
             templates: [
                 {
-                    file: 'package/config/OAuth2Configuration.kt',
-                    renameTo: generator => `${generator.javaDir}config/OAuth2Configuration.kt`,
+                    file: 'package/security/oauth2/AudienceValidator.kt',
+                    renameTo: generator => `${generator.javaDir}security/oauth2/AudienceValidator.kt`,
                     useBluePrint: true
-                },
+                }
+            ]
+        },
+        {
+            condition: generator => generator.authenticationType === 'oauth2',
+            path: SERVER_TEST_SRC_KOTLIN_DIR,
+            templates: [
                 {
-                    file: 'package/security/OAuth2AuthenticationSuccessHandler.kt',
-                    renameTo: generator => `${generator.javaDir}security/OAuth2AuthenticationSuccessHandler.kt`,
+                    file: 'package/security/oauth2/AudienceValidatorTest.kt',
+                    renameTo: generator => `${generator.javaDir}security/oauth2/AudienceValidatorTest.kt`,
                     useBluePrint: true
                 }
             ]
@@ -494,23 +513,6 @@ const serverFiles = {
         },
         {
             condition: generator =>
-                generator.applicationType === 'gateway' && generator.authenticationType === 'oauth2' && generator.serviceDiscoveryType,
-            path: SERVER_MAIN_KOTLIN_SRC_DIR,
-            templates: [
-                {
-                    file: 'package/config/OAuth2Configuration.kt',
-                    renameTo: generator => `${generator.javaDir}config/OAuth2Configuration.kt`,
-                    useBluePrint: true
-                },
-                {
-                    file: 'package/security/OAuth2AuthenticationSuccessHandler.kt',
-                    renameTo: generator => `${generator.javaDir}security/OAuth2AuthenticationSuccessHandler.kt`,
-                    useBluePrint: true
-                }
-            ]
-        },
-        {
-            condition: generator =>
                 generator.authenticationType === 'oauth2' &&
                 (generator.applicationType === 'monolith' || generator.applicationType === 'gateway'),
             path: SERVER_MAIN_KOTLIN_SRC_DIR,
@@ -623,43 +625,12 @@ const serverFiles = {
             ]
         },
         {
-            condition: generator =>
-                !(
-                    generator.applicationType !== 'microservice' &&
-                    !(
-                        generator.applicationType === 'gateway' &&
-                        (generator.authenticationType === 'uaa' || generator.authenticationType === 'oauth2')
-                    )
-                ) && generator.authenticationType === 'oauth2',
+            condition: generator => generator.authenticationType === 'oauth2' && generator.applicationType === 'gateway',
             path: SERVER_MAIN_KOTLIN_SRC_DIR,
             templates: [
                 {
-                    file: 'package/security/oauth2/AuthorizationHeaderUtil.kt',
-                    renameTo: generator => `${generator.javaDir}security/oauth2/AuthorizationHeaderUtil.kt`,
-                    useBluePrint: true
-                },
-                {
-                    file: 'package/security/oauth2/SimplePrincipalExtractor.kt',
-                    renameTo: generator => `${generator.javaDir}security/oauth2/SimplePrincipalExtractor.kt`,
-                    useBluePrint: true
-                },
-                {
-                    file: 'package/security/oauth2/SimpleAuthoritiesExtractor.kt',
-                    renameTo: generator => `${generator.javaDir}security/oauth2/SimpleAuthoritiesExtractor.kt`,
-                    useBluePrint: true
-                }
-            ]
-        },
-        {
-            condition: generator =>
-                generator.applicationType === 'microservice' &&
-                generator.authenticationType === 'oauth2' &&
-                generator.cacheProvider !== 'no',
-            path: SERVER_MAIN_KOTLIN_SRC_DIR,
-            templates: [
-                {
-                    file: 'package/security/oauth2/CachedUserInfoTokenServices.kt',
-                    renameTo: generator => `${generator.javaDir}security/oauth2/CachedUserInfoTokenServices.kt`,
+                    file: 'package/security/oauth2/AuthorizationHeaderFilter.kt',
+                    renameTo: generator => `${generator.javaDir}security/oauth2/AuthorizationHeaderFilter.kt`,
                     useBluePrint: true
                 }
             ]
@@ -670,6 +641,11 @@ const serverFiles = {
                 (generator.applicationType === 'microservice' || generator.applicationType === 'gateway'),
             path: SERVER_MAIN_KOTLIN_SRC_DIR,
             templates: [
+                {
+                    file: 'package/security/oauth2/AuthorizationHeaderUtil.kt',
+                    renameTo: generator => `${generator.javaDir}security/oauth2/AuthorizationHeaderUtil.kt`,
+                    useBluePrint: true
+                },
                 {
                     file: 'package/config/FeignConfiguration.kt',
                     renameTo: generator => `${generator.javaDir}config/FeignConfiguration.kt`,
@@ -686,11 +662,6 @@ const serverFiles = {
                     useBluePrint: true
                 },
                 {
-                    file: 'package/config/OAuth2TokenServicesConfiguration.kt',
-                    renameTo: generator => `${generator.javaDir}config/OAuth2TokenServicesConfiguration.kt`,
-                    useBluePrint: true
-                },
-                {
                     file: 'package/client/TokenRelayRequestInterceptor.kt',
                     renameTo: generator => `${generator.javaDir}client/TokenRelayRequestInterceptor.kt`,
                     useBluePrint: true
@@ -698,20 +669,12 @@ const serverFiles = {
             ]
         },
         {
-            condition: generator =>
-                !(
-                    generator.applicationType !== 'microservice' &&
-                    !(
-                        generator.applicationType === 'gateway' &&
-                        (generator.authenticationType === 'uaa' || generator.authenticationType === 'oauth2')
-                    )
-                ) &&
-                (generator.authenticationType === 'oauth2' && generator.applicationType === 'gateway'),
+            condition: generator => generator.authenticationType === 'oauth2',
             path: SERVER_MAIN_KOTLIN_SRC_DIR,
             templates: [
                 {
-                    file: 'package/config/OAuth2SsoConfiguration.kt',
-                    renameTo: generator => `${generator.javaDir}config/OAuth2SsoConfiguration.kt`,
+                    file: 'package/config/SecurityConfiguration.kt',
+                    renameTo: generator => `${generator.javaDir}config/SecurityConfiguration.kt`,
                     useBluePrint: true
                 }
             ]
@@ -736,9 +699,15 @@ const serverFiles = {
             templates: [
                 {
                     file: 'package/Application.kt',
-                    useBluePrint: true,
-                    renameTo: generator => `${generator.javaDir}${generator.mainClass}.kt`
-                },
+                    renameTo: generator => `${generator.javaDir}${generator.mainClass}.kt`,
+                    useBluePrint: true
+                }
+            ]
+        },
+        {
+            condition: generator => !generator.reactive,
+            path: SERVER_MAIN_KOTLIN_SRC_DIR,
+            templates: [
                 {
                     file: 'package/ApplicationWebXml.kt',
                     renameTo: generator => `${generator.javaDir}ApplicationWebXml.kt`,
@@ -1093,7 +1062,7 @@ const serverFiles = {
             ]
         },
         {
-            condition: generator => !generator.skipClient,
+            condition: generator => !generator.skipClient && !generator.reactive,
             path: SERVER_MAIN_KOTLIN_SRC_DIR,
             templates: [
                 {
@@ -1181,7 +1150,7 @@ const serverFiles = {
             ]
         },
         {
-            condition: generator => !generator.skipClient,
+            condition: generator => !generator.skipClient && !generator.reactive,
             path: SERVER_TEST_SRC_KOTLIN_DIR,
             templates: [
                 {
@@ -1838,12 +1807,15 @@ function writeFiles() {
                 if (this.databaseType === 'sql') {
                     this.addGradlePlugin('org.jetbrains.kotlin', 'kotlin-noarg', '${kotlin_version}');
                 }
+                this.addGradlePlugin('org.jlleitschuh.gradle', 'ktlint-gradle', kotlinConstants.KTLINT_GRADLE_VERSION);
 
                 this.applyFromGradleScript('gradle/kotlin');
             }
 
             if (this.buildTool === 'maven') {
                 this.addMavenProperty('kotlin.version', kotlinConstants.KOTLIN_VERSION);
+                this.addMavenProperty('ktlint.version', kotlinConstants.KTLINT_VERSION);
+                this.addMavenProperty('maven-antrun-plugin.version', kotlinConstants.MAVEN_ANTRUN_VERSION);
                 this.addMavenDependencyManagement('org.jetbrains.kotlin', 'kotlin-stdlib', '${kotlin.version}');
                 this.addMavenDependencyManagement('org.jetbrains.kotlin', 'kotlin-stdlib-jdk7', '${kotlin.version}');
                 this.addMavenDependency('com.fasterxml.jackson.datatype', 'jackson-datatype-json-org');
@@ -2011,6 +1983,52 @@ function writeFiles() {
                     '${maven-compiler-plugin.version}',
                     defaultCompileOther
                 );
+
+                const antRunOther = `                <executions>
+                    <execution>
+                        <id>ktlint-format</id>
+                        <phase>validate</phase>
+                        <configuration>
+                            <target name="ktlint">
+                                <java taskname="ktlint" dir="$\{basedir}" fork="true" failonerror="false"
+                                      classpathref="maven.plugin.classpath" classname="com.github.shyiko.ktlint.Main">
+                                    <arg value="-F"/>
+                                    <arg value="src/**/*.kt"/>
+                                </java>
+                            </target>
+                        </configuration>
+                        <goals>
+                            <goal>run</goal>
+                        </goals>
+                    </execution>
+                    <execution>
+                        <id>ktlint</id>
+                        <configuration>
+                            <target name="ktlint">
+                                <java taskname="ktlint" dir="$\{basedir}" fork="true" failonerror="false"
+                                      classpathref="maven.plugin.classpath" classname="com.github.shyiko.ktlint.Main">
+                                    <arg value="src/**/*.kt"/>
+                                    <!-- to generate report in checkstyle format prepend following args: -->
+                                    <!--<arg value="&#45;&#45;reporter=plain"/>-->
+                                    <!--<arg value="&#45;&#45;reporter=checkstyle,output=$\{project.build.directory}/ktlint.xml"/>-->
+                                    <!-- see https://github.com/shyiko/ktlint#usage for more -->
+                                </java>
+                            </target>
+                        </configuration>
+                        <goals>
+                            <goal>run</goal>
+                        </goals>
+                    </execution>
+                </executions>
+                <dependencies>
+                    <dependency>
+                        <groupId>com.github.shyiko</groupId>
+                        <artifactId>ktlint</artifactId>
+                        <version>$\{ktlint.version}</version>
+                    </dependency>
+                    <!-- additional 3rd party ruleset(s) can be specified here -->
+                </dependencies>`;
+                this.addMavenPlugin('org.apache.maven.plugins', 'maven-antrun-plugin', '${maven-antrun-plugin.version}', antRunOther);
             }
         }
     };

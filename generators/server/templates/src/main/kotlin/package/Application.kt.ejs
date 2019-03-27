@@ -76,22 +76,32 @@ class <%= mainClass %>(private val env: Environment) : InitializingBean {
     @Throws(Exception::class)
     override fun afterPropertiesSet() {
         val activeProfiles = env.activeProfiles
-        if (activeProfiles.contains(JHipsterConstants.SPRING_PROFILE_DEVELOPMENT) && activeProfiles.contains(JHipsterConstants.SPRING_PROFILE_PRODUCTION)) {
-            log.error("You have misconfigured your application! It should not run " +
-             "with both the 'dev' and 'prod' profiles at the same time.")
+        if (
+            activeProfiles.contains(JHipsterConstants.SPRING_PROFILE_DEVELOPMENT) &&
+            activeProfiles.contains(JHipsterConstants.SPRING_PROFILE_PRODUCTION)
+        ) {
+            log.error(
+                "You have misconfigured your application! It should not run " +
+                    "with both the 'dev' and 'prod' profiles at the same time."
+            )
         }
-        if (activeProfiles.contains(JHipsterConstants.SPRING_PROFILE_DEVELOPMENT) && activeProfiles.contains(JHipsterConstants.SPRING_PROFILE_CLOUD)) {
-            log.error("You have misconfigured your application! It should not " +
-             "run with both the 'dev' and 'cloud' profiles at the same time.")
+        if (
+            activeProfiles.contains(JHipsterConstants.SPRING_PROFILE_DEVELOPMENT) &&
+            activeProfiles.contains(JHipsterConstants.SPRING_PROFILE_CLOUD)
+        ) {
+            log.error(
+                "You have misconfigured your application! It should not " +
+                    "run with both the 'dev' and 'cloud' profiles at the same time."
+            )
         }
     }
 
     companion object {
         /**
-        * Main method, used to run the application.
-        *
-        * @param args the command line arguments.
-        */
+         * Main method, used to run the application.
+         *
+         * @param args the command line arguments.
+         */
         @JvmStatic
         fun main(args: Array<String>) {
             val env = runApplication<<%= mainClass %>>(*args) {
@@ -119,7 +129,8 @@ class <%= mainClass %>(private val env: Environment) : InitializingBean {
             } catch (e: UnknownHostException) {
                 log.warn("The host name could not be determined, using `localhost` as fallback")
             }
-            log.info("\n----------------------------------------------------------\n\t" +
+            log.info(
+                "\n----------------------------------------------------------\n\t" +
                     "Application '{}' is running! Access URLs:\n\t" +
                     "Local: \t\t{}://localhost:{}{}\n\t" +
                     "External: \t{}://{}:{}{}\n\t" +
@@ -132,7 +143,8 @@ class <%= mainClass %>(private val env: Environment) : InitializingBean {
                 hostAddress,
                 serverPort,
                 contextPath,
-                env.activeProfiles)
+                env.activeProfiles
+            )
             <%_ if (serviceDiscoveryType && (applicationType === 'microservice' || applicationType === 'gateway' || applicationType === 'uaa')) { _%>
 
             var configServerStatus = env.getProperty("configserver.status")
@@ -143,6 +155,5 @@ class <%= mainClass %>(private val env: Environment) : InitializingBean {
                     "Config Server: \t{}\n----------------------------------------------------------", configServerStatus)
             <%_ } _%>
         }
-
     }
 }

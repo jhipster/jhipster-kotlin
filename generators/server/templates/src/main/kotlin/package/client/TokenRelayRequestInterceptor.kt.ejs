@@ -23,19 +23,14 @@ import <%=packageName%>.security.oauth2.AuthorizationHeaderUtil
 import feign.RequestInterceptor
 import feign.RequestTemplate
 
-import java.util.Optional
-
 class TokenRelayRequestInterceptor(private val authorizationHeaderUtil: AuthorizationHeaderUtil) : RequestInterceptor {
 
     override fun apply(template: RequestTemplate) {
-        val authorizationHeader = authorizationHeaderUtil.getAuthorizationHeaderFromOAuth2Context()
-        if (authorizationHeader.isPresent()) {
-            template.header(AUTHORIZATION, authorizationHeader.get())
-        }
+        val authorizationHeader = authorizationHeaderUtil.getAuthorizationHeader()
+        authorizationHeader.ifPresent { s -> template.header(AUTHORIZATION, s) }
     }
 
     companion object {
         const val AUTHORIZATION: String = "Authorization"
     }
-
 }

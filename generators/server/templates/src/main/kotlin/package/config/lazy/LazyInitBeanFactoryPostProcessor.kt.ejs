@@ -16,14 +16,16 @@
  See the License for the specific language governing permissions and
  limitations under the License.
 -%>
-package  <%=packageName%>.config.lazy
+package <%=packageName%>.config.lazy
 
 import io.github.jhipster.config.JHipsterConstants
 
 import org.springframework.beans.BeansException
-import org.springframework.beans.factory.config.BeanDefinition
 import org.springframework.beans.factory.config.BeanFactoryPostProcessor
 import org.springframework.beans.factory.config.ConfigurableListableBeanFactory
+<%_ if (applicationType === 'gateway') { _%>
+import org.springframework.cloud.netflix.zuul.ZuulFilterInitializer
+<%_ } _%>
 import org.springframework.context.annotation.Profile
 import org.springframework.stereotype.Component
 
@@ -37,7 +39,9 @@ import org.springframework.stereotype.Component
  */
 @Component
 @Profile(JHipsterConstants.SPRING_PROFILE_DEVELOPMENT)
-class LazyInitBeanFactoryPostProcessor(private var exclusionList: Array<Class<*>>? = null) : BeanFactoryPostProcessor {
+class LazyInitBeanFactoryPostProcessor(
+    private var exclusionList: Array<Class<*>>? = <% if (applicationType === 'gateway') { %>arrayOf(ZuulFilterInitializer::class.java)<% } else { %>null<% } %>
+) : BeanFactoryPostProcessor {
 
     @Throws(BeansException::class)
     override fun postProcessBeanFactory(beanFactory: ConfigurableListableBeanFactory) {
@@ -51,7 +55,7 @@ class LazyInitBeanFactoryPostProcessor(private var exclusionList: Array<Class<*>
     }
 
     private fun isLazy(beanName: String, beanFactory: ConfigurableListableBeanFactory): Boolean {
-        if(exclusionList == null || exclusionList?.size == 0 ) {
+        if (exclusionList == null || exclusionList?.size == 0) {
             return true
         }
         exclusionList?.apply {

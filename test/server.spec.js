@@ -7,14 +7,15 @@ const expectedFiles = require('./utils/expected-files');
 
 describe('JHipster server generator', () => {
     describe('generate server', () => {
-        beforeEach(done => {
+        before(done => {
             helpers
                 .run('generator-jhipster/generators/server')
                 .withOptions({
                     'from-cli': true,
                     skipInstall: true,
                     blueprint: 'kotlin',
-                    skipChecks: true
+                    skipChecks: true,
+                    'skip-ktlint-format': true
                 })
                 .withGenerators([
                     [
@@ -48,6 +49,7 @@ describe('JHipster server generator', () => {
             assert.noFile(expectedFiles.common);
             assert.file(expectedFiles.server);
             assert.file(expectedFiles.jwtServer);
+            assert.file(expectedFiles.userManagementServer);
             assert.file(expectedFiles.maven);
             assert.file(expectedFiles.mysql);
             assert.file(expectedFiles.hibernateTimeZoneConfig);
@@ -55,7 +57,6 @@ describe('JHipster server generator', () => {
                 getFilesForOptions(
                     angularfiles,
                     {
-                        useSass: false,
                         enableTranslation: true,
                         serviceDiscoveryType: false,
                         authenticationType: 'jwt',

@@ -18,11 +18,11 @@
 -%>
 package <%=packageName%>.web.rest
 
-import org.slf4j.LoggerFactory
-import org.springframework.beans.factory.annotation.Value
-import org.springframework.boot.autoconfigure.security.oauth2.resource.UserInfoRestTemplateFactory
 import org.springframework.http.ResponseEntity
-import org.springframework.security.core.Authentication
+import org.springframework.security.core.annotation.AuthenticationPrincipal
+import org.springframework.security.oauth2.client.registration.ClientRegistration
+import org.springframework.security.oauth2.client.registration.ClientRegistrationRepository
+import org.springframework.security.oauth2.core.oidc.OidcIdToken
 import org.springframework.web.bind.annotation.PostMapping
 import org.springframework.web.bind.annotation.RestController
 
@@ -32,30 +32,26 @@ import javax.servlet.http.HttpServletRequest
  * REST controller for managing global OIDC logout.
  */
 @RestController
-class LogoutResource(
-    private val templateFactory: UserInfoRestTemplateFactory,
-    @param:Value("\${security.oauth2.client.access-token-uri}") private val accessTokenUri: String
-) {
-
-    private val log = LoggerFactory.getLogger(LogoutResource::class.java)
+class LogoutResource(registrations: ClientRegistrationRepository) {
+    private val registration: ClientRegistration = registrations.findByRegistrationId("oidc")
 
     /**
      * `POST  /api/logout` : logout the current user.
      *
      * @param request the [HttpServletRequest].
-     * @param authentication the authentication token.
+     * @param idToken the ID token.
      * @return the [ResponseEntity] with status `200 (OK)` and a body with a global logout URL and ID token.
      */
     @PostMapping("/api/logout")
-    fun logout(request: HttpServletRequest, authentication: Authentication): ResponseEntity<*> {
-        log.debug("REST request to logout User : {}", authentication)
-        val oauth2RestTemplate = this.templateFactory.userInfoRestTemplate
-        val idToken = oauth2RestTemplate.accessToken.additionalInformation["id_token"] as String
+    fun logout(
+        request: HttpServletRequest,
+        @AuthenticationPrincipal(expression = "idToken") idToken: OidcIdToken?
+    ): ResponseEntity<*> {
+        val logoutUrl = registration.providerDetails.configurationMetadata["end_session_endpoint"].toString()
 
-        val logoutUrl = accessTokenUri.replace("token", "logout")
-        val logoutDetails = mutableMapOf<String, String>()
+        val logoutDetails = mutableMapOf<String, String?>()
         logoutDetails["logoutUrl"] = logoutUrl
-        logoutDetails["idToken"] = idToken
+        logoutDetails["idToken"] = idToken?.tokenValue
         request.session.invalidate()
         return ResponseEntity.ok().body(logoutDetails)
     }

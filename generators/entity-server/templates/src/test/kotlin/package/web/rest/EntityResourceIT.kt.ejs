@@ -107,7 +107,7 @@ import org.springframework.validation.Validator
 <% if (databaseType === 'sql') { %>
 import javax.persistence.EntityManager<% } %><% if (fieldsContainBigDecimal === true) { %>
 import java.math.BigDecimal<% } %><% if (fieldsContainBlob === true && databaseType === 'cassandra') { %>
-import java.nio.ByteBuffer<% } %><% if (reactiveRepositories) { %>
+import java.nio.ByteBuffer<% } %><% if (reactiveRepositories || fieldsContainDuration === true) { %>
 import java.time.Duration<% } %><% if (fieldsContainLocalDate === true) { %>
 import java.time.LocalDate<% } %><% if (fieldsContainInstant === true || fieldsContainZonedDateTime === true) { %>
 import java.time.Instant<% } %><% if (fieldsContainZonedDateTime === true) { %>
@@ -133,10 +133,19 @@ import org.elasticsearch.index.query.QueryBuilders.queryStringQuery
 <%_ } _%>
 import org.hamcrest.Matchers.hasItem
 <%_ if (searchEngine === 'elasticsearch' || fieldsContainOwnerManyToMany === true) { _%>
-import org.mockito.Mockito.*
+import org.mockito.ArgumentMatchers.any
+import org.mockito.Mockito.`when`
+import org.mockito.Mockito.reset
+import org.mockito.Mockito.times
+import org.mockito.Mockito.verify
 <%_ } _%>
-import org.springframework.test.web.servlet.request.MockMvcRequestBuilders.*
-import org.springframework.test.web.servlet.result.MockMvcResultMatchers.*
+import org.springframework.test.web.servlet.request.MockMvcRequestBuilders.delete
+import org.springframework.test.web.servlet.request.MockMvcRequestBuilders.get
+import org.springframework.test.web.servlet.request.MockMvcRequestBuilders.post
+import org.springframework.test.web.servlet.request.MockMvcRequestBuilders.put
+import org.springframework.test.web.servlet.result.MockMvcResultMatchers.content
+import org.springframework.test.web.servlet.result.MockMvcResultMatchers.jsonPath
+import org.springframework.test.web.servlet.result.MockMvcResultMatchers.status
 
 <%_ for (idx in fields) { if (fields[idx].fieldIsEnum === true) { _%>import <%=packageName%>.domain.enumeration.<%= fields[idx].fieldType %>
 <%_ } } _%>
@@ -261,10 +270,11 @@ class <%= entityClass %>ResourceIT <% if (databaseType === 'cassandra') { %>: Ab
         <%_ if (dto === 'mapstruct') { _%>
         val <%= asDto(entityInstance) %> = <%= entityInstance %>Mapper.toDto(<%= asEntity(entityInstance) %>)
         <%_ } _%>
-        rest<%= entityClass %>MockMvc.perform(post("/api/<%= entityApiUrl %>")
-            .contentType(TestUtil.APPLICATION_JSON_UTF8)
-            .content(TestUtil.convertObjectToJsonBytes(<%=(dto === 'mapstruct' ? asDto(entityInstance) : asEntity(entityInstance))%>)))
-            .andExpect(status().isCreated)
+        rest<%= entityClass %>MockMvc.perform(
+            post("/api/<%= entityApiUrl %>")
+                .contentType(TestUtil.APPLICATION_JSON_UTF8)
+                .content(TestUtil.convertObjectToJsonBytes(<%=(dto === 'mapstruct' ? asDto(entityInstance) : asEntity(entityInstance))%>))
+        ).andExpect(status().isCreated)
 
         // Validate the <%= entityClass %> in the database
         val <%= entityInstance %>List = <%= entityInstance %>Repository.findAll()
@@ -306,10 +316,11 @@ class <%= entityClass %>ResourceIT <% if (databaseType === 'cassandra') { %>: Ab
         <%_ } _%>
 
         // An entity with an existing ID cannot be created, so this API call must fail
-        rest<%= entityClass %>MockMvc.perform(post("/api/<%= entityApiUrl %>")
-            .contentType(TestUtil.APPLICATION_JSON_UTF8)
-            .content(TestUtil.convertObjectToJsonBytes(<%=(dto === 'mapstruct' ? asDto(entityInstance) : asEntity(entityInstance))%>)))
-            .andExpect(status().isBadRequest)
+        rest<%= entityClass %>MockMvc.perform(
+            post("/api/<%= entityApiUrl %>")
+                .contentType(TestUtil.APPLICATION_JSON_UTF8)
+                .content(TestUtil.convertObjectToJsonBytes(<%=(dto === 'mapstruct' ? asDto(entityInstance) : asEntity(entityInstance))%>))
+        ).andExpect(status().isBadRequest)
 
         // Validate the <%= entityClass %> in the database
         val <%= entityInstance %>List = <%= entityInstance %>Repository.findAll()
@@ -336,10 +347,11 @@ class <%= entityClass %>ResourceIT <% if (databaseType === 'cassandra') { %>: Ab
         // Create the <%= entityClass %>, which fails.<% if (dto === 'mapstruct') { %>
         val <%= asDto(entityInstance) %> = <%= entityInstance %>Mapper.toDto(<%= asEntity(entityInstance) %>)<% } %>
 
-        rest<%= entityClass %>MockMvc.perform(post("/api/<%= entityApiUrl %>")
-            .contentType(TestUtil.APPLICATION_JSON_UTF8)
-            .content(TestUtil.convertObjectToJsonBytes(<%=(dto === 'mapstruct' ? asDto(entityInstance) : asEntity(entityInstance))%>)))
-            .andExpect(status().isBadRequest)
+        rest<%= entityClass %>MockMvc.perform(
+            post("/api/<%= entityApiUrl %>")
+                .contentType(TestUtil.APPLICATION_JSON_UTF8)
+                .content(TestUtil.convertObjectToJsonBytes(<%=(dto === 'mapstruct' ? asDto(entityInstance) : asEntity(entityInstance))%>))
+        ).andExpect(status().isBadRequest)
 
         val <%= entityInstance %>List = <%= entityInstance %>Repository.findAll()
         assertThat(<%= entityInstance %>List).hasSize(databaseSizeBeforeTest)
@@ -498,7 +510,6 @@ class <%= entityClass %>ResourceIT <% if (databaseType === 'cassandra') { %>: Ab
                   biggerValue = '{' + defaultValue + ' + 1}';
               }
             _%>
-
     @Test<% if (databaseType === 'sql') { %>
     @Transactional<% } %>
     fun getAll<%= entityClassPlural %>By<%= searchBy.fieldInJavaBeanMethod %>IsGreaterThanOrEqualToSomething() {
@@ -524,7 +535,6 @@ class <%= entityClass %>ResourceIT <% if (databaseType === 'cassandra') { %>: Ab
         // Get all the <%= entityInstance %>List where <%= searchBy.fieldName %> less than or equals to <%= biggerValue %>
         default<%= entityClass %>ShouldBeFound("<%= searchBy.fieldName %>.lessThan=$<%= biggerValue %>")
     }
-
 <%_         } _%>
 <%_     }); _%>
 <%_ relationships.forEach((relationship) => { _%>
@@ -551,10 +561,10 @@ class <%= entityClass %>ResourceIT <% if (databaseType === 'cassandra') { %>: Ab
         default<%= entityClass %>ShouldBeFound("<%= relationship.relationshipFieldName %>Id.equals=$<%= relationship.relationshipFieldName %>Id")
 
         // Get all the <%= entityInstance %>List where <%= relationship.relationshipFieldName %> equals to <%= relationship.relationshipFieldName %>Id + 1
-        default<%= entityClass %>ShouldNotBeFound("<%= relationship.relationshipFieldName %>Id.equals=${<%= relationship.relationshipFieldName %>Id?.plus(1)}" )
+        default<%= entityClass %>ShouldNotBeFound("<%= relationship.relationshipFieldName %>Id.equals=${<%= relationship.relationshipFieldName %>Id?.plus(1)}")
     }
-
 <%_ }); _%>
+
     /**
      * Executes the search, and checks that the default entity is returned
      */
@@ -591,7 +601,6 @@ class <%= entityClass %>ResourceIT <% if (databaseType === 'cassandra') { %>: Ab
             .andExpect(content().contentType(MediaType.APPLICATION_JSON_UTF8_VALUE))
             .andExpect(content().string("0"))
     }
-
 <%_  } _%>
 <%_ if (reactiveRepositories) { _%>
 
@@ -681,10 +690,11 @@ class <%= entityClass %>ResourceIT <% if (databaseType === 'cassandra') { %>: Ab
         val <%= asDto(entityInstance) %> = <%= entityInstance %>Mapper.toDto(updated<%= entityClass %>)
         <%_ } _%>
 
-        rest<%= entityClass %>MockMvc.perform(put("/api/<%= entityApiUrl %>")
-            .contentType(TestUtil.APPLICATION_JSON_UTF8)
-            .content(TestUtil.convertObjectToJsonBytes(<% if (dto === 'mapstruct') { %><%= asDto(entityInstance) %><% } else { %>updated<%= entityClass %><% } %>)))
-            .andExpect(status().isOk)
+        rest<%= entityClass %>MockMvc.perform(
+            put("/api/<%= entityApiUrl %>")
+                .contentType(TestUtil.APPLICATION_JSON_UTF8)
+                .content(TestUtil.convertObjectToJsonBytes(<% if (dto === 'mapstruct') { %><%= asDto(entityInstance) %><% } else { %>updated<%= entityClass %><% } %>))
+        ).andExpect(status().isOk)
 
         // Validate the <%= entityClass %> in the database
         val <%= entityInstance %>List = <%= entityInstance %>Repository.findAll()
@@ -716,10 +726,11 @@ class <%= entityClass %>ResourceIT <% if (databaseType === 'cassandra') { %>: Ab
         val <%= asDto(entityInstance) %> = <%= entityInstance %>Mapper.toDto(<%= asEntity(entityInstance) %>)<% } %>
 
         // If the entity doesn't have an ID, it will throw BadRequestAlertException
-        rest<%= entityClass %>MockMvc.perform(put("/api/<%= entityApiUrl %>")
-            .contentType(TestUtil.APPLICATION_JSON_UTF8)
-            .content(TestUtil.convertObjectToJsonBytes(<%=(dto === 'mapstruct' ? asDto(entityInstance) : asEntity(entityInstance))%>)))
-            .andExpect(status().isBadRequest)
+        rest<%= entityClass %>MockMvc.perform(
+            put("/api/<%= entityApiUrl %>")
+                .contentType(TestUtil.APPLICATION_JSON_UTF8)
+                .content(TestUtil.convertObjectToJsonBytes(<%=(dto === 'mapstruct' ? asDto(entityInstance) : asEntity(entityInstance))%>))
+        ).andExpect(status().isBadRequest)
 
         // Validate the <%= entityClass %> in the database
         val <%= entityInstance %>List = <%= entityInstance %>Repository.findAll()
@@ -750,9 +761,10 @@ class <%= entityClass %>ResourceIT <% if (databaseType === 'cassandra') { %>: Ab
         assertNotNull(id)
 
         // Delete the <%= entityInstance %>
-        rest<%= entityClass %>MockMvc.perform(delete("/api/<%= entityApiUrl %>/{id}", id)
-            .accept(TestUtil.APPLICATION_JSON_UTF8))
-            .andExpect(status().isNoContent)
+        rest<%= entityClass %>MockMvc.perform(
+            delete("/api/<%= entityApiUrl %>/{id}", id)
+                .accept(TestUtil.APPLICATION_JSON_UTF8)
+        ).andExpect(status().isNoContent)
 
         // Validate the database is empty
         val <%= entityInstance %>List = <%= entityInstance %>Repository.findAll()
@@ -841,7 +853,6 @@ class <%= entityClass %>ResourceIT <% if (databaseType === 'cassandra') { %>: Ab
     <%_ } _%>
 
     companion object {
-
     <%_
         let oldSource = '';
         try {
@@ -978,10 +989,14 @@ class <%= entityClass %>ResourceIT <% if (databaseType === 'cassandra') { %>: Ab
 
         private val <%=defaultValueName %>: ZonedDateTime = ZonedDateTime.ofInstant(Instant.ofEpochMilli(0L), ZoneOffset.UTC)
         private val <%=updatedValueName %>: ZonedDateTime = ZonedDateTime.now(ZoneId.systemDefault()).withNano(0)
+        <%_ } else if (fieldType === 'Duration') { _%>
+
+        private val <%=defaultValueName %>: Duration = Duration.ofHours(6)
+        private val <%=updatedValueName %>: Duration = Duration.ofHours(12)
         <%_ } else if (fieldType === 'Boolean') { _%>
 
-        private const val <%=defaultValueName %>:Boolean = false
-        private const val <%=updatedValueName %>:Boolean = true
+        private const val <%=defaultValueName %>: Boolean = false
+        private const val <%=updatedValueName %>: Boolean = true
         <%_ } else if ((fieldType === 'byte[]' || fieldType === 'ByteBuffer') && fieldTypeBlobContent !== 'text') { _%>
 
         <%_ if (databaseType !== 'cassandra') { _%>
@@ -1005,9 +1020,11 @@ class <%= entityClass %>ResourceIT <% if (databaseType === 'cassandra') { %>: Ab
          * This is a static method, as tests for other entities might also need it,
          * if they test an entity which requires the current entity.
          */
-         @JvmStatic
+        @JvmStatic
         fun createEntity(<% if (databaseType === 'sql' && relationships.length>0 ) { %>em: EntityManager<% } %>): <%= asEntity(entityClass) %> {
-            <% if ( fields.length<1 ) { %>val <%= asEntity(entityInstance) %> = <%= asEntity(entityClass) %>()<% } else { %>
+<%_ if ( fields.length<1 ) { _%>
+            val <%= asEntity(entityInstance) %> = <%= asEntity(entityClass) %>()
+<%_ } else { _%>
             val <%= asEntity(entityInstance) %> = <%= asEntity(entityClass) %>(<% for (idx in fields) {
                 const comma = (parseInt(idx,10) === (fields.length - 1)) ?  '' : ','; %>
                 <%= fields[idx].fieldName %> = <%='DEFAULT_' + fields[idx].fieldNameUnderscored.toUpperCase()%><%_ if ((fields[idx].fieldType === 'byte[]' || fields[idx].fieldType === 'ByteBuffer') && fields[idx].fieldTypeBlobContent !== 'text') { _%>,<%_ } else { _%><%= comma %><%_ } _%><%_ if ((fields[idx].fieldType === 'byte[]' || fields[idx].fieldType === 'ByteBuffer') && fields[idx].fieldTypeBlobContent !== 'text') { %>
@@ -1044,6 +1061,5 @@ class <%= entityClass %>ResourceIT <% if (databaseType === 'cassandra') { %>: Ab
             <%_ } } _%>
             return <%= asEntity(entityInstance) %>
         }
-
     }
 }

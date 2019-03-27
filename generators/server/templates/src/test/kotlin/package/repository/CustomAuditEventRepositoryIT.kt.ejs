@@ -28,11 +28,15 @@ import org.junit.runner.RunWith
 import org.springframework.beans.factory.annotation.Autowired
 import org.springframework.boot.actuate.audit.AuditEvent
 import org.springframework.boot.test.context.SpringBootTest
+<%_ if (!reactive) { _%>
 import org.springframework.mock.web.MockHttpServletRequest
 import org.springframework.mock.web.MockHttpSession
 import org.springframework.security.web.authentication.WebAuthenticationDetails
-import org.springframework.test.context.junit4.SpringRunner<% if (databaseType === 'sql') { %>
-import org.springframework.transaction.annotation.Transactional<% } %>
+<%_ } _%>
+import org.springframework.test.context.junit4.SpringRunner
+<%_ if (databaseType === 'sql') { _%>
+import org.springframework.transaction.annotation.Transactional
+<%_ } _%>
 
 import java.time.Instant
 
@@ -128,6 +132,7 @@ class CustomAuditEventRepositoryIT {
         assertThat(actualData).isSubstringOf(largeData)
         assertThat(persistentAuditEvent.auditEventDate).isEqualTo(event.timestamp)
     }
+    <%_ if (!reactive) { _%>
 
     @Test
     fun testAddEventWithWebAuthenticationDetails() {
@@ -146,6 +151,7 @@ class CustomAuditEventRepositoryIT {
         assertThat(persistentAuditEvent.data["remoteAddress"]).isEqualTo("1.2.3.4")
         assertThat(persistentAuditEvent.data["sessionId"]).isEqualTo("test-session-id")
     }
+    <%_ } _%>
 
     @Test
     fun testAddEventWithNullData() {
@@ -178,5 +184,4 @@ class CustomAuditEventRepositoryIT {
         val persistentAuditEvents = persistenceAuditEventRepository.findAll()
         assertThat(persistentAuditEvents).hasSize(0)
     }
-
 }

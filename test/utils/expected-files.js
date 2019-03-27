@@ -232,8 +232,8 @@ const expectedFiles = {
         `${SERVER_TEST_SRC_DIR}com/mycompany/myapp/web/rest/AuditResourceIT.kt`,
         `${SERVER_TEST_SRC_DIR}com/mycompany/myapp/web/rest/UserResourceIT.kt`,
         `${SERVER_TEST_SRC_DIR}com/mycompany/myapp/service/UserServiceIT.kt`,
-        `${SERVER_TEST_SRC_DIR}com/mycompany/myapp/service/mapper/UserMapperIT.kt`,
         `${SERVER_TEST_SRC_DIR}com/mycompany/myapp/service/MailServiceIT.kt`,
+        `${SERVER_TEST_SRC_DIR}com/mycompany/myapp/service/mapper/UserMapperIT.kt`,
         `${SERVER_TEST_SRC_DIR}com/mycompany/myapp/repository/CustomAuditEventRepositoryIT.kt`
     ],
 
@@ -339,7 +339,7 @@ const expectedFiles = {
         `${CLIENT_MAIN_SRC_DIR}app/account/password-reset/init/password-reset-init.route.ts`,
         `${CLIENT_MAIN_SRC_DIR}app/account/password-reset/init/password-reset-init.service.ts`,
         `${CLIENT_MAIN_SRC_DIR}app/account/password/password-strength-bar.component.ts`,
-        `${CLIENT_MAIN_SRC_DIR}app/account/password/password-strength-bar.css`,
+        `${CLIENT_MAIN_SRC_DIR}app/account/password/password-strength-bar.scss`,
         `${CLIENT_MAIN_SRC_DIR}app/account/password/password.component.html`,
         `${CLIENT_MAIN_SRC_DIR}app/account/password/password.component.ts`,
         `${CLIENT_MAIN_SRC_DIR}app/account/password/password.route.ts`,
@@ -394,7 +394,7 @@ const expectedFiles = {
         `${CLIENT_MAIN_SRC_DIR}app/entities/entity.module.ts`,
         `${CLIENT_MAIN_SRC_DIR}app/home/home.component.html`,
         `${CLIENT_MAIN_SRC_DIR}app/home/home.component.ts`,
-        `${CLIENT_MAIN_SRC_DIR}app/home/home.css`,
+        `${CLIENT_MAIN_SRC_DIR}app/home/home.scss`,
         `${CLIENT_MAIN_SRC_DIR}app/home/home.module.ts`,
         `${CLIENT_MAIN_SRC_DIR}app/home/home.route.ts`,
         `${CLIENT_MAIN_SRC_DIR}app/home/index.ts`,
@@ -409,10 +409,10 @@ const expectedFiles = {
         `${CLIENT_MAIN_SRC_DIR}app/layouts/navbar/active-menu.directive.ts`,
         `${CLIENT_MAIN_SRC_DIR}app/layouts/navbar/navbar.component.html`,
         `${CLIENT_MAIN_SRC_DIR}app/layouts/navbar/navbar.component.ts`,
-        `${CLIENT_MAIN_SRC_DIR}app/layouts/navbar/navbar.css`,
+        `${CLIENT_MAIN_SRC_DIR}app/layouts/navbar/navbar.scss`,
         `${CLIENT_MAIN_SRC_DIR}app/layouts/navbar/navbar.route.ts`,
         `${CLIENT_MAIN_SRC_DIR}app/layouts/profiles/page-ribbon.component.ts`,
-        `${CLIENT_MAIN_SRC_DIR}app/layouts/profiles/page-ribbon.css`,
+        `${CLIENT_MAIN_SRC_DIR}app/layouts/profiles/page-ribbon.scss`,
         `${CLIENT_MAIN_SRC_DIR}app/layouts/profiles/profile-info.model.ts`,
         `${CLIENT_MAIN_SRC_DIR}app/layouts/profiles/profile.service.ts`,
         `${CLIENT_MAIN_SRC_DIR}app/polyfills.ts`,
@@ -443,10 +443,10 @@ const expectedFiles = {
         `${CLIENT_MAIN_SRC_DIR}app/core/core.module.ts`,
         `${CLIENT_MAIN_SRC_DIR}app/core/index.ts`,
         `${CLIENT_MAIN_SRC_DIR}app/vendor.ts`,
-        `${CLIENT_MAIN_SRC_DIR}content/css/documentation.css`,
-        `${CLIENT_MAIN_SRC_DIR}content/css/global.css`,
+        `${CLIENT_MAIN_SRC_DIR}content/scss/global.scss`,
         `${CLIENT_MAIN_SRC_DIR}content/css/loading.css`,
-        `${CLIENT_MAIN_SRC_DIR}content/css/vendor.css`,
+        `${CLIENT_MAIN_SRC_DIR}content/scss/vendor.scss`,
+        `${CLIENT_MAIN_SRC_DIR}content/scss/_bootstrap-variables.scss`,
         `${CLIENT_MAIN_SRC_DIR}content/images/jhipster_family_member_0.svg`,
         `${CLIENT_MAIN_SRC_DIR}content/images/jhipster_family_member_1.svg`,
         `${CLIENT_MAIN_SRC_DIR}content/images/jhipster_family_member_2.svg`,
@@ -533,7 +533,7 @@ const expectedFiles = {
         `${CLIENT_MAIN_SRC_DIR}i18n/en/global.json`,
         `${CLIENT_MAIN_SRC_DIR}i18n/ar-ly/global.json`,
         `${CLIENT_MAIN_SRC_DIR}app/core/language/language.constants.ts`,
-        `${CLIENT_MAIN_SRC_DIR}content/css/rtl.css`,
+        `${CLIENT_MAIN_SRC_DIR}content/scss/rtl.scss`,
         `${CLIENT_MAIN_SRC_DIR}app/core/language/language.helper.ts`,
         `${CLIENT_MAIN_SRC_DIR}app/shared/language/find-language-from-key.pipe.ts`
     ],
@@ -594,9 +594,9 @@ const expectedFiles = {
         `${SERVER_MAIN_SRC_DIR}com/mycompany/myapp/gateway/ratelimiting/RateLimitingFilter.kt`,
         `${SERVER_MAIN_SRC_DIR}com/mycompany/myapp/gateway/accesscontrol/AccessControlFilter.kt`,
         `${SERVER_MAIN_SRC_DIR}com/mycompany/myapp/gateway/responserewriting/SwaggerBasePathRewritingFilter.kt`,
+        `${SERVER_TEST_SRC_DIR}com/mycompany/myapp/gateway/responserewriting/SwaggerBasePathRewritingFilterTest.kt`,
         `${SERVER_MAIN_SRC_DIR}com/mycompany/myapp/web/rest/vm/RouteVM.kt`,
         `${SERVER_MAIN_SRC_DIR}com/mycompany/myapp/web/rest/GatewayResource.kt`,
-        `${SERVER_TEST_SRC_DIR}com/mycompany/myapp/gateway/responserewriting/SwaggerBasePathRewritingFilterTest.kt`,
         `${CLIENT_MAIN_SRC_DIR}app/admin/gateway/gateway.component.ts`,
         `${CLIENT_MAIN_SRC_DIR}app/admin/gateway/gateway.route.ts`,
         `${CLIENT_MAIN_SRC_DIR}app/admin/gateway/gateway.component.html`,
@@ -643,6 +643,12 @@ const expectedFiles = {
 
     dockerServices: [`${DOCKER_DIR}app.yml`, `${DOCKER_DIR}Dockerfile`, `${DOCKER_DIR}sonar.yml`],
 
+    hibernateTimeZoneConfig: [
+        `${SERVER_TEST_SRC_DIR}com/mycompany/myapp/config/timezone/HibernateTimeZoneIT.kt`,
+        `${SERVER_TEST_SRC_DIR}com/mycompany/myapp/repository/timezone/DateTimeWrapper.kt`,
+        `${SERVER_TEST_SRC_DIR}com/mycompany/myapp/repository/timezone/DateTimeWrapperRepository.kt`
+    ],
+
     mysql: [`${SERVER_MAIN_SRC_DIR}com/mycompany/myapp/config/LiquibaseConfiguration.kt`, `${DOCKER_DIR}mysql.yml`],
 
     mariadb: [`${SERVER_MAIN_SRC_DIR}com/mycompany/myapp/config/LiquibaseConfiguration.kt`, `${DOCKER_DIR}mariadb.yml`],
@@ -655,12 +661,6 @@ const expectedFiles = {
         `${SERVER_MAIN_RES_DIR}config/liquibase/master.xml`,
         `${SERVER_MAIN_RES_DIR}config/liquibase/changelog/00000000000000_initial_schema.xml`,
         `${SERVER_MAIN_SRC_DIR}com/mycompany/myapp/config/LiquibaseConfiguration.kt`
-    ],
-
-    hibernateTimeZoneConfig: [
-        `${SERVER_TEST_SRC_DIR}com/mycompany/myapp/config/timezone/HibernateTimeZoneIT.kt`,
-        `${SERVER_TEST_SRC_DIR}com/mycompany/myapp/repository/timezone/DateTimeWrapper.kt`,
-        `${SERVER_TEST_SRC_DIR}com/mycompany/myapp/repository/timezone/DateTimeWrapperRepository.kt`
     ],
 
     hazelcast: [`${DOCKER_DIR}hazelcast-management-center.yml`],

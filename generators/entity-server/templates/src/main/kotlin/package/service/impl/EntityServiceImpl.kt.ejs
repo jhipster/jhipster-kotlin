@@ -74,7 +74,7 @@ import java.util.UUID
 <%_ } _%>
 <%_ if (searchEngine === 'elasticsearch') { _%>
 
-import org.elasticsearch.index.query.QueryBuilders.*
+import org.elasticsearch.index.query.QueryBuilders.queryStringQuery
 <%_ } _%>
 
 /**
@@ -82,9 +82,9 @@ import org.elasticsearch.index.query.QueryBuilders.*
  */
 @Service<% if (databaseType === 'sql') { %>
 @Transactional<% } %>
-class <%= serviceClassName %> (
+class <%= serviceClassName %>(
 <%- include('../../common/inject_template', {asEntity, asDto, viaService: viaService, constructorName: serviceClassName, queryService: false, isUsingMapsId: isUsingMapsId, mapsIdAssoc: mapsIdAssoc, isController: false}); -%>
-)<% if (service === 'serviceImpl') { %>: <%= entityClass %>Service<% } %> {
+)<% if (service === 'serviceImpl') { %> : <%= entityClass %>Service<% } %> {
 
     private val log = LoggerFactory.getLogger(<%= serviceClassName %>::class.java)
 
@@ -140,7 +140,7 @@ class <%= serviceClassName %> (
     <% if (service === 'serviceImpl') { %>override <% } %>fun findAllWithEagerRelationships(pageable: Pageable): Page<<%= instanceType %>> {
         return <%= entityInstance %>Repository.findAllWithEagerRelationships(pageable)<% if (dto !== 'mapstruct') { %><% } else { %>.map(<%= entityToDtoReference %>)<% } %>
     }
-    <% } %>
+    <%_ } _%>
 <%- include('../../common/get_filtered_template', {asEntity, asDto}); -%>
     /**
      * Get one <%= entityInstance %> by id.
@@ -181,9 +181,8 @@ class <%= serviceClassName %> (
         log.debug("Request to search <%= entityClassPlural %> for query {}", query)<%- include('../../common/search_stream_template', {viaService: viaService}); -%>
         <%_ } else { _%>
         log.debug("Request to search for a page of <%= entityClassPlural %> for query {}", query)
-        return <%= entityInstance %>SearchRepository.search(queryStringQuery(query), pageable)<%_ if (dto !== 'mapstruct') { _%><% } else { %>
-            .map(<%= entityToDtoReference %>)
-        <%_ } } _%>
+        return <%= entityInstance %>SearchRepository.search(queryStringQuery(query), pageable)<%_ if (dto !== 'mapstruct') { _%><% } else { %>.map(<%= entityToDtoReference %>)<% } %>
+        <%_ } _%>
     }
     <%_ } _%>
 }

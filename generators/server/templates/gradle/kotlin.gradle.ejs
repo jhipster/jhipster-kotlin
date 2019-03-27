@@ -18,13 +18,15 @@
 -%>
 import org.gradle.internal.os.OperatingSystem
 
-apply plugin: 'kotlin' // Required for Kotlin integration
-apply plugin: 'kotlin-kapt' // Required for annotations processing
+apply plugin: "kotlin" // Required for Kotlin integration
+apply plugin: "kotlin-kapt" // Required for annotations processing
 apply plugin: "kotlin-spring" // See https://kotlinlang.org/docs/reference/compiler-plugins.html#spring-support
 <%_ if (databaseType === 'sql') { _%>
 apply plugin: "kotlin-allopen" // See https://kotlinlang.org/docs/reference/compiler-plugins.html#using-in-gradle
 apply plugin: "kotlin-jpa" // See https://kotlinlang.org/docs/reference/compiler-plugins.html#jpa-support
 <%_ } _%>
+
+apply plugin: "org.jlleitschuh.gradle.ktlint"
 
 dependencies {
     implementation "org.jetbrains.kotlin:kotlin-stdlib-jdk8:${kotlin_version}"
@@ -32,14 +34,14 @@ dependencies {
 
     kapt "org.mapstruct:mapstruct-processor:${mapstruct_version}"
     <%_ if (databaseType === 'sql') { _%>
-    kapt "org.hibernate:hibernate-jpamodelgen"
+    kapt "org.hibernate:hibernate-jpamodelgen:${hibernate_version}"
     kapt "javax.xml.bind:jaxb-api:${jaxb_api_version}"
     kapt "com.sun.xml.bind:jaxb-impl:${jaxb_impl_version}"
     <%_ } _%>
 
-    implementation "org.jetbrains.kotlin:kotlin-test-junit:${kotlin_version}"
+    testImplementation "org.jetbrains.kotlin:kotlin-test-junit:${kotlin_version}"
 
-    implementation 'com.nhaarman.mockitokotlin2:mockito-kotlin:<%= MOCKITO_KOTLIN_VERSION %>'
+    testImplementation "com.nhaarman.mockitokotlin2:mockito-kotlin:<%= MOCKITO_KOTLIN_VERSION %>"
 }<%_ if (databaseType === 'sql') { %>
 
 allOpen {
@@ -54,6 +56,12 @@ compileKotlin {
         javaParameters = true<%_ if (databaseType === 'couchbase') { %>
     	freeCompilerArgs = ["-Xjvm-default=enable"]<%_ } %>
     }
+}
+
+ktlint {
+    //See more options: https://github.com/JLLeitschuh/ktlint-gradle#configuration
+    version = "<%= KTLINT_VERSION %>"
+    ignoreFailures = true
 }
 
 if (OperatingSystem.current().isWindows()) {
