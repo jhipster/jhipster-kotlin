@@ -78,60 +78,60 @@ jobs:
                   JHI_ENTITY: mongodb
 
           steps:
-          #----------------------------------------------------------------------
-          # Install all tools and check configuration
-          #----------------------------------------------------------------------
-          - task: NodeTool@0
-            inputs:
-              versionSpec: '10.15.3'
-            displayName: 'TOOLS: install Node.js'
-          - script: |
-              wget -q -O - https://dl-ssl.google.com/linux/linux_signing_key.pub | sudo apt-key add -
-              sudo sh -c 'echo "deb [arch=amd64] http://dl.google.com/linux/chrome/deb/ stable main" >> /etc/apt/sources.list.d/google.list'
-              sudo apt update
-              sudo apt install google-chrome-stable
-            displayName: 'TOOLS: install google-chrome-stable'
-          - script: sudo npm install -g npm
-            displayName: 'TOOLS: update NPM'
-          - script: sudo chown -R vsts:docker /home/vsts/.npm/
-            displayName: 'BUGS-FIX: change /home/vsts/.npm/ permission'
-          - bash: $(KOTLIN_JHI_SCRIPTS)/01-display-configuration.sh
-            displayName: 'TOOLS: display configuration'
-          - bash: $(KOTLIN_JHI_SCRIPTS)/03-system.sh
-            displayName: 'TOOLS: configure tools installed by the system'
-          - bash: $(KOTLIN_JHI_SCRIPTS)/04-git-config.sh
-            displayName: 'TOOLS: configure git'
+              #----------------------------------------------------------------------
+              # Install all tools and check configuration
+              #----------------------------------------------------------------------
+              - task: NodeTool@0
+                inputs:
+                    versionSpec: '10.15.3'
+                displayName: 'TOOLS: install Node.js'
+              - script: |
+                    wget -q -O - https://dl-ssl.google.com/linux/linux_signing_key.pub | sudo apt-key add -
+                    sudo sh -c 'echo "deb [arch=amd64] http://dl.google.com/linux/chrome/deb/ stable main" >> /etc/apt/sources.list.d/google.list'
+                    sudo apt update
+                    sudo apt install google-chrome-stable
+                displayName: 'TOOLS: install google-chrome-stable'
+              - script: sudo npm install -g npm
+                displayName: 'TOOLS: update NPM'
+              - script: sudo chown -R vsts:docker /home/vsts/.npm/
+                displayName: 'BUGS-FIX: change /home/vsts/.npm/ permission'
+              - bash: $(KOTLIN_JHI_SCRIPTS)/01-display-configuration.sh
+                displayName: 'TOOLS: display configuration'
+              - bash: $(KOTLIN_JHI_SCRIPTS)/03-system.sh
+                displayName: 'TOOLS: configure tools installed by the system'
+              - bash: $(KOTLIN_JHI_SCRIPTS)/04-git-config.sh
+                displayName: 'TOOLS: configure git'
 
-          #----------------------------------------------------------------------
-          # Install JHipster and generate project+entities
-          #----------------------------------------------------------------------
-          - bash: $(KOTLIN_JHI_SCRIPTS)/10-install-jhipster-kotlin.sh
-            displayName: 'GENERATION: install JHipster'
-          - bash: $(JHI_SCRIPTS)/11-generate-entities.sh
-            displayName: 'GENERATION: entities'
-          - bash: $(KOTLIN_JHI_SCRIPTS)/12-generate-project-kotlin.sh
-            displayName: 'GENERATION: project'
-          - bash: $(JHI_SCRIPTS)/13-replace-version-generated-project.sh
-            displayName: 'GENERATION: replace version in generated project'
-          - bash: $(JHI_SCRIPTS)/14-jhipster-info.sh
-            displayName: 'GENERATION: jhipster info'
+              #----------------------------------------------------------------------
+              # Install JHipster and generate project+entities
+              #----------------------------------------------------------------------
+              - bash: $(KOTLIN_JHI_SCRIPTS)/10-install-jhipster-kotlin.sh
+                displayName: 'GENERATION: install JHipster'
+              - bash: $(JHI_SCRIPTS)/11-generate-entities.sh
+                displayName: 'GENERATION: entities'
+              - bash: $(KOTLIN_JHI_SCRIPTS)/12-generate-project-kotlin.sh
+                displayName: 'GENERATION: project'
+              - bash: $(JHI_SCRIPTS)/13-replace-version-generated-project.sh
+                displayName: 'GENERATION: replace version in generated project'
+              - bash: $(JHI_SCRIPTS)/14-jhipster-info.sh
+                displayName: 'GENERATION: jhipster info'
 
-          #----------------------------------------------------------------------
-          # Bugs fix
-          #----------------------------------------------------------------------
-          - bash: $(JHI_SCRIPTS)/20-no-memory-limit-elasticsearch.sh
-            displayName: 'BUGS-FIX: no memory limit for Elasticsearch'
+              #----------------------------------------------------------------------
+              # Bugs fix
+              #----------------------------------------------------------------------
+              - bash: $(JHI_SCRIPTS)/20-no-memory-limit-elasticsearch.sh
+                displayName: 'BUGS-FIX: no memory limit for Elasticsearch'
 
-          #----------------------------------------------------------------------
-          # Launch tests
-          #----------------------------------------------------------------------
-          - bash: $(JHI_SCRIPTS)/20-docker-compose.sh
-            displayName: 'TESTS: Start docker-compose containers'
-          - bash: $(JHI_SCRIPTS)/21-tests-backend.sh
-            displayName: 'TESTS: backend'
-          - bash: $(JHI_SCRIPTS)/22-tests-frontend.sh
-            displayName: 'TESTS: frontend'
-          - bash: $(JHI_SCRIPTS)/23-package.sh
-            displayName: 'TESTS: packaging'
-          - bash: $(JHI_SCRIPTS)/24-tests-e2e.sh
-            displayName: 'TESTS: End-to-End'
+              #----------------------------------------------------------------------
+              # Launch tests
+              #----------------------------------------------------------------------
+              - bash: $(JHI_SCRIPTS)/20-docker-compose.sh
+                displayName: 'TESTS: Start docker-compose containers'
+              - bash: $(JHI_SCRIPTS)/21-tests-backend.sh
+                displayName: 'TESTS: backend'
+              - bash: $(JHI_SCRIPTS)/22-tests-frontend.sh
+                displayName: 'TESTS: frontend'
+              - bash: $(JHI_SCRIPTS)/23-package.sh
+                displayName: 'TESTS: packaging'
+              - bash: $(JHI_SCRIPTS)/24-tests-e2e.sh
+                displayName: 'TESTS: End-to-End'
