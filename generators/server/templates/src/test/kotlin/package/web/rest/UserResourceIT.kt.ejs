@@ -22,6 +22,9 @@ package <%= packageName %>.web.rest
 import <%= packageName %>.AbstractCassandraTest
 <%_ } _%>
 import <%= packageName %>.<%= mainClass %>
+<%_ if (authenticationType === 'oauth2') { _%>
+import <%=packageName%>.config.TestSecurityConfiguration
+<%_ } _%>
 <%_ if (reactive) { _%>
 import <%= packageName %>.config.ReactivePageableHandlerMethodArgumentResolver
 <%_ } _%>
@@ -107,7 +110,11 @@ import kotlin.test.assertNull
  * Integration tests for the [UserResource] REST controller.
  */
 @RunWith(SpringRunner::class)
+<%_ if (authenticationType === 'oauth2') { _%>
+@SpringBootTest(classes = [<%= mainClass %>::class, TestSecurityConfiguration::class])
+<%_ } else { _%>
 @SpringBootTest(classes = [<%= mainClass %>::class])
+<%_ } _%>
 class UserResourceIT <% if (databaseType === 'cassandra') { %>: AbstractCassandraTest() <% } %>{
 
     @Autowired

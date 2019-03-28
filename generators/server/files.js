@@ -350,6 +350,11 @@ const serverFiles = {
                     file: 'package/security/oauth2/AudienceValidatorTest.kt',
                     renameTo: generator => `${generator.javaDir}security/oauth2/AudienceValidatorTest.kt`,
                     useBluePrint: true
+                },
+                {
+                    file: 'package/config/TestSecurityConfiguration.kt',
+                    renameTo: generator => `${generator.testDir}config/TestSecurityConfiguration.kt`,
+                    useBluePrint: true
                 }
             ]
         },

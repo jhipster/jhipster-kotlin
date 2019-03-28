@@ -20,6 +20,9 @@ package <%=packageName%>.repository
 
 import <%=packageName%>.<%= mainClass %>
 import <%=packageName%>.config.Constants
+<%_ if (authenticationType === 'oauth2') { _%>
+import <%=packageName%>.config.TestSecurityConfiguration
+<%_ } _%>
 import <%=packageName%>.config.audit.AuditEventConverter
 import <%=packageName%>.domain.PersistentAuditEvent
 import org.junit.Before
@@ -39,6 +42,7 @@ import org.springframework.transaction.annotation.Transactional
 <%_ } _%>
 
 import java.time.Instant
+import java.time.temporal.ChronoUnit;
 
 <%_ if (databaseType === 'couchbase') { _%>
 import <%= packageName %>.web.rest.TestUtil.mockAuthentication
@@ -49,8 +53,14 @@ import org.assertj.core.api.Assertions.assertThat
  * Integration tests for [CustomAuditEventRepository].
  */
 @RunWith(SpringRunner::class)
-@SpringBootTest(classes = [<%= mainClass %>::class])<% if (databaseType === 'sql') { %>
-@Transactional<% } %>
+<%_ if (authenticationType === 'oauth2') { _%>
+@SpringBootTest(classes = [<%= mainClass %>::class, TestSecurityConfiguration::class])
+<%_ } else { _%>
+@SpringBootTest(classes = [<%= mainClass %>::class])
+<%_ } _%>
+<%_ if (databaseType === 'sql') { _%>
+@Transactional
+<%_ } _%>
 class CustomAuditEventRepositoryIT {
 
     @Autowired
@@ -108,7 +118,8 @@ class CustomAuditEventRepositoryIT {
         assertThat(persistentAuditEvent.auditEventType).isEqualTo(event.type)
         assertThat(persistentAuditEvent.data).containsKey("test-key")
         assertThat(persistentAuditEvent.data["test-key"]).isEqualTo("test-value")
-        assertThat(persistentAuditEvent.auditEventDate).isEqualTo(event.timestamp)
+        assertThat(persistentAuditEvent.auditEventDate!!.truncatedTo(ChronoUnit.MILLIS))
+            .isEqualTo(event.timestamp!!.truncatedTo(ChronoUnit.MILLIS))
     }
 
     @Test
@@ -130,7 +141,8 @@ class CustomAuditEventRepositoryIT {
         val actualData = persistentAuditEvent.data["test-key"]
         assertThat(actualData!!.length).isEqualTo(CustomAuditEventRepository.EVENT_DATA_COLUMN_MAX_LENGTH)
         assertThat(actualData).isSubstringOf(largeData)
-        assertThat(persistentAuditEvent.auditEventDate).isEqualTo(event.timestamp)
+        assertThat(persistentAuditEvent.auditEventDate!!.truncatedTo(ChronoUnit.MILLIS))
+            .isEqualTo(event.timestamp!!.truncatedTo(ChronoUnit.MILLIS))
     }
     <%_ if (!reactive) { _%>
 
