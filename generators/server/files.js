@@ -726,11 +726,6 @@ const serverFiles = {
                     useBluePrint: true
                 },
                 {
-                    file: 'package/config/lazy/LazyInitBeanFactoryPostProcessor.kt',
-                    renameTo: generator => `${generator.javaDir}config/lazy/LazyInitBeanFactoryPostProcessor.kt`,
-                    useBluePrint: true
-                },
-                {
                     file: 'package/config/DefaultProfileUtil.kt',
                     renameTo: generator => `${generator.javaDir}config/DefaultProfileUtil.kt`,
                     useBluePrint: true
