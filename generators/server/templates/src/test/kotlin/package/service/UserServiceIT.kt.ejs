@@ -22,6 +22,9 @@ package <%= packageName %>.service
 import <%= packageName %>.AbstractCassandraTest
 <%_ } _%>
 import <%= packageName %>.<%= mainClass %>
+<%_ if (authenticationType === 'oauth2') { _%>
+import <%= packageName %>.config.TestSecurityConfiguration
+<%_ } _%>
 import <%= packageName %>.config.Constants
 <%_ if ((databaseType === 'sql' || databaseType === 'mongodb' || databaseType === 'couchbase') && authenticationType === 'session' && !reactive) { _%>
 import <%= packageName %>.domain.PersistentToken
@@ -110,8 +113,14 @@ import kotlin.test.assertNotNull
  * Integration tests for [UserService].
  */
 @RunWith(SpringRunner::class)
-@SpringBootTest(classes = [<%= mainClass %>::class])<% if (databaseType === 'sql') { %>
-@Transactional<% } %>
+<%_ if (authenticationType === 'oauth2') { _%>
+@SpringBootTest(classes = [<%= mainClass %>::class, TestSecurityConfiguration::class])
+<%_ } else { _%>
+@SpringBootTest(classes = [<%= mainClass %>::class])
+<%_ } _%>
+<%_ if (databaseType === 'sql') { _%>
+@Transactional
+<%_ } _%>
 class UserServiceIT <% if (databaseType === 'cassandra') { %>: AbstractCassandraTest() <% } %>{
 
     <%_ if ((databaseType === 'sql' || databaseType === 'mongodb' || databaseType === 'couchbase') && authenticationType === 'session' && !reactive) { _%>

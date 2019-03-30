@@ -163,7 +163,6 @@ const expectedFiles = {
         `${SERVER_MAIN_RES_DIR}i18n/messages.properties`,
         `${SERVER_MAIN_SRC_DIR}com/mycompany/myapp/JhipsterApp.kt`,
         `${SERVER_MAIN_SRC_DIR}com/mycompany/myapp/aop/logging/LoggingAspect.kt`,
-        `${SERVER_MAIN_SRC_DIR}com/mycompany/myapp/config/lazy/LazyInitBeanFactoryPostProcessor.kt`,
         `${SERVER_MAIN_SRC_DIR}com/mycompany/myapp/config/ApplicationProperties.kt`,
         `${SERVER_MAIN_SRC_DIR}com/mycompany/myapp/config/AsyncConfiguration.kt`,
         `${SERVER_MAIN_SRC_DIR}com/mycompany/myapp/config/CacheConfiguration.kt`,

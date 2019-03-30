@@ -22,6 +22,9 @@ package <%= packageName %>.service.mapper
 import <%=packageName%>.AbstractCassandraTest
 <%_ } _%>
 import <%= packageName %>.<%= mainClass %>
+<%_ if (authenticationType === 'oauth2') { _%>
+import <%=packageName%>.config.TestSecurityConfiguration
+<%_ } _%>
 import <%= packageName %>.domain.<%= asEntity('User') %>
 import <%= packageName %>.service.dto.<%= asDto('User') %>
 <%_ if (authenticationType !== 'oauth2') { _%>
@@ -42,7 +45,11 @@ import kotlin.test.assertNull
  * Integration tests for [UserMapper].
  */
 @RunWith(SpringRunner::class)
+<%_ if (authenticationType === 'oauth2') { _%>
+@SpringBootTest(classes = [<%= mainClass %>::class, TestSecurityConfiguration::class])
+<%_ } else { _%>
 @SpringBootTest(classes = [<%= mainClass %>::class])
+<%_ } _%>
 class UserMapperIT <% if (databaseType === 'cassandra') { %>: AbstractCassandraTest() <% } %>{
 
     @Autowired

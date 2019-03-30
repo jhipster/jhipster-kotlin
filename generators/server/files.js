@@ -350,6 +350,11 @@ const serverFiles = {
                     file: 'package/security/oauth2/AudienceValidatorTest.kt',
                     renameTo: generator => `${generator.javaDir}security/oauth2/AudienceValidatorTest.kt`,
                     useBluePrint: true
+                },
+                {
+                    file: 'package/config/TestSecurityConfiguration.kt',
+                    renameTo: generator => `${generator.testDir}config/TestSecurityConfiguration.kt`,
+                    useBluePrint: true
                 }
             ]
         },
@@ -723,11 +728,6 @@ const serverFiles = {
                 {
                     file: 'package/aop/logging/LoggingAspect.kt',
                     renameTo: generator => `${generator.javaDir}aop/logging/LoggingAspect.kt`,
-                    useBluePrint: true
-                },
-                {
-                    file: 'package/config/lazy/LazyInitBeanFactoryPostProcessor.kt',
-                    renameTo: generator => `${generator.javaDir}config/lazy/LazyInitBeanFactoryPostProcessor.kt`,
                     useBluePrint: true
                 },
                 {
