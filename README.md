@@ -20,7 +20,9 @@ This project adds Kotlin to the JHipster application 😎. It is based on JHipst
 
 Install the package with `npm install -g generator-jhipster-kotlin`
 
-And generate the application with `jhipster --blueprint kotlin`
+1. Make sure you have followed the [JHipster installation guide](https://www.jhipster.tech/installation) and that both `yeoman` and `jhipster` are installed.
+2. Install the package with `npm install -g generator-jhipster-kotlin`
+3. And generate the application with `jhipster --blueprint kotlin`
 
 ## 🚦 What we have now
 
