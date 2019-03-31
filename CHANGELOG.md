@@ -2,9 +2,9 @@
 
 # [0.7.0](https://github.com/sendilkumarn/jhipster-kotlin/compare/0.6.1...0.7.0) (2018-12-29)
 
--  Upgraded Kotlin support to 1.3.11
--  Improved contribution guidelines
--  Upgraded JHipster support to 5.7.2 (and master ~beta)
+-   Upgraded Kotlin support to 1.3.11
+-   Improved contribution guidelines
+-   Upgraded JHipster support to 5.7.2 (and master ~beta)
 
 <a name="0.6.1"></a>
 
@@ -16,7 +16,7 @@
 
 # [0.6.0](https://github.com/sendilkumarn/jhipster-kotlin/compare/0.5.0...0.6.0) (2018-11-29)
 
--   Used base JHipster files to cope up with the changes. 
+-   Used base JHipster files to cope up with the changes.
 -   Updated libraries
 -   Fixed to work along with JHipster master
 -   Fixed both Maven and Gradle builds

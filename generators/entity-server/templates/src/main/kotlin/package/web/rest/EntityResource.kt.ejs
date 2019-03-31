@@ -17,6 +17,7 @@
  limitations under the License.
 -%>
 package <%=packageName%>.web.rest
+
 <%_ const viaService = service !== 'no';
     let isUsingMapsId = false;
     let mapsIdAssoc;
@@ -49,8 +50,6 @@ import <%=packageName%>.repository.search.<%= entityClass %>SearchRepository
 import <%=packageName%>.repository.UserRepository
 <%_ } _%>
 import <%=packageName%>.web.rest.errors.BadRequestAlertException
-import <%=packageName%>.web.rest.util.HeaderUtil<% if (pagination !== 'no') { %>
-import <%=packageName%>.web.rest.util.PaginationUtil<% } %>
 <%_ if (dto === 'mapstruct') { _%>
 import <%=packageName%>.service.dto.<%= asDto(entityClass) %>
 <%_ if (service === 'no') { _%>
@@ -60,19 +59,35 @@ import <%=packageName%>.service.mapper.<%= entityClass %>Mapper
 import <%=packageName%>.service.dto.<%= entityClass %>Criteria
 import <%=packageName%>.service.<%= entityClass %>QueryService
 <%_ } _%>
+
+import io.github.jhipster.web.util.HeaderUtil
+<%_ if (pagination !== 'no') { _%>
+import io.github.jhipster.web.util.PaginationUtil
+<%_ } _%>
 import io.github.jhipster.web.util.ResponseUtil
 import org.slf4j.LoggerFactory
+import org.springframework.beans.factory.annotation.Value
 <%_ if (pagination !== 'no') { _%>
 import org.springframework.data.domain.Page
 import org.springframework.data.domain.Pageable
 import org.springframework.http.HttpStatus
+import org.springframework.util.MultiValueMap;
+import org.springframework.web.util.UriComponentsBuilder;
 <%_ } _%>
 <%_ if (reactiveRepositories) { _%>
 import org.springframework.http.MediaType
 <%_ } _%>
 import org.springframework.http.ResponseEntity <%_ if (isUsingMapsId === true && !viaService) { %>
 import org.springframework.transaction.annotation.Transactional <% } %>
-import org.springframework.web.bind.annotation.*
+import org.springframework.web.bind.annotation.DeleteMapping
+import org.springframework.web.bind.annotation.GetMapping
+import org.springframework.web.bind.annotation.PathVariable
+import org.springframework.web.bind.annotation.PostMapping
+import org.springframework.web.bind.annotation.PutMapping
+import org.springframework.web.bind.annotation.RequestBody
+import org.springframework.web.bind.annotation.RequestMapping
+import org.springframework.web.bind.annotation.RequestParam
+import org.springframework.web.bind.annotation.RestController
 <%_ if (reactiveRepositories) { _%>
 import reactor.core.publisher.Flux
 <%_ } _%>
@@ -83,14 +98,14 @@ import javax.validation.Valid
 import java.net.URI
 import java.net.URISyntaxException<% if (isUsingMapsId === true) { %>
 import java.util.Objects<% } %>
-<% if (databaseType === 'cassandra') { %>
+<%_ if (databaseType === 'cassandra') { _%>
 import java.util.UUID<% } %><% if (searchEngine === 'elasticsearch') { %>
 
-import org.elasticsearch.index.query.QueryBuilders.*
-<% } %>
+import org.elasticsearch.index.query.QueryBuilders.queryStringQuery
+<%_ } _%>
 
 /**
- * REST controller for managing [<%= entityClass %>].
+ * REST controller for managing [<%= packageName %>.domain.<%= asEntity(entityClass) %>].
  */
 @RestController
 @RequestMapping("/api")<% if (databaseType === 'sql' && isUsingMapsId === true && !viaService) { %>
@@ -102,17 +117,20 @@ class <%= entityClass %>Resource(
 _%><%- include('../../common/inject_template', {viaService: viaService, constructorName: entityClass + 'Resource', queryService: jpaMetamodelFiltering, isUsingMapsId: isUsingMapsId, mapsIdAssoc: mapsIdAssoc, isController: true}); -%>
 ) {
 
-    val log = LoggerFactory.getLogger(this.javaClass)
+    private val log = LoggerFactory.getLogger(this.javaClass)
+
+    @Value("\${jhipster.clientApp.name}")
+    private var applicationName: String? = null
     <%_ let entityName = entityInstance;
     if (clientRootFolder && !skipUiGrouping) {
         entityName = _.camelCase(`${clientRootFolder}${entityClass}`)
     } _%>
 
     /**
-     * POST  /<%= entityApiUrl %> : Create a new [<%= entityInstance %>].
+     * `POST  /<%= entityApiUrl %>` : Create a new <%= entityInstance %>.
      *
      * @param <%= instanceName %> the <%= instanceName %> to create.
-     * @return the ResponseEntity with status 201 (Created) and with body the new <%= instanceName %>, or with status 400 (Bad Request) if the <%= entityInstance %> has already an ID.
+     * @return the [ResponseEntity] with status `201 (Created)` and with body the new <%= instanceName %>, or with status `400 (Bad Request)` if the <%= entityInstance %> has already an ID.
      * @throws URISyntaxException if the Location URI syntax is incorrect.
      */
     @PostMapping("/<%= entityApiUrl %>")
@@ -132,17 +150,17 @@ _%><%- include('../../common/inject_template', {viaService: viaService, construc
         <%_ } _%>
 <%- include('../../common/save_template', {asEntity, asDto, viaService: viaService, returnDirectly: false, isUsingMapsId: isUsingMapsId, mapsIdAssoc: mapsIdAssoc, isController: true}); -%>
         return ResponseEntity.created(URI("/api/<%= entityApiUrl %>/" + result.id))
-            .headers(HeaderUtil.createEntityCreationAlert(ENTITY_NAME, result.id.toString()))
+            .headers(HeaderUtil.createEntityCreationAlert(applicationName, <%= enableTranslation %>, ENTITY_NAME, result.id.toString()))
             .body(result)
     }
 
     /**
-     * PUT  /<%= entityApiUrl %> : Updates an existing [<%= entityInstance %>].
+     * `PUT  /<%= entityApiUrl %>` : Updates an existing <%= entityInstance %>.
      *
      * @param <%= instanceName %> the <%= instanceName %> to update.
-     * @return the ResponseEntity with status 200 (OK) and with body the updated <%= instanceName %>,
-     * or with status 400 (Bad Request) if the <%= instanceName %> is not valid,
-     * or with status 500 (Internal Server Error) if the <%= instanceName %> couldn't be updated.
+     * @return the [ResponseEntity] with status `200 (OK)` and with body the updated <%= instanceName %>,
+     * or with status `400 (Bad Request)` if the <%= instanceName %> is not valid,
+     * or with status `500 (Internal Server Error)` if the <%= instanceName %> couldn't be updated.
      * @throws URISyntaxException if the Location URI syntax is incorrect.
      */
     @PutMapping("/<%= entityApiUrl %>")
@@ -159,18 +177,18 @@ _%><%- include('../../common/inject_template', {viaService: viaService, construc
         <%_ } _%>
 <%- include('../../common/save_template', {asEntity, asDto, viaService: viaService, returnDirectly: false, isUsingMapsId: false, mapsIdAssoc: mapsIdAssoc}); -%>
         return ResponseEntity.ok()
-            .headers(HeaderUtil.createEntityUpdateAlert(ENTITY_NAME, <%= instanceName %>.id.toString()))
+            .headers(HeaderUtil.createEntityUpdateAlert(applicationName, <%= enableTranslation %>, ENTITY_NAME, <%= instanceName %>.id.toString()))
             .body(result)
     }
 
     /**
-     * GET  /<%= entityApiUrl %> : get all the <%= entityInstancePlural %>.
+     * `GET  /<%= entityApiUrl %>` : get all the <%= entityInstancePlural %>.
      *<% if (pagination !== 'no') { %>
      * @param pageable the pagination information.<% } if (!jpaMetamodelFiltering && fieldsContainOwnerManyToMany) { %>
      * @param eagerload flag to eager load entities from relationships (This is applicable for many-to-many).<% } if (jpaMetamodelFiltering) { %>
      * @param criteria the criteria which the requested entities should match.<% } else if (fieldsContainNoOwnerOneToOne) { %>
      * @param filter the filter of the request.<% } %>
-     * @return the ResponseEntity with status 200 (OK) and the list of <%= entityInstancePlural %> in body.
+     * @return the [ResponseEntity] with status `200 (OK)` and the list of <%= entityInstancePlural %> in body.
      */
     @GetMapping("/<%= entityApiUrl %>")<%_ if (databaseType === 'sql' && isUsingMapsId === true && !viaService) { %>
     @Transactional(readOnly = true)<%_ } _%>
@@ -178,8 +196,8 @@ _%><%- include('../../common/inject_template', {viaService: viaService, construc
 
     <%_ if (reactiveRepositories) { _%>
     /**
-     * GET  /<%= entityApiUrl %> : get all the <%= entityInstancePlural %> as a stream.
-     * @return the Flux of <%= entityInstancePlural %>.
+     * `GET  /<%= entityApiUrl %>` : get all the <%= entityInstancePlural %> as a stream.
+     * @return the [Flux] of <%= entityInstancePlural %>.
      */
     @GetMapping(value = ["/<%= entityApiUrl %>"], produces = [MediaType.APPLICATION_STREAM_JSON_VALUE])
     <%_ if (databaseType === 'sql' && isUsingMapsId === true && !viaService) { _%>
@@ -196,10 +214,10 @@ _%><%- include('../../common/inject_template', {viaService: viaService, construc
 
     <%_ } _%>
     /**
-     * GET  /<%= entityApiUrl %>/:id : get the "id" <%= entityInstance %>.
+     * `GET  /<%= entityApiUrl %>/:id` : get the "id" <%= entityInstance %>.
      *
      * @param id the id of the <%= instanceName %> to retrieve.
-     * @return the ResponseEntity with status 200 (OK) and with body the <%= instanceName %>, or with status 404 (Not Found).
+     * @return the [ResponseEntity] with status `200 (OK)` and with body the <%= instanceName %>, or with status `404 (Not Found)`.
      */
     @GetMapping("/<%= entityApiUrl %>/{id}")
     <%_ if (databaseType === 'sql' && isUsingMapsId === true && !viaService) { _%>
@@ -211,20 +229,20 @@ _%><%- include('../../common/inject_template', {viaService: viaService, construc
     }
 
     /**
-     * DELETE  /<%= entityApiUrl %>/:id : delete the "id" <%= entityInstance %>.
+     * `DELETE  /<%= entityApiUrl %>/:id` : delete the "id" <%= entityInstance %>.
      *
      * @param id the id of the <%= instanceName %> to delete.
-     * @return the ResponseEntity with status 200 (OK).
+     * @return the [ResponseEntity] with status `204 (NO_CONTENT)`.
      */
     @DeleteMapping("/<%= entityApiUrl %>/{id}")
     fun delete<%= entityClass %>(@PathVariable id: <%= pkType %>): ResponseEntity<Void> {
         log.debug("REST request to delete <%= entityClass %> : {}", id)
 <%- include('../../common/delete_template', {viaService: viaService}); -%>
-        return ResponseEntity.ok().headers(HeaderUtil.createEntityDeletionAlert(ENTITY_NAME, id<% if (pkType !== 'String') { %>.toString()<% } %>)).build()
+        return ResponseEntity.noContent().headers(HeaderUtil.createEntityDeletionAlert(applicationName, <%= enableTranslation %>, ENTITY_NAME, id<% if (pkType !== 'String') { %>.toString()<% } %>)).build()
     }<% if (searchEngine === 'elasticsearch') { %>
 
     /**
-     * SEARCH  /_search/<%= entityApiUrl %>?query=:query : search for the <%= entityInstance %> corresponding
+     * `SEARCH  /_search/<%= entityApiUrl %>?query=:query` : search for the <%= entityInstance %> corresponding
      * to the query.
      *
      * @param query the query of the <%= entityInstance %> search.<% if (pagination !== 'no') { %>
