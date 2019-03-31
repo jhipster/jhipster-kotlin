@@ -16,25 +16,26 @@
  See the License for the specific language governing permissions and
  limitations under the License.
 -%>
-package <%=packageName%>;
+package <%=packageName%>
 
 import io.github.jhipster.config.JHipsterConstants
 
 import com.datastax.driver.core.Cluster
+import com.datastax.driver.core.Session
 import org.apache.cassandra.exceptions.ConfigurationException
 import org.apache.thrift.transport.TTransportException
 import org.cassandraunit.CQLDataLoader
 import org.cassandraunit.dataset.cql.ClassPathCQLDataSet
-import org.cassandraunit.utils.EmbeddedCassandraServerHelper
 import org.junit.BeforeClass
 import org.springframework.test.context.ActiveProfiles
+import org.testcontainers.containers.GenericContainer
+import org.testcontainers.containers.wait.strategy.Wait
 
 import java.io.IOException
 import java.net.URISyntaxException
 import java.nio.file.Files
 import java.nio.file.Paths
-
-import org.cassandraunit.utils.EmbeddedCassandraServerHelper.getNativeTransportPort
+import java.time.Duration
 
 /**
  * Base class for starting/stopping Cassandra during tests.
@@ -44,8 +45,12 @@ open class AbstractCassandraTest {
     companion object {
 
         const val CASSANDRA_UNIT_KEYSPACE = "cassandra_unit_keyspace"
-        private const val CASSANDRA_UNIT_RANDOM_PORT_YAML = "cassandra-random-port.yml"
-        private const val CASSANDRA_TIMEOUT = 30000L
+        const val CASSANDRA_TEST_PORT = 9042
+
+        @JvmField
+        val CASSANDRA_CONTAINER: GenericContainer<*> = KGenericContainer()
+            .waitingFor(Wait.forListeningPort().withStartupTimeout(Duration.ofSeconds(30)))
+            .withExposedPorts(CASSANDRA_TEST_PORT)
 
         private var started = false
 
@@ -54,23 +59,31 @@ open class AbstractCassandraTest {
         @Throws(TTransportException::class, ConfigurationException::class, IOException::class, URISyntaxException::class)
         fun startServer() {
             if (!started) {
-                EmbeddedCassandraServerHelper.startEmbeddedCassandra(CASSANDRA_UNIT_RANDOM_PORT_YAML, CASSANDRA_TIMEOUT)
+                CASSANDRA_CONTAINER.start()
                 val cluster = Cluster.Builder()
-                    .addContactPoints("127.0.0.1")
-                    .withPort(getNativeTransportPort())
-                    .withoutJMXReporting()
+                    .addContactPoint("127.0.0.1")
+                    .withPort(CASSANDRA_CONTAINER.getMappedPort(CASSANDRA_TEST_PORT))
                     .withoutMetrics()
+                    .withoutJMXReporting()
                     .build()
+
                 val session = cluster.connect()
-                val createQuery = "CREATE KEYSPACE $CASSANDRA_UNIT_KEYSPACE WITH replication={'class' : 'SimpleStrategy', 'replication_factor':1}"
-                session.execute(createQuery)
-                val useKeyspaceQuery = "USE $CASSANDRA_UNIT_KEYSPACE"
-                session.execute(useKeyspaceQuery)
+                createTestKeyspace(session)
                 val dataLoader = CQLDataLoader(session)
                 applyScripts(dataLoader, "config/cql/changelog/", "*.cql")
+
                 started = true
             }
         }
+
+        @JvmStatic
+        private fun createTestKeyspace(session: Session) {
+            val createQuery = "CREATE KEYSPACE $CASSANDRA_UNIT_KEYSPACE WITH replication={'class' : 'SimpleStrategy', 'replication_factor':1}"
+            session.execute(createQuery)
+            val useKeyspaceQuery = "USE $CASSANDRA_UNIT_KEYSPACE"
+            session.execute(useKeyspaceQuery)
+        }
+
 
         @JvmStatic
         @Throws(IOException::class, URISyntaxException::class)
@@ -92,4 +105,7 @@ open class AbstractCassandraTest {
             }
         }
     }
+
+    private class KGenericContainer : GenericContainer<KGenericContainer>("<%= DOCKER_CASSANDRA %>")
+
 }

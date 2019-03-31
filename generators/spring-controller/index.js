@@ -29,7 +29,7 @@ const SERVER_TEST_SRC_DIR = `${constants.TEST_DIR}kotlin/`;
 
 module.exports = class extends BaseGenerator {
     constructor(args, opts) {
-        super(args, Object.assign({ fromBlueprint: true }, opts));
+        super(args, { fromBlueprint: true, ...opts });
         this.argument('name', { type: String, required: true });
         this.name = this.options.name;
 
@@ -57,14 +57,13 @@ module.exports = class extends BaseGenerator {
             initializing() {
                 this.log(`The spring-controller ${this.name} is being created.`);
                 const configuration = this.getAllJhipsterConfig(this, true);
-                const blueprintConfiguration = this.getJhipsterAppConfig('generator-jhipster-kotlin');
-                this.baseName = blueprintConfiguration.baseName || configuration.get('baseName');
-                this.packageName = blueprintConfiguration.packageName || configuration.get('packageName');
-                this.packageFolder = blueprintConfiguration.packageFolder || configuration.get('packageFolder');
-                this.databaseType = blueprintConfiguration.databaseType || configuration.get('databaseType');
+                this.baseName = configuration.get('baseName');
+                this.packageName = configuration.get('packageName');
+                this.packageFolder = configuration.get('packageFolder');
+                this.databaseType = configuration.get('databaseType');
                 this.reactiveController = false;
-                this.applicationType = blueprintConfiguration.applicationType || configuration.get('applicationType');
-                this.reactive = blueprintConfiguration.reactive || configuration.get('reactive');
+                this.applicationType = configuration.get('applicationType');
+                this.reactive = configuration.get('reactive');
                 this.reactiveController = this.reactive;
                 this.controllerActions = [];
             }
@@ -142,8 +141,8 @@ module.exports = class extends BaseGenerator {
                 });
 
                 this.template(
-                    `${SERVER_TEST_SRC_DIR}package/web/rest/ResourceIntTest.kt.ejs`,
-                    `${SERVER_TEST_SRC_DIR}${this.packageFolder}/web/rest/${this.controllerClass}IntTest.kt`
+                    `${SERVER_TEST_SRC_DIR}package/web/rest/ResourceIT.kt.ejs`,
+                    `${SERVER_TEST_SRC_DIR}${this.packageFolder}/web/rest/${this.controllerClass}IT.kt`
                 );
                 this.template(
                     `${SERVER_MAIN_SRC_DIR}package/web/rest/Resource.kt.ejs`,

@@ -1,0 +1,199 @@
+<%#
+ Copyright 2013-2019 the original author or authors from the JHipster project.
+
+ This file is part of the JHipster project, see https://www.jhipster.tech/
+ for more information.
+
+ Licensed under the Apache License, Version 2.0 (the "License");
+ you may not use this file except in compliance with the License.
+ You may obtain a copy of the License at
+
+      http://www.apache.org/licenses/LICENSE-2.0
+
+ Unless required by applicable law or agreed to in writing, software
+ distributed under the License is distributed on an "AS IS" BASIS,
+ WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
+ See the License for the specific language governing permissions and
+ limitations under the License.
+-%>
+package <%= packageName %>.security
+
+<%_ if (databaseType === 'cassandra') { _%>
+import <%= packageName %>.AbstractCassandraTest
+<%_ } _%>
+import <%= packageName %>.<%= mainClass %>
+import <%= packageName %>.domain.<%= asEntity('User') %>
+import <%= packageName %>.repository.<% if (reactive) { %>reactive.<% } %>UserRepository
+
+import org.apache.commons.lang3.RandomStringUtils
+import org.junit.Before
+import org.junit.Test
+import org.junit.runner.RunWith
+import org.springframework.beans.factory.annotation.Autowired
+import org.springframework.boot.test.context.SpringBootTest
+<%_ if (reactive) { _%>
+import org.springframework.security.core.userdetails.ReactiveUserDetailsService
+<%_ } _%>
+<%_ if (!reactive) { _%>
+import org.springframework.security.core.userdetails.UserDetailsService
+<%_ } _%>
+<%_ if (databaseType === 'sql') { _%>
+import org.springframework.security.core.userdetails.UsernameNotFoundException
+<%_ } _%>
+<%_ if (databaseType === 'couchbase') { _%>
+import org.springframework.security.test.context.support.WithMockUser
+<%_ } _%>
+import org.springframework.test.context.junit4.SpringRunner
+<%_ if (databaseType === 'sql') { _%>
+import org.springframework.transaction.annotation.Transactional
+<%_ } _%>
+
+<%_ if (databaseType === 'cassandra') { _%>
+import java.util.UUID
+<%_ } _%>
+import java.util.Locale
+
+import org.assertj.core.api.Assertions.assertThat
+
+/**
+ * Integration tests for [DomainUserDetailsService].
+ */
+@RunWith(SpringRunner::class)
+@SpringBootTest(classes = [<%= mainClass %>::class])
+<%_ if (databaseType === 'sql') { _%>
+@Transactional
+<%_ } _%>
+<%_ if (databaseType === 'couchbase') { _%>
+@WithMockUser("test-user-one")
+<%_ } _%>
+class DomainUserDetailsServiceIT <% if (databaseType === 'cassandra') { %>: AbstractCassandraTest() <% } %>{
+
+    @Autowired
+    private lateinit var userRepository: UserRepository
+
+    @Autowired
+    private lateinit var domainUserDetailsService: <% if (reactive) { %>Reactive<% } %>UserDetailsService
+
+    private lateinit var userOne: <%= asEntity('User') %>
+    private lateinit var userTwo: <%= asEntity('User') %>
+    private lateinit var userThree: <%= asEntity('User') %>
+
+    @Before
+    fun init() {
+        <%_ if (databaseType !== 'sql') { _%>
+        userRepository.deleteAll()<% if (reactive) { %>.block()<% } %>
+
+        <%_ } _%>
+        userOne = <%= asEntity('User') %>()
+        <%_ if (databaseType === 'cassandra') { _%>
+        userOne.id = UUID.randomUUID().toString()
+        <%_ } _%>
+        userOne.login = USER_ONE_LOGIN
+        userOne.password = RandomStringUtils.random(60)
+        userOne.activated = true
+        userOne.email = USER_ONE_EMAIL
+        userOne.firstName = "userOne"
+        userOne.lastName = "doe"
+        userOne.langKey = "en"
+        userRepository.save(userOne)<% if (reactive) { %>.block()<% } %>
+
+        userTwo = <%= asEntity('User') %>()
+        <%_ if (databaseType === 'cassandra') { _%>
+        userTwo.id = UUID.randomUUID().toString()
+        <%_ } _%>
+        userTwo.login = USER_TWO_LOGIN
+        userTwo.password = RandomStringUtils.random(60)
+        userTwo.activated = true
+        userTwo.email = USER_TWO_EMAIL
+        userTwo.firstName = "userTwo"
+        userTwo.lastName = "doe"
+        userTwo.langKey = "en"
+        userRepository.save(userTwo)<% if (reactive) { %>.block()<% } %>
+
+        userThree = <%= asEntity('User') %>()
+        <%_ if (databaseType === 'cassandra') { _%>
+        userThree.id = UUID.randomUUID().toString()
+        <%_ } _%>
+        userThree.login = USER_THREE_LOGIN
+        userThree.password = RandomStringUtils.random(60)
+        userThree.activated = false
+        userThree.email = USER_THREE_EMAIL
+        userThree.firstName = "userThree"
+        userThree.lastName = "doe"
+        userThree.langKey = "en"
+        userRepository.save(userThree)<% if (reactive) { %>.block()<% } %>
+    }
+
+    @Test
+    <%_ if (databaseType === 'sql') { _%>
+    @Transactional
+    <%_ } _%>
+    fun assertThatUserCanBeFoundByLogin() {
+        val userDetails = domainUserDetailsService.<% if (reactive) { %>find<% } else { %>loadUser<% } %>ByUsername(USER_ONE_LOGIN)<% if (reactive) { %>.block()<% } %>
+        assertThat(userDetails).isNotNull
+        assertThat(userDetails.username).isEqualTo(USER_ONE_LOGIN)
+    }
+
+    @Test
+    <%_ if (databaseType === 'sql') { _%>
+    @Transactional
+    <%_ } _%>
+    fun assertThatUserCanBeFoundByLoginIgnoreCase() {
+        val userDetails = domainUserDetailsService.<% if (reactive) { %>find<% } else { %>loadUser<% } %>ByUsername(USER_ONE_LOGIN.toUpperCase(Locale.ENGLISH))<% if (reactive) { %>.block()<% } %>
+        assertThat(userDetails).isNotNull
+        assertThat(userDetails.username).isEqualTo(USER_ONE_LOGIN)
+    }
+
+    @Test
+    <%_ if (databaseType === 'sql') { _%>
+    @Transactional
+    <%_ } _%>
+    fun assertThatUserCanBeFoundByEmail() {
+        val userDetails = domainUserDetailsService.<% if (reactive) { %>find<% } else { %>loadUser<% } %>ByUsername(USER_TWO_EMAIL)<% if (reactive) { %>.block()<% } %>
+        assertThat(userDetails).isNotNull
+        assertThat(userDetails.username).isEqualTo(USER_TWO_LOGIN)
+    }
+
+    <%_ if (databaseType === 'sql') { _%>
+    @Test(expected = UsernameNotFoundException::class)
+    @Transactional
+    fun assertThatUserCanNotBeFoundByEmailIgnoreCase() {
+    domainUserDetailsService.loadUserByUsername(USER_TWO_EMAIL.toUpperCase(Locale.ENGLISH))
+    }
+    <%_ } else { // MongoDB and Cassandra _%>
+    @Test
+    fun assertThatUserCanBeFoundByEmailIgnoreCase() {
+        val userDetails = domainUserDetailsService.<% if (reactive) { %>find<% } else { %>loadUser<% } %>ByUsername(USER_TWO_EMAIL.toUpperCase(Locale.ENGLISH))<% if (reactive) { %>.block()<% } %>
+        assertThat(userDetails).isNotNull
+        assertThat(userDetails.username).isEqualTo(USER_TWO_LOGIN)
+    }
+    <%_ } _%>
+
+    @Test
+    <%_ if (databaseType === 'sql') { _%>
+    @Transactional
+    <%_ } _%>
+    fun assertThatEmailIsPrioritizedOverLogin() {
+        val userDetails = domainUserDetailsService.<% if (reactive) { %>find<% } else { %>loadUser<% } %>ByUsername(USER_ONE_EMAIL)<% if (reactive) { %>.block()<% } %>
+        assertThat(userDetails).isNotNull
+        assertThat(userDetails.username).isEqualTo(USER_ONE_LOGIN)
+    }
+
+    @Test(expected = UserNotActivatedException::class)
+    <%_ if (databaseType === 'sql') { _%>
+    @Transactional
+    <%_ } _%>
+    fun assertThatUserNotActivatedExceptionIsThrownForNotActivatedUsers() {
+        domainUserDetailsService.<% if (reactive) { %>find<% } else { %>loadUser<% } %>ByUsername(USER_THREE_LOGIN)<% if (reactive) { %>.block()<% } %>
+    }
+
+    companion object {
+
+        private const val USER_ONE_LOGIN = "test-user-one"
+        private const val USER_ONE_EMAIL = "test-user-one@localhost"
+        private const val USER_TWO_LOGIN = "test-user-two"
+        private const val USER_TWO_EMAIL = "test-user-two@localhost"
+        private const val USER_THREE_LOGIN = "test-user-three"
+        private const val USER_THREE_EMAIL = "test-user-three@localhost"
+    }
+}

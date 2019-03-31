@@ -153,7 +153,7 @@ const serverFiles = {
             path: SERVER_TEST_SRC_KOTLIN_DIR,
             templates: [
                 {
-                    file: 'package/web/rest/EntityResourceIntTest.kt',
+                    file: 'package/web/rest/EntityResourceIT.kt',
                     options: {
                         context: {
                             randexp,
@@ -163,7 +163,7 @@ const serverFiles = {
                             SERVER_TEST_SRC_KOTLIN_DIR
                         }
                     },
-                    renameTo: generator => `${generator.packageFolder}/web/rest/${generator.entityClass}ResourceIntTest.kt`,
+                    renameTo: generator => `${generator.packageFolder}/web/rest/${generator.entityClass}ResourceIT.kt`,
                     useBluePrint: true
                 }
             ]

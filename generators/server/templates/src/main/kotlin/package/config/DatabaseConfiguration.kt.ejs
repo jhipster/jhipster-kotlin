@@ -31,13 +31,18 @@ import com.mongodb.MongoClient
 import com.couchbase.client.java.Bucket
 import com.github.couchmove.Couchmove
 import <%=packageName%>.repository.CustomN1qlCouchbaseRepository
+<%_ if (reactive) { _%>
+import <%=packageName%>.repository.reactive.CustomReactiveN1qlCouchbaseRepository
+<%_ } _%>
 import org.apache.commons.codec.binary.Base64
 <%_ } _%>
 <%_ if (databaseType === 'mongodb') { _%>
 import io.github.jhipster.domain.util.JSR310DateConverters.DateToZonedDateTimeConverter
 import io.github.jhipster.domain.util.JSR310DateConverters.ZonedDateTimeToDateConverter
 <%_ } _%>
+<%_ if (databaseType === 'mongodb' || databaseType === 'couchbase' || (databaseType==='sql' && (devDatabaseType === 'h2Disk' || devDatabaseType === 'h2Memory'))) { _%>
 import org.slf4j.LoggerFactory
+<%_ } _%>
 <%_ if (databaseType === 'mongodb') { _%>
 import org.springframework.boot.autoconfigure.mongo.MongoAutoConfiguration
 import org.springframework.boot.autoconfigure.mongo.MongoProperties
@@ -48,7 +53,9 @@ import org.springframework.boot.autoconfigure.mongo.MongoReactiveAutoConfigurati
 <%_ if (databaseType === 'couchbase') { _%>
 import org.springframework.boot.autoconfigure.couchbase.CouchbaseAutoConfiguration
 <%_ } _%>
+<%_ if (databaseType === 'mongodb' || databaseType === 'couchbase' || (databaseType==='sql' && (devDatabaseType === 'h2Disk' || devDatabaseType === 'h2Memory'))) { _%>
 import org.springframework.context.annotation.Bean
+<%_ } _%>
 import org.springframework.context.annotation.Configuration
 <%_ if (databaseType === 'mongodb' || databaseType === 'couchbase') { _%>
 import org.springframework.context.annotation.Import
@@ -142,22 +149,21 @@ import java.util.Date
 <%_ if (databaseType === 'couchbase') { _%>
 @EnableCouchbaseRepositories(repositoryBaseClass = CustomN1qlCouchbaseRepository::class, basePackages = ["<%=packageName%>.repository"])
     <%_ if (reactive) { _%>
-@EnableReactiveCouchbaseRepositories("<%=packageName%>.repository.reactive")
+@EnableReactiveCouchbaseRepositories(repositoryBaseClass = CustomReactiveN1qlCouchbaseRepository::class.java, basePackages = ["<%=packageName%>.repository.reactive"])
     <%_ } _%>
 @Import(value = [CouchbaseAutoConfiguration::class])
 @EnableCouchbaseAuditing(auditorAwareRef = "springSecurityAuditorAware")
 <%_ } _%>
-class DatabaseConfiguration<%_ if (databaseType === 'sql' && (devDatabaseType === 'h2Disk' || devDatabaseType === 'h2Memory') ) { _%>(private val env: Environment)<%_ } %> {
+class DatabaseConfiguration<%_ if (databaseType === 'sql' && (devDatabaseType === 'h2Disk' || devDatabaseType === 'h2Memory') ) { _%>(private val env: Environment) { <%_ } else if (databaseType === 'mongodb' || databaseType === 'couchbase') { %> {<% } %>
+<%_ if (databaseType === 'sql' && (devDatabaseType === 'h2Disk' || devDatabaseType === 'h2Memory')) { _%>
 
     private val log = LoggerFactory.getLogger(DatabaseConfiguration::class.java)
-<%_ if (databaseType === 'sql') { _%>
-    <%_ if (devDatabaseType === 'h2Disk' || devDatabaseType === 'h2Memory') { _%>
 
     /**
      * Open the TCP port for the H2 database, so it is available remotely.
      *
-     * @return the H2 database TCP server
-     * @throws SQLException if the server failed to start
+     * @return the H2 database TCP server.
+     * @throws SQLException if the server failed to start.
      */
     @Throws(SQLException::class)
     @Bean(initMethod = "start", destroyMethod = "stop")
@@ -181,7 +187,10 @@ class DatabaseConfiguration<%_ if (databaseType === 'sql' && (devDatabaseType ==
         }
         return port.toString()
     }
-    <%_ } _%>
+<%_ } _%>
+<%_ if (databaseType === 'mongodb' || databaseType === 'couchbase') { _%>
+
+    private val log = LoggerFactory.getLogger(DatabaseConfiguration::class.java)
 <%_ } _%>
 <%_ if (databaseType === 'mongodb') { _%>
 
@@ -328,4 +337,6 @@ class DatabaseConfiguration<%_ if (databaseType === 'sql' && (devDatabaseType ==
         }
     }
 <%_ } _%>
+<%_ if (databaseType === 'mongodb' || databaseType === 'couchbase' || (databaseType === 'sql' && (devDatabaseType === 'h2Disk' || devDatabaseType === 'h2Memory'))) { _%>
 }
+<%_ } _%>

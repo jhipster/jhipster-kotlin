@@ -1,0 +1,166 @@
+<%#
+ Copyright 2013-2019 the original author or authors from the JHipster project.
+
+ This file is part of the JHipster project, see https://www.jhipster.tech/
+ for more information.
+
+ Licensed under the Apache License, Version 2.0 (the "License");
+ you may not use this file except in compliance with the License.
+ You may obtain a copy of the License at
+
+      http://www.apache.org/licenses/LICENSE-2.0
+
+ Unless required by applicable law or agreed to in writing, software
+ distributed under the License is distributed on an "AS IS" BASIS,
+ WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
+ See the License for the specific language governing permissions and
+ limitations under the License.
+-%>
+package <%=packageName%>.web.rest
+
+import com.fasterxml.jackson.annotation.JsonInclude
+import com.fasterxml.jackson.databind.ObjectMapper
+import com.fasterxml.jackson.datatype.jsr310.JavaTimeModule
+import org.hamcrest.Description
+import org.hamcrest.TypeSafeDiagnosingMatcher
+import org.springframework.format.datetime.standard.DateTimeFormatterRegistrar
+import org.springframework.format.support.DefaultFormattingConversionService
+import org.springframework.format.support.FormattingConversionService
+import org.springframework.http.MediaType
+<%_ if (databaseType === 'couchbase') { _%>
+import org.springframework.security.authentication.TestingAuthenticationToken
+import org.springframework.security.test.context.TestSecurityContextHolder
+<%_ } _%>
+
+import java.io.IOException
+import java.time.ZonedDateTime
+import java.time.format.DateTimeParseException
+
+import org.assertj.core.api.Assertions.assertThat
+
+/**
+ * Utility class for testing REST controllers.
+ */
+object TestUtil {
+
+    private val mapper = createObjectMapper()
+
+    /** MediaType for JSON UTF8  */
+    @JvmField
+    val APPLICATION_JSON_UTF8: MediaType = MediaType.APPLICATION_JSON_UTF8
+
+    private fun createObjectMapper(): ObjectMapper {
+        val mapper = ObjectMapper()
+        mapper.setSerializationInclusion(JsonInclude.Include.NON_EMPTY)
+        mapper.registerModule(JavaTimeModule())
+        return mapper
+    }
+
+    /**
+     * Convert an object to JSON byte array.
+     *
+     * @param object the object to convert.
+     * @return the JSON byte array.
+     * @throws IOException
+     */
+    @JvmStatic
+    @Throws(IOException::class)
+    fun convertObjectToJsonBytes(`object`: Any): ByteArray {
+        return mapper.writeValueAsBytes(`object`)
+    }
+
+    /**
+     * Create a byte array with a specific size filled with specified data.
+     *
+     * @param size the size of the byte array.
+     * @param data the data to put in the byte array.
+     * @return the JSON byte array.
+     */
+    @JvmStatic
+    fun createByteArray(size: Int, data: String): ByteArray {
+        val byteArray = ByteArray(size)
+        for (i in 0 until size) {
+            byteArray[i] = java.lang.Byte.parseByte(data, 2)
+        }
+        return byteArray
+    }
+    <%_ if (databaseType === 'couchbase') { _%>
+
+    /**
+     * Mock user authentication for Spring SpEL expression used in [<%=packageName%>.repository.N1qlCouchbaseRepository].
+     */
+    @JvmStatic
+    fun mockAuthentication() {
+        TestSecurityContextHolder.getContext().setAuthentication(TestingAuthenticationToken("user", null))
+    }
+    <%_ } _%>
+
+    /**
+     * A matcher that tests that the examined string represents the same instant as the reference datetime.
+     */
+    class ZonedDateTimeMatcher(private val date: ZonedDateTime) : TypeSafeDiagnosingMatcher<String>() {
+
+        override fun matchesSafely(item: String, mismatchDescription: Description): Boolean {
+            try {
+                if (!date.isEqual(ZonedDateTime.parse(item))) {
+                    mismatchDescription.appendText("was ").appendValue(item)
+                    return false
+                }
+                return true
+            } catch (e: DateTimeParseException) {
+                mismatchDescription.appendText("was ").appendValue(item)
+                    .appendText(", which could not be parsed as a ZonedDateTime")
+                return false
+            }
+        }
+
+        override fun describeTo(description: Description) {
+            description.appendText("a String representing the same Instant as ").appendValue(date)
+        }
+    }
+
+    /**
+     * Creates a matcher that matches when the examined string represents the same instant as the reference datetime.
+     * @param date the reference datetime against which the examined string is checked.
+     */
+    @JvmStatic
+    fun sameInstant(date: ZonedDateTime): ZonedDateTimeMatcher {
+        return ZonedDateTimeMatcher(date)
+    }
+
+    /**
+     * Verifies the equals/hashcode contract on the domain object.
+     */
+    @JvmStatic
+    @Throws(Exception::class)
+    fun <T> equalsVerifier(clazz: Class<T>) {
+        val domainObject1 = clazz.getConstructor().newInstance()
+        assertThat(domainObject1.toString()).isNotNull()
+        assertThat(domainObject1).isEqualTo(domainObject1)
+        assertThat(domainObject1.hashCode()).isEqualTo(domainObject1.hashCode())
+        // Test with an instance of another class
+        val testOtherObject = Any()
+        assertThat(domainObject1).isNotEqualTo(testOtherObject)
+        assertThat(domainObject1).isNotEqualTo(null)
+        // Test with an instance of the same class
+        val domainObject2 = clazz.getConstructor().newInstance()
+        assertThat(domainObject1).isNotEqualTo(domainObject2)
+        <%_ if (databaseType === 'sql' || databaseType === 'mongodb' || databaseType === 'couchbase') { _%>
+        // HashCodes are equals because the objects are not persisted yet
+        assertThat(domainObject1.hashCode()).isEqualTo(domainObject2.hashCode())
+        <%_ } _%>
+    }
+
+    /**
+     * Create a [FormattingConversionService] which use ISO date format, instead of the localized one.
+     * @return the created [FormattingConversionService].
+     */
+    @JvmStatic
+    fun createFormattingConversionService(): FormattingConversionService {
+        val dfcs = DefaultFormattingConversionService()
+        val registrar = DateTimeFormatterRegistrar()
+        registrar.setUseIsoFormat(true)
+        registrar.registerFormatters(dfcs)
+        return dfcs
+    }
+}
