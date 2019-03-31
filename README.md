@@ -1,4 +1,4 @@
-> ## 🛠 Mode: Development
+> ## 🛠 Mode: Development - test Azure
 >
 > JHipster-Kotlin is currently in development. We encourage you to use it and give us your feedback.
 
