@@ -29,7 +29,7 @@ else
         mkdir -p "$JHI_FOLDER_UAA"
         cp -f "$JHI_SAMPLES"/uaa/.yo-rc.json "$JHI_FOLDER_UAA"/
         cd "$JHI_FOLDER_UAA"
-        jhipster --force --no-insight --with-entities --skip-checks --from-cli
+        jhipster --force --no-insight --with-entities --skip-checks --skip-git --skip-commit-hook --from-cli
         ls -al "$JHI_FOLDER_UAA"
     fi
 
@@ -40,7 +40,7 @@ else
     cp -f "$JHI_SAMPLES"/"$JHI_APP"/.yo-rc.json "$JHI_FOLDER_APP"/
     cd "$JHI_FOLDER_APP"
     npm link generator-jhipster-kotlin
-    jhipster --force --no-insight --skip-checks --with-entities --from-cli --blueprint kotlin
+    jhipster --force --no-insight --skip-checks --with-entities --skip-git --skip-commit-hook --from-cli --blueprint kotlin
 
 fi
 

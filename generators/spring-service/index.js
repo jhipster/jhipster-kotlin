@@ -1,7 +1,7 @@
 /**
  * Copyright 2013-2019 the original author or authors from the JHipster project.
  *
- * This file is part of the JHipster project, see https://www.jhipster.tech/
+ * This file is part of the JHipster project, see http://www.jhipster.tech/
  * for more information.
  *
  * Licensed under the Apache License, Version 2.0 (the "License");
@@ -25,7 +25,7 @@ const SERVER_MAIN_SRC_DIR = `${constants.MAIN_DIR}kotlin/`;
 
 module.exports = class extends BaseGenerator {
     constructor(args, opts) {
-        super(args, { fromBlueprint: true, ...opts });
+        super(args, Object.assign({ fromBlueprint: true }, opts));
         this.argument('name', { type: String, required: true });
         this.name = this.options.name;
 
@@ -52,10 +52,11 @@ module.exports = class extends BaseGenerator {
             initializing() {
                 this.log(`The service ${this.name} is being created.`);
                 const configuration = this.getAllJhipsterConfig(this, true);
-                this.baseName = configuration.get('baseName');
-                this.packageName = configuration.get('packageName');
-                this.packageFolder = configuration.get('packageFolder');
-                this.databaseType = configuration.get('databaseType');
+                const blueprintConfiguration = this.getJhipsterAppConfig('generator-jhipster-kotlin');
+                this.baseName = blueprintConfiguration.baseName || configuration.get('baseName');
+                this.packageName = blueprintConfiguration.packageName || configuration.get('packageName');
+                this.packageFolder = blueprintConfiguration.packageFolder || configuration.get('packageFolder');
+                this.databaseType = blueprintConfiguration.databaseType || configuration.get('databaseType');
             }
         };
     }

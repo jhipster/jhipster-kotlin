@@ -24,7 +24,9 @@ import io.github.jhipster.config.JHipsterProperties
 
 import java.nio.charset.StandardCharsets
 import java.util.Locale
+import javax.mail.internet.MimeMessage
 
+import org.slf4j.Logger
 import org.slf4j.LoggerFactory
 import org.springframework.context.MessageSource
 import org.springframework.mail.javamail.JavaMailSender
@@ -36,16 +38,12 @@ import org.thymeleaf.spring5.SpringTemplateEngine
 
 /**
  * Service for sending emails.
- *
- * We use the [Async] annotation to send emails asynchronously.
+ * <p>
+ * We use the @Async annotation to send emails asynchronously.
  */
 @Service
-class MailService(
-    private val jHipsterProperties: JHipsterProperties,
-    private val javaMailSender: JavaMailSender,
-    private val messageSource: MessageSource,
-    private val templateEngine: SpringTemplateEngine
-) {
+class MailService(private val jHipsterProperties: JHipsterProperties, private val javaMailSender: JavaMailSender,
+                  private val messageSource: MessageSource, private val templateEngine: SpringTemplateEngine)  {
 
     private val log = LoggerFactory.getLogger(MailService::class.java)
 
@@ -85,8 +83,9 @@ class MailService(
         context.setVariable(BASE_URL, jHipsterProperties.mail.baseUrl)
         val content = templateEngine.process(templateName, context)
         val subject = messageSource.getMessage(titleKey, null, locale)
-        sendEmail(user.email!!, subject, content, isMultipart = false, isHtml = true)
+        sendEmail(user.email!!, subject, content, false, true)
     }
+
     <%_ if (authenticationType !== 'oauth2') { _%>
 
     @Async
@@ -110,8 +109,8 @@ class MailService(
 
     companion object {
 
-        private const val USER = "user"
+        private val USER = "user"
 
-        private const val BASE_URL = "baseUrl"
+        private val BASE_URL = "baseUrl"
     }
 }

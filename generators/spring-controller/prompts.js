@@ -80,24 +80,20 @@ function askForControllerActions() {
             }
         ];
 
-        if (!this.defaultOption) {
-            this.prompt(prompts).then(props => {
-                if (props.actionAdd) {
-                    const controllerAction = {
-                        actionName: props.actionName,
-                        actionMethod: props.actionMethod
-                    };
+        this.prompt(prompts).then(props => {
+            if (props.actionAdd) {
+                const controllerAction = {
+                    actionName: props.actionName,
+                    actionMethod: props.actionMethod
+                };
 
-                    this.controllerActions.push(controllerAction);
+                this.controllerActions.push(controllerAction);
 
-                    askForControllerAction(done);
-                } else {
-                    done();
-                }
-            });
-        } else {
-            done();
-        }
+                askForControllerAction(done);
+            } else {
+                done();
+            }
+        });
     };
 
     const done = this.async();

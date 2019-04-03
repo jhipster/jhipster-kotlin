@@ -17,17 +17,13 @@
  * limitations under the License.
  */
 /* eslint-disable consistent-return */
-const os = require('os');
-
 const chalk = require('chalk');
-const shelljs = require('shelljs');
 const ServerGenerator = require('generator-jhipster/generators/server');
 const writeFiles = require('./files').writeFiles;
-const kotlinConstants = require('../generator-kotlin-constants');
 
 module.exports = class extends ServerGenerator {
     constructor(args, opts) {
-        super(args, { fromBlueprint: true, ...opts }); // fromBlueprint variable is important
+        super(args, Object.assign({ fromBlueprint: true }, opts)); // fromBlueprint variable is important
 
         const jhContext = (this.jhipsterContext = this.options.jhipsterContext);
 
@@ -36,27 +32,13 @@ module.exports = class extends ServerGenerator {
         }
 
         this.configOptions = jhContext.configOptions || {};
-
-        // This adds support for a `--skip-ktlint-format` flag
-        this.option('skip-ktlint-format', {
-            desc: 'Indicates to skip formatting using ktlint',
-            type: Boolean,
-            defaults: false
-        });
-
         // This sets up options for this sub generator and is being reused from JHipster
         jhContext.setupServerOptions(this, jhContext);
     }
 
     get initializing() {
-        const phaseFromJHipster = super._initializing();
-        const myCustomPhaseSteps = {
-            setupConstants() {
-                this.MOCKITO_KOTLIN_VERSION = kotlinConstants.MOCKITO_KOTLIN_VERSION;
-                this.KTLINT_VERSION = kotlinConstants.KTLINT_VERSION;
-            }
-        };
-        return Object.assign(phaseFromJHipster, myCustomPhaseSteps);
+        // Here we are not overriding this phase and hence its being handled by JHipster
+        return super._initializing();
     }
 
     get prompting() {
@@ -75,40 +57,8 @@ module.exports = class extends ServerGenerator {
     }
 
     get writing() {
-        // The writing phase is completely overridden
+        // The writing phase is completely overriden
         return writeFiles();
-    }
-
-    get install() {
-        const phaseFromJHipster = super._install();
-        const myCustomPhaseSteps = {
-            lintFiles() {
-                if (this.options['skip-ktlint-format']) {
-                    this.log('Skipping ktlint format...');
-                    return;
-                }
-
-                // Execute the ktlint format command through either Maven or gradle
-                let command;
-                const prefix = os.platform() === 'win32' ? '' : './';
-                if (this.buildTool === 'gradle') {
-                    command = `${prefix}gradlew ktlintFormat`;
-                } else if (this.buildTool === 'maven') {
-                    command = `${prefix}mvnw antrun:run@ktlint-format`;
-                }
-                if (command) {
-                    const startTime = new Date();
-                    this.info('Running ktlint...');
-                    const exitCode = shelljs.exec(command, { silent: this.silent }).code;
-                    if (exitCode === 0) {
-                        this.info(`Finished formatting Kotlin files in : ${new Date() - startTime}ms`);
-                    } else {
-                        this.warning('Something went wrong while running ktlint formatter...');
-                    }
-                }
-            }
-        };
-        return Object.assign(phaseFromJHipster, myCustomPhaseSteps);
     }
 
     get end() {

@@ -50,6 +50,7 @@ import org.springframework.security.web.authentication.UsernamePasswordAuthentic
 import org.springframework.web.filter.CorsFilter
 
 import javax.servlet.http.HttpServletResponse
+import java.util.ArrayList
 
 @Configuration
 @EnableAuthorizationServer
@@ -143,7 +144,7 @@ class UaaConfiguration(
         //this avoids changes to this class if an application wants to add its own to the chain
         val tokenEnhancers = applicationContext!!.getBeansOfType(TokenEnhancer::class.java).values
         val tokenEnhancerChain = TokenEnhancerChain()
-        tokenEnhancerChain.setTokenEnhancers(mutableListOf(tokenEnhancers))
+        tokenEnhancerChain.setTokenEnhancers(ArrayList(tokenEnhancers))
         endpoints!!
             .authenticationManager(authenticationManager)
             .tokenStore(tokenStore())
@@ -153,7 +154,7 @@ class UaaConfiguration(
 
     /**
      * Apply the token converter (and enhancer) for token store.
-     * @return the [JwtTokenStore] managing the tokens.
+     * @return the JwtTokenStore managing the tokens.
      */
     @Bean
     fun tokenStore(): JwtTokenStore {
@@ -164,7 +165,7 @@ class UaaConfiguration(
      * This bean generates an token enhancer, which manages the exchange between JWT acces tokens and Authentication
      * in both directions.
      *
-     * @return an access token converter configured with the authorization server's public/private keys.
+     * @return an access token converter configured with the authorization server's public/private keys
      */
     @Bean
     fun jwtAccessTokenConverter(): JwtAccessTokenConverter {

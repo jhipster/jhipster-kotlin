@@ -26,11 +26,11 @@
     fun search<%= entityClassPlural %>(@RequestParam query: String): MutableList<<%= instanceType %>> {
         log.debug("REST request to search <%= entityClassPlural %> for query {}", query)<%- include('search_stream_template', {viaService: viaService}); -%>
     <% } if (pagination !== 'no') { %>
-    fun search<%= entityClassPlural %>(@RequestParam query: String, pageable: Pageable, @RequestParam queryParams: MultiValueMap<String, String>, uriBuilder: UriComponentsBuilder): ResponseEntity<MutableList<<%= instanceType %>>> {
+    fun search<%= entityClassPlural %>(@RequestParam query: String, pageable: Pageable): ResponseEntity<MutableList<<%= instanceType %>>> {
         log.debug("REST request to search for a page of <%= entityClassPlural %> for query {}", query)<% if (viaService) { %>
         val page = <%= entityInstance %>Service.search(query, pageable)<% } else { %>
         val page = <%= entityInstance %>SearchRepository.search(queryStringQuery(query), pageable)<% } %>
-        val headers = PaginationUtil.generatePaginationHttpHeaders(uriBuilder.queryParams(queryParams), page)
+        val headers = PaginationUtil.generateSearchPaginationHttpHeaders(query, page, "/api/_search/<%= entityApiUrl %>")
         return ResponseEntity.ok().headers(headers).body(<% if (!viaService && dto === 'mapstruct') { %><%= entityListToDtoListReference %>(<% } %>page.content<% if (!viaService && dto === 'mapstruct') { %>)<% } %>)
     <% } -%>
 }

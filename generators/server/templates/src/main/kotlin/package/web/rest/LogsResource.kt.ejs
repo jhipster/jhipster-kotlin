@@ -24,12 +24,7 @@ import ch.qos.logback.classic.Level
 import ch.qos.logback.classic.LoggerContext
 import org.slf4j.LoggerFactory
 import org.springframework.http.HttpStatus
-import org.springframework.web.bind.annotation.GetMapping
-import org.springframework.web.bind.annotation.PutMapping
-import org.springframework.web.bind.annotation.RequestBody
-import org.springframework.web.bind.annotation.RequestMapping
-import org.springframework.web.bind.annotation.ResponseStatus
-import org.springframework.web.bind.annotation.RestController
+import org.springframework.web.bind.annotation.*
 <%_ if (reactive) { _%>
 import reactor.core.publisher.Flux
 <%_ } _%>
@@ -42,12 +37,14 @@ import reactor.core.publisher.Flux
 class LogsResource {
 
     @GetMapping("/logs")
-    fun getList(): <% if (reactive) { %>Flux<% } else { %>List<% } %><LoggerVM> {
+    fun getList(): <% if (reactive) { %>Flux<% } else { %>kotlin.collections.List<% } %><LoggerVM> {
         val context = LoggerFactory.getILoggerFactory() as LoggerContext
         <%_ if (reactive) { _%>
-        return Flux.fromIterable(context.getLoggerList()) .map{ LoggerVM(it) }
+        return Flux.fromIterable(context.getLoggerList())
+            .map{ LoggerVM(it) }
         <%_ } else { _%>
-        return context.loggerList.map { LoggerVM(it) }
+        return context.loggerList
+            .map{ LoggerVM(it) }
          <%_ } _%>
     }
 

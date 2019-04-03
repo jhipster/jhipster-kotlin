@@ -18,12 +18,10 @@
 -%>
 package <%=packageName%>.service.mapper
 
-import <%=packageName%>.domain.<%= asEntity(entityClass) %>
+import <%=packageName%>.domain.*
 import <%=packageName%>.service.dto.<%= asDto(entityClass) %>
 
-import org.mapstruct.Mapper
-import org.mapstruct.Mapping
-import org.mapstruct.Mappings
+import org.mapstruct.*
 
 /**
  * Mapper for the entity [<%= asEntity(entityClass) %>] and its DTO [<%= asDto(entityClass) %>].
@@ -35,7 +33,8 @@ import org.mapstruct.Mappings
       if (!existingMappings.includes(relationships[idx].otherEntityNameCapitalized) && asEntity(relationships[idx].otherEntityNameCapitalized) !== entityClass) {
           existingMappings.push(relationships[idx].otherEntityNameCapitalized);
       } } } %><%= existingMappings.map(otherEntityNameCapitalized => otherEntityNameCapitalized + 'Mapper::class').join(', ') %>])
-interface <%= entityClass %>Mapper : EntityMapper<<%= asDto(entityClass) %>, <%= asEntity(entityClass) %>> {
+interface <%= entityClass %>Mapper: EntityMapper<<%= asDto(entityClass) %>, <%= asEntity(entityClass) %>> {
+
 <%_
 // entity -> DTO mapping
 var mappedRelsEnt = [];
@@ -45,9 +44,8 @@ relationships.forEach( (relationship) => {
     }
 });
 var renMapAnotEnt = mappedRelsEnt.length > 0; //Render Mapping Annotation during Entity to DTO conversion?
-if(renMapAnotEnt === true) { _%>
-    @Mappings(
-<%_ } _%>
+_%>
+    <% if(renMapAnotEnt === true) { %>@Mappings (<% } %>
 <%_
 // entity -> DTO mapping
 mappedRelsEnt.forEach( (relationship, index) => {
@@ -68,6 +66,7 @@ _%>
     )
     override fun toDto(entity: <%= asEntity(entityClass) %>): <%= asDto(entityClass) %>
     <%_ } _%>
+
 <%_
 // DTO -> entity mapping
 var renMapAnotDto = false;  //Render Mapping Annotation during DTO to Entity conversion?
@@ -81,8 +80,9 @@ for (idx in relationships) {
         renMapAnotDto = true;
         break;
     }
-} if(renMapAnotDto === true) { _%>
-    @Mappings(<% } %>
+}
+_%>
+    <% if(renMapAnotDto === true) { %>@Mappings (<% } %>
 <%_
 // var hasOAuthUser = false; // if OAuthuser, use a String id in fromId() method
 for (idx in relationships) {

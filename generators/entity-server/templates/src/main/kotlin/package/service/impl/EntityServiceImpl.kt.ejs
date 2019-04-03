@@ -74,7 +74,7 @@ import java.util.UUID
 <%_ } _%>
 <%_ if (searchEngine === 'elasticsearch') { _%>
 
-import org.elasticsearch.index.query.QueryBuilders.queryStringQuery
+import org.elasticsearch.index.query.QueryBuilders.*
 <%_ } _%>
 
 /**
@@ -82,11 +82,11 @@ import org.elasticsearch.index.query.QueryBuilders.queryStringQuery
  */
 @Service<% if (databaseType === 'sql') { %>
 @Transactional<% } %>
-class <%= serviceClassName %>(
+class <%= serviceClassName %> (
 <%- include('../../common/inject_template', {asEntity, asDto, viaService: viaService, constructorName: serviceClassName, queryService: false, isUsingMapsId: isUsingMapsId, mapsIdAssoc: mapsIdAssoc, isController: false}); -%>
-)<% if (service === 'serviceImpl') { %> : <%= entityClass %>Service<% } %> {
+)<% if (service === 'serviceImpl') { %>: <%= entityClass %>Service<% } %> {
 
-    private val log = LoggerFactory.getLogger(<%= serviceClassName %>::class.java)
+    val log = LoggerFactory.getLogger(<%= serviceClassName %>::class.java)
 
     /**
      * Save a <%= entityInstance %>.
@@ -114,7 +114,7 @@ class <%= serviceClassName %>(
         return <%= entityInstance %>Repository.<% if (fieldsContainOwnerManyToMany === true) { %>findAllWithEagerRelationships<% } else { %>findAll<% } %>()<% if (dto === 'mapstruct') { %>
             .mapTo(mutableListOf(), <%= entityToDtoReference %>)<% } %>
         <%_ } else { _%>
-        return <%= entityInstance %>Repository.findAll(pageable)<% if (dto === 'mapstruct') { %>
+        return <%= entityInstance %>Repository.findAll(pageable)<% if (dto !== 'mapstruct') { %>;<% } else { %>
             .map(<%= entityToDtoReference %>)<% } %>
         <%_ } _%>
     }
@@ -122,7 +122,7 @@ class <%= serviceClassName %>(
 
     /**
      * Get all the <%= entityInstancePlural %>.
-     * @return the [Flux] of entities.
+     * @return the Flux of entities.
      */
     <% if (service === 'serviceImpl') { %>override <% } %>fun findAllAsFlux(): Flux<<%= instanceType %>> {
         log.debug("Request to get all <%= entityClassPlural %> as a flux")
@@ -133,14 +133,14 @@ class <%= serviceClassName %>(
     <%_ if (fieldsContainOwnerManyToMany === true) { _%>
 
     /**
-     * Get all the <%= entityInstancePlural %> with eager load of many-to-many relationships.
+     * Get all the [<%= entityClass %>] with eager load of many-to-many relationships.
      *
      * @return the list of entities.
      */
     <% if (service === 'serviceImpl') { %>override <% } %>fun findAllWithEagerRelationships(pageable: Pageable): Page<<%= instanceType %>> {
-        return <%= entityInstance %>Repository.findAllWithEagerRelationships(pageable)<% if (dto !== 'mapstruct') { %><% } else { %>.map(<%= entityToDtoReference %>)<% } %>
+        return <%= entityInstance %>Repository.findAllWithEagerRelationships(pageable)<% if (dto !== 'mapstruct') { %>;<% } else { %>.map(<%= entityToDtoReference %>)<% } %>
     }
-    <%_ } _%>
+    <% } %>
 <%- include('../../common/get_filtered_template', {asEntity, asDto}); -%>
     /**
      * Get one <%= entityInstance %> by id.
@@ -156,18 +156,17 @@ class <%= serviceClassName %>(
     }
 
     /**
-     * Delete the <%= entityInstance %> by id.
+     * Delete the [<%= entityInstance %>] by id.
      *
      * @param id the id of the entity.
      */
     <% if (service === 'serviceImpl') { %>override <% } %>fun delete(id: <%= pkType %>) {
-        log.debug("Request to delete <%= entityClass %> : {}", id)
-<%- include('../../common/delete_template', {viaService: viaService}); -%>
+        log.debug("Request to delete <%= entityClass %> : {}", id)<%- include('../../common/delete_template', {viaService: viaService}); -%>
     }
     <%_ if (searchEngine === 'elasticsearch') { _%>
 
     /**
-     * Search for the <%= entityInstance %> corresponding to the query.
+     * Search for the [<%= entityInstance %>] corresponding to the query.
      *
      * @param query the query of the search.<% if (pagination !== 'no') { %>
      * @param pageable the pagination information.<% } %>
@@ -181,8 +180,9 @@ class <%= serviceClassName %>(
         log.debug("Request to search <%= entityClassPlural %> for query {}", query)<%- include('../../common/search_stream_template', {viaService: viaService}); -%>
         <%_ } else { _%>
         log.debug("Request to search for a page of <%= entityClassPlural %> for query {}", query)
-        return <%= entityInstance %>SearchRepository.search(queryStringQuery(query), pageable)<%_ if (dto !== 'mapstruct') { _%><% } else { %>.map(<%= entityToDtoReference %>)<% } %>
-        <%_ } _%>
+        return <%= entityInstance %>SearchRepository.search(queryStringQuery(query), pageable)<%_ if (dto !== 'mapstruct') { _%>;<% } else { %>
+            .map(<%= entityToDtoReference %>)
+        <%_ } } _%>
     }
     <%_ } _%>
 }
