@@ -25,7 +25,7 @@ import org.springframework.security.oauth2.provider.token.store.JwtAccessTokenCo
 import org.springframework.security.oauth2.provider.OAuth2Authentication
 
 /**
- * Improved [JwtAccessTokenConverter] that can handle lazy fetching of public verifier keys.
+ * Improved JwtAccessTokenConverter that can handle lazy fetching of public verifier keys.
  */
 class OAuth2JwtAccessTokenConverter(
     private val oAuth2Properties: OAuth2Properties,
@@ -54,9 +54,9 @@ class OAuth2JwtAccessTokenConverter(
      */
     override fun decode(token: String): Map<String, Any> {
         try {
-            // check if our public key and thus SignatureVerifier have expired
+            //check if our public key and thus SignatureVerifier have expired
             val ttl = oAuth2Properties.signatureVerification.ttl
-            if (ttl != null && ttl > 0 && System.currentTimeMillis() - lastKeyFetchTimestamp > ttl) {
+            if (ttl > 0 && System.currentTimeMillis() - lastKeyFetchTimestamp > ttl) {
                 throw InvalidTokenException("public key expired")
             }
             return super.decode(token)
@@ -74,15 +74,15 @@ class OAuth2JwtAccessTokenConverter(
      * @return true, if we could fetch it; false, if we could not.
      */
     private fun tryCreateSignatureVerifier(): Boolean {
-        val time = System.currentTimeMillis()
-        if (time - lastKeyFetchTimestamp < oAuth2Properties.signatureVerification.publicKeyRefreshRateLimit ?: 0) {
+        val t = System.currentTimeMillis()
+        if (t - lastKeyFetchTimestamp < oAuth2Properties.signatureVerification.publicKeyRefreshRateLimit) {
             return false
         }
         try {
-            val verifier = signatureVerifierClient.getSignatureVerifier()
+            val verifier = signatureVerifierClient.signatureVerifier
             if (verifier != null) {
                 setVerifier(verifier)
-                lastKeyFetchTimestamp = time
+                lastKeyFetchTimestamp = t
                 log.debug("Public key retrieved from OAuth2 server to create SignatureVerifier")
                 return true
             }
@@ -109,8 +109,8 @@ class OAuth2JwtAccessTokenConverter(
      *      }
      *  }
      * ```
-     * @param claims OAuth2JWTToken claims.
-     * @return [OAuth2Authentication].
+     * @param claims OAuth2JWTToken claims
+     * @return [OAuth2Authentication]
      */
     override fun extractAuthentication(claims: Map<String, *>): OAuth2Authentication {
         val authentication = super.extractAuthentication(claims)

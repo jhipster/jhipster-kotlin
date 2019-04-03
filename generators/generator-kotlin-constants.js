@@ -17,18 +17,10 @@
  * limitations under the License.
  */
 
-const KOTLIN_VERSION = '1.3.21';
-const MOCKITO_KOTLIN_VERSION = '2.1.0';
-const KTLINT_VERSION = '0.30.0';
-const KTLINT_GRADLE_VERSION = '7.1.0';
-const MAVEN_ANTRUN_VERSION = '1.8';
+const KOTLIN_VERSION = '1.3.20';
 
 const constants = {
-    KOTLIN_VERSION,
-    MOCKITO_KOTLIN_VERSION,
-    KTLINT_VERSION,
-    KTLINT_GRADLE_VERSION,
-    MAVEN_ANTRUN_VERSION
+    KOTLIN_VERSION
 };
 
 module.exports = constants;

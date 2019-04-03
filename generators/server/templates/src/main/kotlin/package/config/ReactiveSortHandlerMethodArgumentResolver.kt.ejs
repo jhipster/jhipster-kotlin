@@ -87,7 +87,7 @@ class ReactiveSortHandlerMethodArgumentResolver : SyncHandlerMethodArgumentResol
      * Configures the delimiter used to separate the qualifier from the sort parameter. Defaults to `_`, so a
      * qualified sort property would look like `qualifier_sort`.
      *
-     * @param qualifierDelimiter the qualifier delimiter to be used or `null` to reset to the default.
+     * @param qualifierDelimiter the qualifier delimiter to be used or null to reset to the default.
      */
     fun setQualifierDelimiter(qualifierDelimiter: String?) {
         this.qualifierDelimiter = qualifierDelimiter ?: DEFAULT_QUALIFIER_DELIMITER
@@ -96,6 +96,7 @@ class ReactiveSortHandlerMethodArgumentResolver : SyncHandlerMethodArgumentResol
     /**
      * Configures the [Sort] to be used as fallback in case no [SortDefault] or [SortDefaults] (the
      * latter only supported in legacy mode) can be found at the method parameter to be resolved.
+     *
      *
      * If you set this to `null`, be aware that you controller methods will get `null` handed into them
      * in case no [Sort] data can be found in the request.
@@ -183,7 +184,7 @@ class ReactiveSortHandlerMethodArgumentResolver : SyncHandlerMethodArgumentResol
      *
      * @param source will never be `null`.
      * @param delimiter the delimiter to be used to split up the source elements, will never be `null`.
-     * @return the parsed [Sort].
+     * @return
      */
     private fun parseParameterIntoSort(source: List<String?>, delimiter: String): Sort {
 
@@ -197,13 +198,12 @@ class ReactiveSortHandlerMethodArgumentResolver : SyncHandlerMethodArgumentResol
 
             val elements = part.split(delimiter.toRegex()).dropLastWhile { it.isEmpty() }.toTypedArray()
 
-            val direction = if (elements.isEmpty()) {
+            val direction = if (elements.size == 0)
                 Optional.empty()
-            } else {
+            else
                 Direction.fromOptionalString(elements[elements.size - 1])
-            }
 
-            val lastIndex = direction.map { elements.size - 1 }.orElseGet { elements.size }
+            val lastIndex = direction.map { it -> elements.size - 1 }.orElseGet { elements.size }
 
             for (i in 0 until lastIndex) {
                 toOrder(elements[i], direction).ifPresent { allOrders.add(it) }
@@ -218,11 +218,11 @@ class ReactiveSortHandlerMethodArgumentResolver : SyncHandlerMethodArgumentResol
      * of the same direction into a single expression if they are in order.
      *
      * @param sort must not be `null`.
-     * @return the list of sort expresssions.
+     * @return
      */
     private fun foldIntoExpressions(sort: Sort): List<String> {
 
-        val expressions = mutableListOf<String>()
+        val expressions = ArrayList<String>()
         var builder: ExpressionBuilder? = null
 
         for (order in sort) {
@@ -248,11 +248,11 @@ class ReactiveSortHandlerMethodArgumentResolver : SyncHandlerMethodArgumentResol
      *
      * @throws IllegalArgumentException if a [Sort] with multiple [Direction]s has been handed in.
      * @param sort must not be `null`.
-     * @return the list of epxressions.
+     * @return
      */
     private fun legacyFoldExpressions(sort: Sort): List<String> {
 
-        val expressions = mutableListOf<String>()
+        val expressions = ArrayList<String>()
         var builder: ExpressionBuilder? = null
 
         for (order in sort) {
@@ -298,7 +298,7 @@ class ReactiveSortHandlerMethodArgumentResolver : SyncHandlerMethodArgumentResol
         /**
          * Adds the given property to the expression to be built.
          *
-         * @param property the property to add.
+         * @param property
          */
         fun add(property: String) {
             this.elements.add(property)
@@ -347,9 +347,9 @@ class ReactiveSortHandlerMethodArgumentResolver : SyncHandlerMethodArgumentResol
          * Returns the value of the given specific property of the given annotation. If the value of that property is the
          * properties default, we fall back to the value of the `value` attribute.
          *
-         * @param annotation must not be `null`.
-         * @param property must not be `null` or empty.
-         * @return the value of the given specific property of the given annotation.
+         * @param annotation must not be null.
+         * @param property must not be null or empty.
+         * @return
          */
         fun <T> getSpecificPropertyOrDefaultFromValue(annotation: Annotation, property: String): T {
 

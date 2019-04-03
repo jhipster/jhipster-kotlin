@@ -17,7 +17,7 @@
  * limitations under the License.
  */
 const chalk = require('chalk');
-const needleServerCache = require('generator-jhipster/generators/server/needle-api/needle-server-cache');
+const needleServerCache = require('generator-jhipster/generators/internal/needle-api/needle-server-cache');
 const constants = require('generator-jhipster/generators/generator-constants');
 
 const SERVER_MAIN_SRC_KOTLIN_DIR = `${constants.MAIN_DIR}kotlin/`;
@@ -44,7 +44,7 @@ module.exports = class extends needleServerCache {
 
         if (cacheProvider === 'ehcache') {
             const needle = 'jhipster-needle-ehcache-add-entry';
-            const content = `createCache(cm, ${entry})`;
+            const content = `cm.createCache(${entry}, jcacheConfiguration)`;
 
             this._doAddBlockContentToFile(cachePath, needle, content, errorMessage);
         } else if (cacheProvider === 'infinispan') {

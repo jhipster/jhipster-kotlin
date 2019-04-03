@@ -50,6 +50,9 @@ if [[ "$JHI_REPO" == *"/generator-jhipster" ]]; then
 
     npm ci
     npm install -g "$JHI_HOME"
+    if [[ "$JHI_APP" == "" || "$JHI_APP" == "ngx-default" ]]; then
+        npm test
+    fi
 
 elif [[ "$JHI_GEN_BRANCH" == "release" ]]; then
     echo "*** generator-jhipster: use release version"
@@ -69,7 +72,6 @@ else
 
     npm ci
     npm link
-
 fi
 
 #-------------------------------------------------------------------------------
@@ -80,17 +82,16 @@ fi
 cp "$KOTLIN_JHI_SCRIPTS"/00-init-env.sh "$JHI_SCRIPTS"/
 
 # copy all samples
+
 cp -R "$JHI_CLONED"/test-integration/samples-kotlin/* "$JHI_HOME"/test-integration/samples/
 
 #-------------------------------------------------------------------------------
 # Install JHipster Kotlin
 #-------------------------------------------------------------------------------
 cd "$JHI_CLONED"/
-
 npm ci
 npm link
 npm link generator-jhipster
 
-if [[ "$JHI_APP" == "" || "$JHI_APP" == "ngx-default" ]]; then
-    npm test
-fi
+# npm run lint
+# npm test
