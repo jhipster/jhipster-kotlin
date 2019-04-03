@@ -1,0 +1,435 @@
+<%#
+ Copyright 2013-2019 the original author or authors from the JHipster project.
+
+ This file is part of the JHipster project, see https://www.jhipster.tech/
+ for more information.
+
+ Licensed under the Apache License, Version 2.0 (the "License");
+ you may not use this file except in compliance with the License.
+ You may obtain a copy of the License at
+
+      http://www.apache.org/licenses/LICENSE-2.0
+
+ Unless required by applicable law or agreed to in writing, software
+ distributed under the License is distributed on an "AS IS" BASIS,
+ WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
+ See the License for the specific language governing permissions and
+ limitations under the License.
+-%>
+package <%= packageName %>.service
+
+<%_ if (databaseType === 'cassandra') { _%>
+import <%= packageName %>.AbstractCassandraTest
+<%_ } _%>
+import <%= packageName %>.<%= mainClass %>
+<%_ if (authenticationType === 'oauth2') { _%>
+import <%= packageName %>.config.TestSecurityConfiguration
+<%_ } _%>
+import <%= packageName %>.config.Constants
+<%_ if ((databaseType === 'sql' || databaseType === 'mongodb' || databaseType === 'couchbase') && authenticationType === 'session' && !reactive) { _%>
+import <%= packageName %>.domain.PersistentToken
+<%_ } _%>
+import <%= packageName %>.domain.<%= asEntity('User') %>
+<%_ if ((databaseType === 'sql' || databaseType === 'mongodb' || databaseType === 'couchbase') && authenticationType === 'session' && !reactive) { _%>
+import <%= packageName %>.repository.PersistentTokenRepository
+<%_ } _%>
+<%_ if (searchEngine === 'elasticsearch') { _%>
+import <%= packageName %>.repository.search.UserSearchRepository
+<%_ } _%>
+import <%= packageName %>.repository<% if (reactive) { %>.reactive<% } %>.UserRepository
+<%_ if (authenticationType === 'oauth2') { _%>
+import <%= packageName %>.security.AuthoritiesConstants
+<%_ } _%>
+<%_ if (authenticationType !== 'oauth2' && (databaseType === 'sql' || databaseType === 'mongodb' || databaseType === 'couchbase')) { _%>
+import <%= packageName %>.service.util.RandomUtil
+<%_ } _%>
+
+<%_ if (authenticationType !== 'oauth2') { _%>
+import org.apache.commons.lang3.RandomStringUtils
+<%_ } _%>
+import org.junit.Before
+import org.junit.Test
+import org.junit.runner.RunWith
+<%_ if (databaseType === 'sql') { _%>
+import org.mockito.Mock
+<%_ } _%>
+import org.springframework.beans.factory.annotation.Autowired
+import org.springframework.boot.test.context.SpringBootTest
+<%_ if (databaseType === 'sql') { _%>
+import org.springframework.data.auditing.AuditingHandler
+import org.springframework.data.auditing.DateTimeProvider
+<%_ } _%>
+<%_ if (databaseType === 'sql' || databaseType === 'mongodb' || databaseType === 'couchbase') { _%>
+import org.springframework.data.domain.PageRequest
+<%_ } _%>
+<%_ if (authenticationType === 'oauth2') { _%>
+import org.springframework.security.authentication.UsernamePasswordAuthenticationToken
+import org.springframework.security.core.GrantedAuthority
+import org.springframework.security.core.authority.SimpleGrantedAuthority
+import org.springframework.security.oauth2.client.authentication.OAuth2AuthenticationToken
+import org.springframework.security.oauth2.core.user.DefaultOAuth2User
+import org.springframework.security.oauth2.core.user.OAuth2User
+<%_ } _%>
+<%_ if (databaseType === 'couchbase') { _%>
+import org.springframework.security.test.context.support.WithAnonymousUser
+<%_ } _%>
+import org.springframework.test.context.junit4.SpringRunner
+<%_ if (databaseType === 'sql') { _%>
+import org.springframework.transaction.annotation.Transactional
+<%_ } _%>
+
+<%_ if (authenticationType !== 'oauth2' && (databaseType === 'sql' || databaseType === 'mongodb' || databaseType === 'couchbase')) { _%>
+import java.time.Instant
+import java.time.temporal.ChronoUnit
+<%_ } _%>
+<%_ if (databaseType === 'sql') { _%>
+import java.time.temporal.TemporalAccessor
+<%_ } _%>
+<%_ if ((databaseType === 'sql' || databaseType === 'mongodb' || databaseType === 'couchbase') && authenticationType === 'session' && !reactive) { _%>
+import java.time.LocalDate
+<%_ } _%>
+<%_ if (databaseType === 'sql') { _%>
+import java.time.LocalDateTime
+import java.util.Optional
+<%_ } _%>
+<%_ if (databaseType === 'cassandra') { _%>
+import java.util.UUID
+<%_ } _%>
+
+<%_ if (databaseType === 'couchbase') { _%>
+import <%= packageName %>.web.rest.TestUtil.mockAuthentication
+<%_ } _%>
+import org.assertj.core.api.Assertions.assertThat
+<%_ if (searchEngine === 'elasticsearch') { _%>
+import org.mockito.Mockito.times
+import org.mockito.Mockito.verify
+<%_ } _%>
+<%_ if (databaseType === 'sql') { _%>
+import org.mockito.Mockito.`when`
+<%_ } _%>
+import kotlin.test.assertNotNull
+
+/**
+ * Integration tests for [UserService].
+ */
+@RunWith(SpringRunner::class)
+<%_ if (authenticationType === 'oauth2') { _%>
+@SpringBootTest(classes = [<%= mainClass %>::class, TestSecurityConfiguration::class])
+<%_ } else { _%>
+@SpringBootTest(classes = [<%= mainClass %>::class])
+<%_ } _%>
+<%_ if (databaseType === 'sql') { _%>
+@Transactional
+<%_ } _%>
+class UserServiceIT <% if (databaseType === 'cassandra') { %>: AbstractCassandraTest() <% } %>{
+
+    <%_ if ((databaseType === 'sql' || databaseType === 'mongodb' || databaseType === 'couchbase') && authenticationType === 'session' && !reactive) { _%>
+    @Autowired
+    private lateinit var persistentTokenRepository: PersistentTokenRepository
+
+    <%_ } _%>
+    @Autowired
+    private lateinit var userRepository: UserRepository
+
+    @Autowired
+    private lateinit var userService: UserService
+    <%_ if (searchEngine === 'elasticsearch') { _%>
+
+    /**
+     * This repository is mocked in the <%=packageName%>.repository.search test package.
+     *
+     * @see <%= packageName %>.repository.search.UserSearchRepositoryMockConfiguration
+     */
+    @Autowired
+    private lateinit var mockUserSearchRepository: UserSearchRepository
+    <%_ } _%>
+    <%_ if (databaseType === 'sql') { _%>
+
+    @Autowired
+    private lateinit var auditingHandler: AuditingHandler
+
+    @Mock
+    private lateinit var dateTimeProvider: DateTimeProvider
+    <%_ } _%>
+
+    private lateinit var user: <%= asEntity('User') %>
+
+    @Before
+    fun init() {
+        <%_ if (databaseType === 'couchbase') { _%>
+        mockAuthentication()
+        <%_ } _%>
+        <%_ if ((databaseType === 'sql' || databaseType === 'mongodb' || databaseType === 'couchbase') && authenticationType === 'session' && !reactive) { _%>
+        persistentTokenRepository.deleteAll()
+        <%_ } _%>
+        <%_ if (databaseType !== 'sql') { _%>
+        userRepository.deleteAll()<% if (reactive) { %>.block()<% } %>
+        <%_ } _%>
+        user = <%= asEntity('User') %>()
+        <%_ if (databaseType === 'cassandra') { _%>
+        user.id = UUID.randomUUID().toString()
+        <%_ } _%>
+        user.login = "johndoe"
+        <%_ if (authenticationType !== 'oauth2') { _%>
+        user.password = RandomStringUtils.random(60)
+        <%_ } _%>
+        user.activated = true
+        user.email = "johndoe@localhost"
+        user.firstName = "john"
+        user.lastName = "doe"
+        <%_ if (databaseType !== 'cassandra') { _%>
+        user.imageUrl = "http://placehold.it/50x50"
+        <%_ } _%>
+        user.langKey = "en"
+        <%_ if (databaseType === 'sql') { _%>
+
+        `when`<Optional<TemporalAccessor>>(dateTimeProvider.now).thenReturn(Optional.of(LocalDateTime.now()))
+        auditingHandler.setDateTimeProvider(dateTimeProvider)
+        <%_ } _%>
+    }
+    <%_ if ((databaseType === 'sql' || databaseType === 'mongodb' || databaseType === 'couchbase') && authenticationType === 'session' && !reactive) { _%>
+
+    @Test
+    <%_ if (databaseType === 'sql') { _%>
+    @Transactional
+    <%_ } _%>
+    fun testRemoveOldPersistentTokens() {
+        userRepository.save<% if (databaseType === 'sql') { %>AndFlush<% } %>(user)
+        val existingCount = persistentTokenRepository.findByUser(user).size
+        val today = LocalDate.now()
+        generateUserToken(user, "1111-1111", today)
+        generateUserToken(user, "2222-2222", today.minusDays(32))
+        assertThat(persistentTokenRepository.findByUser(user)).hasSize(existingCount + 2)
+        userService.removeOldPersistentTokens()
+        assertThat(persistentTokenRepository.findByUser(user)).hasSize(existingCount + 1)
+    }
+    <%_ } _%>
+    <%_ if (authenticationType !== 'oauth2' && (databaseType === 'sql' || databaseType === 'mongodb' || databaseType === 'couchbase')) { _%>
+
+    @Test
+    <%_ if (databaseType === 'sql') { _%>
+    @Transactional
+    <%_ } _%>
+    fun assertThatUserMustExistToResetPassword() {
+        userRepository.save<% if (databaseType === 'sql') { %>AndFlush<% } %>(user)<% if (reactive) { %>.block()<% } %>
+        var maybeUser = userService.requestPasswordReset("invalid.login@localhost")<% if (reactive) { %>.blockOptional()<% } %>
+        assertThat(maybeUser).isNotPresent
+
+        maybeUser = userService.requestPasswordReset(user.email!!)<% if (reactive) { %>.blockOptional()<% } %>
+        assertThat(maybeUser).isPresent
+        assertThat(maybeUser.orElse(null).email).isEqualTo(user.email)
+        assertThat(maybeUser.orElse(null).resetDate).isNotNull()
+        assertThat(maybeUser.orElse(null).resetKey).isNotNull()
+    }
+
+    @Test
+    <%_ if (databaseType === 'sql') { _%>
+    @Transactional
+    <%_ } _%>
+    fun assertThatOnlyActivatedUserCanRequestPasswordReset() {
+        user.activated = false
+        userRepository.save<% if (databaseType === 'sql') { %>AndFlush<% } %>(user)<% if (reactive) { %>.block()<% } %>
+
+        val maybeUser = userService.requestPasswordReset(user.login!!)<% if (reactive) { %>.blockOptional()<% } %>
+        assertThat(maybeUser).isNotPresent
+        userRepository.delete(user)<% if (reactive) { %>.block()<% } %>
+    }
+
+    @Test
+    <%_ if (databaseType === 'sql') { _%>
+    @Transactional
+    <%_ } _%>
+    fun assertThatResetKeyMustNotBeOlderThan24Hours() {
+        val daysAgo = Instant.now().minus(25, ChronoUnit.HOURS)
+        val resetKey = RandomUtil.generateResetKey()
+        user.activated = true
+        user.resetDate = daysAgo
+        user.resetKey = resetKey
+        userRepository.save<% if (databaseType === 'sql') { %>AndFlush<% } %>(user)<% if (reactive) { %>.block()<% } %>
+
+        val maybeUser = userService.completePasswordReset("johndoe2", user.resetKey!!)<% if (reactive) { %>.blockOptional()<% } %>
+        assertThat(maybeUser).isNotPresent
+        userRepository.delete(user)<% if (reactive) { %>.block()<% } %>
+    }
+
+    @Test
+    <%_ if (databaseType === 'sql') { _%>
+    @Transactional
+    <%_ } _%>
+    fun assertThatResetKeyMustBeValid() {
+        val daysAgo = Instant.now().minus(25, ChronoUnit.HOURS)
+        user.activated = true
+        user.resetDate = daysAgo
+        user.resetKey = "1234"
+        userRepository.save<% if (databaseType === 'sql') { %>AndFlush<% } %>(user)<% if (reactive) { %>.block()<% } %>
+
+        val maybeUser = userService.completePasswordReset("johndoe2", user.resetKey!!)<% if (reactive) { %>.blockOptional()<% } %>
+        assertThat(maybeUser).isNotPresent
+        userRepository.delete(user)<% if (reactive) { %>.block()<% } %>
+    }
+
+    @Test
+    <%_ if (databaseType === 'sql') { _%>
+    @Transactional
+    <%_ } _%>
+    fun assertThatUserCanResetPassword() {
+        val oldPassword = user.password
+        val daysAgo = Instant.now().minus(2, ChronoUnit.HOURS)
+        val resetKey = RandomUtil.generateResetKey()
+        user.activated = true
+        user.resetDate = daysAgo
+        user.resetKey = resetKey
+        userRepository.save<% if (databaseType === 'sql') { %>AndFlush<% } %>(user)<% if (reactive) { %>.block()<% } %>
+
+        val maybeUser = userService.completePasswordReset("johndoe2", user.resetKey!!)<% if (reactive) { %>.blockOptional()<% } %>
+        assertThat(maybeUser).isPresent
+        assertThat(maybeUser.orElse(null).resetDate).isNull()
+        assertThat(maybeUser.orElse(null).resetKey).isNull()
+        assertThat(maybeUser.orElse(null).password).isNotEqualTo(oldPassword)
+
+        userRepository.delete(user)<% if (reactive) { %>.block()<% } %>
+    }
+
+    @Test
+    <%_ if (databaseType === 'sql') { _%>
+    @Transactional
+    <%_ } _%>
+    fun testFindNotActivatedUsersByCreationDateBefore() {
+        val now = Instant.now()
+        <%_ if (databaseType === 'sql') { _%>
+        `when`<Optional<TemporalAccessor>>(dateTimeProvider.now).thenReturn(Optional.of(now.minus(4, ChronoUnit.DAYS)))
+        <%_ } _%>
+        user.activated = false
+        val dbUser = userRepository.save<% if (databaseType === 'sql') { %>AndFlush<% } %>(user)<% if (reactive) { %>.block()<% } %>
+        assertNotNull(dbUser)
+        dbUser.createdDate = now.minus(4, ChronoUnit.DAYS)
+        userRepository.save<% if (databaseType === 'sql') { %>AndFlush<% } %>(user)<% if (reactive) { %>.block()<% } %>
+        var users = userRepository.findAllByActivatedIsFalseAndCreatedDateBefore(now.minus(3, ChronoUnit.DAYS))<% if (reactive) { %>
+            .collectList().block()<% } %>
+        assertThat(users).isNotEmpty
+        userService.removeNotActivatedUsers()
+        users = userRepository.findAllByActivatedIsFalseAndCreatedDateBefore(now.minus(3, ChronoUnit.DAYS))<% if (reactive) { %>
+            .collectList().block()<% } %>
+        assertThat(users).isEmpty()
+        <%_ if (searchEngine === 'elasticsearch') { _%>
+
+        // Verify Elasticsearch mock
+        verify(mockUserSearchRepository, times(1)).delete(user)
+        <%_ } _%>
+    }
+    <%_ } _%>
+    <%_ if ((databaseType === 'sql' || databaseType === 'mongodb' || databaseType === 'couchbase') && authenticationType === 'session' && !reactive) { _%>
+
+    private fun generateUserToken(user: <%= asEntity('User') %>, tokenSeries: String, localDate: LocalDate) {
+        val token = PersistentToken()
+        token.series = tokenSeries<% if (databaseType === 'couchbase') { %>
+        token.login = user.login<% } else { %>
+        token.user = user<% } %>
+        token.tokenValue = "$tokenSeries-data"
+        token.tokenDate = localDate
+        token.ipAddress = "127.0.0.1"
+        token.userAgent = "Test agent"
+        persistentTokenRepository.save<% if (databaseType === 'sql') { %>AndFlush<% } %>(token)
+    }
+    <%_ } _%>
+
+    @Test
+    <%_ if (databaseType === 'sql') { _%>
+    @Transactional
+    <%_ } else if (databaseType === 'couchbase') { _%>
+    @WithAnonymousUser
+    <%_ } _%>
+    fun assertThatAnonymousUserIsNotGet() {
+        <%_ if (authenticationType === 'oauth2') { _%>
+        user.id = Constants.ANONYMOUS_USER
+        <%_ } _%>
+        user.login = Constants.ANONYMOUS_USER
+        if (!userRepository.findOneByLogin(Constants.ANONYMOUS_USER)<% if (reactive) { %>.blockOptional()<% } %>.isPresent) {
+            userRepository.save<% if (databaseType === 'sql') { %>AndFlush<% } %>(user)<% if (reactive) { %>.block()<% } %>
+        }<% if (databaseType === 'sql' || databaseType === 'mongodb' || databaseType === 'couchbase') { %>
+        val pageable = PageRequest.of(0, userRepository.count()<% if (reactive) { %>.block()!!<% } %>.toInt())
+        val allManagedUsers = userService.getAllManagedUsers(pageable)<% if (reactive) { %>
+            .collectList().block()<% } %>
+        assertNotNull(allManagedUsers)
+        assertThat(allManagedUsers<% if (!reactive) { %>.content<% } %>.stream()<% } %><% if (databaseType === 'cassandra') { %>
+        val allManagedUsers = userService.getAllManagedUsers()<% if (reactive) { %>.collectList().block()<% } %>
+        assertThat(allManagedUsers.stream()<% } %>
+            .noneMatch { user -> Constants.ANONYMOUS_USER == user.login })
+            .isTrue()
+    }
+    <%_ if (authenticationType !== 'oauth2' && (databaseType === 'sql' || databaseType === 'mongodb' || databaseType === 'couchbase')) { _%>
+
+    @Test
+    <%_ if (databaseType === 'sql') { _%>
+    @Transactional
+    <%_ } _%>
+    fun testRemoveNotActivatedUsers() {
+        <%_ if (databaseType === 'sql') { _%>
+        // custom "now" for audit to use as creation date
+        `when`<Optional<TemporalAccessor>>(dateTimeProvider.now).thenReturn(Optional.of(Instant.now().minus(30, ChronoUnit.DAYS)))
+        <%_ } _%>
+
+        user.activated = false
+        userRepository.save<% if (databaseType === 'sql') { %>AndFlush<% } %>(user)<% if (reactive) { %>.block()<% } %>
+        <%_ if (databaseType !== 'sql') { _%>
+        // Let the audit first set the creation date but then update it
+        user.createdDate = Instant.now().minus(30, ChronoUnit.DAYS)
+        userRepository.save<% if (databaseType === 'sql') { %>AndFlush<% } %>(user)<% if (reactive) { %>.block()<% } %>
+        <%_ } _%>
+
+        assertThat(userRepository.findOneByLogin("johndoe")<% if (reactive) { %>.blockOptional()<% } %>).isPresent
+        userService.removeNotActivatedUsers()
+        assertThat(userRepository.findOneByLogin("johndoe")<% if (reactive) { %>.blockOptional()<% } %>).isNotPresent
+        <%_ if (searchEngine === 'elasticsearch') { _%>
+
+        // Verify Elasticsearch mock
+        verify(mockUserSearchRepository, times(1)).delete(user)
+        <%_ } _%>
+    }
+    <%_ } _%>
+    <%_ if (authenticationType === 'oauth2') { _%>
+
+    @Test
+    <%_ if (databaseType === 'sql') { _%>
+    @Transactional
+    <%_ } _%>
+    fun assertThatUserLocaleIsCorrectlySetFromAuthenticationDetails() {
+        user.id = Constants.ANONYMOUS_USER
+        user.login = Constants.ANONYMOUS_USER
+
+        val userDetails = mutableMapOf<String, Any?>()
+        userDetails["sub"] = user.id
+        userDetails["preferred_username"] = user.login
+        userDetails["given_name"] = user.firstName
+        userDetails["family_name"] = user.lastName
+        userDetails["email"] = user.email
+        userDetails["picture"] = user.imageUrl
+        userDetails["locale"] = "en_US"
+
+        var authentication = createMockOAuth2AuthenticationToken(userDetails)
+
+        var userDTO = userService.getUserFromAuthentication(authentication)
+
+        assertThat(userDTO.langKey).isEqualTo("en")
+
+        userDetails["locale"] = "it-IT"
+        authentication = createMockOAuth2AuthenticationToken(userDetails)
+
+        userDTO = userService.getUserFromAuthentication(authentication)
+
+        assertThat(userDTO.langKey).isEqualTo("it-it")
+    }
+
+    private fun createMockOAuth2AuthenticationToken(userDetails: Map<String, Any?>): OAuth2AuthenticationToken {
+        val scopes = mutableSetOf<String>()
+
+        val authorities = mutableListOf<GrantedAuthority>()
+        authorities.add(SimpleGrantedAuthority(AuthoritiesConstants.ANONYMOUS))
+        val usernamePasswordAuthenticationToken = UsernamePasswordAuthenticationToken(Constants.ANONYMOUS_USER, Constants.ANONYMOUS_USER, authorities)
+        usernamePasswordAuthenticationToken.details = userDetails
+        val user = DefaultOAuth2User(authorities, userDetails, "preferred_username")
+
+        return OAuth2AuthenticationToken(user, authorities, "oidc")
+    }
+    <%_ } _%>
+}

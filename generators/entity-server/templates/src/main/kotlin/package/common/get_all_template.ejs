@@ -23,23 +23,23 @@
     const entityListToDtoListReference = mapper + '.' + 'toDto';
     const entityToDtoReference = mapper + '::'+ 'toDto';
     if (jpaMetamodelFiltering) {  %>
-    fun getAll<%= entityClassPlural %>(criteria: <%= entityClass %>Criteria<% if (pagination != 'no') { %>, pageable: Pageable<% } %>): ResponseEntity<MutableList<<%= instanceType %>>> {
+    fun getAll<%= entityClassPlural %>(criteria: <%= entityClass %>Criteria<% if (pagination != 'no') { %>, pageable: Pageable, @RequestParam queryParams: MultiValueMap<String, String>, uriBuilder: UriComponentsBuilder<% } %>): ResponseEntity<MutableList<<%= instanceType %>>> {
         log.debug("REST request to get <%= entityClassPlural %> by criteria: {}", criteria)
     <%_ if (pagination === 'no') { _%>
         val entityList = <%= entityInstance %>QueryService.findByCriteria(criteria)
         return ResponseEntity.ok().body(entityList)
     <%_ } else { _%>
         val page = <%= entityInstance %>QueryService.findByCriteria(criteria, pageable)
-        val headers = PaginationUtil.generatePaginationHttpHeaders(page, "/api/<%= entityApiUrl %>")
+        val headers = PaginationUtil.generatePaginationHttpHeaders(uriBuilder.queryParams(queryParams), page)
         return ResponseEntity.ok().headers(headers).body(page.content)
     <%_ } _%>
     }
 
     /**
-    * GET  /<%= entityApiUrl %>/count : count all the <%= entityInstancePlural %>.
+    * `GET  /<%= entityApiUrl %>/count}` : count all the <%= entityInstancePlural %>.
     *
-    * @param criteria the criterias which the requested entities should match.
-    * @return the ResponseEntity with status 200 (OK) and the count in body.
+    * @param criteria the criteria which the requested entities should match.
+    * @return the [ResponseEntity] with status `200 (OK)` and the count in body.
     */
     @GetMapping("/<%= entityApiUrl %>/count")
     fun count<%= entityClassPlural %>(criteria: <%= entityClass %>Criteria): ResponseEntity<Long> {
@@ -55,33 +55,31 @@
         return <%= entityListToDtoListReference %>(<%= entityInstancePlural %>)<% } else { %>
         return <%= entityInstance %>Repository.<% if (fieldsContainOwnerManyToMany) { %>findAllWithEagerRelationships<% } else { %>findAll<% } %>()<% } %>
     <%_ } if (pagination !== 'no') { _%>
-    fun getAll<%= entityClassPlural %>(pageable: Pageable<% if (fieldsContainNoOwnerOneToOne) { %>, @RequestParam(required = false) filter: String?<% } %><% if (fieldsContainOwnerManyToMany) { %>, @RequestParam(required = false, defaultValue = "false") eagerload: Boolean<% } %>): ResponseEntity<MutableList<<%= instanceType %>>> {<%- include('get_all_stream_template', {viaService: viaService}); -%>
+    fun getAll<%= entityClassPlural %>(pageable: Pageable, @RequestParam queryParams: MultiValueMap<String, String>, uriBuilder: UriComponentsBuilder<% if (fieldsContainNoOwnerOneToOne) { %>, @RequestParam(required = false) filter: String?<% } %><% if (fieldsContainOwnerManyToMany) { %>, @RequestParam(required = false, defaultValue = "false") eagerload: Boolean<% } %>): ResponseEntity<MutableList<<%= instanceType %>>> {<%- include('get_all_stream_template', {viaService: viaService}); -%>
         log.debug("REST request to get a page of <%= entityClassPlural %>")
     <%_ if (viaService) { _%>
         <%_ if (fieldsContainOwnerManyToMany) { _%>
-        val page: Page<<%= instanceType %>>
-        if (eagerload) {
-            page = <%= entityInstance %>Service.findAllWithEagerRelationships(pageable)
+        val page: Page<<%= instanceType %>> = if (eagerload) {
+            <%= entityInstance %>Service.findAllWithEagerRelationships(pageable)
         } else {
-            page = <%= entityInstance %>Service.findAll(pageable)
+            <%= entityInstance %>Service.findAll(pageable)
         }
-        val headers = PaginationUtil.generatePaginationHttpHeaders(page, String.format("/api/<%= entityApiUrl %>?eagerload=%b", eagerload))
+        val headers = PaginationUtil.generatePaginationHttpHeaders(uriBuilder.queryParams(queryParams), page)
         <%_ } else { _%>
         val page = <%= entityInstance %>Service.findAll(pageable)
-        val headers = PaginationUtil.generatePaginationHttpHeaders(page, "/api/<%= entityApiUrl %>")
+        val headers = PaginationUtil.generatePaginationHttpHeaders(uriBuilder.queryParams(queryParams), page)
         <%_ } _%>
     <%_ } else { _%>
         <%_ if (fieldsContainOwnerManyToMany) { _%>
-        val page: Page<<%= instanceType %>>
-        if (eagerload) {
-            page = <%= entityInstance %>Repository.findAllWithEagerRelationships(pageable)<% if (dto === 'mapstruct') {%>.map(<%= entityToDtoReference %>)<% } %>
+        val page: Page<<%= instanceType %>> = if (eagerload) {
+            <%= entityInstance %>Repository.findAllWithEagerRelationships(pageable)<% if (dto === 'mapstruct') {%>.map(<%= entityToDtoReference %>)<% } %>
         } else {
-            page = <%= entityInstance %>Repository.findAll(pageable)<% if (dto !== 'mapstruct') { %>;<% } else { %>.map(<%= entityToDtoReference %>)<% } %>
+            <%= entityInstance %>Repository.findAll(pageable)<% if (dto === 'mapstruct') { %>.map(<%= entityToDtoReference %>)<% } %>
         }
-        val headers = PaginationUtil.generatePaginationHttpHeaders(page, String.format("/api/<%= entityApiUrl %>?eagerload=%b", eagerload))
+        val headers = PaginationUtil.generatePaginationHttpHeaders(uriBuilder.queryParams(queryParams), page)
         <%_ } else { _%>
-        val page = <%= entityInstance %>Repository.findAll(pageable)<% if (dto !== 'mapstruct') { %>;<% } else { %>.map(<%= entityToDtoReference %>)<% } %>
-        val headers = PaginationUtil.generatePaginationHttpHeaders(page, "/api/<%= entityApiUrl %>")
+        val page = <%= entityInstance %>Repository.findAll(pageable)<% if (dto === 'mapstruct') { %>.map(<%= entityToDtoReference %>)<% } %>
+        val headers = PaginationUtil.generatePaginationHttpHeaders(uriBuilder.queryParams(queryParams), page)
         <%_ } _%>
     <%_ } _%>
         return ResponseEntity.ok().headers(headers).body(page.content)

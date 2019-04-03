@@ -1,0 +1,162 @@
+<%#
+ Copyright 2013-2019 the original author or authors from the JHipster project.
+
+ This file is part of the JHipster project, see https://www.jhipster.tech/
+ for more information.
+
+ Licensed under the Apache License, Version 2.0 (the "License");
+ you may not use this file except in compliance with the License.
+ You may obtain a copy of the License at
+
+      http://www.apache.org/licenses/LICENSE-2.0
+
+ Unless required by applicable law or agreed to in writing, software
+ distributed under the License is distributed on an "AS IS" BASIS,
+ WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
+ See the License for the specific language governing permissions and
+ limitations under the License.
+-%>
+package <%=packageName%>.security
+
+import org.junit.Test
+import org.springframework.security.authentication.UsernamePasswordAuthenticationToken
+import org.springframework.security.core.GrantedAuthority
+import org.springframework.security.core.authority.SimpleGrantedAuthority
+<%_ if (reactive) { _%>
+import org.springframework.security.core.context.ReactiveSecurityContextHolder
+<%_ } else { _%>
+import org.springframework.security.core.context.SecurityContextHolder
+<%_ } _%>
+
+import org.assertj.core.api.Assertions.assertThat
+
+/**
+ * Test class for the [SecurityUtils] utility class.
+ */
+class SecurityUtilsUnitTest {
+
+<%_ if (!reactive) { _%>
+    @Test
+    fun testgetCurrentUserLogin() {
+        val securityContext = SecurityContextHolder.createEmptyContext()
+        securityContext.authentication = UsernamePasswordAuthenticationToken("admin", "admin")
+        SecurityContextHolder.setContext(securityContext)
+        val login = SecurityUtils.getCurrentUserLogin()
+        assertThat(login).contains("admin")
+    }
+    <%_ if (authenticationType === 'jwt') { _%>
+
+    @Test
+    fun testgetCurrentUserJWT() {
+        val securityContext = SecurityContextHolder.createEmptyContext()
+        securityContext.authentication = UsernamePasswordAuthenticationToken("admin", "token")
+        SecurityContextHolder.setContext(securityContext)
+        val jwt = SecurityUtils.getCurrentUserJWT()
+        assertThat(jwt).contains("token")
+    }
+    <%_ } _%>
+
+    @Test
+    fun testIsAuthenticated() {
+        val securityContext = SecurityContextHolder.createEmptyContext()
+        securityContext.authentication = UsernamePasswordAuthenticationToken("admin", "admin")
+        SecurityContextHolder.setContext(securityContext)
+        val isAuthenticated = SecurityUtils.isAuthenticated()
+        assertThat(isAuthenticated).isTrue()
+    }
+
+    @Test
+    fun testAnonymousIsNotAuthenticated() {
+        val securityContext = SecurityContextHolder.createEmptyContext()
+        val authorities = mutableListOf<GrantedAuthority>()
+        authorities.add(SimpleGrantedAuthority(AuthoritiesConstants.ANONYMOUS))
+        securityContext.authentication = UsernamePasswordAuthenticationToken("anonymous", "anonymous", authorities)
+        SecurityContextHolder.setContext(securityContext)
+        val isAuthenticated = SecurityUtils.isAuthenticated()
+        assertThat(isAuthenticated).isFalse()
+    }
+
+    @Test
+    fun testIsCurrentUserInRole() {
+        val securityContext = SecurityContextHolder.createEmptyContext()
+        val authorities = mutableListOf<GrantedAuthority>()
+        authorities.add(SimpleGrantedAuthority(AuthoritiesConstants.USER))
+        securityContext.authentication = UsernamePasswordAuthenticationToken("user", "user", authorities)
+        SecurityContextHolder.setContext(securityContext)
+
+        assertThat(SecurityUtils.isCurrentUserInRole(AuthoritiesConstants.USER)).isTrue()
+        assertThat(SecurityUtils.isCurrentUserInRole(AuthoritiesConstants.ADMIN)).isFalse()
+    }
+<%_ } _%>
+<%_ if (reactive) { _%>
+    @Test
+    fun testgetCurrentUserLogin() {
+        val login = SecurityUtils.getCurrentUserLogin()
+            .subscriberContext(
+                ReactiveSecurityContextHolder.withAuthentication(
+                    UsernamePasswordAuthenticationToken("admin", "admin")
+                )
+            )
+            .block()
+        assertThat(login).isEqualTo("admin")
+    }
+    <%_ if (authenticationType === 'jwt') { _%>
+
+    @Test
+    fun testgetCurrentUserJWT() {
+        val jwt = SecurityUtils.getCurrentUserJWT()
+            .subscriberContext(
+                ReactiveSecurityContextHolder.withAuthentication(
+                    UsernamePasswordAuthenticationToken("admin", "token")
+                )
+            )
+            .block()
+        assertThat(jwt).isEqualTo("token")
+    }
+    <%_ } _%>
+
+    @Test
+    fun testIsAuthenticated() {
+        val isAuthenticated = SecurityUtils.isAuthenticated()
+            .subscriberContext(
+                ReactiveSecurityContextHolder.withAuthentication(
+                    UsernamePasswordAuthenticationToken("admin", "admin")
+                )
+            )
+            .block()
+        assertThat(isAuthenticated!!).isTrue()
+    }
+
+    @Test
+    fun testAnonymousIsNotAuthenticated() {
+        val authorities = mutableListOf<GrantedAuthority>()
+        authorities.add(SimpleGrantedAuthority(AuthoritiesConstants.ANONYMOUS))
+        val isAuthenticated = SecurityUtils.isAuthenticated()
+            .subscriberContext(
+                ReactiveSecurityContextHolder.withAuthentication(
+                    UsernamePasswordAuthenticationToken("admin", "admin", authorities)
+                )
+            )
+            .block()
+        assertThat(isAuthenticated!!).isFalse()
+    }
+
+    @Test
+    fun testIsCurrentUserInRole() {
+        val authorities = mutableListOf<GrantedAuthority>()
+        authorities.add(SimpleGrantedAuthority(AuthoritiesConstants.USER))
+        val context = ReactiveSecurityContextHolder.withAuthentication(
+            UsernamePasswordAuthenticationToken("admin", "admin", authorities)
+        )
+        var isCurrentUserInRole = SecurityUtils.isCurrentUserInRole(AuthoritiesConstants.USER)
+            .subscriberContext(context)
+            .block()
+        assertThat(isCurrentUserInRole!!).isTrue()
+
+        isCurrentUserInRole = SecurityUtils.isCurrentUserInRole(AuthoritiesConstants.ADMIN)
+            .subscriberContext(context)
+            .block()
+        assertThat(isCurrentUserInRole!!).isFalse()
+    }
+<%_ } _%>
+}

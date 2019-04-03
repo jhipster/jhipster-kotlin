@@ -1,0 +1,1598 @@
+<%#
+ Copyright 2013-2019 the original author or authors from the JHipster project.
+
+ This file is part of the JHipster project, see https://www.jhipster.tech/
+ for more information.
+
+ Licensed under the Apache License, Version 2.0 (the "License");
+ you may not use this file except in compliance with the License.
+ You may obtain a copy of the License at
+
+      http://www.apache.org/licenses/LICENSE-2.0
+
+ Unless required by applicable law or agreed to in writing, software
+ distributed under the License is distributed on an "AS IS" BASIS,
+ WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
+ See the License for the specific language governing permissions and
+ limitations under the License.
+-%>
+package <%=packageName%>.web.rest
+<%_ if (authenticationType === 'oauth2') { _%>
+
+<%_ if (databaseType === 'cassandra') { _%>
+import <%=packageName%>.AbstractCassandraTest
+<%_ } _%>
+import <%=packageName%>.config.TestSecurityConfiguration
+import <%=packageName%>.<%= mainClass %>
+import <%=packageName%>.domain.Authority
+import <%=packageName%>.domain.<%= asEntity('User') %>
+import <%=packageName%>.repository.UserRepository
+import <%=packageName%>.security.AuthoritiesConstants
+import <%=packageName%>.service.UserService
+import <%=packageName%>.web.rest.errors.ExceptionTranslator
+
+import org.apache.commons.lang3.RandomStringUtils
+import org.springframework.security.test.web.servlet.request.SecurityMockMvcRequestPostProcessors.user
+import org.springframework.security.test.web.servlet.setup.SecurityMockMvcConfigurers.springSecurity
+import org.springframework.test.web.servlet.request.MockMvcRequestBuilders.get
+import org.springframework.test.web.servlet.result.MockMvcResultMatchers.content
+import org.springframework.test.web.servlet.result.MockMvcResultMatchers.jsonPath
+import org.springframework.test.web.servlet.result.MockMvcResultMatchers.status
+
+import org.junit.Before
+import org.junit.Test
+import org.junit.runner.RunWith
+import org.mockito.MockitoAnnotations
+import org.springframework.beans.factory.annotation.Autowired
+import org.springframework.boot.test.context.SpringBootTest
+import org.springframework.http.MediaType
+import org.springframework.test.context.junit4.SpringRunner
+import org.springframework.test.web.servlet.MockMvc
+import org.springframework.test.web.servlet.setup.DefaultMockMvcBuilder
+import org.springframework.test.web.servlet.setup.MockMvcBuilders
+import org.springframework.transaction.annotation.Transactional
+import org.springframework.web.context.WebApplicationContext
+
+/**
+ * Integration tests for the [AccountResource] REST controller.
+ */
+@RunWith(SpringRunner::class)
+@SpringBootTest(classes = [<%= mainClass %>::class, TestSecurityConfiguration::class])
+class AccountResourceIT <% if (databaseType === 'cassandra') { %>: AbstractCassandraTest() <% } %>{
+
+    @Autowired
+    private lateinit var userRepository: UserRepository
+
+    @Autowired
+    private lateinit var exceptionTranslator: ExceptionTranslator
+
+    @Autowired
+    private lateinit var userService: UserService
+
+    private lateinit var restUserMockMvc: MockMvc
+
+    @Autowired
+    private lateinit var context: WebApplicationContext
+
+    @Before
+    fun setup() {
+        MockitoAnnotations.initMocks(this)
+        val accountUserMockResource = AccountResource(userService)
+
+        this.restUserMockMvc = MockMvcBuilders.standaloneSetup(accountUserMockResource)
+            .setControllerAdvice(exceptionTranslator)
+            .build()
+    }
+
+    @Test
+    @Throws(Exception::class)
+    fun testNonAuthenticatedUser() {
+        restUserMockMvc.perform(get("/api/authenticate")
+            .accept(MediaType.APPLICATION_JSON))
+            .andExpect(status().isOk)
+            .andExpect(content().string(""))
+    }
+
+    @Test
+    @Throws(Exception::class)
+    fun testAuthenticatedUser() {
+        restUserMockMvc.perform(get("/api/authenticate")
+            .with { request ->
+                request.remoteUser = "test"
+                request
+            }
+            .accept(MediaType.APPLICATION_JSON))
+            .andExpect(status().isOk)
+            .andExpect(content().string("test"))
+    }
+
+    @Test<% if (databaseType === 'sql') { %>
+    @Transactional<% } %>
+    @Throws(Exception::class)
+    fun testGetExistingAccount() {
+        <%_ if (databaseType !== 'couchbase') { _%>
+        val authorities = mutableSetOf<Authority>()
+        val authority = Authority()
+        authority.name = AuthoritiesConstants.ADMIN
+        authorities.add(authority)
+        <%_ } else { _%>
+        val authorities = mutableSetOf<String>()
+        authorities.add(AuthoritiesConstants.ADMIN)
+        <%_ } _%>
+
+        val user = <%= asEntity('User') %>()
+        <%_ if (authenticationType === 'oauth2' && databaseType !== 'couchbase') { _%>
+        user.id = RandomStringUtils.randomAlphanumeric(50)
+        <%_ } _%>
+        user.login = "test"
+        user.firstName = "john"
+        user.lastName = "doe"
+        user.email = "john.doe@jhipster.com"
+        user.imageUrl = "http://placehold.it/50x50"
+        user.langKey = "en"
+        user.authorities = authorities
+        userRepository.save(user)
+
+        // create security-aware mockMvc
+        restUserMockMvc = MockMvcBuilders
+            .webAppContextSetup(context)
+            .apply<DefaultMockMvcBuilder>(springSecurity())
+            .build()
+
+        restUserMockMvc.perform(get("/api/account")
+            .with(user(user.login).roles("ADMIN"))
+            .accept(MediaType.APPLICATION_JSON))
+            .andExpect(status().isOk)
+            .andExpect(content().contentType(MediaType.APPLICATION_JSON_UTF8_VALUE))
+            .andExpect(jsonPath("\$.login").value("test"))
+            .andExpect(jsonPath("\$.firstName").value("john"))
+            .andExpect(jsonPath("\$.lastName").value("doe"))
+            .andExpect(jsonPath("\$.email").value("john.doe@jhipster.com"))
+            .andExpect(jsonPath("\$.imageUrl").value("http://placehold.it/50x50"))
+            .andExpect(jsonPath("\$.langKey").value("en"))
+            .andExpect(jsonPath("\$.authorities").value(AuthoritiesConstants.ADMIN))
+    }
+
+    @Test
+    @Throws(Exception::class)
+    fun testGetUnknownAccount() {
+        restUserMockMvc.perform(get("/api/account")
+            .accept(MediaType.APPLICATION_JSON))
+            .andExpect(status().isInternalServerError)
+    }
+}
+<%_ } else { _%>
+
+<%_ if (databaseType === 'cassandra') { _%>
+import <%=packageName%>.AbstractCassandraTest
+<%_ } _%>
+import <%=packageName%>.<%= mainClass %>
+import <%=packageName%>.config.Constants
+<%_ if (databaseType === 'sql' || databaseType === 'mongodb') { _%>
+import <%=packageName%>.domain.Authority
+<%_ } _%>
+<%_ if (authenticationType === 'session' && !reactive) { _%>
+import <%=packageName%>.domain.PersistentToken
+<%_ } _%>
+import <%=packageName%>.domain.<%= asEntity('User') %>
+<%_ if (databaseType === 'sql' || databaseType === 'mongodb' || databaseType === 'couchbase') { _%>
+import <%=packageName%>.repository<% if (reactive) { %>.reactive<% } %>.AuthorityRepository
+<%_ } _%>
+<%_ if (authenticationType === 'session' && !reactive) { _%>
+import <%=packageName%>.repository.PersistentTokenRepository
+<%_ } _%>
+import <%=packageName%>.repository<% if (reactive) { %>.reactive<% } %>.UserRepository
+import <%=packageName%>.security.AuthoritiesConstants
+import <%=packageName%>.service.MailService
+import <%=packageName%>.service.UserService
+import <%=packageName%>.service.dto.PasswordChangeDTO
+import <%=packageName%>.service.dto.<%= asDto('User') %>
+import <%=packageName%>.web.rest.errors.ExceptionTranslator
+import <%=packageName%>.web.rest.vm.KeyAndPasswordVM
+import <%=packageName%>.web.rest.vm.ManagedUserVM
+import org.apache.commons.lang3.RandomStringUtils
+
+import org.junit.Before
+import org.junit.Test
+import org.junit.runner.RunWith
+import org.mockito.Mock
+import org.mockito.MockitoAnnotations
+import org.springframework.beans.factory.annotation.Autowired
+import org.springframework.boot.test.context.SpringBootTest
+<%_ if (reactive) { _%>
+import org.springframework.http.HttpStatus
+<%_ } _%>
+import org.springframework.http.MediaType
+<%_ if (!reactive) { _%>
+import org.springframework.http.converter.HttpMessageConverter
+<%_ } _%>
+import org.springframework.security.crypto.password.PasswordEncoder
+import org.springframework.security.test.context.support.WithMockUser
+<%_ if (reactive) { _%>
+import org.springframework.security.web.server.context.SecurityContextServerWebExchangeWebFilter
+<%_ } _%>
+import org.springframework.test.context.junit4.SpringRunner
+<%_ if (reactive) { _%>
+import org.springframework.test.web.reactive.server.WebTestClient
+import reactor.core.publisher.Mono
+<%_ } _%>
+<%_ if (!reactive) { _%>
+import org.springframework.test.web.servlet.MockMvc
+import org.springframework.test.web.servlet.setup.MockMvcBuilders
+<%_ } _%>
+<%_ if (databaseType === 'sql') { _%>
+import org.springframework.transaction.annotation.Transactional
+<%_ } _%>
+
+import java.time.Instant
+<%_ if (authenticationType === 'session' && !reactive && (databaseType === 'sql' || databaseType === 'mongodb' || databaseType === 'couchbase')) { _%>
+import java.time.LocalDate
+<%_ } _%>
+<%_ if (!(databaseType === 'sql' || databaseType === 'mongodb' || databaseType === 'couchbase')) { _%>
+import java.util.Date
+<%_ } _%>
+import java.util.Optional
+<%_ if (databaseType === 'cassandra') { _%>
+import java.util.UUID
+<%_ } _%>
+
+import org.assertj.core.api.Assertions.assertThat
+<%_ if (authenticationType === 'session' && !reactive) { _%>
+import org.hamcrest.Matchers.hasItem
+<%_ } _%>
+<%_ if (!reactive) { _%>
+import org.springframework.test.web.servlet.request.MockMvcRequestBuilders.delete
+import org.springframework.test.web.servlet.request.MockMvcRequestBuilders.get
+import org.springframework.test.web.servlet.request.MockMvcRequestBuilders.post
+import org.springframework.test.web.servlet.result.MockMvcResultMatchers.content
+import org.springframework.test.web.servlet.result.MockMvcResultMatchers.jsonPath
+import org.springframework.test.web.servlet.result.MockMvcResultMatchers.status
+<%_ } _%>
+
+import com.nhaarman.mockitokotlin2.whenever
+import com.nhaarman.mockitokotlin2.doNothing
+import com.nhaarman.mockitokotlin2.any
+<%_ if (reactive) { _%>
+
+import kotlin.test.assertNotNull
+<%_ } _%>
+
+/**
+ * Integrations tests for the [AccountResource] REST controller.
+ */
+@RunWith(SpringRunner::class)
+@SpringBootTest(classes = [<%= mainClass %>::class])
+class AccountResourceIT <% if (databaseType === 'cassandra') { %>: AbstractCassandraTest() <% } %>{
+
+    @Autowired
+    private lateinit var userRepository: UserRepository
+<%_ if (databaseType === 'sql' || databaseType === 'mongodb') { _%>
+
+    @Autowired
+    private lateinit var authorityRepository: AuthorityRepository
+<%_ } _%>
+
+    @Autowired
+    private lateinit var userService: UserService
+<%_ if (authenticationType === 'session' && !reactive) { _%>
+
+    @Autowired
+    private lateinit var persistentTokenRepository: PersistentTokenRepository
+<%_ } _%>
+
+    @Autowired
+    private lateinit var passwordEncoder: PasswordEncoder
+<%_ if (!reactive) { _%>
+
+    @Autowired
+    private lateinit var httpMessageConverters: Array<HttpMessageConverter<*>>
+<%_ } _%>
+
+    @Autowired
+    private lateinit var exceptionTranslator: ExceptionTranslator
+
+    @Mock
+    private lateinit var mockUserService: UserService
+
+    @Mock
+    private lateinit var mockMailService: MailService
+<%_ if (!reactive) { _%>
+
+    private lateinit var restMvc: MockMvc
+
+    private lateinit var restUserMockMvc: MockMvc
+<%_ } else { _%>
+
+    private lateinit var webTestClient: WebTestClient
+
+    private lateinit var userWebTestClient: WebTestClient
+<%_ } _%>
+
+    @Before
+    fun setup() {
+        <%_ if (databaseType === 'mongodb') { _%>
+        userRepository.deleteAll()<% if (reactive) { %>.block()<% } %>
+        <%_ } _%>
+        MockitoAnnotations.initMocks(this)
+        doNothing().whenever(mockMailService).sendActivationEmail(any())
+        val accountResource = AccountResource(userRepository, userService, mockMailService<% if (authenticationType === 'session' && !reactive) { %>, persistentTokenRepository<% } %>)
+
+        val accountUserMockResource =
+            AccountResource(userRepository, mockUserService, mockMailService<% if (authenticationType === 'session' && !reactive) { %>, persistentTokenRepository<% } %>)
+        <%_ if (!reactive) { _%>
+        this.restMvc = MockMvcBuilders.standaloneSetup(accountResource)
+            .setMessageConverters(*httpMessageConverters)
+            .setControllerAdvice(exceptionTranslator)
+            .build()
+        this.restUserMockMvc = MockMvcBuilders.standaloneSetup(accountUserMockResource)
+            .setControllerAdvice(exceptionTranslator)
+            .build()
+        <%_ } else { _%>
+        this.webTestClient = WebTestClient.bindToController(accountResource)
+            .controllerAdvice(exceptionTranslator)
+            .build()
+        this.userWebTestClient = WebTestClient.bindToController(accountUserMockResource)
+            .webFilter<WebTestClient.ControllerSpec>(SecurityContextServerWebExchangeWebFilter())
+            .controllerAdvice(exceptionTranslator)
+            .build()
+        <%_ } _%>
+    }
+
+    @Test
+    <%_ if (!reactive) { _%>
+    @Throws(Exception::class)
+    fun testNonAuthenticatedUser() {
+        restUserMockMvc.perform(
+            get("/api/authenticate")
+                .accept(MediaType.APPLICATION_JSON)
+        )
+            .andExpect(status().isOk)
+            .andExpect(content().string(""))
+    <%_ } else { _%>
+    fun testNonAuthenticatedUser() {
+        userWebTestClient.get().uri("/api/authenticate")
+            .accept(MediaType.APPLICATION_JSON)
+            .exchange()
+            .expectStatus().isOk
+            .expectBody().json("")
+    <%_ } _%>
+    }
+
+    @Test
+    <%_ if (!reactive) { _%>
+    @Throws(Exception::class)
+    fun testAuthenticatedUser() {
+        restUserMockMvc.perform(get("/api/authenticate")
+            .with { request ->
+                request.remoteUser = "test"
+                request
+            }
+            .accept(MediaType.APPLICATION_JSON))
+            .andExpect(status().isOk)
+            .andExpect(content().string("test"))
+    <%_ } else { _%>
+    @WithMockUser
+    fun testAuthenticatedUser() {
+        userWebTestClient
+            .get().uri("/api/authenticate")
+            .accept(MediaType.APPLICATION_JSON)
+            .exchange()
+            .expectStatus().isOk
+            .expectBody(String::class.java).isEqualTo<Nothing>("user")
+    <%_ } _%>
+    }
+
+    @Test
+    <%_ if (!reactive) { _%>
+    @Throws(Exception::class)
+    <%_ } _%>
+    fun testGetExistingAccount() {<% if (databaseType === 'sql' || databaseType === 'mongodb') { %>
+        val authorities = mutableSetOf<Authority>()
+        val authority = Authority()
+        authority.name = AuthoritiesConstants.ADMIN
+        authorities.add(authority)<% } %><% if (databaseType === 'cassandra' || databaseType === 'couchbase') { %>
+        val authorities = mutableSetOf<String>()
+        authorities.add(AuthoritiesConstants.ADMIN)<% } %>
+
+        val user = <%= asEntity('User') %>()
+        user.login = "test"
+        user.firstName = "john"
+        user.lastName = "doe"
+        user.email = "john.doe@jhipster.com"
+        <%_ if (['sql', 'mongodb', 'couchbase'].includes(databaseType)) { _%>
+        user.imageUrl = "http://placehold.it/50x50"
+        <%_ } _%>
+        user.langKey = "en"
+        user.authorities = authorities
+        whenever(mockUserService.getUserWithAuthorities()).thenReturn(<% if (reactive) { %>Mono.just<% } else { %>Optional.of<% } %>(user))
+
+        <%_ if (!reactive) { _%>
+        restUserMockMvc.perform(
+            get("/api/account")
+                .accept(MediaType.APPLICATION_JSON)
+        )
+            .andExpect(status().isOk)
+            .andExpect(content().contentType(MediaType.APPLICATION_JSON_UTF8_VALUE))
+            .andExpect(jsonPath("\$.login").value("test"))
+            .andExpect(jsonPath("\$.firstName").value("john"))
+            .andExpect(jsonPath("\$.lastName").value("doe"))
+            .andExpect(jsonPath("\$.email").value("john.doe@jhipster.com"))
+            <%_ if (['sql', 'mongodb', 'couchbase'].includes(databaseType)) { _%>
+            .andExpect(jsonPath("\$.imageUrl").value("http://placehold.it/50x50"))
+            <%_ } _%>
+            .andExpect(jsonPath("\$.langKey").value("en"))
+            .andExpect(jsonPath("\$.authorities").value(AuthoritiesConstants.ADMIN))
+        <%_ } else { _%>
+        userWebTestClient.get().uri("/api/account")
+            .accept(MediaType.APPLICATION_JSON)
+            .exchange()
+            .expectStatus().isOk
+            .expectHeader().contentType(MediaType.APPLICATION_JSON_UTF8_VALUE)
+            .expectBody()
+            .jsonPath("\$.login").isEqualTo("test")
+            .jsonPath("\$.firstName").isEqualTo("john")
+            .jsonPath("\$.lastName").isEqualTo("doe")
+            .jsonPath("\$.email").isEqualTo("john.doe@jhipster.com")
+            <%_ if (['sql', 'mongodb', 'couchbase'].includes(databaseType)) { _%>
+            .jsonPath("\$.imageUrl").isEqualTo("http://placehold.it/50x50")
+            <%_ } _%>
+            .jsonPath("\$.langKey").isEqualTo("en")
+            .jsonPath("\$.authorities").isEqualTo(AuthoritiesConstants.ADMIN)
+        <%_ } _%>
+    }
+
+    @Test
+    <%_ if (!reactive) { _%>
+    @Throws(Exception::class)
+    fun testGetUnknownAccount() {
+        whenever(mockUserService.getUserWithAuthorities()).thenReturn(Optional.empty())
+
+        restUserMockMvc.perform(
+            get("/api/account")
+                .accept(MediaType.APPLICATION_PROBLEM_JSON)
+        )
+            .andExpect(status().isInternalServerError)
+    <%_ } else { _%>
+    fun testGetUnknownAccount() {
+        whenever(mockUserService.getUserWithAuthorities()).thenReturn(Mono.empty())
+
+        userWebTestClient.get().uri("/api/account")
+            .accept(MediaType.APPLICATION_JSON)
+            .exchange()
+            .expectStatus().isEqualTo(HttpStatus.INTERNAL_SERVER_ERROR)
+    <%_ } _%>
+    }
+
+    @Test<% if (databaseType === 'sql') { %>
+    @Transactional<% } %>
+    @Throws(Exception::class)
+    fun testRegisterValid() {
+        val validUser = ManagedUserVM()
+        validUser.login = "test-register-valid"
+        validUser.password = "password"
+        validUser.firstName = "Alice"
+        validUser.lastName = "Test"
+        validUser.email = "test-register-valid@example.com"
+        <%_ if (['sql', 'mongodb', 'couchbase'].includes(databaseType)) { _%>
+        validUser.imageUrl = "http://placehold.it/50x50"
+        <%_ } _%>
+        validUser.langKey = Constants.DEFAULT_LANGUAGE
+        validUser.authorities = setOf(AuthoritiesConstants.USER)
+        assertThat(userRepository.findOneByLogin("test-register-valid")<% if (reactive) { %>.blockOptional()<% } %>.isPresent).isFalse()
+
+        <%_ if (!reactive) { _%>
+        restMvc.perform(
+            post("/api/register")
+                .contentType(TestUtil.APPLICATION_JSON_UTF8)
+                .content(TestUtil.convertObjectToJsonBytes(validUser))
+        )
+            .andExpect(status().isCreated)
+        <%_ } else { _%>
+        webTestClient.post().uri("/api/register")
+            .contentType(TestUtil.APPLICATION_JSON_UTF8)
+            .syncBody(TestUtil.convertObjectToJsonBytes(validUser))
+            .exchange()
+            .expectStatus().isCreated
+        <%_ } _%>
+
+        assertThat(userRepository.findOneByLogin("test-register-valid")<% if (reactive) { %>.blockOptional()<% } %>.isPresent).isTrue()
+    }
+
+    @Test<% if (databaseType === 'sql') { %>
+    @Transactional<% } %>
+    @Throws(Exception::class)
+    fun testRegisterInvalidLogin() {
+        val invalidUser = ManagedUserVM()
+        invalidUser.login = "funky-log!n" // <-- invalid
+        invalidUser.password = "password"
+        invalidUser.firstName = "Funky"
+        invalidUser.lastName = "One"
+        invalidUser.email = "funky@example.com"
+        invalidUser.activated = true
+        <%_ if (['sql', 'mongodb', 'couchbase'].includes(databaseType)) { _%>
+        invalidUser.imageUrl = "http://placehold.it/50x50"
+        <%_ } _%>
+        invalidUser.langKey = Constants.DEFAULT_LANGUAGE
+        invalidUser.authorities = setOf(AuthoritiesConstants.USER)
+
+        <%_ if (!reactive) { _%>
+        restUserMockMvc.perform(
+            post("/api/register")
+                .contentType(TestUtil.APPLICATION_JSON_UTF8)
+                .content(TestUtil.convertObjectToJsonBytes(invalidUser))
+        )
+            .andExpect(status().isBadRequest)
+        <%_ } else { _%>
+        userWebTestClient.post().uri("/api/register")
+            .contentType(TestUtil.APPLICATION_JSON_UTF8)
+            .syncBody(TestUtil.convertObjectToJsonBytes(invalidUser))
+            .exchange()
+            .expectStatus().isBadRequest
+        <%_ } _%>
+
+        val user = userRepository.findOneByEmailIgnoreCase("funky@example.com")<% if (reactive) { %>.blockOptional()<% } %>
+        assertThat(user.isPresent).isFalse()
+    }
+
+    @Test<% if (databaseType === 'sql') { %>
+    @Transactional<% } %>
+    @Throws(Exception::class)
+    fun testRegisterInvalidEmail() {
+        val invalidUser = ManagedUserVM()
+        invalidUser.login = "bob"
+        invalidUser.password = "password"
+        invalidUser.firstName = "Bob"
+        invalidUser.lastName = "Green"
+        invalidUser.email = "invalid" // <-- invalid
+        invalidUser.activated = true
+        <%_ if (['sql', 'mongodb', 'couchbase'].includes(databaseType)) { _%>
+        invalidUser.imageUrl = "http://placehold.it/50x50"
+        <%_ } _%>
+        invalidUser.langKey = Constants.DEFAULT_LANGUAGE
+        invalidUser.authorities = setOf(AuthoritiesConstants.USER)
+
+        <%_ if (!reactive) { _%>
+        restUserMockMvc.perform(
+            post("/api/register")
+                .contentType(TestUtil.APPLICATION_JSON_UTF8)
+                .content(TestUtil.convertObjectToJsonBytes(invalidUser))
+        )
+            .andExpect(status().isBadRequest)
+        <%_ } else { _%>
+        userWebTestClient.post().uri("/api/register")
+            .contentType(TestUtil.APPLICATION_JSON_UTF8)
+            .syncBody(TestUtil.convertObjectToJsonBytes(invalidUser))
+            .exchange()
+            .expectStatus().isBadRequest
+        <%_ } _%>
+
+        val user = userRepository.findOneByLogin("bob")<% if (reactive) { %>.blockOptional()<% } %>
+        assertThat(user.isPresent).isFalse()
+    }
+
+    @Test<% if (databaseType === 'sql') { %>
+    @Transactional<% } %>
+    @Throws(Exception::class)
+    fun testRegisterInvalidPassword() {
+        val invalidUser = ManagedUserVM()
+        invalidUser.login = "bob"
+        invalidUser.password = "123" // password with only 3 digits
+        invalidUser.firstName = "Bob"
+        invalidUser.lastName = "Green"
+        invalidUser.email = "bob@example.com"
+        invalidUser.activated = true
+        <%_ if (['sql', 'mongodb', 'couchbase'].includes(databaseType)) { _%>
+        invalidUser.imageUrl = "http://placehold.it/50x50"
+        <%_ } _%>
+        invalidUser.langKey = Constants.DEFAULT_LANGUAGE
+        invalidUser.authorities = setOf(AuthoritiesConstants.USER)
+
+        <%_ if (!reactive) { _%>
+        restUserMockMvc.perform(
+            post("/api/register")
+                .contentType(TestUtil.APPLICATION_JSON_UTF8)
+                .content(TestUtil.convertObjectToJsonBytes(invalidUser))
+        )
+            .andExpect(status().isBadRequest)
+        <%_ } else { _%>
+        userWebTestClient.post().uri("/api/register")
+            .contentType(TestUtil.APPLICATION_JSON_UTF8)
+            .syncBody(TestUtil.convertObjectToJsonBytes(invalidUser))
+            .exchange()
+            .expectStatus().isBadRequest
+        <%_ } _%>
+
+        val user = userRepository.findOneByLogin("bob")<% if (reactive) { %>.blockOptional()<% } %>
+        assertThat(user.isPresent).isFalse()
+    }
+
+    @Test<% if (databaseType === 'sql') { %>
+    @Transactional<% } %>
+    @Throws(Exception::class)
+    fun testRegisterNullPassword() {
+        val invalidUser = ManagedUserVM()
+        invalidUser.login = "bob"
+        invalidUser.password = null // invalid null password
+        invalidUser.firstName = "Bob"
+        invalidUser.lastName = "Green"
+        invalidUser.email = "bob@example.com"
+        invalidUser.activated = true
+        <%_ if (['sql', 'mongodb', 'couchbase'].includes(databaseType)) { _%>
+        invalidUser.imageUrl = "http://placehold.it/50x50"
+        <%_ } _%>
+        invalidUser.langKey = Constants.DEFAULT_LANGUAGE
+        invalidUser.authorities = setOf(AuthoritiesConstants.USER)
+
+        <%_ if (!reactive) { _%>
+        restUserMockMvc.perform(
+            post("/api/register")
+                .contentType(TestUtil.APPLICATION_JSON_UTF8)
+                .content(TestUtil.convertObjectToJsonBytes(invalidUser))
+        )
+            .andExpect(status().isBadRequest)
+        <%_ } else { _%>
+        userWebTestClient.post().uri("/api/register")
+            .contentType(TestUtil.APPLICATION_JSON_UTF8)
+            .syncBody(TestUtil.convertObjectToJsonBytes(invalidUser))
+            .exchange()
+            .expectStatus().isBadRequest
+        <%_ } _%>
+
+        val user = userRepository.findOneByLogin("bob")<% if (reactive) { %>.blockOptional()<% } %>
+        assertThat(user.isPresent).isFalse()
+    }
+
+    @Test<% if (databaseType === 'sql') { %>
+    @Transactional<% } %>
+    @Throws(Exception::class)
+    fun testRegisterDuplicateLogin() {
+        // First registration
+        val firstUser = ManagedUserVM()
+        firstUser.login = "alice"
+        firstUser.password = "password"
+        firstUser.firstName = "Alice"
+        firstUser.lastName = "Something"
+        firstUser.email = "alice@example.com"
+        <%_ if (['sql', 'mongodb', 'couchbase'].includes(databaseType)) { _%>
+        firstUser.imageUrl = "http://placehold.it/50x50"
+        <%_ } _%>
+        firstUser.langKey = Constants.DEFAULT_LANGUAGE
+        firstUser.authorities = setOf(AuthoritiesConstants.USER)
+
+        // Duplicate login, different email
+        val secondUser = ManagedUserVM()
+        secondUser.login = firstUser.login
+        secondUser.password = firstUser.password
+        secondUser.firstName = firstUser.firstName
+        secondUser.lastName = firstUser.lastName
+        secondUser.email = "alice2@example.com"
+        <%_ if (['sql', 'mongodb', 'couchbase'].includes(databaseType)) { _%>
+        secondUser.imageUrl = firstUser.imageUrl
+        <%_ } _%>
+        secondUser.langKey = firstUser.langKey
+        <%_ if (['sql', 'mongodb', 'couchbase'].includes(databaseType)) { _%>
+        secondUser.createdBy = firstUser.createdBy
+        secondUser.createdDate = firstUser.createdDate
+        secondUser.lastModifiedBy = firstUser.lastModifiedBy
+        secondUser.lastModifiedDate = firstUser.lastModifiedDate
+        <%_ } _%>
+        secondUser.authorities = firstUser.authorities?.toMutableSet()
+
+        // First user
+        <%_ if (!reactive) { _%>
+        restMvc.perform(
+            post("/api/register")
+                .contentType(TestUtil.APPLICATION_JSON_UTF8)
+                .content(TestUtil.convertObjectToJsonBytes(firstUser))
+        )
+            .andExpect(status().isCreated)
+        <%_ } else { _%>
+        webTestClient.post().uri("/api/register")
+            .contentType(TestUtil.APPLICATION_JSON_UTF8)
+            .syncBody(TestUtil.convertObjectToJsonBytes(firstUser))
+            .exchange()
+            .expectStatus().isCreated
+        <%_ } _%>
+
+        // Second (non activated) user
+        <%_ if (!reactive) { _%>
+        restMvc.perform(
+            post("/api/register")
+                .contentType(TestUtil.APPLICATION_JSON_UTF8)
+                .content(TestUtil.convertObjectToJsonBytes(secondUser)))
+            .andExpect(status().isCreated)
+        <%_ } else { _%>
+        webTestClient.post().uri("/api/register")
+            .contentType(TestUtil.APPLICATION_JSON_UTF8)
+            .syncBody(TestUtil.convertObjectToJsonBytes(secondUser))
+            .exchange()
+            .expectStatus().isCreated
+        <%_ } _%>
+
+        val testUser = userRepository.findOneByEmailIgnoreCase("alice2@example.com")<% if (reactive) { %>.blockOptional()<% } %>
+        assertThat(testUser.isPresent).isTrue()
+        testUser.get().activated = true
+        userRepository.save(testUser.get())<% if (reactive) { %>.block()<% } %>
+
+        // Second (already activated) user
+        <%_ if (!reactive) { _%>
+        restMvc.perform(
+            post("/api/register")
+                .contentType(TestUtil.APPLICATION_JSON_UTF8)
+                .content(TestUtil.convertObjectToJsonBytes(secondUser))
+        )
+            .andExpect(status().is4xxClientError)
+        <%_ } else { _%>
+        webTestClient.post().uri("/api/register")
+            .contentType(TestUtil.APPLICATION_JSON_UTF8)
+            .syncBody(TestUtil.convertObjectToJsonBytes(secondUser))
+            .exchange()
+            .expectStatus().isBadRequest
+        <%_ } _%>
+    }
+
+    @Test<% if (databaseType === 'sql') { %>
+    @Transactional<% } %>
+    @Throws(Exception::class)
+    fun testRegisterDuplicateEmail() {
+        // First user
+        val firstUser = ManagedUserVM()
+        firstUser.login = "test-register-duplicate-email"
+        firstUser.password = "password"
+        firstUser.firstName = "Alice"
+        firstUser.lastName = "Test"
+        firstUser.email = "test-register-duplicate-email@example.com"
+        <%_ if (['sql', 'mongodb', 'couchbase'].includes(databaseType)) { _%>
+        firstUser.imageUrl = "http://placehold.it/50x50"
+        <%_ } _%>
+        firstUser.langKey = Constants.DEFAULT_LANGUAGE
+        firstUser.authorities = setOf(AuthoritiesConstants.USER)
+
+        // Register first user
+        <%_ if (!reactive) { _%>
+        restMvc.perform(
+            post("/api/register")
+                .contentType(TestUtil.APPLICATION_JSON_UTF8)
+                .content(TestUtil.convertObjectToJsonBytes(firstUser))
+        )
+            .andExpect(status().isCreated)
+        <%_ } else { _%>
+        webTestClient.post().uri("/api/register")
+            .contentType(TestUtil.APPLICATION_JSON_UTF8)
+            .syncBody(TestUtil.convertObjectToJsonBytes(firstUser))
+            .exchange()
+            .expectStatus().isCreated
+        <%_ } _%>
+
+        val testUser1 = userRepository.findOneByLogin("test-register-duplicate-email")<% if (reactive) { %>.blockOptional()<% } %>
+        assertThat(testUser1.isPresent).isTrue()
+
+        // Duplicate email, different login
+        val secondUser = ManagedUserVM()
+        secondUser.login = "test-register-duplicate-email-2"
+        secondUser.password = firstUser.password
+        secondUser.firstName = firstUser.firstName
+        secondUser.lastName = firstUser.lastName
+        secondUser.email = firstUser.email
+        <%_ if (['sql', 'mongodb', 'couchbase'].includes(databaseType)) { _%>
+        secondUser.imageUrl = firstUser.imageUrl
+        <%_ } _%>
+        secondUser.langKey = firstUser.langKey
+        secondUser.authorities = firstUser.authorities?.toMutableSet()
+
+        // Register second (non activated) user
+        <%_ if (!reactive) { _%>
+        restMvc.perform(
+            post("/api/register")
+                .contentType(TestUtil.APPLICATION_JSON_UTF8)
+                .content(TestUtil.convertObjectToJsonBytes(secondUser))
+        )
+            .andExpect(status().isCreated)
+        <%_ } else { _%>
+        webTestClient.post().uri("/api/register")
+            .contentType(TestUtil.APPLICATION_JSON_UTF8)
+            .syncBody(TestUtil.convertObjectToJsonBytes(secondUser))
+            .exchange()
+            .expectStatus().isCreated
+        <%_ } _%>
+
+        val testUser2 = userRepository.findOneByLogin("test-register-duplicate-email")<% if (reactive) { %>.blockOptional()<% } %>
+        assertThat(testUser2.isPresent).isFalse()
+
+        val testUser3 = userRepository.findOneByLogin("test-register-duplicate-email-2")<% if (reactive) { %>.blockOptional()<% } %>
+        assertThat(testUser3.isPresent).isTrue()
+
+        // Duplicate email - with uppercase email address
+        val userWithUpperCaseEmail = ManagedUserVM()
+        userWithUpperCaseEmail.id = firstUser.id
+        userWithUpperCaseEmail.login = "test-register-duplicate-email-3"
+        userWithUpperCaseEmail.password = firstUser.password
+        userWithUpperCaseEmail.firstName = firstUser.firstName
+        userWithUpperCaseEmail.lastName = firstUser.lastName
+        userWithUpperCaseEmail.email = "TEST-register-duplicate-email@example.com"
+        <%_ if (['sql', 'mongodb', 'couchbase'].includes(databaseType)) { _%>
+        userWithUpperCaseEmail.imageUrl = firstUser.imageUrl
+        <%_ } _%>
+        userWithUpperCaseEmail.langKey = firstUser.langKey
+        userWithUpperCaseEmail.authorities = firstUser.authorities?.toMutableSet()
+
+        // Register third (not activated) user
+        <%_ if (!reactive) { _%>
+        restMvc.perform(
+            post("/api/register")
+                .contentType(TestUtil.APPLICATION_JSON_UTF8)
+                .content(TestUtil.convertObjectToJsonBytes(userWithUpperCaseEmail))
+        )
+            .andExpect(status().isCreated)
+        <%_ } else { _%>
+        webTestClient.post().uri("/api/register")
+            .contentType(TestUtil.APPLICATION_JSON_UTF8)
+            .syncBody(TestUtil.convertObjectToJsonBytes(userWithUpperCaseEmail))
+            .exchange()
+            .expectStatus().isCreated
+        <%_ } _%>
+
+        val testUser4 = userRepository.findOneByLogin("test-register-duplicate-email-3")<% if (reactive) { %>.blockOptional()<% } %>
+        assertThat(testUser4.isPresent).isTrue()
+        assertThat(testUser4.get().email).isEqualTo("test-register-duplicate-email@example.com")
+
+        testUser4.get().activated = true
+        userService.updateUser((<%= asDto('User') %>(testUser4.get())))<% if (reactive) { %>.block()<% } %>
+
+        // Register 4th (already activated) user
+        <%_ if (!reactive) { _%>
+        restMvc.perform(
+            post("/api/register")
+                .contentType(TestUtil.APPLICATION_JSON_UTF8)
+                .content(TestUtil.convertObjectToJsonBytes(secondUser))
+        )
+            .andExpect(status().is4xxClientError)
+        <%_ } else { _%>
+        webTestClient.post().uri("/api/register")
+            .contentType(TestUtil.APPLICATION_JSON_UTF8)
+            .syncBody(TestUtil.convertObjectToJsonBytes(secondUser))
+            .exchange()
+            .expectStatus().is4xxClientError
+        <%_ } _%>
+    }
+
+    @Test<% if (databaseType === 'sql') { %>
+    @Transactional<% } %>
+    @Throws(Exception::class)
+    fun testRegisterAdminIsIgnored() {
+        val validUser = ManagedUserVM()
+        validUser.login = "badguy"
+        validUser.password = "password"
+        validUser.firstName = "Bad"
+        validUser.lastName = "Guy"
+        validUser.email = "badguy@example.com"
+        validUser.activated = true
+        <%_ if (['sql', 'mongodb', 'couchbase'].includes(databaseType)) { _%>
+        validUser.imageUrl = "http://placehold.it/50x50"
+        <%_ } _%>
+        validUser.langKey = Constants.DEFAULT_LANGUAGE
+        validUser.authorities = setOf(AuthoritiesConstants.ADMIN)
+
+        <%_ if (!reactive) { _%>
+        restMvc.perform(
+            post("/api/register")
+                .contentType(TestUtil.APPLICATION_JSON_UTF8)
+                .content(TestUtil.convertObjectToJsonBytes(validUser))
+        )
+            .andExpect(status().isCreated)
+        <%_ } else { _%>
+        webTestClient.post().uri("/api/register")
+            .contentType(TestUtil.APPLICATION_JSON_UTF8)
+            .syncBody(TestUtil.convertObjectToJsonBytes(validUser))
+            .exchange()
+            .expectStatus().isCreated
+        <%_ } _%>
+
+        val userDup = userRepository.findOneByLogin("badguy")<% if (reactive) { %>.blockOptional()<% } %>
+        assertThat(userDup.isPresent).isTrue()
+        assertThat(userDup.get().authorities).hasSize(1)
+            .containsExactly(<% if (databaseType === 'sql' || databaseType === 'mongodb') { %>authorityRepository.findById(AuthoritiesConstants.USER).<% if (reactive) { %>block<% } else { %>get<% } %>()<% } %><% if (databaseType === 'cassandra' || databaseType === 'couchbase') { %>AuthoritiesConstants.USER<% } %>)
+    }
+
+    @Test<% if (databaseType === 'sql') { %>
+    @Transactional<% } %>
+    <%_ if (!reactive) { _%>
+    @Throws(Exception::class)
+    <%_ } _%>
+    fun testActivateAccount() {
+        val activationKey = "some activation key"
+        var user = <%= asEntity('User') %>()
+        <%_ if (databaseType === 'cassandra') { _%>
+        user.id = UUID.randomUUID().toString()
+        <%_ } _%>
+        user.login = "activate-account"
+        user.email = "activate-account@example.com"
+        user.password = RandomStringUtils.random(60)
+        user.activated = false
+        user.activationKey = activationKey
+
+        userRepository.save<% if (databaseType === 'sql') { %>AndFlush<% } %>(user)<% if (reactive) { %>.block()<% } %>
+
+        <%_ if (!reactive) { _%>
+        restMvc.perform(get("/api/activate?key={activationKey}", activationKey))
+            .andExpect(status().isOk)
+        <%_ } else { _%>
+        webTestClient.get().uri("/api/activate?key={activationKey}", activationKey)
+            .exchange()
+            .expectStatus().isOk
+        <%_ } _%>
+
+        user = userRepository.findOneByLogin(user.login!!)<% if (!reactive) { %>.orElse(null)<% } else { %>.block()!!<% } %>
+        assertThat(user.activated).isTrue()
+    }
+
+    @Test<% if (databaseType === 'sql') { %>
+    @Transactional<% } %>
+    <%_ if (!reactive) { _%>
+    @Throws(Exception::class)
+    fun testActivateAccountWithWrongKey() {
+        restMvc.perform(get("/api/activate?key=wrongActivationKey"))
+            .andExpect(status().isInternalServerError)
+    <%_ } else { _%>
+    fun testActivateAccountWithWrongKey() {
+        webTestClient.get().uri("/api/activate?key=wrongActivationKey")
+            .exchange()
+            .expectStatus().isEqualTo(HttpStatus.INTERNAL_SERVER_ERROR)
+    <%_ } _%>
+    }
+
+    @Test<% if (databaseType === 'sql') { %>
+    @Transactional<% } %>
+    @WithMockUser("save-account")
+    @Throws(Exception::class)
+    fun testSaveAccount() {
+        val user = <%= asEntity('User') %>()
+        <%_ if (databaseType === 'cassandra') { _%>
+        user.id = UUID.randomUUID().toString()
+        <%_ } _%>
+        user.login = "save-account"
+        user.email = "save-account@example.com"
+        user.password = RandomStringUtils.random(60)
+        user.activated = true
+
+        userRepository.save<% if (databaseType === 'sql') { %>AndFlush<% } %>(user)<% if (reactive) { %>.block()<% } %>
+
+        val userDTO = <%= asDto('User') %>()
+        userDTO.login = "not-used"
+        userDTO.firstName = "firstname"
+        userDTO.lastName = "lastname"
+        userDTO.email = "save-account@example.com"
+        userDTO.activated = false
+        <%_ if (['sql', 'mongodb', 'couchbase'].includes(databaseType)) { _%>
+        userDTO.imageUrl = "http://placehold.it/50x50"
+        <%_ } _%>
+        userDTO.langKey = Constants.DEFAULT_LANGUAGE
+        userDTO.authorities = setOf(AuthoritiesConstants.ADMIN)
+
+        <%_ if (!reactive) { _%>
+        restMvc.perform(
+            post("/api/account")
+                .contentType(TestUtil.APPLICATION_JSON_UTF8)
+                .content(TestUtil.convertObjectToJsonBytes(userDTO))
+        )
+            .andExpect(status().isOk)
+        <%_ } else { _%>
+        webTestClient.post().uri("/api/account")
+            .contentType(TestUtil.APPLICATION_JSON_UTF8)
+            .syncBody(TestUtil.convertObjectToJsonBytes(userDTO))
+            .exchange()
+            .expectStatus().isOk
+        <%_ } _%>
+
+        val updatedUser = userRepository.findOneByLogin(user.login!!)<% if (!reactive) { %>.orElse(null)<% } else { %>.block()
+        assertNotNull(updatedUser)<% } %>
+        assertThat(updatedUser.firstName).isEqualTo(userDTO.firstName)
+        assertThat(updatedUser.lastName).isEqualTo(userDTO.lastName)
+        assertThat(updatedUser.email).isEqualTo(userDTO.email)
+        assertThat(updatedUser.langKey).isEqualTo(userDTO.langKey)
+        assertThat(updatedUser.password).isEqualTo(user.password)<% if (['sql', 'mongodb', 'couchbase'].includes(databaseType)) { %>
+        assertThat(updatedUser.imageUrl).isEqualTo(userDTO.imageUrl)<% } %>
+        assertThat(updatedUser.activated).isEqualTo(true)
+        assertThat(updatedUser.authorities).isEmpty()
+    }
+
+    @Test<% if (databaseType === 'sql') { %>
+    @Transactional<% } %>
+    @WithMockUser("save-invalid-email")
+    <%_ if (!reactive) { _%>
+    @Throws(Exception::class)
+    <%_ } _%>
+    fun testSaveInvalidEmail() {
+        val user = <%= asEntity('User') %>()
+        <%_ if (databaseType === 'cassandra') { _%>
+        user.id = UUID.randomUUID().toString()
+        <%_ } _%>
+        user.login = "save-invalid-email"
+        user.email = "save-invalid-email@example.com"
+        user.password = RandomStringUtils.random(60)
+        user.activated = true
+
+        userRepository.save<% if (databaseType === 'sql') { %>AndFlush<% } %>(user)<% if (reactive) { %>.block()<% } %>
+
+        val userDTO = <%= asDto('User') %>()
+        userDTO.login = "not-used"
+        userDTO.firstName = "firstname"
+        userDTO.lastName = "lastname"
+        userDTO.email = "invalid email"
+        userDTO.activated = false
+        <%_ if (['sql', 'mongodb', 'couchbase'].includes(databaseType)) { _%>
+        userDTO.imageUrl = "http://placehold.it/50x50"
+        <%_ } _%>
+        userDTO.langKey = Constants.DEFAULT_LANGUAGE
+        userDTO.authorities = setOf(AuthoritiesConstants.ADMIN)
+
+        <%_ if (!reactive) { _%>
+        restMvc.perform(
+            post("/api/account")
+                .contentType(TestUtil.APPLICATION_JSON_UTF8)
+                .content(TestUtil.convertObjectToJsonBytes(userDTO))
+        )
+            .andExpect(status().isBadRequest)
+        <%_ } else { _%>
+        webTestClient.post().uri("/api/account")
+            .contentType(TestUtil.APPLICATION_JSON_UTF8)
+            .syncBody(TestUtil.convertObjectToJsonBytes(userDTO))
+            .exchange()
+            .expectStatus().isBadRequest
+        <%_ } _%>
+
+        assertThat(userRepository.findOneByEmailIgnoreCase("invalid email")<% if (reactive) { %>.blockOptional()<% } %>).isNotPresent
+    }
+
+    @Test<% if (databaseType === 'sql') { %>
+    @Transactional<% } %>
+    @WithMockUser("save-existing-email")
+    <%_ if (!reactive) { _%>
+    @Throws(Exception::class)
+    <%_ } _%>
+    fun testSaveExistingEmail() {
+        val user = <%= asEntity('User') %>()
+        <%_ if (databaseType === 'cassandra') { _%>
+        user.id = UUID.randomUUID().toString()
+        <%_ } _%>
+        user.login = "save-existing-email"
+        user.email = "save-existing-email@example.com"
+        user.password = RandomStringUtils.random(60)
+        user.activated = true
+
+        userRepository.save<% if (databaseType === 'sql') { %>AndFlush<% } %>(user)<% if (reactive) { %>.block()<% } %>
+
+        val anotherUser = <%= asEntity('User') %>()
+        <%_ if (databaseType === 'cassandra') { _%>
+        anotherUser.id  = UUID.randomUUID().toString()
+        <%_ } _%>
+        anotherUser.login = "save-existing-email2"
+        anotherUser.email = "save-existing-email2@example.com"
+        anotherUser.password = RandomStringUtils.random(60)
+        anotherUser.activated = true
+
+        userRepository.save<% if (databaseType === 'sql') { %>AndFlush<% } %>(anotherUser)<% if (reactive) { %>.block()<% } %>
+
+        val userDTO = <%= asDto('User') %>()
+        userDTO.login = "not-used"
+        userDTO.firstName = "firstname"
+        userDTO.lastName = "lastname"
+        userDTO.email = "save-existing-email2@example.com"
+        userDTO.activated = false
+        <%_ if (['sql', 'mongodb', 'couchbase'].includes(databaseType)) { _%>
+        userDTO.imageUrl = "http://placehold.it/50x50"
+        <%_ } _%>
+        userDTO.langKey = Constants.DEFAULT_LANGUAGE
+        userDTO.authorities = setOf(AuthoritiesConstants.ADMIN)
+
+        <%_ if (!reactive) { _%>
+        restMvc.perform(
+            post("/api/account")
+                .contentType(TestUtil.APPLICATION_JSON_UTF8)
+                .content(TestUtil.convertObjectToJsonBytes(userDTO))
+        )
+            .andExpect(status().isBadRequest)
+        <%_ } else { _%>
+        webTestClient.post().uri("/api/account")
+            .contentType(TestUtil.APPLICATION_JSON_UTF8)
+            .syncBody(TestUtil.convertObjectToJsonBytes(userDTO))
+            .exchange()
+            .expectStatus().isBadRequest
+        <%_ } _%>
+
+        val updatedUser = userRepository.findOneByLogin("save-existing-email")<% if (!reactive) { %>.orElse(null)<% } else { %>.block()
+        assertNotNull(updatedUser)<% } %>
+        assertThat(updatedUser.email).isEqualTo("save-existing-email@example.com")
+    }
+
+    @Test<% if (databaseType === 'sql') { %>
+    @Transactional<% } %>
+    @WithMockUser("save-existing-email-and-login")
+    @Throws(Exception::class)
+    fun testSaveExistingEmailAndLogin() {
+        val user = <%= asEntity('User') %>()
+        <%_ if (databaseType === 'cassandra') { _%>
+        user.id = UUID.randomUUID().toString()
+        <%_ } _%>
+        user.login = "save-existing-email-and-login"
+        user.email = "save-existing-email-and-login@example.com"
+        user.password = RandomStringUtils.random(60)
+        user.activated = true
+
+        userRepository.save<% if (databaseType === 'sql') { %>AndFlush<% } %>(user)<% if (reactive) { %>.block()<% } %>
+
+        val userDTO = <%= asDto('User') %>()
+        userDTO.login = "not-used"
+        userDTO.firstName = "firstname"
+        userDTO.lastName = "lastname"
+        userDTO.email = "save-existing-email-and-login@example.com"
+        userDTO.activated = false
+        <%_ if (['sql', 'mongodb', 'couchbase'].includes(databaseType)) { _%>
+        userDTO.imageUrl = "http://placehold.it/50x50"
+        <%_ } _%>
+        userDTO.langKey = Constants.DEFAULT_LANGUAGE
+        userDTO.authorities = setOf(AuthoritiesConstants.ADMIN)
+
+        <%_ if (!reactive) { _%>
+        restMvc.perform(
+            post("/api/account")
+                .contentType(TestUtil.APPLICATION_JSON_UTF8)
+                .content(TestUtil.convertObjectToJsonBytes(userDTO))
+        )
+            .andExpect(status().isOk)
+        <%_ } else { _%>
+        webTestClient.post().uri("/api/account")
+            .contentType(TestUtil.APPLICATION_JSON_UTF8)
+            .syncBody(TestUtil.convertObjectToJsonBytes(userDTO))
+            .exchange()
+            .expectStatus().isOk
+        <%_ } _%>
+
+        val updatedUser = userRepository.findOneByLogin("save-existing-email-and-login")<% if (!reactive) { %>.orElse(null)<% } else { %>.block()
+        assertNotNull(updatedUser)<% } %>
+        assertThat(updatedUser.email).isEqualTo("save-existing-email-and-login@example.com")
+    }
+
+    @Test<% if (databaseType === 'sql') { %>
+    @Transactional<% } %>
+    @WithMockUser("change-password-wrong-existing-password")
+    @Throws(Exception::class)
+    fun testChangePasswordWrongExistingPassword() {
+        val user = <%= asEntity('User') %>()
+    <%_ if (databaseType === 'cassandra') { _%>
+        user.id = UUID.randomUUID().toString()
+    <%_ } _%>
+        val currentPassword = RandomStringUtils.random(60)
+        user.password = passwordEncoder.encode(currentPassword)
+        user.login = "change-password-wrong-existing-password"
+        user.email = "change-password-wrong-existing-password@example.com"
+
+        userRepository.save<% if (databaseType === 'sql') { %>AndFlush<% } %>(user)<% if (reactive) { %>.block()<% } %>
+
+        <%_ if (!reactive) { _%>
+        restMvc.perform(
+            post("/api/account/change-password")
+                .contentType(TestUtil.APPLICATION_JSON_UTF8)
+                .content(TestUtil.convertObjectToJsonBytes(PasswordChangeDTO("1$currentPassword", "new password")))
+        )
+            .andExpect(status().isBadRequest)
+        <%_ } else { _%>
+        webTestClient.post().uri("/api/account/change-password")
+            .contentType(TestUtil.APPLICATION_JSON_UTF8)
+            .syncBody(TestUtil.convertObjectToJsonBytes(PasswordChangeDTO("1$currentPassword", "new password")))
+            .exchange()
+            .expectStatus().isBadRequest
+        <%_ } _%>
+
+        val updatedUser = userRepository.findOneByLogin("change-password-wrong-existing-password")<% if (!reactive) { %>.orElse(null)<% } else { %>.block()
+        assertNotNull(updatedUser)<% } %>
+        assertThat(passwordEncoder.matches("new password", updatedUser.password)).isFalse()
+        assertThat(passwordEncoder.matches(currentPassword, updatedUser.password)).isTrue()
+    }
+
+    @Test<% if (databaseType === 'sql') { %>
+    @Transactional<% } %>
+    @WithMockUser("change-password")
+    @Throws(Exception::class)
+    fun testChangePassword() {
+        val user = <%= asEntity('User') %>()
+        <%_ if (databaseType === 'cassandra') { _%>
+        user.id = UUID.randomUUID().toString()
+        <%_ } _%>
+        val currentPassword = RandomStringUtils.random(60)
+        user.password = passwordEncoder.encode(currentPassword)
+        user.login = "change-password"
+        user.email = "change-password@example.com"
+
+        userRepository.save<% if (databaseType === 'sql') { %>AndFlush<% } %>(user)<% if (reactive) { %>.block()<% } %>
+
+        <%_ if (!reactive) { _%>
+        restMvc.perform(
+            post("/api/account/change-password")
+                .contentType(TestUtil.APPLICATION_JSON_UTF8)
+                .content(TestUtil.convertObjectToJsonBytes(PasswordChangeDTO(currentPassword, "new password")))
+        )
+            .andExpect(status().isOk)
+        <%_ } else { _%>
+        webTestClient.post().uri("/api/account/change-password")
+            .contentType(TestUtil.APPLICATION_JSON_UTF8)
+            .syncBody(TestUtil.convertObjectToJsonBytes(PasswordChangeDTO(currentPassword, "new password")))
+            .exchange()
+            .expectStatus().isOk
+        <%_ } _%>
+
+        val updatedUser = userRepository.findOneByLogin("change-password")<% if (!reactive) { %>.orElse(null)<% } else { %>.block()
+        assertNotNull(updatedUser)<% } %>
+        assertThat(passwordEncoder.matches("new password", updatedUser.password)).isTrue()
+    }
+
+    @Test<% if (databaseType === 'sql') { %>
+    @Transactional<% } %>
+    @WithMockUser("change-password-too-small")
+    @Throws(Exception::class)
+    fun testChangePasswordTooSmall() {
+        val user = <%= asEntity('User') %>()
+        <%_ if (databaseType === 'cassandra') { _%>
+        user.id = UUID.randomUUID().toString()
+        <%_ } _%>
+        val currentPassword = RandomStringUtils.random(60)
+        user.password = passwordEncoder.encode(currentPassword)
+        user.login = "change-password-too-small"
+        user.email = "change-password-too-small@example.com"
+
+        userRepository.save<% if (databaseType === 'sql') { %>AndFlush<% } %>(user)<% if (reactive) { %>.block()<% } %>
+
+        val newPassword = RandomStringUtils.random(ManagedUserVM.PASSWORD_MIN_LENGTH - 1)
+
+        <%_ if (!reactive) { _%>
+        restMvc.perform(
+            post("/api/account/change-password")
+                .contentType(TestUtil.APPLICATION_JSON_UTF8)
+                .content(TestUtil.convertObjectToJsonBytes(PasswordChangeDTO(currentPassword, newPassword)))
+        )
+            .andExpect(status().isBadRequest)
+        <%_ } else { _%>
+        webTestClient.post().uri("/api/account/change-password")
+            .contentType(TestUtil.APPLICATION_JSON_UTF8)
+            .syncBody(TestUtil.convertObjectToJsonBytes(PasswordChangeDTO(currentPassword, newPassword)))
+            .exchange()
+            .expectStatus().isBadRequest
+        <%_ } _%>
+
+        val updatedUser = userRepository.findOneByLogin("change-password-too-small")<% if (!reactive) { %>.orElse(null)<% } else { %>.block()
+        assertNotNull(updatedUser)<% } %>
+        assertThat(updatedUser.password).isEqualTo(user.password)
+    }
+
+    @Test<% if (databaseType === 'sql') { %>
+    @Transactional<% } %>
+    @WithMockUser("change-password-too-long")
+    @Throws(Exception::class)
+    fun testChangePasswordTooLong() {
+        val user = <%= asEntity('User') %>()
+        <%_ if (databaseType === 'cassandra') { _%>
+        user.id = UUID.randomUUID().toString()
+        <%_ } _%>
+        val currentPassword = RandomStringUtils.random(60)
+        user.password = passwordEncoder.encode(currentPassword)
+        user.login = "change-password-too-long"
+        user.email = "change-password-too-long@example.com"
+
+        userRepository.save<% if (databaseType === 'sql') { %>AndFlush<% } %>(user)<% if (reactive) { %>.block()<% } %>
+
+        val newPassword = RandomStringUtils.random(ManagedUserVM.PASSWORD_MAX_LENGTH + 1)
+
+        <%_ if (!reactive) { _%>
+        restMvc.perform(
+            post("/api/account/change-password")
+                .contentType(TestUtil.APPLICATION_JSON_UTF8)
+                .content(TestUtil.convertObjectToJsonBytes(PasswordChangeDTO(currentPassword, newPassword)))
+        )
+            .andExpect(status().isBadRequest)
+        <%_ } else { _%>
+        webTestClient.post().uri("/api/account/change-password")
+            .contentType(TestUtil.APPLICATION_JSON_UTF8)
+            .syncBody(TestUtil.convertObjectToJsonBytes(PasswordChangeDTO(currentPassword, newPassword)))
+            .exchange()
+            .expectStatus().isBadRequest
+        <%_ } _%>
+
+        val updatedUser = userRepository.findOneByLogin("change-password-too-long")<% if (!reactive) { %>.orElse(null)<% } else { %>.block()
+        assertNotNull(updatedUser)<% } %>
+        assertThat(updatedUser.password).isEqualTo(user.password)
+    }
+
+    @Test<% if (databaseType === 'sql') { %>
+    @Transactional<% } %>
+    @WithMockUser("change-password-empty")
+    @Throws(Exception::class)
+    fun testChangePasswordEmpty() {
+        val user = <%= asEntity('User') %>()
+        <%_ if (databaseType === 'cassandra') { _%>
+        user.id = UUID.randomUUID().toString()
+        <%_ } _%>
+        val currentPassword = RandomStringUtils.random(60)
+        user.password = passwordEncoder.encode(currentPassword)
+        user.login = "change-password-empty"
+        user.email = "change-password-empty@example.com"
+
+        userRepository.save<% if (databaseType === 'sql') { %>AndFlush<% } %>(user)<% if (reactive) { %>.block()<% } %>
+
+        <%_ if (!reactive) { _%>
+        restMvc.perform(
+            post("/api/account/change-password")
+                .contentType(TestUtil.APPLICATION_JSON_UTF8)
+                .content(TestUtil.convertObjectToJsonBytes(PasswordChangeDTO(currentPassword, "")))
+        )
+            .andExpect(status().isBadRequest)
+        <%_ } else { _%>
+        webTestClient.post().uri("/api/account/change-password")
+            .contentType(TestUtil.APPLICATION_JSON_UTF8)
+            .syncBody(TestUtil.convertObjectToJsonBytes(PasswordChangeDTO(currentPassword, "")))
+            .exchange()
+            .expectStatus().isBadRequest
+        <%_ } _%>
+
+        val updatedUser = userRepository.findOneByLogin("change-password-empty")<% if (!reactive) { %>.orElse(null)<% } else { %>.block()
+        assertNotNull(updatedUser)<% } %>
+        assertThat(updatedUser.password).isEqualTo(user.password)
+    }
+    <%_ if (authenticationType === 'session' && !reactive) { _%>
+
+    @Test<% if (databaseType === 'sql') { %>
+    @Transactional<% } %>
+    @WithMockUser("current-sessions")
+    @Throws(Exception::class)
+    fun testGetCurrentSessions() {
+        val user = <%= asEntity('User') %>()
+        <%_ if (databaseType === 'cassandra') { _%>
+        user.id = UUID.randomUUID().toString()
+        <%_ } _%>
+        user.password = RandomStringUtils.random(60)
+        user.login = "current-sessions"
+        user.email = "current-sessions@example.com"
+
+        userRepository.save<% if (databaseType === 'sql') { %>AndFlush<% } %>(user)<% if (reactive) { %>.block()<% } %>
+
+        val token = PersistentToken()
+        token.series = "current-sessions"<% if (databaseType === 'sql' || databaseType === 'mongodb') { %>
+        token.user = user<% } else { %><% if (databaseType === 'cassandra') { %>
+        token.userId = user.id<% } else { %>
+        token.login = user.login<% } %><% } %>
+        token.tokenValue = "current-session-data"<% if (databaseType === 'sql' || databaseType === 'mongodb' || databaseType === 'couchbase') { %>
+        token.tokenDate = LocalDate.of(2017, 3, 23)<% } else { %>
+        token.tokenDate = Date(1490714757123L)<% } %>
+        token.ipAddress = "127.0.0.1"
+        token.userAgent = "Test agent"
+
+        persistentTokenRepository.save<% if (databaseType === 'sql') { %>AndFlush<% } %>(token)
+
+        restMvc.perform(get("/api/account/sessions"))
+            .andExpect(status().isOk)
+            .andExpect(jsonPath("\$.[*].series").value(hasItem(token.series)))
+            .andExpect(jsonPath("\$.[*].ipAddress").value(hasItem(token.ipAddress)))
+            .andExpect(jsonPath("\$.[*].userAgent").value(hasItem(token.userAgent)))
+            .andExpect(jsonPath("\$.[*].tokenDate").value(hasItem(<% if (databaseType === 'cassandra') { %>"2017-03-28T15:25:57.123+0000"<% } else { %>token.tokenDate.toString()<% } %>)))
+    }
+
+    @Test<% if (databaseType === 'sql') { %>
+    @Transactional<% } %>
+    @WithMockUser("invalidate-session")
+    @Throws(Exception::class)
+    fun testInvalidateSession() {
+        val user = <%= asEntity('User') %>()
+        <%_ if (databaseType === 'cassandra') { _%>
+        user.id = UUID.randomUUID().toString()
+        <%_ } _%>
+        user.password = RandomStringUtils.random(60)
+        user.login = "invalidate-session"
+        user.email = "invalidate-session@example.com"
+
+        userRepository.save<% if (databaseType === 'sql') { %>AndFlush<% } %>(user)<% if (reactive) { %>.block()<% } %>
+
+        val token = PersistentToken()
+        token.series = "invalidate-session"<% if (databaseType === 'sql' || databaseType === 'mongodb') { %>
+        token.user = user<% } else { %><% if (databaseType === 'cassandra') { %>
+        token.userId = user.id<% } else { %>
+        token.login = user.login<% } %><% } %>
+        token.tokenValue = "invalidate-data"<% if (databaseType === 'sql' || databaseType === 'mongodb' || databaseType === 'couchbase') { %>
+        token.tokenDate = LocalDate.of(2017, 3, 23)<% } else { %>
+        token.tokenDate = Date(1490714757123L)<% } %>
+        token.ipAddress = "127.0.0.1"
+        token.userAgent = "Test agent"
+
+        persistentTokenRepository.save<% if (databaseType === 'sql') { %>AndFlush<% } %>(token)
+
+        assertThat(persistentTokenRepository.findByUser(user)).hasSize(1)
+
+        restMvc.perform(delete("/api/account/sessions/invalidate-session"))
+            .andExpect(status().isOk)
+
+        assertThat(persistentTokenRepository.findByUser(user)).isEmpty()
+    }
+    <%_ } _%>
+
+    @Test<% if (databaseType === 'sql') { %>
+    @Transactional<% } %>
+    <%_ if (!reactive) { _%>
+    @Throws(Exception::class)
+    <%_ } _%>
+    fun testRequestPasswordReset() {
+        val user = <%= asEntity('User') %>()
+        <%_ if (databaseType === 'cassandra') { _%>
+        user.id = UUID.randomUUID().toString()
+        <%_ } _%>
+        user.password = RandomStringUtils.random(60)
+        user.activated = true
+        user.login = "password-reset"
+
+        user.email = "password-reset@example.com"
+        userRepository.save<% if (databaseType === 'sql') { %>AndFlush<% } %>(user)<% if (reactive) { %>.block()<% } %>
+
+        <%_ if (!reactive) { _%>
+        restMvc.perform(
+            post("/api/account/reset-password/init")
+                .content("password-reset@example.com")
+        )
+            .andExpect(status().isOk)
+        <%_ } else { _%>
+        webTestClient.post().uri("/api/account/reset-password/init")
+            .syncBody("password-reset@example.com")
+            .exchange()
+            .expectStatus().isOk
+        <%_ } _%>
+    }
+
+    @Test<% if (databaseType === 'sql') { %>
+    @Transactional<% } %>
+    <%_ if (!reactive) { _%>
+    @Throws(Exception::class)
+    <%_ } _%>
+    fun testRequestPasswordResetUpperCaseEmail() {
+        val user = <%= asEntity('User') %>()
+        <%_ if (databaseType === 'cassandra') { _%>
+        user.id = UUID.randomUUID().toString()
+        <%_ } _%>
+        user.password = RandomStringUtils.random(60)
+        user.activated = true
+        user.login = "password-reset"
+        user.email = "password-reset@example.com"
+
+        userRepository.save<% if (databaseType === 'sql') { %>AndFlush<% } %>(user)<% if (reactive) { %>.block()<% } %>
+
+        <%_ if (!reactive) { _%>
+        restMvc.perform(
+            post("/api/account/reset-password/init")
+                .content("password-reset@EXAMPLE.COM")
+        )
+            .andExpect(status().isOk)
+        <%_ } else { _%>
+        webTestClient.post().uri("/api/account/reset-password/init")
+            .syncBody("password-reset@EXAMPLE.COM")
+            .exchange()
+            .expectStatus().isOk
+        <%_ } _%>
+    }
+
+    @Test
+    <%_ if (!reactive) { _%>
+    @Throws(Exception::class)
+    fun testRequestPasswordResetWrongEmail() {
+        restMvc.perform(
+            post("/api/account/reset-password/init")
+                .content("password-reset-wrong-email@example.com"))
+            .andExpect(status().isBadRequest)
+    <%_ } else { _%>
+    fun testRequestPasswordResetWrongEmail() {
+        webTestClient.post().uri("/api/account/reset-password/init")
+            .syncBody("password-reset-wrong-email@example.com")
+            .exchange()
+            .expectStatus().isBadRequest
+    <%_ } _%>
+    }
+
+    @Test<% if (databaseType === 'sql') { %>
+    @Transactional<% } %>
+    @Throws(Exception::class)
+    fun testFinishPasswordReset() {
+        val user = <%= asEntity('User') %>()
+        <%_ if (databaseType === 'cassandra') { _%>
+        user.id = UUID.randomUUID().toString()
+        <%_ } _%>
+        user.password = RandomStringUtils.random(60)
+        user.login = "finish-password-reset"
+        user.email = "finish-password-reset@example.com"
+        user.resetDate = Instant.now().plusSeconds(60)
+        user.resetKey = "reset key"
+
+        userRepository.save<% if (databaseType === 'sql') { %>AndFlush<% } %>(user)<% if (reactive) { %>.block()<% } %>
+
+        val keyAndPassword = KeyAndPasswordVM()
+        keyAndPassword.key = user.resetKey
+        keyAndPassword.newPassword = "new password"
+
+        <%_ if (!reactive) { _%>
+        restMvc.perform(
+            post("/api/account/reset-password/finish")
+                .contentType(TestUtil.APPLICATION_JSON_UTF8)
+                .content(TestUtil.convertObjectToJsonBytes(keyAndPassword))
+        )
+            .andExpect(status().isOk)
+        <%_ } else { _%>
+        webTestClient.post().uri("/api/account/reset-password/finish")
+            .contentType(TestUtil.APPLICATION_JSON_UTF8)
+            .syncBody(TestUtil.convertObjectToJsonBytes(keyAndPassword))
+            .exchange()
+            .expectStatus().isOk
+        <%_ } _%>
+
+        val updatedUser = userRepository.findOneByLogin(user.login!!)<% if (!reactive) { %>.orElse(null)<% } else { %>.block()
+        assertNotNull(updatedUser)<% } %>
+        assertThat(passwordEncoder.matches(keyAndPassword.newPassword, updatedUser.password)).isTrue()
+    }
+
+    @Test<% if (databaseType === 'sql') { %>
+    @Transactional<% } %>
+    @Throws(Exception::class)
+    fun testFinishPasswordResetTooSmall() {
+        val user = <%= asEntity('User') %>()
+        <%_ if (databaseType === 'cassandra') { _%>
+        user.id = UUID.randomUUID().toString()
+        <%_ } _%>
+        user.password = RandomStringUtils.random(60)
+        user.login = "finish-password-reset-too-small"
+        user.email = "finish-password-reset-too-small@example.com"
+        user.resetDate = Instant.now().plusSeconds(60)
+        user.resetKey = "reset key too small"
+
+        userRepository.save<% if (databaseType === 'sql') { %>AndFlush<% } %>(user)<% if (reactive) { %>.block()<% } %>
+
+        val keyAndPassword = KeyAndPasswordVM()
+        keyAndPassword.key = user.resetKey
+        keyAndPassword.newPassword = "foo"
+
+        <%_ if (!reactive) { _%>
+        restMvc.perform(
+            post("/api/account/reset-password/finish")
+                .contentType(TestUtil.APPLICATION_JSON_UTF8)
+                .content(TestUtil.convertObjectToJsonBytes(keyAndPassword))
+        )
+            .andExpect(status().isBadRequest)
+        <%_ } else { _%>
+        webTestClient.post().uri("/api/account/reset-password/finish")
+            .contentType(TestUtil.APPLICATION_JSON_UTF8)
+            .syncBody(TestUtil.convertObjectToJsonBytes(keyAndPassword))
+            .exchange()
+            .expectStatus().isBadRequest
+        <%_ } _%>
+
+        val updatedUser = userRepository.findOneByLogin(user.login!!)<% if (!reactive) { %>.orElse(null)<% } else { %>.block()
+        assertNotNull(updatedUser)<% } %>
+        assertThat(passwordEncoder.matches(keyAndPassword.newPassword, updatedUser.password)).isFalse()
+    }
+
+    @Test<% if (databaseType === 'sql') { %>
+    @Transactional<% } %>
+    @Throws(Exception::class)
+    fun testFinishPasswordResetWrongKey() {
+        val keyAndPassword = KeyAndPasswordVM()
+        keyAndPassword.key = "wrong reset key"
+        keyAndPassword.newPassword = "new password"
+
+        <%_ if (!reactive) { _%>
+        restMvc.perform(
+            post("/api/account/reset-password/finish")
+                .contentType(TestUtil.APPLICATION_JSON_UTF8)
+                .content(TestUtil.convertObjectToJsonBytes(keyAndPassword))
+        )
+            .andExpect(status().isInternalServerError)
+        <%_ } else { _%>
+        webTestClient.post().uri("/api/account/reset-password/finish")
+            .contentType(TestUtil.APPLICATION_JSON_UTF8)
+            .syncBody(TestUtil.convertObjectToJsonBytes(keyAndPassword))
+            .exchange()
+            .expectStatus().isEqualTo(HttpStatus.INTERNAL_SERVER_ERROR)
+        <%_ } _%>
+    }
+}
+<%_ } _%>
