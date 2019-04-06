@@ -43,14 +43,20 @@ if (!viaService) {
         var <%= asEntity(entityInstance) %> = <%= dtoToEntity %>(<%= instanceName %>)
         <%_ if (isUsingMapsId === true) { _%>
         val <%= otherEntityName %>Id = <%= instanceName %>.<%= mapsIdAssoc.relationshipName%>Id
-        <%= mapsIdRepoInstance %>.findById(<%= otherEntityName %>Id).ifPresent(<%= entityInstance%>::<%= otherEntityName %>)
+        if (<%= otherEntityName %>Id != null) {
+            <%= mapsIdRepoInstance %>.findById(<%= otherEntityName %>Id)
+                .ifPresent { <%= asEntity(entityInstance) %>.<%= otherEntityName %> = it }
+        }
         <%_ } _%>
         <%= asEntity(entityInstance) %> = <%= entityInstance %>Repository.save(<%= asEntity(entityInstance) %>)
         <%= returnPrefix %> <%= entityToDto %>(<%= asEntity(entityInstance) %>)
     <%_ } else { resultEntity = 'result'; _%>
         <%_ if (isUsingMapsId === true) { _%>
-        val <%= otherEntityName %>Id = <%= instanceName %>.<%= mapsIdAssoc.relationshipName %>.id
-        <%= mapsIdRepoInstance %>.findById(<%= otherEntityName %>Id).ifPresent(<%= instanceName%>::<%= otherEntityName %>)
+        val <%= otherEntityName %>Id = <%= instanceName %>.<%= mapsIdAssoc.relationshipName %>?.id
+        if (<%= otherEntityName %>Id != null) {
+            <%= mapsIdRepoInstance %>.findById(<%= otherEntityName %>Id)
+                .ifPresent { <%= asEntity(entityInstance) %>.<%= otherEntityName %> = it }
+        }
         <%_ } _%>
         <%= returnPrefix %> <%= entityInstance %>Repository.save(<%= asEntity(entityInstance) %>)
         <%_ } if (searchEngine === 'elasticsearch') { _%>
@@ -59,8 +65,11 @@ if (!viaService) {
         return result
     <%_ }}} else { _%>
         <%_ if (isUsingMapsId === true && isController === false) { _%>
-        val <%= otherEntityName %>Id = <%= entityInstance %>.<%= mapsIdAssoc.relationshipName %>.id
-        <%= mapsIdRepoInstance %>.findById(<%= otherEntityName %>Id).ifPresent(<%= entityInstance%>::<%= otherEntityName %>)
+        val <%= otherEntityName %>Id = <%= entityInstance %>.<%= mapsIdAssoc.relationshipName %>?.id
+        if (<%= otherEntityName %>Id != null) {
+            <%= mapsIdRepoInstance %>.findById(<%= otherEntityName %>Id)
+                .ifPresent { <%= asEntity(entityInstance) %>.<%= otherEntityName %> = it }
+        }
         <%_ } _%>
         <%= returnPrefix %> <%= entityInstance %>Service.save(<%= instanceName %>)
 <%_ } _%>
