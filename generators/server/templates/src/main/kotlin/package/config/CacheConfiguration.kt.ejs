@@ -133,7 +133,7 @@ import io.github.jhipster.config.JHipsterProperties
 <%_ } _%>
 class CacheConfiguration<%_ if (cacheProvider === 'ehcache') { _%>(jHipsterProperties: JHipsterProperties)<%_ } %><%_ if (cacheProvider === 'hazelcast') { %>(private val env: Environment<%_ if (serviceDiscoveryType === 'eureka' || serviceDiscoveryType === 'consul') { %>,
     private val serverProperties: ServerProperties,
-    private val discoveryClient: DiscoveryClient)<%_ } } %><% if (cacheProvider === 'hazelcast') { %> : DisposableBean<% } %> {
+    private val discoveryClient: DiscoveryClient<%_ } } %>)<% if (cacheProvider === 'hazelcast') { %> : DisposableBean<% } %> {
     <%_ if (cacheProvider === 'ehcache') { _%>
 
     private val jcacheConfiguration: javax.cache.configuration.Configuration<Any, Any>
@@ -248,15 +248,15 @@ class CacheConfiguration<%_ if (cacheProvider === 'ehcache') { _%>(jHipsterPrope
         }
         <%_ } else { _%>
         config.networkConfig.port = 5701
-        config.networkConfig.portAutoIncrement = true
+        config.networkConfig.isPortAutoIncrement = true
 
         // In development, remove multicast auto-configuration
         if (env.acceptsProfiles(Profiles.of(JHipsterConstants.SPRING_PROFILE_DEVELOPMENT))) {
             System.setProperty("hazelcast.local.localAddress", "127.0.0.1")
 
-            config.networkConfig.join.awsConfig.enabled = false
-            config.networkConfig.join.multicastConfig.enabled = false
-            config.networkConfig.join.tcpIpConfig.enabled = false
+            config.networkConfig.join.awsConfig.isEnabled = false
+            config.networkConfig.join.multicastConfig.isEnabled = false
+            config.networkConfig.join.tcpIpConfig.isEnabled = false
         }
         <%_ } _%>
         config.mapConfigs["default"] = initializeDefaultMapConfig(jHipsterProperties)
