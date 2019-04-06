@@ -104,13 +104,36 @@ _%>
     var <%= filterVariable.name %>: <%- filterVariable.filterType %>? = null<%= comma %>
 <%_ }) _%>
 ) : Serializable, Criteria {
+
+    constructor(other: <%= entityClass %>Criteria) :
+        this(
+<%_
+    filterVariables.forEach((filterVariable, index) => {
+        const comma = (index===filterVariables.length-1) ? '' : ',';
+_%>
+            other.<%= filterVariable.name %>?.copy()<%= comma %>
+<%_ }); _%>
+        )
 <%_ Object.keys(extraFilters).forEach((key) => {
         extraFilter = extraFilters[key]; _%>
+
     /**
      * Class for filtering <%= key %>
      */
-    class <%= extraFilter.type %> : <%- extraFilter.superType %>()
+    class <%= extraFilter.type %> : <%- extraFilter.superType %> {
+        constructor()
+
+        constructor(filter: <%= extraFilter.type %>) : super(filter)
+
+        override fun copy(): <%= extraFilter.type %> {
+            return <%= extraFilter.type %>(this)
+        }
+    }
 <%_ }); _%>
+
+    override fun copy(): <%= entityClass %>Criteria {
+        return <%= entityClass %>Criteria(this)
+    }
 
     companion object {
         private const val serialVersionUID: Long = 1L
