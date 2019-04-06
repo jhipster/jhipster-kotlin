@@ -1860,14 +1860,14 @@ function writeFiles() {
                                     <version>$\{hibernate.version}</version>
                                 </path>${
                                     this.authenticationType !== 'uaa'
-                                        ? `<path>
-                                    <groupId>javax.xml.bind</groupId>
-                                    <artifactId>jaxb-api</artifactId>
-                                    <version>$\{jaxb-api.version}</version>
+                                        ? `
+                                <path>
+                                    <groupId>org.glassfish.jaxb</groupId>
+                                    <artifactId>jaxb-runtime</artifactId>
+                                    <version>$\{jaxb-runtime.version}</version>
                                 </path>`
                                         : ''
-                                }
-                                    `
+                                }`
                                         : ''
                                 }
                             </annotationProcessorPaths>
