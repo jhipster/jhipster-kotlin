@@ -1858,17 +1858,16 @@ function writeFiles() {
                                     <groupId>org.hibernate</groupId>
                                     <artifactId>hibernate-jpamodelgen</artifactId>
                                     <version>$\{hibernate.version}</version>
-                                </path>
+                                </path>${
+                                    this.authenticationType !== 'uaa'
+                                        ? `
                                 <path>
-                                    <groupId>javax.xml.bind</groupId>
-                                    <artifactId>jaxb-api</artifactId>
-                                    <version>$\{jaxb-api.version}</version>
-                                </path>
-                                <path>
-                                    <groupId>com.sun.xml.bind</groupId>
-                                    <artifactId>jaxb-impl</artifactId>
-                                    <version>$\{jaxb-impl.version}</version>
+                                    <groupId>org.glassfish.jaxb</groupId>
+                                    <artifactId>jaxb-runtime</artifactId>
+                                    <version>$\{jaxb-runtime.version}</version>
                                 </path>`
+                                        : ''
+                                }`
                                         : ''
                                 }
                             </annotationProcessorPaths>

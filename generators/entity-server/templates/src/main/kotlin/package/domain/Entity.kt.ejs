@@ -107,6 +107,9 @@ import javax.persistence.ManyToMany
     <%_ if (fieldsContainManyToOne) { _%>
 import javax.persistence.ManyToOne
     <%_ } _%>
+    <%_ if (isUsingMapsId) { _%>
+import javax.persistence.MapsId
+    <%_ } _%>
     <%_ if (fieldsContainOneToMany) { _%>
 import javax.persistence.OneToMany
     <%_ } _%>
@@ -284,7 +287,7 @@ for (var idx in fields) {
         const relationshipRequired = relationships[idx].relationshipRequired;
         const otherEntityNameCapitalized = relationships[idx].otherEntityNameCapitalized;
         const ownerSide = relationships[idx].ownerSide;
-        const useJPADerivedIdentifier = relationships[idx].useJPADerivedIdentifier;
+        const isUsingMapsId = relationships[idx].useJPADerivedIdentifier;
         const comma = (parseInt(idx,10) === (relationships.length - 1)) ?  '' : ',';
         if (otherEntityRelationshipName) {
             mappedBy = otherEntityRelationshipName.charAt(0).toLowerCase() + otherEntityRelationshipName.slice(1)
@@ -311,6 +314,7 @@ for (var idx in fields) {
     @Field("<%= relationshipFieldName %>")
     <%_ } _%>
     var <%= relationshipFieldNamePlural %>: MutableSet<<%= asEntity(otherEntityNameCapitalized) %>> = mutableSetOf()<%= comma %>
+
     <%_ } else if (relationshipType === 'many-to-one') {
             if (databaseType === 'sql') {
     _%>
@@ -359,7 +363,7 @@ for (var idx in fields) {
             <%_ if (relationshipValidate) { _%>
     <%- include relationship_validators -%>
             <%_ }_%>
-            <%_ if (useJPADerivedIdentifier === true) { %>
+            <%_ if (isUsingMapsId === true) { %>
     @MapsId
     @JoinColumn(name = "id")
             <%_ } else { %>
