@@ -20,7 +20,7 @@
 const KOTLIN_VERSION = '1.3.30';
 const MOCKITO_KOTLIN_VERSION = '2.1.0';
 const KTLINT_VERSION = '0.31.0';
-const KTLINT_GRADLE_VERSION = '7.1.0';
+const KTLINT_GRADLE_VERSION = '7.3.0';
 const MAVEN_ANTRUN_VERSION = '1.8';
 
 const constants = {
