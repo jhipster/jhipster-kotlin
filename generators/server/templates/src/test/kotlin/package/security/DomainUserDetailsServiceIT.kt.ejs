@@ -26,9 +26,8 @@ import <%= packageName %>.domain.<%= asEntity('User') %>
 import <%= packageName %>.repository.<% if (reactive) { %>reactive.<% } %>UserRepository
 
 import org.apache.commons.lang3.RandomStringUtils
-import org.junit.Before
-import org.junit.Test
-import org.junit.runner.RunWith
+import org.junit.jupiter.api.BeforeEach
+import org.junit.jupiter.api.Test
 import org.springframework.beans.factory.annotation.Autowired
 import org.springframework.boot.test.context.SpringBootTest
 <%_ if (reactive) { _%>
@@ -43,7 +42,6 @@ import org.springframework.security.core.userdetails.UsernameNotFoundException
 <%_ if (databaseType === 'couchbase') { _%>
 import org.springframework.security.test.context.support.WithMockUser
 <%_ } _%>
-import org.springframework.test.context.junit4.SpringRunner
 <%_ if (databaseType === 'sql') { _%>
 import org.springframework.transaction.annotation.Transactional
 <%_ } _%>
@@ -54,11 +52,11 @@ import java.util.UUID
 import java.util.Locale
 
 import org.assertj.core.api.Assertions.assertThat
+import org.assertj.core.api.Assertions.assertThatExceptionOfType
 
 /**
  * Integration tests for [DomainUserDetailsService].
  */
-@RunWith(SpringRunner::class)
 @SpringBootTest(classes = [<%= mainClass %>::class])
 <%_ if (databaseType === 'sql') { _%>
 @Transactional
@@ -78,7 +76,7 @@ class DomainUserDetailsServiceIT <% if (databaseType === 'cassandra') { %>: Abst
     private lateinit var userTwo: <%= asEntity('User') %>
     private lateinit var userThree: <%= asEntity('User') %>
 
-    @Before
+    @BeforeEach
     fun init() {
         <%_ if (databaseType !== 'sql') { _%>
         userRepository.deleteAll()<% if (reactive) { %>.block()<% } %>
@@ -155,10 +153,12 @@ class DomainUserDetailsServiceIT <% if (databaseType === 'cassandra') { %>: Abst
     }
 
     <%_ if (databaseType === 'sql') { _%>
-    @Test(expected = UsernameNotFoundException::class)
+    @Test
     @Transactional
     fun assertThatUserCanNotBeFoundByEmailIgnoreCase() {
-    domainUserDetailsService.loadUserByUsername(USER_TWO_EMAIL.toUpperCase(Locale.ENGLISH))
+        assertThatExceptionOfType(UsernameNotFoundException::class.java).isThrownBy {
+            domainUserDetailsService.loadUserByUsername(USER_TWO_EMAIL.toUpperCase(Locale.ENGLISH))
+        }
     }
     <%_ } else { // MongoDB and Cassandra _%>
     @Test
@@ -179,12 +179,14 @@ class DomainUserDetailsServiceIT <% if (databaseType === 'cassandra') { %>: Abst
         assertThat(userDetails.username).isEqualTo(USER_ONE_LOGIN)
     }
 
-    @Test(expected = UserNotActivatedException::class)
+    @Test
     <%_ if (databaseType === 'sql') { _%>
     @Transactional
     <%_ } _%>
     fun assertThatUserNotActivatedExceptionIsThrownForNotActivatedUsers() {
-        domainUserDetailsService.<% if (reactive) { %>find<% } else { %>loadUser<% } %>ByUsername(USER_THREE_LOGIN)<% if (reactive) { %>.block()<% } %>
+        assertThatExceptionOfType(UserNotActivatedException::class.java).isThrownBy {
+            domainUserDetailsService.<% if (reactive) { %>find<% } else { %>loadUser<% } %>ByUsername(USER_THREE_LOGIN)<% if (reactive) { %>.block()<% } %>
+        }
     }
 
     companion object {

@@ -27,11 +27,11 @@ import <%=packageName%>.domain.PersistentAuditEvent
 import <%=packageName%>.repository.PersistenceAuditEventRepository
 
 import <%=packageName%>.service.AuditEventService
-import org.junit.Before
-import org.junit.Test
-import org.junit.runner.RunWith
+import org.junit.jupiter.api.BeforeEach
+import org.junit.jupiter.api.Test
 import org.mockito.MockitoAnnotations
 import org.springframework.beans.factory.annotation.Autowired
+import org.springframework.beans.factory.annotation.Qualifier
 import org.springframework.boot.test.context.SpringBootTest
 import org.springframework.data.web.PageableHandlerMethodArgumentResolver
 import org.springframework.format.support.FormattingConversionService
@@ -58,7 +58,6 @@ import org.springframework.test.web.servlet.result.MockMvcResultMatchers.status
 /**
  * Integration tests for the [AuditResource] REST controller.
  */
-@RunWith(SpringRunner::class)
 <%_ if (authenticationType === 'oauth2') { _%>
 @SpringBootTest(classes = [<%= mainClass %>::class, TestSecurityConfiguration::class])
 <%_ } else { _%>
@@ -79,6 +78,7 @@ class AuditResourceIT {
     private lateinit var jacksonMessageConverter: MappingJackson2HttpMessageConverter
 
     @Autowired
+    @Qualifier("mvcConversionService")
     private lateinit var formattingConversionService: FormattingConversionService
 
     @Autowired
@@ -88,7 +88,7 @@ class AuditResourceIT {
 
     private lateinit var restAuditMockMvc: MockMvc
 
-    @Before
+    @BeforeEach
     fun setup() {
         MockitoAnnotations.initMocks(this)
         val auditEventService = AuditEventService(auditEventRepository, auditEventConverter)
@@ -99,7 +99,7 @@ class AuditResourceIT {
             .setMessageConverters(jacksonMessageConverter).build()
     }
 
-    @Before
+    @BeforeEach
     fun initTest() {
         <%_ if (databaseType === 'couchbase') { _%>
         mockAuthentication()
