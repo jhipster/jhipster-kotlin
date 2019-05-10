@@ -973,16 +973,6 @@ const serverFiles = {
                     file: 'package/web/rest/errors/FieldErrorVM.kt',
                     renameTo: generator => `${generator.javaDir}web/rest/errors/FieldErrorVM.kt`,
                     useBluePrint: true
-                },
-                {
-                    file: 'package/web/rest/errors/InvalidPasswordException.kt',
-                    renameTo: generator => `${generator.javaDir}web/rest/errors/InvalidPasswordException.kt`,
-                    useBluePrint: true
-                },
-                {
-                    file: 'package/web/rest/errors/LoginAlreadyUsedException.kt',
-                    renameTo: generator => `${generator.javaDir}web/rest/errors/LoginAlreadyUsedException.kt`,
-                    useBluePrint: true
                 }
             ]
         },

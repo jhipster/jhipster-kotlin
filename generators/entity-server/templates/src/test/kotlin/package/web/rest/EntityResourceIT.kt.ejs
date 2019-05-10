@@ -17,6 +17,7 @@
  limitations under the License.
 -%>
 package <%=packageName%>.web.rest
+
 <%_ let isUsingMapsId = false;
     let mapsIdAssoc;
     let mapsIdEntity;
@@ -32,12 +33,13 @@ package <%=packageName%>.web.rest
             break;
         }
     } _%>
-<% if (databaseType === 'cassandra') { %>
-import <%=packageName%>.AbstractCassandraTest<% } %>
+<%_ if (databaseType === 'cassandra') { _%>
+import <%=packageName%>.AbstractCassandraTest
+<%_ } _%>
 import <%=packageName%>.<%= mainClass %>
-<% if (authenticationType === 'uaa') { %>
+<%_ if (authenticationType === 'uaa') { _%>
 import <%=packageName%>.config.SecurityBeanOverrideConfiguration
-<% } %>
+<%_ } _%>
 <%_ if (authenticationType === 'oauth2') { _%>
 import <%=packageName%>.config.TestSecurityConfiguration
 <%_ } _%>
@@ -80,9 +82,8 @@ import <%=packageName%>.service.<%= entityClass %>QueryService
 
 import kotlin.test.assertNotNull
 
-import org.junit.Before
-import org.junit.Test
-import org.junit.runner.RunWith
+import org.junit.jupiter.api.BeforeEach
+import org.junit.jupiter.api.Test
 <%_ if (fieldsContainOwnerManyToMany) { _%>
 import org.mockito.Mock
 <%_ } _%>
@@ -98,16 +99,19 @@ import org.springframework.data.domain.PageRequest
 import org.springframework.data.web.PageableHandlerMethodArgumentResolver
 import org.springframework.http.MediaType
 import org.springframework.http.converter.json.MappingJackson2HttpMessageConverter
-import org.springframework.test.context.junit4.SpringRunner
 <%_ if (reactiveRepositories) { _%>
 import org.springframework.test.web.reactive.server.WebTestClient
 <%_ } _%>
 import org.springframework.test.web.servlet.MockMvc
-import org.springframework.test.web.servlet.setup.MockMvcBuilders<% if (databaseType === 'sql') { %>
-import org.springframework.transaction.annotation.Transactional<% } %><% if (fieldsContainBlob === true) { %>
-import org.springframework.util.Base64Utils<% } %>
+import org.springframework.test.web.servlet.setup.MockMvcBuilders;
+<%_ if (databaseType === 'sql') { _%>
+import org.springframework.transaction.annotation.Transactional;
+<%_ } _%>
+<%_ if (fieldsContainBlob === true) { _%>
+import org.springframework.util.Base64Utils;
+<%_ } _%>
 import org.springframework.validation.Validator
-<% if (databaseType === 'sql') { %>
+<%_ if (databaseType === 'sql') { _%>
 import javax.persistence.EntityManager<% } %><% if (fieldsContainBigDecimal === true) { %>
 import java.math.BigDecimal<% } %><% if (fieldsContainBlob === true && databaseType === 'cassandra') { %>
 import java.nio.ByteBuffer<% } %><% if (reactiveRepositories || fieldsContainDuration === true) { %>
@@ -122,13 +126,15 @@ import java.time.temporal.ChronoUnit<% } %>
 import java.util.Collections
 <%_ } _%>
 <%_ if (databaseType === 'cassandra') { _%>
-import java.util.UUID<% } %>
+import java.util.UUID;
+<%_ } _%>
 <%_ if (databaseType === 'couchbase') { _%>
     import <%= packageName %>.web.rest.TestUtil.mockAuthentication
 <%_ } _%>
-<%_ if (fieldsContainZonedDateTime === true) { _%>
 
-import <%=packageName%>.web.rest.TestUtil.sameInstant<% } %>
+<%_ if (fieldsContainZonedDateTime === true) { _%>
+import <%=packageName%>.web.rest.TestUtil.sameInstant
+<%_ } _%>
 import <%=packageName%>.web.rest.TestUtil.createFormattingConversionService
 import org.assertj.core.api.Assertions.assertThat
 <%_ if (searchEngine === 'elasticsearch') { _%>
@@ -157,7 +163,6 @@ import org.springframework.test.web.servlet.result.MockMvcResultMatchers.status
  *
  * @see <%= entityClass %>Resource
  */
-@RunWith(SpringRunner::class)
 <%_ if (authenticationType === 'oauth2') { _%>
 @SpringBootTest(classes = [<%= mainClass %>::class, TestSecurityConfiguration::class])
 <%_ } else if (authenticationType === 'uaa' && applicationType !== 'uaa') { _%>
@@ -239,7 +244,7 @@ class <%= entityClass %>ResourceIT <% if (databaseType === 'cassandra') { %>: Ab
 
     private lateinit var <%= asEntity(entityInstance) %>: <%= asEntity(entityClass) %>
 
-    @Before
+    @BeforeEach
     fun setup() {
         MockitoAnnotations.initMocks(this)
         <%_ if (service !== 'no') { _%>
@@ -255,7 +260,7 @@ class <%= entityClass %>ResourceIT <% if (databaseType === 'cassandra') { %>: Ab
             .setValidator(validator).build()
     }
 
-    @Before
+    @BeforeEach
     fun initTest() {
         <%_ if (databaseType === 'couchbase') { _%>
         mockAuthentication()
@@ -305,7 +310,11 @@ class <%= entityClass %>ResourceIT <% if (databaseType === 'cassandra') { %>: Ab
         <%_ if (searchEngine === 'elasticsearch') { _%>
 
         // Validate the <%= entityClass %> in Elasticsearch
-        verify(mock<%= entityClass %>SearchRepository, times(1)).save(test<%= entityClass %>)
+        <%_ if (service !== 'no' && dto !== 'mapstruct') { _%>
+        verify(mock<%= entityClass %>SearchRepository, times(2)).save(<%= asEntity(entityInstance) %>);
+<%_ } else { _%>
+        verify(mock<%= entityClass %>SearchRepository, times(1)).save(<%= asEntity(entityInstance) %>);
+<%_ } _%>
         <%_ } _%>
     }
 

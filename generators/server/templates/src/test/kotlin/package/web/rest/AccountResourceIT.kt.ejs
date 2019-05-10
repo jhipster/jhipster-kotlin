@@ -54,7 +54,9 @@ import java.util.Map
 
 import org.springframework.security.test.web.servlet.setup.SecurityMockMvcConfigurers.springSecurity
 import org.springframework.test.web.servlet.request.MockMvcRequestBuilders.get
-import org.springframework.test.web.servlet.result.MockMvcResultMatchers.*
+import org.springframework.test.web.servlet.result.MockMvcResultMatchers.content
+import org.springframework.test.web.servlet.result.MockMvcResultMatchers.jsonPath
+import org.springframework.test.web.servlet.result.MockMvcResultMatchers.status
 
 /**
  * Integration tests for the [AccountResource] REST controller.
@@ -115,9 +117,9 @@ class AccountResourceIT <% if (databaseType === 'cassandra') { %>: AbstractCassa
             .apply<DefaultMockMvcBuilder>(springSecurity())
             .build()
 
-        val userDetails = HashMap<String, String>()
-        userDetails.put("sub", "test")
-        userDetails.put("email", "john.doe@jhipster.com")
+        val userDetails = HashMap<String, Any>()
+        userDetails["sub"] = "test"
+        userDetails["email"] = "john.doe@jhipster.com"
         val authorities = Collections.singletonList(SimpleGrantedAuthority(AuthoritiesConstants.ADMIN))
         val user = DefaultOAuth2User(authorities, userDetails, "sub")
         val authentication = OAuth2AuthenticationToken(user, authorities, "oidc")
