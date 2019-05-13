@@ -170,8 +170,9 @@ class OAuth2AuthenticationServiceTest {
         params["password"] = "user2"
         params["rememberMe"] = "false"
         val response = MockHttpServletResponse()
-        expectedException.expect(InvalidPasswordException::class.java)
-        authenticationService.authenticate(request, response, params)
+        Assertions.assertThrows(BadCredentialsException::class.java) {
+            authenticationService.authenticate(request, response, params)
+        }
     }
 
     @Test
@@ -216,8 +217,9 @@ class OAuth2AuthenticationServiceTest {
         val accessTokenCookie = Cookie(OAuth2CookieHelper.ACCESS_TOKEN_COOKIE, ACCESS_TOKEN_VALUE)
         request.setCookies(accessTokenCookie)
         val response = MockHttpServletResponse()
-        expectedException.expect(InvalidTokenException::class.java)
-        refreshTokenFilter.refreshTokensIfExpiring(request, response)
+        Assertions.assertThrows(InvalidTokenException::class.java) {
+            refreshTokenFilter.refreshTokensIfExpiring(request, response)
+        }
     }
 
     @Test
