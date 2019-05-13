@@ -20,14 +20,7 @@ package <%=packageName%>.security.oauth2
 
 import javax.servlet.http.Cookie
 
-/**
- * A collection of [Cookie]s that allows modification - unlike a mere array.
- *
- *
- * Since [Cookie] doesn't implement `hashCode` nor `equals`,
- * we cannot simply put it into a `HashSet`.
- */
-class CookieCollection {
+class CookieCollection: Collection<Cookie> {
 
     private val cookieMap = mutableMapOf<String, Cookie>()
 
@@ -39,20 +32,37 @@ class CookieCollection {
         addAll(cookies)
     }
 
-    val size: Int
+    override val size: Int
         get() = cookieMap.size
 
-    fun isEmpty(): Boolean  = cookieMap.isEmpty()
+    override fun isEmpty(): Boolean  = cookieMap.isEmpty()
 
-    fun contains(element: Any): Boolean {
-        return when (element){
-            is String -> cookieMap.containsKey(element)
-            is Cookie -> cookieMap.containsValue(element)
-            else -> false
-        }
+    override fun contains(element: Cookie): Boolean {
+        return cookieMap.containsValue(element)
     }
 
-    fun iterator(): Iterator<Cookie>  = cookieMap.values.iterator()
+    fun contains(element: String): Boolean {
+        return cookieMap.containsKey(element)
+    }
+
+    override fun containsAll(elements: Collection<Cookie>): Boolean {
+        return containsAllStringOrCookie(elements)
+    }
+
+    fun containsAll(elements: List<String>): Boolean {
+        return containsAllStringOrCookie(elements)
+    }
+
+    fun containsAllStringOrCookie(elements: Collection<Any>): Boolean{
+        for (o in elements) {
+            if (!contains(o)) {
+                return false
+            }
+        }
+        return true
+    }
+
+    override fun iterator(): Iterator<Cookie> = cookieMap.values.iterator()
 
     fun toArray(): Array<Cookie> {
         return cookieMap.values.toTypedArray()
@@ -63,46 +73,56 @@ class CookieCollection {
         return true
     }
 
-    fun remove(o: Any): Boolean {
-        return when (o) {
-            is String -> cookieMap.remove(o) != null
-            is Cookie -> cookieMap.remove(o.name) != null
-            else -> false
-        }
+    fun remove(o: String): Boolean {
+        return cookieMap.remove(o) != null
+    }
+
+    fun remove(o: Cookie): Boolean {
+        return cookieMap.remove(o.name) != null
     }
 
     operator fun get(name: String): Cookie? {
         return cookieMap[name]
     }
 
-    fun containsAll(elements: Collection<Any>): Boolean {
-        for (o in elements) {
-            if (!contains(o)) {
-                return false
-            }
-        }
-        return true
-    }
-
     fun addAll(collection: Collection<Cookie>): Boolean {
         var result = false
         for (cookie in collection) {
-            result = result or add(cookie)
+            result = result or add(cookie as Cookie)
         }
         return result
     }
 
-    fun removeAll(collection: Collection<Any>): Boolean {
+    fun removeAll(collection: List<String>): Boolean {
+        return removeAllValues(collection)
+    }
+
+    fun removeAll(collection: Collection<Cookie>): Boolean {
+        return removeAllValues(collection)
+    }
+
+    fun removeAllValues(collection: Collection<Any>): Boolean {
         var result = false
         for (cookie in collection) {
-            result = result or remove(cookie)
+            when(cookie) {
+                is String ->result = result or remove(cookie)
+                is Cookie ->result = result or remove(cookie)
+            }
         }
         return result
     }
 
-    fun retainAll(collection: Collection<Any>): Boolean {
+    fun retainAll(collection: Collection<Cookie>): Boolean {
+        return retainAllValues(collection)
+    }
+
+    fun retainAll(collection: List<String>): Boolean {
+        return retainAllValues(collection)
+    }
+
+    fun retainAllValues(collection: Collection<Any>): Boolean {
         var result = false
-        val it = cookieMap.entries.iterator()
+        val it= cookieMap.entries.iterator()
         while (it.hasNext()) {
             val e = it.next()
             if (!collection.contains(e.key) && !collection.contains(e.value)) {

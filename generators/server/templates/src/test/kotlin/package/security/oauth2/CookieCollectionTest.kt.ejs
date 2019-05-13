@@ -29,9 +29,9 @@ import org.assertj.core.api.Assertions.assertThat
  * Test the [CookieCollection].
  */
 class CookieCollectionTest {
-    private lateinit  var cookie: Cookie
-    private lateinit  var cupsCookie: Cookie
-    private lateinit  var brownieCookie: Cookie
+    private lateinit var cookie: Cookie
+    private lateinit var cupsCookie: Cookie
+    private lateinit var brownieCookie: Cookie
 
     @BeforeEach
     fun setUp() {
@@ -105,7 +105,7 @@ class CookieCollectionTest {
         val white = Cookie(COOKIE_NAME, "white")
         val modified = cookies.add(white)
         assertThat(modified).isTrue()
-        assertThat(cookies.get(COOKIE_NAME)).isEqualTo(white)
+        assertThat(cookies[COOKIE_NAME]).isEqualTo(white)
         assertThat(cookies.contains(white)).isTrue()
         assertThat(cookies.contains(cookie)).isFalse()
         assertThat(cookies.contains(COOKIE_NAME)).isTrue()
@@ -115,7 +115,7 @@ class CookieCollectionTest {
     fun get() {
         val cookies = CookieCollection(cookie, brownieCookie, cupsCookie)
         val c = cookies[COOKIE_NAME]
-        assertThat(c).isNotNull()
+        assertThat(c).isNotNull
         assertThat(c).isEqualTo(cookie)
     }
 
@@ -135,30 +135,29 @@ class CookieCollectionTest {
         val content = listOf(cookie, brownieCookie)
         val cookies = CookieCollection(content)
         assertThat(cookies.containsAll(content)).isTrue()
-        assertThat(cookies.containsAll(Collections.singletonList(cookie))).isTrue()
-        assertThat(cookies.containsAll(Arrays.asList(cookie, brownieCookie, cupsCookie))).isFalse()
-        assertThat(cookies.containsAll(Arrays.asList(COOKIE_NAME, BROWNIE_NAME))).isTrue()
+        assertThat(cookies.containsAll(listOf(cookie))).isTrue()
+        assertThat(cookies.containsAll(listOf(cookie, brownieCookie, cupsCookie))).isFalse()
     }
 
     @Test
     fun addAll() {
         val cookies = CookieCollection()
         val content = listOf(cookie, brownieCookie, cupsCookie)
-        val modified = cookies.addAll(content)
+        var modified = cookies.addAll(content)
         assertThat(modified).isTrue()
         assertThat(cookies).hasSize(3)
         assertThat(cookies).containsAll(content)
-        modified = cookies.addAll(Collections.EMPTY_LIST)
+        modified = cookies.addAll(listOf())
         assertThat(modified).isFalse()
     }
 
-   @Test
-   fun addAllEmpty() {
-       val cookies = CookieCollection(cookie, brownieCookie, cupsCookie)
-       val modified = cookies.addAll(Collections.EMPTY_LIST)
-       assertThat(modified).isFalse()
-       assertThat(cookies).contains(cookie, brownieCookie, cupsCookie)
-   }
+    @Test
+    fun addAllEmpty() {
+        val cookies = CookieCollection(cookie, brownieCookie, cupsCookie)
+        val modified = cookies.addAll(listOf())
+        assertThat(modified).isFalse()
+        assertThat(cookies).contains(cookie, brownieCookie, cupsCookie)
+    }
 
     @Test
     fun removeAll() {
@@ -172,7 +171,7 @@ class CookieCollectionTest {
     @Test
     fun removeAllEmpty() {
         val cookies = CookieCollection(cookie, brownieCookie, cupsCookie)
-        val modified = cookies.removeAll(Collections.EMPTY_LIST)
+        val modified = cookies.removeAll(listOf<String>())
         assertThat(modified).isFalse()
         assertThat(cookies).contains(cookie, brownieCookie, cupsCookie)
     }
@@ -190,7 +189,7 @@ class CookieCollectionTest {
     fun retainAll() {
         val cookies = CookieCollection(cookie, brownieCookie, cupsCookie)
         val content = listOf(cookie, brownieCookie)
-        val modified = cookies.retainAll(content)
+        var modified = cookies.retainAll(content)
         assertThat(modified).isTrue()
         assertThat(cookies).hasSize(2)
         assertThat(cookies).containsAll(content)
