@@ -50,7 +50,7 @@ import <%=packageName%>.domain.<%= asEntity(entityClass) %>
         const relationshipValidate = relationships[idx].relationshipValidate;
         const otherEntityNameCapitalized = relationships[idx].otherEntityNameCapitalized;
         const isUsingMapsIdL1 = relationships[idx].useJPADerivedIdentifier;
-        if(imported.indexOf(otherEntityNameCapitalized) === -1) {
+        if(imported.indexOf(otherEntityNameCapitalized) === -1 && asEntity(entityClass) !== asEntity(otherEntityNameCapitalized)) {
             if ((relationshipValidate !== null && relationshipValidate === true) || jpaMetamodelFiltering || (isUsingMapsIdL1 === true)) { _%>
 import <%=packageName%>.domain.<%= asEntity(otherEntityNameCapitalized) %>
 <%_         imported.push(otherEntityNameCapitalized);
@@ -268,7 +268,7 @@ class <%= entityClass %>ResourceIT <% if (databaseType === 'cassandra') { %>: Ab
         <%_ if (databaseType === 'mongodb' || databaseType === 'couchbase' || databaseType === 'cassandra') { _%>
         <%= entityInstance %>Repository.deleteAll()
         <%_ } _%>
-        <%= asEntity(entityInstance) %> = createEntity(<% if (databaseType === 'sql' && relationships.length>0 ) { %>em<% } %>)
+        <%= asEntity(entityInstance) %> = createEntity(<% if (databaseType === 'sql') { %>em<% } %>)
     }
 
     @Test<% if (databaseType === 'sql') { %>
@@ -1090,23 +1090,29 @@ class <%= entityClass %>ResourceIT <% if (databaseType === 'cassandra') { %>: Ab
         private val <%=defaultValueName %>: <%=fieldType %> = <%=fieldType %>.<%=enumValue1 %>
         private val <%=updatedValueName %>: <%=fieldType %> = <%=fieldType %>.<%=enumValue2 %>
         <%_ } } _%>
-
+        <%_ ['DEFAULT_', 'UPDATED_'].forEach((fieldStatus) => { _%>
         /**
-         * Create an entity for this test.
+         * Create an <% if (fieldStatus === 'UPDATED_') { %>updated <% } %>entity for this test.
          *
          * This is a static method, as tests for other entities might also need it,
          * if they test an entity which requires the current entity.
          */
         @JvmStatic
-        fun createEntity(<% if (databaseType === 'sql' && relationships.length>0 ) { %>em: EntityManager<% } %>): <%= asEntity(entityClass) %> {
-<%_ if ( fields.length<1 ) { _%>
+        fun create<% if (fieldStatus === 'UPDATED_') { _%>Updated<%_ } %>Entity(<% if (databaseType === 'sql') { %>em: EntityManager<% } %>): <%= asEntity(entityClass) %> {
+            <%_ if (fluentMethods) { _%>
+            val <%= asEntity(entityInstance) %> = <%= asEntity(entityClass) %>()<% for (idx in fields) { %>
+            <%= asEntity(entityInstance) %>.<%= fields[idx].fieldName %> = <%=fieldStatus + fields[idx].fieldNameUnderscored.toUpperCase()%><% if ((fields[idx].fieldType === 'byte[]' || fields[idx].fieldType === 'ByteBuffer') && fields[idx].fieldTypeBlobContent !== 'text') { %>
+            <%= asEntity(entityInstance) %>.<%= fields[idx].fieldName %>ContentType = <%=fieldStatus + fields[idx].fieldNameUnderscored.toUpperCase()%>_CONTENT_TYPE<% } %><% } %>
+            <%_ } else { _%>
             val <%= asEntity(entityInstance) %> = <%= asEntity(entityClass) %>()
-<%_ } else { _%>
-            val <%= asEntity(entityInstance) %> = <%= asEntity(entityClass) %>(<% for (idx in fields) {
-                const comma = (parseInt(idx,10) === (fields.length - 1)) ?  '' : ','; %>
-                <%= fields[idx].fieldName %> = <%='DEFAULT_' + fields[idx].fieldNameUnderscored.toUpperCase()%><%_ if ((fields[idx].fieldType === 'byte[]' || fields[idx].fieldType === 'ByteBuffer') && fields[idx].fieldTypeBlobContent !== 'text') { _%>,<%_ } else { _%><%= comma %><%_ } _%><%_ if ((fields[idx].fieldType === 'byte[]' || fields[idx].fieldType === 'ByteBuffer') && fields[idx].fieldTypeBlobContent !== 'text') { %>
-                <%= fields[idx].fieldName %>ContentType = <%='DEFAULT_' + fields[idx].fieldNameUnderscored.toUpperCase()%>_CONTENT_TYPE<%= comma %><% } %><% } %>
-            )<% } %>
+            <%_ for (idx in fields) { _%>
+                <%= asEntity(entityInstance) %>.set<%= fields[idx].fieldInJavaBeanMethod %>(<%=fieldStatus + fields[idx].fieldNameUnderscored.toUpperCase() %>)
+                    <%_ if ((fields[idx].fieldType === 'byte[]' || fields[idx].fieldType === 'ByteBuffer') && fields[idx].fieldTypeBlobContent !== 'text') { _%>
+            <%= asEntity(entityInstance) %>.set<%= fields[idx].fieldInJavaBeanMethod %>ContentType(<%=fieldStatus + fields[idx].fieldNameUnderscored.toUpperCase() %>_CONTENT_TYPE)
+                    <%_ } _%>
+                <%_ } _%>
+            <%_ } _%>
+
             <%_
             const alreadyGeneratedEntities = []
             for (idx in relationships) {
@@ -1114,29 +1120,47 @@ class <%= entityClass %>ResourceIT <% if (databaseType === 'cassandra') { %>: Ab
                 const otherEntityName = relationships[idx].otherEntityName;
                 const otherEntityNameCapitalized = relationships[idx].otherEntityNameCapitalized;
                 const relationshipType = relationships[idx].relationshipType;
-                const relationshipNamePlural = relationships[idx].relationshipNamePlural;
+                const relationshipNameCapitalizedPlural = relationships[idx].relationshipNameCapitalizedPlural;
+                const relationshipNameCapitalized = relationships[idx].relationshipNameCapitalized;
                 const relationshipName = relationships[idx].relationshipName;
                 const mapsIdUse = relationships[idx].useJPADerivedIdentifier;
-                if (relationshipValidate !== null && relationshipValidate === true || mapsIdUse === true) { _%>
+                if ((relationshipValidate !== null && relationshipValidate === true) || mapsIdUse === true) { _%>
             // Add required entity
-                <%_ if (alreadyGeneratedEntities.indexOf(otherEntityName) === -1) { _%>
+                <%_ if (alreadyGeneratedEntities.indexOf(otherEntityName) == -1) { _%>
+        <%_ if (otherEntityName === 'user') { // TODO or other entity has no unique fields _%>
             val <%= otherEntityName %> = <%= otherEntityNameCapitalized %>ResourceIT.createEntity(<% if (databaseType === 'sql') { %>em<% } %>)
-                    <%_ if (databaseType === 'sql') { _%>
+                <%_ if (databaseType === 'sql') { _%>
             em.persist(<%= otherEntityName %>)
             em.flush()
-                    <%_ } _%>
-                    <%_ if (databaseType === 'mongodb') { _%>
+                <%_ } _%>
+                <%_ if (databaseType === 'mongodb') { _%>
             <%= otherEntityName %>.id = "fixed-id-for-tests"
-                    <%_ } _%>
+                <%_ } _%>
+        <%_ } else { _%>
+            val <%= otherEntityName %>: <%= otherEntityNameCapitalized %>
+            if (TestUtil.findAll(em, <%= otherEntityNameCapitalized %>::class.java).isEmpty()) {
+                <%= otherEntityName %> = <%= otherEntityNameCapitalized %>ResourceIT.create<% if (fieldStatus === 'UPDATED_') { %>Updated<% } %>Entity(<% if (databaseType === 'sql') { %>em<% } %>)
+                <%_ if (databaseType === 'sql') { _%>
+                em.persist(<%= otherEntityName %>)
+                em.flush()
+                <%_ } _%>
+                <%_ if (databaseType === 'mongodb') { _%>
+            <%= otherEntityName %>.id = "fixed-id-for-tests"
+                <%_ } _%>
+            } else {
+                <%= otherEntityName %> = TestUtil.findAll(em, <%= otherEntityNameCapitalized %>::class.java).get(0)
+            }
+        <%_ } _%>
                 <%_ } _%>
                 <%_ if (relationshipType === 'many-to-many' || relationshipType === 'one-to-many') { _%>
-            <%= asEntity(entityInstance) %>.<%= relationshipNamePlural %>.add(<%= otherEntityName %>)
-                <%_ } else { _%>
+            <%= asEntity(entityInstance) %>.relationshipNamePlural.add(<%= otherEntityName %>);
+            <%_ } else { _%>
             <%= asEntity(entityInstance) %>.<%= relationshipName %> = <%= otherEntityName %>
-                <%_ } _%>
-            <%_ alreadyGeneratedEntities.push(otherEntityName) _%>
-            <%_ } } _%>
-            return <%= asEntity(entityInstance) %>
+            <%_ } _%>
+        <%_ alreadyGeneratedEntities.push(otherEntityName) _%>
+        <%_ } } _%>
+        return <%= asEntity(entityInstance) %>
         }
+        <%_ }); _%>
     }
 }

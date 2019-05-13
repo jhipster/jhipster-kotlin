@@ -31,6 +31,9 @@ import org.springframework.http.MediaType
 import org.springframework.security.authentication.TestingAuthenticationToken
 import org.springframework.security.test.context.TestSecurityContextHolder
 <%_ } _%>
+<%_ if (databaseType === 'sql') { _%>
+import javax.persistence.EntityManager
+<%_ } _%>
 
 import java.io.IOException
 import java.time.ZonedDateTime
@@ -163,4 +166,23 @@ object TestUtil {
         registrar.registerFormatters(dfcs)
         return dfcs
     }
+
+<%_ if (databaseType === 'sql') { _%>
+    /**
+     * Makes a an executes a query to the EntityManager finding all stored objects.
+     * @param <T> The type of objects to be searched
+     * @param em The instance of the EntityManager
+     * @param clss The class type to be searched
+     * @return A list of all found objects
+     */
+    @JvmStatic
+    fun <T> findAll(em: EntityManager, clazz: Class<T>): List<T> {
+        val cb = em.criteriaBuilder
+        val cq = cb.createQuery(clazz)
+        val rootEntry = cq.from(clazz)
+        val all = cq.select(rootEntry)
+        val allQuery = em.createQuery(all)
+        return allQuery.resultList
+    }
+<%_ } _%>   
 }
