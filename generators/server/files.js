@@ -113,7 +113,7 @@ const serverFiles = {
                     renameTo: () => 'config/liquibase/changelog/00000000000000_initial_schema.xml',
                     options: { interpolate: INTERPOLATE_REGEX }
                 },
-                { file: 'config/liquibase/master.xml', method: 'copy' }
+                'config/liquibase/master.xml'
             ]
         },
         {
@@ -509,8 +509,8 @@ const serverFiles = {
     serverMicroservice: [
         {
             condition: generator =>
-              generator.authenticationType === 'uaa' &&
-              (generator.applicationType === 'microservice' || generator.applicationType === 'gateway'),
+                generator.authenticationType === 'uaa' &&
+                (generator.applicationType === 'microservice' || generator.applicationType === 'gateway'),
             path: SERVER_MAIN_KOTLIN_SRC_DIR,
             templates: [
                 {
@@ -742,7 +742,13 @@ const serverFiles = {
         {
             condition: generator => !generator.skipUserManagement || ['sql', 'mongodb', 'couchbase'].includes(generator.databaseType),
             path: SERVER_MAIN_KOTLIN_SRC_DIR,
-            templates: [{ file: 'package/config/Constants.kt', renameTo: generator => `${generator.javaDir}config/Constants.kt`, useBluePrint: true }]
+            templates: [
+                {
+                    file: 'package/config/Constants.kt',
+                    renameTo: generator => `${generator.javaDir}config/Constants.kt`,
+                    useBluePrint: true
+                }
+            ]
         },
         {
             // TODO: remove when supported by spring-data
@@ -1294,9 +1300,9 @@ const serverFiles = {
             path: SERVER_MAIN_KOTLIN_SRC_DIR,
             templates: [
                 {
-                  file: 'package/config/Constants.kt',
-                  renameTo: generator => `${generator.javaDir}config/Constants.kt`,
-                  useBluePrint: true
+                    file: 'package/config/Constants.kt',
+                    renameTo: generator => `${generator.javaDir}config/Constants.kt`,
+                    useBluePrint: true
                 },
                 {
                     file: 'package/domain/User.kt',

@@ -26,11 +26,17 @@ import org.springframework.security.core.context.SecurityContext
 import org.springframework.security.core.context.SecurityContextHolder
 <%_ } _%>
 import org.springframework.security.core.userdetails.UserDetails
+<%_ if (authenticationType === 'oauth2') { _%>
+import org.springframework.security.oauth2.core.oidc.user.DefaultOidcUser
+<%_ } _%>
 <%_ if (reactive) { _%>
 import reactor.core.publisher.Mono
 <%_ } _%>
 <%_ if (!reactive) { _%>
 
+<%_ if (authenticationType === 'oauth2') { _%>
+import java.util.Map;
+<%_ } _%>
 import java.util.Optional
 <%_ } _%>
 
@@ -57,6 +63,14 @@ object SecurityUtils {
                 val principal = authentication.principal
                 when (principal) {
                     is UserDetails -> principal.username
+                    <%_ if (authenticationType === 'oauth2') { _%>
+                    is DefaultOidcUser -> {
+                        val attributes = authentication.principal.attributes
+                        if (attributes.containsKey("preferred_username")) {
+                            return attributes["preferred_username"] as String
+                        }
+                    }
+                    <%_ } _%>
                     is String -> principal
                     else -> null
                 }
