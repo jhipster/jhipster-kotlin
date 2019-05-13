@@ -67,12 +67,12 @@ class SecurityUtilsUnitTest {
     <%_ if (authenticationType === 'oauth2') { _%>
 
     @Test
-    public void testGetCurrentUserLoginForOAuth2() {
+    fun testGetCurrentUserLoginForOAuth2() {
         val securityContext = SecurityContextHolder.createEmptyContext()
         val claims = HashMap<String, Any>()
         claims["groups"] = "ROLE_USER"
         claims["sub"] = 123
-        claims["preferred_username"] = "admin";
+        claims["preferred_username"] = "admin"
         val idToken = OidcIdToken(ID_TOKEN, Instant.now(),
             Instant.now().plusSeconds(60), claims)
         val authorities = ArrayList<GrantedAuthority>()
@@ -80,10 +80,10 @@ class SecurityUtilsUnitTest {
         val user = DefaultOidcUser(authorities, idToken)
         val bla = new OAuth2AuthenticationToken(user, authorities, "oidc")
         securityContext.authentication = bla
-        SecurityContextHolder.context = securityContext
+        SecurityContextHolder.setContext(securityContext)
 
-        val login = SecurityUtils.currentUserLogin
-
+        val login = SecurityUtils.getCurrentUserLogin()
+        
         assertThat(login).contains("admin")
     }
     <%_ } _%>
