@@ -22,10 +22,10 @@ package <%= packageName %>.service
 import <%= packageName %>.AbstractCassandraTest
 <%_ } _%>
 import <%= packageName %>.<%= mainClass %>
+import <%=packageName%>.config.Constants
 <%_ if (authenticationType === 'oauth2') { _%>
 import <%= packageName %>.config.TestSecurityConfiguration
 <%_ } _%>
-import <%= packageName %>.config.Constants
 <%_ if ((databaseType === 'sql' || databaseType === 'mongodb' || databaseType === 'couchbase') && authenticationType === 'session' && !reactive) { _%>
 import <%= packageName %>.domain.PersistentToken
 <%_ } _%>
@@ -47,15 +47,14 @@ import <%= packageName %>.service.util.RandomUtil
 <%_ if (authenticationType !== 'oauth2') { _%>
 import org.apache.commons.lang3.RandomStringUtils
 <%_ } _%>
-import org.junit.Before
-import org.junit.Test
-import org.junit.runner.RunWith
-<%_ if (databaseType === 'sql') { _%>
+import org.junit.jupiter.api.BeforeEach
+import org.junit.jupiter.api.Test
+<%_ if (databaseType === 'sql' && authenticationType !== 'oauth2') { _%>
 import org.mockito.Mock
 <%_ } _%>
 import org.springframework.beans.factory.annotation.Autowired
 import org.springframework.boot.test.context.SpringBootTest
-<%_ if (databaseType === 'sql') { _%>
+<%_ if (databaseType === 'sql' && authenticationType !== 'oauth2') { _%>
 import org.springframework.data.auditing.AuditingHandler
 import org.springframework.data.auditing.DateTimeProvider
 <%_ } _%>
@@ -73,7 +72,6 @@ import org.springframework.security.oauth2.core.user.OAuth2User
 <%_ if (databaseType === 'couchbase') { _%>
 import org.springframework.security.test.context.support.WithAnonymousUser
 <%_ } _%>
-import org.springframework.test.context.junit4.SpringRunner
 <%_ if (databaseType === 'sql') { _%>
 import org.springframework.transaction.annotation.Transactional
 <%_ } _%>
@@ -104,7 +102,7 @@ import org.assertj.core.api.Assertions.assertThat
 import org.mockito.Mockito.times
 import org.mockito.Mockito.verify
 <%_ } _%>
-<%_ if (databaseType === 'sql') { _%>
+<%_ if (databaseType === 'sql' && authenticationType !== 'oauth2') { _%>
 import org.mockito.Mockito.`when`
 <%_ } _%>
 import kotlin.test.assertNotNull
@@ -112,16 +110,28 @@ import kotlin.test.assertNotNull
 /**
  * Integration tests for [UserService].
  */
-@RunWith(SpringRunner::class)
 <%_ if (authenticationType === 'oauth2') { _%>
 @SpringBootTest(classes = [<%= mainClass %>::class, TestSecurityConfiguration::class])
 <%_ } else { _%>
 @SpringBootTest(classes = [<%= mainClass %>::class])
 <%_ } _%>
-<%_ if (databaseType === 'sql') { _%>
-@Transactional
-<%_ } _%>
 class UserServiceIT <% if (databaseType === 'cassandra') { %>: AbstractCassandraTest() <% } %>{
+
+    companion object {
+        private const val DEFAULT_LOGIN = "johndoe"
+
+        private const val DEFAULT_EMAIL = "johndoe@localhost"
+
+        private const val DEFAULT_FIRSTNAME = "john"
+
+        private const val DEFAULT_LASTNAME = "doe"
+
+        <%_ if (databaseType !== 'cassandra') { _%>
+        private const val DEFAULT_IMAGEURL = "http://placehold.it/50x50"
+
+        <%_ } _%>
+        private const val DEFAULT_LANGKEY = "en"
+    }
 
     <%_ if ((databaseType === 'sql' || databaseType === 'mongodb' || databaseType === 'couchbase') && authenticationType === 'session' && !reactive) { _%>
     @Autowired
@@ -143,7 +153,7 @@ class UserServiceIT <% if (databaseType === 'cassandra') { %>: AbstractCassandra
     @Autowired
     private lateinit var mockUserSearchRepository: UserSearchRepository
     <%_ } _%>
-    <%_ if (databaseType === 'sql') { _%>
+    <%_ if (databaseType === 'sql' && authenticationType !== 'oauth2') { _%>
 
     @Autowired
     private lateinit var auditingHandler: AuditingHandler
@@ -154,7 +164,11 @@ class UserServiceIT <% if (databaseType === 'cassandra') { %>: AbstractCassandra
 
     private lateinit var user: <%= asEntity('User') %>
 
-    @Before
+    <%_ if (authenticationType === 'oauth2' ) { _%>
+    private lateinit var userDetails: MutableMap<String, Any>
+    <%_ } _%>
+
+    @BeforeEach
     fun init() {
         <%_ if (databaseType === 'couchbase') { _%>
         mockAuthentication()
@@ -169,19 +183,29 @@ class UserServiceIT <% if (databaseType === 'cassandra') { %>: AbstractCassandra
         <%_ if (databaseType === 'cassandra') { _%>
         user.id = UUID.randomUUID().toString()
         <%_ } _%>
-        user.login = "johndoe"
+        user.login = DEFAULT_LOGIN
         <%_ if (authenticationType !== 'oauth2') { _%>
         user.password = RandomStringUtils.random(60)
         <%_ } _%>
         user.activated = true
-        user.email = "johndoe@localhost"
-        user.firstName = "john"
-        user.lastName = "doe"
+        user.email = DEFAULT_EMAIL
+        user.firstName = DEFAULT_FIRSTNAME
+        user.lastName = DEFAULT_LASTNAME
         <%_ if (databaseType !== 'cassandra') { _%>
-        user.imageUrl = "http://placehold.it/50x50"
+        user.imageUrl = DEFAULT_IMAGEURL
         <%_ } _%>
-        user.langKey = "en"
-        <%_ if (databaseType === 'sql') { _%>
+        user.langKey = DEFAULT_LANGKEY
+        <%_ if (authenticationType === 'oauth2' ) { _%>
+        userDetails = HashMap()
+        userDetails["sub"] = DEFAULT_LOGIN
+        userDetails["email"] = DEFAULT_EMAIL
+        userDetails["given_name"] = DEFAULT_FIRSTNAME
+        userDetails["family_name"] = DEFAULT_LASTNAME
+        <%_ if (databaseType !== 'cassandra') { _%>
+        userDetails["picture"] = DEFAULT_IMAGEURL
+        <%_ } _%>
+        <%_ } _%>
+        <%_ if (databaseType === 'sql' && authenticationType !== 'oauth2' ) { _%>
 
         `when`<Optional<TemporalAccessor>>(dateTimeProvider.now).thenReturn(Optional.of(LocalDateTime.now()))
         auditingHandler.setDateTimeProvider(dateTimeProvider)
@@ -377,9 +401,9 @@ class UserServiceIT <% if (databaseType === 'cassandra') { %>: AbstractCassandra
         userRepository.save<% if (databaseType === 'sql') { %>AndFlush<% } %>(user)<% if (reactive) { %>.block()<% } %>
         <%_ } _%>
 
-        assertThat(userRepository.findOneByLogin("johndoe")<% if (reactive) { %>.blockOptional()<% } %>).isPresent
+        assertThat(userRepository.findOneByLogin(DEFAULT_LOGIN)<% if (reactive) { %>.blockOptional()<% } %>).isPresent
         userService.removeNotActivatedUsers()
-        assertThat(userRepository.findOneByLogin("johndoe")<% if (reactive) { %>.blockOptional()<% } %>).isNotPresent
+        assertThat(userRepository.findOneByLogin(DEFAULT_LOGIN)<% if (reactive) { %>.blockOptional()<% } %>).isNotPresent
         <%_ if (searchEngine === 'elasticsearch') { _%>
 
         // Verify Elasticsearch mock
@@ -393,31 +417,74 @@ class UserServiceIT <% if (databaseType === 'cassandra') { %>: AbstractCassandra
     <%_ if (databaseType === 'sql') { _%>
     @Transactional
     <%_ } _%>
-    fun assertThatUserLocaleIsCorrectlySetFromAuthenticationDetails() {
-        user.id = Constants.ANONYMOUS_USER
-        user.login = Constants.ANONYMOUS_USER
+    fun testDefaultUserDetails() {
+        val authentication = createMockOAuth2AuthenticationToken(userDetails)
+        val userDTO = userService.getUserFromAuthentication(authentication)
 
-        val userDetails = mutableMapOf<String, Any?>()
-        userDetails["sub"] = user.id
-        userDetails["preferred_username"] = user.login
-        userDetails["given_name"] = user.firstName
-        userDetails["family_name"] = user.lastName
-        userDetails["email"] = user.email
-        userDetails["picture"] = user.imageUrl
-        userDetails["locale"] = "en_US"
+        assertThat(userDTO.login).isEqualTo(DEFAULT_LOGIN)
+        assertThat(userDTO.firstName).isEqualTo(DEFAULT_FIRSTNAME)
+        assertThat(userDTO.lastName).isEqualTo(DEFAULT_LASTNAME)
+        assertThat(userDTO.email).isEqualTo(DEFAULT_EMAIL)
+        assertThat(userDTO.activated).isTrue()
+        assertThat(userDTO.langKey).isEqualTo(Constants.DEFAULT_LANGUAGE)
+        assertThat(userDTO.imageUrl).isEqualTo(DEFAULT_IMAGEURL)
+        assertThat(userDTO.authorities).contains(AuthoritiesConstants.ANONYMOUS)
+    }
 
-        var authentication = createMockOAuth2AuthenticationToken(userDetails)
+    @Test
+    <%_ if (databaseType === 'sql') { _%>
+    @Transactional
+    <%_ } _%>
+    fun testUserDetailsWithUsername() {
+      userDetails.put("preferred_username", "TEST")
+      val authentication = createMockOAuth2AuthenticationToken(userDetails)
+      val userDTO = userService.getUserFromAuthentication(authentication)
+      assertThat(userDTO.login).isEqualTo("test")
+    }
 
-        var userDTO = userService.getUserFromAuthentication(authentication)
+    @Test
+    <%_ if (databaseType === 'sql') { _%>
+    @Transactional
+    <%_ } _%>
+    fun testUserDetailsWithLangKey() {
+        userDetails.put("langKey", "fr")
+        userDetails.put("locale", "en-US")
+        val authentication = createMockOAuth2AuthenticationToken(userDetails)
+        val userDTO = userService.getUserFromAuthentication(authentication)
+        assertThat(userDTO.langKey).isEqualTo("fr")
+    }
 
-        assertThat(userDTO.langKey).isEqualTo("en")
-
-        userDetails["locale"] = "it-IT"
-        authentication = createMockOAuth2AuthenticationToken(userDetails)
-
-        userDTO = userService.getUserFromAuthentication(authentication)
-
+    @Test
+    <%_ if (databaseType === 'sql') { _%>
+    @Transactional
+    <%_ } _%>
+    fun testUserDetailsWithLocale() {
+        userDetails.put("locale", "it-IT")
+        val authentication = createMockOAuth2AuthenticationToken(userDetails)
+        val userDTO = userService.getUserFromAuthentication(authentication)
         assertThat(userDTO.langKey).isEqualTo("it-it")
+    }
+
+    @Test
+    <%_ if (databaseType === 'sql') { _%>
+    @Transactional
+    <%_ } _%>
+    fun testUserDetailsWithUSLocale() {
+        userDetails.put("locale", "en_US")
+        val authentication = createMockOAuth2AuthenticationToken(userDetails)
+        val userDTO = userService.getUserFromAuthentication(authentication)
+        assertThat(userDTO.langKey).isEqualTo("en")
+    }
+
+    @Test
+    <%_ if (databaseType === 'sql') { _%>
+    @Transactional
+    <%_ } _%>
+    fun testUserDetailsWithUSLocale2() {
+        userDetails.put("locale", "en-US")
+        val authentication = createMockOAuth2AuthenticationToken(userDetails)
+        val userDTO = userService.getUserFromAuthentication(authentication)
+        assertThat(userDTO.langKey).isEqualTo("en")
     }
 
     private fun createMockOAuth2AuthenticationToken(userDetails: Map<String, Any?>): OAuth2AuthenticationToken {
@@ -427,7 +494,7 @@ class UserServiceIT <% if (databaseType === 'cassandra') { %>: AbstractCassandra
         authorities.add(SimpleGrantedAuthority(AuthoritiesConstants.ANONYMOUS))
         val usernamePasswordAuthenticationToken = UsernamePasswordAuthenticationToken(Constants.ANONYMOUS_USER, Constants.ANONYMOUS_USER, authorities)
         usernamePasswordAuthenticationToken.details = userDetails
-        val user = DefaultOAuth2User(authorities, userDetails, "preferred_username")
+        val user = DefaultOAuth2User(authorities, userDetails, "sub")
 
         return OAuth2AuthenticationToken(user, authorities, "oidc")
     }

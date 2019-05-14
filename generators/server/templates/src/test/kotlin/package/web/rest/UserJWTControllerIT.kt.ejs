@@ -22,19 +22,26 @@ package <%=packageName%>.web.rest
 import <%=packageName%>.AbstractCassandraTest
 <%_ } _%>
 import <%=packageName%>.<%= mainClass %>
+<%_ if (!skipUserManagement) { _%>
 import <%=packageName%>.domain.<%= asEntity('User') %>
 import <%=packageName%>.repository<% if (reactive) { %>.reactive<% } %>.UserRepository
+<%_ } _%>
 import <%=packageName%>.security.jwt.TokenProvider
 import <%=packageName%>.web.rest.errors.ExceptionTranslator
 import <%=packageName%>.web.rest.vm.LoginVM
-import org.junit.Before
-import org.junit.Test
-import org.junit.runner.RunWith
+import org.junit.jupiter.api.BeforeEach
+import org.junit.jupiter.api.Test
 import org.springframework.beans.factory.annotation.Autowired
 import org.springframework.boot.test.context.SpringBootTest
-import org.springframework.security.authentication.<% if (reactive) { %>Reactive<% } %>AuthenticationManager
+<%_ if (reactive) { _%>
+import org.springframework.security.authentication.ReactiveAuthenticationManager
+<%_ } _%>
+<%_ if (!reactive) { _%>
+import org.springframework.security.config.annotation.authentication.builders.AuthenticationManagerBuilder
+<%_ } _%>
+<%_ if (!skipUserManagement) { _%>
 import org.springframework.security.crypto.password.PasswordEncoder
-import org.springframework.test.context.junit4.SpringRunner
+<%_ } _%>
 <%_ if (reactive) { _%>
 import org.springframework.test.web.reactive.server.WebTestClient
 <%_ } _%>
@@ -63,7 +70,6 @@ import org.hamcrest.Matchers.not
 /**
  * Integration tests for the [UserJWTController] REST controller.
  */
-@RunWith(SpringRunner::class)
 @SpringBootTest(classes = [<%= mainClass %>::class])
 class UserJWTControllerIT <% if (databaseType === 'cassandra') { %>: AbstractCassandraTest() <% } %>{
 
@@ -71,13 +77,15 @@ class UserJWTControllerIT <% if (databaseType === 'cassandra') { %>: AbstractCas
     private lateinit var tokenProvider: TokenProvider
 
     @Autowired
-    private lateinit var authenticationManager: <% if (reactive) { %>Reactive<% } %>AuthenticationManager
+    private lateinit var authenticationManager: <% if (reactive) { %>Reactive<% } %>AuthenticationManager<% if (!reactive) { %>Builder<% } %>
 
+<%_ if (!skipUserManagement) { _%>
     @Autowired
     private lateinit var userRepository: UserRepository
 
     @Autowired
     private lateinit var passwordEncoder: PasswordEncoder
+<%_ }  _%>
 
     @Autowired
     private lateinit var exceptionTranslator: ExceptionTranslator
@@ -88,7 +96,7 @@ class UserJWTControllerIT <% if (databaseType === 'cassandra') { %>: AbstractCas
     private lateinit var mockMvc: MockMvc
     <%_ }  _%>
 
-    @Before
+    @BeforeEach
     fun setup() {
         val userJWTController = UserJWTController(tokenProvider, authenticationManager)
         <%_ if (!reactive) { _%>
@@ -102,6 +110,7 @@ class UserJWTControllerIT <% if (databaseType === 'cassandra') { %>: AbstractCas
     }
 
     @Test
+<%_ if (!skipUserManagement) { _%>
     <%_ if (databaseType === 'sql') { _%>
     @Transactional
     <%_ } _%>
@@ -124,6 +133,12 @@ class UserJWTControllerIT <% if (databaseType === 'cassandra') { %>: AbstractCas
 
         val login = LoginVM()
         login.username = "user-jwt-controller"
+<%_ } else { _%>
+    @Throws(Exception::class)
+    fun testAuthorize() {
+        val login = LoginVM()
+        login.username ="test"
+<%_ } _%>
         login.password = "test"
         <%_ if (!reactive) { _%>
         mockMvc.perform(post("/api/authenticate")
@@ -147,6 +162,7 @@ class UserJWTControllerIT <% if (databaseType === 'cassandra') { %>: AbstractCas
     }
 
     @Test
+    <%_ if (!skipUserManagement) { _%>
     <%_ if (databaseType === 'sql') { _%>
     @Transactional
     <%_ } _%>
@@ -169,6 +185,12 @@ class UserJWTControllerIT <% if (databaseType === 'cassandra') { %>: AbstractCas
 
         val login = LoginVM()
         login.username = "user-jwt-controller-remember-me"
+<%_ } else { _%>
+    @Throws(Exception::class)
+    fun testAuthorizeWithRememberMe() {
+        val login = LoginVM()
+        login.username ="test"
+<%_ } _%>
         login.password = "test"
         login.isRememberMe = true
         <%_ if (!reactive) { _%>
@@ -193,9 +215,6 @@ class UserJWTControllerIT <% if (databaseType === 'cassandra') { %>: AbstractCas
     }
 
     @Test
-    <%_ if (databaseType === 'sql') { _%>
-    @Transactional
-    <%_ } _%>
     @Throws(Exception::class)
     fun testAuthorizeFails() {
         val login = LoginVM()

@@ -20,14 +20,11 @@ package <%=packageName%>.security.oauth2
 
 import <%=packageName%>.config.oauth2.OAuth2Properties
 import <%=packageName%>.web.filter.RefreshTokenFilter
-import <%=packageName%>.web.rest.errors.InvalidPasswordException
 import io.github.jhipster.config.JHipsterProperties
-import org.junit.Assert
-import org.junit.Before
-import org.junit.Rule
-import org.junit.Test
-import org.junit.rules.ExpectedException
-import org.junit.runner.RunWith
+import org.junit.jupiter.api.Assertions
+import org.junit.jupiter.api.BeforeEach
+import org.junit.jupiter.api.Test
+import org.junit.jupiter.api.extension.ExtendWith
 import org.mockito.Mock
 import org.mockito.junit.MockitoJUnitRunner
 import org.springframework.http.HttpEntity
@@ -38,11 +35,13 @@ import org.springframework.http.MediaType
 import org.springframework.http.ResponseEntity
 import org.springframework.mock.web.MockHttpServletRequest
 import org.springframework.mock.web.MockHttpServletResponse
+import org.springframework.security.authentication.BadCredentialsException
 import org.springframework.security.oauth2.common.DefaultOAuth2AccessToken
 import org.springframework.security.oauth2.common.DefaultOAuth2RefreshToken
 import org.springframework.security.oauth2.common.OAuth2AccessToken
 import org.springframework.security.oauth2.common.exceptions.InvalidTokenException
 import org.springframework.security.oauth2.provider.token.TokenStore
+import org.springframework.test.context.junit.jupiter.SpringExtension
 import org.springframework.util.LinkedMultiValueMap
 import org.springframework.util.MultiValueMap
 import org.springframework.web.client.HttpClientErrorException
@@ -58,7 +57,7 @@ import org.mockito.Mockito.`when`
  *
  * @see OAuth2AuthenticationService
  */
-@RunWith(MockitoJUnitRunner::class)
+@ExtendWith(SpringExtension::class)
 class OAuth2AuthenticationServiceTest {
 
     @Mock
@@ -68,11 +67,7 @@ class OAuth2AuthenticationServiceTest {
     private lateinit var authenticationService: OAuth2AuthenticationService
     private lateinit var refreshTokenFilter: RefreshTokenFilter
 
-    @Rule
-    @JvmField
-    var expectedException: ExpectedException = ExpectedException.none()
-
-    @Before
+    @BeforeEach
     fun init() {
         val oAuth2Properties = OAuth2Properties()
         val jHipsterProperties = JHipsterProperties()
@@ -142,10 +137,10 @@ class OAuth2AuthenticationServiceTest {
         authenticationService.authenticate(request, response, params)
         //check that cookies are set correctly
         val accessTokenCookie = response.getCookie(OAuth2CookieHelper.ACCESS_TOKEN_COOKIE)
-        Assert.assertEquals(ACCESS_TOKEN_VALUE, accessTokenCookie!!.value)
+        Assertions.assertEquals(ACCESS_TOKEN_VALUE, accessTokenCookie!!.value)
         val refreshTokenCookie = response.getCookie(OAuth2CookieHelper.REFRESH_TOKEN_COOKIE)
-        Assert.assertEquals(REFRESH_TOKEN_VALUE, OAuth2CookieHelper.getRefreshTokenValue(refreshTokenCookie!!))
-        Assert.assertTrue(OAuth2CookieHelper.isRememberMe(refreshTokenCookie))
+        Assertions.assertEquals(REFRESH_TOKEN_VALUE, OAuth2CookieHelper.getRefreshTokenValue(refreshTokenCookie!!))
+        Assertions.assertTrue(OAuth2CookieHelper.isRememberMe(refreshTokenCookie))
     }
 
     @Test
@@ -160,10 +155,10 @@ class OAuth2AuthenticationServiceTest {
         authenticationService.authenticate(request, response, params)
         //check that cookies are set correctly
         val accessTokenCookie = response.getCookie(OAuth2CookieHelper.ACCESS_TOKEN_COOKIE)
-        Assert.assertEquals(ACCESS_TOKEN_VALUE, accessTokenCookie!!.value)
+        Assertions.assertEquals(ACCESS_TOKEN_VALUE, accessTokenCookie!!.value)
         val refreshTokenCookie = response.getCookie(OAuth2CookieHelper.SESSION_TOKEN_COOKIE)
-        Assert.assertEquals(REFRESH_TOKEN_VALUE, OAuth2CookieHelper.getRefreshTokenValue(refreshTokenCookie!!))
-        Assert.assertFalse(OAuth2CookieHelper.isRememberMe(refreshTokenCookie))
+        Assertions.assertEquals(REFRESH_TOKEN_VALUE, OAuth2CookieHelper.getRefreshTokenValue(refreshTokenCookie!!))
+        Assertions.assertFalse(OAuth2CookieHelper.isRememberMe(refreshTokenCookie))
     }
 
     @Test
@@ -175,8 +170,9 @@ class OAuth2AuthenticationServiceTest {
         params["password"] = "user2"
         params["rememberMe"] = "false"
         val response = MockHttpServletResponse()
-        expectedException.expect(InvalidPasswordException::class.java)
-        authenticationService.authenticate(request, response, params)
+        Assertions.assertThrows(BadCredentialsException::class.java) {
+            authenticationService.authenticate(request, response, params)
+        }
     }
 
     @Test
@@ -185,11 +181,11 @@ class OAuth2AuthenticationServiceTest {
         val response = MockHttpServletResponse()
         val newRequest = refreshTokenFilter.refreshTokensIfExpiring(request, response)
         val newAccessTokenCookie = response.getCookie(OAuth2CookieHelper.ACCESS_TOKEN_COOKIE)
-        Assert.assertEquals(NEW_ACCESS_TOKEN_VALUE, newAccessTokenCookie!!.value)
+        Assertions.assertEquals(NEW_ACCESS_TOKEN_VALUE, newAccessTokenCookie!!.value)
         val newRefreshTokenCookie = response.getCookie(OAuth2CookieHelper.REFRESH_TOKEN_COOKIE)
-        Assert.assertEquals(NEW_REFRESH_TOKEN_VALUE, newRefreshTokenCookie!!.value)
+        Assertions.assertEquals(NEW_REFRESH_TOKEN_VALUE, newRefreshTokenCookie!!.value)
         val requestAccessTokenCookie = OAuth2CookieHelper.getAccessTokenCookie(newRequest)
-        Assert.assertEquals(NEW_ACCESS_TOKEN_VALUE, requestAccessTokenCookie?.value)
+        Assertions.assertEquals(NEW_ACCESS_TOKEN_VALUE, requestAccessTokenCookie?.value)
     }
 
     @Test
@@ -202,14 +198,14 @@ class OAuth2AuthenticationServiceTest {
         val newRequest = refreshTokenFilter.refreshTokensIfExpiring(request, response)
         //cookies in response are deleted
         val newAccessTokenCookie = response.getCookie(OAuth2CookieHelper.ACCESS_TOKEN_COOKIE)
-        Assert.assertEquals(0, newAccessTokenCookie!!.maxAge.toLong())
+        Assertions.assertEquals(0, newAccessTokenCookie!!.maxAge.toLong())
         val newRefreshTokenCookie = response.getCookie(OAuth2CookieHelper.REFRESH_TOKEN_COOKIE)
-        Assert.assertEquals(0, newRefreshTokenCookie!!.maxAge.toLong())
+        Assertions.assertEquals(0, newRefreshTokenCookie!!.maxAge.toLong())
         //request no longer contains cookies
         val requestAccessTokenCookie = OAuth2CookieHelper.getAccessTokenCookie(newRequest)
-        Assert.assertNull(requestAccessTokenCookie)
+        Assertions.assertNull(requestAccessTokenCookie)
         val requestRefreshTokenCookie = OAuth2CookieHelper.getRefreshTokenCookie(newRequest)
-        Assert.assertNull(requestRefreshTokenCookie)
+        Assertions.assertNull(requestRefreshTokenCookie)
     }
 
     /**
@@ -221,8 +217,9 @@ class OAuth2AuthenticationServiceTest {
         val accessTokenCookie = Cookie(OAuth2CookieHelper.ACCESS_TOKEN_COOKIE, ACCESS_TOKEN_VALUE)
         request.setCookies(accessTokenCookie)
         val response = MockHttpServletResponse()
-        expectedException.expect(InvalidTokenException::class.java)
-        refreshTokenFilter.refreshTokensIfExpiring(request, response)
+        Assertions.assertThrows(InvalidTokenException::class.java) {
+            refreshTokenFilter.refreshTokensIfExpiring(request, response)
+        }
     }
 
     @Test
@@ -234,9 +231,9 @@ class OAuth2AuthenticationServiceTest {
         val response = MockHttpServletResponse()
         authenticationService.logout(request, response)
         val newAccessTokenCookie = response.getCookie(OAuth2CookieHelper.ACCESS_TOKEN_COOKIE)
-        Assert.assertEquals(0, newAccessTokenCookie!!.maxAge.toLong())
+        Assertions.assertEquals(0, newAccessTokenCookie!!.maxAge.toLong())
         val newRefreshTokenCookie = response.getCookie(OAuth2CookieHelper.REFRESH_TOKEN_COOKIE)
-        Assert.assertEquals(0, newRefreshTokenCookie!!.maxAge.toLong())
+        Assertions.assertEquals(0, newRefreshTokenCookie!!.maxAge.toLong())
     }
 
     @Test
@@ -244,8 +241,8 @@ class OAuth2AuthenticationServiceTest {
         val request = createMockHttpServletRequest()
         val newRequest = authenticationService.stripTokens(request)
         val cookies = CookieCollection(*newRequest.cookies)
-        Assert.assertFalse(cookies.contains(OAuth2CookieHelper.ACCESS_TOKEN_COOKIE))
-        Assert.assertFalse(cookies.contains(OAuth2CookieHelper.REFRESH_TOKEN_COOKIE))
+        Assertions.assertFalse(cookies.contains(OAuth2CookieHelper.ACCESS_TOKEN_COOKIE))
+        Assertions.assertFalse(cookies.contains(OAuth2CookieHelper.REFRESH_TOKEN_COOKIE))
     }
 
     companion object {

@@ -27,9 +27,12 @@ import com.fasterxml.jackson.annotation.JsonProperty
 import org.springframework.http.HttpHeaders
 import org.springframework.http.HttpStatus
 import org.springframework.http.ResponseEntity
-import org.springframework.security.authentication.<% if (reactive) { %>Reactive<% } %>AuthenticationManager
+<%_ if (reactive) { _%>
+import org.springframework.security.authentication.ReactiveAuthenticationManager
+<%_ } _%>
 import org.springframework.security.authentication.UsernamePasswordAuthenticationToken
 <%_ if (!reactive) { _%>
+import org.springframework.security.config.annotation.authentication.builders.AuthenticationManagerBuilder;
 import org.springframework.security.core.context.SecurityContextHolder
 <%_ } _%>
 import org.springframework.web.bind.annotation.PostMapping
@@ -52,16 +55,15 @@ import java.util.Optional
 @RequestMapping("/api")
 class UserJWTController(
     private val tokenProvider: TokenProvider,
-    private val authenticationManager: <% if (reactive) { %>Reactive<% } %>AuthenticationManager
+    <% if (!reactive) { %>private val authenticationManagerBuilder: AuthenticationManagerBuilder <% } else { %>private val authenticationManager: ReactiveAuthenticationManager <% } %>
 ) {
-
-    @PostMapping("/authenticate")
     <%_ if (!reactive) { _%>
+    @PostMapping("/authenticate")
     fun authorize(@Valid @RequestBody loginVM: LoginVM): ResponseEntity<JWTToken> {
 
         val authenticationToken = UsernamePasswordAuthenticationToken(loginVM.username, loginVM.password)
 
-        val authentication = this.authenticationManager.authenticate(authenticationToken)
+        val authentication = authenticationManagerBuilder.getObject().authenticate(authenticationToken)
         SecurityContextHolder.getContext().authentication = authentication
         val rememberMe = loginVM.isRememberMe ?: false
         val jwt = tokenProvider.createToken(authentication, rememberMe)
@@ -69,6 +71,7 @@ class UserJWTController(
         httpHeaders.add(JWTFilter.AUTHORIZATION_HEADER, "Bearer $jwt")
         return ResponseEntity(JWTToken(jwt), httpHeaders, HttpStatus.OK)
     <%_ } else { _%>
+    @PostMapping("/authenticate")
     fun authorize(@Valid @RequestBody loginVM: Mono<LoginVM>): Mono<ResponseEntity<JWTToken>> {
         return loginVM
             .flatMap { login ->

@@ -18,7 +18,7 @@
 -%>
 package <%=packageName%>.security
 
-import org.junit.Test
+import org.junit.jupiter.api.Test
 import org.springframework.security.authentication.UsernamePasswordAuthenticationToken
 import org.springframework.security.core.GrantedAuthority
 import org.springframework.security.core.authority.SimpleGrantedAuthority
@@ -26,9 +26,29 @@ import org.springframework.security.core.authority.SimpleGrantedAuthority
 import org.springframework.security.core.context.ReactiveSecurityContextHolder
 <%_ } else { _%>
 import org.springframework.security.core.context.SecurityContextHolder
+    <%_ if (authenticationType === 'oauth2') { _%>
+import org.springframework.security.oauth2.client.authentication.OAuth2AuthenticationToken
+import org.springframework.security.oauth2.core.oidc.OidcIdToken
+import org.springframework.security.oauth2.core.oidc.user.DefaultOidcUser
+import org.springframework.security.oauth2.core.oidc.user.OidcUser
+    <%_ } _%>
+<%_ } _%>
+
+<%_ if (authenticationType === 'oauth2') { _%>
+import java.time.Instant
+import java.util.*
+<%_ } else { _%>
+import java.util.ArrayList
+import java.util.Collection
+    <%_ if (!reactive) { _%>
+import java.util.Optional
+    <%_ } _%>
 <%_ } _%>
 
 import org.assertj.core.api.Assertions.assertThat
+<%_ if (authenticationType === 'oauth2') { _%>
+import org.springframework.security.oauth2.core.oidc.endpoint.OidcParameterNames.ID_TOKEN
+<%_ } _%>
 
 /**
  * Test class for the [SecurityUtils] utility class.
@@ -44,6 +64,29 @@ class SecurityUtilsUnitTest {
         val login = SecurityUtils.getCurrentUserLogin()
         assertThat(login).contains("admin")
     }
+    <%_ if (authenticationType === 'oauth2') { _%>
+
+    @Test
+    fun testGetCurrentUserLoginForOAuth2() {
+        val securityContext = SecurityContextHolder.createEmptyContext()
+        val claims = HashMap<String, Any>()
+        claims["groups"] = "ROLE_USER"
+        claims["sub"] = 123
+        claims["preferred_username"] = "admin"
+        val idToken = OidcIdToken(ID_TOKEN, Instant.now(),
+            Instant.now().plusSeconds(60), claims)
+        val authorities = ArrayList<GrantedAuthority>()
+        authorities.add(SimpleGrantedAuthority(AuthoritiesConstants.USER))
+        val user = DefaultOidcUser(authorities, idToken)
+        val bla = OAuth2AuthenticationToken(user, authorities, "oidc")
+        securityContext.authentication = bla
+        SecurityContextHolder.setContext(securityContext)
+
+        val login = SecurityUtils.getCurrentUserLogin()
+        
+        assertThat(login).contains("admin")
+    }
+    <%_ } _%>
     <%_ if (authenticationType === 'jwt') { _%>
 
     @Test
