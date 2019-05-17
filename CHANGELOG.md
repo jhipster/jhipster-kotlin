@@ -1,6 +1,6 @@
 <a name="0.8.0"></a>
 
-# [0.7.0](https://github.com/sendilkumarn/jhipster-kotlin/compare/0.7.0...0.8.0) (2019-05-17)
+# [0.8.0](https://github.com/sendilkumarn/jhipster-kotlin/compare/0.7.0...0.8.0) (2019-05-17)
 
 -   Added `khipster` command to generate Kotlin based project
 -   Upgraded Kotlin support to 1.3.30
