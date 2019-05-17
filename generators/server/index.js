@@ -92,7 +92,7 @@ module.exports = class extends ServerGenerator {
                 let command;
                 const prefix = os.platform() === 'win32' ? '' : './';
                 if (this.buildTool === 'gradle') {
-                    command = `${prefix}gradlew ktlintFormat`;
+                    command = `${prefix}gradlew :ktlintFormat`;
                 } else if (this.buildTool === 'maven') {
                     command = `${prefix}mvnw antrun:run@ktlint-format`;
                 }
