@@ -1727,9 +1727,8 @@ function writeFiles() {
             this.javaDir = `${this.packageFolder}/`;
             this.testDir = `${this.packageFolder}/`;
 
-            // Create Java resource files
+            // Create server resource files
             mkdirp(SERVER_MAIN_RES_DIR);
-            mkdirp(`${SERVER_TEST_SRC_DIR}/${this.testDir}`);
             mkdirp(`${SERVER_TEST_SRC_KOTLIN_DIR}/${this.testDir}`);
             this.generateKeyStore();
         },
