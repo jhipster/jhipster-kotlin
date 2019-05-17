@@ -1,3 +1,16 @@
+<a name="0.8.0"></a>
+
+# [0.7.0](https://github.com/sendilkumarn/jhipster-kotlin/compare/0.7.0...0.8.0) (2019-05-17)
+
+-   Added `khipster` command to generate Kotlin based project
+-   Upgraded Kotlin support to 1.3.30
+-   Upgraded ktlint support to 0.31.0
+-   Improved user generation workflow
+-   Upgraded JHipster support to 6.0.1
+-   Upgraded JHipster core to 3.6.13
+-   Upgraded Java support till JDK11
+-   Upgraded Spring Boot to 2.1.5
+
 <a name="0.7.0"></a>
 
 # [0.7.0](https://github.com/sendilkumarn/jhipster-kotlin/compare/0.6.1...0.7.0) (2018-12-29)
