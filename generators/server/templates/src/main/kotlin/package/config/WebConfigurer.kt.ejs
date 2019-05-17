@@ -168,9 +168,9 @@ class WebConfigurer(
         if (server is ConfigurableServletWebServerFactory) {
             val mappings = MimeMappings(MimeMappings.DEFAULT)
             // IE issue, see https://github.com/jhipster/generator-jhipster/pull/711
-            mappings.add("html", MediaType.TEXT_HTML_VALUE + ";charset=" + StandardCharsets.UTF_8.name().toLowerCase())
+            mappings.add("html", "${MediaType.TEXT_HTML_VALUE};charset=${StandardCharsets.UTF_8.name().toLowerCase()}")
             // CloudFoundry issue, see https://github.com/cloudfoundry/gorouter/issues/64
-            mappings.add("json", MediaType.TEXT_HTML_VALUE + ";charset=" + StandardCharsets.UTF_8.name().toLowerCase())
+            mappings.add("json", "${MediaType.TEXT_HTML_VALUE};charset=${StandardCharsets.UTF_8.name().toLowerCase()}")
             server.setMimeMappings(mappings)
         }
     }
@@ -226,7 +226,7 @@ class WebConfigurer(
     fun corsFilter(): Cors<% if (reactive) { %>Web<% } %>Filter {
         val source = UrlBasedCorsConfigurationSource()
         val config = jHipsterProperties.cors
-        if (config.allowedOrigins != null && !config.allowedOrigins!!.isEmpty()) {
+        if (config.allowedOrigins != null && config.allowedOrigins!!.isNotEmpty()) {
             log.debug("Registering CORS filter")
             source.registerCorsConfiguration("/api/**", config)
             source.registerCorsConfiguration("/management/**", config)
