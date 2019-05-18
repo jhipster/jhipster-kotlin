@@ -48,19 +48,20 @@ class LiquibaseConfiguration(private val env: Environment<% if (enableHibernateC
     ): SpringLiquibase {
 
         // Use liquibase.integration.spring.SpringLiquibase if you don't want Liquibase to start asynchronously
-        val liquibase = AsyncSpringLiquibase(executor, env)
-        liquibase.dataSource = dataSource
-        liquibase.changeLog = "classpath:config/liquibase/master.xml"
-        liquibase.contexts = liquibaseProperties.contexts
-        liquibase.defaultSchema = liquibaseProperties.defaultSchema
-        liquibase.isDropFirst = liquibaseProperties.isDropFirst
-        liquibase.setChangeLogParameters(liquibaseProperties.parameters)
-        if (env.acceptsProfiles(Profiles.of(JHipsterConstants.SPRING_PROFILE_NO_LIQUIBASE))) {
-            liquibase.setShouldRun(false)
-        } else {
-            liquibase.setShouldRun(liquibaseProperties.isEnabled)
-            log.debug("Configuring Liquibase")
+        return AsyncSpringLiquibase(executor, env).apply {
+            this.dataSource = dataSource
+            changeLog = "classpath:config/liquibase/master.xml"
+            contexts = liquibaseProperties.contexts
+            defaultSchema = liquibaseProperties.defaultSchema
+            isDropFirst = liquibaseProperties.isDropFirst
+            setChangeLogParameters(liquibaseProperties.parameters)
+
+            if (env.acceptsProfiles(Profiles.of(JHipsterConstants.SPRING_PROFILE_NO_LIQUIBASE))) {
+                setShouldRun(false)
+            } else {
+                setShouldRun(liquibaseProperties.isEnabled)
+                log.debug("Configuring Liquibase")
+            }
         }
-        return liquibase
     }
 }

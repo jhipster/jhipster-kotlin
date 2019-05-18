@@ -68,6 +68,7 @@ _%>
     )
     override fun toDto(entity: <%= asEntity(entityClass) %>): <%= asDto(entityClass) %>
     <%_ } _%>
+
 <%_
 // DTO -> entity mapping
 var renMapAnotDto = false;  //Render Mapping Annotation during DTO to Entity conversion?
@@ -110,12 +111,7 @@ _%>
     <%_ if (databaseType === 'sql' || databaseType === 'mongodb') { _%>
 
     fun fromId(id: <%= pkType %>?): <%= asEntity(entityClass) %>? {
-        if (id == null) {
-            return null
-        }
-        val <%= asEntity(entityInstance) %> = <%= asEntity(entityClass) %>()
-        <%= asEntity(entityInstance) %>.id = id
-        return <%= asEntity(entityInstance) %>
+        return id?.let { <%= asEntity(entityClass) %>(it) }
     }
 <%_ } _%>
 }

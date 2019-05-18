@@ -17,8 +17,8 @@
  limitations under the License.
 -%>
 package <%= packageName %>.web.rest
-<%_ if (authenticationType === 'oauth2') { _%>
 
+<%_ if (authenticationType === 'oauth2') { _%>
 <%_ if (databaseType === 'cassandra') { _%>
 import <%= packageName %>.AbstractCassandraTest
 <%_ } _%>
@@ -46,11 +46,6 @@ import org.springframework.test.web.servlet.setup.DefaultMockMvcBuilder
 import org.springframework.test.web.servlet.setup.MockMvcBuilders
 import org.springframework.transaction.annotation.Transactional
 import org.springframework.web.context.WebApplicationContext
-
-import java.util.Collection
-import java.util.Collections
-import java.util.HashMap
-import java.util.Map
 
 import org.springframework.security.test.web.servlet.setup.SecurityMockMvcConfigurers.springSecurity
 import org.springframework.test.web.servlet.request.MockMvcRequestBuilders.get
@@ -117,13 +112,14 @@ class AccountResourceIT <% if (databaseType === 'cassandra') { %>: AbstractCassa
             .apply<DefaultMockMvcBuilder>(springSecurity())
             .build()
 
-        val userDetails = HashMap<String, Any>()
-        userDetails["sub"] = "test"
-        userDetails["email"] = "john.doe@jhipster.com"
-        val authorities = Collections.singletonList(SimpleGrantedAuthority(AuthoritiesConstants.ADMIN))
+        val userDetails = mapOf<String, Any>(
+            "sub" to "test",
+            "email" to "john.doe@jhipster.com"
+        )
+        val authorities = listOf(SimpleGrantedAuthority(AuthoritiesConstants.ADMIN))
         val user = DefaultOAuth2User(authorities, userDetails, "sub")
         val authentication = OAuth2AuthenticationToken(user, authorities, "oidc")
-        TestSecurityContextHolder.getContext().setAuthentication(authentication)
+        TestSecurityContextHolder.getContext().authentication = authentication
 
         restUserMockMvc.perform(get("/api/account")
             .accept(MediaType.APPLICATION_JSON))
@@ -421,24 +417,25 @@ class AccountResourceIT <% if (databaseType === 'cassandra') { %>: AbstractCassa
     <%_ if (!reactive) { _%>
     @Throws(Exception::class)
     <%_ } _%>
-    fun testGetExistingAccount() {<% if (databaseType === 'sql' || databaseType === 'mongodb') { %>
-        val authorities = mutableSetOf<Authority>()
-        val authority = Authority()
-        authority.name = AuthoritiesConstants.ADMIN
-        authorities.add(authority)<% } %><% if (databaseType === 'cassandra' || databaseType === 'couchbase') { %>
-        val authorities = mutableSetOf<String>()
-        authorities.add(AuthoritiesConstants.ADMIN)<% } %>
-
-        val user = <%= asEntity('User') %>()
-        user.login = "test"
-        user.firstName = "john"
-        user.lastName = "doe"
-        user.email = "john.doe@jhipster.com"
-        <%_ if (['sql', 'mongodb', 'couchbase'].includes(databaseType)) { _%>
-        user.imageUrl = "http://placehold.it/50x50"
+    fun testGetExistingAccount() {
+        <%_ if (databaseType === 'sql' || databaseType === 'mongodb') { _%>
+        val authorities = mutableSetOf(Authority(name = AuthoritiesConstants.ADMIN))
         <%_ } _%>
-        user.langKey = "en"
-        user.authorities = authorities
+        <%_ if (databaseType === 'cassandra' || databaseType === 'couchbase') { _%>
+        val authorities = mutableSetOf(AuthoritiesConstants.ADMIN)
+        <%_ } _%>
+
+        val user = <%= asEntity('User') %>(
+            login = "test",
+            firstName = "john",
+            lastName = "doe",
+            email = "john.doe@jhipster.com",
+            <%_ if (['sql', 'mongodb', 'couchbase'].includes(databaseType)) { _%>
+            imageUrl = "http://placehold.it/50x50",
+            <%_ } _%>
+            langKey = "en",
+            authorities = authorities
+        )
         whenever(mockUserService.getUserWithAuthorities()).thenReturn(<% if (reactive) { %>Mono.just<% } else { %>Optional.of<% } %>(user))
 
         <%_ if (!reactive) { _%>
@@ -502,17 +499,18 @@ class AccountResourceIT <% if (databaseType === 'cassandra') { %>: AbstractCassa
     @Transactional<% } %>
     @Throws(Exception::class)
     fun testRegisterValid() {
-        val validUser = ManagedUserVM()
-        validUser.login = "test-register-valid"
-        validUser.password = "password"
-        validUser.firstName = "Alice"
-        validUser.lastName = "Test"
-        validUser.email = "test-register-valid@example.com"
-        <%_ if (['sql', 'mongodb', 'couchbase'].includes(databaseType)) { _%>
-        validUser.imageUrl = "http://placehold.it/50x50"
-        <%_ } _%>
-        validUser.langKey = Constants.DEFAULT_LANGUAGE
-        validUser.authorities = setOf(AuthoritiesConstants.USER)
+        val validUser = ManagedUserVM().apply {
+            login = "test-register-valid"
+            password = "password"
+            firstName = "Alice"
+            lastName = "Test"
+            email = "test-register-valid@example.com"
+            <%_ if (['sql', 'mongodb', 'couchbase'].includes(databaseType)) { _%>
+            imageUrl = "http://placehold.it/50x50"
+            <%_ } _%>
+            langKey = Constants.DEFAULT_LANGUAGE
+            authorities = setOf(AuthoritiesConstants.USER)
+        }
         assertThat(userRepository.findOneByLogin("test-register-valid")<% if (reactive) { %>.blockOptional()<% } %>.isPresent).isFalse()
 
         <%_ if (!reactive) { _%>
@@ -537,18 +535,19 @@ class AccountResourceIT <% if (databaseType === 'cassandra') { %>: AbstractCassa
     @Transactional<% } %>
     @Throws(Exception::class)
     fun testRegisterInvalidLogin() {
-        val invalidUser = ManagedUserVM()
-        invalidUser.login = "funky-log!n" // <-- invalid
-        invalidUser.password = "password"
-        invalidUser.firstName = "Funky"
-        invalidUser.lastName = "One"
-        invalidUser.email = "funky@example.com"
-        invalidUser.activated = true
-        <%_ if (['sql', 'mongodb', 'couchbase'].includes(databaseType)) { _%>
-        invalidUser.imageUrl = "http://placehold.it/50x50"
-        <%_ } _%>
-        invalidUser.langKey = Constants.DEFAULT_LANGUAGE
-        invalidUser.authorities = setOf(AuthoritiesConstants.USER)
+        val invalidUser = ManagedUserVM().apply {
+            login = "funky-log!n" // <-- invalid
+            password = "password"
+            firstName = "Funky"
+            lastName = "One"
+            email = "funky@example.com"
+            activated = true
+            <%_ if (['sql', 'mongodb', 'couchbase'].includes(databaseType)) { _%>
+            imageUrl = "http://placehold.it/50x50"
+            <%_ } _%>
+            langKey = Constants.DEFAULT_LANGUAGE
+            authorities = setOf(AuthoritiesConstants.USER)
+        }
 
         <%_ if (!reactive) { _%>
         restUserMockMvc.perform(
@@ -573,18 +572,19 @@ class AccountResourceIT <% if (databaseType === 'cassandra') { %>: AbstractCassa
     @Transactional<% } %>
     @Throws(Exception::class)
     fun testRegisterInvalidEmail() {
-        val invalidUser = ManagedUserVM()
-        invalidUser.login = "bob"
-        invalidUser.password = "password"
-        invalidUser.firstName = "Bob"
-        invalidUser.lastName = "Green"
-        invalidUser.email = "invalid" // <-- invalid
-        invalidUser.activated = true
-        <%_ if (['sql', 'mongodb', 'couchbase'].includes(databaseType)) { _%>
-        invalidUser.imageUrl = "http://placehold.it/50x50"
-        <%_ } _%>
-        invalidUser.langKey = Constants.DEFAULT_LANGUAGE
-        invalidUser.authorities = setOf(AuthoritiesConstants.USER)
+        val invalidUser = ManagedUserVM().apply {
+            login = "bob"
+            password = "password"
+            firstName = "Bob"
+            lastName = "Green"
+            email = "invalid" // <-- invalid
+            activated = true
+            <%_ if (['sql', 'mongodb', 'couchbase'].includes(databaseType)) { _%>
+            imageUrl = "http://placehold.it/50x50"
+            <%_ } _%>
+            langKey = Constants.DEFAULT_LANGUAGE
+            authorities = setOf(AuthoritiesConstants.USER)
+        }
 
         <%_ if (!reactive) { _%>
         restUserMockMvc.perform(
@@ -609,18 +609,19 @@ class AccountResourceIT <% if (databaseType === 'cassandra') { %>: AbstractCassa
     @Transactional<% } %>
     @Throws(Exception::class)
     fun testRegisterInvalidPassword() {
-        val invalidUser = ManagedUserVM()
-        invalidUser.login = "bob"
-        invalidUser.password = "123" // password with only 3 digits
-        invalidUser.firstName = "Bob"
-        invalidUser.lastName = "Green"
-        invalidUser.email = "bob@example.com"
-        invalidUser.activated = true
-        <%_ if (['sql', 'mongodb', 'couchbase'].includes(databaseType)) { _%>
-        invalidUser.imageUrl = "http://placehold.it/50x50"
-        <%_ } _%>
-        invalidUser.langKey = Constants.DEFAULT_LANGUAGE
-        invalidUser.authorities = setOf(AuthoritiesConstants.USER)
+        val invalidUser = ManagedUserVM().apply {
+            login = "bob"
+            password = "123" // password with only 3 digits
+            firstName = "Bob"
+            lastName = "Green"
+            email = "bob@example.com"
+            activated = true
+            <%_ if (['sql', 'mongodb', 'couchbase'].includes(databaseType)) { _%>
+            imageUrl = "http://placehold.it/50x50"
+            <%_ } _%>
+            langKey = Constants.DEFAULT_LANGUAGE
+            authorities = setOf(AuthoritiesConstants.USER)
+        }
 
         <%_ if (!reactive) { _%>
         restUserMockMvc.perform(
@@ -645,18 +646,19 @@ class AccountResourceIT <% if (databaseType === 'cassandra') { %>: AbstractCassa
     @Transactional<% } %>
     @Throws(Exception::class)
     fun testRegisterNullPassword() {
-        val invalidUser = ManagedUserVM()
-        invalidUser.login = "bob"
-        invalidUser.password = null // invalid null password
-        invalidUser.firstName = "Bob"
-        invalidUser.lastName = "Green"
-        invalidUser.email = "bob@example.com"
-        invalidUser.activated = true
-        <%_ if (['sql', 'mongodb', 'couchbase'].includes(databaseType)) { _%>
-        invalidUser.imageUrl = "http://placehold.it/50x50"
-        <%_ } _%>
-        invalidUser.langKey = Constants.DEFAULT_LANGUAGE
-        invalidUser.authorities = setOf(AuthoritiesConstants.USER)
+        val invalidUser = ManagedUserVM().apply {
+            login = "bob"
+            password = null // invalid null password
+            firstName = "Bob"
+            lastName = "Green"
+            email = "bob@example.com"
+            activated = true
+            <%_ if (['sql', 'mongodb', 'couchbase'].includes(databaseType)) { _%>
+            imageUrl = "http://placehold.it/50x50"
+            <%_ } _%>
+            langKey = Constants.DEFAULT_LANGUAGE
+            authorities = setOf(AuthoritiesConstants.USER)
+        }
 
         <%_ if (!reactive) { _%>
         restUserMockMvc.perform(
@@ -682,36 +684,38 @@ class AccountResourceIT <% if (databaseType === 'cassandra') { %>: AbstractCassa
     @Throws(Exception::class)
     fun testRegisterDuplicateLogin() {
         // First registration
-        val firstUser = ManagedUserVM()
-        firstUser.login = "alice"
-        firstUser.password = "password"
-        firstUser.firstName = "Alice"
-        firstUser.lastName = "Something"
-        firstUser.email = "alice@example.com"
-        <%_ if (['sql', 'mongodb', 'couchbase'].includes(databaseType)) { _%>
-        firstUser.imageUrl = "http://placehold.it/50x50"
-        <%_ } _%>
-        firstUser.langKey = Constants.DEFAULT_LANGUAGE
-        firstUser.authorities = setOf(AuthoritiesConstants.USER)
+        val firstUser = ManagedUserVM().apply {
+            login = "alice"
+            password = "password"
+            firstName = "Alice"
+            lastName = "Something"
+            email = "alice@example.com"
+            <%_ if (['sql', 'mongodb', 'couchbase'].includes(databaseType)) { _%>
+            imageUrl = "http://placehold.it/50x50"
+            <%_ } _%>
+            langKey = Constants.DEFAULT_LANGUAGE
+            authorities = setOf(AuthoritiesConstants.USER)
+        }
 
         // Duplicate login, different email
-        val secondUser = ManagedUserVM()
-        secondUser.login = firstUser.login
-        secondUser.password = firstUser.password
-        secondUser.firstName = firstUser.firstName
-        secondUser.lastName = firstUser.lastName
-        secondUser.email = "alice2@example.com"
-        <%_ if (['sql', 'mongodb', 'couchbase'].includes(databaseType)) { _%>
-        secondUser.imageUrl = firstUser.imageUrl
-        <%_ } _%>
-        secondUser.langKey = firstUser.langKey
-        <%_ if (['sql', 'mongodb', 'couchbase'].includes(databaseType)) { _%>
-        secondUser.createdBy = firstUser.createdBy
-        secondUser.createdDate = firstUser.createdDate
-        secondUser.lastModifiedBy = firstUser.lastModifiedBy
-        secondUser.lastModifiedDate = firstUser.lastModifiedDate
-        <%_ } _%>
-        secondUser.authorities = firstUser.authorities?.toMutableSet()
+        val secondUser = ManagedUserVM().apply {
+            login = firstUser.login
+            password = firstUser.password
+            firstName = firstUser.firstName
+            lastName = firstUser.lastName
+            email = "alice2@example.com"
+            <%_ if (['sql', 'mongodb', 'couchbase'].includes(databaseType)) { _%>
+            imageUrl = firstUser.imageUrl
+            <%_ } _%>
+            langKey = firstUser.langKey
+            <%_ if (['sql', 'mongodb', 'couchbase'].includes(databaseType)) { _%>
+            createdBy = firstUser.createdBy
+            createdDate = firstUser.createdDate
+            lastModifiedBy = firstUser.lastModifiedBy
+            lastModifiedDate = firstUser.lastModifiedDate
+            <%_ } _%>
+            authorities = firstUser.authorities?.toMutableSet()
+        }
 
         // First user
         <%_ if (!reactive) { _%>
@@ -771,17 +775,18 @@ class AccountResourceIT <% if (databaseType === 'cassandra') { %>: AbstractCassa
     @Throws(Exception::class)
     fun testRegisterDuplicateEmail() {
         // First user
-        val firstUser = ManagedUserVM()
-        firstUser.login = "test-register-duplicate-email"
-        firstUser.password = "password"
-        firstUser.firstName = "Alice"
-        firstUser.lastName = "Test"
-        firstUser.email = "test-register-duplicate-email@example.com"
-        <%_ if (['sql', 'mongodb', 'couchbase'].includes(databaseType)) { _%>
-        firstUser.imageUrl = "http://placehold.it/50x50"
-        <%_ } _%>
-        firstUser.langKey = Constants.DEFAULT_LANGUAGE
-        firstUser.authorities = setOf(AuthoritiesConstants.USER)
+        val firstUser = ManagedUserVM().apply {
+            login = "test-register-duplicate-email"
+            password = "password"
+            firstName = "Alice"
+            lastName = "Test"
+            email = "test-register-duplicate-email@example.com"
+            <%_ if (['sql', 'mongodb', 'couchbase'].includes(databaseType)) { _%>
+            imageUrl = "http://placehold.it/50x50"
+            <%_ } _%>
+            langKey = Constants.DEFAULT_LANGUAGE
+            authorities = setOf(AuthoritiesConstants.USER)
+        }
 
         // Register first user
         <%_ if (!reactive) { _%>
@@ -803,17 +808,18 @@ class AccountResourceIT <% if (databaseType === 'cassandra') { %>: AbstractCassa
         assertThat(testUser1.isPresent).isTrue()
 
         // Duplicate email, different login
-        val secondUser = ManagedUserVM()
-        secondUser.login = "test-register-duplicate-email-2"
-        secondUser.password = firstUser.password
-        secondUser.firstName = firstUser.firstName
-        secondUser.lastName = firstUser.lastName
-        secondUser.email = firstUser.email
-        <%_ if (['sql', 'mongodb', 'couchbase'].includes(databaseType)) { _%>
-        secondUser.imageUrl = firstUser.imageUrl
-        <%_ } _%>
-        secondUser.langKey = firstUser.langKey
-        secondUser.authorities = firstUser.authorities?.toMutableSet()
+        val secondUser = ManagedUserVM().apply {
+            login = "test-register-duplicate-email-2"
+            password = firstUser.password
+            firstName = firstUser.firstName
+            lastName = firstUser.lastName
+            email = firstUser.email
+            <%_ if (['sql', 'mongodb', 'couchbase'].includes(databaseType)) { _%>
+            imageUrl = firstUser.imageUrl
+            <%_ } _%>
+            langKey = firstUser.langKey
+            authorities = firstUser.authorities?.toMutableSet()
+        }
 
         // Register second (non activated) user
         <%_ if (!reactive) { _%>
@@ -838,18 +844,19 @@ class AccountResourceIT <% if (databaseType === 'cassandra') { %>: AbstractCassa
         assertThat(testUser3.isPresent).isTrue()
 
         // Duplicate email - with uppercase email address
-        val userWithUpperCaseEmail = ManagedUserVM()
-        userWithUpperCaseEmail.id = firstUser.id
-        userWithUpperCaseEmail.login = "test-register-duplicate-email-3"
-        userWithUpperCaseEmail.password = firstUser.password
-        userWithUpperCaseEmail.firstName = firstUser.firstName
-        userWithUpperCaseEmail.lastName = firstUser.lastName
-        userWithUpperCaseEmail.email = "TEST-register-duplicate-email@example.com"
-        <%_ if (['sql', 'mongodb', 'couchbase'].includes(databaseType)) { _%>
-        userWithUpperCaseEmail.imageUrl = firstUser.imageUrl
-        <%_ } _%>
-        userWithUpperCaseEmail.langKey = firstUser.langKey
-        userWithUpperCaseEmail.authorities = firstUser.authorities?.toMutableSet()
+        val userWithUpperCaseEmail = ManagedUserVM().apply {
+            id = firstUser.id
+            login = "test-register-duplicate-email-3"
+            password = firstUser.password
+            firstName = firstUser.firstName
+            lastName = firstUser.lastName
+            email = "TEST-register-duplicate-email@example.com"
+            <%_ if (['sql', 'mongodb', 'couchbase'].includes(databaseType)) { _%>
+            imageUrl = firstUser.imageUrl
+            <%_ } _%>
+            langKey = firstUser.langKey
+            authorities = firstUser.authorities?.toMutableSet()
+        }
 
         // Register third (not activated) user
         <%_ if (!reactive) { _%>
@@ -895,18 +902,19 @@ class AccountResourceIT <% if (databaseType === 'cassandra') { %>: AbstractCassa
     @Transactional<% } %>
     @Throws(Exception::class)
     fun testRegisterAdminIsIgnored() {
-        val validUser = ManagedUserVM()
-        validUser.login = "badguy"
-        validUser.password = "password"
-        validUser.firstName = "Bad"
-        validUser.lastName = "Guy"
-        validUser.email = "badguy@example.com"
-        validUser.activated = true
-        <%_ if (['sql', 'mongodb', 'couchbase'].includes(databaseType)) { _%>
-        validUser.imageUrl = "http://placehold.it/50x50"
-        <%_ } _%>
-        validUser.langKey = Constants.DEFAULT_LANGUAGE
-        validUser.authorities = setOf(AuthoritiesConstants.ADMIN)
+        val validUser = ManagedUserVM().apply {
+            login = "badguy"
+            password = "password"
+            firstName = "Bad"
+            lastName = "Guy"
+            email = "badguy@example.com"
+            activated = true
+            <%_ if (['sql', 'mongodb', 'couchbase'].includes(databaseType)) { _%>
+            imageUrl = "http://placehold.it/50x50"
+            <%_ } _%>
+            langKey = Constants.DEFAULT_LANGUAGE
+            authorities = setOf(AuthoritiesConstants.ADMIN)
+        }
 
         <%_ if (!reactive) { _%>
         restMvc.perform(
@@ -936,15 +944,16 @@ class AccountResourceIT <% if (databaseType === 'cassandra') { %>: AbstractCassa
     <%_ } _%>
     fun testActivateAccount() {
         val activationKey = "some activation key"
-        var user = <%= asEntity('User') %>()
-        <%_ if (databaseType === 'cassandra') { _%>
-        user.id = UUID.randomUUID().toString()
-        <%_ } _%>
-        user.login = "activate-account"
-        user.email = "activate-account@example.com"
-        user.password = RandomStringUtils.random(60)
-        user.activated = false
-        user.activationKey = activationKey
+        var user = <%= asEntity('User') %>(
+            <%_ if (databaseType === 'cassandra') { _%>
+            id = UUID.randomUUID().toString(),
+            <%_ } _%>
+            login = "activate-account",
+            email = "activate-account@example.com",
+            password = RandomStringUtils.random(60),
+            activated = false,
+            activationKey = activationKey
+        )
 
         userRepository.save<% if (databaseType === 'sql') { %>AndFlush<% } %>(user)<% if (reactive) { %>.block()<% } %>
 
@@ -981,28 +990,30 @@ class AccountResourceIT <% if (databaseType === 'cassandra') { %>: AbstractCassa
     @WithMockUser("save-account")
     @Throws(Exception::class)
     fun testSaveAccount() {
-        val user = <%= asEntity('User') %>()
-        <%_ if (databaseType === 'cassandra') { _%>
-        user.id = UUID.randomUUID().toString()
-        <%_ } _%>
-        user.login = "save-account"
-        user.email = "save-account@example.com"
-        user.password = RandomStringUtils.random(60)
-        user.activated = true
+        val user = <%= asEntity('User') %>(
+            <%_ if (databaseType === 'cassandra') { _%>
+            id = UUID.randomUUID().toString(),
+            <%_ } _%>
+            login = "save-account",
+            email = "save-account@example.com",
+            password = RandomStringUtils.random(60),
+            activated = true
+        )
 
         userRepository.save<% if (databaseType === 'sql') { %>AndFlush<% } %>(user)<% if (reactive) { %>.block()<% } %>
 
-        val userDTO = <%= asDto('User') %>()
-        userDTO.login = "not-used"
-        userDTO.firstName = "firstname"
-        userDTO.lastName = "lastname"
-        userDTO.email = "save-account@example.com"
-        userDTO.activated = false
-        <%_ if (['sql', 'mongodb', 'couchbase'].includes(databaseType)) { _%>
-        userDTO.imageUrl = "http://placehold.it/50x50"
-        <%_ } _%>
-        userDTO.langKey = Constants.DEFAULT_LANGUAGE
-        userDTO.authorities = setOf(AuthoritiesConstants.ADMIN)
+        val userDTO = <%= asDto('User') %>(
+            login = "not-used",
+            firstName = "firstname",
+            lastName = "lastname",
+            email = "save-account@example.com",
+            activated = false,
+            <%_ if (['sql', 'mongodb', 'couchbase'].includes(databaseType)) { _%>
+            imageUrl = "http://placehold.it/50x50",
+            <%_ } _%>
+            langKey = Constants.DEFAULT_LANGUAGE,
+            authorities = setOf(AuthoritiesConstants.ADMIN)
+        )
 
         <%_ if (!reactive) { _%>
         restMvc.perform(
@@ -1038,28 +1049,30 @@ class AccountResourceIT <% if (databaseType === 'cassandra') { %>: AbstractCassa
     @Throws(Exception::class)
     <%_ } _%>
     fun testSaveInvalidEmail() {
-        val user = <%= asEntity('User') %>()
-        <%_ if (databaseType === 'cassandra') { _%>
-        user.id = UUID.randomUUID().toString()
-        <%_ } _%>
-        user.login = "save-invalid-email"
-        user.email = "save-invalid-email@example.com"
-        user.password = RandomStringUtils.random(60)
-        user.activated = true
+        val user = <%= asEntity('User') %>(
+            <%_ if (databaseType === 'cassandra') { _%>
+            id = UUID.randomUUID().toString(),
+            <%_ } _%>
+            login = "save-invalid-email",
+            email = "save-invalid-email@example.com",
+            password = RandomStringUtils.random(60),
+            activated = true
+        )
 
         userRepository.save<% if (databaseType === 'sql') { %>AndFlush<% } %>(user)<% if (reactive) { %>.block()<% } %>
 
-        val userDTO = <%= asDto('User') %>()
-        userDTO.login = "not-used"
-        userDTO.firstName = "firstname"
-        userDTO.lastName = "lastname"
-        userDTO.email = "invalid email"
-        userDTO.activated = false
-        <%_ if (['sql', 'mongodb', 'couchbase'].includes(databaseType)) { _%>
-        userDTO.imageUrl = "http://placehold.it/50x50"
-        <%_ } _%>
-        userDTO.langKey = Constants.DEFAULT_LANGUAGE
-        userDTO.authorities = setOf(AuthoritiesConstants.ADMIN)
+        val userDTO = <%= asDto('User') %>(
+            login = "not-used",
+            firstName = "firstname",
+            lastName = "lastname",
+            email = "invalid email",
+            activated = false,
+            <%_ if (['sql', 'mongodb', 'couchbase'].includes(databaseType)) { _%>
+            imageUrl = "http://placehold.it/50x50",
+            <%_ } _%>
+            langKey = Constants.DEFAULT_LANGUAGE,
+            authorities = setOf(AuthoritiesConstants.ADMIN)
+        )
 
         <%_ if (!reactive) { _%>
         restMvc.perform(
@@ -1086,39 +1099,42 @@ class AccountResourceIT <% if (databaseType === 'cassandra') { %>: AbstractCassa
     @Throws(Exception::class)
     <%_ } _%>
     fun testSaveExistingEmail() {
-        val user = <%= asEntity('User') %>()
-        <%_ if (databaseType === 'cassandra') { _%>
-        user.id = UUID.randomUUID().toString()
-        <%_ } _%>
-        user.login = "save-existing-email"
-        user.email = "save-existing-email@example.com"
-        user.password = RandomStringUtils.random(60)
-        user.activated = true
+        val user = <%= asEntity('User') %>(
+            <%_ if (databaseType === 'cassandra') { _%>
+            id = UUID.randomUUID().toString(),
+            <%_ } _%>
+            login = "save-existing-email",
+            email = "save-existing-email@example.com",
+            password = RandomStringUtils.random(60),
+            activated = true
+        )
 
         userRepository.save<% if (databaseType === 'sql') { %>AndFlush<% } %>(user)<% if (reactive) { %>.block()<% } %>
 
-        val anotherUser = <%= asEntity('User') %>()
-        <%_ if (databaseType === 'cassandra') { _%>
-        anotherUser.id  = UUID.randomUUID().toString()
-        <%_ } _%>
-        anotherUser.login = "save-existing-email2"
-        anotherUser.email = "save-existing-email2@example.com"
-        anotherUser.password = RandomStringUtils.random(60)
-        anotherUser.activated = true
+        val anotherUser = <%= asEntity('User') %>(
+            <%_ if (databaseType === 'cassandra') { _%>
+            id  = UUID.randomUUID().toString(),
+            <%_ } _%>
+            login = "save-existing-email2",
+            email = "save-existing-email2@example.com",
+            password = RandomStringUtils.random(60),
+            activated = true
+        )
 
         userRepository.save<% if (databaseType === 'sql') { %>AndFlush<% } %>(anotherUser)<% if (reactive) { %>.block()<% } %>
 
-        val userDTO = <%= asDto('User') %>()
-        userDTO.login = "not-used"
-        userDTO.firstName = "firstname"
-        userDTO.lastName = "lastname"
-        userDTO.email = "save-existing-email2@example.com"
-        userDTO.activated = false
-        <%_ if (['sql', 'mongodb', 'couchbase'].includes(databaseType)) { _%>
-        userDTO.imageUrl = "http://placehold.it/50x50"
-        <%_ } _%>
-        userDTO.langKey = Constants.DEFAULT_LANGUAGE
-        userDTO.authorities = setOf(AuthoritiesConstants.ADMIN)
+        val userDTO = <%= asDto('User') %>(
+            login = "not-used",
+            firstName = "firstname",
+            lastName = "lastname",
+            email = "save-existing-email2@example.com",
+            activated = false,
+            <%_ if (['sql', 'mongodb', 'couchbase'].includes(databaseType)) { _%>
+            imageUrl = "http://placehold.it/50x50",
+            <%_ } _%>
+            langKey = Constants.DEFAULT_LANGUAGE,
+            authorities = setOf(AuthoritiesConstants.ADMIN)
+        )
 
         <%_ if (!reactive) { _%>
         restMvc.perform(
@@ -1145,28 +1161,30 @@ class AccountResourceIT <% if (databaseType === 'cassandra') { %>: AbstractCassa
     @WithMockUser("save-existing-email-and-login")
     @Throws(Exception::class)
     fun testSaveExistingEmailAndLogin() {
-        val user = <%= asEntity('User') %>()
-        <%_ if (databaseType === 'cassandra') { _%>
-        user.id = UUID.randomUUID().toString()
-        <%_ } _%>
-        user.login = "save-existing-email-and-login"
-        user.email = "save-existing-email-and-login@example.com"
-        user.password = RandomStringUtils.random(60)
-        user.activated = true
+        val user = <%= asEntity('User') %>(
+            <%_ if (databaseType === 'cassandra') { _%>
+            id = UUID.randomUUID().toString(),
+            <%_ } _%>
+            login = "save-existing-email-and-login",
+            email = "save-existing-email-and-login@example.com",
+            password = RandomStringUtils.random(60),
+            activated = true
+        )
 
         userRepository.save<% if (databaseType === 'sql') { %>AndFlush<% } %>(user)<% if (reactive) { %>.block()<% } %>
 
-        val userDTO = <%= asDto('User') %>()
-        userDTO.login = "not-used"
-        userDTO.firstName = "firstname"
-        userDTO.lastName = "lastname"
-        userDTO.email = "save-existing-email-and-login@example.com"
-        userDTO.activated = false
-        <%_ if (['sql', 'mongodb', 'couchbase'].includes(databaseType)) { _%>
-        userDTO.imageUrl = "http://placehold.it/50x50"
-        <%_ } _%>
-        userDTO.langKey = Constants.DEFAULT_LANGUAGE
-        userDTO.authorities = setOf(AuthoritiesConstants.ADMIN)
+        val userDTO = <%= asDto('User') %>(
+            login = "not-used",
+            firstName = "firstname",
+            lastName = "lastname",
+            email = "save-existing-email-and-login@example.com",
+            activated = false,
+            <%_ if (['sql', 'mongodb', 'couchbase'].includes(databaseType)) { _%>
+            imageUrl = "http://placehold.it/50x50",
+            <%_ } _%>
+            langKey = Constants.DEFAULT_LANGUAGE,
+            authorities = setOf(AuthoritiesConstants.ADMIN)
+        )
 
         <%_ if (!reactive) { _%>
         restMvc.perform(
@@ -1193,14 +1211,15 @@ class AccountResourceIT <% if (databaseType === 'cassandra') { %>: AbstractCassa
     @WithMockUser("change-password-wrong-existing-password")
     @Throws(Exception::class)
     fun testChangePasswordWrongExistingPassword() {
-        val user = <%= asEntity('User') %>()
-    <%_ if (databaseType === 'cassandra') { _%>
-        user.id = UUID.randomUUID().toString()
-    <%_ } _%>
         val currentPassword = RandomStringUtils.random(60)
-        user.password = passwordEncoder.encode(currentPassword)
-        user.login = "change-password-wrong-existing-password"
-        user.email = "change-password-wrong-existing-password@example.com"
+        val user = <%= asEntity('User') %>(
+            <%_ if (databaseType === 'cassandra') { _%>
+            id = UUID.randomUUID().toString(),
+            <%_ } _%>
+            password = passwordEncoder.encode(currentPassword),
+            login = "change-password-wrong-existing-password",
+            email = "change-password-wrong-existing-password@example.com"
+        )
 
         userRepository.save<% if (databaseType === 'sql') { %>AndFlush<% } %>(user)<% if (reactive) { %>.block()<% } %>
 
@@ -1230,14 +1249,15 @@ class AccountResourceIT <% if (databaseType === 'cassandra') { %>: AbstractCassa
     @WithMockUser("change-password")
     @Throws(Exception::class)
     fun testChangePassword() {
-        val user = <%= asEntity('User') %>()
-        <%_ if (databaseType === 'cassandra') { _%>
-        user.id = UUID.randomUUID().toString()
-        <%_ } _%>
         val currentPassword = RandomStringUtils.random(60)
-        user.password = passwordEncoder.encode(currentPassword)
-        user.login = "change-password"
-        user.email = "change-password@example.com"
+        val user = <%= asEntity('User') %>(
+            <%_ if (databaseType === 'cassandra') { _%>
+            id = UUID.randomUUID().toString(),
+            <%_ } _%>
+            password = passwordEncoder.encode(currentPassword),
+            login = "change-password",
+            email = "change-password@example.com"
+        )
 
         userRepository.save<% if (databaseType === 'sql') { %>AndFlush<% } %>(user)<% if (reactive) { %>.block()<% } %>
 
@@ -1266,14 +1286,15 @@ class AccountResourceIT <% if (databaseType === 'cassandra') { %>: AbstractCassa
     @WithMockUser("change-password-too-small")
     @Throws(Exception::class)
     fun testChangePasswordTooSmall() {
-        val user = <%= asEntity('User') %>()
-        <%_ if (databaseType === 'cassandra') { _%>
-        user.id = UUID.randomUUID().toString()
-        <%_ } _%>
         val currentPassword = RandomStringUtils.random(60)
-        user.password = passwordEncoder.encode(currentPassword)
-        user.login = "change-password-too-small"
-        user.email = "change-password-too-small@example.com"
+        val user = <%= asEntity('User') %>(
+            <%_ if (databaseType === 'cassandra') { _%>
+            id = UUID.randomUUID().toString(),
+            <%_ } _%>
+            password = passwordEncoder.encode(currentPassword),
+            login = "change-password-too-small",
+            email = "change-password-too-small@example.com"
+        )
 
         userRepository.save<% if (databaseType === 'sql') { %>AndFlush<% } %>(user)<% if (reactive) { %>.block()<% } %>
 
@@ -1304,14 +1325,15 @@ class AccountResourceIT <% if (databaseType === 'cassandra') { %>: AbstractCassa
     @WithMockUser("change-password-too-long")
     @Throws(Exception::class)
     fun testChangePasswordTooLong() {
-        val user = <%= asEntity('User') %>()
-        <%_ if (databaseType === 'cassandra') { _%>
-        user.id = UUID.randomUUID().toString()
-        <%_ } _%>
         val currentPassword = RandomStringUtils.random(60)
-        user.password = passwordEncoder.encode(currentPassword)
-        user.login = "change-password-too-long"
-        user.email = "change-password-too-long@example.com"
+        val user = <%= asEntity('User') %>(
+            <%_ if (databaseType === 'cassandra') { _%>
+            id = UUID.randomUUID().toString(),
+            <%_ } _%>
+            password = passwordEncoder.encode(currentPassword),
+            login = "change-password-too-long",
+            email = "change-password-too-long@example.com"
+        )
 
         userRepository.save<% if (databaseType === 'sql') { %>AndFlush<% } %>(user)<% if (reactive) { %>.block()<% } %>
 
@@ -1342,14 +1364,15 @@ class AccountResourceIT <% if (databaseType === 'cassandra') { %>: AbstractCassa
     @WithMockUser("change-password-empty")
     @Throws(Exception::class)
     fun testChangePasswordEmpty() {
-        val user = <%= asEntity('User') %>()
-        <%_ if (databaseType === 'cassandra') { _%>
-        user.id = UUID.randomUUID().toString()
-        <%_ } _%>
         val currentPassword = RandomStringUtils.random(60)
-        user.password = passwordEncoder.encode(currentPassword)
-        user.login = "change-password-empty"
-        user.email = "change-password-empty@example.com"
+        val user = <%= asEntity('User') %>(
+            <%_ if (databaseType === 'cassandra') { _%>
+            id = UUID.randomUUID().toString(),
+            <%_ } _%>
+            password = passwordEncoder.encode(currentPassword),
+            login = "change-password-empty",
+            email = "change-password-empty@example.com"
+        )
 
         userRepository.save<% if (databaseType === 'sql') { %>AndFlush<% } %>(user)<% if (reactive) { %>.block()<% } %>
 
@@ -1379,26 +1402,28 @@ class AccountResourceIT <% if (databaseType === 'cassandra') { %>: AbstractCassa
     @WithMockUser("current-sessions")
     @Throws(Exception::class)
     fun testGetCurrentSessions() {
-        val user = <%= asEntity('User') %>()
-        <%_ if (databaseType === 'cassandra') { _%>
-        user.id = UUID.randomUUID().toString()
-        <%_ } _%>
-        user.password = RandomStringUtils.random(60)
-        user.login = "current-sessions"
-        user.email = "current-sessions@example.com"
+        val user = <%= asEntity('User') %>(
+            <%_ if (databaseType === 'cassandra') { _%>
+            id = UUID.randomUUID().toString(),
+            <%_ } _%>
+            password = RandomStringUtils.random(60),
+            login = "current-sessions",
+            email = "current-sessions@example.com"
+        )
 
         userRepository.save<% if (databaseType === 'sql') { %>AndFlush<% } %>(user)<% if (reactive) { %>.block()<% } %>
 
-        val token = PersistentToken()
-        token.series = "current-sessions"<% if (databaseType === 'sql' || databaseType === 'mongodb') { %>
-        token.user = user<% } else { %><% if (databaseType === 'cassandra') { %>
-        token.userId = user.id<% } else { %>
-        token.login = user.login<% } %><% } %>
-        token.tokenValue = "current-session-data"<% if (databaseType === 'sql' || databaseType === 'mongodb' || databaseType === 'couchbase') { %>
-        token.tokenDate = LocalDate.of(2017, 3, 23)<% } else { %>
-        token.tokenDate = Date(1490714757123L)<% } %>
-        token.ipAddress = "127.0.0.1"
-        token.userAgent = "Test agent"
+        val token = PersistentToken(
+            series = "current-sessions",<% if (databaseType === 'sql' || databaseType === 'mongodb') { %>
+            user = user,<% } else { %><% if (databaseType === 'cassandra') { %>
+            userId = user.id,<% } else { %>
+            login = user.login,<% } %><% } %>
+            tokenValue = "current-session-data",<% if (databaseType === 'sql' || databaseType === 'mongodb' || databaseType === 'couchbase') { %>
+            tokenDate = LocalDate.of(2017, 3, 23),<% } else { %>
+            tokenDate = Date(1490714757123L),<% } %>
+            ipAddress = "127.0.0.1",
+            userAgent = "Test agent"
+        )
 
         persistentTokenRepository.save<% if (databaseType === 'sql') { %>AndFlush<% } %>(token)
 
@@ -1415,26 +1440,28 @@ class AccountResourceIT <% if (databaseType === 'cassandra') { %>: AbstractCassa
     @WithMockUser("invalidate-session")
     @Throws(Exception::class)
     fun testInvalidateSession() {
-        val user = <%= asEntity('User') %>()
-        <%_ if (databaseType === 'cassandra') { _%>
-        user.id = UUID.randomUUID().toString()
-        <%_ } _%>
-        user.password = RandomStringUtils.random(60)
-        user.login = "invalidate-session"
-        user.email = "invalidate-session@example.com"
+        val user = <%= asEntity('User') %>(
+            <%_ if (databaseType === 'cassandra') { _%>
+            id = UUID.randomUUID().toString(),
+            <%_ } _%>
+            password = RandomStringUtils.random(60),
+            login = "invalidate-session",
+            email = "invalidate-session@example.com"
+        )
 
         userRepository.save<% if (databaseType === 'sql') { %>AndFlush<% } %>(user)<% if (reactive) { %>.block()<% } %>
 
-        val token = PersistentToken()
-        token.series = "invalidate-session"<% if (databaseType === 'sql' || databaseType === 'mongodb') { %>
-        token.user = user<% } else { %><% if (databaseType === 'cassandra') { %>
-        token.userId = user.id<% } else { %>
-        token.login = user.login<% } %><% } %>
-        token.tokenValue = "invalidate-data"<% if (databaseType === 'sql' || databaseType === 'mongodb' || databaseType === 'couchbase') { %>
-        token.tokenDate = LocalDate.of(2017, 3, 23)<% } else { %>
-        token.tokenDate = Date(1490714757123L)<% } %>
-        token.ipAddress = "127.0.0.1"
-        token.userAgent = "Test agent"
+        val token = PersistentToken(
+            series = "invalidate-session",<% if (databaseType === 'sql' || databaseType === 'mongodb') { %>
+            user = user,<% } else { %><% if (databaseType === 'cassandra') { %>
+            userId = user.id,<% } else { %>
+            login = user.login,<% } %><% } %>
+            tokenValue = "invalidate-data",<% if (databaseType === 'sql' || databaseType === 'mongodb' || databaseType === 'couchbase') { %>
+            tokenDate = LocalDate.of(2017, 3, 23),<% } else { %>
+            tokenDate = Date(1490714757123L),<% } %>
+            ipAddress = "127.0.0.1",
+            userAgent = "Test agent"
+        )
 
         persistentTokenRepository.save<% if (databaseType === 'sql') { %>AndFlush<% } %>(token)
 
@@ -1453,15 +1480,16 @@ class AccountResourceIT <% if (databaseType === 'cassandra') { %>: AbstractCassa
     @Throws(Exception::class)
     <%_ } _%>
     fun testRequestPasswordReset() {
-        val user = <%= asEntity('User') %>()
-        <%_ if (databaseType === 'cassandra') { _%>
-        user.id = UUID.randomUUID().toString()
-        <%_ } _%>
-        user.password = RandomStringUtils.random(60)
-        user.activated = true
-        user.login = "password-reset"
+        val user = <%= asEntity('User') %>(
+            <%_ if (databaseType === 'cassandra') { _%>
+            id = UUID.randomUUID().toString(),
+            <%_ } _%>
+            password = RandomStringUtils.random(60),
+            activated = true,
+            login = "password-reset",
+            email = "password-reset@example.com"
+        )
 
-        user.email = "password-reset@example.com"
         userRepository.save<% if (databaseType === 'sql') { %>AndFlush<% } %>(user)<% if (reactive) { %>.block()<% } %>
 
         <%_ if (!reactive) { _%>
@@ -1484,14 +1512,15 @@ class AccountResourceIT <% if (databaseType === 'cassandra') { %>: AbstractCassa
     @Throws(Exception::class)
     <%_ } _%>
     fun testRequestPasswordResetUpperCaseEmail() {
-        val user = <%= asEntity('User') %>()
-        <%_ if (databaseType === 'cassandra') { _%>
-        user.id = UUID.randomUUID().toString()
-        <%_ } _%>
-        user.password = RandomStringUtils.random(60)
-        user.activated = true
-        user.login = "password-reset"
-        user.email = "password-reset@example.com"
+        val user = <%= asEntity('User') %>(
+            <%_ if (databaseType === 'cassandra') { _%>
+            id = UUID.randomUUID().toString(),
+            <%_ } _%>
+            password = RandomStringUtils.random(60),
+            activated = true,
+            login = "password-reset",
+            email = "password-reset@example.com"
+        )
 
         userRepository.save<% if (databaseType === 'sql') { %>AndFlush<% } %>(user)<% if (reactive) { %>.block()<% } %>
 
@@ -1530,21 +1559,20 @@ class AccountResourceIT <% if (databaseType === 'cassandra') { %>: AbstractCassa
     @Transactional<% } %>
     @Throws(Exception::class)
     fun testFinishPasswordReset() {
-        val user = <%= asEntity('User') %>()
-        <%_ if (databaseType === 'cassandra') { _%>
-        user.id = UUID.randomUUID().toString()
-        <%_ } _%>
-        user.password = RandomStringUtils.random(60)
-        user.login = "finish-password-reset"
-        user.email = "finish-password-reset@example.com"
-        user.resetDate = Instant.now().plusSeconds(60)
-        user.resetKey = "reset key"
+        val user = <%= asEntity('User') %>(
+            <%_ if (databaseType === 'cassandra') { _%>
+            id = UUID.randomUUID().toString(),
+            <%_ } _%>
+            password = RandomStringUtils.random(60),
+            login = "finish-password-reset",
+            email = "finish-password-reset@example.com",
+            resetDate = Instant.now().plusSeconds(60),
+            resetKey = "reset key"
+        )
 
         userRepository.save<% if (databaseType === 'sql') { %>AndFlush<% } %>(user)<% if (reactive) { %>.block()<% } %>
 
-        val keyAndPassword = KeyAndPasswordVM()
-        keyAndPassword.key = user.resetKey
-        keyAndPassword.newPassword = "new password"
+        val keyAndPassword = KeyAndPasswordVM(key = user.resetKey, newPassword = "new password")
 
         <%_ if (!reactive) { _%>
         restMvc.perform(
@@ -1570,21 +1598,20 @@ class AccountResourceIT <% if (databaseType === 'cassandra') { %>: AbstractCassa
     @Transactional<% } %>
     @Throws(Exception::class)
     fun testFinishPasswordResetTooSmall() {
-        val user = <%= asEntity('User') %>()
-        <%_ if (databaseType === 'cassandra') { _%>
-        user.id = UUID.randomUUID().toString()
-        <%_ } _%>
-        user.password = RandomStringUtils.random(60)
-        user.login = "finish-password-reset-too-small"
-        user.email = "finish-password-reset-too-small@example.com"
-        user.resetDate = Instant.now().plusSeconds(60)
-        user.resetKey = "reset key too small"
+        val user = <%= asEntity('User') %>(
+            <%_ if (databaseType === 'cassandra') { _%>
+            id = UUID.randomUUID().toString(),
+            <%_ } _%>
+            password = RandomStringUtils.random(60),
+            login = "finish-password-reset-too-small",
+            email = "finish-password-reset-too-small@example.com",
+            resetDate = Instant.now().plusSeconds(60),
+            resetKey = "reset key too small"
+        )
 
         userRepository.save<% if (databaseType === 'sql') { %>AndFlush<% } %>(user)<% if (reactive) { %>.block()<% } %>
 
-        val keyAndPassword = KeyAndPasswordVM()
-        keyAndPassword.key = user.resetKey
-        keyAndPassword.newPassword = "foo"
+        val keyAndPassword = KeyAndPasswordVM(key = user.resetKey, newPassword = "foo")
 
         <%_ if (!reactive) { _%>
         restMvc.perform(
@@ -1610,9 +1637,7 @@ class AccountResourceIT <% if (databaseType === 'cassandra') { %>: AbstractCassa
     @Transactional<% } %>
     @Throws(Exception::class)
     fun testFinishPasswordResetWrongKey() {
-        val keyAndPassword = KeyAndPasswordVM()
-        keyAndPassword.key = "wrong reset key"
-        keyAndPassword.newPassword = "new password"
+        val keyAndPassword = KeyAndPasswordVM(key = "wrong reset key", newPassword = "new password")
 
         <%_ if (!reactive) { _%>
         restMvc.perform(

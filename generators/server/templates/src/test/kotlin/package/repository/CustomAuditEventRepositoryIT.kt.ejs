@@ -83,29 +83,29 @@ class CustomAuditEventRepositoryIT {
         persistenceAuditEventRepository.deleteAll()
         val oneHourAgo = Instant.now().minusSeconds(3600)
 
-        testUserEvent = PersistentAuditEvent()
-        testUserEvent.principal = "test-user"
-        testUserEvent.auditEventType = "test-type"
-        testUserEvent.auditEventDate = oneHourAgo
-        val data = mutableMapOf<String, String?>()
-        data["test-key"] = "test-value"
-        testUserEvent.data = data
+        testUserEvent = PersistentAuditEvent(
+            principal = "test-user",
+            auditEventType = "test-type",
+            auditEventDate = oneHourAgo,
+            data = mutableMapOf("test-key" to "test-value")
+        )
 
-        testOldUserEvent = PersistentAuditEvent()
-        testOldUserEvent.principal = "test-user"
-        testOldUserEvent.auditEventType = "test-type"
-        testOldUserEvent.auditEventDate = oneHourAgo.minusSeconds(10000)
+        testOldUserEvent = PersistentAuditEvent(
+            principal = "test-user",
+            auditEventType = "test-type",
+            auditEventDate = oneHourAgo.minusSeconds(10000)
+        )
 
-        testOtherUserEvent = PersistentAuditEvent()
-        testOtherUserEvent.principal = "other-test-user"
-        testOtherUserEvent.auditEventType = "test-type"
-        testOtherUserEvent.auditEventDate = oneHourAgo
+        testOtherUserEvent = PersistentAuditEvent(
+            principal = "other-test-user",
+            auditEventType = "test-type",
+            auditEventDate = oneHourAgo
+        )
     }
 
     @Test
     fun addAuditEvent() {
-        val data = mutableMapOf<String, Any>()
-        data["test-key"] = "test-value"
+        val data = mutableMapOf<String, Any>("test-key" to "test-value")
         val event = AuditEvent("test-user", "test-type", data)
         customAuditEventRepository.add(event)
         val persistentAuditEvents = persistenceAuditEventRepository.findAll()
@@ -150,8 +150,7 @@ class CustomAuditEventRepositoryIT {
         request.session = session
         request.remoteAddr = "1.2.3.4"
         val details = WebAuthenticationDetails(request)
-        val data = mutableMapOf<String, Any>()
-        data["test-key"] = details
+        val data = mutableMapOf<String, Any>("test-key" to details)
         val event = AuditEvent("test-user", "test-type", data)
         customAuditEventRepository.add(event)
         val persistentAuditEvents = persistenceAuditEventRepository.findAll()
@@ -164,8 +163,7 @@ class CustomAuditEventRepositoryIT {
 
     @Test
     fun testAddEventWithNullData() {
-        val data = mutableMapOf<String, Any?>()
-        data["test-key"] = null
+        val data = mutableMapOf<String, Any?>("test-key" to null)
         val event = AuditEvent("test-user", "test-type", data)
         customAuditEventRepository.add(event)
         val persistentAuditEvents = persistenceAuditEventRepository.findAll()
@@ -176,8 +174,7 @@ class CustomAuditEventRepositoryIT {
 
     @Test
     fun addAuditEventWithAnonymousUser() {
-        val data = mutableMapOf<String, Any>()
-        data["test-key"] = "test-value"
+        val data = mutableMapOf<String, Any>("test-key" to "test-value")
         val event = AuditEvent(Constants.ANONYMOUS_USER, "test-type", data)
         customAuditEventRepository.add(event)
         val persistentAuditEvents = persistenceAuditEventRepository.findAll()
@@ -186,8 +183,7 @@ class CustomAuditEventRepositoryIT {
 
     @Test
     fun addAuditEventWithAuthorizationFailureType() {
-        val data = mutableMapOf<String, Any>()
-        data["test-key"] = "test-value"
+        val data = mutableMapOf<String, Any>("test-key" to "test-value")
         val event = AuditEvent("test-user", "AUTHORIZATION_FAILURE", data)
         customAuditEventRepository.add(event)
         val persistentAuditEvents = persistenceAuditEventRepository.findAll()

@@ -108,11 +108,12 @@ class RateLimitingFilter(private val jHipsterProperties: JHipsterProperties) : Z
      * Create a Zuul response error when the API limit is exceeded.
      */
     private fun apiLimitExceeded() {
-        val ctx = RequestContext.getCurrentContext()
-        ctx.responseStatusCode = HttpStatus.TOO_MANY_REQUESTS.value()
-        if (ctx.responseBody == null) {
-            ctx.responseBody = "API rate limit exceeded"
-            ctx.setSendZuulResponse(false)
+        RequestContext.getCurrentContext().apply {
+            responseStatusCode = HttpStatus.TOO_MANY_REQUESTS.value()
+            if (responseBody == null) {
+                responseBody = "API rate limit exceeded"
+                setSendZuulResponse(false)
+            }
         }
     }
 

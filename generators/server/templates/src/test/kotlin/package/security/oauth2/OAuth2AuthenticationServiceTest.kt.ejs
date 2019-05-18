@@ -89,10 +89,11 @@ class OAuth2AuthenticationServiceTest {
         val reqHeaders = HttpHeaders()
         reqHeaders.contentType = MediaType.APPLICATION_FORM_URLENCODED
         reqHeaders.add("Authorization", CLIENT_AUTHORIZATION)                //take over Authorization header from client request to UAA request
-        val formParams = LinkedMultiValueMap<String, String>()
-        formParams.set("username", "user")
-        formParams.set("password", "user2")
-        formParams.add("grant_type", "password")
+        val formParams = LinkedMultiValueMap<String, String>().apply {
+            set("username", "user")
+            set("password", "user2")
+            add("grant_type", "password")
+        }
         val entity = HttpEntity<MultiValueMap<String, String>>(formParams, reqHeaders)
         `when`(restTemplate.postForEntity("http://uaa/oauth/token", entity, OAuth2AccessToken::class.java))
             .thenThrow(HttpClientErrorException(HttpStatus.BAD_REQUEST))
@@ -102,19 +103,21 @@ class OAuth2AuthenticationServiceTest {
         val reqHeaders = HttpHeaders()
         reqHeaders.contentType = MediaType.APPLICATION_FORM_URLENCODED
         reqHeaders.add("Authorization", CLIENT_AUTHORIZATION)                //take over Authorization header from client request to UAA request
-        val formParams = LinkedMultiValueMap<String, String>()
-        formParams.set("username", "user")
-        formParams.set("password", "user")
-        formParams.add("grant_type", "password")
+        val formParams = LinkedMultiValueMap<String, String>().apply {
+            set("username", "user")
+            set("password", "user")
+            add("grant_type", "password")
+        }
         val entity = HttpEntity<MultiValueMap<String, String>>(formParams, reqHeaders)
         `when`(restTemplate.postForEntity("http://uaa/oauth/token", entity, OAuth2AccessToken::class.java))
             .thenReturn(ResponseEntity(accessToken, HttpStatus.OK))
     }
 
     private fun mockRefreshGrant() {
-        val params = LinkedMultiValueMap<String, String>()
-        params.add("grant_type", "refresh_token")
-        params.add("refresh_token", REFRESH_TOKEN_VALUE)
+        val params = LinkedMultiValueMap<String, String>().apply {
+            add("grant_type", "refresh_token")
+            add("refresh_token", REFRESH_TOKEN_VALUE)
+        }
         //we must authenticate with the UAA server via HTTP basic authentication using the browser's client_id with no client secret
         val headers = HttpHeaders()
         headers.add("Authorization", CLIENT_AUTHORIZATION)
@@ -126,13 +129,15 @@ class OAuth2AuthenticationServiceTest {
 
     @Test
     fun testAuthenticationCookies() {
-        val request = MockHttpServletRequest()
-        request.serverName = "www.test.com"
-        request.addHeader("Authorization", CLIENT_AUTHORIZATION)
-        val params = mutableMapOf<String, String>()
-        params["username"] = "user"
-        params["password"] = "user"
-        params["rememberMe"] = "true"
+        val request = MockHttpServletRequest().apply{
+            serverName = "www.test.com"
+            addHeader("Authorization", CLIENT_AUTHORIZATION)
+        }
+        val params = mutableMapOf<String, String>(
+            "username"to "user",
+            "password" to "user",
+            "rememberMe" to "true"
+        )
         val response = MockHttpServletResponse()
         authenticationService.authenticate(request, response, params)
         //check that cookies are set correctly
@@ -147,10 +152,11 @@ class OAuth2AuthenticationServiceTest {
     fun testAuthenticationNoRememberMe() {
         val request = MockHttpServletRequest()
         request.serverName = "www.test.com"
-        val params = mutableMapOf<String, String>()
-        params["username"] = "user"
-        params["password"] = "user"
-        params["rememberMe"] = "false"
+        val params = mutableMapOf<String, String>(
+            "username"to "user",
+            "password" to "user",
+            "rememberMe" to "false"
+        )
         val response = MockHttpServletResponse()
         authenticationService.authenticate(request, response, params)
         //check that cookies are set correctly
@@ -165,10 +171,11 @@ class OAuth2AuthenticationServiceTest {
     fun testInvalidPassword() {
         val request = MockHttpServletRequest()
         request.serverName = "www.test.com"
-        val params = mutableMapOf<String, String>()
-        params["username"] = "user"
-        params["password"] = "user2"
-        params["rememberMe"] = "false"
+        val params = mutableMapOf<String, String>(
+            "username" to "user",
+            "password" to "user2",
+            "rememberMe" to "false"
+        )
         val response = MockHttpServletResponse()
         Assertions.assertThrows(BadCredentialsException::class.java) {
             authenticationService.authenticate(request, response, params)

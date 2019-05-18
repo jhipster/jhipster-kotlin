@@ -61,11 +61,12 @@ class MailService(
         // Prepare message using a Spring helper
         val mimeMessage = javaMailSender.createMimeMessage()
         try {
-            val message = MimeMessageHelper(mimeMessage, isMultipart, StandardCharsets.UTF_8.name())
-            message.setTo(to)
-            message.setFrom(jHipsterProperties.mail.from)
-            message.setSubject(subject)
-            message.setText(content, isHtml)
+            val message = MimeMessageHelper(mimeMessage, isMultipart, StandardCharsets.UTF_8.name()).apply {
+                setTo(to)
+                setFrom(jHipsterProperties.mail.from)
+                setSubject(subject)
+                setText(content, isHtml)
+            }
             javaMailSender.send(mimeMessage)
             log.debug("Sent email to User '{}'", to)
         } catch (e: Exception) {
@@ -80,9 +81,10 @@ class MailService(
     @Async
     fun sendEmailFromTemplate(user: <%= asEntity('User') %>, templateName: String, titleKey: String) {
         val locale = Locale.forLanguageTag(user.langKey)
-        val context = Context(locale)
-        context.setVariable(USER, user)
-        context.setVariable(BASE_URL, jHipsterProperties.mail.baseUrl)
+        val context = Context(locale).apply {
+            setVariable(USER, user)
+            setVariable(BASE_URL, jHipsterProperties.mail.baseUrl)
+        }
         val content = templateEngine.process(templateName, context)
         val subject = messageSource.getMessage(titleKey, null, locale)
         sendEmail(user.email!!, subject, content, isMultipart = false, isHtml = true)

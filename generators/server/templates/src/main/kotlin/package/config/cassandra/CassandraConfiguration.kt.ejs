@@ -81,16 +81,15 @@ class CassandraConfiguration : InitializingBean {
 
     @Bean
     fun cassandraCustomConversions(cluster: Cluster): CassandraCustomConversions {
-        val converters = mutableListOf<Converter<*, *>>()
-        converters.add(TupleToZonedDateTimeConverter.INSTANCE)
-        converters.add(ZonedDateTimeToTupleConverter(protocolVersion, cluster.configuration.codecRegistry))
+        val converters = mutableListOf<Converter<*, *>>(
+            TupleToZonedDateTimeConverter,
+            ZonedDateTimeToTupleConverter(protocolVersion, cluster.configuration.codecRegistry)
+        )
         return CassandraCustomConversions(converters)
     }
 
     @ReadingConverter
-    internal enum class TupleToZonedDateTimeConverter : Converter<TupleValue, ZonedDateTime> {
-        INSTANCE;
-
+    internal object TupleToZonedDateTimeConverter : Converter<TupleValue, ZonedDateTime> {
         override fun convert(source: TupleValue): ZonedDateTime {
             val timestamp = source.getTimestamp(0)
             val zoneId = ZoneId.of(source.getString(1))
@@ -99,15 +98,15 @@ class CassandraConfiguration : InitializingBean {
     }
 
     @WritingConverter
-    internal inner class ZonedDateTimeToTupleConverter(version: ProtocolVersion, codecRegistry: CodecRegistry) : Converter<ZonedDateTime, TupleValue> {
+    internal object ZonedDateTimeToTupleConverter(version: ProtocolVersion, codecRegistry: CodecRegistry) : Converter<ZonedDateTime, TupleValue> {
 
         private val type: TupleType = TupleType.of(version, codecRegistry, DataType.timestamp(), DataType.text())
 
         override fun convert(source: ZonedDateTime): TupleValue? {
-            val tupleValue = type.newValue()
-            tupleValue.setTimestamp(0, Date.from(source.toLocalDateTime().toInstant(ZoneOffset.UTC)))
-            tupleValue.setString(1, source.zone.toString())
-            return tupleValue
+            return type.newValue().apply {
+                setTimestamp(0, Date.from(source.toLocalDateTime().toInstant(ZoneOffset.UTC)))
+                setString(1, source.zone.toString())
+            }
         }
     }
 

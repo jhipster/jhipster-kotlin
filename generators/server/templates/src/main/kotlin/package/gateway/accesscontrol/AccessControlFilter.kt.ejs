@@ -92,10 +92,11 @@ class AccessControlFilter(
     }
 
     override fun run(): Any? {
-        val ctx = RequestContext.getCurrentContext()
-        ctx.responseStatusCode = HttpStatus.FORBIDDEN.value()
-        ctx.setSendZuulResponse(false)
-        log.debug("Access Control: filtered unauthorized access on endpoint {}", ctx.request.requestURI)
+        RequestContext.getCurrentContext().apply {
+            responseStatusCode = HttpStatus.FORBIDDEN.value()
+            setSendZuulResponse(false)
+            log.debug("Access Control: filtered unauthorized access on endpoint {}", request.requestURI)
+        }
         return null
     }
 }

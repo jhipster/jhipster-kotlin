@@ -42,11 +42,12 @@ class AsyncConfiguration(private val taskExecutionProperties: TaskExecutionPrope
     @Bean(name = ["taskExecutor"])
     override fun getAsyncExecutor(): Executor {
         log.debug("Creating Async Task Executor")
-        val executor = ThreadPoolTaskExecutor()
-        executor.corePoolSize = taskExecutionProperties.pool.coreSize
-        executor.maxPoolSize = taskExecutionProperties.pool.maxSize
-        executor.setQueueCapacity(taskExecutionProperties.pool.queueCapacity)
-        executor.threadNamePrefix = taskExecutionProperties.threadNamePrefix
+        val executor = ThreadPoolTaskExecutor().apply {
+            corePoolSize = taskExecutionProperties.pool.coreSize
+            maxPoolSize = taskExecutionProperties.pool.maxSize
+            setQueueCapacity(taskExecutionProperties.pool.queueCapacity)
+            threadNamePrefix = taskExecutionProperties.threadNamePrefix
+        }
         return ExceptionHandlingAsyncTaskExecutor(executor)
     }
 

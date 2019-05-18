@@ -116,14 +116,15 @@ class UserJWTControllerIT <% if (databaseType === 'cassandra') { %>: AbstractCas
     <%_ } _%>
     @Throws(Exception::class)
     fun testAuthorize() {
-        val user = <%= asEntity('User') %>()
-        <%_ if (databaseType === 'cassandra') { _%>
-        user.id = UUID.randomUUID().toString())
-        <%_ } _%>
-        user.login = "user-jwt-controller"
-        user.email = "user-jwt-controller@example.com"
-        user.activated = true
-        user.password = passwordEncoder.encode("test")
+        val user = <%= asEntity('User') %>(
+            <%_ if (databaseType === 'cassandra') { _%>
+            id = UUID.randomUUID().toString()),
+            <%_ } _%>
+            login = "user-jwt-controller",
+            email = "user-jwt-controller@example.com",
+            activated = true,
+            password = passwordEncoder.encode("test")
+        )
 
         <%_ if (databaseType === 'sql') { _%>
         userRepository.saveAndFlush(user)
@@ -131,15 +132,12 @@ class UserJWTControllerIT <% if (databaseType === 'cassandra') { %>: AbstractCas
         userRepository.save(user)<% if (reactive) { %>.block()<% } %>
         <%_ } _%>
 
-        val login = LoginVM()
-        login.username = "user-jwt-controller"
+        val login = LoginVM(username = "user-jwt-controller", password = "test")
 <%_ } else { _%>
     @Throws(Exception::class)
     fun testAuthorize() {
-        val login = LoginVM()
-        login.username ="test"
+        val login = LoginVM(username ="test", password = "test")
 <%_ } _%>
-        login.password = "test"
         <%_ if (!reactive) { _%>
         mockMvc.perform(post("/api/authenticate")
             .contentType(TestUtil.APPLICATION_JSON_UTF8)
@@ -168,14 +166,15 @@ class UserJWTControllerIT <% if (databaseType === 'cassandra') { %>: AbstractCas
     <%_ } _%>
     @Throws(Exception::class)
     fun testAuthorizeWithRememberMe() {
-        val user = <%= asEntity('User') %>()
-        <%_ if (databaseType === 'cassandra') { _%>
-        user.id = UUID.randomUUID().toString()
-        <%_ } _%>
-        user.login = "user-jwt-controller-remember-me"
-        user.email = "user-jwt-controller-remember-me@example.com"
-        user.activated = true
-        user.password = passwordEncoder.encode("test")
+        val user = <%= asEntity('User') %>(
+            <%_ if (databaseType === 'cassandra') { _%>
+            id = UUID.randomUUID().toString(),
+            <%_ } _%>
+            login = "user-jwt-controller-remember-me",
+            email = "user-jwt-controller-remember-me@example.com",
+            activated = true,
+            password = passwordEncoder.encode("test")
+        )
 
         <%_ if (databaseType === 'sql') { _%>
         userRepository.saveAndFlush(user)
@@ -183,16 +182,20 @@ class UserJWTControllerIT <% if (databaseType === 'cassandra') { %>: AbstractCas
         userRepository.save(user)<% if (reactive) { %>.block()<% } %>
         <%_ } _%>
 
-        val login = LoginVM()
-        login.username = "user-jwt-controller-remember-me"
+        val login = LoginVM(
+            username = "user-jwt-controller-remember-me",
+            password = "test",
+            isRememberMe = true
+        )
 <%_ } else { _%>
     @Throws(Exception::class)
     fun testAuthorizeWithRememberMe() {
-        val login = LoginVM()
-        login.username ="test"
+        val login = LoginVM(
+            username ="test",
+            password = "test",
+            isRememberMe = true
+        )
 <%_ } _%>
-        login.password = "test"
-        login.isRememberMe = true
         <%_ if (!reactive) { _%>
         mockMvc.perform(post("/api/authenticate")
             .contentType(TestUtil.APPLICATION_JSON_UTF8)
@@ -217,9 +220,7 @@ class UserJWTControllerIT <% if (databaseType === 'cassandra') { %>: AbstractCas
     @Test
     @Throws(Exception::class)
     fun testAuthorizeFails() {
-        val login = LoginVM()
-        login.username = "wrong-user"
-        login.password = "wrong password"
+        val login = LoginVM(username = "wrong-user", password = "wrong password")
         <%_ if (!reactive) { _%>
         mockMvc.perform(post("/api/authenticate")
             .contentType(TestUtil.APPLICATION_JSON_UTF8)
