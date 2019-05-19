@@ -62,7 +62,7 @@ function requireCLI(preferLocal) {
                 // load local version
                 /* eslint-disable import/no-dynamic-require */
                 logger.info("Using KHipster version installed locally in current project's node_modules");
-                require(localCLI)(process.argv.slice(2));
+                require(localCLI);
                 return;
             }
         } catch (e) {
