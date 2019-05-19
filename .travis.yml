@@ -55,6 +55,7 @@ env:
         - KOTLIN_JHI_SCRIPTS=$TRAVIS_BUILD_DIR/test-integration/scripts
     matrix:
         - JHI_APP=kotlin-jdl-default JHI_ENTITY=jdl JHI_PROFILE=prod JHI_PROTRACTOR=1
+        - JHI_APP=kotlin-jdl-default JHI_ENTITY=jdl JHI_PROFILE=prod JHI_PROTRACTOR=1 JHI_JDK=11
         - JHI_APP=ngx-psql-es-noi18n-mapsid JHI_PROFILE=prod JHI_PROTRACTOR=1 JHI_ENTITY=sqlfull
         - JHI_APP=ngx-gradle-fr JHI_PROFILE=prod JHI_PROTRACTOR=1 JHI_ENTITY=sql JHI_WAR=1
         - JHI_APP=ms-ngx-gateway-eureka JHI_ENTITY=sql JHI_WAR=1
@@ -71,10 +72,11 @@ before_install:
     - |
         if [[ $JHI_JDK = '11' ]]; then
             echo '*** Using OpenJDK 11'
-            curl -s get.sdkman.io | bash
-            echo sdkman_auto_answer=true > ~/.sdkman/etc/config
-            source "$HOME/.sdkman/bin/sdkman-init.sh"
-            sdk install java 11.0.2-open
+            sudo add-apt-repository ppa:openjdk-r/ppa -y
+            sudo apt-get update
+            sudo apt-get install -y openjdk-11-jdk
+            sudo update-java-alternatives -s java-1.11.0-openjdk-amd64
+            java -version
         else
             echo '*** Using OpenJDK 8 by default'
         fi
