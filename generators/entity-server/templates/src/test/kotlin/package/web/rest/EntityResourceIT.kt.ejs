@@ -22,7 +22,7 @@ package <%=packageName%>.web.rest
     let mapsIdAssoc;
     let mapsIdEntity;
     let mapsIdEntityInstance;
-    let mapsIdRepoInstance
+    let mapsIdRepoInstance;
     for (idx in relationships) {
         isUsingMapsId = relationships[idx].useJPADerivedIdentifier;
         if ( isUsingMapsId === true) {
@@ -32,7 +32,8 @@ package <%=packageName%>.web.rest
             mapsIdRepoInstance = `${mapsIdEntityInstance}Repository`;
             break;
         }
-    } _%>
+    }
+_%>
 <%_ if (databaseType === 'cassandra') { _%>
 import <%=packageName%>.AbstractCassandraTest
 <%_ } _%>
@@ -1097,19 +1098,14 @@ class <%= entityClass %>ResourceIT <% if (databaseType === 'cassandra') { %>: Ab
          */
         @JvmStatic
         fun create<% if (fieldStatus === 'UPDATED_') { _%>Updated<%_ } %>Entity(<% if (databaseType === 'sql') { %>em: EntityManager<% } %>): <%= asEntity(entityClass) %> {
-            <%_ if (fluentMethods) { _%>
-            val <%= asEntity(entityInstance) %> = <%= asEntity(entityClass) %>()<% for (idx in fields) { %>
-            <%= asEntity(entityInstance) %>.<%= fields[idx].fieldName %> = <%=fieldStatus + fields[idx].fieldNameUnderscored.toUpperCase()%><% if ((fields[idx].fieldType === 'byte[]' || fields[idx].fieldType === 'ByteBuffer') && fields[idx].fieldTypeBlobContent !== 'text') { %>
-            <%= asEntity(entityInstance) %>.<%= fields[idx].fieldName %>ContentType = <%=fieldStatus + fields[idx].fieldNameUnderscored.toUpperCase()%>_CONTENT_TYPE<% } %><% } %>
-            <%_ } else { _%>
-            val <%= asEntity(entityInstance) %> = <%= asEntity(entityClass) %>()
-            <%_ for (idx in fields) { _%>
-                <%= asEntity(entityInstance) %>.set<%= fields[idx].fieldInJavaBeanMethod %>(<%=fieldStatus + fields[idx].fieldNameUnderscored.toUpperCase() %>)
-                    <%_ if ((fields[idx].fieldType === 'byte[]' || fields[idx].fieldType === 'ByteBuffer') && fields[idx].fieldTypeBlobContent !== 'text') { _%>
-            <%= asEntity(entityInstance) %>.set<%= fields[idx].fieldInJavaBeanMethod %>ContentType(<%=fieldStatus + fields[idx].fieldNameUnderscored.toUpperCase() %>_CONTENT_TYPE)
-                    <%_ } _%>
-                <%_ } _%>
+            val <%= asEntity(entityInstance) %> = <%= asEntity(entityClass) %>(
+            <%_ for (idx in fields) {
+                const comma = (parseInt(idx, 10) === (fields.length - 1)) ?  '' : ',';
+            _%>
+                <%= fields[idx].fieldName %> = <%=fieldStatus + fields[idx].fieldNameUnderscored.toUpperCase()%><% if ((fields[idx].fieldType === 'byte[]' || fields[idx].fieldType === 'ByteBuffer') && fields[idx].fieldTypeBlobContent !== 'text') { %>,
+                <%= fields[idx].fieldName %>ContentType = <%=fieldStatus + fields[idx].fieldNameUnderscored.toUpperCase()%>_CONTENT_TYPE<% } %><%= comma %>
             <%_ } _%>
+            )
 
             <%_
             const alreadyGeneratedEntities = []
@@ -1118,8 +1114,6 @@ class <%= entityClass %>ResourceIT <% if (databaseType === 'cassandra') { %>: Ab
                 const otherEntityName = relationships[idx].otherEntityName;
                 const otherEntityNameCapitalized = relationships[idx].otherEntityNameCapitalized;
                 const relationshipType = relationships[idx].relationshipType;
-                const relationshipNameCapitalizedPlural = relationships[idx].relationshipNameCapitalizedPlural;
-                const relationshipNameCapitalized = relationships[idx].relationshipNameCapitalized;
                 const relationshipName = relationships[idx].relationshipName;
                 const mapsIdUse = relationships[idx].useJPADerivedIdentifier;
                 if ((relationshipValidate !== null && relationshipValidate === true) || mapsIdUse === true) { _%>

@@ -203,7 +203,7 @@ class UserRepository(
     private val insertByActivationKeyStmt = session.prepare(
         "INSERT INTO user_by_activation_key (activation_key, id) " +
             "VALUES (:activation_key, :id)"
-   )<% if(reactive) { %>.block()<% } %>
+    )<% if(reactive) { %>.block()<% } %>
 
     private val insertByResetKeyStmt = session.prepare(
         "INSERT INTO user_by_reset_key (reset_key, id) " +
@@ -325,11 +325,11 @@ class UserRepository(
                 user
             }
     }
-
     <%_ } _%>
+
     fun save(user: <%= asEntity('User') %>): <% if(reactive) { %>Mono<<% } %><%= asEntity('User') %><% if(reactive) { %>><% } %> {
         val violations = validator.validate(user)
-        if (violations != null && !violations.isEmpty()) {
+        if (violations != null && violations.isNotEmpty()) {
             throw ConstraintViolationException(violations)
         }
         <%_ if(!reactive) { _%>
@@ -450,7 +450,7 @@ class UserRepository(
     <%_ if(!reactive) { _%>
     private fun findOneFromIndex(stmt: BoundStatement): Optional<<%= asEntity('User') %>> {
         val rs = session.execute(stmt)
-        if (rs.isExhausted()) {
+        if (rs.isExhausted) {
             return Optional.empty()
         }
         return Optional.ofNullable(rs.one().getString("id"))

@@ -31,9 +31,9 @@ import com.datastax.driver.extras.codecs.jdk8.LocalDateCodec
 import com.datastax.driver.extras.codecs.jdk8.ZonedDateTimeCodec
 import io.github.jhipster.config.JHipsterConstants
 import org.slf4j.LoggerFactory
+import org.springframework.beans.factory.InitializingBean
 import org.springframework.beans.factory.annotation.Autowired
 import org.springframework.beans.factory.annotation.Value
-import org.springframework.beans.factory.InitializingBean
 import org.springframework.boot.autoconfigure.cassandra.CassandraProperties
 import org.springframework.boot.autoconfigure.cassandra.ClusterBuilderCustomizer
 <%_ if (applicationType === 'gateway' && databaseType !== 'cassandra') { _%>
@@ -98,15 +98,23 @@ class CassandraConfiguration : InitializingBean {
     }
 
     @WritingConverter
-    internal object ZonedDateTimeToTupleConverter(version: ProtocolVersion, codecRegistry: CodecRegistry) : Converter<ZonedDateTime, TupleValue> {
+    internal object ZonedDateTimeToTupleConverter : Converter<ZonedDateTime, TupleValue> {
 
-        private val type: TupleType = TupleType.of(version, codecRegistry, DataType.timestamp(), DataType.text())
+        private lateinit var type: TupleType
 
         override fun convert(source: ZonedDateTime): TupleValue? {
             return type.newValue().apply {
                 setTimestamp(0, Date.from(source.toLocalDateTime().toInstant(ZoneOffset.UTC)))
                 setString(1, source.zone.toString())
             }
+        }
+
+        internal operator fun invoke(
+            version: ProtocolVersion,
+            codecRegistry: CodecRegistry?
+        ): ZonedDateTimeToTupleConverter {
+            type = TupleType.of(version, codecRegistry, DataType.timestamp(), DataType.text())
+            return this
         }
     }
 

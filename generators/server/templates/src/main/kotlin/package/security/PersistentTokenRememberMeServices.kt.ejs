@@ -150,7 +150,11 @@ class PersistentTokenRememberMeServices(
         }
     }
 
-    override fun onLoginSuccess(request: HttpServletRequest, response: HttpServletResponse, successfulAuthentication: Authentication) {
+    override fun onLoginSuccess(
+        request: HttpServletRequest,
+        response: HttpServletResponse,
+        successfulAuthentication: Authentication
+    ) {
 
         val login = successfulAuthentication.name
 
@@ -161,7 +165,7 @@ class PersistentTokenRememberMeServices(
                 <%_ if (databaseType === 'sql' || databaseType === 'mongodb') { _%>
                 user = u,
                 <%_ } else { _%>
-                this.login = login,
+                login = login,
                 <%_ } _%>
                 <%_ if (databaseType === 'cassandra') { _%>
                 userId = u.id,
@@ -221,8 +225,9 @@ class PersistentTokenRememberMeServices(
      */
     private fun getPersistentToken(cookieTokens: Array<String>): PersistentToken {
         if (cookieTokens.size != 2) {
-            throw InvalidCookieException("Cookie token did not contain " + 2 +
-                " tokens, but contained '" + cookieTokens.toList() + "'")
+            throw InvalidCookieException(
+                "Cookie token did not contain 2 tokens, but contained '${cookieTokens.toList()}'"
+            )
         }
         val presentedSeries = cookieTokens[0]
         val presentedToken = cookieTokens[1]
@@ -246,14 +251,18 @@ class PersistentTokenRememberMeServices(
             <%_ if (databaseType === 'mongodb' || databaseType === 'couchbase') { _%>
             persistentTokenRepository.delete(token)
             <%_ } _%>
-            throw CookieTheftException("Invalid remember-me token (Series/token) mismatch. Implies previous " +
-                "cookie theft attack.")
+            throw CookieTheftException(
+                "Invalid remember-me token (Series/token) mismatch. Implies previous cookie theft attack."
+            )
         }
         <%_ if (databaseType === 'sql' || databaseType === 'mongodb' || databaseType === 'couchbase') { _%>
         if (token.tokenDate!!.plusDays(TOKEN_VALIDITY_DAYS.toLong()).isBefore(LocalDate.now())) {
         <%_ } _%>
         <%_ if (databaseType === 'cassandra') { _%>
-        if (token.tokenDate!!.toInstant().plus(TOKEN_VALIDITY_DAYS.toLong(), ChronoUnit.DAYS).isBefore(Date().toInstant())) {
+        if (token.tokenDate!!.toInstant().plus(
+                TOKEN_VALIDITY_DAYS.toLong(), ChronoUnit.DAYS
+            ).isBefore(Date().toInstant())
+        ) {
         <%_ } _%>
             <%_ if (databaseType === 'sql') { _%>
             persistentTokenRepository.deleteById(token.series!!)

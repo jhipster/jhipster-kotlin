@@ -56,7 +56,9 @@ open class AbstractCassandraTest {
 
         @JvmStatic
         @BeforeAll
-        @Throws(TTransportException::class, ConfigurationException::class, IOException::class, URISyntaxException::class)
+        @Throws(
+            TTransportException::class, ConfigurationException::class, IOException::class, URISyntaxException::class
+        )
         fun startServer() {
             if (!started) {
                 CASSANDRA_CONTAINER.start()
@@ -78,19 +80,18 @@ open class AbstractCassandraTest {
 
         @JvmStatic
         private fun createTestKeyspace(session: Session) {
-            val createQuery = "CREATE KEYSPACE $CASSANDRA_UNIT_KEYSPACE WITH replication={'class' : 'SimpleStrategy', 'replication_factor':1}"
+            val createQuery =
+                "CREATE KEYSPACE $CASSANDRA_UNIT_KEYSPACE WITH replication={'class' : 'SimpleStrategy', 'replication_factor':1}"
             session.execute(createQuery)
             val useKeyspaceQuery = "USE $CASSANDRA_UNIT_KEYSPACE"
             session.execute(useKeyspaceQuery)
         }
 
-
         @JvmStatic
         @Throws(IOException::class, URISyntaxException::class)
         private fun applyScripts(dataLoader: CQLDataLoader, cqlDir: String, pattern: String) {
-            val dirUrl = ClassLoader.getSystemResource(cqlDir)
-                ?: // protect for empty directory
-                return
+            // protect for empty directory
+            val dirUrl = ClassLoader.getSystemResource(cqlDir) ?: return
 
             val scripts = mutableListOf<String>()
             Files.newDirectoryStream(Paths.get(dirUrl.toURI()), pattern).use { stream ->

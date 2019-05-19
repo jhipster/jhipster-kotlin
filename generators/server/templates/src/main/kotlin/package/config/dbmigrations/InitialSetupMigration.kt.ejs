@@ -32,12 +32,13 @@ import java.time.Instant
  * Creates the initial database setup.
  */
 @ChangeLog(order = "001")
+@Suppress("unused")
 class InitialSetupMigration {
 
     @ChangeSet(order = "01", author = "initiator", id = "01-addAuthorities")
     fun addAuthorities(mongoTemplate: MongoTemplate) {
-        val adminAuthority = Authority(name = AuthoritiesConstants.ADMIN)
-        val userAuthority = Authority(name = AuthoritiesConstants.USER)
+        val adminAuthority = Authority(AuthoritiesConstants.ADMIN)
+        val userAuthority = Authority(AuthoritiesConstants.USER)
 
         mongoTemplate.save(adminAuthority)
         mongoTemplate.save(userAuthority)
@@ -46,8 +47,8 @@ class InitialSetupMigration {
 
     @ChangeSet(order = "02", author = "initiator", id = "02-addUsers")
     fun addUsers(mongoTemplate: MongoTemplate) {
-        val adminAuthority = Authority(name = AuthoritiesConstants.ADMIN)
-        val userAuthority = Authority(name = AuthoritiesConstants.USER)
+        val adminAuthority = Authority(AuthoritiesConstants.ADMIN)
+        val userAuthority = Authority(AuthoritiesConstants.USER)
 
         val systemUser = <%= asEntity('User') %>(
             id = "user-0",
@@ -60,7 +61,7 @@ class InitialSetupMigration {
             email = "system@localhost",
             activated = true,
             langKey = "en",
-            createdBy = systemUser.login,
+            createdBy = "system",
             createdDate = Instant.now(),
             authorities = mutableSetOf(adminAuthority, userAuthority)
         )

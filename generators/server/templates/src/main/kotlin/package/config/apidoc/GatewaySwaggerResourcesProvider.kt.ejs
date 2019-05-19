@@ -22,7 +22,6 @@ import io.github.jhipster.config.JHipsterConstants
 
 import org.springframework.context.annotation.Primary
 import org.springframework.context.annotation.Profile
-import org.springframework.cloud.netflix.zuul.filters.Route
 import org.springframework.cloud.netflix.zuul.filters.RouteLocator
 import org.springframework.stereotype.Component
 
@@ -38,14 +37,13 @@ import springfox.documentation.swagger.web.SwaggerResourcesProvider
 class GatewaySwaggerResourcesProvider(private val routeLocator: RouteLocator) : SwaggerResourcesProvider {
 
     override fun get(): MutableList<SwaggerResource> {
-        val resources = mutableListOf<SwaggerResource>()
+        val resources = mutableListOf(
+            // Add the default swagger resource that correspond to the gateway's own swagger doc
+            swaggerResource("default", "/v2/api-docs")
+        )
 
-        //Add the default swagger resource that correspond to the gateway's own swagger doc
-        resources.add(swaggerResource("default", "/v2/api-docs"))
-
-        //Add the registered microservices swagger docs as additional swagger resources
-        val routes = routeLocator.getRoutes()
-        routes.forEach {
+        // Add the registered microservices swagger docs as additional swagger resources
+        routeLocator.routes.forEach {
             resources.add(swaggerResource(it.id, it.fullPath.replace("**", "v2/api-docs")))
         }
 
