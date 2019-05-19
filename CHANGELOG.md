@@ -1,3 +1,9 @@
+<a name="0.8.1"></a>
+
+# [0.8.1](https://github.com/jhipster/jhipster-kotlin/compare/0.8.0...0.8.1) (2019-05-19)
+
+-  Fixed duplicate invocation of `khipster`
+
 <a name="0.8.0"></a>
 
 # [0.8.0](https://github.com/jhipster/jhipster-kotlin/compare/0.7.0...0.8.0) (2019-05-17)
