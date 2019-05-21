@@ -179,31 +179,32 @@ class UserServiceIT <% if (databaseType === 'cassandra') { %>: AbstractCassandra
         <%_ if (databaseType !== 'sql') { _%>
         userRepository.deleteAll()<% if (reactive) { %>.block()<% } %>
         <%_ } _%>
-        user = <%= asEntity('User') %>()
-        <%_ if (databaseType === 'cassandra') { _%>
-        user.id = UUID.randomUUID().toString()
-        <%_ } _%>
-        user.login = DEFAULT_LOGIN
-        <%_ if (authenticationType !== 'oauth2') { _%>
-        user.password = RandomStringUtils.random(60)
-        <%_ } _%>
-        user.activated = true
-        user.email = DEFAULT_EMAIL
-        user.firstName = DEFAULT_FIRSTNAME
-        user.lastName = DEFAULT_LASTNAME
-        <%_ if (databaseType !== 'cassandra') { _%>
-        user.imageUrl = DEFAULT_IMAGEURL
-        <%_ } _%>
-        user.langKey = DEFAULT_LANGKEY
+        user = <%= asEntity('User') %>(
+            <%_ if (databaseType === 'cassandra') { _%>
+            id = UUID.randomUUID().toString(),
+            <%_ } _%>
+            login = DEFAULT_LOGIN,
+            <%_ if (authenticationType !== 'oauth2') { _%>
+            password = RandomStringUtils.random(60),
+            <%_ } _%>
+            activated = true,
+            email = DEFAULT_EMAIL,
+            firstName = DEFAULT_FIRSTNAME,
+            lastName = DEFAULT_LASTNAME,
+            <%_ if (databaseType !== 'cassandra') { _%>
+            imageUrl = DEFAULT_IMAGEURL,
+            <%_ } _%>
+            langKey = DEFAULT_LANGKEY
+        )
         <%_ if (authenticationType === 'oauth2' ) { _%>
-        userDetails = HashMap()
-        userDetails["sub"] = DEFAULT_LOGIN
-        userDetails["email"] = DEFAULT_EMAIL
-        userDetails["given_name"] = DEFAULT_FIRSTNAME
-        userDetails["family_name"] = DEFAULT_LASTNAME
-        <%_ if (databaseType !== 'cassandra') { _%>
-        userDetails["picture"] = DEFAULT_IMAGEURL
-        <%_ } _%>
+        userDetails = mutableMapOf(
+            "sub" to DEFAULT_LOGIN,
+            "email" to DEFAULT_EMAIL,
+            "given_name" to DEFAULT_FIRSTNAME,
+            "family_name" to DEFAULT_LASTNAME<% if (databaseType !== 'cassandra') { _%>,
+            "picture" to DEFAULT_IMAGEURL
+            <%_ } _%>
+        )
         <%_ } _%>
         <%_ if (databaseType === 'sql' && authenticationType !== 'oauth2' ) { _%>
 
@@ -345,14 +346,18 @@ class UserServiceIT <% if (databaseType === 'cassandra') { %>: AbstractCassandra
     <%_ if ((databaseType === 'sql' || databaseType === 'mongodb' || databaseType === 'couchbase') && authenticationType === 'session' && !reactive) { _%>
 
     private fun generateUserToken(user: <%= asEntity('User') %>, tokenSeries: String, localDate: LocalDate) {
-        val token = PersistentToken()
-        token.series = tokenSeries<% if (databaseType === 'couchbase') { %>
-        token.login = user.login<% } else { %>
-        token.user = user<% } %>
-        token.tokenValue = "$tokenSeries-data"
-        token.tokenDate = localDate
-        token.ipAddress = "127.0.0.1"
-        token.userAgent = "Test agent"
+        val token = PersistentToken(
+            series = tokenSeries,
+            <%_ if (databaseType === 'couchbase') { _%>
+            login = user.login,
+            <%_ } else { _%>
+            user = user,
+            <%_ } _%>
+            tokenValue = "$tokenSeries-data",
+            tokenDate = localDate,
+            ipAddress = "127.0.0.1",
+            userAgent = "Test agent"
+        )
         persistentTokenRepository.save<% if (databaseType === 'sql') { %>AndFlush<% } %>(token)
     }
     <%_ } _%>
@@ -436,10 +441,10 @@ class UserServiceIT <% if (databaseType === 'cassandra') { %>: AbstractCassandra
     @Transactional
     <%_ } _%>
     fun testUserDetailsWithUsername() {
-      userDetails.put("preferred_username", "TEST")
-      val authentication = createMockOAuth2AuthenticationToken(userDetails)
-      val userDTO = userService.getUserFromAuthentication(authentication)
-      assertThat(userDTO.login).isEqualTo("test")
+        userDetails["preferred_username"] = "TEST"
+        val authentication = createMockOAuth2AuthenticationToken(userDetails)
+        val userDTO = userService.getUserFromAuthentication(authentication)
+        assertThat(userDTO.login).isEqualTo("test")
     }
 
     @Test
@@ -447,8 +452,8 @@ class UserServiceIT <% if (databaseType === 'cassandra') { %>: AbstractCassandra
     @Transactional
     <%_ } _%>
     fun testUserDetailsWithLangKey() {
-        userDetails.put("langKey", "fr")
-        userDetails.put("locale", "en-US")
+        userDetails["langKey"] = "fr"
+        userDetails["locale"] = "en-US"
         val authentication = createMockOAuth2AuthenticationToken(userDetails)
         val userDTO = userService.getUserFromAuthentication(authentication)
         assertThat(userDTO.langKey).isEqualTo("fr")
@@ -459,7 +464,7 @@ class UserServiceIT <% if (databaseType === 'cassandra') { %>: AbstractCassandra
     @Transactional
     <%_ } _%>
     fun testUserDetailsWithLocale() {
-        userDetails.put("locale", "it-IT")
+        userDetails["locale"] = "it-IT"
         val authentication = createMockOAuth2AuthenticationToken(userDetails)
         val userDTO = userService.getUserFromAuthentication(authentication)
         assertThat(userDTO.langKey).isEqualTo("it-it")
@@ -470,7 +475,7 @@ class UserServiceIT <% if (databaseType === 'cassandra') { %>: AbstractCassandra
     @Transactional
     <%_ } _%>
     fun testUserDetailsWithUSLocale() {
-        userDetails.put("locale", "en_US")
+        userDetails["locale"] = "en_US"
         val authentication = createMockOAuth2AuthenticationToken(userDetails)
         val userDTO = userService.getUserFromAuthentication(authentication)
         assertThat(userDTO.langKey).isEqualTo("en")
@@ -481,17 +486,14 @@ class UserServiceIT <% if (databaseType === 'cassandra') { %>: AbstractCassandra
     @Transactional
     <%_ } _%>
     fun testUserDetailsWithUSLocale2() {
-        userDetails.put("locale", "en-US")
+        userDetails["locale"] = "en-US"
         val authentication = createMockOAuth2AuthenticationToken(userDetails)
         val userDTO = userService.getUserFromAuthentication(authentication)
         assertThat(userDTO.langKey).isEqualTo("en")
     }
 
     private fun createMockOAuth2AuthenticationToken(userDetails: Map<String, Any?>): OAuth2AuthenticationToken {
-        val scopes = mutableSetOf<String>()
-
-        val authorities = mutableListOf<GrantedAuthority>()
-        authorities.add(SimpleGrantedAuthority(AuthoritiesConstants.ANONYMOUS))
+        val authorities = listOf(SimpleGrantedAuthority(AuthoritiesConstants.ANONYMOUS))
         val usernamePasswordAuthenticationToken = UsernamePasswordAuthenticationToken(Constants.ANONYMOUS_USER, Constants.ANONYMOUS_USER, authorities)
         usernamePasswordAuthenticationToken.details = userDetails
         val user = DefaultOAuth2User(authorities, userDetails, "sub")

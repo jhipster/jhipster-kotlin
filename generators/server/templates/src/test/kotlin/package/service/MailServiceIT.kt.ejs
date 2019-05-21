@@ -146,10 +146,11 @@ class MailServiceIT <% if (databaseType === 'cassandra') { %>: AbstractCassandra
     @Test
     @Throws(Exception::class)
     fun testSendEmailFromTemplate() {
-        val user = <%= asEntity('User') %>()
-        user.login = "john"
-        user.email = "john.doe@example.com"
-        user.langKey = "en"
+        val user = <%= asEntity('User') %>(
+            login = "john",
+            email = "john.doe@example.com",
+            langKey = "en"
+        )
         mailService.sendEmailFromTemplate(user, "mail/testEmail", "email.test.title")
         verify<JavaMailSenderImpl>(javaMailSender).send(messageCaptor.capture())
         val message = messageCaptor.value
@@ -164,10 +165,11 @@ class MailServiceIT <% if (databaseType === 'cassandra') { %>: AbstractCassandra
     @Test
     @Throws(Exception::class)
     fun testSendActivationEmail() {
-        val user = <%= asEntity('User') %>()
-        user.langKey = Constants.DEFAULT_LANGUAGE
-        user.login = "john"
-        user.email = "john.doe@example.com"
+        val user = <%= asEntity('User') %>(
+            langKey = Constants.DEFAULT_LANGUAGE,
+            login = "john",
+            email = "john.doe@example.com"
+        )
         mailService.sendActivationEmail(user)
         verify<JavaMailSenderImpl>(javaMailSender).send(messageCaptor.capture())
         val message = messageCaptor.value
@@ -180,10 +182,11 @@ class MailServiceIT <% if (databaseType === 'cassandra') { %>: AbstractCassandra
     @Test
     @Throws(Exception::class)
     fun testCreationEmail() {
-        val user = <%= asEntity('User') %>()
-        user.langKey = Constants.DEFAULT_LANGUAGE
-        user.login = "john"
-        user.email = "john.doe@example.com"
+        val user = <%= asEntity('User') %>(
+            langKey = Constants.DEFAULT_LANGUAGE,
+            login = "john",
+            email = "john.doe@example.com"
+        )
         mailService.sendCreationEmail(user)
         verify<JavaMailSenderImpl>(javaMailSender).send(messageCaptor.capture())
         val message = messageCaptor.value
@@ -196,10 +199,11 @@ class MailServiceIT <% if (databaseType === 'cassandra') { %>: AbstractCassandra
     @Test
     @Throws(Exception::class)
     fun testSendPasswordResetMail() {
-        val user = <%= asEntity('User') %>()
-        user.langKey = Constants.DEFAULT_LANGUAGE
-        user.login = "john"
-        user.email = "john.doe@example.com"
+        val user = <%= asEntity('User') %>(
+            langKey = Constants.DEFAULT_LANGUAGE,
+            login = "john",
+            email = "john.doe@example.com"
+        )
         mailService.sendPasswordResetMail(user)
         verify<JavaMailSenderImpl>(javaMailSender).send(messageCaptor.capture())
         val message = messageCaptor.value
@@ -213,7 +217,9 @@ class MailServiceIT <% if (databaseType === 'cassandra') { %>: AbstractCassandra
     @Test
     @Throws(Exception::class)
     fun testSendEmailWithException() {
-        doThrow(MailSendException::class.java).`when`<JavaMailSenderImpl>(javaMailSender).send(any(MimeMessage::class.java))
+        doThrow(MailSendException::class.java)
+            .`when`<JavaMailSenderImpl>(javaMailSender)
+            .send(any(MimeMessage::class.java))
         mailService.sendEmail("john.doe@example.com", "testSubject", "testContent", isMultipart = false, isHtml = false)
     }
 }

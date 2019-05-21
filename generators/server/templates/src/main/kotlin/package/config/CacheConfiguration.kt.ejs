@@ -270,11 +270,11 @@ class CacheConfiguration<%_ if (cacheProvider === 'ehcache') { _%>(jHipsterPrope
     }
 
     private fun initializeDefaultManagementCenterConfig(jHipsterProperties: JHipsterProperties): ManagementCenterConfig {
-        val managementCenterConfig = ManagementCenterConfig()
-        managementCenterConfig.isEnabled = jHipsterProperties.cache.hazelcast.managementCenter.isEnabled
-        managementCenterConfig.url = jHipsterProperties.cache.hazelcast.managementCenter.url
-        managementCenterConfig.updateInterval = jHipsterProperties.cache.hazelcast.managementCenter.updateInterval
-        return managementCenterConfig
+        return ManagementCenterConfig().apply {
+            isEnabled = jHipsterProperties.cache.hazelcast.managementCenter.isEnabled
+            url = jHipsterProperties.cache.hazelcast.managementCenter.url
+            updateInterval = jHipsterProperties.cache.hazelcast.managementCenter.updateInterval
+        }
     }
 
     private fun initializeDefaultMapConfig(jHipsterProperties: JHipsterProperties): MapConfig {
@@ -309,9 +309,7 @@ class CacheConfiguration<%_ if (cacheProvider === 'ehcache') { _%>(jHipsterPrope
     <%_ if (cacheProvider === 'hazelcast') { _%>
 
     private fun initializeDomainMapConfig(jHipsterProperties: JHipsterProperties): MapConfig {
-        val mapConfig = MapConfig()
-        mapConfig.timeToLiveSeconds = jHipsterProperties.cache.hazelcast.timeToLiveSeconds
-        return mapConfig
+        return MapConfig().apply { timeToLiveSeconds = jHipsterProperties.cache.hazelcast.timeToLiveSeconds }
     }
     <%_ } _%>
     <%_ } _%>
@@ -351,26 +349,8 @@ class CacheConfiguration<%_ if (cacheProvider === 'ehcache') { _%>(jHipsterPrope
     fun globalConfiguration(jHipsterProperties: JHipsterProperties): InfinispanGlobalConfigurer {
         log.info("Defining Infinispan Global Configuration")
         <%_ if (serviceDiscoveryType === 'eureka' || serviceDiscoveryType === 'consul') { _%>
-            if (this.registration == null) { // if registry is not defined, use native discovery
-                log.warn("No discovery service is set up, Infinispan will use default discovery for cluster formation")
-                return InfinispanGlobalConfigurer {
-                    GlobalConfigurationBuilder
-                        .defaultClusteredBuilder().defaultCacheName("infinispan-<%=baseName%>-cluster-cache").transport().defaultTransport()
-                        .addProperty("configurationFile", jHipsterProperties.cache.infinispan.configFile)
-                        .clusterName("infinispan-<%=baseName%>-cluster").globalJmxStatistics()
-                        .enabled(jHipsterProperties.cache.infinispan.isStatsEnabled)
-                        .allowDuplicateDomains(true).build()
-                }
-            }
-            return InfinispanGlobalConfigurer {
-                GlobalConfigurationBuilder
-                    .defaultClusteredBuilder().defaultCacheName("infinispan-<%=baseName%>-cluster-cache").transport()
-                    .transport(JGroupsTransport(getTransportChannel()))
-                    .clusterName("infinispan-<%=baseName%>-cluster").globalJmxStatistics()
-                    .enabled(jHipsterProperties.cache.infinispan.isStatsEnabled)
-                    .allowDuplicateDomains(true).build()
-            }
-        <%_ } else { _%>
+        if (this.registration == null) { // if registry is not defined, use native discovery
+            log.warn("No discovery service is set up, Infinispan will use default discovery for cluster formation")
             return InfinispanGlobalConfigurer {
                 GlobalConfigurationBuilder
                     .defaultClusteredBuilder().defaultCacheName("infinispan-<%=baseName%>-cluster-cache").transport().defaultTransport()
@@ -379,6 +359,24 @@ class CacheConfiguration<%_ if (cacheProvider === 'ehcache') { _%>(jHipsterPrope
                     .enabled(jHipsterProperties.cache.infinispan.isStatsEnabled)
                     .allowDuplicateDomains(true).build()
             }
+        }
+        return InfinispanGlobalConfigurer {
+            GlobalConfigurationBuilder
+                .defaultClusteredBuilder().defaultCacheName("infinispan-<%=baseName%>-cluster-cache").transport()
+                .transport(JGroupsTransport(getTransportChannel()))
+                .clusterName("infinispan-<%=baseName%>-cluster").globalJmxStatistics()
+                .enabled(jHipsterProperties.cache.infinispan.isStatsEnabled)
+                .allowDuplicateDomains(true).build()
+        }
+        <%_ } else { _%>
+        return InfinispanGlobalConfigurer {
+            GlobalConfigurationBuilder
+                .defaultClusteredBuilder().defaultCacheName("infinispan-<%=baseName%>-cluster-cache").transport().defaultTransport()
+                .addProperty("configurationFile", jHipsterProperties.cache.infinispan.configFile)
+                .clusterName("infinispan-<%=baseName%>-cluster").globalJmxStatistics()
+                .enabled(jHipsterProperties.cache.infinispan.isStatsEnabled)
+                .allowDuplicateDomains(true).build()
+        }
         <%_ } _%>
     }
 
@@ -530,32 +528,37 @@ class CacheConfiguration<%_ if (cacheProvider === 'ehcache') { _%>(jHipsterPrope
                 log.debug("Adding Infinispan cluster member {}", clusterMember)
                 initialHosts.add(IpAddress(clusterMember))
             }
-            val tcp = TCP()
-            tcp.setBindAddress(InetAddress.getLocalHost())
-            tcp.setBindPort(7800)
-            tcp.setThreadPoolMinThreads(2)
-            tcp.setThreadPoolMaxThreads(30)
-            tcp.setThreadPoolKeepAliveTime(60000)
+            val tcp = TCP().apply {
+                setBindAddress(InetAddress.getLocalHost())
+                setBindPort(7800)
+                setThreadPoolMinThreads(2)
+                setThreadPoolMaxThreads(30)
+                setThreadPoolKeepAliveTime(60000)
+            }
 
-            val tcpping = TCPPING()
-            initialHosts.add(IpAddress(InetAddress.getLocalHost(), 7800))
-            tcpping.setInitialHosts(initialHosts)
-            tcpping.setErgonomics(false)
-            tcpping.setPortRange(10)
-            tcpping.sendCacheInformation()
+            val tcpping = TCPPING().apply {
+                initialHosts.add(IpAddress(InetAddress.getLocalHost(), 7800))
+                setInitialHosts(initialHosts)
+                setErgonomics(false)
+                setPortRange(10)
+                sendCacheInformation()
+            }
 
-            val nakack = NAKACK2()
-            nakack.setUseMcastXmit(false)
-            nakack.setDiscardDeliveredMsgs(false)
+            val nakack = NAKACK2().apply {
+                setUseMcastXmit(false)
+                setDiscardDeliveredMsgs(false)
+            }
 
-            val merge = MERGE3()
-            merge.setMinInterval(10000)
-            merge.setMaxInterval(30000)
+            val merge = MERGE3().apply {
+                setMinInterval(10000)
+                setMaxInterval(30000)
+            }
 
-            val fd = FD_ALL()
-            fd.setTimeout(60000)
-            fd.setInterval(15000)
-            fd.setTimeoutCheckInterval(5000)
+            val fd = FD_ALL().apply {
+                setTimeout(60000)
+                setInterval(15000)
+                setTimeoutCheckInterval(5000)
+            }
 
             val stack = ProtocolStack()
             // Order shouldn't be changed
@@ -572,8 +575,8 @@ class CacheConfiguration<%_ if (cacheProvider === 'ehcache') { _%>(jHipsterPrope
                 .addProtocol(GMS())
                 .addProtocol(MFC())
                 .addProtocol(FRAG2())
-            val channel = JChannel(stack)
-            stack.init()
+
+            return JChannel(stack).apply { init() }
             return channel
         } catch (e: Exception) {
             throw BeanInitializationException("Cache (Infinispan protocol stack) configuration failed", e)
@@ -630,17 +633,19 @@ class CacheConfiguration<%_ if (cacheProvider === 'ehcache') { _%>(jHipsterPrope
             // So it should be disabled in development mode
             return null
         }
-        val defaultCache = CacheFactory()
-        defaultCache.cacheName = cacheName
-        defaultCache.cacheClientFactory = MemcacheClientFactoryImpl()
+        val defaultCache = CacheFactory().apply {
+            this.cacheName = cacheName
+            cacheClientFactory = MemcacheClientFactoryImpl()
+        }
 
-        val addressProvider = DefaultAddressProvider()
-        addressProvider.address = jHipsterProperties.cache.memcached.servers
-        defaultCache.addressProvider = addressProvider
+        defaultCache.addressProvider = DefaultAddressProvider().apply {
+            address = jHipsterProperties.cache.memcached.servers
+        }
 
-        val cacheConfiguration = com.google.code.ssm.providers.CacheConfiguration()
-        cacheConfiguration.consistentHashing = true
-        cacheConfiguration.useBinaryProtocol = jHipsterProperties.cache.memcached.useBinaryProtocol
+        val cacheConfiguration = com.google.code.ssm.providers.CacheConfiguration().apply {
+            consistentHashing = true
+            useBinaryProtocol = jHipsterProperties.cache.memcached.useBinaryProtocol
+        }
         defaultCache.configuration = cacheConfiguration
 
         return defaultCache

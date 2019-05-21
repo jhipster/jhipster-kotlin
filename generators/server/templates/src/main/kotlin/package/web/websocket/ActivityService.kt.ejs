@@ -41,18 +41,18 @@ class ActivityService(private val messagingTemplate: SimpMessageSendingOperation
     @MessageMapping("/topic/activity")
     @SendTo("/topic/tracker")
     fun sendActivity(@Payload activityDTO: ActivityDTO, stompHeaderAccessor: StompHeaderAccessor, principal: Principal): ActivityDTO {
-        activityDTO.userLogin = principal.name
-        activityDTO.sessionId = stompHeaderAccessor.sessionId
-        activityDTO.ipAddress = stompHeaderAccessor.sessionAttributes!![IP_ADDRESS].toString()
-        activityDTO.time = Instant.now()
+        activityDTO.apply {
+            userLogin = principal.name
+            sessionId = stompHeaderAccessor.sessionId
+            ipAddress = stompHeaderAccessor.sessionAttributes!![IP_ADDRESS].toString()
+            time = Instant.now()
+        }
         log.debug("Sending user tracking data {}", activityDTO)
         return activityDTO
     }
 
     override fun onApplicationEvent(event: SessionDisconnectEvent) {
-        val activityDTO = ActivityDTO()
-        activityDTO.sessionId = event.sessionId
-        activityDTO.page = "logout"
+        val activityDTO = ActivityDTO( sessionId = event.sessionId, page = "logout")
         messagingTemplate.convertAndSend("/topic/tracker", activityDTO)
     }
 

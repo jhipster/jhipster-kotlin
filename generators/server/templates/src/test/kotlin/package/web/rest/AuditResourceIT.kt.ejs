@@ -105,10 +105,11 @@ class AuditResourceIT {
         mockAuthentication()
         <%_ } _%>
         auditEventRepository.deleteAll()
-        auditEvent = PersistentAuditEvent()
-        auditEvent.auditEventType = SAMPLE_TYPE
-        auditEvent.principal = SAMPLE_PRINCIPAL
-        auditEvent.auditEventDate = SAMPLE_TIMESTAMP
+        auditEvent = PersistentAuditEvent(
+            auditEventType = SAMPLE_TYPE,
+            principal = SAMPLE_PRINCIPAL,
+            auditEventDate = SAMPLE_TIMESTAMP
+        )
     }
 
     @Test
@@ -186,10 +187,8 @@ class AuditResourceIT {
     @Throws(Exception::class)
     fun testPersistentAuditEventEquals() {
         TestUtil.equalsVerifier(PersistentAuditEvent::class.java)
-        val auditEvent1 = PersistentAuditEvent()
-        auditEvent1.id = <% if (databaseType === 'sql') { %>1L<% } else { %>"id1"<% } %>
-        val auditEvent2 = PersistentAuditEvent()
-        auditEvent2.id = auditEvent1.id
+        val auditEvent1 = PersistentAuditEvent(id = <% if (databaseType === 'sql') { %>1L<% } else { %>"id1"<% } %>)
+        val auditEvent2 = PersistentAuditEvent(id = auditEvent1.id)
         assertThat(auditEvent1).isEqualTo(auditEvent2)
         auditEvent2.id = <% if (databaseType === 'sql') { %>2L<% } else { %>"id2"<% } %>
         assertThat(auditEvent1).isNotEqualTo(auditEvent2)

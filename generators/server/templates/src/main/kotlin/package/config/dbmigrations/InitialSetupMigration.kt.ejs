@@ -32,14 +32,14 @@ import java.time.Instant
  * Creates the initial database setup.
  */
 @ChangeLog(order = "001")
+@Suppress("unused")
 class InitialSetupMigration {
 
     @ChangeSet(order = "01", author = "initiator", id = "01-addAuthorities")
     fun addAuthorities(mongoTemplate: MongoTemplate) {
-        val adminAuthority = Authority()
-        adminAuthority.name = AuthoritiesConstants.ADMIN
-        val userAuthority = Authority()
-        userAuthority.name = AuthoritiesConstants.USER
+        val adminAuthority = Authority(AuthoritiesConstants.ADMIN)
+        val userAuthority = Authority(AuthoritiesConstants.USER)
+
         mongoTemplate.save(adminAuthority)
         mongoTemplate.save(userAuthority)
     }
@@ -47,74 +47,74 @@ class InitialSetupMigration {
 
     @ChangeSet(order = "02", author = "initiator", id = "02-addUsers")
     fun addUsers(mongoTemplate: MongoTemplate) {
-        val adminAuthority = Authority()
-        adminAuthority.name = AuthoritiesConstants.ADMIN
-        val userAuthority = Authority()
-        userAuthority.name = AuthoritiesConstants.USER
+        val adminAuthority = Authority(AuthoritiesConstants.ADMIN)
+        val userAuthority = Authority(AuthoritiesConstants.USER)
 
-        val systemUser = <%= asEntity('User') %>()
-        systemUser.id = "user-0"
-        systemUser.login = "system"
-        <%_ if (authenticationType !== 'oauth2') { _%>
-        systemUser.password = "\$2a\$10\$mE.qmcV0mFU5NcKh73TZx.z4ueI/.bDWbj0T1BYyqP481kGGarKLG"
-        <%_ } _%>
-        systemUser.firstName = ""
-        systemUser.lastName = "System"
-        systemUser.email = "system@localhost"
-        systemUser.activated = true
-        systemUser.langKey = "en"
-        systemUser.createdBy = systemUser.login
-        systemUser.createdDate = Instant.now()
-        systemUser.authorities.add(adminAuthority)
-        systemUser.authorities.add(userAuthority)
+        val systemUser = <%= asEntity('User') %>(
+            id = "user-0",
+            login = "system",
+            <%_ if (authenticationType !== 'oauth2') { _%>
+            password = "\$2a\$10\$mE.qmcV0mFU5NcKh73TZx.z4ueI/.bDWbj0T1BYyqP481kGGarKLG",
+            <%_ } _%>
+            firstName = "",
+            lastName = "System",
+            email = "system@localhost",
+            activated = true,
+            langKey = "en",
+            createdBy = "system",
+            createdDate = Instant.now(),
+            authorities = mutableSetOf(adminAuthority, userAuthority)
+        )
         mongoTemplate.save(systemUser)
 
-        val anonymousUser = <%= asEntity('User') %>()
-        anonymousUser.id = "user-1"
-        anonymousUser.login = "anonymoususer"
-        <%_ if (authenticationType !== 'oauth2') { _%>
-        anonymousUser.password = "\$2a\$10\$j8S5d7Sr7.8VTOYNviDPOeWX8KcYILUVJBsYV83Y5NtECayypx9lO"
-        <%_ } _%>
-        anonymousUser.firstName = "Anonymous"
-        anonymousUser.lastName = "User"
-        anonymousUser.email = "anonymous@localhost"
-        anonymousUser.activated = true
-        anonymousUser.langKey = "en"
-        anonymousUser.createdBy = systemUser.login
-        anonymousUser.createdDate = Instant.now()
+        val anonymousUser = <%= asEntity('User') %>(
+            id = "user-1",
+            login = "anonymoususer",
+            <%_ if (authenticationType !== 'oauth2') { _%>
+            password = "\$2a\$10\$j8S5d7Sr7.8VTOYNviDPOeWX8KcYILUVJBsYV83Y5NtECayypx9lO",
+            <%_ } _%>
+            firstName = "Anonymous",
+            lastName = "User",
+            email = "anonymous@localhost",
+            activated = true,
+            langKey = "en",
+            createdBy = systemUser.login,
+            createdDate = Instant.now()
+        )
         mongoTemplate.save(anonymousUser)
 
-        val adminUser = <%= asEntity('User') %>()
-        adminUser.id = "user-2"
-        adminUser.login = "admin"
-        <%_ if (authenticationType !== 'oauth2') { _%>
-        adminUser.password = "\$2a\$10\$gSAhZrxMllrbgj/kkK9UceBPpChGWJA7SYIb1Mqo.n5aNLq1/oRrC"
-        <%_ } _%>
-        adminUser.firstName = "admin"
-        adminUser.lastName = "Administrator"
-        adminUser.email = "admin@localhost"
-        adminUser.activated = true
-        adminUser.langKey = "en"
-        adminUser.createdBy = systemUser.login
-        adminUser.createdDate = Instant.now()
-        adminUser.authorities.add(adminAuthority)
-        adminUser.authorities.add(userAuthority)
+        val adminUser = <%= asEntity('User') %>(
+            id = "user-2",
+            login = "admin",
+            <%_ if (authenticationType !== 'oauth2') { _%>
+            password = "\$2a\$10\$gSAhZrxMllrbgj/kkK9UceBPpChGWJA7SYIb1Mqo.n5aNLq1/oRrC",
+            <%_ } _%>
+            firstName = "admin",
+            lastName = "Administrator",
+            email = "admin@localhost",
+            activated = true,
+            langKey = "en",
+            createdBy = systemUser.login,
+            createdDate = Instant.now(),
+            authorities = mutableSetOf(adminAuthority, userAuthority)
+        )
         mongoTemplate.save(adminUser)
 
-        val userUser = <%= asEntity('User') %>()
-        userUser.id = "user-3"
-        userUser.login = "user"
-        <%_ if (authenticationType !== 'oauth2') { _%>
-        userUser.password = "\$2a\$10\$VEjxo0jq2YG9Rbk2HmX9S.k1uZBGYUHdUcid3g/vfiEl7lwWgOH/K"
-        <%_ } _%>
-        userUser.firstName = ""
-        userUser.lastName = "User"
-        userUser.email = "user@localhost"
-        userUser.activated = true
-        userUser.langKey = "en"
-        userUser.createdBy = systemUser.login
-        userUser.createdDate = Instant.now()
-        userUser.authorities.add(userAuthority)
+        val userUser = <%= asEntity('User') %>(
+            id = "user-3",
+            login = "user",
+            <%_ if (authenticationType !== 'oauth2') { _%>
+            password = "\$2a\$10\$VEjxo0jq2YG9Rbk2HmX9S.k1uZBGYUHdUcid3g/vfiEl7lwWgOH/K",
+            <%_ } _%>
+            firstName = "",
+            lastName = "User",
+            email = "user@localhost",
+            activated = true,
+            langKey = "en",
+            createdBy = systemUser.login,
+            createdDate = Instant.now(),
+            authorities = mutableSetOf(userAuthority)
+        )
         mongoTemplate.save(userUser)
     }
     <%_ } _%>

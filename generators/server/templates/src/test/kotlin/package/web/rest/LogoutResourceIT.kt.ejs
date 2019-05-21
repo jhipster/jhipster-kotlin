@@ -61,9 +61,10 @@ class LogoutResourceIT {
 
     @BeforeEach
     fun before() {
-        val claims = mutableMapOf<String, Any>()
-        claims["groups"] = "ROLE_USER"
-        claims["sub"] = 123
+        val claims = mapOf(
+            "groups" to "ROLE_USER",
+            "sub" to 123
+        )
         val idToken = OidcIdToken(ID_TOKEN, Instant.now(), Instant.now().plusSeconds(60), claims)
         SecurityContextHolder.getContext().authentication = authenticationToken(idToken)
         val authInjector = SecurityContextHolderAwareRequestFilter()
@@ -85,8 +86,7 @@ class LogoutResourceIT {
     }
 
     private fun authenticationToken(idToken: OidcIdToken): OAuth2AuthenticationToken {
-        val authorities = mutableListOf<GrantedAuthority>()
-        authorities.add(SimpleGrantedAuthority(AuthoritiesConstants.USER))
+        val authorities = listOf(SimpleGrantedAuthority(AuthoritiesConstants.USER))
         val user = DefaultOidcUser(authorities, idToken)
         return OAuth2AuthenticationToken(user, authorities, "oidc")
     }

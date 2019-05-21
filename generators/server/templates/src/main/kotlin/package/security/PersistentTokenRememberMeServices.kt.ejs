@@ -105,7 +105,8 @@ class PersistentTokenRememberMeServices(
         response: HttpServletResponse
     ): UserDetails {
 
-        synchronized(this) { // prevent 2 authentication requests from the same user in parallel
+        // prevent 2 authentication requests from the same user in parallel
+        synchronized(this) {
             var login: String? = null
             val upgradedToken = upgradedTokenCache.get(cookieTokens[0])
             if (upgradedToken != null) {
@@ -119,12 +120,18 @@ class PersistentTokenRememberMeServices(
                 login = token.login<%}%>
 
                 // Token also matches, so login is valid. Update the token value, keeping the *same* series number.
-                log.debug("Refreshing persistent login token for user '{}', series '{}'", login, token.series)<% if (databaseType === 'sql' || databaseType === 'mongodb' || databaseType === 'couchbase') { %>
-                token.tokenDate = LocalDate.now()<%}%><% if (databaseType === 'cassandra') { %>
-                token.tokenDate = Date()<%}%>
-                token.tokenValue = RandomUtil.generateTokenData()
-                token.ipAddress = request.remoteAddr
-                token.userAgent = request.getHeader("User-Agent")
+                log.debug("Refreshing persistent login token for user '{}', series '{}'", login, token.series)
+                token.apply {
+                    <%_ if (databaseType === 'sql' || databaseType === 'mongodb' || databaseType === 'couchbase') { _%>
+                    tokenDate = LocalDate.now()
+                    <%_ } _%>
+                    <%_ if (databaseType === 'cassandra') { _%>
+                    tokenDate = Date()
+                    <%_ } _%>
+                    tokenValue = RandomUtil.generateTokenData()
+                    ipAddress = request.remoteAddr
+                    userAgent = request.getHeader("User-Agent")
+                }
                 try {
                     <% if (databaseType === 'sql') { %>persistentTokenRepository.saveAndFlush(token)<% } else { %>persistentTokenRepository.save(token)<% } %>
                     <%_ if (databaseType === 'sql' || databaseType === 'mongodb' || databaseType === 'couchbase') { _%>
@@ -143,22 +150,31 @@ class PersistentTokenRememberMeServices(
         }
     }
 
-    override fun onLoginSuccess(request: HttpServletRequest, response: HttpServletResponse, successfulAuthentication: Authentication) {
+    override fun onLoginSuccess(
+        request: HttpServletRequest,
+        response: HttpServletResponse,
+        successfulAuthentication: Authentication
+    ) {
 
         val login = successfulAuthentication.name
 
         log.debug("Creating new persistent login for user {}", login)
         val token = userRepository.findOneByLogin(login).map { u ->
-            val t = PersistentToken()
-            t.series = RandomUtil.generateSeriesData()<% if (databaseType === 'sql' || databaseType === 'mongodb') { %>
-            t.user = u<% } else { %>
-            t.login = login<% } %><% if (databaseType === 'cassandra') { %>
-            t.userId = u.id<% } %>
-            t.tokenValue = RandomUtil.generateTokenData()
-            t.tokenDate = <% if (databaseType === 'cassandra') { %>Date()<% } else { %>LocalDate.now()<% } %>
-            t.ipAddress = request.remoteAddr
-            t.userAgent = request.getHeader("User-Agent")
-            t
+            PersistentToken(
+                series = RandomUtil.generateSeriesData(),
+                <%_ if (databaseType === 'sql' || databaseType === 'mongodb') { _%>
+                user = u,
+                <%_ } else { _%>
+                login = login,
+                <%_ } _%>
+                <%_ if (databaseType === 'cassandra') { _%>
+                userId = u.id,
+                <%_ } _%>
+                tokenValue = RandomUtil.generateTokenData(),
+                tokenDate = <% if (databaseType === 'cassandra') { %>Date()<% } else { %>LocalDate.now()<% } %>,
+                ipAddress = request.remoteAddr,
+                userAgent = request.getHeader("User-Agent")
+            )
         }.orElseThrow { UsernameNotFoundException("User $login was not found in the database") }
         try {
             <% if (databaseType === 'sql') { %>persistentTokenRepository.saveAndFlush(token)<% } else { %>persistentTokenRepository.save(token)<% } %>
@@ -209,8 +225,9 @@ class PersistentTokenRememberMeServices(
      */
     private fun getPersistentToken(cookieTokens: Array<String>): PersistentToken {
         if (cookieTokens.size != 2) {
-            throw InvalidCookieException("Cookie token did not contain " + 2 +
-                " tokens, but contained '" + cookieTokens.toList() + "'")
+            throw InvalidCookieException(
+                "Cookie token did not contain 2 tokens, but contained '${cookieTokens.toList()}'"
+            )
         }
         val presentedSeries = cookieTokens[0]
         val presentedToken = cookieTokens[1]
@@ -234,14 +251,18 @@ class PersistentTokenRememberMeServices(
             <%_ if (databaseType === 'mongodb' || databaseType === 'couchbase') { _%>
             persistentTokenRepository.delete(token)
             <%_ } _%>
-            throw CookieTheftException("Invalid remember-me token (Series/token) mismatch. Implies previous " +
-                "cookie theft attack.")
+            throw CookieTheftException(
+                "Invalid remember-me token (Series/token) mismatch. Implies previous cookie theft attack."
+            )
         }
         <%_ if (databaseType === 'sql' || databaseType === 'mongodb' || databaseType === 'couchbase') { _%>
         if (token.tokenDate!!.plusDays(TOKEN_VALIDITY_DAYS.toLong()).isBefore(LocalDate.now())) {
         <%_ } _%>
         <%_ if (databaseType === 'cassandra') { _%>
-        if (token.tokenDate!!.toInstant().plus(TOKEN_VALIDITY_DAYS.toLong(), ChronoUnit.DAYS).isBefore(Date().toInstant())) {
+        if (token.tokenDate!!.toInstant().plus(
+                TOKEN_VALIDITY_DAYS.toLong(), ChronoUnit.DAYS
+            ).isBefore(Date().toInstant())
+        ) {
         <%_ } _%>
             <%_ if (databaseType === 'sql') { _%>
             persistentTokenRepository.deleteById(token.series!!)

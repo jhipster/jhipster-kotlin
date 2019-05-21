@@ -51,10 +51,11 @@ class CustomAuditEventRepository(
     override fun add(event: AuditEvent) {
         if (AUTHORIZATION_FAILURE != event.type && Constants.ANONYMOUS_USER != event.principal) {
 
-            val persistentAuditEvent = PersistentAuditEvent()
-            persistentAuditEvent.principal = event.principal
-            persistentAuditEvent.auditEventType = event.type
-            persistentAuditEvent.auditEventDate = event.timestamp
+            val persistentAuditEvent = PersistentAuditEvent(
+                principal = event.principal,
+                auditEventType = event.type,
+                auditEventDate = event.timestamp
+            )
             val eventData = auditEventConverter.convertDataToStrings(event.data)
             persistentAuditEvent.data = truncate(eventData)
             persistenceAuditEventRepository.save(persistentAuditEvent)

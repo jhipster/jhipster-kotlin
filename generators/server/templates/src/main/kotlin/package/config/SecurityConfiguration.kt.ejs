@@ -270,7 +270,7 @@ class SecurityConfiguration(
                 val userInfo = oidcUserAuthority.userInfo
                 var groups = userInfo.claims["groups"] as Collection<String>?
                 if (groups == null) {
-                    groups = userInfo.claims.get("roles") as Collection<String>?
+                    groups = userInfo.claims["roles"] as Collection<String>?
                 }
                 groups?.let {
                     mappedAuthorities.addAll(
@@ -376,9 +376,7 @@ public class SecurityConfiguration(private val oAuth2Properties: OAuth2Propertie
     @Bean
     @Qualifier("loadBalancedRestTemplate")
     fun loadBalancedRestTemplate(customizer: RestTemplateCustomizer): RestTemplate {
-        val restTemplate = RestTemplate()
-        customizer.customize(restTemplate)
-        return restTemplate
+        return RestTemplate().apply { customizer.customize(this) }
     }
 
     @Bean

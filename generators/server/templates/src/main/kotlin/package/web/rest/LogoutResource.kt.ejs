@@ -49,9 +49,10 @@ class LogoutResource(registrations: ClientRegistrationRepository) {
     ): ResponseEntity<*> {
         val logoutUrl = registration.providerDetails.configurationMetadata["end_session_endpoint"].toString()
 
-        val logoutDetails = mutableMapOf<String, String?>()
-        logoutDetails["logoutUrl"] = logoutUrl
-        logoutDetails["idToken"] = idToken?.tokenValue
+        val logoutDetails = mutableMapOf(
+            "logoutUrl" to logoutUrl,
+            "idToken" to idToken?.tokenValue
+        )
         request.session.invalidate()
         return ResponseEntity.ok().body(logoutDetails)
     }

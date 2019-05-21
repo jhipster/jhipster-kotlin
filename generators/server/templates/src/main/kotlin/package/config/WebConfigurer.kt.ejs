@@ -168,9 +168,9 @@ class WebConfigurer(
         if (server is ConfigurableServletWebServerFactory) {
             val mappings = MimeMappings(MimeMappings.DEFAULT)
             // IE issue, see https://github.com/jhipster/generator-jhipster/pull/711
-            mappings.add("html", MediaType.TEXT_HTML_VALUE + ";charset=" + StandardCharsets.UTF_8.name().toLowerCase())
+            mappings.add("html", "${MediaType.TEXT_HTML_VALUE};charset=${StandardCharsets.UTF_8.name().toLowerCase()}")
             // CloudFoundry issue, see https://github.com/cloudfoundry/gorouter/issues/64
-            mappings.add("json", MediaType.TEXT_HTML_VALUE + ";charset=" + StandardCharsets.UTF_8.name().toLowerCase())
+            mappings.add("json", "${MediaType.TEXT_HTML_VALUE};charset=${StandardCharsets.UTF_8.name().toLowerCase()}")
             server.setMimeMappings(mappings)
         }
     }
@@ -211,13 +211,14 @@ class WebConfigurer(
      */
     private fun initCachingHttpHeadersFilter(servletContext: ServletContext, disps: EnumSet<DispatcherType>) {
         log.debug("Registering Caching HTTP Headers Filter")
-        val cachingHttpHeadersFilter = servletContext.addFilter("cachingHttpHeadersFilter",
-            CachingHttpHeadersFilter(jHipsterProperties))
-
-        cachingHttpHeadersFilter.addMappingForUrlPatterns(disps, true, "/i18n/*")
-        cachingHttpHeadersFilter.addMappingForUrlPatterns(disps, true, "/content/*")
-        cachingHttpHeadersFilter.addMappingForUrlPatterns(disps, true, "/app/*")
-        cachingHttpHeadersFilter.setAsyncSupported(true)
+        servletContext.addFilter(
+            "cachingHttpHeadersFilter", CachingHttpHeadersFilter(jHipsterProperties)
+        ).apply {
+            addMappingForUrlPatterns(disps, true, "/i18n/*")
+            addMappingForUrlPatterns(disps, true, "/content/*")
+            addMappingForUrlPatterns(disps, true, "/app/*")
+            setAsyncSupported(true)
+        }
     }
         <%_ } _%>
     <%_ } _%>
@@ -226,21 +227,23 @@ class WebConfigurer(
     fun corsFilter(): Cors<% if (reactive) { %>Web<% } %>Filter {
         val source = UrlBasedCorsConfigurationSource()
         val config = jHipsterProperties.cors
-        if (config.allowedOrigins != null && !config.allowedOrigins!!.isEmpty()) {
+        if (config.allowedOrigins != null && config.allowedOrigins!!.isNotEmpty()) {
             log.debug("Registering CORS filter")
-            source.registerCorsConfiguration("/api/**", config)
-            source.registerCorsConfiguration("/management/**", config)
-            source.registerCorsConfiguration("/v2/api-docs", config)
-            <%_ if (applicationType === 'gateway' && authenticationType === 'uaa') { _%>
-            source.registerCorsConfiguration("/auth/**", config)
-            <%_ } _%>
-            <%_ if (applicationType === 'gateway') { _%>
-            source.registerCorsConfiguration("/*/api/**", config)
-            source.registerCorsConfiguration("/*/management/**", config)
-                <%_ if (authenticationType === 'uaa') { _%>
-            source.registerCorsConfiguration("/*/oauth/**", config)
+            source.apply {
+                registerCorsConfiguration("/api/**", config)
+                registerCorsConfiguration("/management/**", config)
+                registerCorsConfiguration("/v2/api-docs", config)
+                <%_ if (applicationType === 'gateway' && authenticationType === 'uaa') { _%>
+                registerCorsConfiguration("/auth/**", config)
                 <%_ } _%>
-            <%_ } _%>
+                <%_ if (applicationType === 'gateway') { _%>
+                registerCorsConfiguration("/*/api/**", config)
+                registerCorsConfiguration("/*/management/**", config)
+                    <%_ if (authenticationType === 'uaa') { _%>
+                registerCorsConfiguration("/*/oauth/**", config)
+                    <%_ } _%>
+                <%_ } _%>
+            }
         }
         return Cors<% if (reactive) { %>Web<% } %>Filter(source)
     }

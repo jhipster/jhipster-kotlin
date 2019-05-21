@@ -35,6 +35,7 @@ import org.springframework.core.env.Profiles
  *
  * By default, it only runs with the "dev" profile.
  */
+@Suppress("unused")
 @Aspect
 open class LoggingAspect(private val env: Environment) {
 
@@ -43,9 +44,11 @@ open class LoggingAspect(private val env: Environment) {
     /**
      * Pointcut that matches all repositories, services and Web REST endpoints.
      */
-    @Pointcut("within(@org.springframework.stereotype.Repository *)" +
-        " || within(@org.springframework.stereotype.Service *)" +
-        " || within(@org.springframework.web.bind.annotation.RestController *)")
+    @Pointcut(
+        "within(@org.springframework.stereotype.Repository *)" +
+            " || within(@org.springframework.stereotype.Service *)" +
+            " || within(@org.springframework.web.bind.annotation.RestController *)"
+    )
     fun springBeanPointcut() {
         // Method is empty as this is just a Pointcut, the implementations are in the advices.
     }
@@ -53,9 +56,11 @@ open class LoggingAspect(private val env: Environment) {
     /**
      * Pointcut that matches all Spring beans in the application's main packages.
      */
-    @Pointcut("within(<%=packageName%>.repository..*)" +
-        " || within(<%=packageName%>.service..*)" +
-        " || within(<%=packageName%>.web.rest..*)")
+    @Pointcut(
+        "within(<%=packageName%>.repository..*)" +
+            " || within(<%=packageName%>.service..*)" +
+            " || within(<%=packageName%>.web.rest..*)"
+    )
     fun applicationPackagePointcut() {
         // Method is empty as this is just a Pointcut, the implementations are in the advices.
     }
@@ -69,11 +74,18 @@ open class LoggingAspect(private val env: Environment) {
     @AfterThrowing(pointcut = "applicationPackagePointcut() && springBeanPointcut()", throwing = "e")
     fun logAfterThrowing(joinPoint: JoinPoint, e: Throwable) {
         if (env.acceptsProfiles(Profiles.of(JHipsterConstants.SPRING_PROFILE_DEVELOPMENT))) {
-            log.error("Exception in {}.{}() with cause = \'{}\' and exception = \'{}\'", joinPoint.signature.declaringTypeName,
-                joinPoint.signature.name, if (e.cause != null) e.cause else "NULL", e.message, e)
+            log.error(
+                "Exception in {}.{}() with cause = \'{}\' and exception = \'{}\'",
+                joinPoint.signature.declaringTypeName,
+                joinPoint.signature.name,
+                if (e.cause != null) e.cause else "NULL",
+                e.message, e
+            )
         } else {
-            log.error("Exception in {}.{}() with cause = {}", joinPoint.signature.declaringTypeName,
-                joinPoint.signature.name, if (e.cause != null) e.cause else "NULL")
+            log.error(
+                "Exception in {}.{}() with cause = {}", joinPoint.signature.declaringTypeName,
+                joinPoint.signature.name, if (e.cause != null) e.cause else "NULL"
+            )
         }
     }
 
@@ -87,19 +99,25 @@ open class LoggingAspect(private val env: Environment) {
     @Around(value = "applicationPackagePointcut() && springBeanPointcut()")
     fun logAround(joinPoint: ProceedingJoinPoint): Any? {
         if (log.isDebugEnabled) {
-            log.debug("Enter: {}.{}() with argument[s] = {}", joinPoint.signature.declaringTypeName,
-                joinPoint.signature.name, joinPoint.args.joinToString())
+            log.debug(
+                "Enter: {}.{}() with argument[s] = {}", joinPoint.signature.declaringTypeName,
+                joinPoint.signature.name, joinPoint.args.joinToString()
+            )
         }
         try {
             val result = joinPoint.proceed()
             if (log.isDebugEnabled) {
-                log.debug("Exit: {}.{}() with result = {}", joinPoint.signature.declaringTypeName,
-                    joinPoint.signature.name, result)
+                log.debug(
+                    "Exit: {}.{}() with result = {}", joinPoint.signature.declaringTypeName,
+                    joinPoint.signature.name, result
+                )
             }
             return result
         } catch (e: IllegalArgumentException) {
-            log.error("Illegal argument: {} in {}.{}()", joinPoint.args.joinToString(),
-                joinPoint.signature.declaringTypeName, joinPoint.signature.name)
+            log.error(
+                "Illegal argument: {} in {}.{}()", joinPoint.args.joinToString(),
+                joinPoint.signature.declaringTypeName, joinPoint.signature.name
+            )
 
             throw e
         }

@@ -211,53 +211,51 @@ class DatabaseConfiguration<%_ if (databaseType === 'sql' && (devDatabaseType ==
 
     @Bean
     fun customConversions(): MongoCustomConversions {
-        val converters = mutableListOf<Converter<*, *>>()
-        converters.add(DateToZonedDateTimeConverter.INSTANCE)
-        converters.add(ZonedDateTimeToDateConverter.INSTANCE)
+        val converters = mutableListOf<Converter<*, *>>(
+            DateToZonedDateTimeConverter.INSTANCE,
+            ZonedDateTimeToDateConverter.INSTANCE
+        )
         return MongoCustomConversions(converters)
     }
 
     @Bean
     fun mongobee(mongoClient: MongoClient, mongoTemplate: MongoTemplate, mongoProperties: MongoProperties): Mongobee {
         log.debug("Configuring Mongobee")
-        val mongobee = Mongobee(mongoClient)
-        mongobee.setDbName(mongoProperties.mongoClientDatabase)
-        mongobee.setMongoTemplate(mongoTemplate)
-        // package to scan for migrations
-        mongobee.setChangeLogsScanPackage("io.github.jhipster.travis.config.dbmigrations")
-        mongobee.isEnabled = true
-        return mongobee
-    }<% } %><% if (databaseType === 'couchbase') { %>
+        return Mongobee(mongoClient).apply {
+            setDbName(mongoProperties.mongoClientDatabase)
+            setMongoTemplate(mongoTemplate)
+            // package to scan for migrations
+            setChangeLogsScanPackage("io.github.jhipster.travis.config.dbmigrations")
+            isEnabled = true
+        }
+    }
+<%_ } %><% if (databaseType === 'couchbase') { _%>
 
     @Bean(name = [BeanNames.COUCHBASE_CUSTOM_CONVERSIONS])
     fun customConversions(): CouchbaseCustomConversions {
-        val converters = mutableListOf<Converter<*, *>>()
-        converters.add(ZonedDateTimeToLongConverter.INSTANCE)
-        converters.add(NumberToLocalDateTimeConverter.INSTANCE)
-        converters.add(BigIntegerToStringConverter.INSTANCE)
-        converters.add(StringToBigIntegerConverter.INSTANCE)
-        converters.add(BigDecimalToStringConverter.INSTANCE)
-        converters.add(StringToBigDecimalConverter.INSTANCE)
-        converters.add(StringToByteConverter.INSTANCE)
+        val converters = mutableListOf<Converter<*, *>>(
+            ZonedDateTimeToLongConverter,
+            NumberToLocalDateTimeConverter,
+            BigIntegerToStringConverter,
+            StringToBigIntegerConverter,
+            BigDecimalToStringConverter,
+            StringToBigDecimalConverter,
+            StringToByteConverter
+        )
         return CouchbaseCustomConversions(converters)
     }
 
     @Bean
     fun couchmove(couchbaseBucket: Bucket): Couchmove {
         log.debug("Configuring Couchmove")
-        val couchMove = Couchmove(couchbaseBucket, "config/couchmove/changelog")
-        couchMove.migrate()
-        return couchMove
+        return Couchmove(couchbaseBucket, "config/couchmove/changelog").apply { migrate() }
     }
 
     /**
      * Simple singleton to convert [ZonedDateTime]s to their [Long] representation.
      */
     @WritingConverter
-    enum class ZonedDateTimeToLongConverter : Converter<ZonedDateTime, Long> {
-
-        INSTANCE;
-
+    object ZonedDateTimeToLongConverter : Converter<ZonedDateTime, Long> {
         override fun convert(source: ZonedDateTime): Long? {
             return Date.from(source.toInstant()).time
         }
@@ -267,10 +265,7 @@ class DatabaseConfiguration<%_ if (databaseType === 'sql' && (devDatabaseType ==
      * Simple singleton to convert from [Number] [BigDecimal] representation.
      */
     @ReadingConverter
-    enum class NumberToLocalDateTimeConverter : Converter<Number, ZonedDateTime> {
-
-        INSTANCE;
-
+    object NumberToLocalDateTimeConverter : Converter<Number, ZonedDateTime> {
         override fun convert(source: Number): ZonedDateTime? {
             return ZonedDateTime.ofInstant(Date(source.toLong()).toInstant(), ZoneId.systemDefault())
         }
@@ -281,9 +276,7 @@ class DatabaseConfiguration<%_ if (databaseType === 'sql' && (devDatabaseType ==
      * Simple singleton to convert [BigDecimal]s to their [String] representation.
      */
     @WritingConverter
-    enum class BigDecimalToStringConverter : Converter<BigDecimal, String> {
-        INSTANCE;
-
+    object BigDecimalToStringConverter : Converter<BigDecimal, String> {
         override fun convert(source: BigDecimal): String? {
             return source.toString()
         }
@@ -293,9 +286,7 @@ class DatabaseConfiguration<%_ if (databaseType === 'sql' && (devDatabaseType ==
      * Simple singleton to convert from [String] [BigDecimal] representation.
      */
     @ReadingConverter
-    enum class StringToBigDecimalConverter : Converter<String, BigDecimal> {
-        INSTANCE;
-
+    object StringToBigDecimalConverter : Converter<String, BigDecimal> {
         override fun convert(source: String): BigDecimal? {
             return if (StringUtils.hasText(source)) BigDecimal(source) else null
         }
@@ -305,9 +296,7 @@ class DatabaseConfiguration<%_ if (databaseType === 'sql' && (devDatabaseType ==
      * Simple singleton to convert [BigInteger]s to their [String] representation.
      */
     @WritingConverter
-    enum class BigIntegerToStringConverter : Converter<BigInteger, String> {
-        INSTANCE;
-
+    object BigIntegerToStringConverter : Converter<BigInteger, String> {
         override fun convert(source: BigInteger): String? {
             return source.toString()
         }
@@ -317,9 +306,7 @@ class DatabaseConfiguration<%_ if (databaseType === 'sql' && (devDatabaseType ==
      * Simple singleton to convert from [String] [BigInteger] representation.
      */
     @ReadingConverter
-    enum class StringToBigIntegerConverter : Converter<String, BigInteger> {
-        INSTANCE;
-
+    object StringToBigIntegerConverter : Converter<String, BigInteger> {
         override fun convert(source: String): BigInteger? {
             return if (StringUtils.hasText(source)) BigInteger(source) else null
         }
@@ -329,9 +316,7 @@ class DatabaseConfiguration<%_ if (databaseType === 'sql' && (devDatabaseType ==
      * Simple singleton to convert from [String] [byte[]] representation.
      */
     @ReadingConverter
-    enum class StringToByteConverter : Converter<String, ByteArray> {
-        INSTANCE;
-
+    object StringToByteConverter : Converter<String, ByteArray> {
         override fun convert(source: String): ByteArray? {
             return Base64.decodeBase64(source)
         }

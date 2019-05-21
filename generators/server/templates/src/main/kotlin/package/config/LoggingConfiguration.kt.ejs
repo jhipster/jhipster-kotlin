@@ -104,11 +104,12 @@ class LoggingConfiguration(
         log.info("Initializing Console logging")
 
         // More documentation is available at: https://github.com/logstash/logstash-logback-encoder
-        val consoleAppender = ConsoleAppender<ILoggingEvent>()
-        consoleAppender.context = context
-        consoleAppender.encoder = compositeJsonEncoder(context)
-        consoleAppender.name = CONSOLE_APPENDER_NAME
-        consoleAppender.start()
+        val consoleAppender = ConsoleAppender<ILoggingEvent>().apply {
+            this.context = context
+            encoder = compositeJsonEncoder(context)
+            name = CONSOLE_APPENDER_NAME
+            start()
+        }
 
         context.getLogger(ch.qos.logback.classic.Logger.ROOT_LOGGER_NAME).detachAppender(CONSOLE_APPENDER_NAME)
         context.getLogger(ch.qos.logback.classic.Logger.ROOT_LOGGER_NAME).addAppender(consoleAppender)
@@ -118,61 +119,65 @@ class LoggingConfiguration(
         log.info("Initializing Logstash logging")
 
         // More documentation is available at: https://github.com/logstash/logstash-logback-encoder
-        val logstashAppender = LogstashTcpSocketAppender()
-        logstashAppender.addDestinations(InetSocketAddress(jHipsterProperties.logging.logstash.host,
-            jHipsterProperties.logging.logstash.port))
-        logstashAppender.context = context
-        logstashAppender.encoder = logstashEncoder()
-        logstashAppender.name = LOGSTASH_APPENDER_NAME
-        logstashAppender.start()
+        val logstashAppender = LogstashTcpSocketAppender().apply {
+            addDestinations(
+                InetSocketAddress(
+                    jHipsterProperties.logging.logstash.host,
+                    jHipsterProperties.logging.logstash.port
+                )
+            )
+            this.context = context
+            encoder = logstashEncoder()
+            name = LOGSTASH_APPENDER_NAME
+            start()
+        }
 
         // Wrap the appender in an Async appender for performance
-        val asyncLogstashAppender = AsyncAppender()
-        asyncLogstashAppender.context = context
-        asyncLogstashAppender.name = ASYNC_LOGSTASH_APPENDER_NAME
-        asyncLogstashAppender.queueSize = jHipsterProperties.logging.logstash.queueSize
-        asyncLogstashAppender.addAppender(logstashAppender)
-        asyncLogstashAppender.start()
+        val asyncLogstashAppender = AsyncAppender().apply {
+            this.context = context
+            name = ASYNC_LOGSTASH_APPENDER_NAME
+            queueSize = jHipsterProperties.logging.logstash.queueSize
+            addAppender(logstashAppender)
+            start()
+        }
 
         context.getLogger(ch.qos.logback.classic.Logger.ROOT_LOGGER_NAME).addAppender(asyncLogstashAppender)
     }
 
     private fun compositeJsonEncoder(context: LoggerContext): LoggingEventCompositeJsonEncoder {
-        val compositeJsonEncoder = LoggingEventCompositeJsonEncoder()
-        compositeJsonEncoder.context = context
-        compositeJsonEncoder.providers = jsonProviders(context)
-        compositeJsonEncoder.start()
-        return compositeJsonEncoder
+        return LoggingEventCompositeJsonEncoder().apply {
+            this.context = context
+            providers = jsonProviders(context)
+            start()
+        }
     }
 
     private fun logstashEncoder(): LogstashEncoder {
-        val logstashEncoder = LogstashEncoder()
-        logstashEncoder.throwableConverter = throwableConverter()
-        logstashEncoder.customFields = customFields()
-        return logstashEncoder
+        return LogstashEncoder().apply {
+            throwableConverter = throwableConverter()
+            customFields = customFields()
+        }
     }
 
     private fun jsonProviders(context: LoggerContext): LoggingEventJsonProviders {
-        val jsonProviders = LoggingEventJsonProviders()
-        jsonProviders.addArguments(ArgumentsJsonProvider())
-        jsonProviders.addContext(ContextJsonProvider())
-        jsonProviders.addGlobalCustomFields(customFieldsJsonProvider())
-        jsonProviders.addLogLevel(LogLevelJsonProvider())
-        jsonProviders.addLoggerName(loggerNameJsonProvider())
-        jsonProviders.addMdc(MdcJsonProvider())
-        jsonProviders.addMessage(MessageJsonProvider())
-        jsonProviders.addPattern(LoggingEventPatternJsonProvider())
-        jsonProviders.addStackTrace(stackTraceJsonProvider())
-        jsonProviders.addThreadName(ThreadNameJsonProvider())
-        jsonProviders.addTimestamp(timestampJsonProvider())
-        jsonProviders.setContext(context)
-        return jsonProviders
+        return LoggingEventJsonProviders().apply {
+            addArguments(ArgumentsJsonProvider())
+            addContext(ContextJsonProvider())
+            addGlobalCustomFields(customFieldsJsonProvider())
+            addLogLevel(LogLevelJsonProvider())
+            addLoggerName(loggerNameJsonProvider())
+            addMdc(MdcJsonProvider())
+            addMessage(MessageJsonProvider())
+            addPattern(LoggingEventPatternJsonProvider())
+            addStackTrace(stackTraceJsonProvider())
+            addThreadName(ThreadNameJsonProvider())
+            addTimestamp(timestampJsonProvider())
+            setContext(context)
+        }
     }
 
     private fun customFieldsJsonProvider(): GlobalCustomFieldsJsonProvider<ILoggingEvent> {
-        val customFieldsJsonProvider = GlobalCustomFieldsJsonProvider<ILoggingEvent>()
-        customFieldsJsonProvider.customFields = customFields()
-        return customFieldsJsonProvider
+        return GlobalCustomFieldsJsonProvider<ILoggingEvent>().apply { customFields = customFields() }
     }
 
     private fun customFields(): String {
@@ -193,28 +198,22 @@ class LoggingConfiguration(
     }
 
     private fun loggerNameJsonProvider(): LoggerNameJsonProvider {
-        val loggerNameJsonProvider = LoggerNameJsonProvider()
-        loggerNameJsonProvider.shortenedLoggerNameLength = 20
-        return loggerNameJsonProvider
+        return LoggerNameJsonProvider().apply { shortenedLoggerNameLength = 20 }
     }
 
     private fun stackTraceJsonProvider(): StackTraceJsonProvider {
-        val stackTraceJsonProvider = StackTraceJsonProvider()
-        stackTraceJsonProvider.throwableConverter = throwableConverter()
-        return stackTraceJsonProvider
+        return StackTraceJsonProvider().apply { throwableConverter = throwableConverter() }
     }
 
     private fun throwableConverter(): ShortenedThrowableConverter {
-        val throwableConverter = ShortenedThrowableConverter()
-        throwableConverter.isRootCauseFirst = true
-        return throwableConverter
+        return ShortenedThrowableConverter().apply { isRootCauseFirst = true }
     }
 
     private fun timestampJsonProvider(): LoggingEventFormattedTimestampJsonProvider {
-        val timestampJsonProvider = LoggingEventFormattedTimestampJsonProvider()
-        timestampJsonProvider.timeZone = "UTC"
-        timestampJsonProvider.fieldName = "timestamp"
-        return timestampJsonProvider
+        return LoggingEventFormattedTimestampJsonProvider().apply {
+            timeZone = "UTC"
+            fieldName = "timestamp"
+        }
     }
 
     private fun addContextListener(context: LoggerContext) {
@@ -226,22 +225,27 @@ class LoggingConfiguration(
     // Configure a log filter to remove "metrics" logs from all appenders except the "LOGSTASH" appender
     private fun setMetricsMarkerLogbackFilter(context: LoggerContext) {
         log.info("Filtering metrics logs from all appenders except the {} appender", LOGSTASH_APPENDER_NAME)
-        val onMarkerMetricsEvaluator = OnMarkerEvaluator()
-        onMarkerMetricsEvaluator.context = context
-        onMarkerMetricsEvaluator.addMarker("metrics")
-        onMarkerMetricsEvaluator.start()
-        val metricsFilter = EvaluatorFilter<ILoggingEvent>()
-        metricsFilter.context = context
-        metricsFilter.evaluator = onMarkerMetricsEvaluator
-        metricsFilter.onMatch = FilterReply.DENY
-        metricsFilter.start()
+
+        val onMarkerMetricsEvaluator = OnMarkerEvaluator().apply {
+            this.context = context
+            addMarker("metrics")
+            start()
+        }
+
+        val metricsFilter = EvaluatorFilter<ILoggingEvent>().apply {
+            this.context = context
+            evaluator = onMarkerMetricsEvaluator
+            onMatch = FilterReply.DENY
+            start()
+        }
 
         for (logger in context.loggerList) {
             val it = logger.iteratorForAppenders()
             while (it.hasNext()) {
                 val appender = it.next()
                 if (appender.name != ASYNC_LOGSTASH_APPENDER_NAME &&
-                    appender.name != CONSOLE_APPENDER_NAME && jHipsterProperties.logging.isUseJsonFormat) {
+                    appender.name != CONSOLE_APPENDER_NAME && jHipsterProperties.logging.isUseJsonFormat
+                ) {
                     log.debug("Filter metrics logs from the {} appender", appender.name)
                     appender.context = context
                     appender.addFilter(metricsFilter)

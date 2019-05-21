@@ -112,7 +112,7 @@ _%>
                 .withCause((problem as DefaultProblem).cause)
                 .withDetail(problem.detail)
                 .withInstance(problem.instance)
-            problem.parameters.forEach { key, value -> builder.with(key, value) }
+            problem.parameters.forEach { (key, value) -> builder.with(key, value) }
             if (!problem.parameters.containsKey(MESSAGE_KEY) && problem.status != null) {
                 builder.with(MESSAGE_KEY, "error.http." + problem.status!!.statusCode)
             }
@@ -121,9 +121,13 @@ _%>
     }
 
     <%_ if (!reactive) { _%>
-    override fun handleMethodArgumentNotValid(ex: MethodArgumentNotValidException, request: <%= requestClass %>): <%- returnType %> {
+    override fun handleMethodArgumentNotValid(
+        ex: MethodArgumentNotValidException, request: <%= requestClass %>
+    ): <%- returnType %> {
     <%_ } else { _%>
-    override fun handleBindingResult(ex: WebExchangeBindException, request: <%= requestClass %>): <%- returnType %>  {
+    override fun handleBindingResult(
+        ex: WebExchangeBindException, request: <%= requestClass %>)
+    : <%- returnType %>  {
     <%_ } _%>
         val result = ex.bindingResult
         val fieldErrors = result.fieldErrors.map { FieldErrorVM(it.objectName, it.field, it.code) }
@@ -150,8 +154,13 @@ _%>
     <%_ } _%>
 
     @ExceptionHandler
-    fun handleBadRequestAlertException(ex: BadRequestAlertException, request: <%= requestClass %>): <%- returnType %> {
-        return create(ex, request, HeaderUtil.createFailureAlert(applicationName, <%= enableTranslation %>, ex.entityName, ex.errorKey, ex.message))
+    fun handleBadRequestAlertException(
+        ex: BadRequestAlertException, request: <%= requestClass %>
+    ): <%- returnType %> {
+        return create(
+            ex, request,
+            HeaderUtil.createFailureAlert(applicationName, <%= enableTranslation %>, ex.entityName, ex.errorKey, ex.message)
+        )
     }
     <%_ if (databaseType !== 'no' && databaseType !== 'cassandra') { _%>
 

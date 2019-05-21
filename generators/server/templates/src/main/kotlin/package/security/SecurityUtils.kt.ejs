@@ -34,9 +34,6 @@ import reactor.core.publisher.Mono
 <%_ } _%>
 <%_ if (!reactive) { _%>
 
-<%_ if (authenticationType === 'oauth2') { _%>
-import java.util.Map;
-<%_ } _%>
 import java.util.Optional
 <%_ } _%>
 
@@ -60,8 +57,7 @@ object SecurityUtils {
             .map(SecurityContext::getAuthentication)
         <%_ } _%>
             .map { authentication ->
-                val principal = authentication.principal
-                when (principal) {
+                when (val principal = authentication.principal) {
                     is UserDetails -> principal.username
                     <%_ if (authenticationType === 'oauth2') { _%>
                     is DefaultOidcUser -> {
@@ -113,7 +109,7 @@ object SecurityUtils {
             .map(SecurityContext::getAuthentication)
         <%_ } _%>
             .map { authentication ->
-                    authentication.authorities.none { it.authority == AuthoritiesConstants.ANONYMOUS }
+                authentication.authorities.none { it.authority == AuthoritiesConstants.ANONYMOUS }
             }<% if (!reactive) { %>
             .orElse(false)<% } %>
     }

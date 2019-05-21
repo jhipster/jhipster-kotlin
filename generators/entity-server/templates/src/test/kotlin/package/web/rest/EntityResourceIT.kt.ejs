@@ -22,7 +22,7 @@ package <%=packageName%>.web.rest
     let mapsIdAssoc;
     let mapsIdEntity;
     let mapsIdEntityInstance;
-    let mapsIdRepoInstance
+    let mapsIdRepoInstance;
     for (idx in relationships) {
         isUsingMapsId = relationships[idx].useJPADerivedIdentifier;
         if ( isUsingMapsId === true) {
@@ -32,7 +32,8 @@ package <%=packageName%>.web.rest
             mapsIdRepoInstance = `${mapsIdEntityInstance}Repository`;
             break;
         }
-    } _%>
+    }
+_%>
 <%_ if (databaseType === 'cassandra') { _%>
 import <%=packageName%>.AbstractCassandraTest
 <%_ } _%>
@@ -103,12 +104,12 @@ import org.springframework.http.converter.json.MappingJackson2HttpMessageConvert
 import org.springframework.test.web.reactive.server.WebTestClient
 <%_ } _%>
 import org.springframework.test.web.servlet.MockMvc
-import org.springframework.test.web.servlet.setup.MockMvcBuilders;
+import org.springframework.test.web.servlet.setup.MockMvcBuilders
 <%_ if (databaseType === 'sql') { _%>
-import org.springframework.transaction.annotation.Transactional;
+import org.springframework.transaction.annotation.Transactional
 <%_ } _%>
 <%_ if (fieldsContainBlob === true) { _%>
-import org.springframework.util.Base64Utils;
+import org.springframework.util.Base64Utils
 <%_ } _%>
 import org.springframework.validation.Validator
 <%_ if (databaseType === 'sql') { _%>
@@ -122,11 +123,8 @@ import java.time.ZonedDateTime
 import java.time.ZoneOffset<% } %><% if (fieldsContainLocalDate === true || fieldsContainZonedDateTime === true) { %>
 import java.time.ZoneId<% } %><% if (fieldsContainInstant === true) { %>
 import java.time.temporal.ChronoUnit<% } %>
-<%_ if (searchEngine === 'elasticsearch') { _%>
-import java.util.Collections
-<%_ } _%>
 <%_ if (databaseType === 'cassandra') { _%>
-import java.util.UUID;
+import java.util.UUID
 <%_ } _%>
 <%_ if (databaseType === 'couchbase') { _%>
     import <%= packageName %>.web.rest.TestUtil.mockAuthentication
@@ -158,6 +156,7 @@ import org.springframework.test.web.servlet.result.MockMvcResultMatchers.status
 
 <%_ for (idx in fields) { if (fields[idx].fieldIsEnum === true) { _%>import <%=packageName%>.domain.enumeration.<%= fields[idx].fieldType %>
 <%_ } } _%>
+
 /**
  * Test class for the <%= entityClass %>Resource REST controller.
  *
@@ -451,7 +450,7 @@ class <%= entityClass %>ResourceIT <% if (databaseType === 'cassandra') { %>: Ab
             <%_ if ((fields[idx].fieldType === 'byte[]' || fields[idx].fieldType === 'ByteBuffer') && fields[idx].fieldTypeBlobContent !== 'text') { _%>
             .andExpect(jsonPath("$.[*].<%=fields[idx].fieldName%>ContentType").value(hasItem(<%='DEFAULT_' + fields[idx].fieldNameUnderscored.toUpperCase()%>_CONTENT_TYPE)))
             <%_ } _%>
-            .andExpect(jsonPath("$.[*].<%=fields[idx].fieldName%>").value(hasItem(<% if ((fields[idx].fieldType === 'byte[]' || fields[idx].fieldType === 'ByteBuffer') && fields[idx].fieldTypeBlobContent !== 'text') { %>Base64Utils.encodeToString(<% } else if (fields[idx].fieldType === 'ZonedDateTime') { %>sameInstant(<% } %><%='DEFAULT_' + fields[idx].fieldNameUnderscored.toUpperCase()%><% if ((fields[idx].fieldType === 'byte[]' || fields[idx].fieldType === 'ByteBuffer') && fields[idx].fieldTypeBlobContent !== 'text') { %><% if (databaseType === 'cassandra') { %>.array()<% } %>)<% } else if(fields[idx].fieldType === 'Integer'){ %><% } else if (fields[idx].fieldType === 'Long') { %>.toInt()<% } else if (fields[idx].fieldType === 'Float') { %>.toDouble()<% } else if (fields[idx].fieldType === 'Double') { %><% } else if (fields[idx].fieldType === 'BigDecimal') { %>.toInt()<% } else if (fields[idx].fieldType === 'Boolean') { %><% } else if (fields[idx].fieldType === 'ZonedDateTime') { %>)<% } else if (fields[idx].fieldType === 'String') { %><% } else { %>.toString()<% } %>)))<% } %>
+            .andExpect(jsonPath("$.[*].<%=fields[idx].fieldName%>").value(hasItem(<% if ((fields[idx].fieldType === 'byte[]' || fields[idx].fieldType === 'ByteBuffer') && fields[idx].fieldTypeBlobContent !== 'text') { %>Base64Utils.encodeToString(<% } else if (fields[idx].fieldType === 'ZonedDateTime') { %>sameInstant(<% } %><%='DEFAULT_' + fields[idx].fieldNameUnderscored.toUpperCase()%><% if ((fields[idx].fieldType === 'byte[]' || fields[idx].fieldType === 'ByteBuffer') && fields[idx].fieldTypeBlobContent !== 'text') { %><% if (databaseType === 'cassandra') { %>.array()<% } %>)<% } else if(fields[idx].fieldType === 'Integer'){ %><% } else if (fields[idx].fieldType === 'Long') { %>.toInt()<% } else if (fields[idx].fieldType === 'Float') { %>.toDouble()<% } else if (fields[idx].fieldType === 'Double') { %><% } else if (fields[idx].fieldType === 'BigDecimal') { %>.toInt()<% } else if (fields[idx].fieldType === 'Boolean') { %><% } else if (fields[idx].fieldType === 'ZonedDateTime') { %>)<% } else if (fields[idx].fieldType === 'String' || fields[idx].fieldTypeBlobContent === 'text') { %><% } else { %>.toString()<% } %>)))<% } %>
     }
     <% if (fieldsContainOwnerManyToMany === true) { %>
     @SuppressWarnings("unchecked")
@@ -471,7 +470,7 @@ class <%= entityClass %>ResourceIT <% if (databaseType === 'cassandra') { %>: Ab
             .setMessageConverters(jacksonMessageConverter).build()
 
         rest<%= entityClass %>MockMvc.perform(get("/api/<%= entityApiUrl %>?eagerload=true"))
-        .andExpect(status().isOk)
+            .andExpect(status().isOk)
 
         <%_ if (service !== 'no') { _%>
         verify(<%= entityInstance %>ServiceMock, times(1)).findAllWithEagerRelationships(any())
@@ -487,21 +486,21 @@ class <%= entityClass %>ResourceIT <% if (databaseType === 'cassandra') { %>: Ab
             `when`(<%= entityInstance %>ServiceMock.findAllWithEagerRelationships(any())).thenReturn( PageImpl( mutableListOf()))
         <%_ } else { _%>
         val <%= entityInstance %>Resource = <%= entityClass %>Resource(<%= entityInstance %>RepositoryMock<% if (dto === 'mapstruct') { %>, <%= entityInstance %>Mapper<% } %><% if (searchEngine === 'elasticsearch') { %>, mock<%= entityClass %>SearchRepository<% } %><% if (jpaMetamodelFiltering) { %>, <%= entityInstance %>QueryService<% } %>)
-            `when`(<%= entityInstance %>RepositoryMock.findAllWithEagerRelationships(any())).thenReturn( PageImpl( mutableListOf()))
+        `when`(<%= entityInstance %>RepositoryMock.findAllWithEagerRelationships(any())).thenReturn( PageImpl( mutableListOf()))
         <%_ } _%>
-            val rest<%= entityClass %>MockMvc = MockMvcBuilders.standaloneSetup(<%= entityInstance %>Resource)
+        val rest<%= entityClass %>MockMvc = MockMvcBuilders.standaloneSetup(<%= entityInstance %>Resource)
             .setCustomArgumentResolvers(pageableArgumentResolver)
             .setControllerAdvice(exceptionTranslator)
             .setConversionService(createFormattingConversionService())
             .setMessageConverters(jacksonMessageConverter).build()
 
         rest<%= entityClass %>MockMvc.perform(get("/api/<%= entityApiUrl %>?eagerload=true"))
-        .andExpect(status().isOk)
+            .andExpect(status().isOk)
 
         <%_ if (service !== 'no') { _%>
-            verify(<%= entityInstance %>ServiceMock, times(1)).findAllWithEagerRelationships(any())
+        verify(<%= entityInstance %>ServiceMock, times(1)).findAllWithEagerRelationships(any())
         <%_ } else { _%>
-            verify(<%= entityInstance %>RepositoryMock, times(1)).findAllWithEagerRelationships(any())
+        verify(<%= entityInstance %>RepositoryMock, times(1)).findAllWithEagerRelationships(any())
         <%_ } _%>
     }
     <%_ } _%>
@@ -528,7 +527,7 @@ class <%= entityClass %>ResourceIT <% if (databaseType === 'cassandra') { %>: Ab
             <%_ if ((fields[idx].fieldType === 'byte[]' || fields[idx].fieldType === 'ByteBuffer') && fields[idx].fieldTypeBlobContent !== 'text') { _%>
             .andExpect(jsonPath("$.<%=fields[idx].fieldName%>ContentType").value(<%='DEFAULT_' + fields[idx].fieldNameUnderscored.toUpperCase()%>_CONTENT_TYPE))
             <%_ } _%>
-            .andExpect(jsonPath("$.<%=fields[idx].fieldName%>").value(<% if ((fields[idx].fieldType === 'byte[]' || fields[idx].fieldType === 'ByteBuffer') && fields[idx].fieldTypeBlobContent !== 'text') { %>Base64Utils.encodeToString(<% } else if (fields[idx].fieldType === 'ZonedDateTime') { %>sameInstant(<% } %><%='DEFAULT_' + fields[idx].fieldNameUnderscored.toUpperCase()%><% if ((fields[idx].fieldType === 'byte[]' || fields[idx].fieldType === 'ByteBuffer') && fields[idx].fieldTypeBlobContent !== 'text') { %><% if (databaseType === 'cassandra') { %>.array()<% } %>)<% } else if (fields[idx].fieldType === 'Integer') { %><% } else if (fields[idx].fieldType === 'Long') { %>.toInt()<% } else if (fields[idx].fieldType === 'Float') { %>.toDouble()<% } else if (fields[idx].fieldType === 'Double') { %><% } else if (fields[idx].fieldType === 'BigDecimal') { %>.toInt()<% } else if (fields[idx].fieldType === 'Boolean') { %><% } else if (fields[idx].fieldType === 'ZonedDateTime') { %>)<% } else if (fields[idx].fieldType === 'String') {%><% } else { %>.toString()<% } %>))<% } %>
+            .andExpect(jsonPath("$.<%=fields[idx].fieldName%>").value(<% if ((fields[idx].fieldType === 'byte[]' || fields[idx].fieldType === 'ByteBuffer') && fields[idx].fieldTypeBlobContent !== 'text') { %>Base64Utils.encodeToString(<% } else if (fields[idx].fieldType === 'ZonedDateTime') { %>sameInstant(<% } %><%='DEFAULT_' + fields[idx].fieldNameUnderscored.toUpperCase()%><% if ((fields[idx].fieldType === 'byte[]' || fields[idx].fieldType === 'ByteBuffer') && fields[idx].fieldTypeBlobContent !== 'text') { %><% if (databaseType === 'cassandra') { %>.array()<% } %>)<% } else if (fields[idx].fieldType === 'Integer') { %><% } else if (fields[idx].fieldType === 'Long') { %>.toInt()<% } else if (fields[idx].fieldType === 'Float') { %>.toDouble()<% } else if (fields[idx].fieldType === 'Double') { %><% } else if (fields[idx].fieldType === 'BigDecimal') { %>.toInt()<% } else if (fields[idx].fieldType === 'Boolean') { %><% } else if (fields[idx].fieldType === 'ZonedDateTime') { %>)<% } else if (fields[idx].fieldType === 'String'  || fields[idx].fieldTypeBlobContent === 'text') {%><% } else { %>.toString()<% } %>))<% } %>
     }
 <%_ if (jpaMetamodelFiltering) {
         fields.forEach((searchBy) => {
@@ -585,6 +584,7 @@ class <%= entityClass %>ResourceIT <% if (databaseType === 'cassandra') { %>: Ab
                   biggerValue = '{' + defaultValue + ' + 1}';
               }
             _%>
+
     @Test<% if (databaseType === 'sql') { %>
     @Transactional<% } %>
     fun getAll<%= entityClassPlural %>By<%= searchBy.fieldInJavaBeanMethod %>IsGreaterThanOrEqualToSomething() {
@@ -651,10 +651,10 @@ class <%= entityClass %>ResourceIT <% if (databaseType === 'cassandra') { %>: Ab
             <%_ if ((field.fieldType === 'byte[]' || field.fieldType === 'ByteBuffer') && field.fieldTypeBlobContent !== 'text') { _%>
             .andExpect(jsonPath("$.[*].<%=field.fieldName%>ContentType").value(hasItem(<%='DEFAULT_' + field.fieldNameUnderscored.toUpperCase()%>_CONTENT_TYPE)))
             <%_ } _%>
-            .andExpect(jsonPath("$.[*].<%=field.fieldName%>").value(hasItem(<% if ((field.fieldType === 'byte[]' || field.fieldType === 'ByteBuffer') && field.fieldTypeBlobContent !== 'text') { %>Base64Utils.encodeToString(<% } else if (field.fieldType === 'ZonedDateTime') { %>sameInstant(<% } %><%='DEFAULT_' + field.fieldNameUnderscored.toUpperCase()%><% if ((field.fieldType === 'byte[]' || field.fieldType === 'ByteBuffer') && field.fieldTypeBlobContent !== 'text') { %><% if (databaseType === 'cassandra') { %>.array()<% } %>)<% } else if (field.fieldType === 'Integer') { %><% } else if (field.fieldType === 'Long') { %>.toInt()<% } else if (field.fieldType === 'Float') { %>.toDouble()<% } else if (field.fieldType === 'Double') { %><% } else if (field.fieldType === 'BigDecimal') { %>.toInt()<% } else if (field.fieldType === 'Boolean') { %><% } else if (field.fieldType === 'ZonedDateTime') { %>)<% } else if (field.fieldType === 'String') { %><% } else { %>.toString()<% } %>)))<% }); %>
+            .andExpect(jsonPath("$.[*].<%=field.fieldName%>").value(hasItem(<% if ((field.fieldType === 'byte[]' || field.fieldType === 'ByteBuffer') && field.fieldTypeBlobContent !== 'text') { %>Base64Utils.encodeToString(<% } else if (field.fieldType === 'ZonedDateTime') { %>sameInstant(<% } %><%='DEFAULT_' + field.fieldNameUnderscored.toUpperCase()%><% if ((field.fieldType === 'byte[]' || field.fieldType === 'ByteBuffer') && field.fieldTypeBlobContent !== 'text') { %><% if (databaseType === 'cassandra') { %>.array()<% } %>)<% } else if (field.fieldType === 'Integer') { %><% } else if (field.fieldType === 'Long') { %>.toInt()<% } else if (field.fieldType === 'Float') { %>.toDouble()<% } else if (field.fieldType === 'Double') { %><% } else if (field.fieldType === 'BigDecimal') { %>.toInt()<% } else if (field.fieldType === 'Boolean') { %><% } else if (field.fieldType === 'ZonedDateTime') { %>)<% } else if (field.fieldType === 'String' || field.fieldTypeBlobContent === 'text') { %><% } else { %>.toString()<% } %>)))<% }); %>
 
         // Check, that the count call also returns 1
-        rest<%= entityClass %>MockMvc.perform(get("/api/<%= entityApiUrl %>/count?sort=id,desc&" + filter))
+        rest<%= entityClass %>MockMvc.perform(get("/api/<%= entityApiUrl %>/count?sort=id,desc&$filter"))
             .andExpect(status().isOk)
             .andExpect(content().contentType(MediaType.APPLICATION_JSON_UTF8_VALUE))
             .andExpect(content().string("1"))
@@ -866,10 +866,10 @@ class <%= entityClass %>ResourceIT <% if (databaseType === 'cassandra') { %>: Ab
 <%_ } _%>
 <%_ if (searchEngine === 'elasticsearch' && pagination !== 'no') { _%>
         `when`(mock<%= entityClass %>SearchRepository.search(queryStringQuery("id:" + <%= asEntity(entityInstance) %>.id), PageRequest.of(0, 20)))
-            .thenReturn(PageImpl(Collections.singletonList(<%= asEntity(entityInstance) %>), PageRequest.of(0, 1), 1))
+            .thenReturn(PageImpl(listOf(<%= asEntity(entityInstance) %>), PageRequest.of(0, 1), 1))
 <%_ } else { _%>
         `when`(mock<%= entityClass %>SearchRepository.search(queryStringQuery("id:" + <%= asEntity(entityInstance) %>.id)))
-            .thenReturn(Collections.singletonList(<%= asEntity(entityInstance) %>))
+            .thenReturn(listOf(<%= asEntity(entityInstance) %>))
 <%_ } _%>
         // Search the <%= entityInstance %>
         rest<%= entityClass %>MockMvc.perform(get("/api/_search/<%= entityApiUrl %>?query=id:" + <%= asEntity(entityInstance) %>.id))
@@ -881,7 +881,7 @@ class <%= entityClass %>ResourceIT <% if (databaseType === 'cassandra') { %>: Ab
             <%_ if ((fields[idx].fieldType === 'byte[]' || fields[idx].fieldType === 'ByteBuffer') && fields[idx].fieldTypeBlobContent !== 'text') { _%>
             .andExpect(jsonPath("$.[*].<%=fields[idx].fieldName%>ContentType").value(hasItem(<%='DEFAULT_' + fields[idx].fieldNameUnderscored.toUpperCase()%>_CONTENT_TYPE)))
             <%_ } _%>
-            .andExpect(jsonPath("$.[*].<%=fields[idx].fieldName%>").value(hasItem(<% if ((fields[idx].fieldType === 'byte[]' || fields[idx].fieldType === 'ByteBuffer') && fields[idx].fieldTypeBlobContent !== 'text') { %>Base64Utils.encodeToString(<% } else if (fields[idx].fieldType === 'ZonedDateTime') { %>sameInstant(<% } %><%='DEFAULT_' + fields[idx].fieldNameUnderscored.toUpperCase()%><% if ((fields[idx].fieldType === 'byte[]' || fields[idx].fieldType === 'ByteBuffer') && fields[idx].fieldTypeBlobContent !== 'text') { %><% if (databaseType === 'cassandra') { %>.array()<% } %>)<% } else if (fields[idx].fieldType === 'Integer') { %><% } else if (fields[idx].fieldType === 'Long') { %>.toInt()<% } else if (fields[idx].fieldType === 'Float') { %>.toDouble()<% } else if (fields[idx].fieldType === 'Double') { %><% } else if (fields[idx].fieldType === 'BigDecimal') { %>.toInt()<% } else if (fields[idx].fieldType === 'Boolean') { %><% } else if (fields[idx].fieldType === 'ZonedDateTime') { %>)<% } else if (fields[idx].fieldType === 'String') { %><% } else { %>.toString()<% } %>)))<% } %>
+            .andExpect(jsonPath("$.[*].<%=fields[idx].fieldName%>").value(hasItem(<% if ((fields[idx].fieldType === 'byte[]' || fields[idx].fieldType === 'ByteBuffer') && fields[idx].fieldTypeBlobContent !== 'text') { %>Base64Utils.encodeToString(<% } else if (fields[idx].fieldType === 'ZonedDateTime') { %>sameInstant(<% } %><%='DEFAULT_' + fields[idx].fieldNameUnderscored.toUpperCase()%><% if ((fields[idx].fieldType === 'byte[]' || fields[idx].fieldType === 'ByteBuffer') && fields[idx].fieldTypeBlobContent !== 'text') { %><% if (databaseType === 'cassandra') { %>.array()<% } %>)<% } else if (fields[idx].fieldType === 'Integer') { %><% } else if (fields[idx].fieldType === 'Long') { %>.toInt()<% } else if (fields[idx].fieldType === 'Float') { %>.toDouble()<% } else if (fields[idx].fieldType === 'Double') { %><% } else if (fields[idx].fieldType === 'BigDecimal') { %>.toInt()<% } else if (fields[idx].fieldType === 'Boolean') { %><% } else if (fields[idx].fieldType === 'ZonedDateTime') { %>)<% } else if (fields[idx].fieldType === 'String' || fields[idx].fieldTypeBlobContent === 'text') { %><% } else { %>.toString()<% } %>)))<% } %>
     }
     <%_ } _%>
 
@@ -1089,6 +1089,7 @@ class <%= entityClass %>ResourceIT <% if (databaseType === 'cassandra') { %>: Ab
         private val <%=updatedValueName %>: <%=fieldType %> = <%=fieldType %>.<%=enumValue2 %>
         <%_ } } _%>
         <%_ ['DEFAULT_', 'UPDATED_'].forEach((fieldStatus) => { _%>
+
         /**
          * Create an <% if (fieldStatus === 'UPDATED_') { %>updated <% } %>entity for this test.
          *
@@ -1097,19 +1098,14 @@ class <%= entityClass %>ResourceIT <% if (databaseType === 'cassandra') { %>: Ab
          */
         @JvmStatic
         fun create<% if (fieldStatus === 'UPDATED_') { _%>Updated<%_ } %>Entity(<% if (databaseType === 'sql') { %>em: EntityManager<% } %>): <%= asEntity(entityClass) %> {
-            <%_ if (fluentMethods) { _%>
-            val <%= asEntity(entityInstance) %> = <%= asEntity(entityClass) %>()<% for (idx in fields) { %>
-            <%= asEntity(entityInstance) %>.<%= fields[idx].fieldName %> = <%=fieldStatus + fields[idx].fieldNameUnderscored.toUpperCase()%><% if ((fields[idx].fieldType === 'byte[]' || fields[idx].fieldType === 'ByteBuffer') && fields[idx].fieldTypeBlobContent !== 'text') { %>
-            <%= asEntity(entityInstance) %>.<%= fields[idx].fieldName %>ContentType = <%=fieldStatus + fields[idx].fieldNameUnderscored.toUpperCase()%>_CONTENT_TYPE<% } %><% } %>
-            <%_ } else { _%>
-            val <%= asEntity(entityInstance) %> = <%= asEntity(entityClass) %>()
-            <%_ for (idx in fields) { _%>
-                <%= asEntity(entityInstance) %>.set<%= fields[idx].fieldInJavaBeanMethod %>(<%=fieldStatus + fields[idx].fieldNameUnderscored.toUpperCase() %>)
-                    <%_ if ((fields[idx].fieldType === 'byte[]' || fields[idx].fieldType === 'ByteBuffer') && fields[idx].fieldTypeBlobContent !== 'text') { _%>
-            <%= asEntity(entityInstance) %>.set<%= fields[idx].fieldInJavaBeanMethod %>ContentType(<%=fieldStatus + fields[idx].fieldNameUnderscored.toUpperCase() %>_CONTENT_TYPE)
-                    <%_ } _%>
-                <%_ } _%>
+            val <%= asEntity(entityInstance) %> = <%= asEntity(entityClass) %>(
+            <%_ for (idx in fields) {
+                const comma = (parseInt(idx, 10) === (fields.length - 1)) ?  '' : ',';
+            _%>
+                <%= fields[idx].fieldName %> = <%=fieldStatus + fields[idx].fieldNameUnderscored.toUpperCase()%><% if ((fields[idx].fieldType === 'byte[]' || fields[idx].fieldType === 'ByteBuffer') && fields[idx].fieldTypeBlobContent !== 'text') { %>,
+                <%= fields[idx].fieldName %>ContentType = <%=fieldStatus + fields[idx].fieldNameUnderscored.toUpperCase()%>_CONTENT_TYPE<% } %><%= comma %>
             <%_ } _%>
+            )
 
             <%_
             const alreadyGeneratedEntities = []
@@ -1118,8 +1114,6 @@ class <%= entityClass %>ResourceIT <% if (databaseType === 'cassandra') { %>: Ab
                 const otherEntityName = relationships[idx].otherEntityName;
                 const otherEntityNameCapitalized = relationships[idx].otherEntityNameCapitalized;
                 const relationshipType = relationships[idx].relationshipType;
-                const relationshipNameCapitalizedPlural = relationships[idx].relationshipNameCapitalizedPlural;
-                const relationshipNameCapitalized = relationships[idx].relationshipNameCapitalized;
                 const relationshipName = relationships[idx].relationshipName;
                 const mapsIdUse = relationships[idx].useJPADerivedIdentifier;
                 if ((relationshipValidate !== null && relationshipValidate === true) || mapsIdUse === true) { _%>
@@ -1157,7 +1151,7 @@ class <%= entityClass %>ResourceIT <% if (databaseType === 'cassandra') { %>: Ab
             <%_ } _%>
         <%_ alreadyGeneratedEntities.push(otherEntityName) _%>
         <%_ } } _%>
-        return <%= asEntity(entityInstance) %>
+            return <%= asEntity(entityInstance) %>
         }
         <%_ }); _%>
     }

@@ -57,28 +57,27 @@ class UserMapperIT <% if (databaseType === 'cassandra') { %>: AbstractCassandraT
 
     @BeforeEach
     fun init() {
-        user = <%= asEntity('User') %>()
-        user.login = DEFAULT_LOGIN
-        <%_ if (authenticationType !== 'oauth2') { _%>
-        user.password = RandomStringUtils.random(60)
-        <%_ } _%>
-        user.activated = true
-        user.email = "johndoe@localhost"
-        user.firstName = "john"
-        user.lastName = "doe"
-        <%_ if (databaseType !== 'cassandra') { _%>
-        user.imageUrl = "image_url"
-        <%_ } _%>
-        user.langKey = "en"
+        user = <%= asEntity('User') %>(
+            login = DEFAULT_LOGIN,
+            <%_ if (authenticationType !== 'oauth2') { _%>
+            password = RandomStringUtils.random(60),
+            <%_ } _%>
+            activated = true,
+            email = "johndoe@localhost",
+            firstName = "john",
+            lastName = "doe",
+            <%_ if (databaseType !== 'cassandra') { _%>
+            imageUrl = "image_url",
+            <%_ } _%>
+            langKey = "en"
+        )
 
         userDto = <%= asDto('User') %>(user)
     }
 
     @Test
     fun usersToUserDTOsShouldMapOnlyNonNullUsers() {
-        val users = mutableListOf<<%= asEntity('User') %>?>()
-        users.add(user)
-        users.add(null)
+        val users = listOf(user, null)
 
         val userDTOS = userMapper.usersToUserDTOs(users)
 
@@ -88,9 +87,7 @@ class UserMapperIT <% if (databaseType === 'cassandra') { %>: AbstractCassandraT
 
     @Test
     fun userDTOsToUsersShouldMapOnlyNonNullUsers() {
-        val usersDto = mutableListOf<<%= asDto('User') %>?>()
-        usersDto.add(userDto)
-        usersDto.add(null)
+        val usersDto = mutableListOf(userDto, null)
 
         val users = userMapper.userDTOsToUsers(usersDto)
 
@@ -100,12 +97,9 @@ class UserMapperIT <% if (databaseType === 'cassandra') { %>: AbstractCassandraT
 
     @Test
     fun userDTOsToUsersWithAuthoritiesStringShouldMapToUsersWithAuthoritiesDomain() {
-        val authoritiesAsString = mutableSetOf<String>()
-        authoritiesAsString.add("ADMIN")
-        userDto.authorities = authoritiesAsString
+        userDto.authorities = setOf("ADMIN")
 
-        val usersDto = mutableListOf<<%= asDto('User') %>>()
-        usersDto.add(userDto)
+        val usersDto = listOf(userDto)
 
         val users = userMapper.userDTOsToUsers(usersDto)
 
@@ -125,8 +119,7 @@ class UserMapperIT <% if (databaseType === 'cassandra') { %>: AbstractCassandraT
     fun userDTOsToUsersMapWithNullAuthoritiesStringShouldReturnUserWithEmptyAuthorities() {
         userDto.authorities = null
 
-        val usersDto = mutableListOf<<%= asDto('User') %>>()
-        usersDto.add(userDto)
+        val usersDto = listOf(userDto)
 
         val users = userMapper.userDTOsToUsers(usersDto)
 
@@ -138,9 +131,7 @@ class UserMapperIT <% if (databaseType === 'cassandra') { %>: AbstractCassandraT
 
     @Test
     fun userDTOToUserMapWithAuthoritiesStringShouldReturnUserWithAuthorities() {
-        val authoritiesAsString = mutableSetOf<String>()
-        authoritiesAsString.add("ADMIN")
-        userDto.authorities = authoritiesAsString
+        userDto.authorities = setOf("ADMIN")
 
         val user = userMapper.userDTOToUser(userDto)
 
