@@ -51,7 +51,7 @@ const serverFiles = {
             templates: [{ file: 'gradle/kotlin.gradle', useBluePrint: true }]
         },
         {
-            templates: [{ file: 'detekt-config.yml', useBluePrint: true }]
+            templates: [{ file: `${kotlinConstants.DETEKT_CONFIG_FILE}`, useBluePrint: true }]
         }
     ],
     serverResource: [
@@ -1772,7 +1772,7 @@ function writeFiles() {
                 this.addMavenProperty('ktlint.version', kotlinConstants.KTLINT_VERSION);
                 this.addMavenProperty('maven-antrun-plugin.version', kotlinConstants.MAVEN_ANTRUN_VERSION);
                 this.addMavenProperty('detekt.version', kotlinConstants.DETEKT_VERSION);
-                this.addMavenProperty('detekt.configFile', '${project.basedir}/detekt-config.yml');
+                this.addMavenProperty('detekt.configFile', `$\{project.basedir}/${kotlinConstants.DETEKT_CONFIG_FILE}`);
                 this.addMavenProperty('detekt.xmlReportFile', '${project.build.directory}/detekt-reports/detekt.xml');
                 this.addMavenProperty('sonar.kotlin.detekt.reportPaths', '${detekt.xmlReportFile}');
                 this.addMavenProperty('sonar.coverage.jacoco.xmlReportPaths', '${jacoco.reportFolder}/jacoco.xml');

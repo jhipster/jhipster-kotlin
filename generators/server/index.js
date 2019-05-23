@@ -54,6 +54,7 @@ module.exports = class extends ServerGenerator {
             setupConstants() {
                 this.MOCKITO_KOTLIN_VERSION = kotlinConstants.MOCKITO_KOTLIN_VERSION;
                 this.KTLINT_VERSION = kotlinConstants.KTLINT_VERSION;
+                this.DETEKT_CONFIG_FILE = kotlinConstants.DETEKT_CONFIG_FILE;
             }
         };
         return Object.assign(phaseFromJHipster, myCustomPhaseSteps);
