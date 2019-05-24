@@ -34,10 +34,16 @@ If you also have JHipster avaiable locally Use the following:
 ## 🚦 What we have now
 
 ✅ General App generation
+    - `khipster`
 
 ✅ Spring Controller
+    - `khipster spring-controller <controller-name>`
 
 ✅ Spring Service
+    - `khipster spring-service <service-name>`
+
+✅ Entity generation
+    - `khipster entity <entity-name>`
 
 ## ❤️ for community
 
