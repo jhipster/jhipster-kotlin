@@ -49,6 +49,9 @@ const serverFiles = {
         {
             condition: generator => generator.buildTool === 'gradle',
             templates: [{ file: 'gradle/kotlin.gradle', useBluePrint: true }]
+        },
+        {
+            templates: [{ file: `${kotlinConstants.DETEKT_CONFIG_FILE}`, useBluePrint: true }]
         }
     ],
     serverResource: [
@@ -1750,20 +1753,30 @@ function writeFiles() {
         modifyFiles() {
             if (this.buildTool === 'gradle') {
                 this.addGradleProperty('kotlin_version', kotlinConstants.KOTLIN_VERSION);
+                this.addGradleProperty('detekt_version', kotlinConstants.DETEKT_VERSION);
                 this.addGradlePlugin('org.jetbrains.kotlin', 'kotlin-gradle-plugin', '${kotlin_version}');
                 this.addGradlePlugin('org.jetbrains.kotlin', 'kotlin-allopen', '${kotlin_version}');
                 if (this.databaseType === 'sql') {
                     this.addGradlePlugin('org.jetbrains.kotlin', 'kotlin-noarg', '${kotlin_version}');
                 }
                 this.addGradlePlugin('org.jlleitschuh.gradle', 'ktlint-gradle', kotlinConstants.KTLINT_GRADLE_VERSION);
+                this.addGradlePlugin('io.gitlab.arturbosch.detekt', 'detekt-gradle-plugin', '${detekt_version}');
 
                 this.applyFromGradleScript('gradle/kotlin');
             }
 
             if (this.buildTool === 'maven') {
+                this.addMavenPluginRepository('jcenter', 'https://jcenter.bintray.com/');
+
                 this.addMavenProperty('kotlin.version', kotlinConstants.KOTLIN_VERSION);
                 this.addMavenProperty('ktlint.version', kotlinConstants.KTLINT_VERSION);
                 this.addMavenProperty('maven-antrun-plugin.version', kotlinConstants.MAVEN_ANTRUN_VERSION);
+                this.addMavenProperty('detekt.version', kotlinConstants.DETEKT_VERSION);
+                this.addMavenProperty('detekt.configFile', `$\{project.basedir}/${kotlinConstants.DETEKT_CONFIG_FILE}`);
+                this.addMavenProperty('detekt.xmlReportFile', '${project.build.directory}/detekt-reports/detekt.xml');
+                this.addMavenProperty('sonar.kotlin.detekt.reportPaths', '${detekt.xmlReportFile}');
+                this.addMavenProperty('sonar.coverage.jacoco.xmlReportPaths', '${jacoco.reportFolder}/jacoco.xml');
+
                 this.addMavenDependencyManagement('org.jetbrains.kotlin', 'kotlin-stdlib', '${kotlin.version}');
                 this.addMavenDependencyManagement('org.jetbrains.kotlin', 'kotlin-stdlib-jdk7', '${kotlin.version}');
                 this.addMavenDependency('com.fasterxml.jackson.datatype', 'jackson-datatype-json-org');
@@ -1850,10 +1863,10 @@ function writeFiles() {
                 </executions>
                 <configuration>
                     <jvmTarget>$\{java.version}</jvmTarget>
-                    <javaParameters>true</javaParameters>
-                    ${
+                    <javaParameters>true</javaParameters>${
                         this.databaseType === 'couchbase'
-                            ? `<args>
+                            ? `
+                    <args>
                         <arg>-Xjvm-default=enable</arg>
                     </args>`
                             : ''
@@ -1861,7 +1874,8 @@ function writeFiles() {
                     <compilerPlugins>
                         <plugin>spring</plugin>${
                             this.databaseType === 'sql'
-                                ? `<plugin>jpa</plugin>
+                                ? `
+                        <plugin>jpa</plugin>
                         <plugin>all-open</plugin>`
                                 : ''
                         }
@@ -1966,12 +1980,42 @@ function writeFiles() {
                             <goal>run</goal>
                         </goals>
                     </execution>
+                    <execution>
+                        <!-- This can be run separately with mvn antrun:run@detekt -->
+                        <id>detekt</id>
+                        <phase>verify</phase>
+                        <configuration>
+                            <target name="detekt">
+                                <!-- See https://arturbosch.github.io/detekt/cli.html for more options-->
+                                <java taskname="detekt" dir="$\{basedir}"
+                                      fork="true"
+                                      failonerror="true"
+                                      classname="io.gitlab.arturbosch.detekt.cli.Main"
+                                      classpathref="maven.plugin.classpath">
+                                    <arg value="--input"/>
+                                    <arg value="$\{project.basedir}/src/main/kotlin"/>
+                                    <arg value="--report"/>
+                                    <arg value="xml:$\{detekt.xmlReportFile}"/>
+                                    <arg value="--config"/>
+                                    <arg value="$\{detekt.configFile}"/>
+                                </java>
+                            </target>
+                        </configuration>
+                        <goals>
+                            <goal>run</goal>
+                        </goals>
+                    </execution>
                 </executions>
                 <dependencies>
                     <dependency>
                         <groupId>com.github.shyiko</groupId>
                         <artifactId>ktlint</artifactId>
                         <version>$\{ktlint.version}</version>
+                    </dependency>
+                    <dependency>
+                        <groupId>io.gitlab.arturbosch.detekt</groupId>
+                        <artifactId>detekt-cli</artifactId>
+                        <version>$\{detekt.version}</version>
                     </dependency>
                     <!-- additional 3rd party ruleset(s) can be specified here -->
                 </dependencies>`;
