@@ -19,7 +19,7 @@ describe('JHipster generator spring-controller', () => {
                     skipChecks: true
                 })
                 .inTmpDir(dir => {
-                    fse.copySync(path.join(__dirname, '../node_modules/generator-jhipster/test/templates/default'), dir);
+                    fse.copySync(path.join(__dirname, '../test/templates/default'), dir);
                 })
                 .withArguments(['foo'])
                 .withPrompts({
@@ -47,7 +47,7 @@ describe('JHipster generator spring-controller', () => {
                     default: true
                 })
                 .inTmpDir(dir => {
-                    fse.copySync(path.join(__dirname, '../node_modules/generator-jhipster/test/templates/default'), dir);
+                    fse.copySync(path.join(__dirname, '../test/templates/default'), dir);
                 })
                 .withArguments(['foo'])
                 .on('end', done);
