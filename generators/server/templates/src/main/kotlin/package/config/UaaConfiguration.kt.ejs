@@ -71,13 +71,16 @@ class UaaConfiguration(
     }
 
     @EnableResourceServer
-    class ResourceServerConfiguration(private val tokenStore: TokenStore, private val jHipsterProperties: JHipsterProperties, private val corsFilter: CorsFilter) : ResourceServerConfigurerAdapter() {
+    class ResourceServerConfiguration(
+        private val tokenStore: TokenStore,
+        private val corsFilter: CorsFilter
+    ) : ResourceServerConfigurerAdapter() {
 
         @Throws(Exception::class)
         override fun configure(http: HttpSecurity) {
             http
                 .exceptionHandling()
-                .authenticationEntryPoint { request, response, authException -> response.sendError(HttpServletResponse.SC_UNAUTHORIZED) }
+                .authenticationEntryPoint { _, response, _ -> response.sendError(HttpServletResponse.SC_UNAUTHORIZED) }
                 .and()
                 .csrf()
                 .disable()
@@ -139,16 +142,16 @@ class UaaConfiguration(
 
     @Throws(Exception::class)
     override fun configure(endpoints: AuthorizationServerEndpointsConfigurer?) {
-        //pick up all  TokenEnhancers incl. those defined in the application
-        //this avoids changes to this class if an application wants to add its own to the chain
+        // pick up all  TokenEnhancers incl. those defined in the application
+        // this avoids changes to this class if an application wants to add its own to the chain
         val tokenEnhancers = applicationContext!!.getBeansOfType(TokenEnhancer::class.java).values
         val tokenEnhancerChain = TokenEnhancerChain()
-        tokenEnhancerChain.setTokenEnhancers(tokenEnhancers as MutableList<TokenEnhancer>?)
+        tokenEnhancerChain.setTokenEnhancers(tokenEnhancers.toMutableList())
         endpoints!!
             .authenticationManager(authenticationManager)
             .tokenStore(tokenStore())
             .tokenEnhancer(tokenEnhancerChain)
-            .reuseRefreshTokens(false)             //don't reuse or we will run into session inactivity timeouts
+            .reuseRefreshTokens(false) // don't reuse or we will run into session inactivity timeouts
     }
 
     /**
