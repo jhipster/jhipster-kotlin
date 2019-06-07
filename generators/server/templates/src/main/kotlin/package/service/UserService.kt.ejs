@@ -41,7 +41,9 @@ import <%=packageName%>.security.USER
 import <%=packageName%>.security.getCurrentUserLogin
 import <%=packageName%>.service.dto.<%= asDto('User') %>
 <%_ if (authenticationType !== 'oauth2') { _%>
-import <%=packageName%>.service.util.RandomUtil
+import <%=packageName%>.service.util.generateActivationKey
+import <%=packageName%>.service.util.generatePassword
+import <%=packageName%>.service.util.generateResetKey
 import <%=packageName%>.web.rest.errors.EmailAlreadyUsedException
 import <%=packageName%>.web.rest.errors.InvalidPasswordException
 import <%=packageName%>.web.rest.errors.LoginAlreadyUsedException
@@ -166,7 +168,7 @@ class UserService(
         return userRepository.findOneByEmailIgnoreCase(mail)
             .filter(<%= asEntity('User') %>::activated)
             .<% if (reactive) { %>flatMap<% } else { %>map<% } %> { user ->
-                user.resetKey = RandomUtil.generateResetKey()
+                user.resetKey = generateResetKey()
                 user.resetDate = Instant.now()
             <%_ if (!reactive) { _%>
                 <%_ if (databaseType === 'mongodb' || databaseType === 'couchbase' || databaseType === 'cassandra') { _%>
@@ -219,7 +221,7 @@ class UserService(
             // new user is not active
             activated = false
             // new user gets registration key
-            activationKey = RandomUtil.generateActivationKey()
+            activationKey = generateActivationKey()
             <%_ if (['sql', 'mongodb'].includes(databaseType)) { _%>
             authorities = mutableSetOf()
             authorityRepository.findById(USER).ifPresent { authorities.add(it) }
@@ -275,7 +277,7 @@ class UserService(
                     // new user is not active
                     activated = false
                     // new user gets registration key
-                    activationKey = RandomUtil.generateActivationKey()
+                    activationKey = generateActivationKey()
                 }
 
                 val authorities = mutableSetOf<<% if (['sql', 'mongodb'].includes(databaseType)) { %>Authority<% } else { %>String<% } %>>()
@@ -315,7 +317,7 @@ class UserService(
 
     <%_ } _%>
     fun createUser(userDTO: <%= asDto('User') %>): <% if (reactive) { %>Mono<<%= asEntity('User') %>><% } else { %><%= asEntity('User') %><% } %> {
-        val encryptedPassword = passwordEncoder.encode(RandomUtil.generatePassword())
+        val encryptedPassword = passwordEncoder.encode(generatePassword())
         val user = <%= asEntity('User') %>(
             <%_ if (databaseType === 'cassandra') { _%>
             id = UUID.randomUUID().toString(),
@@ -329,7 +331,7 @@ class UserService(
             <%_ } _%>
             langKey = userDTO.langKey ?: DEFAULT_LANGUAGE, // default language
             password = encryptedPassword,
-            resetKey = RandomUtil.generateResetKey(),
+            resetKey = generateResetKey(),
             resetDate = Instant.now(),
             activated = true
         )
