@@ -18,7 +18,9 @@
 -%>
 package <%=packageName%>.service
 
-import <%=packageName%>.config.Constants
+import <%=packageName%>.config.ANONYMOUS_USER
+import <%=packageName%>.config.DEFAULT_LANGUAGE
+import <%=packageName%>.config.SYSTEM_ACCOUNT
 <%_ if (databaseType === 'sql' || databaseType === 'mongodb' || databaseType === 'couchbase') { _%>
 import <%=packageName%>.domain.Authority
 <%_ } _%>
@@ -325,7 +327,7 @@ class UserService(
             <%_ if (databaseType === 'sql' || databaseType === 'mongodb' || databaseType === 'couchbase') { _%>
             imageUrl = userDTO.imageUrl,
             <%_ } _%>
-            langKey = userDTO.langKey ?: Constants.DEFAULT_LANGUAGE, // default language
+            langKey = userDTO.langKey ?: DEFAULT_LANGUAGE, // default language
             password = encryptedPassword,
             resetKey = RandomUtil.generateResetKey(),
             resetDate = Instant.now(),
@@ -515,7 +517,7 @@ class UserService(
         return userRepository.save(user)
         <%_ } else { _%>
         return getCurrentUserLogin()
-            .switchIfEmpty(Mono.just(Constants.SYSTEM_ACCOUNT))
+            .switchIfEmpty(Mono.just(SYSTEM_ACCOUNT))
             .flatMap { login ->
                 user.lastModifiedBy = login
                 userRepository.save(user)
@@ -528,7 +530,7 @@ class UserService(
         return userRepository.save(user)
         <%_ } else { _%>
         return getCurrentUserLogin()
-            .switchIfEmpty(Mono.just(Constants.SYSTEM_ACCOUNT))
+            .switchIfEmpty(Mono.just(SYSTEM_ACCOUNT))
             .flatMap { login ->
                 user.createdBy = login
                 user.lastModifiedBy = login
@@ -585,18 +587,18 @@ class UserService(
     <%_ } _%>
     <%_ if (['sql', 'mongodb', 'couchbase'].includes(databaseType)) { _%>
     fun getAllManagedUsers(pageable: Pageable): <% if (reactive) { %>Flux<% } else { %>Page<% } %><<%= asDto('User') %>> {
-        return userRepository.findAllByLoginNot(pageable, Constants.ANONYMOUS_USER).map { <%= asDto('User') %>(it) }
+        return userRepository.findAllByLoginNot(pageable, ANONYMOUS_USER).map { <%= asDto('User') %>(it) }
     }
         <%_ if (reactive) { _%>
 
     fun countManagedUsers(): Mono<Long> {
-        return userRepository.countAllByLoginNot(Constants.ANONYMOUS_USER)
+        return userRepository.countAllByLoginNot(ANONYMOUS_USER)
     }
         <%_ } _%>
     <%_ } else { // Cassandra _%>
     fun getAllManagedUsers(): <% if (reactive) { %>Flux<% } else { %>List<% } %><<%= asDto('User') %>> {
         return userRepository.findAll()<% if (!reactive) { %>.asSequence()<% } %>
-            .filter { user -> Constants.ANONYMOUS_USER!=user.login }
+            .filter { user -> ANONYMOUS_USER!=user.login }
             .mapTo(mutableListOf()) { <%= asDto('User') %>(it) }
     }
     <%_ } _%>
@@ -796,7 +798,7 @@ class UserService(
                 user.langKey = locale.toLowerCase()
             } else {
                 // set langKey to default if not specified by IdP
-                user.langKey = Constants.DEFAULT_LANGUAGE
+                user.langKey = DEFAULT_LANGUAGE
             }
             if (details["picture"] != null) {
                 user.imageUrl = details["picture"] as String

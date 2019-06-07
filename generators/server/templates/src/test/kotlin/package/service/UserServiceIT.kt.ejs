@@ -22,7 +22,8 @@ package <%= packageName %>.service
 import <%= packageName %>.AbstractCassandraTest
 <%_ } _%>
 import <%= packageName %>.<%= mainClass %>
-import <%=packageName%>.config.Constants
+import <%=packageName%>.config.ANONYMOUS_USER
+import <%=packageName%>.config.DEFAULT_LANGUAGE
 <%_ if (authenticationType === 'oauth2') { _%>
 import <%= packageName %>.config.TestSecurityConfiguration
 <%_ } _%>
@@ -370,10 +371,10 @@ class UserServiceIT <% if (databaseType === 'cassandra') { %>: AbstractCassandra
     <%_ } _%>
     fun assertThatAnonymousUserIsNotGet() {
         <%_ if (authenticationType === 'oauth2') { _%>
-        user.id = Constants.ANONYMOUS_USER
+        user.id = ANONYMOUS_USER
         <%_ } _%>
-        user.login = Constants.ANONYMOUS_USER
-        if (!userRepository.findOneByLogin(Constants.ANONYMOUS_USER)<% if (reactive) { %>.blockOptional()<% } %>.isPresent) {
+        user.login = ANONYMOUS_USER
+        if (!userRepository.findOneByLogin(ANONYMOUS_USER)<% if (reactive) { %>.blockOptional()<% } %>.isPresent) {
             userRepository.save<% if (databaseType === 'sql') { %>AndFlush<% } %>(user)<% if (reactive) { %>.block()<% } %>
         }<% if (databaseType === 'sql' || databaseType === 'mongodb' || databaseType === 'couchbase') { %>
         val pageable = PageRequest.of(0, userRepository.count()<% if (reactive) { %>.block()!!<% } %>.toInt())
@@ -383,7 +384,7 @@ class UserServiceIT <% if (databaseType === 'cassandra') { %>: AbstractCassandra
         assertThat(allManagedUsers<% if (!reactive) { %>.content<% } %>.stream()<% } %><% if (databaseType === 'cassandra') { %>
         val allManagedUsers = userService.getAllManagedUsers()<% if (reactive) { %>.collectList().block()<% } %>
         assertThat(allManagedUsers.stream()<% } %>
-            .noneMatch { user -> Constants.ANONYMOUS_USER == user.login })
+            .noneMatch { user -> ANONYMOUS_USER == user.login })
             .isTrue()
     }
     <%_ if (authenticationType !== 'oauth2' && (databaseType === 'sql' || databaseType === 'mongodb' || databaseType === 'couchbase')) { _%>
@@ -431,7 +432,7 @@ class UserServiceIT <% if (databaseType === 'cassandra') { %>: AbstractCassandra
         assertThat(userDTO.lastName).isEqualTo(DEFAULT_LASTNAME)
         assertThat(userDTO.email).isEqualTo(DEFAULT_EMAIL)
         assertThat(userDTO.activated).isTrue()
-        assertThat(userDTO.langKey).isEqualTo(Constants.DEFAULT_LANGUAGE)
+        assertThat(userDTO.langKey).isEqualTo(DEFAULT_LANGUAGE)
         assertThat(userDTO.imageUrl).isEqualTo(DEFAULT_IMAGEURL)
         assertThat(userDTO.authorities).contains(AuthoritiesConstants.ANONYMOUS)
     }
@@ -494,7 +495,7 @@ class UserServiceIT <% if (databaseType === 'cassandra') { %>: AbstractCassandra
 
     private fun createMockOAuth2AuthenticationToken(userDetails: Map<String, Any?>): OAuth2AuthenticationToken {
         val authorities = listOf(SimpleGrantedAuthority(AuthoritiesConstants.ANONYMOUS))
-        val usernamePasswordAuthenticationToken = UsernamePasswordAuthenticationToken(Constants.ANONYMOUS_USER, Constants.ANONYMOUS_USER, authorities)
+        val usernamePasswordAuthenticationToken = UsernamePasswordAuthenticationToken(ANONYMOUS_USER, ANONYMOUS_USER, authorities)
         usernamePasswordAuthenticationToken.details = userDetails
         val user = DefaultOAuth2User(authorities, userDetails, "sub")
 
