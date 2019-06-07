@@ -94,7 +94,7 @@ _%>
             <%_ } _%>
         }
         val builder = Problem.builder()
-            .withType(if (Problem.DEFAULT_TYPE == problem.type) ErrorConstants.DEFAULT_TYPE else problem.type)
+            .withType(if (Problem.DEFAULT_TYPE == problem.type) DEFAULT_TYPE else problem.type)
             .withStatus(problem.status)
             .withTitle(problem.title)
             <%_ if (!reactive) { _%>
@@ -106,7 +106,7 @@ _%>
         if (problem is ConstraintViolationProblem) {
             builder
                 .with(VIOLATIONS_KEY, problem.violations)
-                .with(MESSAGE_KEY, ErrorConstants.ERR_VALIDATION)
+                .with(MESSAGE_KEY, ERR_VALIDATION)
         } else {
             builder
                 .withCause((problem as DefaultProblem).cause)
@@ -133,10 +133,10 @@ _%>
         val fieldErrors = result.fieldErrors.map { FieldErrorVM(it.objectName, it.field, it.code) }
 
         val problem = Problem.builder()
-            .withType(ErrorConstants.CONSTRAINT_VIOLATION_TYPE)
+            .withType(CONSTRAINT_VIOLATION_TYPE)
             .withTitle("<%_ if (!reactive) { _%>Method argument not valid<% } else { %>Data binding and validation failure<% } %>")
             .withStatus(<% if (!reactive) { %>defaultConstraintViolationStatus()<% } else { %>Status.BAD_REQUEST<% } %>)
-            .with(MESSAGE_KEY, ErrorConstants.ERR_VALIDATION)
+            .with(MESSAGE_KEY, ERR_VALIDATION)
             .with(FIELD_ERRORS_KEY, fieldErrors)
             .build()
         return create(ex, problem, request)
@@ -147,7 +147,7 @@ _%>
     fun handleNoSuchElementException(ex: NoSuchElementException, request: NativeWebRequest): ResponseEntity<Problem> {
         val problem = Problem.builder()
             .withStatus(Status.NOT_FOUND)
-            .with(MESSAGE_KEY, ErrorConstants.ENTITY_NOT_FOUND_TYPE)
+            .with(MESSAGE_KEY, ENTITY_NOT_FOUND_TYPE)
             .build()
         return create(ex, problem, request)
     }
@@ -168,7 +168,7 @@ _%>
     fun handleConcurrencyFailure(ex: ConcurrencyFailureException, request: <%= requestClass %>): <%- returnType %> {
         val problem = Problem.builder()
             .withStatus(Status.CONFLICT)
-            .with(MESSAGE_KEY, ErrorConstants.ERR_CONCURRENCY_FAILURE)
+            .with(MESSAGE_KEY, ERR_CONCURRENCY_FAILURE)
             .build()
         return create(ex, problem, request)
     }
