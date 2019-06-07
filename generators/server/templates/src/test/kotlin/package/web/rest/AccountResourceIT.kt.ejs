@@ -24,7 +24,8 @@ import <%= packageName %>.AbstractCassandraTest
 <%_ } _%>
 import <%= packageName %>.config.TestSecurityConfiguration
 import <%= packageName %>.<%= mainClass %>
-import <%= packageName %>.security.AuthoritiesConstants
+import <%= packageName %>.security.ADMIN
+import <%= packageName %>.security.USER
 import <%= packageName %>.service.UserService
 import <%= packageName %>.web.rest.errors.ExceptionTranslator
 
@@ -116,7 +117,7 @@ class AccountResourceIT <% if (databaseType === 'cassandra') { %>: AbstractCassa
             "sub" to "test",
             "email" to "john.doe@jhipster.com"
         )
-        val authorities = listOf(SimpleGrantedAuthority(AuthoritiesConstants.ADMIN))
+        val authorities = listOf(SimpleGrantedAuthority(ADMIN))
         val user = DefaultOAuth2User(authorities, userDetails, "sub")
         val authentication = OAuth2AuthenticationToken(user, authorities, "oidc")
         TestSecurityContextHolder.getContext().authentication = authentication
@@ -127,7 +128,7 @@ class AccountResourceIT <% if (databaseType === 'cassandra') { %>: AbstractCassa
             .andExpect(content().contentType(MediaType.APPLICATION_JSON_UTF8_VALUE))
             .andExpect(jsonPath("\$.login").value("test"))
             .andExpect(jsonPath("\$.email").value("john.doe@jhipster.com"))
-            .andExpect(jsonPath("\$.authorities").value(AuthoritiesConstants.ADMIN))
+            .andExpect(jsonPath("\$.authorities").value(ADMIN))
     }
 
     @Test
@@ -143,7 +144,8 @@ class AccountResourceIT <% if (databaseType === 'cassandra') { %>: AbstractCassa
 import <%= packageName %>.AbstractCassandraTest
 <%_ } _%>
 import <%= packageName %>.<%= mainClass %>
-import <%= packageName %>.security.AuthoritiesConstants
+import <%= packageName %>.security.ADMIN
+import <%= packageName %>.security.USER
 import <%= packageName %>.web.rest.errors.ExceptionTranslator
 import org.junit.jupiter.api.BeforeEach
 import org.junit.jupiter.api.Test
@@ -185,7 +187,7 @@ class AccountResourceIT <% if (databaseType === 'cassandra') { %>: AbstractCassa
                 .andExpect(status().isOk())
                 .andExpect(content().contentType(MediaType.APPLICATION_JSON_UTF8_VALUE))
                 .andExpect(jsonPath("$.login").value("test"))
-                .andExpect(jsonPath("$.authorities").value(AuthoritiesConstants.ADMIN))
+                .andExpect(jsonPath("$.authorities").value(ADMIN))
     }
 
     @Test
@@ -216,7 +218,8 @@ import <%= packageName %>.repository<% if (reactive) { %>.reactive<% } %>.Author
 import <%= packageName %>.repository.PersistentTokenRepository
 <%_ } _%>
 import <%= packageName %>.repository<% if (reactive) { %>.reactive<% } %>.UserRepository
-import <%= packageName %>.security.AuthoritiesConstants
+import <%= packageName %>.security.ADMIN
+import <%= packageName %>.security.USER
 import <%= packageName %>.service.MailService
 import <%= packageName %>.service.UserService
 import <%= packageName %>.service.dto.PasswordChangeDTO
@@ -419,10 +422,10 @@ class AccountResourceIT <% if (databaseType === 'cassandra') { %>: AbstractCassa
     <%_ } _%>
     fun testGetExistingAccount() {
         <%_ if (databaseType === 'sql' || databaseType === 'mongodb') { _%>
-        val authorities = mutableSetOf(Authority(name = AuthoritiesConstants.ADMIN))
+        val authorities = mutableSetOf(Authority(name = ADMIN))
         <%_ } _%>
         <%_ if (databaseType === 'cassandra' || databaseType === 'couchbase') { _%>
-        val authorities = mutableSetOf(AuthoritiesConstants.ADMIN)
+        val authorities = mutableSetOf(ADMIN)
         <%_ } _%>
 
         val user = <%= asEntity('User') %>(
@@ -453,7 +456,7 @@ class AccountResourceIT <% if (databaseType === 'cassandra') { %>: AbstractCassa
             .andExpect(jsonPath("\$.imageUrl").value("http://placehold.it/50x50"))
             <%_ } _%>
             .andExpect(jsonPath("\$.langKey").value("en"))
-            .andExpect(jsonPath("\$.authorities").value(AuthoritiesConstants.ADMIN))
+            .andExpect(jsonPath("\$.authorities").value(ADMIN))
         <%_ } else { _%>
         userWebTestClient.get().uri("/api/account")
             .accept(MediaType.APPLICATION_JSON)
@@ -469,7 +472,7 @@ class AccountResourceIT <% if (databaseType === 'cassandra') { %>: AbstractCassa
             .jsonPath("\$.imageUrl").isEqualTo("http://placehold.it/50x50")
             <%_ } _%>
             .jsonPath("\$.langKey").isEqualTo("en")
-            .jsonPath("\$.authorities").isEqualTo(AuthoritiesConstants.ADMIN)
+            .jsonPath("\$.authorities").isEqualTo(ADMIN)
         <%_ } _%>
     }
 
@@ -509,7 +512,7 @@ class AccountResourceIT <% if (databaseType === 'cassandra') { %>: AbstractCassa
             imageUrl = "http://placehold.it/50x50"
             <%_ } _%>
             langKey = DEFAULT_LANGUAGE
-            authorities = setOf(AuthoritiesConstants.USER)
+            authorities = setOf(USER)
         }
         assertThat(userRepository.findOneByLogin("test-register-valid")<% if (reactive) { %>.blockOptional()<% } %>.isPresent).isFalse()
 
@@ -546,7 +549,7 @@ class AccountResourceIT <% if (databaseType === 'cassandra') { %>: AbstractCassa
             imageUrl = "http://placehold.it/50x50"
             <%_ } _%>
             langKey = DEFAULT_LANGUAGE
-            authorities = setOf(AuthoritiesConstants.USER)
+            authorities = setOf(USER)
         }
 
         <%_ if (!reactive) { _%>
@@ -583,7 +586,7 @@ class AccountResourceIT <% if (databaseType === 'cassandra') { %>: AbstractCassa
             imageUrl = "http://placehold.it/50x50"
             <%_ } _%>
             langKey = DEFAULT_LANGUAGE
-            authorities = setOf(AuthoritiesConstants.USER)
+            authorities = setOf(USER)
         }
 
         <%_ if (!reactive) { _%>
@@ -620,7 +623,7 @@ class AccountResourceIT <% if (databaseType === 'cassandra') { %>: AbstractCassa
             imageUrl = "http://placehold.it/50x50"
             <%_ } _%>
             langKey = DEFAULT_LANGUAGE
-            authorities = setOf(AuthoritiesConstants.USER)
+            authorities = setOf(USER)
         }
 
         <%_ if (!reactive) { _%>
@@ -657,7 +660,7 @@ class AccountResourceIT <% if (databaseType === 'cassandra') { %>: AbstractCassa
             imageUrl = "http://placehold.it/50x50"
             <%_ } _%>
             langKey = DEFAULT_LANGUAGE
-            authorities = setOf(AuthoritiesConstants.USER)
+            authorities = setOf(USER)
         }
 
         <%_ if (!reactive) { _%>
@@ -694,7 +697,7 @@ class AccountResourceIT <% if (databaseType === 'cassandra') { %>: AbstractCassa
             imageUrl = "http://placehold.it/50x50"
             <%_ } _%>
             langKey = DEFAULT_LANGUAGE
-            authorities = setOf(AuthoritiesConstants.USER)
+            authorities = setOf(USER)
         }
 
         // Duplicate login, different email
@@ -786,7 +789,7 @@ class AccountResourceIT <% if (databaseType === 'cassandra') { %>: AbstractCassa
             imageUrl = "http://placehold.it/50x50"
             <%_ } _%>
             langKey = DEFAULT_LANGUAGE
-            authorities = setOf(AuthoritiesConstants.USER)
+            authorities = setOf(USER)
         }
 
         // Register first user
@@ -914,7 +917,7 @@ class AccountResourceIT <% if (databaseType === 'cassandra') { %>: AbstractCassa
             imageUrl = "http://placehold.it/50x50"
             <%_ } _%>
             langKey = DEFAULT_LANGUAGE
-            authorities = setOf(AuthoritiesConstants.ADMIN)
+            authorities = setOf(ADMIN)
         }
 
         <%_ if (!reactive) { _%>
@@ -935,7 +938,7 @@ class AccountResourceIT <% if (databaseType === 'cassandra') { %>: AbstractCassa
         val userDup = userRepository.findOneByLogin("badguy")<% if (reactive) { %>.blockOptional()<% } %>
         assertThat(userDup.isPresent).isTrue()
         assertThat(userDup.get().authorities).hasSize(1)
-            .containsExactly(<% if (databaseType === 'sql' || databaseType === 'mongodb') { %>authorityRepository.findById(AuthoritiesConstants.USER).<% if (reactive) { %>block<% } else { %>get<% } %>()<% } %><% if (databaseType === 'cassandra' || databaseType === 'couchbase') { %>AuthoritiesConstants.USER<% } %>)
+            .containsExactly(<% if (databaseType === 'sql' || databaseType === 'mongodb') { %>authorityRepository.findById(USER).<% if (reactive) { %>block<% } else { %>get<% } %>()<% } %><% if (databaseType === 'cassandra' || databaseType === 'couchbase') { %>USER<% } %>)
     }
 
     @Test<% if (databaseType === 'sql') { %>
@@ -1013,7 +1016,7 @@ class AccountResourceIT <% if (databaseType === 'cassandra') { %>: AbstractCassa
             imageUrl = "http://placehold.it/50x50",
             <%_ } _%>
             langKey = DEFAULT_LANGUAGE,
-            authorities = setOf(AuthoritiesConstants.ADMIN)
+            authorities = setOf(ADMIN)
         )
 
         <%_ if (!reactive) { _%>
@@ -1072,7 +1075,7 @@ class AccountResourceIT <% if (databaseType === 'cassandra') { %>: AbstractCassa
             imageUrl = "http://placehold.it/50x50",
             <%_ } _%>
             langKey = DEFAULT_LANGUAGE,
-            authorities = setOf(AuthoritiesConstants.ADMIN)
+            authorities = setOf(ADMIN)
         )
 
         <%_ if (!reactive) { _%>
@@ -1134,7 +1137,7 @@ class AccountResourceIT <% if (databaseType === 'cassandra') { %>: AbstractCassa
             imageUrl = "http://placehold.it/50x50",
             <%_ } _%>
             langKey = DEFAULT_LANGUAGE,
-            authorities = setOf(AuthoritiesConstants.ADMIN)
+            authorities = setOf(ADMIN)
         )
 
         <%_ if (!reactive) { _%>
@@ -1184,7 +1187,7 @@ class AccountResourceIT <% if (databaseType === 'cassandra') { %>: AbstractCassa
             imageUrl = "http://placehold.it/50x50",
             <%_ } _%>
             langKey = DEFAULT_LANGUAGE,
-            authorities = setOf(AuthoritiesConstants.ADMIN)
+            authorities = setOf(ADMIN)
         )
 
         <%_ if (!reactive) { _%>

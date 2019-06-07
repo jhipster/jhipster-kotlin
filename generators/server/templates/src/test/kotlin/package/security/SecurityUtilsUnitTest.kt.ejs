@@ -72,7 +72,7 @@ class SecurityUtilsUnitTest {
             "preferred_username" to "admin"
         )
         val idToken = OidcIdToken(ID_TOKEN, Instant.now(), Instant.now().plusSeconds(60), claims)
-        val authorities = listOf(SimpleGrantedAuthority(AuthoritiesConstants.USER))
+        val authorities = listOf(SimpleGrantedAuthority(USER))
         val user = DefaultOidcUser(authorities, idToken)
         val bla = OAuth2AuthenticationToken(user, authorities, "oidc")
         securityContext.authentication = bla
@@ -107,7 +107,7 @@ class SecurityUtilsUnitTest {
     @Test
     fun testAnonymousIsNotAuthenticated() {
         val securityContext = SecurityContextHolder.createEmptyContext()
-        val authorities = listOf(SimpleGrantedAuthority(AuthoritiesConstants.ANONYMOUS))
+        val authorities = listOf(SimpleGrantedAuthority(ANONYMOUS))
         securityContext.authentication = UsernamePasswordAuthenticationToken("anonymous", "anonymous", authorities)
         SecurityContextHolder.setContext(securityContext)
         val isAuthenticated = isAuthenticated()
@@ -117,12 +117,12 @@ class SecurityUtilsUnitTest {
     @Test
     fun testIsCurrentUserInRole() {
         val securityContext = SecurityContextHolder.createEmptyContext()
-        val authorities = listOf(SimpleGrantedAuthority(AuthoritiesConstants.USER))
+        val authorities = listOf(SimpleGrantedAuthority(USER))
         securityContext.authentication = UsernamePasswordAuthenticationToken("user", "user", authorities)
         SecurityContextHolder.setContext(securityContext)
 
-        assertThat(isCurrentUserInRole(AuthoritiesConstants.USER)).isTrue()
-        assertThat(isCurrentUserInRole(AuthoritiesConstants.ADMIN)).isFalse()
+        assertThat(isCurrentUserInRole(USER)).isTrue()
+        assertThat(isCurrentUserInRole(ADMIN)).isFalse()
     }
 <%_ } _%>
 <%_ if (reactive) { _%>
@@ -166,7 +166,7 @@ class SecurityUtilsUnitTest {
 
     @Test
     fun testAnonymousIsNotAuthenticated() {
-        val authorities = mutableListOf(SimpleGrantedAuthority(AuthoritiesConstants.ANONYMOUS))
+        val authorities = mutableListOf(SimpleGrantedAuthority(ANONYMOUS))
         val isAuthenticated = isAuthenticated()
             .subscriberContext(
                 ReactiveSecurityContextHolder.withAuthentication(
@@ -179,16 +179,16 @@ class SecurityUtilsUnitTest {
 
     @Test
     fun testIsCurrentUserInRole() {
-        val authorities = mutableListOf(SimpleGrantedAuthority(AuthoritiesConstants.USER))
+        val authorities = mutableListOf(SimpleGrantedAuthority(USER))
         val context = ReactiveSecurityContextHolder.withAuthentication(
             UsernamePasswordAuthenticationToken("admin", "admin", authorities)
         )
-        var isCurrentUserInRole = isCurrentUserInRole(AuthoritiesConstants.USER)
+        var isCurrentUserInRole = isCurrentUserInRole(USER)
             .subscriberContext(context)
             .block()
         assertThat(isCurrentUserInRole!!).isTrue()
 
-        isCurrentUserInRole = isCurrentUserInRole(AuthoritiesConstants.ADMIN)
+        isCurrentUserInRole = isCurrentUserInRole(ADMIN)
             .subscriberContext(context)
             .block()
         assertThat(isCurrentUserInRole!!).isFalse()

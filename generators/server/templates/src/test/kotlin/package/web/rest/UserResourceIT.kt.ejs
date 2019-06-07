@@ -36,7 +36,8 @@ import <%= packageName %>.repository<% if (reactive) { %>.reactive<% } %>.UserRe
 <%_ if (searchEngine === 'elasticsearch') { _%>
 import <%= packageName %>.repository.search.UserSearchRepository
 <%_ } _%>
-import <%= packageName %>.security.AuthoritiesConstants
+import <%= packageName %>.security.ADMIN
+import <%= packageName %>.security.USER
 <%_ if (authenticationType !== 'oauth2') { _%>
 import <%= packageName %>.service.MailService<% } %>
 import <%= packageName %>.service.UserService
@@ -226,7 +227,7 @@ class UserResourceIT <% if (databaseType === 'cassandra') { %>: AbstractCassandr
             imageUrl = DEFAULT_IMAGEURL
             <%_ } _%>
             langKey = DEFAULT_LANGKEY
-            authorities = setOf(AuthoritiesConstants.USER)
+            authorities = setOf(USER)
         }
 
         <%_ if (!reactive) { _%>
@@ -284,7 +285,7 @@ class UserResourceIT <% if (databaseType === 'cassandra') { %>: AbstractCassandr
             imageUrl = DEFAULT_IMAGEURL
             <%_ } _%>
             langKey = DEFAULT_LANGKEY
-            authorities = setOf(AuthoritiesConstants.USER)
+            authorities = setOf(USER)
         }
 
         // An entity with an existing ID cannot be created, so this API call must fail
@@ -331,7 +332,7 @@ class UserResourceIT <% if (databaseType === 'cassandra') { %>: AbstractCassandr
             imageUrl = DEFAULT_IMAGEURL
             <%_ } _%>
             langKey = DEFAULT_LANGKEY
-            authorities = setOf(AuthoritiesConstants.USER)
+            authorities = setOf(USER)
         }
 
         // Create the User
@@ -378,7 +379,7 @@ class UserResourceIT <% if (databaseType === 'cassandra') { %>: AbstractCassandr
             imageUrl = DEFAULT_IMAGEURL
             <%_ } _%>
             langKey = DEFAULT_LANGKEY
-            authorities = setOf(AuthoritiesConstants.USER)
+            authorities = setOf(USER)
         }
 
         // Create the User
@@ -556,7 +557,7 @@ class UserResourceIT <% if (databaseType === 'cassandra') { %>: AbstractCassandr
             lastModifiedBy = updatedUser.lastModifiedBy
             lastModifiedDate = updatedUser.lastModifiedDate
             <%_ } _%>
-            authorities = setOf(AuthoritiesConstants.USER)
+            authorities = setOf(USER)
         }
 
         <%_ if (!reactive) { _%>
@@ -622,7 +623,7 @@ class UserResourceIT <% if (databaseType === 'cassandra') { %>: AbstractCassandr
             lastModifiedBy = updatedUser.lastModifiedBy
             lastModifiedDate = updatedUser.lastModifiedDate
             <%_ } _%>
-            authorities = setOf(AuthoritiesConstants.USER)
+            authorities = setOf(USER)
         }
 
         <%_ if (!reactive) { _%>
@@ -707,7 +708,7 @@ class UserResourceIT <% if (databaseType === 'cassandra') { %>: AbstractCassandr
             lastModifiedBy = updatedUser.lastModifiedBy
             lastModifiedDate = updatedUser.lastModifiedDate
             <%_ } _%>
-            authorities = setOf(AuthoritiesConstants.USER)
+            authorities = setOf(USER)
         }
 
         <%_ if (!reactive) { _%>
@@ -778,7 +779,7 @@ class UserResourceIT <% if (databaseType === 'cassandra') { %>: AbstractCassandr
             lastModifiedBy = updatedUser.lastModifiedBy
             lastModifiedDate = updatedUser.lastModifiedDate
             <%_ } _%>
-            authorities = setOf(AuthoritiesConstants.USER)
+            authorities = setOf(USER)
         }
 
         <%_ if (!reactive) { _%>
@@ -850,7 +851,7 @@ class UserResourceIT <% if (databaseType === 'cassandra') { %>: AbstractCassandr
             .andExpect(status().isOk)
             .andExpect(content().contentType(MediaType.APPLICATION_JSON_UTF8_VALUE))
             .andExpect(jsonPath("\$").isArray)
-            .andExpect(jsonPath("\$").value(hasItems(AuthoritiesConstants.USER, AuthoritiesConstants.ADMIN)))
+            .andExpect(jsonPath("\$").value(hasItems(USER, ADMIN)))
         <%_ } else { _%>
         webTestClient.get().uri("/api/users/authorities")
             .accept(TestUtil.APPLICATION_JSON_UTF8)
@@ -859,8 +860,8 @@ class UserResourceIT <% if (databaseType === 'cassandra') { %>: AbstractCassandr
             .expectHeader().contentType(MediaType.APPLICATION_JSON_UTF8_VALUE)
             .expectBody()
             .jsonPath("\$").isArray
-            .jsonPath("\$[?(@=='" + AuthoritiesConstants.ADMIN + "')]").hasJsonPath()
-            .jsonPath("\$[?(@=='" + AuthoritiesConstants.USER + "')]").hasJsonPath()
+            .jsonPath("\$[?(@=='" + ADMIN + "')]").hasJsonPath()
+            .jsonPath("\$[?(@=='" + USER + "')]").hasJsonPath()
         <%_ } _%>
     }
     <%_ } _%>
@@ -898,7 +899,7 @@ class UserResourceIT <% if (databaseType === 'cassandra') { %>: AbstractCassandr
             createdBy = DEFAULT_LOGIN,
             lastModifiedBy = DEFAULT_LOGIN,
             <%_ } _%>
-            authorities = setOf(AuthoritiesConstants.USER)
+            authorities = setOf(USER)
         )
 
         val user = userMapper.userDTOToUser(userDTO)
@@ -919,7 +920,7 @@ class UserResourceIT <% if (databaseType === 'cassandra') { %>: AbstractCassandr
         assertThat(user.lastModifiedBy).isNull()
         assertThat(user.lastModifiedDate).isNotNull()
         <%_ } _%>
-        assertThat(user.authorities)<% if (databaseType !== 'cassandra' && databaseType !== 'couchbase') { %>.extracting("name")<%_ } _%>.containsExactly(AuthoritiesConstants.USER)
+        assertThat(user.authorities)<% if (databaseType !== 'cassandra' && databaseType !== 'couchbase') { %>.extracting("name")<%_ } _%>.containsExactly(USER)
     }
 
     @Test
@@ -932,9 +933,9 @@ class UserResourceIT <% if (databaseType === 'cassandra') { %>: AbstractCassandr
         user.lastModifiedDate = Instant.now()
         <%_ } _%>
         <%_ if (databaseType !== 'cassandra' && databaseType !== 'couchbase') { _%>
-        user.authorities = mutableSetOf(Authority(name = AuthoritiesConstants.USER))
+        user.authorities = mutableSetOf(Authority(name = USER))
         <%_ } else { _%>
-        user.authorities = mutableSetOf(AuthoritiesConstants.USER)
+        user.authorities = mutableSetOf(USER)
         <%_ } _%>
 
         val userDTO = userMapper.userToUserDTO(user)
@@ -955,7 +956,7 @@ class UserResourceIT <% if (databaseType === 'cassandra') { %>: AbstractCassandr
         assertThat(userDTO.lastModifiedBy).isEqualTo(DEFAULT_LOGIN)
         assertThat(userDTO.lastModifiedDate).isEqualTo(user.lastModifiedDate)
         <%_ } _%>
-        assertThat(userDTO.authorities).containsExactly(AuthoritiesConstants.USER)
+        assertThat(userDTO.authorities).containsExactly(USER)
         assertThat(userDTO.toString()).isNotNull()
     }
     <%_ if (databaseType === 'sql' || databaseType === 'mongodb') { _%>
@@ -972,13 +973,13 @@ class UserResourceIT <% if (databaseType === 'cassandra') { %>: AbstractCassandr
         val authorityB = Authority()
         assertThat(authorityA.name).isEqualTo(authorityB.name)
 
-        authorityB.name = AuthoritiesConstants.ADMIN
+        authorityB.name = ADMIN
         assertThat(authorityA).isNotEqualTo(authorityB)
 
-        authorityA.name = AuthoritiesConstants.USER
+        authorityA.name = USER
         assertThat(authorityA).isNotEqualTo(authorityB)
 
-        authorityB.name = AuthoritiesConstants.USER
+        authorityB.name = USER
         assertThat(authorityA).isEqualTo(authorityB)
         assertThat(authorityA.hashCode()).isEqualTo(authorityB.hashCode())
     }

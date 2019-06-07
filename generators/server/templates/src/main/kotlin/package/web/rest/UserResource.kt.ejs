@@ -28,7 +28,7 @@ import <%=packageName%>.repository<% if (reactive) { %>.reactive<% } %>.UserRepo
 <%_ if (searchEngine === 'elasticsearch') { _%>
 import <%=packageName%>.repository.search.UserSearchRepository
 <%_ } _%>
-import <%=packageName%>.security.AuthoritiesConstants
+import <%=packageName%>.security.ADMIN
 <%_ if (authenticationType !== 'oauth2') { _%>
 import <%=packageName%>.service.MailService
 <%_ } _%>
@@ -142,7 +142,7 @@ class UserResource(
      * @throws BadRequestAlertException `400 (Bad Request)` if the login or email is already in use.
      */
     @PostMapping("/users")
-    @PreAuthorize("hasRole(\"" + AuthoritiesConstants.ADMIN + "\")")
+    @PreAuthorize("hasRole(\"" + ADMIN + "\")")
     <%_ if (!reactive) { _%>
     @Throws(URISyntaxException::class)
     <%_ } _%>
@@ -203,7 +203,7 @@ class UserResource(
      * @throws LoginAlreadyUsedException `400 (Bad Request)` if the login is already in use.
      */
     @PutMapping("/users")
-    @PreAuthorize("hasRole(\"" + AuthoritiesConstants.ADMIN + "\")")
+    @PreAuthorize("hasRole(\"" + ADMIN + "\")")
     <%_ if (!reactive) { _%>
     fun updateUser(@Valid @RequestBody userDTO: <%= asDto('User') %>): ResponseEntity<<%= asDto('User') %>> {
         log.debug("REST request to update User : {}", userDTO)
@@ -276,7 +276,7 @@ class UserResource(
      * @return a string list of all roles.
      */
     @GetMapping("/users/authorities")
-    @PreAuthorize("hasRole(\"" + AuthoritiesConstants.ADMIN + "\")")
+    @PreAuthorize("hasRole(\"" + ADMIN + "\")")
     fun getAuthorities(): <% if (reactive) { %>Mono<List<String>><% } else { %>List<String><% } %> {
         return userService.getAuthorities()<% if (reactive) { %>.collectList()<% } %>
     }
@@ -316,7 +316,7 @@ class UserResource(
      * @return the `ResponseEntity` with status `204 (NO_CONTENT)`.
      */
     @DeleteMapping("/users/{login:" + LOGIN_REGEX + "}")
-    @PreAuthorize("hasRole(\"" + AuthoritiesConstants.ADMIN + "\")")
+    @PreAuthorize("hasRole(\"" + ADMIN + "\")")
     <%_ if (!reactive) { _%>
     fun deleteUser(@PathVariable login: String): ResponseEntity<Void> {
         log.debug("REST request to delete User: {}", login)

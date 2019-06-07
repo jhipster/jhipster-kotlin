@@ -39,7 +39,7 @@ import <%= packageName %>.repository.search.UserSearchRepository
 <%_ } _%>
 import <%= packageName %>.repository<% if (reactive) { %>.reactive<% } %>.UserRepository
 <%_ if (authenticationType === 'oauth2') { _%>
-import <%= packageName %>.security.AuthoritiesConstants
+import <%= packageName %>.security.ANONYMOUS
 <%_ } _%>
 <%_ if (authenticationType !== 'oauth2' && (databaseType === 'sql' || databaseType === 'mongodb' || databaseType === 'couchbase')) { _%>
 import <%= packageName %>.service.util.RandomUtil
@@ -434,7 +434,7 @@ class UserServiceIT <% if (databaseType === 'cassandra') { %>: AbstractCassandra
         assertThat(userDTO.activated).isTrue()
         assertThat(userDTO.langKey).isEqualTo(DEFAULT_LANGUAGE)
         assertThat(userDTO.imageUrl).isEqualTo(DEFAULT_IMAGEURL)
-        assertThat(userDTO.authorities).contains(AuthoritiesConstants.ANONYMOUS)
+        assertThat(userDTO.authorities).contains(ANONYMOUS)
     }
 
     @Test
@@ -494,7 +494,7 @@ class UserServiceIT <% if (databaseType === 'cassandra') { %>: AbstractCassandra
     }
 
     private fun createMockOAuth2AuthenticationToken(userDetails: Map<String, Any?>): OAuth2AuthenticationToken {
-        val authorities = listOf(SimpleGrantedAuthority(AuthoritiesConstants.ANONYMOUS))
+        val authorities = listOf(SimpleGrantedAuthority(ANONYMOUS))
         val usernamePasswordAuthenticationToken = UsernamePasswordAuthenticationToken(ANONYMOUS_USER, ANONYMOUS_USER, authorities)
         usernamePasswordAuthenticationToken.details = userDetails
         val user = DefaultOAuth2User(authorities, userDetails, "sub")

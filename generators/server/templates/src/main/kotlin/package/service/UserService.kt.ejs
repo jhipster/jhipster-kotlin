@@ -36,7 +36,7 @@ import <%=packageName%>.repository<% if (reactive) { %>.reactive<% } %>.UserRepo
 import <%=packageName%>.repository.search.UserSearchRepository
 <%_ } _%>
 <%_ if (authenticationType !== 'oauth2') { _%>
-import <%=packageName%>.security.AuthoritiesConstants
+import <%=packageName%>.security.USER
 <%_ } _%>
 import <%=packageName%>.security.getCurrentUserLogin
 import <%=packageName%>.service.dto.<%= asDto('User') %>
@@ -222,9 +222,9 @@ class UserService(
             activationKey = RandomUtil.generateActivationKey()
             <%_ if (['sql', 'mongodb'].includes(databaseType)) { _%>
             authorities = mutableSetOf()
-            authorityRepository.findById(AuthoritiesConstants.USER).ifPresent { authorities.add(it) }
+            authorityRepository.findById(USER).ifPresent { authorities.add(it) }
             <%_ } else { _%>
-            authorities = mutableSetOf(AuthoritiesConstants.USER)
+            authorities = mutableSetOf(USER)
             <%_ } _%>
         }
         userRepository.save(newUser)<% if (searchEngine === 'elasticsearch') { %>
@@ -280,13 +280,13 @@ class UserService(
 
                 val authorities = mutableSetOf<<% if (['sql', 'mongodb'].includes(databaseType)) { %>Authority<% } else { %>String<% } %>>()
                 <%_ if (['sql', 'mongodb'].includes(databaseType)) { _%>
-                authorityRepository.findById(AuthoritiesConstants.USER)
+                authorityRepository.findById(USER)
                     .map(authorities::add)
                     .thenReturn(newUser)
                     .doOnNext { user -> user.authorities = authorities }
                     .flatMap(this::createUser)
                 <%_ } else { _%>
-                authorities.add(AuthoritiesConstants.USER)
+                authorities.add(USER)
                 newUser.authorities = authorities
                 createUser(newUser)
                 <%_ } _%>
