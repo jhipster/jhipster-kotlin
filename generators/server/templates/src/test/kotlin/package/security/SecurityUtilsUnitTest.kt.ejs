@@ -48,7 +48,7 @@ import org.springframework.security.oauth2.core.oidc.endpoint.OidcParameterNames
 <%_ } _%>
 
 /**
- * Test class for the [SecurityUtils] utility class.
+ * Test class for the Security Utility methods.
  */
 class SecurityUtilsUnitTest {
 
@@ -58,7 +58,7 @@ class SecurityUtilsUnitTest {
         val securityContext = SecurityContextHolder.createEmptyContext()
         securityContext.authentication = UsernamePasswordAuthenticationToken("admin", "admin")
         SecurityContextHolder.setContext(securityContext)
-        val login = SecurityUtils.getCurrentUserLogin()
+        val login = getCurrentUserLogin()
         assertThat(login).contains("admin")
     }
     <%_ if (authenticationType === 'oauth2') { _%>
@@ -78,7 +78,7 @@ class SecurityUtilsUnitTest {
         securityContext.authentication = bla
         SecurityContextHolder.setContext(securityContext)
 
-        val login = SecurityUtils.getCurrentUserLogin()
+        val login = getCurrentUserLogin()
 
         assertThat(login).contains("admin")
     }
@@ -90,7 +90,7 @@ class SecurityUtilsUnitTest {
         val securityContext = SecurityContextHolder.createEmptyContext()
         securityContext.authentication = UsernamePasswordAuthenticationToken("admin", "token")
         SecurityContextHolder.setContext(securityContext)
-        val jwt = SecurityUtils.getCurrentUserJWT()
+        val jwt = getCurrentUserJWT()
         assertThat(jwt).contains("token")
     }
     <%_ } _%>
@@ -100,7 +100,7 @@ class SecurityUtilsUnitTest {
         val securityContext = SecurityContextHolder.createEmptyContext()
         securityContext.authentication = UsernamePasswordAuthenticationToken("admin", "admin")
         SecurityContextHolder.setContext(securityContext)
-        val isAuthenticated = SecurityUtils.isAuthenticated()
+        val isAuthenticated = isAuthenticated()
         assertThat(isAuthenticated).isTrue()
     }
 
@@ -110,7 +110,7 @@ class SecurityUtilsUnitTest {
         val authorities = listOf(SimpleGrantedAuthority(AuthoritiesConstants.ANONYMOUS))
         securityContext.authentication = UsernamePasswordAuthenticationToken("anonymous", "anonymous", authorities)
         SecurityContextHolder.setContext(securityContext)
-        val isAuthenticated = SecurityUtils.isAuthenticated()
+        val isAuthenticated = isAuthenticated()
         assertThat(isAuthenticated).isFalse()
     }
 
@@ -121,14 +121,14 @@ class SecurityUtilsUnitTest {
         securityContext.authentication = UsernamePasswordAuthenticationToken("user", "user", authorities)
         SecurityContextHolder.setContext(securityContext)
 
-        assertThat(SecurityUtils.isCurrentUserInRole(AuthoritiesConstants.USER)).isTrue()
-        assertThat(SecurityUtils.isCurrentUserInRole(AuthoritiesConstants.ADMIN)).isFalse()
+        assertThat(isCurrentUserInRole(AuthoritiesConstants.USER)).isTrue()
+        assertThat(isCurrentUserInRole(AuthoritiesConstants.ADMIN)).isFalse()
     }
 <%_ } _%>
 <%_ if (reactive) { _%>
     @Test
     fun testgetCurrentUserLogin() {
-        val login = SecurityUtils.getCurrentUserLogin()
+        val login = getCurrentUserLogin()
             .subscriberContext(
                 ReactiveSecurityContextHolder.withAuthentication(
                     UsernamePasswordAuthenticationToken("admin", "admin")
@@ -141,7 +141,7 @@ class SecurityUtilsUnitTest {
 
     @Test
     fun testgetCurrentUserJWT() {
-        val jwt = SecurityUtils.getCurrentUserJWT()
+        val jwt = getCurrentUserJWT()
             .subscriberContext(
                 ReactiveSecurityContextHolder.withAuthentication(
                     UsernamePasswordAuthenticationToken("admin", "token")
@@ -154,7 +154,7 @@ class SecurityUtilsUnitTest {
 
     @Test
     fun testIsAuthenticated() {
-        val isAuthenticated = SecurityUtils.isAuthenticated()
+        val isAuthenticated = isAuthenticated()
             .subscriberContext(
                 ReactiveSecurityContextHolder.withAuthentication(
                     UsernamePasswordAuthenticationToken("admin", "admin")
@@ -167,7 +167,7 @@ class SecurityUtilsUnitTest {
     @Test
     fun testAnonymousIsNotAuthenticated() {
         val authorities = mutableListOf(SimpleGrantedAuthority(AuthoritiesConstants.ANONYMOUS))
-        val isAuthenticated = SecurityUtils.isAuthenticated()
+        val isAuthenticated = isAuthenticated()
             .subscriberContext(
                 ReactiveSecurityContextHolder.withAuthentication(
                     UsernamePasswordAuthenticationToken("admin", "admin", authorities)
@@ -183,12 +183,12 @@ class SecurityUtilsUnitTest {
         val context = ReactiveSecurityContextHolder.withAuthentication(
             UsernamePasswordAuthenticationToken("admin", "admin", authorities)
         )
-        var isCurrentUserInRole = SecurityUtils.isCurrentUserInRole(AuthoritiesConstants.USER)
+        var isCurrentUserInRole = isCurrentUserInRole(AuthoritiesConstants.USER)
             .subscriberContext(context)
             .block()
         assertThat(isCurrentUserInRole!!).isTrue()
 
-        isCurrentUserInRole = SecurityUtils.isCurrentUserInRole(AuthoritiesConstants.ADMIN)
+        isCurrentUserInRole = isCurrentUserInRole(AuthoritiesConstants.ADMIN)
             .subscriberContext(context)
             .block()
         assertThat(isCurrentUserInRole!!).isFalse()

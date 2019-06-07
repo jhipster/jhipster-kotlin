@@ -36,7 +36,7 @@ import <%=packageName%>.repository.search.UserSearchRepository
 <%_ if (authenticationType !== 'oauth2') { _%>
 import <%=packageName%>.security.AuthoritiesConstants
 <%_ } _%>
-import <%=packageName%>.security.SecurityUtils
+import <%=packageName%>.security.getCurrentUserLogin
 import <%=packageName%>.service.dto.<%= asDto('User') %>
 <%_ if (authenticationType !== 'oauth2') { _%>
 import <%=packageName%>.service.util.RandomUtil
@@ -382,7 +382,7 @@ class UserService(
      <%_ } _%>
      */
     fun updateUser(firstName: String?, lastName: String?, email: String?, langKey: String?<% if (databaseType === 'mongodb' || databaseType === 'couchbase' || databaseType === 'sql') { %>, imageUrl: String?<% } %>)<% if (reactive) { %>: Mono<Void><% } %> {
-        <% if (reactive) { %>return <% } %>SecurityUtils.getCurrentUserLogin()
+        <% if (reactive) { %>return <% } %>getCurrentUserLogin()
             .flatMap(userRepository::findOneByLogin)
             .<% if (reactive) { %>flatMap<% } else { %>ifPresent<% } %> { user ->
                 user.firstName = firstName
@@ -514,7 +514,7 @@ class UserService(
         <%_ if (databaseType === 'cassandra') { _%>
         return userRepository.save(user)
         <%_ } else { _%>
-        return SecurityUtils.getCurrentUserLogin()
+        return getCurrentUserLogin()
             .switchIfEmpty(Mono.just(Constants.SYSTEM_ACCOUNT))
             .flatMap { login ->
                 user.lastModifiedBy = login
@@ -527,7 +527,7 @@ class UserService(
         <%_ if (databaseType === 'cassandra') { _%>
         return userRepository.save(user)
         <%_ } else { _%>
-        return SecurityUtils.getCurrentUserLogin()
+        return getCurrentUserLogin()
             .switchIfEmpty(Mono.just(Constants.SYSTEM_ACCOUNT))
             .flatMap { login ->
                 user.createdBy = login
@@ -550,7 +550,7 @@ class UserService(
 <%_ if (authenticationType !== 'oauth2') { _%>
 
     fun changePassword(currentClearTextPassword: String, newPassword: String)<% if (reactive) { %>: Mono<Void><% } %> {
-        <% if (reactive) { %>return <% } %>SecurityUtils.getCurrentUserLogin()
+        <% if (reactive) { %>return <% } %>getCurrentUserLogin()
             .flatMap(userRepository::findOneByLogin)
             .<% if (reactive) { %>flatMap<% } else { %>ifPresent<% } %> { user ->
                 val currentEncryptedPassword = user.password
@@ -627,7 +627,7 @@ class UserService(
     @Transactional(readOnly = true)
     <%_ } _%>
     fun getUserWithAuthorities(): <% if (reactive) { %>Mono<% } else { %>Optional<% } %><<%= asEntity('User') %>> {
-        return SecurityUtils.getCurrentUserLogin().flatMap(userRepository::findOne<% if (databaseType === 'sql') { %>WithAuthorities<% } %>ByLogin)
+        return getCurrentUserLogin().flatMap(userRepository::findOne<% if (databaseType === 'sql') { %>WithAuthorities<% } %>ByLogin)
     }
     <%_ if ((databaseType === 'sql' || databaseType === 'mongodb' || databaseType === 'couchbase') && authenticationType === 'session' && !reactive) { _%>
 

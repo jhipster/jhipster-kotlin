@@ -71,7 +71,7 @@ class AccountResource(private val userService: UserService) {
     }
 }
 <%_ } else if (skipUserManagement) { _%>
-import <%=packageName%>.security.SecurityUtils
+import <%=packageName%>.security.getCurrentUserLogin
 
 import com.fasterxml.jackson.annotation.JsonCreator
 import org.springframework.security.core.GrantedAuthority
@@ -96,7 +96,7 @@ class AccountResource {
      */
     @GetMapping("/account")
     fun getAccount(): UserVM {
-        val login = SecurityUtils.getCurrentUserLogin()
+        val login = getCurrentUserLogin()
             .orElseThrow { AccountResourceException::new }
         val authorities = SecurityContextHolder.getContext().getAuthentication().getAuthorities()
             .map(GrantedAuthority::getAuthority)
@@ -133,7 +133,7 @@ import <%=packageName%>.domain.PersistentToken
 import <%=packageName%>.repository.PersistentTokenRepository
 <%_ } _%>
 import <%=packageName%>.repository<% if (reactive) { %>.reactive<% } %>.UserRepository
-import <%=packageName%>.security.SecurityUtils
+import <%=packageName%>.security.getCurrentUserLogin
 import <%=packageName%>.service.MailService
 import <%=packageName%>.service.UserService
 import <%=packageName%>.service.dto.PasswordChangeDTO
@@ -280,7 +280,7 @@ class AccountResource(
     @PostMapping("/account")
     <%_ if (!reactive) { _%>
     fun saveAccount(@Valid @RequestBody userDTO: <%= asDto('User') %>) {
-        val userLogin = SecurityUtils.getCurrentUserLogin()
+        val userLogin = getCurrentUserLogin()
             .orElseThrow { AccountResourceException("") }
         val existingUser = userRepository.findOneByEmailIgnoreCase(userDTO.email)
         if (existingUser.isPresent && !existingUser.get().login.equals(userLogin, ignoreCase = true)) {
@@ -296,7 +296,7 @@ class AccountResource(
         )
     <%_ } else { _%>
     fun saveAccount(@Valid @RequestBody userDTO: <%= asDto('User') %>): Mono<Void> {
-        return SecurityUtils.getCurrentUserLogin()
+        return getCurrentUserLogin()
             .switchIfEmpty(Mono.error(AccountResourceException("Current user login not found")))
             .flatMap { userLogin ->
                 userRepository.findOneByEmailIgnoreCase(userDTO.email)
@@ -341,7 +341,7 @@ class AccountResource(
     @GetMapping("/account/sessions")
     fun getCurrentSessions(): List<PersistentToken> {
         return persistentTokenRepository.findByUser(
-            userRepository.findOneByLogin(SecurityUtils.getCurrentUserLogin()
+            userRepository.findOneByLogin(getCurrentUserLogin()
                 .orElseThrow { AccountResourceException("Current user login not found") })
                 .orElseThrow { AccountResourceException("User could not be found") }
         )
@@ -367,7 +367,7 @@ class AccountResource(
     @Throws(UnsupportedEncodingException::class)
     fun invalidateSession(@PathVariable series: String) {
         val decodedSeries = URLDecoder.decode(series, "UTF-8")
-        SecurityUtils.getCurrentUserLogin()
+        getCurrentUserLogin()
             .flatMap(userRepository::findOneByLogin)
             .ifPresent { u ->
                 persistentTokenRepository.findByUser(u).stream()
