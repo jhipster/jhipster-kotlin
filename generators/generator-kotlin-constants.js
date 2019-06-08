@@ -21,7 +21,7 @@ const KOTLIN_VERSION = '1.3.31';
 const MOCKITO_KOTLIN_VERSION = '2.1.0';
 const KTLINT_VERSION = '0.31.0';
 const KTLINT_GRADLE_VERSION = '7.3.0';
-const DETEKT_VERSION = '1.0.0-RC14';
+const DETEKT_VERSION = '1.0.0-RC15';
 const MAVEN_ANTRUN_VERSION = '1.8';
 
 const DETEKT_CONFIG_FILE = 'detekt-config.yml';
