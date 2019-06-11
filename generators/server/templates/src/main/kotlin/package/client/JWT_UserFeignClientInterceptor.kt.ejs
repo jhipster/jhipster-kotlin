@@ -18,7 +18,7 @@
 -%>
 package <%=packageName%>.client
 
-import <%=packageName%>.security.SecurityUtils
+import <%=packageName%>.security.getCurrentUserJWT
 import feign.RequestInterceptor
 import feign.RequestTemplate
 import org.springframework.stereotype.Component
@@ -27,8 +27,7 @@ import org.springframework.stereotype.Component
 class UserFeignClientInterceptor : RequestInterceptor {
 
     override fun apply(template: RequestTemplate) {
-        SecurityUtils.getCurrentUserJWT()
-            .ifPresent { s -> template.header(AUTHORIZATION_HEADER,"$BEARER_TOKEN_TYPE $s") }
+        getCurrentUserJWT().ifPresent { s -> template.header(AUTHORIZATION_HEADER,"$BEARER_TOKEN_TYPE $s") }
     }
 
     companion object {

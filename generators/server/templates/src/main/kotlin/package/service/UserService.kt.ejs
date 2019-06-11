@@ -18,7 +18,9 @@
 -%>
 package <%=packageName%>.service
 
-import <%=packageName%>.config.Constants
+import <%=packageName%>.config.ANONYMOUS_USER
+import <%=packageName%>.config.DEFAULT_LANGUAGE
+import <%=packageName%>.config.SYSTEM_ACCOUNT
 <%_ if (databaseType === 'sql' || databaseType === 'mongodb' || databaseType === 'couchbase') { _%>
 import <%=packageName%>.domain.Authority
 <%_ } _%>
@@ -34,12 +36,14 @@ import <%=packageName%>.repository<% if (reactive) { %>.reactive<% } %>.UserRepo
 import <%=packageName%>.repository.search.UserSearchRepository
 <%_ } _%>
 <%_ if (authenticationType !== 'oauth2') { _%>
-import <%=packageName%>.security.AuthoritiesConstants
+import <%=packageName%>.security.USER
 <%_ } _%>
-import <%=packageName%>.security.SecurityUtils
+import <%=packageName%>.security.getCurrentUserLogin
 import <%=packageName%>.service.dto.<%= asDto('User') %>
 <%_ if (authenticationType !== 'oauth2') { _%>
-import <%=packageName%>.service.util.RandomUtil
+import <%=packageName%>.service.util.generateActivationKey
+import <%=packageName%>.service.util.generatePassword
+import <%=packageName%>.service.util.generateResetKey
 import <%=packageName%>.web.rest.errors.EmailAlreadyUsedException
 import <%=packageName%>.web.rest.errors.InvalidPasswordException
 import <%=packageName%>.web.rest.errors.LoginAlreadyUsedException
@@ -164,7 +168,7 @@ class UserService(
         return userRepository.findOneByEmailIgnoreCase(mail)
             .filter(<%= asEntity('User') %>::activated)
             .<% if (reactive) { %>flatMap<% } else { %>map<% } %> { user ->
-                user.resetKey = RandomUtil.generateResetKey()
+                user.resetKey = generateResetKey()
                 user.resetDate = Instant.now()
             <%_ if (!reactive) { _%>
                 <%_ if (databaseType === 'mongodb' || databaseType === 'couchbase' || databaseType === 'cassandra') { _%>
@@ -217,12 +221,12 @@ class UserService(
             // new user is not active
             activated = false
             // new user gets registration key
-            activationKey = RandomUtil.generateActivationKey()
+            activationKey = generateActivationKey()
             <%_ if (['sql', 'mongodb'].includes(databaseType)) { _%>
             authorities = mutableSetOf()
-            authorityRepository.findById(AuthoritiesConstants.USER).ifPresent { authorities.add(it) }
+            authorityRepository.findById(USER).ifPresent { authorities.add(it) }
             <%_ } else { _%>
-            authorities = mutableSetOf(AuthoritiesConstants.USER)
+            authorities = mutableSetOf(USER)
             <%_ } _%>
         }
         userRepository.save(newUser)<% if (searchEngine === 'elasticsearch') { %>
@@ -273,18 +277,18 @@ class UserService(
                     // new user is not active
                     activated = false
                     // new user gets registration key
-                    activationKey = RandomUtil.generateActivationKey()
+                    activationKey = generateActivationKey()
                 }
 
                 val authorities = mutableSetOf<<% if (['sql', 'mongodb'].includes(databaseType)) { %>Authority<% } else { %>String<% } %>>()
                 <%_ if (['sql', 'mongodb'].includes(databaseType)) { _%>
-                authorityRepository.findById(AuthoritiesConstants.USER)
+                authorityRepository.findById(USER)
                     .map(authorities::add)
                     .thenReturn(newUser)
                     .doOnNext { user -> user.authorities = authorities }
                     .flatMap(this::createUser)
                 <%_ } else { _%>
-                authorities.add(AuthoritiesConstants.USER)
+                authorities.add(USER)
                 newUser.authorities = authorities
                 createUser(newUser)
                 <%_ } _%>
@@ -313,7 +317,7 @@ class UserService(
 
     <%_ } _%>
     fun createUser(userDTO: <%= asDto('User') %>): <% if (reactive) { %>Mono<<%= asEntity('User') %>><% } else { %><%= asEntity('User') %><% } %> {
-        val encryptedPassword = passwordEncoder.encode(RandomUtil.generatePassword())
+        val encryptedPassword = passwordEncoder.encode(generatePassword())
         val user = <%= asEntity('User') %>(
             <%_ if (databaseType === 'cassandra') { _%>
             id = UUID.randomUUID().toString(),
@@ -325,9 +329,9 @@ class UserService(
             <%_ if (databaseType === 'sql' || databaseType === 'mongodb' || databaseType === 'couchbase') { _%>
             imageUrl = userDTO.imageUrl,
             <%_ } _%>
-            langKey = userDTO.langKey ?: Constants.DEFAULT_LANGUAGE, // default language
+            langKey = userDTO.langKey ?: DEFAULT_LANGUAGE, // default language
             password = encryptedPassword,
-            resetKey = RandomUtil.generateResetKey(),
+            resetKey = generateResetKey(),
             resetDate = Instant.now(),
             activated = true
         )
@@ -382,7 +386,7 @@ class UserService(
      <%_ } _%>
      */
     fun updateUser(firstName: String?, lastName: String?, email: String?, langKey: String?<% if (databaseType === 'mongodb' || databaseType === 'couchbase' || databaseType === 'sql') { %>, imageUrl: String?<% } %>)<% if (reactive) { %>: Mono<Void><% } %> {
-        <% if (reactive) { %>return <% } %>SecurityUtils.getCurrentUserLogin()
+        <% if (reactive) { %>return <% } %>getCurrentUserLogin()
             .flatMap(userRepository::findOneByLogin)
             .<% if (reactive) { %>flatMap<% } else { %>ifPresent<% } %> { user ->
                 user.firstName = firstName
@@ -514,8 +518,8 @@ class UserService(
         <%_ if (databaseType === 'cassandra') { _%>
         return userRepository.save(user)
         <%_ } else { _%>
-        return SecurityUtils.getCurrentUserLogin()
-            .switchIfEmpty(Mono.just(Constants.SYSTEM_ACCOUNT))
+        return getCurrentUserLogin()
+            .switchIfEmpty(Mono.just(SYSTEM_ACCOUNT))
             .flatMap { login ->
                 user.lastModifiedBy = login
                 userRepository.save(user)
@@ -527,8 +531,8 @@ class UserService(
         <%_ if (databaseType === 'cassandra') { _%>
         return userRepository.save(user)
         <%_ } else { _%>
-        return SecurityUtils.getCurrentUserLogin()
-            .switchIfEmpty(Mono.just(Constants.SYSTEM_ACCOUNT))
+        return getCurrentUserLogin()
+            .switchIfEmpty(Mono.just(SYSTEM_ACCOUNT))
             .flatMap { login ->
                 user.createdBy = login
                 user.lastModifiedBy = login
@@ -550,7 +554,7 @@ class UserService(
 <%_ if (authenticationType !== 'oauth2') { _%>
 
     fun changePassword(currentClearTextPassword: String, newPassword: String)<% if (reactive) { %>: Mono<Void><% } %> {
-        <% if (reactive) { %>return <% } %>SecurityUtils.getCurrentUserLogin()
+        <% if (reactive) { %>return <% } %>getCurrentUserLogin()
             .flatMap(userRepository::findOneByLogin)
             .<% if (reactive) { %>flatMap<% } else { %>ifPresent<% } %> { user ->
                 val currentEncryptedPassword = user.password
@@ -585,18 +589,18 @@ class UserService(
     <%_ } _%>
     <%_ if (['sql', 'mongodb', 'couchbase'].includes(databaseType)) { _%>
     fun getAllManagedUsers(pageable: Pageable): <% if (reactive) { %>Flux<% } else { %>Page<% } %><<%= asDto('User') %>> {
-        return userRepository.findAllByLoginNot(pageable, Constants.ANONYMOUS_USER).map { <%= asDto('User') %>(it) }
+        return userRepository.findAllByLoginNot(pageable, ANONYMOUS_USER).map { <%= asDto('User') %>(it) }
     }
         <%_ if (reactive) { _%>
 
     fun countManagedUsers(): Mono<Long> {
-        return userRepository.countAllByLoginNot(Constants.ANONYMOUS_USER)
+        return userRepository.countAllByLoginNot(ANONYMOUS_USER)
     }
         <%_ } _%>
     <%_ } else { // Cassandra _%>
     fun getAllManagedUsers(): <% if (reactive) { %>Flux<% } else { %>List<% } %><<%= asDto('User') %>> {
         return userRepository.findAll()<% if (!reactive) { %>.asSequence()<% } %>
-            .filter { user -> Constants.ANONYMOUS_USER!=user.login }
+            .filter { user -> ANONYMOUS_USER!=user.login }
             .mapTo(mutableListOf()) { <%= asDto('User') %>(it) }
     }
     <%_ } _%>
@@ -627,7 +631,7 @@ class UserService(
     @Transactional(readOnly = true)
     <%_ } _%>
     fun getUserWithAuthorities(): <% if (reactive) { %>Mono<% } else { %>Optional<% } %><<%= asEntity('User') %>> {
-        return SecurityUtils.getCurrentUserLogin().flatMap(userRepository::findOne<% if (databaseType === 'sql') { %>WithAuthorities<% } %>ByLogin)
+        return getCurrentUserLogin().flatMap(userRepository::findOne<% if (databaseType === 'sql') { %>WithAuthorities<% } %>ByLogin)
     }
     <%_ if ((databaseType === 'sql' || databaseType === 'mongodb' || databaseType === 'couchbase') && authenticationType === 'session' && !reactive) { _%>
 
@@ -796,7 +800,7 @@ class UserService(
                 user.langKey = locale.toLowerCase()
             } else {
                 // set langKey to default if not specified by IdP
-                user.langKey = Constants.DEFAULT_LANGUAGE
+                user.langKey = DEFAULT_LANGUAGE
             }
             if (details["picture"] != null) {
                 user.imageUrl = details["picture"] as String

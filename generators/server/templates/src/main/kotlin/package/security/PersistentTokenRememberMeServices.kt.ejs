@@ -21,7 +21,8 @@ package <%=packageName%>.security
 import <%=packageName%>.domain.PersistentToken
 import <%=packageName%>.repository.PersistentTokenRepository
 import <%=packageName%>.repository.UserRepository
-import <%=packageName%>.service.util.RandomUtil
+import <%=packageName%>.service.util.generateSeriesData
+import <%=packageName%>.service.util.generateTokenData
 <%_ if (databaseType === 'cassandra') { _%>
 
 import com.datastax.driver.core.exceptions.DriverException
@@ -128,7 +129,7 @@ class PersistentTokenRememberMeServices(
                     <%_ if (databaseType === 'cassandra') { _%>
                     tokenDate = Date()
                     <%_ } _%>
-                    tokenValue = RandomUtil.generateTokenData()
+                    tokenValue = generateTokenData()
                     ipAddress = request.remoteAddr
                     userAgent = request.getHeader("User-Agent")
                 }
@@ -161,7 +162,7 @@ class PersistentTokenRememberMeServices(
         log.debug("Creating new persistent login for user {}", login)
         val token = userRepository.findOneByLogin(login).map { u ->
             PersistentToken(
-                series = RandomUtil.generateSeriesData(),
+                series = generateSeriesData(),
                 <%_ if (databaseType === 'sql' || databaseType === 'mongodb') { _%>
                 user = u,
                 <%_ } else { _%>
@@ -170,7 +171,7 @@ class PersistentTokenRememberMeServices(
                 <%_ if (databaseType === 'cassandra') { _%>
                 userId = u.id,
                 <%_ } _%>
-                tokenValue = RandomUtil.generateTokenData(),
+                tokenValue = generateTokenData(),
                 tokenDate = <% if (databaseType === 'cassandra') { %>Date()<% } else { %>LocalDate.now()<% } %>,
                 ipAddress = request.remoteAddr,
                 userAgent = request.getHeader("User-Agent")
