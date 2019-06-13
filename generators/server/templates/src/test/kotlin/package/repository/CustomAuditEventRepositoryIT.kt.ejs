@@ -19,7 +19,7 @@
 package <%=packageName%>.repository
 
 import <%=packageName%>.<%= mainClass %>
-import <%=packageName%>.config.Constants
+import <%=packageName%>.config.ANONYMOUS_USER
 <%_ if (authenticationType === 'oauth2') { _%>
 import <%=packageName%>.config.TestSecurityConfiguration
 <%_ } _%>
@@ -43,7 +43,7 @@ import java.time.Instant
 import java.time.temporal.ChronoUnit
 
 <%_ if (databaseType === 'couchbase') { _%>
-import <%= packageName %>.web.rest.TestUtil.mockAuthentication
+import <%= packageName %>.web.rest.mockAuthentication
 <%_ } _%>
 import org.assertj.core.api.Assertions.assertThat
 
@@ -175,7 +175,7 @@ class CustomAuditEventRepositoryIT {
     @Test
     fun addAuditEventWithAnonymousUser() {
         val data = mutableMapOf<String, Any>("test-key" to "test-value")
-        val event = AuditEvent(Constants.ANONYMOUS_USER, "test-type", data)
+        val event = AuditEvent(ANONYMOUS_USER, "test-type", data)
         customAuditEventRepository.add(event)
         val persistentAuditEvents = persistenceAuditEventRepository.findAll()
         assertThat(persistentAuditEvents).hasSize(0)

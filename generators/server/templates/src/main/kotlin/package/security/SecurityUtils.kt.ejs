@@ -38,102 +38,92 @@ import java.util.Optional
 <%_ } _%>
 
 /**
- * Utility class for Spring Security.
+ * Get the login of the current user.
+ *
+ * @return the login of the current user.
  */
-object SecurityUtils {
-
-    /**
-     * Get the login of the current user.
-     *
-     * @return the login of the current user.
-     */
-    @JvmStatic
-    fun getCurrentUserLogin(): <% if (!reactive) { %>Optional<% } else { %>Mono<% } %><String> {
-        <%_ if (!reactive) { _%>
-        val securityContext = SecurityContextHolder.getContext()
-        return Optional.ofNullable(securityContext.authentication)
-        <%_ } else { _%>
-        return ReactiveSecurityContextHolder.getContext()
-            .map(SecurityContext::getAuthentication)
-        <%_ } _%>
-            .map { authentication ->
-                when (val principal = authentication.principal) {
-                    is UserDetails -> principal.username
-                    <%_ if (authenticationType === 'oauth2') { _%>
-                    is DefaultOidcUser -> {
-                        if(principal.attributes.containsKey("preferred_username")) {
-                            principal.attributes["preferred_username"].toString()
-                        } else {
-                            null
-                        }
-                    }
-                    <%_ } _%>
-                    is String -> principal
-                    else -> null
-                }
-            }
-    }
-    <%_ if (authenticationType === 'jwt') { _%>
-
-    /**
-     * Get the JWT of the current user.
-     *
-     * @return the JWT of the current user.
-     */
-    @JvmStatic
-    fun getCurrentUserJWT(): <% if (!reactive) { %>Optional<% } else { %>Mono<% } %><String>{
-        <%_ if (!reactive) { _%>
-        val securityContext = SecurityContextHolder.getContext()
-        return Optional.ofNullable(securityContext.authentication)
-        <%_ } else { _%>
-        return ReactiveSecurityContextHolder.getContext()
-            .map(SecurityContext::getAuthentication)
-        <%_ } _%>
-            .filter { it.credentials is String }
-            .map { it.credentials as String }
-    }
+fun getCurrentUserLogin(): <% if (!reactive) { %>Optional<% } else { %>Mono<% } %><String> {
+    <%_ if (!reactive) { _%>
+    val securityContext = SecurityContextHolder.getContext()
+    return Optional.ofNullable(securityContext.authentication)
+    <%_ } else { _%>
+    return ReactiveSecurityContextHolder.getContext()
+        .map(SecurityContext::getAuthentication)
     <%_ } _%>
+        .map { authentication ->
+            when (val principal = authentication.principal) {
+                is UserDetails -> principal.username
+                <%_ if (authenticationType === 'oauth2') { _%>
+                is DefaultOidcUser -> {
+                    if(principal.attributes.containsKey("preferred_username")) {
+                        principal.attributes["preferred_username"].toString()
+                    } else {
+                        null
+                    }
+                }
+                <%_ } _%>
+                is String -> principal
+                else -> null
+            }
+        }
+}
+<%_ if (authenticationType === 'jwt') { _%>
 
-    /**
-     * Check if a user is authenticated.
-     *
-     * @return true if the user is authenticated, false otherwise.
-     */
-    @JvmStatic
-    fun isAuthenticated(): <% if (!reactive) { %>Boolean<% } else { %>Mono<Boolean><% } %> {
-        <%_ if (!reactive) { _%>
-        val securityContext = SecurityContextHolder.getContext()
-        return Optional.ofNullable(securityContext.authentication)
-        <%_ } else { _%>
-        return ReactiveSecurityContextHolder.getContext()
-            .map(SecurityContext::getAuthentication)
-        <%_ } _%>
-            .map { authentication ->
-                authentication.authorities.none { it.authority == AuthoritiesConstants.ANONYMOUS }
-            }<% if (!reactive) { %>
-            .orElse(false)<% } %>
-    }
+/**
+ * Get the JWT of the current user.
+ *
+ * @return the JWT of the current user.
+ */
+fun getCurrentUserJWT(): <% if (!reactive) { %>Optional<% } else { %>Mono<% } %><String>{
+    <%_ if (!reactive) { _%>
+    val securityContext = SecurityContextHolder.getContext()
+    return Optional.ofNullable(securityContext.authentication)
+    <%_ } else { _%>
+    return ReactiveSecurityContextHolder.getContext()
+        .map(SecurityContext::getAuthentication)
+    <%_ } _%>
+        .filter { it.credentials is String }
+        .map { it.credentials as String }
+}
+<%_ } _%>
 
-    /**
-     * If the current user has a specific authority (security role).
-     *
-     * The name of this method comes from the `isUserInRole()` method in the Servlet API
-     *
-     * @param authority the authority to check.
-     * @return true if the current user has the authority, false otherwise.
-     */
-    @JvmStatic
-    fun isCurrentUserInRole(authority: String): <% if (!reactive) { %>Boolean<% } else { %>Mono<Boolean><% } %> {
-        <%_ if (!reactive) { _%>
-        val securityContext = SecurityContextHolder.getContext()
-        return Optional.ofNullable(securityContext.authentication)
-        <%_ } else { _%>
-        return ReactiveSecurityContextHolder.getContext()
-            .map(SecurityContext::getAuthentication)
-        <%_ } _%>
-            .map { authentication ->
-                authentication.authorities.any { it.authority == authority }
-            }<% if (!reactive) { %>
-            .orElse(false)<% } %>
-    }
+/**
+ * Check if a user is authenticated.
+ *
+ * @return true if the user is authenticated, false otherwise.
+ */
+fun isAuthenticated(): <% if (!reactive) { %>Boolean<% } else { %>Mono<Boolean><% } %> {
+    <%_ if (!reactive) { _%>
+    val securityContext = SecurityContextHolder.getContext()
+    return Optional.ofNullable(securityContext.authentication)
+    <%_ } else { _%>
+    return ReactiveSecurityContextHolder.getContext()
+        .map(SecurityContext::getAuthentication)
+    <%_ } _%>
+        .map { authentication ->
+            authentication.authorities.none { it.authority == ANONYMOUS }
+        }<% if (!reactive) { %>
+        .orElse(false)<% } %>
+}
+
+/**
+ * If the current user has a specific authority (security role).
+ *
+ * The name of this method comes from the `isUserInRole()` method in the Servlet API
+ *
+ * @param authority the authority to check.
+ * @return true if the current user has the authority, false otherwise.
+ */
+fun isCurrentUserInRole(authority: String): <% if (!reactive) { %>Boolean<% } else { %>Mono<Boolean><% } %> {
+    <%_ if (!reactive) { _%>
+    val securityContext = SecurityContextHolder.getContext()
+    return Optional.ofNullable(securityContext.authentication)
+    <%_ } else { _%>
+    return ReactiveSecurityContextHolder.getContext()
+        .map(SecurityContext::getAuthentication)
+    <%_ } _%>
+        .map { authentication ->
+            authentication.authorities.any { it.authority == authority }
+        }<% if (!reactive) { %>
+        .orElse(false)<% } %>
 }

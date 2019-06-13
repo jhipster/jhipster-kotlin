@@ -24,7 +24,8 @@ import <%= packageName %>.AbstractCassandraTest
 <%_ } _%>
 import <%= packageName %>.config.TestSecurityConfiguration
 import <%= packageName %>.<%= mainClass %>
-import <%= packageName %>.security.AuthoritiesConstants
+import <%= packageName %>.security.ADMIN
+import <%= packageName %>.security.USER
 import <%= packageName %>.service.UserService
 import <%= packageName %>.web.rest.errors.ExceptionTranslator
 
@@ -116,7 +117,7 @@ class AccountResourceIT <% if (databaseType === 'cassandra') { %>: AbstractCassa
             "sub" to "test",
             "email" to "john.doe@jhipster.com"
         )
-        val authorities = listOf(SimpleGrantedAuthority(AuthoritiesConstants.ADMIN))
+        val authorities = listOf(SimpleGrantedAuthority(ADMIN))
         val user = DefaultOAuth2User(authorities, userDetails, "sub")
         val authentication = OAuth2AuthenticationToken(user, authorities, "oidc")
         TestSecurityContextHolder.getContext().authentication = authentication
@@ -127,7 +128,7 @@ class AccountResourceIT <% if (databaseType === 'cassandra') { %>: AbstractCassa
             .andExpect(content().contentType(MediaType.APPLICATION_JSON_UTF8_VALUE))
             .andExpect(jsonPath("\$.login").value("test"))
             .andExpect(jsonPath("\$.email").value("john.doe@jhipster.com"))
-            .andExpect(jsonPath("\$.authorities").value(AuthoritiesConstants.ADMIN))
+            .andExpect(jsonPath("\$.authorities").value(ADMIN))
     }
 
     @Test
@@ -143,7 +144,8 @@ class AccountResourceIT <% if (databaseType === 'cassandra') { %>: AbstractCassa
 import <%= packageName %>.AbstractCassandraTest
 <%_ } _%>
 import <%= packageName %>.<%= mainClass %>
-import <%= packageName %>.security.AuthoritiesConstants
+import <%= packageName %>.security.ADMIN
+import <%= packageName %>.security.USER
 import <%= packageName %>.web.rest.errors.ExceptionTranslator
 import org.junit.jupiter.api.BeforeEach
 import org.junit.jupiter.api.Test
@@ -185,7 +187,7 @@ class AccountResourceIT <% if (databaseType === 'cassandra') { %>: AbstractCassa
                 .andExpect(status().isOk())
                 .andExpect(content().contentType(MediaType.APPLICATION_JSON_UTF8_VALUE))
                 .andExpect(jsonPath("$.login").value("test"))
-                .andExpect(jsonPath("$.authorities").value(AuthoritiesConstants.ADMIN))
+                .andExpect(jsonPath("$.authorities").value(ADMIN))
     }
 
     @Test
@@ -201,7 +203,7 @@ class AccountResourceIT <% if (databaseType === 'cassandra') { %>: AbstractCassa
 import <%= packageName %>.AbstractCassandraTest
 <%_ } _%>
 import <%= packageName %>.<%= mainClass %>
-import <%= packageName %>.config.Constants
+import <%= packageName %>.config.DEFAULT_LANGUAGE
 <%_ if (databaseType === 'sql' || databaseType === 'mongodb') { _%>
 import <%= packageName %>.domain.Authority
 <%_ } _%>
@@ -216,7 +218,8 @@ import <%= packageName %>.repository<% if (reactive) { %>.reactive<% } %>.Author
 import <%= packageName %>.repository.PersistentTokenRepository
 <%_ } _%>
 import <%= packageName %>.repository<% if (reactive) { %>.reactive<% } %>.UserRepository
-import <%= packageName %>.security.AuthoritiesConstants
+import <%= packageName %>.security.ADMIN
+import <%= packageName %>.security.USER
 import <%= packageName %>.service.MailService
 import <%= packageName %>.service.UserService
 import <%= packageName %>.service.dto.PasswordChangeDTO
@@ -419,10 +422,10 @@ class AccountResourceIT <% if (databaseType === 'cassandra') { %>: AbstractCassa
     <%_ } _%>
     fun testGetExistingAccount() {
         <%_ if (databaseType === 'sql' || databaseType === 'mongodb') { _%>
-        val authorities = mutableSetOf(Authority(name = AuthoritiesConstants.ADMIN))
+        val authorities = mutableSetOf(Authority(name = ADMIN))
         <%_ } _%>
         <%_ if (databaseType === 'cassandra' || databaseType === 'couchbase') { _%>
-        val authorities = mutableSetOf(AuthoritiesConstants.ADMIN)
+        val authorities = mutableSetOf(ADMIN)
         <%_ } _%>
 
         val user = <%= asEntity('User') %>(
@@ -453,7 +456,7 @@ class AccountResourceIT <% if (databaseType === 'cassandra') { %>: AbstractCassa
             .andExpect(jsonPath("\$.imageUrl").value("http://placehold.it/50x50"))
             <%_ } _%>
             .andExpect(jsonPath("\$.langKey").value("en"))
-            .andExpect(jsonPath("\$.authorities").value(AuthoritiesConstants.ADMIN))
+            .andExpect(jsonPath("\$.authorities").value(ADMIN))
         <%_ } else { _%>
         userWebTestClient.get().uri("/api/account")
             .accept(MediaType.APPLICATION_JSON)
@@ -469,7 +472,7 @@ class AccountResourceIT <% if (databaseType === 'cassandra') { %>: AbstractCassa
             .jsonPath("\$.imageUrl").isEqualTo("http://placehold.it/50x50")
             <%_ } _%>
             .jsonPath("\$.langKey").isEqualTo("en")
-            .jsonPath("\$.authorities").isEqualTo(AuthoritiesConstants.ADMIN)
+            .jsonPath("\$.authorities").isEqualTo(ADMIN)
         <%_ } _%>
     }
 
@@ -508,22 +511,22 @@ class AccountResourceIT <% if (databaseType === 'cassandra') { %>: AbstractCassa
             <%_ if (['sql', 'mongodb', 'couchbase'].includes(databaseType)) { _%>
             imageUrl = "http://placehold.it/50x50"
             <%_ } _%>
-            langKey = Constants.DEFAULT_LANGUAGE
-            authorities = setOf(AuthoritiesConstants.USER)
+            langKey = DEFAULT_LANGUAGE
+            authorities = setOf(USER)
         }
         assertThat(userRepository.findOneByLogin("test-register-valid")<% if (reactive) { %>.blockOptional()<% } %>.isPresent).isFalse()
 
         <%_ if (!reactive) { _%>
         restMvc.perform(
             post("/api/register")
-                .contentType(TestUtil.APPLICATION_JSON_UTF8)
-                .content(TestUtil.convertObjectToJsonBytes(validUser))
+                .contentType(APPLICATION_JSON_UTF8)
+                .content(convertObjectToJsonBytes(validUser))
         )
             .andExpect(status().isCreated)
         <%_ } else { _%>
         webTestClient.post().uri("/api/register")
-            .contentType(TestUtil.APPLICATION_JSON_UTF8)
-            .syncBody(TestUtil.convertObjectToJsonBytes(validUser))
+            .contentType(APPLICATION_JSON_UTF8)
+            .syncBody(convertObjectToJsonBytes(validUser))
             .exchange()
             .expectStatus().isCreated
         <%_ } _%>
@@ -545,21 +548,21 @@ class AccountResourceIT <% if (databaseType === 'cassandra') { %>: AbstractCassa
             <%_ if (['sql', 'mongodb', 'couchbase'].includes(databaseType)) { _%>
             imageUrl = "http://placehold.it/50x50"
             <%_ } _%>
-            langKey = Constants.DEFAULT_LANGUAGE
-            authorities = setOf(AuthoritiesConstants.USER)
+            langKey = DEFAULT_LANGUAGE
+            authorities = setOf(USER)
         }
 
         <%_ if (!reactive) { _%>
         restUserMockMvc.perform(
             post("/api/register")
-                .contentType(TestUtil.APPLICATION_JSON_UTF8)
-                .content(TestUtil.convertObjectToJsonBytes(invalidUser))
+                .contentType(APPLICATION_JSON_UTF8)
+                .content(convertObjectToJsonBytes(invalidUser))
         )
             .andExpect(status().isBadRequest)
         <%_ } else { _%>
         userWebTestClient.post().uri("/api/register")
-            .contentType(TestUtil.APPLICATION_JSON_UTF8)
-            .syncBody(TestUtil.convertObjectToJsonBytes(invalidUser))
+            .contentType(APPLICATION_JSON_UTF8)
+            .syncBody(convertObjectToJsonBytes(invalidUser))
             .exchange()
             .expectStatus().isBadRequest
         <%_ } _%>
@@ -582,21 +585,21 @@ class AccountResourceIT <% if (databaseType === 'cassandra') { %>: AbstractCassa
             <%_ if (['sql', 'mongodb', 'couchbase'].includes(databaseType)) { _%>
             imageUrl = "http://placehold.it/50x50"
             <%_ } _%>
-            langKey = Constants.DEFAULT_LANGUAGE
-            authorities = setOf(AuthoritiesConstants.USER)
+            langKey = DEFAULT_LANGUAGE
+            authorities = setOf(USER)
         }
 
         <%_ if (!reactive) { _%>
         restUserMockMvc.perform(
             post("/api/register")
-                .contentType(TestUtil.APPLICATION_JSON_UTF8)
-                .content(TestUtil.convertObjectToJsonBytes(invalidUser))
+                .contentType(APPLICATION_JSON_UTF8)
+                .content(convertObjectToJsonBytes(invalidUser))
         )
             .andExpect(status().isBadRequest)
         <%_ } else { _%>
         userWebTestClient.post().uri("/api/register")
-            .contentType(TestUtil.APPLICATION_JSON_UTF8)
-            .syncBody(TestUtil.convertObjectToJsonBytes(invalidUser))
+            .contentType(APPLICATION_JSON_UTF8)
+            .syncBody(convertObjectToJsonBytes(invalidUser))
             .exchange()
             .expectStatus().isBadRequest
         <%_ } _%>
@@ -619,21 +622,21 @@ class AccountResourceIT <% if (databaseType === 'cassandra') { %>: AbstractCassa
             <%_ if (['sql', 'mongodb', 'couchbase'].includes(databaseType)) { _%>
             imageUrl = "http://placehold.it/50x50"
             <%_ } _%>
-            langKey = Constants.DEFAULT_LANGUAGE
-            authorities = setOf(AuthoritiesConstants.USER)
+            langKey = DEFAULT_LANGUAGE
+            authorities = setOf(USER)
         }
 
         <%_ if (!reactive) { _%>
         restUserMockMvc.perform(
             post("/api/register")
-                .contentType(TestUtil.APPLICATION_JSON_UTF8)
-                .content(TestUtil.convertObjectToJsonBytes(invalidUser))
+                .contentType(APPLICATION_JSON_UTF8)
+                .content(convertObjectToJsonBytes(invalidUser))
         )
             .andExpect(status().isBadRequest)
         <%_ } else { _%>
         userWebTestClient.post().uri("/api/register")
-            .contentType(TestUtil.APPLICATION_JSON_UTF8)
-            .syncBody(TestUtil.convertObjectToJsonBytes(invalidUser))
+            .contentType(APPLICATION_JSON_UTF8)
+            .syncBody(convertObjectToJsonBytes(invalidUser))
             .exchange()
             .expectStatus().isBadRequest
         <%_ } _%>
@@ -656,21 +659,21 @@ class AccountResourceIT <% if (databaseType === 'cassandra') { %>: AbstractCassa
             <%_ if (['sql', 'mongodb', 'couchbase'].includes(databaseType)) { _%>
             imageUrl = "http://placehold.it/50x50"
             <%_ } _%>
-            langKey = Constants.DEFAULT_LANGUAGE
-            authorities = setOf(AuthoritiesConstants.USER)
+            langKey = DEFAULT_LANGUAGE
+            authorities = setOf(USER)
         }
 
         <%_ if (!reactive) { _%>
         restUserMockMvc.perform(
             post("/api/register")
-                .contentType(TestUtil.APPLICATION_JSON_UTF8)
-                .content(TestUtil.convertObjectToJsonBytes(invalidUser))
+                .contentType(APPLICATION_JSON_UTF8)
+                .content(convertObjectToJsonBytes(invalidUser))
         )
             .andExpect(status().isBadRequest)
         <%_ } else { _%>
         userWebTestClient.post().uri("/api/register")
-            .contentType(TestUtil.APPLICATION_JSON_UTF8)
-            .syncBody(TestUtil.convertObjectToJsonBytes(invalidUser))
+            .contentType(APPLICATION_JSON_UTF8)
+            .syncBody(convertObjectToJsonBytes(invalidUser))
             .exchange()
             .expectStatus().isBadRequest
         <%_ } _%>
@@ -693,8 +696,8 @@ class AccountResourceIT <% if (databaseType === 'cassandra') { %>: AbstractCassa
             <%_ if (['sql', 'mongodb', 'couchbase'].includes(databaseType)) { _%>
             imageUrl = "http://placehold.it/50x50"
             <%_ } _%>
-            langKey = Constants.DEFAULT_LANGUAGE
-            authorities = setOf(AuthoritiesConstants.USER)
+            langKey = DEFAULT_LANGUAGE
+            authorities = setOf(USER)
         }
 
         // Duplicate login, different email
@@ -721,14 +724,14 @@ class AccountResourceIT <% if (databaseType === 'cassandra') { %>: AbstractCassa
         <%_ if (!reactive) { _%>
         restMvc.perform(
             post("/api/register")
-                .contentType(TestUtil.APPLICATION_JSON_UTF8)
-                .content(TestUtil.convertObjectToJsonBytes(firstUser))
+                .contentType(APPLICATION_JSON_UTF8)
+                .content(convertObjectToJsonBytes(firstUser))
         )
             .andExpect(status().isCreated)
         <%_ } else { _%>
         webTestClient.post().uri("/api/register")
-            .contentType(TestUtil.APPLICATION_JSON_UTF8)
-            .syncBody(TestUtil.convertObjectToJsonBytes(firstUser))
+            .contentType(APPLICATION_JSON_UTF8)
+            .syncBody(convertObjectToJsonBytes(firstUser))
             .exchange()
             .expectStatus().isCreated
         <%_ } _%>
@@ -737,14 +740,14 @@ class AccountResourceIT <% if (databaseType === 'cassandra') { %>: AbstractCassa
         <%_ if (!reactive) { _%>
         restMvc.perform(
             post("/api/register")
-                .contentType(TestUtil.APPLICATION_JSON_UTF8)
-                .content(TestUtil.convertObjectToJsonBytes(secondUser))
+                .contentType(APPLICATION_JSON_UTF8)
+                .content(convertObjectToJsonBytes(secondUser))
         )
             .andExpect(status().isCreated)
         <%_ } else { _%>
         webTestClient.post().uri("/api/register")
-            .contentType(TestUtil.APPLICATION_JSON_UTF8)
-            .syncBody(TestUtil.convertObjectToJsonBytes(secondUser))
+            .contentType(APPLICATION_JSON_UTF8)
+            .syncBody(convertObjectToJsonBytes(secondUser))
             .exchange()
             .expectStatus().isCreated
         <%_ } _%>
@@ -758,14 +761,14 @@ class AccountResourceIT <% if (databaseType === 'cassandra') { %>: AbstractCassa
         <%_ if (!reactive) { _%>
         restMvc.perform(
             post("/api/register")
-                .contentType(TestUtil.APPLICATION_JSON_UTF8)
-                .content(TestUtil.convertObjectToJsonBytes(secondUser))
+                .contentType(APPLICATION_JSON_UTF8)
+                .content(convertObjectToJsonBytes(secondUser))
         )
             .andExpect(status().is4xxClientError)
         <%_ } else { _%>
         webTestClient.post().uri("/api/register")
-            .contentType(TestUtil.APPLICATION_JSON_UTF8)
-            .syncBody(TestUtil.convertObjectToJsonBytes(secondUser))
+            .contentType(APPLICATION_JSON_UTF8)
+            .syncBody(convertObjectToJsonBytes(secondUser))
             .exchange()
             .expectStatus().isBadRequest
         <%_ } _%>
@@ -785,22 +788,22 @@ class AccountResourceIT <% if (databaseType === 'cassandra') { %>: AbstractCassa
             <%_ if (['sql', 'mongodb', 'couchbase'].includes(databaseType)) { _%>
             imageUrl = "http://placehold.it/50x50"
             <%_ } _%>
-            langKey = Constants.DEFAULT_LANGUAGE
-            authorities = setOf(AuthoritiesConstants.USER)
+            langKey = DEFAULT_LANGUAGE
+            authorities = setOf(USER)
         }
 
         // Register first user
         <%_ if (!reactive) { _%>
         restMvc.perform(
             post("/api/register")
-                .contentType(TestUtil.APPLICATION_JSON_UTF8)
-                .content(TestUtil.convertObjectToJsonBytes(firstUser))
+                .contentType(APPLICATION_JSON_UTF8)
+                .content(convertObjectToJsonBytes(firstUser))
         )
             .andExpect(status().isCreated)
         <%_ } else { _%>
         webTestClient.post().uri("/api/register")
-            .contentType(TestUtil.APPLICATION_JSON_UTF8)
-            .syncBody(TestUtil.convertObjectToJsonBytes(firstUser))
+            .contentType(APPLICATION_JSON_UTF8)
+            .syncBody(convertObjectToJsonBytes(firstUser))
             .exchange()
             .expectStatus().isCreated
         <%_ } _%>
@@ -826,14 +829,14 @@ class AccountResourceIT <% if (databaseType === 'cassandra') { %>: AbstractCassa
         <%_ if (!reactive) { _%>
         restMvc.perform(
             post("/api/register")
-                .contentType(TestUtil.APPLICATION_JSON_UTF8)
-                .content(TestUtil.convertObjectToJsonBytes(secondUser))
+                .contentType(APPLICATION_JSON_UTF8)
+                .content(convertObjectToJsonBytes(secondUser))
         )
             .andExpect(status().isCreated)
         <%_ } else { _%>
         webTestClient.post().uri("/api/register")
-            .contentType(TestUtil.APPLICATION_JSON_UTF8)
-            .syncBody(TestUtil.convertObjectToJsonBytes(secondUser))
+            .contentType(APPLICATION_JSON_UTF8)
+            .syncBody(convertObjectToJsonBytes(secondUser))
             .exchange()
             .expectStatus().isCreated
         <%_ } _%>
@@ -863,14 +866,14 @@ class AccountResourceIT <% if (databaseType === 'cassandra') { %>: AbstractCassa
         <%_ if (!reactive) { _%>
         restMvc.perform(
             post("/api/register")
-                .contentType(TestUtil.APPLICATION_JSON_UTF8)
-                .content(TestUtil.convertObjectToJsonBytes(userWithUpperCaseEmail))
+                .contentType(APPLICATION_JSON_UTF8)
+                .content(convertObjectToJsonBytes(userWithUpperCaseEmail))
         )
             .andExpect(status().isCreated)
         <%_ } else { _%>
         webTestClient.post().uri("/api/register")
-            .contentType(TestUtil.APPLICATION_JSON_UTF8)
-            .syncBody(TestUtil.convertObjectToJsonBytes(userWithUpperCaseEmail))
+            .contentType(APPLICATION_JSON_UTF8)
+            .syncBody(convertObjectToJsonBytes(userWithUpperCaseEmail))
             .exchange()
             .expectStatus().isCreated
         <%_ } _%>
@@ -886,14 +889,14 @@ class AccountResourceIT <% if (databaseType === 'cassandra') { %>: AbstractCassa
         <%_ if (!reactive) { _%>
         restMvc.perform(
             post("/api/register")
-                .contentType(TestUtil.APPLICATION_JSON_UTF8)
-                .content(TestUtil.convertObjectToJsonBytes(secondUser))
+                .contentType(APPLICATION_JSON_UTF8)
+                .content(convertObjectToJsonBytes(secondUser))
         )
             .andExpect(status().is4xxClientError)
         <%_ } else { _%>
         webTestClient.post().uri("/api/register")
-            .contentType(TestUtil.APPLICATION_JSON_UTF8)
-            .syncBody(TestUtil.convertObjectToJsonBytes(secondUser))
+            .contentType(APPLICATION_JSON_UTF8)
+            .syncBody(convertObjectToJsonBytes(secondUser))
             .exchange()
             .expectStatus().is4xxClientError
         <%_ } _%>
@@ -913,21 +916,21 @@ class AccountResourceIT <% if (databaseType === 'cassandra') { %>: AbstractCassa
             <%_ if (['sql', 'mongodb', 'couchbase'].includes(databaseType)) { _%>
             imageUrl = "http://placehold.it/50x50"
             <%_ } _%>
-            langKey = Constants.DEFAULT_LANGUAGE
-            authorities = setOf(AuthoritiesConstants.ADMIN)
+            langKey = DEFAULT_LANGUAGE
+            authorities = setOf(ADMIN)
         }
 
         <%_ if (!reactive) { _%>
         restMvc.perform(
             post("/api/register")
-                .contentType(TestUtil.APPLICATION_JSON_UTF8)
-                .content(TestUtil.convertObjectToJsonBytes(validUser))
+                .contentType(APPLICATION_JSON_UTF8)
+                .content(convertObjectToJsonBytes(validUser))
         )
             .andExpect(status().isCreated)
         <%_ } else { _%>
         webTestClient.post().uri("/api/register")
-            .contentType(TestUtil.APPLICATION_JSON_UTF8)
-            .syncBody(TestUtil.convertObjectToJsonBytes(validUser))
+            .contentType(APPLICATION_JSON_UTF8)
+            .syncBody(convertObjectToJsonBytes(validUser))
             .exchange()
             .expectStatus().isCreated
         <%_ } _%>
@@ -935,7 +938,7 @@ class AccountResourceIT <% if (databaseType === 'cassandra') { %>: AbstractCassa
         val userDup = userRepository.findOneByLogin("badguy")<% if (reactive) { %>.blockOptional()<% } %>
         assertThat(userDup.isPresent).isTrue()
         assertThat(userDup.get().authorities).hasSize(1)
-            .containsExactly(<% if (databaseType === 'sql' || databaseType === 'mongodb') { %>authorityRepository.findById(AuthoritiesConstants.USER).<% if (reactive) { %>block<% } else { %>get<% } %>()<% } %><% if (databaseType === 'cassandra' || databaseType === 'couchbase') { %>AuthoritiesConstants.USER<% } %>)
+            .containsExactly(<% if (databaseType === 'sql' || databaseType === 'mongodb') { %>authorityRepository.findById(USER).<% if (reactive) { %>block<% } else { %>get<% } %>()<% } %><% if (databaseType === 'cassandra' || databaseType === 'couchbase') { %>USER<% } %>)
     }
 
     @Test<% if (databaseType === 'sql') { %>
@@ -1012,21 +1015,21 @@ class AccountResourceIT <% if (databaseType === 'cassandra') { %>: AbstractCassa
             <%_ if (['sql', 'mongodb', 'couchbase'].includes(databaseType)) { _%>
             imageUrl = "http://placehold.it/50x50",
             <%_ } _%>
-            langKey = Constants.DEFAULT_LANGUAGE,
-            authorities = setOf(AuthoritiesConstants.ADMIN)
+            langKey = DEFAULT_LANGUAGE,
+            authorities = setOf(ADMIN)
         )
 
         <%_ if (!reactive) { _%>
         restMvc.perform(
             post("/api/account")
-                .contentType(TestUtil.APPLICATION_JSON_UTF8)
-                .content(TestUtil.convertObjectToJsonBytes(userDTO))
+                .contentType(APPLICATION_JSON_UTF8)
+                .content(convertObjectToJsonBytes(userDTO))
         )
             .andExpect(status().isOk)
         <%_ } else { _%>
         webTestClient.post().uri("/api/account")
-            .contentType(TestUtil.APPLICATION_JSON_UTF8)
-            .syncBody(TestUtil.convertObjectToJsonBytes(userDTO))
+            .contentType(APPLICATION_JSON_UTF8)
+            .syncBody(convertObjectToJsonBytes(userDTO))
             .exchange()
             .expectStatus().isOk
         <%_ } _%>
@@ -1071,21 +1074,21 @@ class AccountResourceIT <% if (databaseType === 'cassandra') { %>: AbstractCassa
             <%_ if (['sql', 'mongodb', 'couchbase'].includes(databaseType)) { _%>
             imageUrl = "http://placehold.it/50x50",
             <%_ } _%>
-            langKey = Constants.DEFAULT_LANGUAGE,
-            authorities = setOf(AuthoritiesConstants.ADMIN)
+            langKey = DEFAULT_LANGUAGE,
+            authorities = setOf(ADMIN)
         )
 
         <%_ if (!reactive) { _%>
         restMvc.perform(
             post("/api/account")
-                .contentType(TestUtil.APPLICATION_JSON_UTF8)
-                .content(TestUtil.convertObjectToJsonBytes(userDTO))
+                .contentType(APPLICATION_JSON_UTF8)
+                .content(convertObjectToJsonBytes(userDTO))
         )
             .andExpect(status().isBadRequest)
         <%_ } else { _%>
         webTestClient.post().uri("/api/account")
-            .contentType(TestUtil.APPLICATION_JSON_UTF8)
-            .syncBody(TestUtil.convertObjectToJsonBytes(userDTO))
+            .contentType(APPLICATION_JSON_UTF8)
+            .syncBody(convertObjectToJsonBytes(userDTO))
             .exchange()
             .expectStatus().isBadRequest
         <%_ } _%>
@@ -1133,21 +1136,21 @@ class AccountResourceIT <% if (databaseType === 'cassandra') { %>: AbstractCassa
             <%_ if (['sql', 'mongodb', 'couchbase'].includes(databaseType)) { _%>
             imageUrl = "http://placehold.it/50x50",
             <%_ } _%>
-            langKey = Constants.DEFAULT_LANGUAGE,
-            authorities = setOf(AuthoritiesConstants.ADMIN)
+            langKey = DEFAULT_LANGUAGE,
+            authorities = setOf(ADMIN)
         )
 
         <%_ if (!reactive) { _%>
         restMvc.perform(
             post("/api/account")
-                .contentType(TestUtil.APPLICATION_JSON_UTF8)
-                .content(TestUtil.convertObjectToJsonBytes(userDTO))
+                .contentType(APPLICATION_JSON_UTF8)
+                .content(convertObjectToJsonBytes(userDTO))
         )
             .andExpect(status().isBadRequest)
         <%_ } else { _%>
         webTestClient.post().uri("/api/account")
-            .contentType(TestUtil.APPLICATION_JSON_UTF8)
-            .syncBody(TestUtil.convertObjectToJsonBytes(userDTO))
+            .contentType(APPLICATION_JSON_UTF8)
+            .syncBody(convertObjectToJsonBytes(userDTO))
             .exchange()
             .expectStatus().isBadRequest
         <%_ } _%>
@@ -1183,21 +1186,21 @@ class AccountResourceIT <% if (databaseType === 'cassandra') { %>: AbstractCassa
             <%_ if (['sql', 'mongodb', 'couchbase'].includes(databaseType)) { _%>
             imageUrl = "http://placehold.it/50x50",
             <%_ } _%>
-            langKey = Constants.DEFAULT_LANGUAGE,
-            authorities = setOf(AuthoritiesConstants.ADMIN)
+            langKey = DEFAULT_LANGUAGE,
+            authorities = setOf(ADMIN)
         )
 
         <%_ if (!reactive) { _%>
         restMvc.perform(
             post("/api/account")
-                .contentType(TestUtil.APPLICATION_JSON_UTF8)
-                .content(TestUtil.convertObjectToJsonBytes(userDTO))
+                .contentType(APPLICATION_JSON_UTF8)
+                .content(convertObjectToJsonBytes(userDTO))
         )
             .andExpect(status().isOk)
         <%_ } else { _%>
         webTestClient.post().uri("/api/account")
-            .contentType(TestUtil.APPLICATION_JSON_UTF8)
-            .syncBody(TestUtil.convertObjectToJsonBytes(userDTO))
+            .contentType(APPLICATION_JSON_UTF8)
+            .syncBody(convertObjectToJsonBytes(userDTO))
             .exchange()
             .expectStatus().isOk
         <%_ } _%>
@@ -1227,14 +1230,14 @@ class AccountResourceIT <% if (databaseType === 'cassandra') { %>: AbstractCassa
         <%_ if (!reactive) { _%>
         restMvc.perform(
             post("/api/account/change-password")
-                .contentType(TestUtil.APPLICATION_JSON_UTF8)
-                .content(TestUtil.convertObjectToJsonBytes(PasswordChangeDTO("1$currentPassword", "new password")))
+                .contentType(APPLICATION_JSON_UTF8)
+                .content(convertObjectToJsonBytes(PasswordChangeDTO("1$currentPassword", "new password")))
         )
             .andExpect(status().isBadRequest)
         <%_ } else { _%>
         webTestClient.post().uri("/api/account/change-password")
-            .contentType(TestUtil.APPLICATION_JSON_UTF8)
-            .syncBody(TestUtil.convertObjectToJsonBytes(PasswordChangeDTO("1$currentPassword", "new password")))
+            .contentType(APPLICATION_JSON_UTF8)
+            .syncBody(convertObjectToJsonBytes(PasswordChangeDTO("1$currentPassword", "new password")))
             .exchange()
             .expectStatus().isBadRequest
         <%_ } _%>
@@ -1265,14 +1268,14 @@ class AccountResourceIT <% if (databaseType === 'cassandra') { %>: AbstractCassa
         <%_ if (!reactive) { _%>
         restMvc.perform(
             post("/api/account/change-password")
-                .contentType(TestUtil.APPLICATION_JSON_UTF8)
-                .content(TestUtil.convertObjectToJsonBytes(PasswordChangeDTO(currentPassword, "new password")))
+                .contentType(APPLICATION_JSON_UTF8)
+                .content(convertObjectToJsonBytes(PasswordChangeDTO(currentPassword, "new password")))
         )
             .andExpect(status().isOk)
         <%_ } else { _%>
         webTestClient.post().uri("/api/account/change-password")
-            .contentType(TestUtil.APPLICATION_JSON_UTF8)
-            .syncBody(TestUtil.convertObjectToJsonBytes(PasswordChangeDTO(currentPassword, "new password")))
+            .contentType(APPLICATION_JSON_UTF8)
+            .syncBody(convertObjectToJsonBytes(PasswordChangeDTO(currentPassword, "new password")))
             .exchange()
             .expectStatus().isOk
         <%_ } _%>
@@ -1304,14 +1307,14 @@ class AccountResourceIT <% if (databaseType === 'cassandra') { %>: AbstractCassa
         <%_ if (!reactive) { _%>
         restMvc.perform(
             post("/api/account/change-password")
-                .contentType(TestUtil.APPLICATION_JSON_UTF8)
-                .content(TestUtil.convertObjectToJsonBytes(PasswordChangeDTO(currentPassword, newPassword)))
+                .contentType(APPLICATION_JSON_UTF8)
+                .content(convertObjectToJsonBytes(PasswordChangeDTO(currentPassword, newPassword)))
         )
             .andExpect(status().isBadRequest)
         <%_ } else { _%>
         webTestClient.post().uri("/api/account/change-password")
-            .contentType(TestUtil.APPLICATION_JSON_UTF8)
-            .syncBody(TestUtil.convertObjectToJsonBytes(PasswordChangeDTO(currentPassword, newPassword)))
+            .contentType(APPLICATION_JSON_UTF8)
+            .syncBody(convertObjectToJsonBytes(PasswordChangeDTO(currentPassword, newPassword)))
             .exchange()
             .expectStatus().isBadRequest
         <%_ } _%>
@@ -1343,14 +1346,14 @@ class AccountResourceIT <% if (databaseType === 'cassandra') { %>: AbstractCassa
         <%_ if (!reactive) { _%>
         restMvc.perform(
             post("/api/account/change-password")
-                .contentType(TestUtil.APPLICATION_JSON_UTF8)
-                .content(TestUtil.convertObjectToJsonBytes(PasswordChangeDTO(currentPassword, newPassword)))
+                .contentType(APPLICATION_JSON_UTF8)
+                .content(convertObjectToJsonBytes(PasswordChangeDTO(currentPassword, newPassword)))
         )
             .andExpect(status().isBadRequest)
         <%_ } else { _%>
         webTestClient.post().uri("/api/account/change-password")
-            .contentType(TestUtil.APPLICATION_JSON_UTF8)
-            .syncBody(TestUtil.convertObjectToJsonBytes(PasswordChangeDTO(currentPassword, newPassword)))
+            .contentType(APPLICATION_JSON_UTF8)
+            .syncBody(convertObjectToJsonBytes(PasswordChangeDTO(currentPassword, newPassword)))
             .exchange()
             .expectStatus().isBadRequest
         <%_ } _%>
@@ -1380,14 +1383,14 @@ class AccountResourceIT <% if (databaseType === 'cassandra') { %>: AbstractCassa
         <%_ if (!reactive) { _%>
         restMvc.perform(
             post("/api/account/change-password")
-                .contentType(TestUtil.APPLICATION_JSON_UTF8)
-                .content(TestUtil.convertObjectToJsonBytes(PasswordChangeDTO(currentPassword, "")))
+                .contentType(APPLICATION_JSON_UTF8)
+                .content(convertObjectToJsonBytes(PasswordChangeDTO(currentPassword, "")))
         )
             .andExpect(status().isBadRequest)
         <%_ } else { _%>
         webTestClient.post().uri("/api/account/change-password")
-            .contentType(TestUtil.APPLICATION_JSON_UTF8)
-            .syncBody(TestUtil.convertObjectToJsonBytes(PasswordChangeDTO(currentPassword, "")))
+            .contentType(APPLICATION_JSON_UTF8)
+            .syncBody(convertObjectToJsonBytes(PasswordChangeDTO(currentPassword, "")))
             .exchange()
             .expectStatus().isBadRequest
         <%_ } _%>
@@ -1579,14 +1582,14 @@ class AccountResourceIT <% if (databaseType === 'cassandra') { %>: AbstractCassa
         <%_ if (!reactive) { _%>
         restMvc.perform(
             post("/api/account/reset-password/finish")
-                .contentType(TestUtil.APPLICATION_JSON_UTF8)
-                .content(TestUtil.convertObjectToJsonBytes(keyAndPassword))
+                .contentType(APPLICATION_JSON_UTF8)
+                .content(convertObjectToJsonBytes(keyAndPassword))
         )
             .andExpect(status().isOk)
         <%_ } else { _%>
         webTestClient.post().uri("/api/account/reset-password/finish")
-            .contentType(TestUtil.APPLICATION_JSON_UTF8)
-            .syncBody(TestUtil.convertObjectToJsonBytes(keyAndPassword))
+            .contentType(APPLICATION_JSON_UTF8)
+            .syncBody(convertObjectToJsonBytes(keyAndPassword))
             .exchange()
             .expectStatus().isOk
         <%_ } _%>
@@ -1618,14 +1621,14 @@ class AccountResourceIT <% if (databaseType === 'cassandra') { %>: AbstractCassa
         <%_ if (!reactive) { _%>
         restMvc.perform(
             post("/api/account/reset-password/finish")
-                .contentType(TestUtil.APPLICATION_JSON_UTF8)
-                .content(TestUtil.convertObjectToJsonBytes(keyAndPassword))
+                .contentType(APPLICATION_JSON_UTF8)
+                .content(convertObjectToJsonBytes(keyAndPassword))
         )
             .andExpect(status().isBadRequest)
         <%_ } else { _%>
         webTestClient.post().uri("/api/account/reset-password/finish")
-            .contentType(TestUtil.APPLICATION_JSON_UTF8)
-            .syncBody(TestUtil.convertObjectToJsonBytes(keyAndPassword))
+            .contentType(APPLICATION_JSON_UTF8)
+            .syncBody(convertObjectToJsonBytes(keyAndPassword))
             .exchange()
             .expectStatus().isBadRequest
         <%_ } _%>
@@ -1644,14 +1647,14 @@ class AccountResourceIT <% if (databaseType === 'cassandra') { %>: AbstractCassa
         <%_ if (!reactive) { _%>
         restMvc.perform(
             post("/api/account/reset-password/finish")
-                .contentType(TestUtil.APPLICATION_JSON_UTF8)
-                .content(TestUtil.convertObjectToJsonBytes(keyAndPassword))
+                .contentType(APPLICATION_JSON_UTF8)
+                .content(convertObjectToJsonBytes(keyAndPassword))
         )
             .andExpect(status().isInternalServerError)
         <%_ } else { _%>
         webTestClient.post().uri("/api/account/reset-password/finish")
-            .contentType(TestUtil.APPLICATION_JSON_UTF8)
-            .syncBody(TestUtil.convertObjectToJsonBytes(keyAndPassword))
+            .contentType(APPLICATION_JSON_UTF8)
+            .syncBody(convertObjectToJsonBytes(keyAndPassword))
             .exchange()
             .expectStatus().isEqualTo(HttpStatus.INTERNAL_SERVER_ERROR)
         <%_ } _%>
