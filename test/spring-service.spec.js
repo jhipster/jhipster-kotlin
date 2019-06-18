@@ -18,7 +18,7 @@ describe('JHipster generator service', () => {
                     skipChecks: true
                 })
                 .inTmpDir(dir => {
-                    fse.copySync(path.join(__dirname, '../node_modules/generator-jhipster/test/templates/default'), dir);
+                    fse.copySync(path.join(__dirname, '../test/templates/default'), dir);
                 })
                 .withArguments(['foo'])
                 .withPrompts({
@@ -47,7 +47,7 @@ describe('JHipster generator service', () => {
                     skipChecks: true
                 })
                 .inTmpDir(dir => {
-                    fse.copySync(path.join(__dirname, '../node_modules/generator-jhipster/test/templates/default'), dir);
+                    fse.copySync(path.join(__dirname, '../test/templates/default'), dir);
                 })
                 .withArguments(['foo'])
                 .withPrompts({
@@ -75,7 +75,7 @@ describe('JHipster generator service', () => {
                     skipChecks: true
                 })
                 .inTmpDir(dir => {
-                    fse.copySync(path.join(__dirname, '../node_modules/generator-jhipster/test/templates/default'), dir);
+                    fse.copySync(path.join(__dirname, '../test/templates/default'), dir);
                 })
                 .withArguments(['foo'])
                 .withOptions({ default: true })

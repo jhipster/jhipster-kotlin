@@ -1991,7 +1991,6 @@ describe('JHipster generator', () => {
                         ['package.json']
                     )
                 );
-                assert.noFile(['gradle/yeoman.gradle']);
             });
             it('generates README with instructions for Gradle', () => {
                 assert.fileContent('README.md', './gradlew');
@@ -2325,7 +2324,7 @@ describe('JHipster generator', () => {
                         ]
                     ])
                     .inTmpDir(dir => {
-                        fse.copySync(path.join(__dirname, '../node_modules/generator-jhipster/test/templates/uaaserver/'), dir);
+                        fse.copySync(path.join(__dirname, '../test/templates/uaaserver/'), dir);
                     })
                     .withPrompts({
                         applicationType: 'gateway',
