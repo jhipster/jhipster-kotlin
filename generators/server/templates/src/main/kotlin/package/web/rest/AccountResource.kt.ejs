@@ -80,13 +80,11 @@ import org.springframework.web.bind.annotation.GetMapping
 import org.springframework.web.bind.annotation.RequestMapping
 import org.springframework.web.bind.annotation.RestController
 
-import java.util.stream.Collectors
-
 @RestController
 @RequestMapping("/api")
 class AccountResource {
 
-    internal class AccountResourceException: RuntimeException()
+    internal class AccountResourceException : RuntimeException()
 
     /**
      * {@code GET  /account} : get the current user.
@@ -97,34 +95,15 @@ class AccountResource {
     @GetMapping("/account")
     fun getAccount(): UserVM {
         val login = getCurrentUserLogin()
-            .orElseThrow { AccountResourceException::new }
-        val authorities = SecurityContextHolder.getContext().getAuthentication().getAuthorities()
-            .map(GrantedAuthority::getAuthority)
-            .collect(Collectors.toSet());
-        return UserVM(login, authorities);
+            .orElseThrow { AccountResourceException() }
+        val authorities = SecurityContextHolder.getContext().authentication.authorities
+            .mapNotNullTo(mutableSetOf()) { it.authority }
+        return UserVM(login, authorities)
     }
 
-    internal class UserVM {
-        private val login: String;
-        private val authorities: Set<String>;
+    data class UserVM @JsonCreator constructor(val login: String, val authorities: Set<String>) {
 
-        @JsonCreator
-        UserVM(login: String, authorities: Set<String>) {
-            this.login = login;
-            this.authorities = authorities;
-        }
-
-        fun isActivated(): boolean {
-            return true;
-        }
-
-        fun getAuthorities(): Set<String> {
-            return authorities;
-        }
-
-        fun getLogin(): String {
-            return login;
-        }
+        fun isActivated() = true
     }
 }
 <%_ } else { _%>
