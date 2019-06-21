@@ -55,12 +55,18 @@ import org.springframework.boot.test.context.SpringBootTest
 <%_ if (cacheManagerIsAvailable === true) { _%>
 import org.springframework.cache.CacheManager
 <%_ } _%>
+<%_ if (cacheProvider === 'memcached' ) { _%>
+import org.springframework.cache.support.NoOpCacheManager
+<%_ } _%>
 <%_ if (!reactive) { _%>
 import org.springframework.data.web.PageableHandlerMethodArgumentResolver
 <%_ } _%>
 import org.springframework.http.MediaType
 <%_ if (!reactive) { _%>
 import org.springframework.http.converter.json.MappingJackson2HttpMessageConverter
+<%_ } _%>
+<%_ if (messageBroker === 'kafka') { _%>
+import org.springframework.kafka.test.context.EmbeddedKafka
 <%_ } _%>
 <%_ if (reactive) { _%>
 import org.springframework.test.web.reactive.server.WebTestClient
@@ -105,6 +111,9 @@ import kotlin.test.assertNull
 /**
  * Integration tests for the [UserResource] REST controller.
  */
+<%_ if (messageBroker === 'kafka') { _%>
+@EmbeddedKafka
+<%_ } _%>
 <%_ if (authenticationType === 'oauth2') { _%>
 @SpringBootTest(classes = [<%= mainClass %>::class, TestSecurityConfiguration::class])
 <%_ } else { _%>
@@ -493,7 +502,11 @@ class UserResourceIT <% if (databaseType === 'cassandra') { %>: AbstractCassandr
             <%_ } _%>
             .jsonPath("\$.langKey").isEqualTo(DEFAULT_LANGKEY)
         <%_ } _%>
-        <%_ if (cacheManagerIsAvailable === true) { _%>
+        <%_ if (cacheProvider === 'memcached') { _%>
+        if (cacheManager !is NoOpCacheManager) {
+            assertThat(cacheManager.getCache(UserRepository.USERS_BY_LOGIN_CACHE)!!.get(user.login!!)).isNotNull
+        }
+        <%_ } else if (cacheManagerIsAvailable === true) { _%>
 
         assertNotNull(cacheManager.getCache(UserRepository.USERS_BY_LOGIN_CACHE)!!.get(user.login!!))
         <%_ } _%>
@@ -869,7 +882,7 @@ class UserResourceIT <% if (databaseType === 'cassandra') { %>: AbstractCassandr
     <%_ } _%>
     @Throws(Exception::class)
     fun testUserEquals() {
-        equalsVerifier(<%= asEntity('User') %>::class.java)
+        equalsVerifier(<%= asEntity('User') %>::class)
         val user1 = <%= asEntity('User') %>(id = <% if (databaseType === 'sql' && authenticationType !== 'oauth2') { %>1L<% } else { %>"id1"<% } %>)
         val user2 = <%= asEntity('User') %>(id = user1.id)
         assertThat(user1).isEqualTo(user2)

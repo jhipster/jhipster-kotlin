@@ -18,289 +18,75 @@
 -%>
 package <%=packageName%>.config
 
-import java.net.InetSocketAddress
-
-import io.github.jhipster.config.JHipsterProperties
-
-import ch.qos.logback.classic.AsyncAppender
-import ch.qos.logback.classic.Level
 import ch.qos.logback.classic.LoggerContext
-import ch.qos.logback.classic.boolex.OnMarkerEvaluator
-import ch.qos.logback.classic.spi.ILoggingEvent
-import ch.qos.logback.classic.spi.LoggerContextListener
-import ch.qos.logback.core.ConsoleAppender
-import ch.qos.logback.core.filter.EvaluatorFilter
-import ch.qos.logback.core.spi.ContextAwareBase
-import ch.qos.logback.core.spi.FilterReply
-import net.logstash.logback.appender.LogstashTcpSocketAppender
-import net.logstash.logback.composite.ContextJsonProvider
-import net.logstash.logback.composite.GlobalCustomFieldsJsonProvider
-import net.logstash.logback.composite.loggingevent.ArgumentsJsonProvider
-import net.logstash.logback.composite.loggingevent.LogLevelJsonProvider
-import net.logstash.logback.composite.loggingevent.LoggerNameJsonProvider
-import net.logstash.logback.composite.loggingevent.LoggingEventFormattedTimestampJsonProvider
-import net.logstash.logback.composite.loggingevent.LoggingEventJsonProviders
-import net.logstash.logback.composite.loggingevent.LoggingEventPatternJsonProvider
-import net.logstash.logback.composite.loggingevent.MdcJsonProvider
-import net.logstash.logback.composite.loggingevent.MessageJsonProvider
-import net.logstash.logback.composite.loggingevent.StackTraceJsonProvider
-import net.logstash.logback.composite.loggingevent.ThreadNameJsonProvider
-import net.logstash.logback.encoder.LoggingEventCompositeJsonEncoder
-import net.logstash.logback.encoder.LogstashEncoder
-import net.logstash.logback.stacktrace.ShortenedThrowableConverter
+import com.fasterxml.jackson.core.JsonProcessingException
+import com.fasterxml.jackson.databind.ObjectMapper
+import io.github.jhipster.config.JHipsterProperties
 import org.slf4j.LoggerFactory
 import org.springframework.beans.factory.annotation.Value
-<%_ if (serviceDiscoveryType && (applicationType === 'microservice' || applicationType === 'gateway' || applicationType === 'uaa')) { _%>
+<%_ if (serviceDiscoveryType && ['microservice', 'gateway', 'uaa'].includes(applicationType)) { _%>
 import org.springframework.boot.info.BuildProperties
-<%_ } _%>
-<%_ if (serviceDiscoveryType === "eureka") { _%>
-import org.springframework.cloud.context.config.annotation.RefreshScope
 <%_ } _%>
 <%_ if (serviceDiscoveryType === "consul") { _%>
 import org.springframework.cloud.consul.serviceregistry.ConsulRegistration
+<%_ } _%>
+<%_ if (["eureka", "consul"].includes(serviceDiscoveryType)) { _%>
 import org.springframework.cloud.context.config.annotation.RefreshScope
 <%_ } _%>
 import org.springframework.context.annotation.Configuration
 
+import io.github.jhipster.config.logging.LoggingUtils.addContextListener
+import io.github.jhipster.config.logging.LoggingUtils.addJsonConsoleAppender
+import io.github.jhipster.config.logging.LoggingUtils.addLogstashTcpSocketAppender
+import io.github.jhipster.config.logging.LoggingUtils.setMetricsMarkerLogbackFilter
+
+/*
+ * Configures the console and Logstash log appenders from the app properties.
+ */
 @Configuration
-<%_ if (serviceDiscoveryType === "eureka") { _%>
-@RefreshScope
-<%_ } _%>
-<%_ if (serviceDiscoveryType === "consul") { _%>
+<%_ if (["eureka", "consul"].includes(serviceDiscoveryType)) { _%>
 @RefreshScope
 <%_ } _%>
 class LoggingConfiguration(
-    @param:Value("\${spring.application.name}") private val appName: String,
-    @param:Value("\${server.port}") private val serverPort: String,<%_ if (serviceDiscoveryType === "consul") { %>
-    private val consulRegistration: ConsulRegistration?,<%_ } if (serviceDiscoveryType && (applicationType === 'microservice' || applicationType === 'gateway' || applicationType === 'uaa')) { %>
-    buildProperties: BuildProperties?,<%_ } %>
-    private val jHipsterProperties: JHipsterProperties
-) {
-
-    private val log = LoggerFactory.getLogger(LoggingConfiguration::class.java)
-    <%_ if (serviceDiscoveryType && (applicationType === 'microservice' || applicationType === 'gateway' || applicationType === 'uaa')) { _%>
-
-    private var version: String = buildProperties?.version ?: ""
+    @Value("\${spring.application.name}") appName: String,
+    @Value("\${server.port}") serverPort: String,
+    jHipsterProperties: JHipsterProperties,
+    <%_ if (serviceDiscoveryType === "consul") { _%>
+    consulRegistration: ConsulRegistration?,
     <%_ } _%>
-
-    private val context = LoggerFactory.getILoggerFactory() as LoggerContext
-
+    <%_ if (serviceDiscoveryType && ['microservice', 'gateway', 'uaa'].includes(applicationType)) { _%>
+    buildProperties: BuildProperties?,
+    <%_ } _%>
+    mapper: ObjectMapper
+) {
     init {
-        if (jHipsterProperties.logging.isUseJsonFormat) {
-            addJsonConsoleAppender(context)
+        val context = LoggerFactory.getILoggerFactory() as LoggerContext
+
+        val map = mutableMapOf<String, String?>()
+        map["app_name"] = appName
+        map["app_port"] = serverPort
+        <%_ if (serviceDiscoveryType && ['microservice', 'gateway', 'uaa'].includes(applicationType)) { _%>
+        buildProperties?.apply { map["version"] = this.version }
+        <%_ } _%>
+        <%_ if (serviceDiscoveryType === 'consul') { _%>
+        consulRegistration?.apply { map["instance_id"] = this.instanceId }
+        <%_ } _%>
+        val customFields = mapper.writeValueAsString(map)
+
+        val loggingProperties = jHipsterProperties.logging
+        val logstashProperties = loggingProperties.logstash
+
+        if (loggingProperties.isUseJsonFormat) {
+            addJsonConsoleAppender(context, customFields)
         }
-        if (jHipsterProperties.logging.logstash.isEnabled) {
-            addLogstashTcpSocketAppender(context)
+        if (logstashProperties.isEnabled) {
+            addLogstashTcpSocketAppender(context, customFields, logstashProperties)
         }
-        if (jHipsterProperties.logging.isUseJsonFormat || jHipsterProperties.logging.logstash.isEnabled) {
-            addContextListener(context)
+        if (loggingProperties.isUseJsonFormat || logstashProperties.isEnabled) {
+            addContextListener(context, customFields, loggingProperties)
         }
         if (jHipsterProperties.metrics.logs.isEnabled) {
-            setMetricsMarkerLogbackFilter(context)
+            setMetricsMarkerLogbackFilter(context, loggingProperties.isUseJsonFormat)
         }
-    }
-
-    private fun addJsonConsoleAppender(context: LoggerContext) {
-        log.info("Initializing Console logging")
-
-        // More documentation is available at: https://github.com/logstash/logstash-logback-encoder
-        val consoleAppender = ConsoleAppender<ILoggingEvent>().apply {
-            this.context = context
-            encoder = compositeJsonEncoder(context)
-            name = CONSOLE_APPENDER_NAME
-            start()
-        }
-
-        context.getLogger(ch.qos.logback.classic.Logger.ROOT_LOGGER_NAME).detachAppender(CONSOLE_APPENDER_NAME)
-        context.getLogger(ch.qos.logback.classic.Logger.ROOT_LOGGER_NAME).addAppender(consoleAppender)
-    }
-
-    private fun addLogstashTcpSocketAppender(context: LoggerContext) {
-        log.info("Initializing Logstash logging")
-
-        // More documentation is available at: https://github.com/logstash/logstash-logback-encoder
-        val logstashAppender = LogstashTcpSocketAppender().apply {
-            addDestinations(
-                InetSocketAddress(
-                    jHipsterProperties.logging.logstash.host,
-                    jHipsterProperties.logging.logstash.port
-                )
-            )
-            this.context = context
-            encoder = logstashEncoder()
-            name = LOGSTASH_APPENDER_NAME
-            start()
-        }
-
-        // Wrap the appender in an Async appender for performance
-        val asyncLogstashAppender = AsyncAppender().apply {
-            this.context = context
-            name = ASYNC_LOGSTASH_APPENDER_NAME
-            queueSize = jHipsterProperties.logging.logstash.queueSize
-            addAppender(logstashAppender)
-            start()
-        }
-
-        context.getLogger(ch.qos.logback.classic.Logger.ROOT_LOGGER_NAME).addAppender(asyncLogstashAppender)
-    }
-
-    private fun compositeJsonEncoder(context: LoggerContext): LoggingEventCompositeJsonEncoder {
-        return LoggingEventCompositeJsonEncoder().apply {
-            this.context = context
-            providers = jsonProviders(context)
-            start()
-        }
-    }
-
-    private fun logstashEncoder(): LogstashEncoder {
-        return LogstashEncoder().apply {
-            throwableConverter = throwableConverter()
-            customFields = customFields()
-        }
-    }
-
-    private fun jsonProviders(context: LoggerContext): LoggingEventJsonProviders {
-        return LoggingEventJsonProviders().apply {
-            addArguments(ArgumentsJsonProvider())
-            addContext(ContextJsonProvider())
-            addGlobalCustomFields(customFieldsJsonProvider())
-            addLogLevel(LogLevelJsonProvider())
-            addLoggerName(loggerNameJsonProvider())
-            addMdc(MdcJsonProvider())
-            addMessage(MessageJsonProvider())
-            addPattern(LoggingEventPatternJsonProvider())
-            addStackTrace(stackTraceJsonProvider())
-            addThreadName(ThreadNameJsonProvider())
-            addTimestamp(timestampJsonProvider())
-            setContext(context)
-        }
-    }
-
-    private fun customFieldsJsonProvider(): GlobalCustomFieldsJsonProvider<ILoggingEvent> {
-        return GlobalCustomFieldsJsonProvider<ILoggingEvent>().apply { customFields = customFields() }
-    }
-
-    private fun customFields(): String {
-        val customFields = StringBuilder()
-        customFields.append("{")
-        customFields.append("\"app_name\":\"").append(appName).append("\"")
-        customFields.append(",").append("\"app_port\":\"").append(this.serverPort).append("\"")
-        <%_ if (serviceDiscoveryType === 'consul' && (applicationType === 'microservice' || applicationType === 'gateway' || applicationType === 'uaa')) { _%>
-        if (consulRegistration != null) {
-            customFields.append(",").append("\"instance_id\":\"").append(this.consulRegistration.instanceId).append("\"")
-        }
-        <%_ } _%>
-        <%_ if (serviceDiscoveryType && (applicationType === 'microservice' || applicationType === 'gateway' || applicationType === 'uaa')) { _%>
-        customFields.append(",").append("\"version\":\"").append(version).append("\"")
-        <%_ } _%>
-        customFields.append("}")
-        return customFields.toString()
-    }
-
-    private fun loggerNameJsonProvider(): LoggerNameJsonProvider {
-        return LoggerNameJsonProvider().apply { shortenedLoggerNameLength = 20 }
-    }
-
-    private fun stackTraceJsonProvider(): StackTraceJsonProvider {
-        return StackTraceJsonProvider().apply { throwableConverter = throwableConverter() }
-    }
-
-    private fun throwableConverter(): ShortenedThrowableConverter {
-        return ShortenedThrowableConverter().apply { isRootCauseFirst = true }
-    }
-
-    private fun timestampJsonProvider(): LoggingEventFormattedTimestampJsonProvider {
-        return LoggingEventFormattedTimestampJsonProvider().apply {
-            timeZone = "UTC"
-            fieldName = "timestamp"
-        }
-    }
-
-    private fun addContextListener(context: LoggerContext) {
-        val loggerContextListener = LogbackLoggerContextListener(jHipsterProperties)
-        loggerContextListener.context = context
-        context.addListener(loggerContextListener)
-    }
-
-    // Configure a log filter to remove "metrics" logs from all appenders except the "LOGSTASH" appender
-    private fun setMetricsMarkerLogbackFilter(context: LoggerContext) {
-        log.info("Filtering metrics logs from all appenders except the {} appender", LOGSTASH_APPENDER_NAME)
-
-        val onMarkerMetricsEvaluator = OnMarkerEvaluator().apply {
-            this.context = context
-            addMarker("metrics")
-            start()
-        }
-
-        val metricsFilter = EvaluatorFilter<ILoggingEvent>().apply {
-            this.context = context
-            evaluator = onMarkerMetricsEvaluator
-            onMatch = FilterReply.DENY
-            start()
-        }
-
-        for (logger in context.loggerList) {
-            val it = logger.iteratorForAppenders()
-            while (it.hasNext()) {
-                val appender = it.next()
-                if (appender.name != ASYNC_LOGSTASH_APPENDER_NAME &&
-                    appender.name != CONSOLE_APPENDER_NAME && jHipsterProperties.logging.isUseJsonFormat
-                ) {
-                    log.debug("Filter metrics logs from the {} appender", appender.name)
-                    appender.context = context
-                    appender.addFilter(metricsFilter)
-                    appender.start()
-                }
-            }
-        }
-    }
-
-    /**
-     * Logback configuration is achieved by configuration file and API.
-     * When configuration file change is detected, the configuration is reset.
-     * This listener ensures that the programmatic configuration is also re-applied after reset.
-     */
-    internal inner class LogbackLoggerContextListener(
-        private val jHipsterProperties: JHipsterProperties
-    ) : ContextAwareBase(), LoggerContextListener {
-
-        override fun isResetResistant(): Boolean {
-            return true
-        }
-
-        override fun onStart(context: LoggerContext) {
-            if (jHipsterProperties.logging.isUseJsonFormat) {
-                addJsonConsoleAppender(context)
-            }
-            if (jHipsterProperties.logging.logstash.isEnabled) {
-                addLogstashTcpSocketAppender(context)
-            }
-        }
-
-        override fun onReset(context: LoggerContext) {
-            if (jHipsterProperties.logging.isUseJsonFormat) {
-                addJsonConsoleAppender(context)
-            }
-            if (jHipsterProperties.logging.logstash.isEnabled) {
-                addLogstashTcpSocketAppender(context)
-            }
-        }
-
-        override fun onStop(context: LoggerContext) {
-            // Nothing to do.
-        }
-
-        override fun onLevelChange(logger: ch.qos.logback.classic.Logger, level: Level) {
-            // Nothing to do.
-        }
-    }
-
-    companion object {
-
-        private const val CONSOLE_APPENDER_NAME = "CONSOLE"
-
-        private const val LOGSTASH_APPENDER_NAME = "LOGSTASH"
-
-        private const val ASYNC_LOGSTASH_APPENDER_NAME = "ASYNC_LOGSTASH"
     }
 }

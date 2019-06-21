@@ -18,30 +18,31 @@
 -%>
 package <%=packageName%>.security.oauth2
 
-import java.util.Optional
-
+import org.springframework.security.authentication.AbstractAuthenticationToken
 import org.springframework.security.core.context.SecurityContextHolder
 import org.springframework.security.oauth2.client.OAuth2AuthorizedClient
 import org.springframework.security.oauth2.client.OAuth2AuthorizedClientService
 import org.springframework.security.oauth2.client.authentication.OAuth2AuthenticationToken
-import org.springframework.security.oauth2.core.OAuth2AccessToken
+import org.springframework.security.oauth2.server.resource.authentication.JwtAuthenticationToken
 import org.springframework.stereotype.Component
 
 @Component
 class AuthorizationHeaderUtil(private val clientService: OAuth2AuthorizedClientService) {
 
-    fun getAuthorizationHeader(): Optional<String> {
+    fun getAuthorizationHeader(): String? {
         val authentication = SecurityContextHolder.getContext().authentication
-        val oauthToken = authentication as OAuth2AuthenticationToken
-        val client: OAuth2AuthorizedClient = clientService.loadAuthorizedClient(
-            oauthToken.authorizedClientRegistrationId,
-            oauthToken.name
-        )
+        var accessToken: String? = null
+        val authToken = authentication as AbstractAuthenticationToken
+        if (authToken is OAuth2AuthenticationToken) {
+            val client: OAuth2AuthorizedClient = clientService.loadAuthorizedClient(
+                authToken.authorizedClientRegistrationId,
+                authToken.name
+            )
+            accessToken = client.accessToken.tokenValue
+        } else if (authToken is JwtAuthenticationToken) {
+            accessToken = authToken.token.tokenValue
+        }
 
-        val accessToken: OAuth2AccessToken = client.accessToken ?: return Optional.empty()
-
-        val tokenType = accessToken.tokenType.value
-        val authorizationHeaderValue = "$tokenType ${accessToken.tokenValue}"
-        return Optional.of(authorizationHeaderValue)
+        return if (accessToken == null) null else "Bearer $accessToken"
     }
 }

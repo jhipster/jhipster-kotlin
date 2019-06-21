@@ -524,7 +524,7 @@ const expectedFiles = {
 
     i18nRtl: [
         `${SERVER_MAIN_RES_DIR}i18n/messages_en.properties`,
-        `${SERVER_MAIN_RES_DIR}i18n/messages_ar_ly.properties`,
+        `${SERVER_MAIN_RES_DIR}i18n/messages_ar_LY.properties`,
         `${CLIENT_MAIN_SRC_DIR}i18n/en/global.json`,
         `${CLIENT_MAIN_SRC_DIR}i18n/ar-ly/global.json`,
         `${CLIENT_MAIN_SRC_DIR}app/core/language/language.constants.ts`,
@@ -565,7 +565,13 @@ const expectedFiles = {
         `${DOCKER_DIR}keycloak.yml`
     ],
 
-    messageBroker: [`${SERVER_MAIN_SRC_DIR}com/mycompany/myapp/config/MessagingConfiguration.kt`, `${DOCKER_DIR}kafka.yml`],
+    messageBroker: [
+        `${SERVER_MAIN_SRC_DIR}com/mycompany/myapp/web/rest/JhipsterKafkaResource.kt`,
+        `${SERVER_MAIN_SRC_DIR}com/mycompany/myapp/service/JhipsterKafkaConsumer.kt`,
+        `${SERVER_MAIN_SRC_DIR}com/mycompany/myapp/service/JhipsterKafkaProducer.kt`,
+        `${SERVER_TEST_SRC_DIR}com/mycompany/myapp/web/rest/JhipsterKafkaResourceIT.kt`,
+        `${DOCKER_DIR}kafka.yml`
+    ],
 
     swaggerCodegen: [`${SERVER_MAIN_RES_DIR}swagger/api.yml`],
 

@@ -71,7 +71,7 @@ _%>
 
 <%_
 // DTO -> entity mapping
-var renMapAnotDto = false;  //Render Mapping Annotation during DTO to Entity conversion?
+var mappedRelsDto = [];
 for (idx in relationships) {
     const relationshipType = relationships[idx].relationshipType;
     const ownerSide = relationships[idx].ownerSide;
@@ -79,20 +79,25 @@ for (idx in relationships) {
         (relationshipType === 'many-to-many' && ownerSide === false) ||
         relationshipType === 'one-to-many' ||
         relationshipType === 'one-to-one' && ownerSide === false) {
-        renMapAnotDto = true;
-        break;
+        mappedRelsDto.push(idx)
     }
-} if(renMapAnotDto === true) { _%>
+}
+var renMapAnotDto = mappedRelsDto.length > 0; //Render Mapping Annotation during DTO to Entity conversion?
+if(renMapAnotDto === true) {
+_%>
     @Mappings(<% } %>
 <%_
 // var hasOAuthUser = false; // if OAuthuser, use a String id in fromId() method
-for (idx in relationships) {
+for (idx in mappedRelsDto) {
     const relationshipType = relationships[idx].relationshipType;
     const relationshipName = relationships[idx].relationshipName;
     // hasOAuthUser = (relationshipName === 'user' && authenticationType === 'oauth2');
     const relationshipNamePlural = relationships[idx].relationshipNamePlural;
+    const relationshipNameCapitalized = relationships[idx].relationshipNameCapitalized;
     const ownerSide = relationships[idx].ownerSide;
-    const comma = parseInt(idx, 10) ===relationships.length-1 ? '' : ',';
+    const isLast = parseInt(idx, 10) === mappedRelsDto.length-1;
+    const useComma = !isLast || ((relationshipType === 'one-to-many' || relationshipType === 'many-to-many') && fluentMethods);
+    const comma = useComma ? ',' : '';
     if (relationshipType === 'many-to-one' || (relationshipType === 'one-to-one' && ownerSide === true)) {
 _%>
         Mapping(source = "<%= relationshipName %>Id", target = "<%= relationshipName %>")<%= comma %>
@@ -102,16 +107,17 @@ _%>
         Mapping(target = "<%= relationshipNamePlural %>", ignore = true)<%= comma %>
             <%_ } else if (relationshipType === 'one-to-one' && ownerSide === false) { _%>
         Mapping(target = "<%= relationshipName %>", ignore = true)<%= comma %>
-            <%_ } _%>
+            <%_ }
+        if ((relationshipType === 'one-to-many' || relationshipType === 'many-to-many') && fluentMethods) { _%>
+        Mapping(target = "remove<%= relationshipNameCapitalized %>", ignore = true)<% if(!isLast) { %>,<% } %>
         <%_ } _%>
+    <%_ } _%>
     <%_ if (renMapAnotDto === true) { _%>
     )
     override fun toEntity(dto: <%= asDto(entityClass) %>): <%= asEntity(entityClass) %>
     <%_ } _%>
     <%_ if (databaseType === 'sql' || databaseType === 'mongodb') { _%>
 
-    fun fromId(id: <%= pkType %>?): <%= asEntity(entityClass) %>? {
-        return id?.let { <%= asEntity(entityClass) %>(it) }
-    }
+    fun fromId(id: <%= pkType %>?) = id?.let { <%= asEntity(entityClass) %>(it) }
 <%_ } _%>
 }

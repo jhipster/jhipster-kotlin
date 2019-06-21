@@ -37,8 +37,10 @@ class AuthorizationHeaderFilter(private val headerUtil: AuthorizationHeaderUtil)
 
     override fun run(): Any? {
         val ctx = RequestContext.getCurrentContext()
-        val authorizationHeader: Optional<String> = headerUtil.getAuthorizationHeader()
-        authorizationHeader.ifPresent { s -> ctx.addZuulRequestHeader(TokenRelayRequestInterceptor.AUTHORIZATION, s) }
+        val authorizationHeader = headerUtil.getAuthorizationHeader()
+        authorizationHeader?.run {
+            ctx.addZuulRequestHeader(TokenRelayRequestInterceptor.AUTHORIZATION, this)
+        }
         return null
     }
 }

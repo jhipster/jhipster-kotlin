@@ -33,6 +33,9 @@ import org.mockito.MockitoAnnotations
 import org.springframework.beans.factory.annotation.Autowired
 import org.springframework.beans.factory.annotation.Qualifier
 import org.springframework.boot.test.context.SpringBootTest
+<%_ if (messageBroker === 'kafka') { _%>
+import org.springframework.kafka.test.context.EmbeddedKafka
+<%_ } _%>
 import org.springframework.data.web.PageableHandlerMethodArgumentResolver
 import org.springframework.format.support.FormattingConversionService
 import org.springframework.http.MediaType
@@ -55,6 +58,9 @@ import org.springframework.test.web.servlet.result.MockMvcResultMatchers.status
 /**
  * Integration tests for the [AuditResource] REST controller.
  */
+<%_ if (messageBroker === 'kafka') { _%>
+@EmbeddedKafka
+<%_ } _%>
 <%_ if (authenticationType === 'oauth2') { _%>
 @SpringBootTest(classes = [<%= mainClass %>::class, TestSecurityConfiguration::class])
 <%_ } else { _%>
@@ -183,7 +189,7 @@ class AuditResourceIT {
     <%_ } _%>
     @Throws(Exception::class)
     fun testPersistentAuditEventEquals() {
-        equalsVerifier(PersistentAuditEvent::class.java)
+        equalsVerifier(PersistentAuditEvent::class)
         val auditEvent1 = PersistentAuditEvent(id = <% if (databaseType === 'sql') { %>1L<% } else { %>"id1"<% } %>)
         val auditEvent2 = PersistentAuditEvent(id = auditEvent1.id)
         assertThat(auditEvent1).isEqualTo(auditEvent2)

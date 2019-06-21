@@ -16,29 +16,23 @@
  See the License for the specific language governing permissions and
  limitations under the License.
 -%>
-package <%=packageName%>.web.rest.vm
+package <%=packageName%>.service
 
-import <%=packageName%>.service.dto.<%= asDto('User') %>
-<%_ if (authenticationType !== 'oauth2') { _%>
-import javax.validation.constraints.Size
-<%_ } _%>
+import org.slf4j.LoggerFactory
+import org.springframework.kafka.core.KafkaTemplate
+import org.springframework.stereotype.Service
 
-/**
- * View Model extending the [<%= asDto('User') %>], which is meant to be used in the user management UI.
- */
-class ManagedUserVM : <%= asDto('User') %>() {
-    <%_ if (authenticationType !== 'oauth2') { _%>
+@Service
+class <%= upperFirstCamelCase(baseName) %>KafkaProducer(private val kafkaTemplate: KafkaTemplate<String, String>) {
 
-    @field:Size(min = PASSWORD_MIN_LENGTH, max = PASSWORD_MAX_LENGTH)
-    var password: String? = null
-    <%_ } _%>
+    private val log = LoggerFactory.getLogger(<%= upperFirstCamelCase(baseName) %>KafkaProducer::class.java)
 
-    override fun toString() = "ManagedUserVM{${super.toString()}}"
-<%_ if (authenticationType !== 'oauth2') { _%>
+    fun sendMessage(message: String) {
+        log.info("Producing message to {} : {}", TOPIC, message)
+        this.kafkaTemplate.send(TOPIC, message)
+    }
 
     companion object {
-        const val PASSWORD_MIN_LENGTH: Int = 4
-        const val PASSWORD_MAX_LENGTH: Int = 100
+        private const val TOPIC = "topic_<%= baseName.toLowerCase() %>"
     }
-<%_ } _%>
 }
