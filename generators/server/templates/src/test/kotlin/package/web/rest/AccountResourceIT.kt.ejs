@@ -145,7 +145,6 @@ import <%= packageName %>.AbstractCassandraTest
 <%_ } _%>
 import <%= packageName %>.<%= mainClass %>
 import <%= packageName %>.security.ADMIN
-import <%= packageName %>.security.USER
 import <%= packageName %>.web.rest.errors.ExceptionTranslator
 import org.junit.jupiter.api.BeforeEach
 import org.junit.jupiter.api.Test
@@ -172,30 +171,34 @@ class AccountResourceIT <% if (databaseType === 'cassandra') { %>: AbstractCassa
 
     @BeforeEach
     fun setup() {
-        val accountUserMockResource = new AccountResource()
+        val accountUserMockResource = AccountResource()
         this.mockMvc = MockMvcBuilders.standaloneSetup(accountUserMockResource)
-                .setControllerAdvice(exceptionTranslator)
-                .build()
+            .setControllerAdvice(exceptionTranslator)
+            .build()
     }
 
     @Test
     @Throws(Exception::class)
-    @WithMockUser(username = "test", roles = "ADMIN")
+    @WithMockUser(username = "test", roles = ["ADMIN"])
     fun testGetExistingAccount() {
-        mockMvc.perform(get("/api/account")
-                .accept(MediaType.APPLICATION_JSON))
-                .andExpect(status().isOk())
-                .andExpect(content().contentType(MediaType.APPLICATION_JSON_UTF8_VALUE))
-                .andExpect(jsonPath("$.login").value("test"))
-                .andExpect(jsonPath("$.authorities").value(ADMIN))
+        mockMvc.perform(
+            get("/api/account")
+                .accept(MediaType.APPLICATION_JSON)
+        )
+            .andExpect(status().isOk)
+            .andExpect(content().contentType(MediaType.APPLICATION_JSON_UTF8_VALUE))
+            .andExpect(jsonPath("\$.login").value("test"))
+            .andExpect(jsonPath("\$.authorities").value(ADMIN))
     }
 
     @Test
     @Throws(Exception::class)
-    fun testGetUnknownAccount(){
-        mockMvc.perform(get("/api/account")
-                .accept(MediaType.APPLICATION_PROBLEM_JSON))
-                .andExpect(status().isInternalServerError())
+    fun testGetUnknownAccount() {
+        mockMvc.perform(
+            get("/api/account")
+                .accept(MediaType.APPLICATION_PROBLEM_JSON)
+        )
+            .andExpect(status().isInternalServerError)
     }
 }
 <%_ } else {  _%>
