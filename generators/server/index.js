@@ -53,7 +53,6 @@ module.exports = class extends ServerGenerator {
         const myCustomPhaseSteps = {
             setupConstants() {
                 this.MOCKITO_KOTLIN_VERSION = kotlinConstants.MOCKITO_KOTLIN_VERSION;
-                this.KTLINT_VERSION = kotlinConstants.KTLINT_VERSION;
                 this.DETEKT_CONFIG_FILE = kotlinConstants.DETEKT_CONFIG_FILE;
             }
         };
@@ -95,7 +94,7 @@ module.exports = class extends ServerGenerator {
                 if (this.buildTool === 'gradle') {
                     command = `${prefix}gradlew :ktlintFormat`;
                 } else if (this.buildTool === 'maven') {
-                    command = `${prefix}mvnw antrun:run@ktlint-format`;
+                    command = `${prefix}mvnw ktlint:format`;
                 }
                 if (command) {
                     const startTime = new Date();
