@@ -1806,7 +1806,7 @@ function writeFiles() {
                 this.addMavenPluginRepository('jcenter', 'https://jcenter.bintray.com/');
 
                 this.addMavenProperty('kotlin.version', kotlinConstants.KOTLIN_VERSION);
-                this.addMavenProperty('ktlint.version', kotlinConstants.KTLINT_VERSION);
+                this.addMavenProperty('ktlint-maven-plugin.version', kotlinConstants.KTLINT_MAVEN_VERSION);
                 this.addMavenProperty('maven-antrun-plugin.version', kotlinConstants.MAVEN_ANTRUN_VERSION);
                 this.addMavenProperty('detekt.version', kotlinConstants.DETEKT_VERSION);
                 this.addMavenProperty('detekt.configFile', `$\{project.basedir}/${kotlinConstants.DETEKT_CONFIG_FILE}`);
@@ -1977,42 +1977,17 @@ function writeFiles() {
                     '${maven-compiler-plugin.version}',
                     defaultCompileOther
                 );
+                const ktlintMavenOther = `                <executions>
+                    <execution>
+                        <id>format</id>
+                        <goals>
+                            <goal>format</goal>
+                        </goals>
+                    </execution>
+                </executions>`;
+                this.addMavenPlugin('com.github.gantsign.maven', 'ktlint-maven-plugin', '${ktlint-maven-plugin.version}', ktlintMavenOther);
 
                 const antRunOther = `                <executions>
-                    <execution>
-                        <id>ktlint-format</id>
-                        <phase>validate</phase>
-                        <configuration>
-                            <target name="ktlint">
-                                <java taskname="ktlint" dir="$\{basedir}" fork="true" failonerror="false"
-                                      classpathref="maven.plugin.classpath" classname="com.github.shyiko.ktlint.Main">
-                                    <arg value="-F"/>
-                                    <arg value="src/**/*.kt"/>
-                                </java>
-                            </target>
-                        </configuration>
-                        <goals>
-                            <goal>run</goal>
-                        </goals>
-                    </execution>
-                    <execution>
-                        <id>ktlint</id>
-                        <configuration>
-                            <target name="ktlint">
-                                <java taskname="ktlint" dir="$\{basedir}" fork="true" failonerror="false"
-                                      classpathref="maven.plugin.classpath" classname="com.github.shyiko.ktlint.Main">
-                                    <arg value="src/**/*.kt"/>
-                                    <!-- to generate report in checkstyle format prepend following args: -->
-                                    <!--<arg value="&#45;&#45;reporter=plain"/>-->
-                                    <!--<arg value="&#45;&#45;reporter=checkstyle,output=$\{project.build.directory}/ktlint.xml"/>-->
-                                    <!-- see https://github.com/shyiko/ktlint#usage for more -->
-                                </java>
-                            </target>
-                        </configuration>
-                        <goals>
-                            <goal>run</goal>
-                        </goals>
-                    </execution>
                     <execution>
                         <!-- This can be run separately with mvn antrun:run@detekt -->
                         <id>detekt</id>
@@ -2040,11 +2015,6 @@ function writeFiles() {
                     </execution>
                 </executions>
                 <dependencies>
-                    <dependency>
-                        <groupId>com.github.shyiko</groupId>
-                        <artifactId>ktlint</artifactId>
-                        <version>$\{ktlint.version}</version>
-                    </dependency>
                     <dependency>
                         <groupId>io.gitlab.arturbosch.detekt</groupId>
                         <artifactId>detekt-cli</artifactId>
