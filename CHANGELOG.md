@@ -1,3 +1,18 @@
+<a name="1.0.0"></a>
+
+# [1.0.0](https://github.com/jhipster/jhipster-kotlin/compare/0.8.1...1.0.0) (2019-06-27)
+- 🎉🎉 Well we did it!!! Thanks to everyone contributed and anyone using. 🎉🎉
+- ✨✨ A brand new logo for KHipster ✨✨
+- Upgraded JHipster support to 6.1.2
+- Upgraded Ktlint support to 0.33.0
+- Updated Detekt support to 1.0.0-RC15
+- Updated Kotlin support to 1.3.40
+- Use the real Kotlin advantages
+    - moving functions top-level
+    - Use `==` instead of `Object.equals`
+    - Replace `@SuppressWarnings` with `@Suppress`
+
+
 <a name="0.8.1"></a>
 
 # [0.8.1](https://github.com/jhipster/jhipster-kotlin/compare/0.8.0...0.8.1) (2019-05-19)
