@@ -1,10 +1,10 @@
-> ## 🛠 Mode: Development
+> ## 🛠 Mode: Just Released 🦄🦄🦄
 >
-> JHipster-Kotlin is currently in development. We encourage you to use it and give us your feedback.
+>  We encourage you to use it and give us your feedback.
 
 <div align="center">
 	<a href="https://github.com/jhipster/jhipster-kotlin">
-		<img width="160" height="200" src="https://github.com/jhipster/jhipster-kotlin/blob/master/logo-khipster.png">
+		<img width="200" height="160" src="https://github.com/jhipster/jhipster-kotlin/blob/master/logo-khipster.png">
 	</a>
 </div>
 
