@@ -36,6 +36,9 @@ import org.mockito.MockitoAnnotations
 import org.mockito.Spy
 import org.springframework.beans.factory.annotation.Autowired
 import org.springframework.boot.test.context.SpringBootTest
+<%_ if (messageBroker === 'kafka') { _%>
+import org.springframework.kafka.test.context.EmbeddedKafka
+<%_ } _%>
 import org.springframework.context.MessageSource
 import org.springframework.mail.MailSendException
 import org.springframework.mail.javamail.JavaMailSenderImpl
@@ -46,12 +49,25 @@ import javax.mail.internet.MimeBodyPart
 import javax.mail.internet.MimeMessage
 import javax.mail.internet.MimeMultipart
 import java.io.ByteArrayOutputStream
+import java.io.File
+import java.io.FileInputStream
+import java.io.InputStreamReader
+import java.net.URI
+import java.net.URL
+import java.nio.charset.Charset
+import java.util.Properties
+import java.util.regex.Pattern
 
 import org.assertj.core.api.Assertions.assertThat
+import org.mockito.Mockito.atLeastOnce
+import kotlin.test.assertNotNull
 
 /**
  * Integration tests for [MailService].
  */
+<%_ if (messageBroker === 'kafka') { _%>
+@EmbeddedKafka
+<%_ } _%>
 @SpringBootTest(classes = [<%= mainClass %>::class])
 class MailServiceIT <% if (databaseType === 'cassandra') { %>: AbstractCassandraTest() <% } %>{
 
@@ -75,15 +91,14 @@ class MailServiceIT <% if (databaseType === 'cassandra') { %>: AbstractCassandra
     @BeforeEach
     fun setup() {
         MockitoAnnotations.initMocks(this)
-        doNothing().`when`<JavaMailSenderImpl>(javaMailSender).send(any(MimeMessage::class.java))
+        doNothing().`when`(javaMailSender).send(any(MimeMessage::class.java))
         mailService = MailService(jHipsterProperties, javaMailSender, messageSource, templateEngine)
     }
 
     @Test
-    @Throws(Exception::class)
     fun testSendEmail() {
         mailService.sendEmail("john.doe@example.com", "testSubject", "testContent", isMultipart = false, isHtml = false)
-        verify<JavaMailSenderImpl>(javaMailSender).send(messageCaptor.capture())
+        verify(javaMailSender).send(messageCaptor.capture())
         val message = messageCaptor.value
         assertThat(message.subject).isEqualTo("testSubject")
         assertThat(message.allRecipients[0].toString()).isEqualTo("john.doe@example.com")
@@ -94,10 +109,9 @@ class MailServiceIT <% if (databaseType === 'cassandra') { %>: AbstractCassandra
     }
 
     @Test
-    @Throws(Exception::class)
     fun testSendHtmlEmail() {
         mailService.sendEmail("john.doe@example.com", "testSubject", "testContent", isMultipart = false, isHtml = true)
-        verify<JavaMailSenderImpl>(javaMailSender).send(messageCaptor.capture())
+        verify(javaMailSender).send(messageCaptor.capture())
         val message = messageCaptor.value
         assertThat(message.subject).isEqualTo("testSubject")
         assertThat(message.allRecipients[0].toString()).isEqualTo("john.doe@example.com")
@@ -108,10 +122,9 @@ class MailServiceIT <% if (databaseType === 'cassandra') { %>: AbstractCassandra
     }
 
     @Test
-    @Throws(Exception::class)
     fun testSendMultipartEmail() {
         mailService.sendEmail("john.doe@example.com", "testSubject", "testContent", isMultipart = true, isHtml = false)
-        verify<JavaMailSenderImpl>(javaMailSender).send(messageCaptor.capture())
+        verify(javaMailSender).send(messageCaptor.capture())
         val message = messageCaptor.value
         val mp = message.content as MimeMultipart
         val part = (mp.getBodyPart(0).content as MimeMultipart).getBodyPart(0) as MimeBodyPart
@@ -126,10 +139,9 @@ class MailServiceIT <% if (databaseType === 'cassandra') { %>: AbstractCassandra
     }
 
     @Test
-    @Throws(Exception::class)
     fun testSendMultipartHtmlEmail() {
         mailService.sendEmail("john.doe@example.com", "testSubject", "testContent", isMultipart = true, isHtml = true)
-        verify<JavaMailSenderImpl>(javaMailSender).send(messageCaptor.capture())
+        verify(javaMailSender).send(messageCaptor.capture())
         val message = messageCaptor.value
         val mp = message.content as MimeMultipart
         val part = (mp.getBodyPart(0).content as MimeMultipart).getBodyPart(0) as MimeBodyPart
@@ -144,7 +156,6 @@ class MailServiceIT <% if (databaseType === 'cassandra') { %>: AbstractCassandra
     }
 
     @Test
-    @Throws(Exception::class)
     fun testSendEmailFromTemplate() {
         val user = <%= asEntity('User') %>(
             login = "john",
@@ -152,7 +163,7 @@ class MailServiceIT <% if (databaseType === 'cassandra') { %>: AbstractCassandra
             langKey = "en"
         )
         mailService.sendEmailFromTemplate(user, "mail/testEmail", "email.test.title")
-        verify<JavaMailSenderImpl>(javaMailSender).send(messageCaptor.capture())
+        verify(javaMailSender).send(messageCaptor.capture())
         val message = messageCaptor.value
         assertThat(message.subject).isEqualTo("test title")
         assertThat(message.allRecipients[0].toString()).isEqualTo(user.email)
@@ -163,7 +174,6 @@ class MailServiceIT <% if (databaseType === 'cassandra') { %>: AbstractCassandra
     <%_ if (authenticationType !== 'oauth2') { _%>
 
     @Test
-    @Throws(Exception::class)
     fun testSendActivationEmail() {
         val user = <%= asEntity('User') %>(
             langKey = DEFAULT_LANGUAGE,
@@ -171,7 +181,7 @@ class MailServiceIT <% if (databaseType === 'cassandra') { %>: AbstractCassandra
             email = "john.doe@example.com"
         )
         mailService.sendActivationEmail(user)
-        verify<JavaMailSenderImpl>(javaMailSender).send(messageCaptor.capture())
+        verify(javaMailSender).send(messageCaptor.capture())
         val message = messageCaptor.value
         assertThat(message.allRecipients[0].toString()).isEqualTo(user.email)
         assertThat(message.from[0].toString()).isEqualTo(jHipsterProperties.mail.from)
@@ -180,7 +190,6 @@ class MailServiceIT <% if (databaseType === 'cassandra') { %>: AbstractCassandra
     }
 
     @Test
-    @Throws(Exception::class)
     fun testCreationEmail() {
         val user = <%= asEntity('User') %>(
             langKey = DEFAULT_LANGUAGE,
@@ -188,7 +197,7 @@ class MailServiceIT <% if (databaseType === 'cassandra') { %>: AbstractCassandra
             email = "john.doe@example.com"
         )
         mailService.sendCreationEmail(user)
-        verify<JavaMailSenderImpl>(javaMailSender).send(messageCaptor.capture())
+        verify(javaMailSender).send(messageCaptor.capture())
         val message = messageCaptor.value
         assertThat(message.allRecipients[0].toString()).isEqualTo(user.email)
         assertThat(message.from[0].toString()).isEqualTo(jHipsterProperties.mail.from)
@@ -197,7 +206,6 @@ class MailServiceIT <% if (databaseType === 'cassandra') { %>: AbstractCassandra
     }
 
     @Test
-    @Throws(Exception::class)
     fun testSendPasswordResetMail() {
         val user = <%= asEntity('User') %>(
             langKey = DEFAULT_LANGUAGE,
@@ -205,7 +213,7 @@ class MailServiceIT <% if (databaseType === 'cassandra') { %>: AbstractCassandra
             email = "john.doe@example.com"
         )
         mailService.sendPasswordResetMail(user)
-        verify<JavaMailSenderImpl>(javaMailSender).send(messageCaptor.capture())
+        verify(javaMailSender).send(messageCaptor.capture())
         val message = messageCaptor.value
         assertThat(message.allRecipients[0].toString()).isEqualTo(user.email)
         assertThat(message.from[0].toString()).isEqualTo(jHipsterProperties.mail.from)
@@ -215,11 +223,60 @@ class MailServiceIT <% if (databaseType === 'cassandra') { %>: AbstractCassandra
     <%_ } _%>
 
     @Test
-    @Throws(Exception::class)
     fun testSendEmailWithException() {
         doThrow(MailSendException::class.java)
-            .`when`<JavaMailSenderImpl>(javaMailSender)
+            .`when`(javaMailSender)
             .send(any(MimeMessage::class.java))
         mailService.sendEmail("john.doe@example.com", "testSubject", "testContent", isMultipart = false, isHtml = false)
+    }
+
+    @Test
+    fun testSendLocalizedEmailForAllSupportedLanguages() {
+        val user = <%= asEntity('User') %>(
+            login = "john",
+            email = "john.doe@example.com"
+        )
+        for (langKey in languages) {
+            user.langKey = langKey
+            mailService.sendEmailFromTemplate(user, "mail/testEmail", "email.test.title")
+            verify(javaMailSender, atLeastOnce()).send(messageCaptor.capture())
+            val message = messageCaptor.value
+
+            val propertyFilePath = "i18n/messages_${getJavaLocale(langKey)}.properties"
+            val resource = this::class.java.classLoader.getResource(propertyFilePath)
+            assertNotNull(resource)
+            val file = File(URI(resource.file).path)
+            val properties = Properties()
+            properties.load(InputStreamReader(FileInputStream(file), Charset.forName("UTF-8")))
+
+            val emailTitle = properties["email.test.title"] as String
+            assertThat(message.subject).isEqualTo(emailTitle)
+            assertThat(message.content.toString())
+                .isEqualToNormalizingNewlines("<html>$emailTitle, http://127.0.0.1:8080, john</html>\n")
+        }
+    }
+
+    /**
+     * Convert a lang key to the Java locale.
+     */
+    private fun getJavaLocale(langKey: String): String {
+        var javaLangKey = langKey
+        val matcher2 = PATTERN_LOCALE_2.matcher(langKey)
+        if (matcher2.matches()) {
+            javaLangKey = "${matcher2.group(1)}_${matcher2.group(2).toUpperCase()}"
+        }
+        val matcher3 = PATTERN_LOCALE_3.matcher(langKey)
+        if (matcher3.matches()) {
+            javaLangKey = "${matcher3.group(1)}_${matcher3.group(2)}_${matcher3.group(3).toUpperCase()}"
+        }
+        return javaLangKey
+    }
+
+    companion object {
+        private val languages = arrayOf<String>(
+            // jhipster-needle-i18n-language-constant - JHipster will add/remove languages in this array
+        )
+        private val PATTERN_LOCALE_3 = Pattern.compile("([a-z]{2})-([a-zA-Z]{4})-([a-z]{2})")
+        private val PATTERN_LOCALE_2 = Pattern.compile("([a-z]{2})-([a-z]{2})")
     }
 }

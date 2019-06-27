@@ -502,6 +502,11 @@ const serverFiles = {
             path: SERVER_MAIN_KOTLIN_SRC_DIR,
             templates: [
                 {
+                    file: 'package/web/rest/AuthInfoResource.kt',
+                    renameTo: generator => `${generator.javaDir}web/rest/AuthInfoResource.kt`,
+                    useBluePrint: true
+                },
+                {
                     file: 'package/web/rest/LogoutResource.kt',
                     renameTo: generator => `${generator.javaDir}web/rest/LogoutResource.kt`,
                     useBluePrint: true
@@ -914,17 +919,6 @@ const serverFiles = {
                     useBluePrint: true
                 }
             ]
-        },
-        {
-            condition: generator => generator.messageBroker === 'kafka',
-            path: SERVER_MAIN_KOTLIN_SRC_DIR,
-            templates: [
-                {
-                    file: 'package/config/MessagingConfiguration.kt',
-                    renameTo: generator => `${generator.javaDir}config/MessagingConfiguration.kt`,
-                    useBluePrint: true
-                }
-            ]
         }
     ],
     serverJavaDomain: [
@@ -954,6 +948,24 @@ const serverFiles = {
                 {
                     file: 'package/service/util/RandomUtil.kt',
                     renameTo: generator => `${generator.javaDir}service/util/RandomUtil.kt`,
+                    useBluePrint: true
+                }
+            ]
+        },
+        {
+            condition: generator => generator.messageBroker === 'kafka',
+            path: SERVER_MAIN_KOTLIN_SRC_DIR,
+            templates: [
+                {
+                    file: 'package/service/KafkaConsumer.kt',
+                    renameTo: generator =>
+                        `${generator.javaDir}service/${generator.upperFirstCamelCase(generator.baseName)}KafkaConsumer.kt`,
+                    useBluePrint: true
+                },
+                {
+                    file: 'package/service/KafkaProducer.kt',
+                    renameTo: generator =>
+                        `${generator.javaDir}service/${generator.upperFirstCamelCase(generator.baseName)}KafkaProducer.kt`,
                     useBluePrint: true
                 }
             ]
@@ -1020,6 +1032,18 @@ const serverFiles = {
                 {
                     file: 'package/web/rest/ClientForwardController.kt',
                     renameTo: generator => `${generator.javaDir}web/rest/ClientForwardController.kt`,
+                    useBluePrint: true
+                }
+            ]
+        },
+        {
+            condition: generator => generator.messageBroker === 'kafka',
+            path: SERVER_MAIN_KOTLIN_SRC_DIR,
+            templates: [
+                {
+                    file: 'package/web/rest/KafkaResource.kt',
+                    renameTo: generator =>
+                        `${generator.javaDir}web/rest/${generator.upperFirstCamelCase(generator.baseName)}KafkaResource.kt`,
                     useBluePrint: true
                 }
             ]
@@ -1276,22 +1300,31 @@ const serverFiles = {
                     useBluePrint: true
                 }
             ]
+        },
+        {
+            condition: generator => generator.messageBroker === 'kafka',
+            path: SERVER_TEST_SRC_KOTLIN_DIR,
+            templates: [
+                {
+                    file: 'package/web/rest/KafkaResourceIT.kt',
+                    renameTo: generator =>
+                        `${generator.testDir}web/rest/${generator.upperFirstCamelCase(generator.baseName)}KafkaResourceIT.kt`,
+                    useBluePrint: true
+                }
+            ]
         }
     ],
     serverJavaUserManagement: [
         {
             condition: generator =>
-                (generator.skipUserManagement &&
-                    generator.authenticationType === 'oauth2' &&
-                    generator.applicationType !== 'microservice') ||
+                (generator.authenticationType === 'oauth2' && generator.applicationType !== 'microservice') ||
                 (!generator.skipUserManagement && generator.databaseType === 'sql'),
             path: SERVER_MAIN_RES_DIR,
             templates: ['config/liquibase/data/user.csv']
         },
         {
             condition: generator =>
-                (generator.skipUserManagement &&
-                    generator.authenticationType === 'oauth2' &&
+                (generator.authenticationType === 'oauth2' &&
                     generator.applicationType !== 'microservice' &&
                     generator.databaseType === 'sql') ||
                 (!generator.skipUserManagement && generator.databaseType === 'sql'),
@@ -1299,22 +1332,12 @@ const serverFiles = {
             templates: ['config/liquibase/data/authority.csv', 'config/liquibase/data/user_authority.csv']
         },
         {
-            condition: generator => generator.skipUserManagement && generator.authenticationType === 'oauth2',
+            condition: generator => generator.authenticationType === 'oauth2',
             path: SERVER_MAIN_KOTLIN_SRC_DIR,
             templates: [
                 {
                     file: 'package/config/Constants.kt',
                     renameTo: generator => `${generator.javaDir}config/Constants.kt`,
-                    useBluePrint: true
-                },
-                {
-                    file: 'package/domain/User.kt',
-                    renameTo: generator => `${generator.javaDir}domain/${generator.asEntity('User')}.kt`,
-                    useBluePrint: true
-                },
-                {
-                    file: 'package/domain/Authority.kt',
-                    renameTo: generator => `${generator.javaDir}domain/Authority.kt`,
                     useBluePrint: true
                 },
                 {
@@ -1325,6 +1348,22 @@ const serverFiles = {
                 {
                     file: 'package/service/dto/UserDTO.kt',
                     renameTo: generator => `${generator.javaDir}service/dto/${generator.asDto('User')}.kt`,
+                    useBluePrint: true
+                }
+            ]
+        },
+        {
+            condition: generator => generator.authenticationType === 'oauth2' && generator.databaseType !== 'no',
+            path: SERVER_MAIN_KOTLIN_SRC_DIR,
+            templates: [
+                {
+                    file: 'package/domain/User.kt',
+                    renameTo: generator => `${generator.javaDir}domain/${generator.asEntity('User')}.kt`,
+                    useBluePrint: true
+                },
+                {
+                    file: 'package/domain/Authority.kt',
+                    renameTo: generator => `${generator.javaDir}domain/Authority.kt`,
                     useBluePrint: true
                 },
                 {
@@ -1369,14 +1408,20 @@ const serverFiles = {
             ]
         },
         {
-            condition: generator => generator.skipUserManagement && generator.authenticationType === 'oauth2',
+            condition: generator => generator.authenticationType === 'oauth2',
             path: SERVER_TEST_SRC_KOTLIN_DIR,
             templates: [
                 {
                     file: 'package/service/UserServiceIT.kt',
                     renameTo: generator => `${generator.testDir}service/UserServiceIT.kt`,
                     useBluePrint: true
-                },
+                }
+            ]
+        },
+        {
+            condition: generator => generator.authenticationType === 'oauth2' && generator.databaseType !== 'no',
+            path: SERVER_TEST_SRC_KOTLIN_DIR,
+            templates: [
                 {
                     file: 'package/service/mapper/UserMapperIT.kt',
                     renameTo: generator => `${generator.testDir}service/mapper/UserMapperIT.kt`,
@@ -1404,8 +1449,7 @@ const serverFiles = {
             ]
         },
         {
-            condition: generator =>
-                generator.skipUserManagement && generator.authenticationType === 'oauth2' && generator.searchEngine === 'elasticsearch',
+            condition: generator => generator.authenticationType === 'oauth2' && generator.searchEngine === 'elasticsearch',
             path: SERVER_MAIN_KOTLIN_SRC_DIR,
             templates: [
                 {
@@ -1416,8 +1460,7 @@ const serverFiles = {
             ]
         },
         {
-            condition: generator =>
-                generator.skipUserManagement && generator.authenticationType === 'oauth2' && generator.searchEngine === 'elasticsearch',
+            condition: generator => generator.authenticationType === 'oauth2' && generator.searchEngine === 'elasticsearch',
             path: SERVER_TEST_SRC_KOTLIN_DIR,
             templates: [
                 {
@@ -1428,10 +1471,7 @@ const serverFiles = {
             ]
         },
         {
-            condition: generator =>
-                generator.skipUserManagement &&
-                generator.authenticationType === 'oauth2' &&
-                ['sql', 'mongodb'].includes(generator.databaseType),
+            condition: generator => generator.authenticationType === 'oauth2' && ['sql', 'mongodb'].includes(generator.databaseType),
             path: SERVER_MAIN_KOTLIN_SRC_DIR,
             templates: [
                 {
@@ -1462,10 +1502,7 @@ const serverFiles = {
             ]
         },
         {
-            condition: generator =>
-                generator.skipUserManagement &&
-                generator.authenticationType === 'oauth2' &&
-                ['sql', 'mongodb'].includes(generator.databaseType),
+            condition: generator => generator.authenticationType === 'oauth2' && ['sql', 'mongodb'].includes(generator.databaseType),
             path: SERVER_TEST_SRC_KOTLIN_DIR,
             templates: [
                 {
@@ -1769,7 +1806,7 @@ function writeFiles() {
                 this.addMavenPluginRepository('jcenter', 'https://jcenter.bintray.com/');
 
                 this.addMavenProperty('kotlin.version', kotlinConstants.KOTLIN_VERSION);
-                this.addMavenProperty('ktlint.version', kotlinConstants.KTLINT_VERSION);
+                this.addMavenProperty('ktlint-maven-plugin.version', kotlinConstants.KTLINT_MAVEN_VERSION);
                 this.addMavenProperty('maven-antrun-plugin.version', kotlinConstants.MAVEN_ANTRUN_VERSION);
                 this.addMavenProperty('detekt.version', kotlinConstants.DETEKT_VERSION);
                 this.addMavenProperty('detekt.configFile', `$\{project.basedir}/${kotlinConstants.DETEKT_CONFIG_FILE}`);
@@ -1819,16 +1856,12 @@ function writeFiles() {
                                     <groupId>org.hibernate</groupId>
                                     <artifactId>hibernate-jpamodelgen</artifactId>
                                     <version>$\{hibernate.version}</version>
-                                </path>${
-                                    this.authenticationType !== 'uaa'
-                                        ? `
+                                </path>
                                 <path>
                                     <groupId>org.glassfish.jaxb</groupId>
                                     <artifactId>jaxb-runtime</artifactId>
                                     <version>$\{jaxb-runtime.version}</version>
                                 </path>`
-                                        : ''
-                                }`
                                         : ''
                                 }
                             </annotationProcessorPaths>
@@ -1944,42 +1977,17 @@ function writeFiles() {
                     '${maven-compiler-plugin.version}',
                     defaultCompileOther
                 );
+                const ktlintMavenOther = `                <executions>
+                    <execution>
+                        <id>format</id>
+                        <goals>
+                            <goal>format</goal>
+                        </goals>
+                    </execution>
+                </executions>`;
+                this.addMavenPlugin('com.github.gantsign.maven', 'ktlint-maven-plugin', '${ktlint-maven-plugin.version}', ktlintMavenOther);
 
                 const antRunOther = `                <executions>
-                    <execution>
-                        <id>ktlint-format</id>
-                        <phase>validate</phase>
-                        <configuration>
-                            <target name="ktlint">
-                                <java taskname="ktlint" dir="$\{basedir}" fork="true" failonerror="false"
-                                      classpathref="maven.plugin.classpath" classname="com.github.shyiko.ktlint.Main">
-                                    <arg value="-F"/>
-                                    <arg value="src/**/*.kt"/>
-                                </java>
-                            </target>
-                        </configuration>
-                        <goals>
-                            <goal>run</goal>
-                        </goals>
-                    </execution>
-                    <execution>
-                        <id>ktlint</id>
-                        <configuration>
-                            <target name="ktlint">
-                                <java taskname="ktlint" dir="$\{basedir}" fork="true" failonerror="false"
-                                      classpathref="maven.plugin.classpath" classname="com.github.shyiko.ktlint.Main">
-                                    <arg value="src/**/*.kt"/>
-                                    <!-- to generate report in checkstyle format prepend following args: -->
-                                    <!--<arg value="&#45;&#45;reporter=plain"/>-->
-                                    <!--<arg value="&#45;&#45;reporter=checkstyle,output=$\{project.build.directory}/ktlint.xml"/>-->
-                                    <!-- see https://github.com/shyiko/ktlint#usage for more -->
-                                </java>
-                            </target>
-                        </configuration>
-                        <goals>
-                            <goal>run</goal>
-                        </goals>
-                    </execution>
                     <execution>
                         <!-- This can be run separately with mvn antrun:run@detekt -->
                         <id>detekt</id>
@@ -2007,11 +2015,6 @@ function writeFiles() {
                     </execution>
                 </executions>
                 <dependencies>
-                    <dependency>
-                        <groupId>com.github.shyiko</groupId>
-                        <artifactId>ktlint</artifactId>
-                        <version>$\{ktlint.version}</version>
-                    </dependency>
                     <dependency>
                         <groupId>io.gitlab.arturbosch.detekt</groupId>
                         <artifactId>detekt-cli</artifactId>

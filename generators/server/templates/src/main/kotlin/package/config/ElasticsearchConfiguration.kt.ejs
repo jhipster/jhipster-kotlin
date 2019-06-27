@@ -50,26 +50,30 @@ import java.io.IOException
 class ElasticsearchConfiguration(private val mapper: ObjectMapper) {
 
     @Bean
-    fun getEntityMapper(): EntityMapper {
-        return CustomEntityMapper(mapper)
-    }
+    fun getEntityMapper() = CustomEntityMapper(mapper)
 
     @Bean
     @Primary
     fun elasticsearchTemplate(
         jestClient: JestClient,
         elasticsearchConverter: ElasticsearchConverter,
+        <%_ if (databaseType !== 'mongodb') { _%>
         simpleElasticsearchMappingContext: SimpleElasticsearchMappingContext,
+        <%_ } _%>
         mapper: EntityMapper
     ): ElasticsearchOperations {
+        <%_ if (databaseType === 'mongodb') { _%>
+        val mappingContext = CustomElasticsearchMappingContext()
+        <%_ } _%>
         return JestElasticsearchTemplate(
             jestClient,
             <%_ if (databaseType === 'mongodb') { _%>
-            MappingElasticsearchConverter(CustomElasticsearchMappingContext()),
+            MappingElasticsearchConverter(mappingContext),
+            DefaultJestResultsMapper(mappingContext, mapper))
             <%_ } else { _%>
             elasticsearchConverter,
-            <%_ } _%>
             DefaultJestResultsMapper(simpleElasticsearchMappingContext, mapper))
+            <%_ } _%>
     }
 
     inner class CustomEntityMapper(private val objectMapper: ObjectMapper) : EntityMapper {
@@ -83,14 +87,10 @@ class ElasticsearchConfiguration(private val mapper: ObjectMapper) {
         }
 
         @Throws(IOException::class)
-        override fun mapToString(`object`: Any): String {
-            return objectMapper.writeValueAsString(`object`)
-        }
+        override fun mapToString(`object`: Any) = objectMapper.writeValueAsString(`object`)
 
         @Throws(IOException::class)
-        override fun <T> mapToObject(source: String, clazz: Class<T>): T {
-            return objectMapper.readValue(source, clazz)
-        }
+        override fun <T> mapToObject(source: String, clazz: Class<T>) = objectMapper.readValue(source, clazz)
     }
 }
 <%_ if (databaseType === 'mongodb') { _%>
@@ -98,17 +98,14 @@ class ElasticsearchConfiguration(private val mapper: ObjectMapper) {
 internal class CustomElasticsearchMappingContext : SimpleElasticsearchMappingContext() {
 
     override fun createPersistentProperty(property: Property, owner: SimpleElasticsearchPersistentEntity<*>,
-                                          simpleTypeHolder: SimpleTypeHolder): ElasticsearchPersistentProperty {
-        return CustomElasticsearchPersistentProperty(property, owner, simpleTypeHolder)
-    }
+                                          simpleTypeHolder: SimpleTypeHolder): ElasticsearchPersistentProperty =
+        CustomElasticsearchPersistentProperty(property, owner, simpleTypeHolder)
 }
 
 internal class CustomElasticsearchPersistentProperty(property: Property, owner: PersistentEntity<*, *>,
                                                      simpleTypeHolder: SimpleTypeHolder
 ) : SimpleElasticsearchPersistentProperty(property, owner, simpleTypeHolder) {
 
-    override fun isAssociation(): Boolean {
-        return false
-    }
+    override fun isAssociation() = false
 }
 <%_ } _%>

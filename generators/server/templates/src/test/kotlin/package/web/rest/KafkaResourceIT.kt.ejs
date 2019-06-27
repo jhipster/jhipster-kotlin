@@ -16,56 +16,40 @@
  See the License for the specific language governing permissions and
  limitations under the License.
 -%>
-package <%=packageName%>.web.rest
+package <%= packageName %>.web.rest
 
-import <%=packageName%>.<%= mainClass %>
-import org.junit.jupiter.api.BeforeEach;
-import org.junit.jupiter.api.Test;
-import org.mockito.MockitoAnnotations
+import <%= packageName %>.<%= mainClass %>
+import <%= packageName %>.service.<%= upperFirstCamelCase(baseName) %>KafkaProducer
+import org.junit.jupiter.api.BeforeEach
+import org.junit.jupiter.api.Test
+import org.springframework.beans.factory.annotation.Autowired
 import org.springframework.boot.test.context.SpringBootTest
-<%_ if (messageBroker === 'kafka') { _%>
 import org.springframework.kafka.test.context.EmbeddedKafka
-<%_ } _%>
 import org.springframework.test.web.servlet.MockMvc
 import org.springframework.test.web.servlet.setup.MockMvcBuilders
 
-<%_ for(let idx in mockRequestImports) { _%>
-import <%= mockRequestImports[idx] %>
-<%_ } _%>
+import org.junit.jupiter.api.Assertions.*
+import org.springframework.test.web.servlet.request.MockMvcRequestBuilders.post
 import org.springframework.test.web.servlet.result.MockMvcResultMatchers.status
-/**
- * Test class for the <%= controllerClass %> REST controller.
- *
- * @see <%= controllerClass %>
- */
-<%_ if (messageBroker === 'kafka') { _%>
+
 @EmbeddedKafka
-<%_ } _%>
-@SpringBootTest(classes = <%= mainClass %>.class)
-class <%= controllerClass %>IT {
+@SpringBootTest(classes = [<%= mainClass %>::class])
+class <%= upperFirstCamelCase(baseName) %>KafkaResourceIT(
+    private val kafkaProducer: <%= upperFirstCamelCase(baseName) %>KafkaProducer
+) {
 
     private lateinit var restMockMvc: MockMvc
 
     @BeforeEach
-    fun setUp() {
-        MockitoAnnotations.initMocks(this)
+    fun setup() {
+        val kafkaResource = <%= upperFirstCamelCase(baseName) %>KafkaResource(kafkaProducer)
 
-        <%= controllerClass %> <%= controllerInstance %> = new <%= controllerClass %>()
-        restMockMvc = MockMvcBuilders
-            .standaloneSetup(<%= controllerInstance %>)
+        this.restMockMvc = MockMvcBuilders.standaloneSetup(kafkaResource)
             .build()
     }
-    <%_ for(let idx in controllerActions) { _%>
 
-    /**
-    * Test <%= controllerActions[idx].actionName %>
-    */
     @Test
-    @Throws(Exception::class)
-    fun test<%= controllerActions[idx].actionNameUF %>() {
-        restMockMvc.perform(<%= controllerActions[idx].actionMethod.toLowerCase() %>("/api/<%= apiPrefix %>/<%= controllerActions[idx].actionPath %>"))
+    fun sendMessageToKafkaTopic() =
+        restMockMvc.perform(post("/api/<%= dasherizedBaseName %>-kafka/publish?message=yolo"))
             .andExpect(status().isOk)
-    }
-    <%_ } _%>
-
 }

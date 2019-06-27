@@ -59,10 +59,12 @@ import org.springframework.security.crypto.password.PasswordEncoder
 <%_ if (authenticationType === 'oauth2') { _%>
 import <%= packageName %>.security.oauth2.AudienceValidator
 import org.springframework.security.oauth2.core.DelegatingOAuth2TokenValidator
+import org.springframework.security.oauth2.jwt.Jwt
 import org.springframework.security.oauth2.jwt.JwtDecoder
 import org.springframework.security.oauth2.jwt.JwtDecoders
 import org.springframework.security.oauth2.jwt.JwtValidators
 import org.springframework.security.oauth2.jwt.NimbusJwtDecoderJwkSupport
+import org.springframework.security.oauth2.server.resource.authentication.JwtAuthenticationConverter
     <%_ if (applicationType === 'gateway') { _%>
 import <%=packageName%>.security.oauth2.AuthorizationHeaderFilter
 import <%=packageName%>.security.oauth2.AuthorizationHeaderUtil
@@ -70,8 +72,10 @@ import <%=packageName%>.security.oauth2.AuthorizationHeaderUtil
 import org.springframework.beans.factory.annotation.Value
 import org.springframework.security.core.GrantedAuthority
 import org.springframework.security.core.authority.SimpleGrantedAuthority
+    <%_ if (applicationType !== 'microservice') { _%>
 import org.springframework.security.core.authority.mapping.GrantedAuthoritiesMapper
 import org.springframework.security.oauth2.core.oidc.user.OidcUserAuthority
+    <%_ } _%>
 <%_ } _%>
 <%_ if (authenticationType === 'session') { _%>
     <%_ if (!skipUserManagement) { _%>
@@ -87,6 +91,7 @@ import org.springframework.security.web.csrf.CsrfFilter
 <%_ if (authenticationType === 'jwt' && applicationType !== 'microservice') { _%>
 import org.springframework.security.web.authentication.UsernamePasswordAuthenticationFilter
 <%_ } _%>
+import org.springframework.security.web.header.writers.ReferrerPolicyHeaderWriter
 <%_ if (applicationType !== 'microservice') { _%>
 import org.springframework.web.filter.CorsFilter
 <%_ } _%>
@@ -116,28 +121,20 @@ class SecurityConfiguration(
     <%_ if (authenticationType === 'session') { _%>
 
     @Bean
-    fun ajaxAuthenticationSuccessHandler(): AjaxAuthenticationSuccessHandler {
-        return AjaxAuthenticationSuccessHandler()
-    }
+    fun ajaxAuthenticationSuccessHandler() = AjaxAuthenticationSuccessHandler()
 
     @Bean
-    fun ajaxAuthenticationFailureHandler(): AjaxAuthenticationFailureHandler {
-        return AjaxAuthenticationFailureHandler()
-    }
+    fun ajaxAuthenticationFailureHandler() = AjaxAuthenticationFailureHandler()
     <%_ } _%>
     <%_ if (authenticationType === 'session') { _%>
 
     @Bean
-    fun ajaxLogoutSuccessHandler(): AjaxLogoutSuccessHandler {
-        return AjaxLogoutSuccessHandler()
-    }
+    fun ajaxLogoutSuccessHandler() = AjaxLogoutSuccessHandler()
     <%_ } _%>
     <%_ if (authenticationType !== 'oauth2' && !skipUserManagement) { _%>
 
     @Bean
-    fun passwordEncoder(): PasswordEncoder {
-        return BCryptPasswordEncoder()
-    }
+    fun passwordEncoder() = BCryptPasswordEncoder()
     <%_ } _%>
     <%_ if (authenticationType !== 'uaa' && !(applicationType === 'microservice' && authenticationType === 'oauth2')) { _%>
 
@@ -204,8 +201,14 @@ class SecurityConfiguration(
             <%_ } _%>
         .and()
             .headers()
+            .contentSecurityPolicy("default-src 'self'; script-src 'self' 'unsafe-inline' 'unsafe-eval'; style-src 'self' 'unsafe-inline'; img-src 'self' data:")
+        .and()
+            .referrerPolicy(ReferrerPolicyHeaderWriter.ReferrerPolicy.STRICT_ORIGIN_WHEN_CROSS_ORIGIN)
+        .and()
+            .featurePolicy("geolocation 'none'; midi 'none'; sync-xhr 'none'; microphone 'none'; camera 'none'; magnetometer 'none'; gyroscope 'none'; speaker 'none'; fullscreen 'self'; payment 'none'")
+        .and()
             .frameOptions()
-            .disable()
+            .deny()
         .and()
         <%_ if (authenticationType === 'jwt' || (authenticationType === 'oauth2' && applicationType === 'microservice')) { _%>
             .sessionManagement()
@@ -220,11 +223,11 @@ class SecurityConfiguration(
             .antMatchers("/api/account/reset-password/init").permitAll()
             .antMatchers("/api/account/reset-password/finish").permitAll()
             <%_ } _%>
-            .antMatchers("/api/**").authenticated()
             <%_ if (authenticationType === 'oauth2') { _%>
             .antMatchers("/authorize").authenticated()
             .antMatchers("/api/auth-info").permitAll()
             <%_ } _%>
+            .antMatchers("/api/**").authenticated()
             <%_ if (websocket === 'spring-websocket') { _%>
             .antMatchers("/websocket/tracker").hasAuthority(ADMIN)
             .antMatchers("/websocket/**").permitAll()
@@ -234,6 +237,10 @@ class SecurityConfiguration(
             .antMatchers("/management/prometheus").permitAll()
             .antMatchers("/management/**").hasAuthority(ADMIN)
         <%_ if (authenticationType === 'jwt') { _%>
+            <%_ if (applicationType === 'monolith') { _%>
+        .and()
+            .httpBasic()
+            <%_ } _%>
         .and()
             .apply(securityConfigurerAdapter())
         <%_ } else if (authenticationType === 'oauth2') { _%>
@@ -242,47 +249,55 @@ class SecurityConfiguration(
             .oauth2Login()
             <%_ } _%>
         .and()
-            .oauth2ResourceServer().jwt()
+            .oauth2ResourceServer()
+                .jwt()
+                .jwtAuthenticationConverter(mapGroupOrRolesClaimToGrantedAuthorities())
         <%_ } _%>
     }
     <%_ if (authenticationType === 'jwt') { _%>
 
-    private fun securityConfigurerAdapter(): JWTConfigurer {
-        return JWTConfigurer(tokenProvider)
-    }
+    private fun securityConfigurerAdapter() = JWTConfigurer(tokenProvider)
     <%_ } _%>
     <%_ if (authenticationType === 'oauth2') { _%>
 
+    <%_ if (applicationType !== 'microservice') { _%>
     /**
      * Map authorities from "groups" or "roles" claim in ID Token.
      *
      * @return a [GrantedAuthoritiesMapper] that maps groups from
      * the IdP to Spring Security Authorities.
      */
-    @Suppress("UNCHECKED_CAST")
     @Bean
-    fun userAuthoritiesMapper(): GrantedAuthoritiesMapper {
-        return GrantedAuthoritiesMapper { authorities ->
+    fun userAuthoritiesMapper() =
+        GrantedAuthoritiesMapper { authorities ->
             val mappedAuthorities = mutableSetOf<GrantedAuthority>()
 
             authorities.forEach { authority ->
                 val oidcUserAuthority = authority as OidcUserAuthority
-                val userInfo = oidcUserAuthority.userInfo
-                var groups = userInfo.claims["groups"] as Collection<String>?
-                if (groups == null) {
-                    groups = userInfo.claims["roles"] as Collection<String>?
-                }
-                groups?.let {
-                    mappedAuthorities.addAll(
-                        it.asSequence()
-                            .filter { group -> group.startsWith("ROLE_") }
-                            .map { a -> SimpleGrantedAuthority(a) }
+                mappedAuthorities.addAll(
+                    mapRolesToGrantedAuthorities(
+                        getRolesFromClaims(oidcUserAuthority.userInfo.claims)
                     )
-                }
+                )
             }
             mappedAuthorities
         }
-    }
+    <%_ } _%>
+
+    private fun mapGroupOrRolesClaimToGrantedAuthorities() =
+        object : JwtAuthenticationConverter() {
+            override fun extractAuthorities(jwt: Jwt) =
+                mapRolesToGrantedAuthorities(getRolesFromClaims(jwt.claims))
+        }
+
+    @Suppress("UNCHECKED_CAST")
+    private fun getRolesFromClaims(claims: Map<String, Any?>): Collection<String> =
+        claims.getOrDefault("groups", claims.getOrDefault("roles", listOf<String>())) as Collection<String>
+
+    private fun mapRolesToGrantedAuthorities(roles: Collection<String>) =
+        roles.asSequence()
+            .filter { it.startsWith("ROLE_") }
+            .mapTo(mutableListOf()) { SimpleGrantedAuthority(it) }
 
     @Bean
     fun jwtDecoder(): JwtDecoder {
@@ -299,9 +314,7 @@ class SecurityConfiguration(
         <%_ if (applicationType === 'gateway') { _%>
 
     @Bean
-    fun authHeaderFilter(headerUtil: AuthorizationHeaderUtil): AuthorizationHeaderFilter {
-        return AuthorizationHeaderFilter(headerUtil)
-    }
+    fun authHeaderFilter(headerUtil: AuthorizationHeaderUtil) = AuthorizationHeaderFilter(headerUtil)
         <%_ } _%>
     <%_ } _%>
 }

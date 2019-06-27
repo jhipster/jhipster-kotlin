@@ -111,8 +111,10 @@ interface UserRepository : <% if (databaseType === 'sql') { %>JpaRepository<<%= 
 
     fun findOneByActivationKey(activationKey: String): <%= optionalOrMono %><<%= asEntity('User') %>>
     <%_ } _%>
+    <%_ if (authenticationType !== 'oauth2') { _%>
 
-    fun findAllByActivatedIsFalseAndCreatedDateBefore(dateTime: Instant): <% if (reactive) { %>Flux<% } else { %>List<% } %><<%= asEntity('User') %>>
+    fun findAllByActivatedIsFalseAndActivationKeyIsNotNullAndCreatedDateBefore(dateTime: Instant): <% if (reactive) { %>Flux<% } else { %>List<% } %><<%= asEntity('User') %>>
+    <%_ } _%>
     <%_ if (authenticationType !== 'oauth2') { _%>
 
     fun findOneByResetKey(resetKey: String): <%= optionalOrMono %><<%= asEntity('User') %>>
