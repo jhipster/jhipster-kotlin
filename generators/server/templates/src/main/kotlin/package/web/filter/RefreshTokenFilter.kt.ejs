@@ -84,20 +84,23 @@ class RefreshTokenFilter(
      * @return a new request to use downstream that contains the new cookies, if they had to be refreshed.
      * @throws InvalidTokenException if the tokens could not be refreshed.
      */
-    fun refreshTokensIfExpiring(httpServletRequest: HttpServletRequest, httpServletResponse: HttpServletResponse): HttpServletRequest {
+    fun refreshTokensIfExpiring(
+        httpServletRequest: HttpServletRequest,
+        httpServletResponse: HttpServletResponse
+    ): HttpServletRequest {
         var newHttpServletRequest = httpServletRequest
-        //get access token from cookie
+        // get access token from cookie
         val accessTokenCookie = OAuth2CookieHelper.getAccessTokenCookie(httpServletRequest)
-        if (mustRefreshToken(accessTokenCookie)) {        //we either have no access token, or it is expired, or it is about to expire
-            //get the refresh token cookie and, if present, request new tokens
+        if (mustRefreshToken(accessTokenCookie)) { // we either have no access token, or it is expired, or it is about to expire
+            // get the refresh token cookie and, if present, request new tokens
             val refreshCookie = OAuth2CookieHelper.getRefreshTokenCookie(httpServletRequest)
             if (refreshCookie != null) {
                 try {
-                    newHttpServletRequest = authenticationService.refreshToken(httpServletRequest, httpServletResponse, refreshCookie)
+                    newHttpServletRequest =
+                        authenticationService.refreshToken(httpServletRequest, httpServletResponse, refreshCookie)
                 } catch (ex: HttpClientErrorException) {
                     throw UnauthorizedClientException("could not refresh OAuth2 token", ex)
                 }
-
             } else if (accessTokenCookie != null) {
                 log.warn("access token found, but no refresh token, stripping them all")
                 val token = tokenStore.readAccessToken(accessTokenCookie.value)
@@ -121,7 +124,7 @@ class RefreshTokenFilter(
             return true
         }
         val token = tokenStore.readAccessToken(accessTokenCookie.value)
-        //check if token is expired or about to expire
+        // check if token is expired or about to expire
         return token.isExpired || token.expiresIn < REFRESH_WINDOW_SECS
     }
 }

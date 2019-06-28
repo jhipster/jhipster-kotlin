@@ -63,7 +63,10 @@ abstract class OAuth2TokenEndpointClientAdapter(
         log.debug("contacting OAuth2 token endpoint to login user: {}", username)
         val responseEntity = restTemplate.postForEntity(getTokenEndpoint(), entity, OAuth2AccessToken::class.java)
         if (responseEntity.statusCode != HttpStatus.OK) {
-            log.debug("failed to authenticate user with OAuth2 token endpoint, status: {}", responseEntity.statusCodeValue)
+            log.debug(
+                "failed to authenticate user with OAuth2 token endpoint, status: {}",
+                responseEntity.statusCodeValue
+            )
             throw HttpClientErrorException(responseEntity.statusCode)
         }
         return responseEntity.body!!
@@ -83,8 +86,10 @@ abstract class OAuth2TokenEndpointClientAdapter(
         addAuthentication(headers, params)
         val entity = HttpEntity<MultiValueMap<String, String>>(params, headers)
         log.debug("contacting OAuth2 token endpoint to refresh OAuth2 JWT tokens")
-        val responseEntity = restTemplate.postForEntity(getTokenEndpoint(), entity,
-            OAuth2AccessToken::class.java)
+        val responseEntity = restTemplate.postForEntity(
+            getTokenEndpoint(), entity,
+            OAuth2AccessToken::class.java
+        )
         if (responseEntity.statusCode != HttpStatus.OK) {
             log.debug("failed to refresh tokens: {}", responseEntity.statusCodeValue)
             throw HttpClientErrorException(responseEntity.statusCode)
