@@ -36,7 +36,10 @@ import org.springframework.stereotype.Controller
 import org.springframework.web.socket.messaging.SessionDisconnectEvent
 
 @Controller
-class ActivityService(private val messagingTemplate: SimpMessageSendingOperations) : ApplicationListener<SessionDisconnectEvent> {
+class ActivityService(private val messagingTemplate: SimpMessageSendingOperations) :
+    ApplicationListener<SessionDisconnectEvent> {
+
+    private val log = LoggerFactory.getLogger(javaClass)
 
     @MessageMapping("/topic/activity")
     @SendTo("/topic/tracker")
@@ -54,9 +57,5 @@ class ActivityService(private val messagingTemplate: SimpMessageSendingOperation
     override fun onApplicationEvent(event: SessionDisconnectEvent) {
         val activityDTO = ActivityDTO( sessionId = event.sessionId, page = "logout")
         messagingTemplate.convertAndSend("/topic/tracker", activityDTO)
-    }
-
-    companion object {
-        private val log = LoggerFactory.getLogger(ActivityService::class.java)
     }
 }

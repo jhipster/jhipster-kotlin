@@ -30,6 +30,11 @@ import javax.servlet.http.HttpServletRequest
 import javax.servlet.http.HttpServletResponse
 
 /**
+ * Number of milliseconds to cache refresh token grants so we don't have to repeat them in case of parallel requests.
+ */
+private const val REFRESH_TOKEN_VALIDITY_MILLIS = 10000L
+
+/**
  * Manages authentication cases for OAuth2 updating the cookies holding access and refresh tokens accordingly.
  *
  * It can authenticate users, refresh the token cookies should they expire and log users out.
@@ -44,7 +49,7 @@ class OAuth2AuthenticationService(
      */
     private val cookieHelper: OAuth2CookieHelper) {
 
-    private val log = LoggerFactory.getLogger(OAuth2AuthenticationService::class.java)
+    private val log = LoggerFactory.getLogger(javaClass)
 
     /**
      * Caches Refresh grant results for a refresh token value so we can reuse them.
@@ -164,12 +169,5 @@ class OAuth2AuthenticationService(
     fun stripTokens(httpServletRequest: HttpServletRequest): HttpServletRequest {
         val cookies = cookieHelper.stripCookies(httpServletRequest.cookies)
         return CookiesHttpServletRequestWrapper(httpServletRequest, cookies)
-    }
-
-    companion object {
-        /**
-         * Number of milliseconds to cache refresh token grants so we don't have to repeat them in case of parallel requests.
-         */
-        private const val REFRESH_TOKEN_VALIDITY_MILLIS = 10000L
     }
 }

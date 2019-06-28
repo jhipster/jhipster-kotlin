@@ -69,9 +69,11 @@ interface <%=entityClass%>Repository : <% if (databaseType === 'sql') { %>JpaRep
     <%_ if (fieldsContainOwnerManyToMany === true) {
         if (databaseType === 'sql') { _%>
 
-    @Query(value = "select distinct <%= entityInstance %> from <%= asEntity(entityClass) %> <%= entityInstance %><% for (idx in relationships) {
+    @Query(
+        value = "select distinct <%= entityInstance %> from <%= asEntity(entityClass) %> <%= entityInstance %><% for (idx in relationships) {
     if (relationships[idx].relationshipType === 'many-to-many' && relationships[idx].ownerSide === true) { %> left join fetch <%=entityInstance%>.<%=relationships[idx].relationshipFieldNamePlural%><%} }%>",
-        countQuery = "select count(distinct <%= entityInstance %>) from <%= asEntity(entityClass) %> <%= entityInstance %>")
+        countQuery = "select count(distinct <%= entityInstance %>) from <%= asEntity(entityClass) %> <%= entityInstance %>"
+    )
     fun findAllWithEagerRelationships(pageable: Pageable): Page<<%= asEntity(entityClass) %>>
 
     @Query(value = "select distinct <%= entityInstance %> from <%= asEntity(entityClass) %> <%= entityInstance %><% for (idx in relationships) {

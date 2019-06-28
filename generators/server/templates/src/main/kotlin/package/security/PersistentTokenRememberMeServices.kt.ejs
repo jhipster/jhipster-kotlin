@@ -53,6 +53,11 @@ import java.time.temporal.ChronoUnit
 import java.util.Date
 <%_ } _%>
 
+// Token is valid for one month
+private const val TOKEN_VALIDITY_DAYS = 31
+private const val TOKEN_VALIDITY_SECONDS = 60 * 60 * 24 * TOKEN_VALIDITY_DAYS
+private const val UPGRADED_TOKEN_VALIDITY_MILLIS = 5000L
+
 /**
  * Custom implementation of Spring Security's RememberMeServices.
  *
@@ -92,7 +97,7 @@ class PersistentTokenRememberMeServices(
     private val userRepository: UserRepository
 ) : AbstractRememberMeServices(jHipsterProperties.security.rememberMe.key, userDetailsService) {
 
-    private val log = LoggerFactory.getLogger(PersistentTokenRememberMeServices::class.java)
+    private val log = LoggerFactory.getLogger(javaClass)
 
     private val upgradedTokenCache: PersistentTokenCache<UpgradedRememberMeToken>
 
@@ -293,15 +298,5 @@ class PersistentTokenRememberMeServices(
 
             private const val serialVersionUID = 1L
         }
-    }
-
-    companion object {
-
-        // Token is valid for one month
-        private const val TOKEN_VALIDITY_DAYS = 31
-
-        private const val TOKEN_VALIDITY_SECONDS = 60 * 60 * 24 * TOKEN_VALIDITY_DAYS
-
-        private const val UPGRADED_TOKEN_VALIDITY_MILLIS = 5000L
     }
 }

@@ -39,6 +39,8 @@ import io.jsonwebtoken.security.Keys
 
 import org.assertj.core.api.Assertions.assertThat
 
+private const val ONE_MINUTE: Long = 60000
+
 class TokenProviderTest {
 
     private lateinit var key: Key
@@ -47,8 +49,10 @@ class TokenProviderTest {
     @BeforeEach
     fun setup() {
         tokenProvider = TokenProvider(JHipsterProperties())
-        key = Keys.hmacShaKeyFor(Decoders.BASE64
-            .decode("fd54a45s65fds737b9aafcb3412e07ed99b267f33413274720ddbb7f6c5e64e9f14075f2d7ed041592f0b7657baf8"))
+        key = Keys.hmacShaKeyFor(
+            Decoders.BASE64
+                .decode("fd54a45s65fds737b9aafcb3412e07ed99b267f33413274720ddbb7f6c5e64e9f14075f2d7ed041592f0b7657baf8")
+        )
 
         ReflectionTestUtils.setField(tokenProvider, "key", key)
         ReflectionTestUtils.setField(tokenProvider, "tokenValidityInMilliseconds", ONE_MINUTE)
@@ -100,30 +104,26 @@ class TokenProviderTest {
     }
 
     private fun createAuthentication(): Authentication {
-        val authorities = mutableListOf<GrantedAuthority>()
-        authorities.add(SimpleGrantedAuthority(ANONYMOUS))
+        val authorities = mutableListOf(SimpleGrantedAuthority(ANONYMOUS))
         return UsernamePasswordAuthenticationToken("anonymous", "anonymous", authorities)
     }
 
-    private fun createUnsupportedToken(): String {
-        return Jwts.builder()
+    private fun createUnsupportedToken() =
+        Jwts.builder()
             .setPayload("payload")
             .signWith(key, SignatureAlgorithm.HS512)
             .compact()
-    }
 
     private fun createTokenWithDifferentSignature(): String {
-        val otherKey = Keys.hmacShaKeyFor(Decoders.BASE64
-            .decode("Xfd54a45s65fds737b9aafcb3412e07ed99b267f33413274720ddbb7f6c5e64e9f14075f2d7ed041592f0b7657baf8"))
+        val otherKey = Keys.hmacShaKeyFor(
+            Decoders.BASE64
+                .decode("Xfd54a45s65fds737b9aafcb3412e07ed99b267f33413274720ddbb7f6c5e64e9f14075f2d7ed041592f0b7657baf8")
+        )
 
         return Jwts.builder()
             .setSubject("anonymous")
             .signWith(otherKey, SignatureAlgorithm.HS512)
             .setExpiration(Date(Date().time + ONE_MINUTE))
             .compact()
-    }
-
-    companion object {
-        private const val ONE_MINUTE: Long = 60000
     }
 }

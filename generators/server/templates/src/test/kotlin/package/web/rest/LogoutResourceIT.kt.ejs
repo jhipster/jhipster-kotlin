@@ -48,6 +48,12 @@ import org.springframework.test.web.servlet.result.MockMvcResultMatchers.content
 import org.springframework.test.web.servlet.result.MockMvcResultMatchers.jsonPath
 import org.springframework.test.web.servlet.result.MockMvcResultMatchers.status
 
+private const val ID_TOKEN = "eyJ0eXAiOiJKV1QiLCJhbGciOiJIUzI1NiJ9" +
+    ".eyJzdWIiOiIxMjM0NTY3ODkwIiwibmFtZSI6IkpvaG4gRG9lIiwiYWRtaW4iOnRydWUsIm" +
+    "p0aSI6ImQzNWRmMTRkLTA5ZjYtNDhmZi04YTkzLTdjNmYwMzM5MzE1OSIsImlhdCI6MTU0M" +
+    "Tk3MTU4MywiZXhwIjoxNTQxOTc1MTgzfQ.QaQOarmV8xEUYV7yvWzX3cUE_4W1luMcWCwpr" +
+    "oqqUrg"
+
 /**
  * Integration tests for the [LogoutResource] REST controller.
  */
@@ -90,18 +96,10 @@ class LogoutResourceIT {
             .andExpect(jsonPath("\$.logoutUrl").value(logoutUrl))
             .andExpect(jsonPath("\$.idToken").value(ID_TOKEN))
     }
+}
 
-    private fun authenticationToken(idToken: OidcIdToken): OAuth2AuthenticationToken {
-        val authorities = listOf(SimpleGrantedAuthority(USER))
-        val user = DefaultOidcUser(authorities, idToken)
-        return OAuth2AuthenticationToken(user, authorities, "oidc")
-    }
-
-    companion object {
-        private const val ID_TOKEN = "eyJ0eXAiOiJKV1QiLCJhbGciOiJIUzI1NiJ9" +
-            ".eyJzdWIiOiIxMjM0NTY3ODkwIiwibmFtZSI6IkpvaG4gRG9lIiwiYWRtaW4iOnRydWUsIm" +
-            "p0aSI6ImQzNWRmMTRkLTA5ZjYtNDhmZi04YTkzLTdjNmYwMzM5MzE1OSIsImlhdCI6MTU0M" +
-            "Tk3MTU4MywiZXhwIjoxNTQxOTc1MTgzfQ.QaQOarmV8xEUYV7yvWzX3cUE_4W1luMcWCwpr" +
-            "oqqUrg"
-    }
+private fun authenticationToken(idToken: OidcIdToken): OAuth2AuthenticationToken {
+    val authorities = listOf(SimpleGrantedAuthority(USER))
+    val user = DefaultOidcUser(authorities, idToken)
+    return OAuth2AuthenticationToken(user, authorities, "oidc")
 }

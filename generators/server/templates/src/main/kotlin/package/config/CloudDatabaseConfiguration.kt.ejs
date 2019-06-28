@@ -62,6 +62,10 @@ import javax.sql.DataSource
 import org.springframework.boot.context.properties.ConfigurationProperties
 <%_ } _%>
 
+<%_ if (databaseType === 'sql') { _%>
+private const val CLOUD_CONFIGURATION_HIKARI_PREFIX = "spring.datasource.hikari"
+<%_ } _%>
+
 @Configuration
 <%_ if (databaseType === 'mongodb') { _%>
 @EnableMongoRepositories("<%=packageName%>.repository")
@@ -70,7 +74,7 @@ import org.springframework.boot.context.properties.ConfigurationProperties
 class CloudDatabaseConfiguration : AbstractCloudConfig() {
     <%_ if (databaseType === 'sql' || databaseType === 'mongodb') { _%>
 
-    private val log = LoggerFactory.getLogger(CloudDatabaseConfiguration::class.java)
+    private val log = LoggerFactory.getLogger(javaClass)
     <%_ } _%>
     <%_ if (databaseType === 'sql') { _%>
 
@@ -80,37 +84,27 @@ class CloudDatabaseConfiguration : AbstractCloudConfig() {
         log.info("Configuring JDBC datasource from a cloud provider")
         return connectionFactory().dataSource()
     }
-
-    companion object {
-        private const val CLOUD_CONFIGURATION_HIKARI_PREFIX = "spring.datasource.hikari"
-    }
     <%_ } _%>
     <%_ if (databaseType === 'mongodb') { _%>
 
     @Bean
-    fun mongoFactory(): MongoDbFactory {
-        return connectionFactory().mongoDbFactory()
-    }
+    fun mongoFactory() = connectionFactory().mongoDbFactory()
 
     @Bean
-    fun validator(): LocalValidatorFactoryBean {
-        return LocalValidatorFactoryBean()
-    }
+    fun validator() = LocalValidatorFactoryBean()
 
     @Bean
-    fun validatingMongoEventListener(): ValidatingMongoEventListener {
-        return ValidatingMongoEventListener(validator())
-    }
+    fun validatingMongoEventListener() = ValidatingMongoEventListener(validator())
 
     @Bean
-    fun customConversions(): MongoCustomConversions {
-        val converterList = mutableListOf<Converter<*, *>>(
-            DateToZonedDateTimeConverter.INSTANCE,
-            ZonedDateTimeToDateConverter.INSTANCE,
-            DurationToLongConverter.INSTANCE
+    fun customConversions() =
+        return MongoCustomConversions(
+            mutableListOf<Converter<*, *>>(
+                DateToZonedDateTimeConverter.INSTANCE,
+                ZonedDateTimeToDateConverter.INSTANCE,
+                DurationToLongConverter.INSTANCE
+            )
         )
-        return MongoCustomConversions(converterList)
-    }
 
     @Bean
     fun mongobee(mongoDbFactory: MongoDbFactory, mongoTemplate: MongoTemplate, cloud: Cloud): Mongobee {
@@ -118,17 +112,16 @@ class CloudDatabaseConfiguration : AbstractCloudConfig() {
         val matchingServiceInfos = cloud.getServiceInfos(MongoDbFactory::class.java)
 
         if (matchingServiceInfos.size != 1) {
-            throw CloudException("No unique service matching MongoDbFactory found. Expected 1, found "
-                + matchingServiceInfos.size)
+            throw CloudException("No unique service matching MongoDbFactory found. Expected 1, found $matchingServiceInfos.size")
         }
         val info = matchingServiceInfos[0] as MongoServiceInfo
-        val mongobee = Mongobee(info.uri)
-        mongobee.setDbName(mongoDbFactory.db.name)
-        mongobee.setMongoTemplate(mongoTemplate)
-        // package to scan for migrations
-        mongobee.setChangeLogsScanPackage("<%=packageName%>.config.dbmigrations")
-        mongobee.isEnabled = true
-        return mongobee
+        return Mongobee(info.uri).apply {
+            setDbName(mongoDbFactory.db.name)
+            setMongoTemplate(mongoTemplate)
+            // package to scan for migrations
+            setChangeLogsScanPackage("<%=packageName%>.config.dbmigrations")
+            isEnabled = true
+        }
     }
     <%_ } _%>
 }

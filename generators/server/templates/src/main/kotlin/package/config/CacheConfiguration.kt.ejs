@@ -76,7 +76,9 @@ import org.springframework.cache.support.NoOpCacheManager
 <%_ } _%>
 import org.springframework.context.annotation.Bean
 import org.springframework.context.annotation.Configuration
+<%_ if (cacheProvider === 'infinispan') { _%>
 import org.springframework.context.annotation.Import
+<%_ } _%>
 <%_ if (cacheProvider === 'hazelcast') { _%>
 import org.springframework.beans.factory.DisposableBean
 import org.springframework.core.env.Environment
@@ -144,10 +146,13 @@ class CacheConfiguration<%_ if (cacheProvider === 'ehcache') { _%>(jHipsterPrope
         val ehcache = jHipsterProperties.cache.ehcache
 
         jcacheConfiguration = Eh107Configuration.fromEhcacheCacheConfiguration(
-            CacheConfigurationBuilder.newCacheConfigurationBuilder(Any::class.java, Any::class.java,
-                ResourcePoolsBuilder.heap(ehcache.maxEntries))
+            CacheConfigurationBuilder.newCacheConfigurationBuilder(
+                Any::class.java, Any::class.java,
+                ResourcePoolsBuilder.heap(ehcache.maxEntries)
+            )
                 .withExpiry(ExpiryPolicyBuilder.timeToLiveExpiration(Duration.ofSeconds(ehcache.timeToLiveSeconds.toLong())))
-                .build())
+                .build()
+        )
     }
 
     @Bean
@@ -183,7 +188,7 @@ class CacheConfiguration<%_ if (cacheProvider === 'ehcache') { _%>(jHipsterPrope
     <%_ } _%>
     <%_ if (cacheProvider === 'hazelcast') { _%>
 
-    private val log = LoggerFactory.getLogger(CacheConfiguration::class.java)
+    private val log = LoggerFactory.getLogger(javaClass)
         <%_ if (serviceDiscoveryType === 'eureka' || serviceDiscoveryType === 'consul') { _%>
 
     private var registration: Registration? = null
@@ -317,7 +322,7 @@ class CacheConfiguration<%_ if (cacheProvider === 'ehcache') { _%>(jHipsterPrope
     <%_ } _%>
     <%_ if (cacheProvider === 'infinispan') { _%>
 
-    private val log = LoggerFactory.getLogger(CacheConfiguration::class.java)
+    private val log = LoggerFactory.getLogger(javaClass)
         <%_ if (serviceDiscoveryType === 'eureka' || serviceDiscoveryType === 'consul') { _%>
 
     @Autowired(required = false)
@@ -595,7 +600,7 @@ class CacheConfiguration<%_ if (cacheProvider === 'ehcache') { _%>(jHipsterPrope
     <%_ } _%>
     <%_ if (cacheProvider === 'memcached') { _%>
 
-    private val log = LoggerFactory.getLogger(CacheConfiguration::class.java)
+    private val log = LoggerFactory.getLogger(javaClass)
 
     @Throws(Exception::class)
     @Bean

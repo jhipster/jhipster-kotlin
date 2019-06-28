@@ -41,20 +41,17 @@ class AuditEventService(
     private val auditEventConverter: AuditEventConverter
 ) {
 
-    fun findAll(pageable: Pageable): Page<AuditEvent> {
-        return persistenceAuditEventRepository.findAll(pageable)
+    fun findAll(pageable: Pageable): Page<AuditEvent> =
+        persistenceAuditEventRepository.findAll(pageable)
             .map { auditEventConverter.convertToAuditEvent(it) }
-    }
 
-    fun findByDates(fromDate: Instant, toDate: Instant, pageable: Pageable): Page<AuditEvent> {
-        return persistenceAuditEventRepository.findAllByAuditEventDateBetween(fromDate, toDate, pageable)
+    fun findByDates(fromDate: Instant, toDate: Instant, pageable: Pageable): Page<AuditEvent> =
+        persistenceAuditEventRepository.findAllByAuditEventDateBetween(fromDate, toDate, pageable)
             .map { auditEventConverter.convertToAuditEvent(it) }
-    }
 
-    fun find(id: <% if (databaseType === 'sql') { %>Long<% } %><% if (databaseType === 'mongodb' || databaseType === 'couchbase') { %>String<% } %>): Optional<AuditEvent> {
-        return Optional.ofNullable(persistenceAuditEventRepository.findById(id))
+    fun find(id: <% if (databaseType === 'sql') { %>Long<% } %><% if (databaseType === 'mongodb' || databaseType === 'couchbase') { %>String<% } %>): Optional<AuditEvent> =
+        Optional.ofNullable(persistenceAuditEventRepository.findById(id))
             .filter { it.isPresent }
             .map { it.get() }
             .map { auditEventConverter.convertToAuditEvent(it) }
-    }
 }

@@ -164,7 +164,7 @@ import java.util.UUID
 class DatabaseConfiguration<%_ if (databaseType === 'sql' && (devDatabaseType === 'h2Disk' || devDatabaseType === 'h2Memory') ) { _%>(private val env: Environment) { <%_ } else if (databaseType === 'mongodb' || databaseType === 'couchbase') { %> {<% } %>
 <%_ if (databaseType === 'sql' && (devDatabaseType === 'h2Disk' || devDatabaseType === 'h2Memory')) { _%>
 
-    private val log = LoggerFactory.getLogger(DatabaseConfiguration::class.java)
+    private val log = LoggerFactory.getLogger(javaClass)
 
     /**
      * Open the TCP port for the H2 database, so it is available remotely.
@@ -197,7 +197,7 @@ class DatabaseConfiguration<%_ if (databaseType === 'sql' && (devDatabaseType ==
 <%_ } _%>
 <%_ if (databaseType === 'mongodb' || databaseType === 'couchbase') { _%>
 
-    private val log = LoggerFactory.getLogger(DatabaseConfiguration::class.java)
+    private val log = LoggerFactory.getLogger(javaClass)
 <%_ } _%>
 <%_ if (databaseType === 'mongodb') { _%>
 
@@ -216,13 +216,13 @@ class DatabaseConfiguration<%_ if (databaseType === 'sql' && (devDatabaseType ==
 <%_ } if (databaseType === 'mongodb') { _%>
 
     @Bean
-    fun customConversions(): MongoCustomConversions {
-        val converters = mutableListOf<Converter<*, *>>(
-            DateToZonedDateTimeConverter.INSTANCE,
-            ZonedDateTimeToDateConverter.INSTANCE
+    fun customConversions() =
+        MongoCustomConversions(
+            mutableListOf<Converter<*, *>>(
+                DateToZonedDateTimeConverter.INSTANCE,
+                ZonedDateTimeToDateConverter.INSTANCE
+            )
         )
-        return MongoCustomConversions(converters)
-    }
 
     @Bean
     fun mongobee(mongoClient: MongoClient, mongoTemplate: MongoTemplate, mongoProperties: MongoProperties): Mongobee {
@@ -238,20 +238,20 @@ class DatabaseConfiguration<%_ if (databaseType === 'sql' && (devDatabaseType ==
 <%_ } %><% if (databaseType === 'couchbase') { _%>
 
     @Bean(name = [BeanNames.COUCHBASE_CUSTOM_CONVERSIONS])
-    fun customConversions(): CouchbaseCustomConversions {
-        val converters = mutableListOf<Converter<*, *>>(
-            ZonedDateTimeToLongConverter,
-            NumberToLocalDateTimeConverter,
-            BigIntegerToStringConverter,
-            StringToBigIntegerConverter,
-            BigDecimalToStringConverter,
-            StringToBigDecimalConverter,
-            StringToByteConverter,
-            UUIDToStringConverter,
-            StringToUUIDConverter
+    fun customConversions() =
+        CouchbaseCustomConversions(
+            mutableListOf<Converter<*, *>>(
+                ZonedDateTimeToLongConverter,
+                NumberToLocalDateTimeConverter,
+                BigIntegerToStringConverter,
+                StringToBigIntegerConverter,
+                BigDecimalToStringConverter,
+                StringToBigDecimalConverter,
+                StringToByteConverter,
+                UUIDToStringConverter,
+                StringToUUIDConverter
+            )
         )
-        return CouchbaseCustomConversions(converters)
-    }
 
     @Bean
     fun couchmove(couchbaseBucket: Bucket): Couchmove {

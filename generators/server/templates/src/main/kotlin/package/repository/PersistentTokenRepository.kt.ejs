@@ -68,9 +68,7 @@ interface PersistentTokenRepository : <% if (databaseType === 'sql') { %>JpaRepo
         deleteById(PersistentToken.PREFIX + ID_DELIMITER + series)
     }
 
-    fun findByUser(user: User): List<PersistentToken> {
-        return findByLogin(user.login)
-    }
+    fun findByUser(user: User): List<PersistentToken> = findByLogin(user.login)
 
     fun findByLogin(login: String): List<PersistentToken><% } else { %>
     fun findByUser(user: User): List<PersistentToken><% } %>
@@ -104,9 +102,8 @@ class PersistentTokenRepository (private val session: Session, private val valid
         "DELETE FROM persistent_token_by_user WHERE user_id = :user_id AND persistent_token_series = :persistent_token_series"
     )
 
-    fun findById(presentedSeries: String): Optional<PersistentToken> {
-        return Optional.ofNullable(mapper.get(presentedSeries))
-    }
+    fun findById(presentedSeries: String): Optional<PersistentToken> =
+        Optional.ofNullable(mapper.get(presentedSeries))
 
     fun findByUser( user: <%= asEntity('User') %>): MutableList<PersistentToken> {
         val stmt = findPersistentTokenSeriesByUserIdStmt.bind()

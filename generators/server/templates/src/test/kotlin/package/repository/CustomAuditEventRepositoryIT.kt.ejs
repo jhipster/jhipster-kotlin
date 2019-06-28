@@ -129,7 +129,7 @@ class CustomAuditEventRepositoryIT {
     fun addAuditEventTruncateLargeData() {
         val data = mutableMapOf<String, Any>()
         val largeData = StringBuilder()
-        for (i in 0 until CustomAuditEventRepository.EVENT_DATA_COLUMN_MAX_LENGTH + 10) {
+        for (i in 0 until EVENT_DATA_COLUMN_MAX_LENGTH + 10) {
             largeData.append("a")
         }
         data["test-key"] = largeData
@@ -142,7 +142,7 @@ class CustomAuditEventRepositoryIT {
         assertThat(persistentAuditEvent.auditEventType).isEqualTo(event.type)
         assertThat(persistentAuditEvent.data).containsKey("test-key")
         val actualData = persistentAuditEvent.data["test-key"]
-        assertThat(actualData!!.length).isEqualTo(CustomAuditEventRepository.EVENT_DATA_COLUMN_MAX_LENGTH)
+        assertThat(actualData!!.length).isEqualTo(EVENT_DATA_COLUMN_MAX_LENGTH)
         assertThat(actualData).isSubstringOf(largeData)
         assertThat(persistentAuditEvent.auditEventDate!!.truncatedTo(ChronoUnit.MILLIS))
             .isEqualTo(event.timestamp!!.truncatedTo(ChronoUnit.MILLIS))

@@ -54,6 +54,11 @@ import javax.servlet.http.HttpServletRequest
 import java.util.NoSuchElementException
 <%_ } _%>
 
+private const val FIELD_ERRORS_KEY = "fieldErrors"
+private const val MESSAGE_KEY = "message"
+private const val PATH_KEY = "path"
+private const val VIOLATIONS_KEY = "violations"
+
 /**
  * Controller advice to translate the server side exceptions to client-friendly json structures.
  * The error response follows RFC7807 - Problem Details for HTTP APIs (https://tools.ietf.org/html/rfc7807).
@@ -157,12 +162,11 @@ _%>
     @ExceptionHandler
     fun handleBadRequestAlertException(
         ex: BadRequestAlertException, request: <%= requestClass %>
-    ): <%- returnType %> {
-        return create(
+    ): <%- returnType %> =
+        create(
             ex, request,
             HeaderUtil.createFailureAlert(applicationName, <%= enableTranslation %>, ex.entityName, ex.errorKey, ex.message)
         )
-    }
     <%_ if (databaseType !== 'no' && databaseType !== 'cassandra') { _%>
 
     @ExceptionHandler
@@ -174,11 +178,4 @@ _%>
         return create(ex, problem, request)
     }
     <%_ } _%>
-
-    companion object {
-        private const val FIELD_ERRORS_KEY = "fieldErrors"
-        private const val MESSAGE_KEY = "message"
-        private const val PATH_KEY = "path"
-        private const val VIOLATIONS_KEY = "violations"
-    }
 }

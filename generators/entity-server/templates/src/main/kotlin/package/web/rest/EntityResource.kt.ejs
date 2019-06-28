@@ -104,6 +104,14 @@ import java.util.UUID<% } %><% if (searchEngine === 'elasticsearch') { %>
 import org.elasticsearch.index.query.QueryBuilders.queryStringQuery
 <%_ } _%>
 
+<%_
+let entityName = entityInstance;
+if (clientRootFolder && !skipUiGrouping) {
+    entityName = _.camelCase(`${clientRootFolder}${entityClass}`)
+}
+_%>
+private const val ENTITY_NAME = "<%= entityName %>"
+
 /**
  * REST controller for managing [<%= packageName %>.domain.<%= asEntity(entityClass) %>].
  */
@@ -117,14 +125,10 @@ class <%= entityClass %>Resource(
 _%><%- include('../../common/inject_template', {viaService: viaService, constructorName: entityClass + 'Resource', queryService: jpaMetamodelFiltering, isUsingMapsId: isUsingMapsId, mapsIdAssoc: mapsIdAssoc, isController: true}); -%>
 ) {
 
-    private val log = LoggerFactory.getLogger(this.javaClass)
+    private val log = LoggerFactory.getLogger(javaClass)
 
     @Value("\${jhipster.clientApp.name}")
     private var applicationName: String? = null
-    <%_ let entityName = entityInstance;
-    if (clientRootFolder && !skipUiGrouping) {
-        entityName = _.camelCase(`${clientRootFolder}${entityClass}`)
-    } _%>
 
     /**
      * `POST  /<%= entityApiUrl %>` : Create a new <%= entityInstance %>.
@@ -137,7 +141,10 @@ _%><%- include('../../common/inject_template', {viaService: viaService, construc
     fun create<%= entityClass %>(<% if (validation) { %>@Valid <% } %>@RequestBody <%= instanceName %>: <%= instanceType %>): ResponseEntity<<%= instanceType %>> {
         log.debug("REST request to save <%= entityClass %> : {}", <%= instanceName %>)
         if (<%= instanceName %>.id != null) {
-            throw BadRequestAlertException("A new <%= entityInstance %> cannot already have an ID", ENTITY_NAME, "idexists")
+            throw BadRequestAlertException(
+                "A new <%= entityInstance %> cannot already have an ID",
+                ENTITY_NAME, "idexists"
+            )
         }
         <%_ if (saveUserSnapshot) { %>
         if (<%= instanceName %>.user != null) {
@@ -177,7 +184,12 @@ _%><%- include('../../common/inject_template', {viaService: viaService, construc
         <%_ } _%>
 <%- include('../../common/save_template', {asEntity, asDto, viaService: viaService, returnDirectly: false, isUsingMapsId: false, mapsIdAssoc: mapsIdAssoc}); -%>
         return ResponseEntity.ok()
-            .headers(HeaderUtil.createEntityUpdateAlert(applicationName, <%= enableTranslation %>, ENTITY_NAME, <%= instanceName %>.id.toString()))
+            .headers(
+                HeaderUtil.createEntityUpdateAlert(
+                    applicationName, <%= enableTranslation %>, ENTITY_NAME,
+                     <%= instanceName %>.id.toString()
+                )
+            )
             .body(result)
     }
 
@@ -240,7 +252,8 @@ _%><%- include('../../common/inject_template', {viaService: viaService, construc
     fun delete<%= entityClass %>(@PathVariable id: <%= pkType %>): ResponseEntity<Void> {
         log.debug("REST request to delete <%= entityClass %> : {}", id)
 <%- include('../../common/delete_template', {viaService: viaService}); -%>
-        return ResponseEntity.noContent().headers(HeaderUtil.createEntityDeletionAlert(applicationName, <%= enableTranslation %>, ENTITY_NAME, id<% if (pkType !== 'String') { %>.toString()<% } %>)).build()
+        return ResponseEntity.noContent()
+            .headers(HeaderUtil.createEntityDeletionAlert(applicationName, <%= enableTranslation %>, ENTITY_NAME, id<% if (pkType !== 'String') { %>.toString()<% } %>)).build()
     }<% if (searchEngine === 'elasticsearch') { %>
 
     /**
@@ -254,8 +267,4 @@ _%><%- include('../../common/inject_template', {viaService: viaService, construc
      * @return the result of the search.
      */
     @GetMapping("/_search/<%= entityApiUrl %>")<%- include('../../common/search_template', {asEntity, asDto, viaService}); -%><% } %>
-
-    companion object {
-        private const val ENTITY_NAME = "<%= entityName %>"
-    }
 }

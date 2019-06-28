@@ -33,10 +33,6 @@ import io.github.jhipster.security.AjaxAuthenticationSuccessHandler
 import io.github.jhipster.security.AjaxLogoutSuccessHandler
 <%_ } _%>
 
-<%_ if (authenticationType !== 'oauth2' && !skipUserManagement) { _%>
-import org.springframework.beans.factory.BeanInitializationException
-import org.springframework.beans.factory.InitializingBean
-<%_ } _%>
 import org.springframework.context.annotation.Bean
 import org.springframework.context.annotation.Import
 <%_ if (authenticationType !== 'uaa' && !(applicationType === 'microservice' && authenticationType === 'oauth2')) { _%>
@@ -377,25 +373,20 @@ public class SecurityConfiguration(private val oAuth2Properties: OAuth2Propertie
     }
 
     @Bean
-    fun tokenStore(jwtAccessTokenConverter: JwtAccessTokenConverter): TokenStore {
-        return JwtTokenStore(jwtAccessTokenConverter)
-    }
+    fun tokenStore(jwtAccessTokenConverter: JwtAccessTokenConverter): TokenStore =
+        JwtTokenStore(jwtAccessTokenConverter)
 
     @Bean
-    fun jwtAccessTokenConverter(signatureVerifierClient: OAuth2SignatureVerifierClient): JwtAccessTokenConverter {
-        return OAuth2JwtAccessTokenConverter(oAuth2Properties, signatureVerifierClient)
-    }
+    fun jwtAccessTokenConverter(signatureVerifierClient: OAuth2SignatureVerifierClient): JwtAccessTokenConverter =
+        OAuth2JwtAccessTokenConverter(oAuth2Properties, signatureVerifierClient)
 
     @Bean
     @Qualifier("loadBalancedRestTemplate")
-    fun loadBalancedRestTemplate(customizer: RestTemplateCustomizer): RestTemplate {
-        return RestTemplate().apply { customizer.customize(this) }
-    }
+    fun loadBalancedRestTemplate(customizer: RestTemplateCustomizer): RestTemplate =
+        RestTemplate().apply { customizer.customize(this) }
 
     @Bean
     @Qualifier("vanillaRestTemplate")
-    fun vanillaRestTemplate(): RestTemplate {
-        return RestTemplate()
-    }
+    fun vanillaRestTemplate(): RestTemplate  = RestTemplate()
 }
 <%_ } _%>

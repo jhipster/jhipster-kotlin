@@ -35,15 +35,11 @@ class AccessControlFilter(
     private val jHipsterProperties: JHipsterProperties
 ) : ZuulFilter() {
 
-    private val log = LoggerFactory.getLogger(AccessControlFilter::class.java)
+    private val log = LoggerFactory.getLogger(javaClass)
 
-    override fun filterType(): String {
-        return "pre"
-    }
+    override fun filterType() = "pre"
 
-    override fun filterOrder(): Int {
-        return 0
-    }
+    override fun filterOrder() = 0
 
     /**
      * Filter requests on endpoints that are not in the list of authorized microservices endpoints.
@@ -71,7 +67,10 @@ class AccessControlFilter(
 
         // If the authorized endpoints list was left empty for this route, all access are allowed
         if (authorizedMicroservicesEndpoints[serviceName] == null) {
-            log.debug("Access Control: allowing access for {}, as no access control policy has been set up for " + "service: {}", requestUri, serviceName)
+            log.debug(
+                "Access Control: allowing access for {}, as no access control policy has been set up for service: {}",
+                requestUri, serviceName
+            )
             return true
         } else {
             val authorizedEndpoints = authorizedMicroservicesEndpoints[serviceName]
@@ -82,7 +81,10 @@ class AccessControlFilter(
                     // We do a substring to remove the "**/" at the end of the route URL
                     val gatewayEndpoint = serviceUrl.substring(0, serviceUrl.length - 3) + endpoint
                     if (requestUri.startsWith(gatewayEndpoint)) {
-                        log.debug("Access Control: allowing access for {}, as it matches the following authorized " + "microservice endpoint: {}", requestUri, gatewayEndpoint)
+                        log.debug(
+                            "Access Control: allowing access for {}, as it matches the following authorized microservice endpoint: {}",
+                            requestUri, gatewayEndpoint
+                        )
                         return true
                     }
                 }

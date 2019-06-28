@@ -38,17 +38,16 @@ import java.util.concurrent.Executor
 @Configuration
 class LiquibaseConfiguration(private val env: Environment<% if (enableHibernateCache) { %>, private val cacheManager: CacheManager<% } %>) {
 
-    private val log = LoggerFactory.getLogger(LiquibaseConfiguration::class.java)
+    private val log = LoggerFactory.getLogger(javaClass)
 
     @Bean
     fun liquibase(
         @Qualifier("taskExecutor") executor: Executor,
         dataSource: DataSource,
         liquibaseProperties: LiquibaseProperties
-    ): SpringLiquibase {
-
+    ): SpringLiquibase =
         // Use liquibase.integration.spring.SpringLiquibase if you don't want Liquibase to start asynchronously
-        return AsyncSpringLiquibase(executor, env).apply {
+        AsyncSpringLiquibase(executor, env).apply {
             this.dataSource = dataSource
             changeLog = "classpath:config/liquibase/master.xml"
             contexts = liquibaseProperties.contexts
@@ -63,5 +62,4 @@ class LiquibaseConfiguration(private val env: Environment<% if (enableHibernateC
                 log.debug("Configuring Liquibase")
             }
         }
-    }
 }

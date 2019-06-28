@@ -116,6 +116,15 @@ import org.mockito.Mockito.`when`
 <%_ } _%>
 import kotlin.test.assertNotNull
 
+private const val DEFAULT_LOGIN = "johndoe"
+private const val DEFAULT_EMAIL = "johndoe@localhost"
+private const val DEFAULT_FIRSTNAME = "john"
+private const val DEFAULT_LASTNAME = "doe"
+<%_ if (databaseType !== 'cassandra') { _%>
+private const val DEFAULT_IMAGEURL = "http://placehold.it/50x50"
+<%_ } _%>
+private const val DEFAULT_LANGKEY = "dummy"
+
 /**
  * Integration tests for [UserService].
  */
@@ -332,12 +341,15 @@ class UserServiceIT <% if (databaseType === 'cassandra') { %>: AbstractCassandra
         assertNotNull(dbUser)
         dbUser.createdDate = now.minus(4, ChronoUnit.DAYS)
         userRepository.save<% if (databaseType === 'sql') { %>AndFlush<% } %>(user)<% if (reactive) { %>.block()<% } %>
-        var users = userRepository.findAllByActivatedIsFalseAndActivationKeyIsNotNullAndCreatedDateBefore(now.minus(3, ChronoUnit.DAYS))<% if (reactive) { %>
-            .collectList().block()<% } %>
+        var users = userRepository.findAllByActivatedIsFalseAndActivationKeyIsNotNullAndCreatedDateBefore(
+            now.minus(3, ChronoUnit.DAYS)
+        )<% if (reactive) { %>.collectList().block()<% } %>
         assertThat(users).isNotEmpty
         userService.removeNotActivatedUsers()
-        users = userRepository.findAllByActivatedIsFalseAndActivationKeyIsNotNullAndCreatedDateBefore(now.minus(3, ChronoUnit.DAYS))<% if (reactive) { %>
-            .collectList().block()<% } %>
+        users =
+            userRepository.findAllByActivatedIsFalseAndActivationKeyIsNotNullAndCreatedDateBefore(
+                now.minus(3, ChronoUnit.DAYS)
+            )<% if (reactive) { %>.collectList().block()<% } %>
         assertThat(users).isEmpty()
         <%_ if (searchEngine === 'elasticsearch') { _%>
 
@@ -359,8 +371,10 @@ class UserServiceIT <% if (databaseType === 'cassandra') { %>: AbstractCassandra
         val dbUser = userRepository.save<% if (databaseType === 'sql') { %>AndFlush<% } %>(user)<% if (reactive) { %>.block()<% } %>
         dbUser.createdDate = now.minus(4, ChronoUnit.DAYS)
         userRepository.save<% if (databaseType === 'sql') { %>AndFlush<% } %>(user)<% if (reactive) { %>.block()<% } %>
-        val users = userRepository.findAllByActivatedIsFalseAndActivationKeyIsNotNullAndCreatedDateBefore(now.minus(3, ChronoUnit.DAYS))<% if (reactive) { %>
-            .collectList().block()<% } %>
+        val users =
+            userRepository.findAllByActivatedIsFalseAndActivationKeyIsNotNullAndCreatedDateBefore(
+                now.minus(3, ChronoUnit.DAYS)
+            )<% if (reactive) { %>.collectList().block()<% } %>
         assertThat(users).isEmpty()
         userService.removeNotActivatedUsers()
         val maybeDbUser = userRepository.findById(dbUser.id)<% if (reactive) { %>.blockOptional()<% } %>
@@ -495,27 +509,12 @@ class UserServiceIT <% if (databaseType === 'cassandra') { %>: AbstractCassandra
 
     private fun createMockOAuth2AuthenticationToken(userDetails: Map<String, Any?>): OAuth2AuthenticationToken {
         val authorities = listOf(SimpleGrantedAuthority(ANONYMOUS))
-        val usernamePasswordAuthenticationToken = UsernamePasswordAuthenticationToken(ANONYMOUS_USER, ANONYMOUS_USER, authorities)
+        val usernamePasswordAuthenticationToken =
+            UsernamePasswordAuthenticationToken(ANONYMOUS_USER, ANONYMOUS_USER, authorities)
         usernamePasswordAuthenticationToken.details = userDetails
         val user = DefaultOAuth2User(authorities, userDetails, "sub")
 
         return OAuth2AuthenticationToken(user, authorities, "oidc")
     }
     <%_ } _%>
-
-    companion object {
-        private const val DEFAULT_LOGIN = "johndoe"
-
-        private const val DEFAULT_EMAIL = "johndoe@localhost"
-
-        private const val DEFAULT_FIRSTNAME = "john"
-
-        private const val DEFAULT_LASTNAME = "doe"
-
-        <%_ if (databaseType !== 'cassandra') { _%>
-        private const val DEFAULT_IMAGEURL = "http://placehold.it/50x50"
-
-        <%_ } _%>
-        private const val DEFAULT_LANGKEY = "dummy"
-    }
 }

@@ -49,7 +49,7 @@ import io.github.jhipster.config.JHipsterProperties
  */
 class RateLimitingFilter(private val jHipsterProperties: JHipsterProperties) : ZuulFilter() {
 
-    private val log = LoggerFactory.getLogger(RateLimitingFilter::class.java)
+    private val log = LoggerFactory.getLogger(javaClass)
 
     private val cache: javax.cache.Cache<String, GridBucketState>
 
@@ -60,8 +60,12 @@ class RateLimitingFilter(private val jHipsterProperties: JHipsterProperties) : Z
             val rateLimitingProperties = jHipsterProperties.gateway.rateLimiting
 
             Bucket4j.configurationBuilder()
-                .addLimit(Bandwidth.simple(rateLimitingProperties.limit,
-                    Duration.ofSeconds(rateLimitingProperties.durationInSeconds.toLong())))
+                .addLimit(
+                    Bandwidth.simple(
+                        rateLimitingProperties.limit,
+                        Duration.ofSeconds(rateLimitingProperties.durationInSeconds.toLong())
+                    )
+                )
                 .build()
         }
 
@@ -76,19 +80,13 @@ class RateLimitingFilter(private val jHipsterProperties: JHipsterProperties) : Z
         this.buckets = Bucket4j.extension(JCache::class.java).proxyManagerForCache(cache)
     }
 
-    override fun filterType(): String {
-        return "pre"
-    }
+    override fun filterType() = "pre"
 
-    override fun filterOrder(): Int {
-        return 10
-    }
+    override fun filterOrder() = 10
 
-    override fun shouldFilter(): Boolean {
-        // specific APIs can be filtered out using
-        // if (RequestContext.getCurrentContext().getRequest().getRequestURI().startsWith("/api")) { ... }
-        return true
-    }
+    // specific APIs can be filtered out using
+    // if (RequestContext.getCurrentContext().getRequest().getRequestURI().startsWith("/api")) { ... }
+    override fun shouldFilter() = true
 
     override fun run(): Any? {
         val bucketId = getId(RequestContext.getCurrentContext().request)
@@ -120,9 +118,8 @@ class RateLimitingFilter(private val jHipsterProperties: JHipsterProperties) : Z
     /**
      * The ID that will identify the limit: the user login or the user IP address.
      */
-    private fun getId(httpServletRequest: HttpServletRequest): String {
-        return getCurrentUserLogin().orElse(httpServletRequest.remoteAddr)
-    }
+    private fun getId(httpServletRequest: HttpServletRequest): String =
+        getCurrentUserLogin().orElse(httpServletRequest.remoteAddr)
 
     companion object {
         const val GATEWAY_RATE_LIMITING_CACHE_NAME = "gateway-rate-limiting"
