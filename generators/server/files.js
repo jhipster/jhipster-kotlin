@@ -2123,7 +2123,6 @@ function updatePom(generator) {
         .parent()
         .remove();
 
-
     _this.fs.write(fullPath, $.xml());
 }
 
