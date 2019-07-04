@@ -42,7 +42,6 @@ constructor(
     private val sortResolver: ReactiveSortHandlerMethodArgumentResolver = DEFAULT_SORT_RESOLVER
 ) : SyncHandlerMethodArgumentResolver {
 
-
     private var fallbackPageable: Pageable? = DEFAULT_PAGE_REQUEST
     /**
      * The parameter name to be used to find the page number in the request. Defaults to `page`. Must not be `null` or empty.
@@ -85,8 +84,11 @@ constructor(
      * (non-Javadoc)
      * @see org.springframework.web.reactive.result.method.SyncHandlerMethodArgumentResolver#resolveArgumentValue(org.springframework.core.MethodParameter, org.springframework.web.reactive.BindingContext, org.springframework.web.server.ServerWebExchange)
      */
-    override fun resolveArgumentValue(parameter: MethodParameter, bindingContext: BindingContext,
-                                      exchange: ServerWebExchange): Pageable {
+    override fun resolveArgumentValue(
+        parameter: MethodParameter,
+        bindingContext: BindingContext,
+        exchange: ServerWebExchange
+    ): Pageable {
 
         val queryParams = exchange.request.queryParams
         val page = queryParams.getFirst(getParameterNameToUse(pageParameterName, parameter))
@@ -147,8 +149,11 @@ constructor(
         this.qualifierDelimiter = qualifierDelimiter ?: DEFAULT_QUALIFIER_DELIMITER
     }
 
-    private fun getPageable(methodParameter: MethodParameter, @Nullable pageString: String?,
-                            @Nullable pageSizeString: String?): Pageable {
+    private fun getPageable(
+        methodParameter: MethodParameter,
+        @Nullable pageString: String?,
+        @Nullable pageSizeString: String?
+    ): Pageable {
         assertPageableUniqueness(methodParameter)
 
         val defaultOrFallback = getDefaultFromAnnotationOrFallback(methodParameter)!!.toOptional()
@@ -160,11 +165,16 @@ constructor(
             return Pageable.unpaged()
         }
 
-        val p = page.orElseGet { defaultOrFallback.map<Int> { it.pageNumber }.orElseThrow<IllegalStateException> { IllegalStateException() } }
-        var ps = pageSize.orElseGet { defaultOrFallback.map<Int> { it.pageSize }.orElseThrow<IllegalStateException> { IllegalStateException() } }
+        val p = page.orElseGet {
+            defaultOrFallback.map { it.pageNumber }.orElseThrow { IllegalStateException() }
+        }
+        var ps = pageSize.orElseGet {
+            defaultOrFallback.map { it.pageSize }.orElseThrow { IllegalStateException() }
+        }
 
         // Limit lower bound
-        ps = if (ps < 1) defaultOrFallback.map<Int> { it.pageSize }.orElseThrow<IllegalStateException> { IllegalStateException() } else ps
+        ps =
+            if (ps < 1) defaultOrFallback.map { it.pageSize }.orElseThrow { IllegalStateException() } else ps
         // Limit upper bound
         ps = if (ps > maxPageSize) maxPageSize else ps
 
@@ -219,12 +229,12 @@ constructor(
         } catch (e: NumberFormatException) {
             Optional.of(0)
         }
-
     }
 
     companion object {
 
-        private const val INVALID_DEFAULT_PAGE_SIZE = "Invalid default page size configured for method %s! Must not be less than one!"
+        private const val INVALID_DEFAULT_PAGE_SIZE =
+            "Invalid default page size configured for method %s! Must not be less than one!"
 
         private const val DEFAULT_PAGE_PARAMETER = "page"
         private const val DEFAULT_SIZE_PARAMETER = "size"
@@ -254,7 +264,7 @@ constructor(
 
         fun assertPageableUniqueness(parameter: MethodParameter) {
             val method = parameter.method
-                ?: throw IllegalArgumentException(String.format("Method parameter %s is not backed by a method.", parameter))
+                ?: throw IllegalArgumentException("Method parameter $parameter is not backed by a method.")
 
             if (containsMoreThanOnePageableParameter(method)) {
                 val annotations = method.parameterAnnotations
@@ -323,7 +333,8 @@ constructor(
                 if (Pageable::class.java == parameterTypes[i]) {
 
                     val qualifier = findAnnotation(annotations[i]) ?: throw IllegalStateException(
-                        "Ambiguous Pageable arguments in handler method. If you use multiple parameters of type Pageable you need to qualify them with @Qualifier")
+                        "Ambiguous Pageable arguments in handler method. If you use multiple parameters of type Pageable you need to qualify them with @Qualifier"
+                    )
 
                     if (values.contains(qualifier.value)) {
                         throw IllegalStateException("Values of the user Qualifiers must be unique!")

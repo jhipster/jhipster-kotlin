@@ -68,12 +68,14 @@ class ReactiveSortHandlerMethodArgumentResolver : SyncHandlerMethodArgumentResol
      *(non-Javadoc)
      * @see org.springframework.web.reactive.result.method.SyncHandlerMethodArgumentResolver#resolveArgumentValue(org.springframework.core.MethodParameter, org.springframework.web.reactive.BindingContext, org.springframework.web.server.ServerWebExchange)
      */
-    override fun resolveArgumentValue(parameter: MethodParameter, bindingContext: BindingContext,
-                                      exchange: ServerWebExchange): Sort {
+    override fun resolveArgumentValue(
+        parameter: MethodParameter,
+        bindingContext: BindingContext,
+        exchange: ServerWebExchange
+    ): Sort {
 
         val directionParameter = exchange.request.queryParams[getSortParameter(parameter)]
             ?: return getDefaultFromAnnotationOrFallback(parameter)
-
 
         // Single empty parameter, e.g "sort="
         return if (directionParameter.size == 1 && !StringUtils.hasText(directionParameter[0])) {
@@ -121,8 +123,9 @@ class ReactiveSortHandlerMethodArgumentResolver : SyncHandlerMethodArgumentResol
 
         if (annotatedDefault != null && annotatedDefaults != null) {
             throw IllegalArgumentException(
-                String.format("Cannot use both @%s and @%s on parameter %s! Move %s into %s to define sorting order!",
-                    SORT_DEFAULTS_NAME, SORT_DEFAULT_NAME, parameter.toString(), SORT_DEFAULT_NAME, SORT_DEFAULTS_NAME))
+                "Cannot use both @$SORT_DEFAULTS_NAME and @$SORT_DEFAULT_NAME on parameter $parameter! " +
+                    "Move $SORT_DEFAULT_NAME into $SORT_DEFAULTS_NAME to define sorting order!"
+            )
         }
 
         if (annotatedDefault != null) {
@@ -261,8 +264,9 @@ class ReactiveSortHandlerMethodArgumentResolver : SyncHandlerMethodArgumentResol
             if (builder == null) {
                 builder = ExpressionBuilder(direction)
             } else if (!builder.hasSameDirectionAs(order)) {
-                throw IllegalArgumentException(String.format(
-                    "%s in legacy configuration only supports a single direction to sort by!", javaClass.simpleName))
+                throw IllegalArgumentException(
+                    "${javaClass.simpleName} in legacy configuration only supports a single direction to sort by!"
+                )
             }
 
             builder.add(order.property)
@@ -280,7 +284,7 @@ class ReactiveSortHandlerMethodArgumentResolver : SyncHandlerMethodArgumentResol
     /**
      * Sets up a new [ExpressionBuilder] for properties to be sorted in the given [Direction].
      */
-    (private val direction: Direction) {
+        (private val direction: Direction) {
 
         private val elements = mutableListOf<String>()
 
@@ -331,7 +335,7 @@ class ReactiveSortHandlerMethodArgumentResolver : SyncHandlerMethodArgumentResol
         private val SORT_DEFAULTS_NAME = SortDefaults::class.java.simpleName
         private val SORT_DEFAULT_NAME = SortDefault::class.java.simpleName
 
-        private fun toOrder(property: String, direction: Optional<Direction>): Optional<Order> =
+        private fun toOrder(property: String, direction: Optional<Direction>) =
             if (!StringUtils.hasText(property)) {
                 Optional.empty()
             } else {
