@@ -44,12 +44,11 @@ import java.util.Optional
  *
  * @return the login of the current user.
  */
-fun getCurrentUserLogin(): <% if (!reactive) { %>Optional<% } else { %>Mono<% } %><String> {
+fun getCurrentUserLogin(): <% if (!reactive) { %>Optional<% } else { %>Mono<% } %><String> =
     <%_ if (!reactive) { _%>
-    val securityContext = SecurityContextHolder.getContext()
-    return Optional.ofNullable(securityContext.authentication)
+    Optional.ofNullable(SecurityContextHolder.getContext().authentication)
     <%_ } else { _%>
-    return ReactiveSecurityContextHolder.getContext()
+    ReactiveSecurityContextHolder.getContext()
         .map(SecurityContext::getAuthentication)
     <%_ } _%>
         .map { authentication ->
@@ -68,7 +67,6 @@ fun getCurrentUserLogin(): <% if (!reactive) { %>Optional<% } else { %>Mono<% } 
                 else -> null
             }
         }
-}
 <%_ if (authenticationType === 'jwt') { _%>
 
 /**
@@ -76,17 +74,15 @@ fun getCurrentUserLogin(): <% if (!reactive) { %>Optional<% } else { %>Mono<% } 
  *
  * @return the JWT of the current user.
  */
-fun getCurrentUserJWT(): <% if (!reactive) { %>Optional<% } else { %>Mono<% } %><String>{
+fun getCurrentUserJWT(): <% if (!reactive) { %>Optional<% } else { %>Mono<% } %><String> =
     <%_ if (!reactive) { _%>
-    val securityContext = SecurityContextHolder.getContext()
-    return Optional.ofNullable(securityContext.authentication)
+    Optional.ofNullable(SecurityContextHolder.getContext().authentication)
     <%_ } else { _%>
-    return ReactiveSecurityContextHolder.getContext()
+    ReactiveSecurityContextHolder.getContext()
         .map(SecurityContext::getAuthentication)
     <%_ } _%>
         .filter { it.credentials is String }
         .map { it.credentials as String }
-}
 <%_ } _%>
 
 /**
@@ -94,19 +90,17 @@ fun getCurrentUserJWT(): <% if (!reactive) { %>Optional<% } else { %>Mono<% } %>
  *
  * @return true if the user is authenticated, false otherwise.
  */
-fun isAuthenticated(): <% if (!reactive) { %>Boolean<% } else { %>Mono<Boolean><% } %> {
+fun isAuthenticated(): <% if (!reactive) { %>Boolean<% } else { %>Mono<Boolean><% } %> =
     <%_ if (!reactive) { _%>
-    val securityContext = SecurityContextHolder.getContext()
-    return Optional.ofNullable(securityContext.authentication)
+    Optional.ofNullable(SecurityContextHolder.getContext().authentication)
     <%_ } else { _%>
-    return ReactiveSecurityContextHolder.getContext()
+    ReactiveSecurityContextHolder.getContext()
         .map(SecurityContext::getAuthentication)
     <%_ } _%>
         .map { authentication ->
             authentication.authorities.none { it.authority == ANONYMOUS }
         }<% if (!reactive) { %>
         .orElse(false)<% } %>
-}
 
 /**
  * If the current user has a specific authority (security role).
@@ -116,16 +110,14 @@ fun isAuthenticated(): <% if (!reactive) { %>Boolean<% } else { %>Mono<Boolean><
  * @param authority the authority to check.
  * @return true if the current user has the authority, false otherwise.
  */
-fun isCurrentUserInRole(authority: String): <% if (!reactive) { %>Boolean<% } else { %>Mono<Boolean><% } %> {
+fun isCurrentUserInRole(authority: String): <% if (!reactive) { %>Boolean<% } else { %>Mono<Boolean><% } %> =
     <%_ if (!reactive) { _%>
-    val securityContext = SecurityContextHolder.getContext()
-    return Optional.ofNullable(securityContext.authentication)
+    Optional.ofNullable(SecurityContextHolder.getContext().authentication)
     <%_ } else { _%>
-    return ReactiveSecurityContextHolder.getContext()
+    ReactiveSecurityContextHolder.getContext()
         .map(SecurityContext::getAuthentication)
     <%_ } _%>
         .map { authentication ->
             authentication.authorities.any { it.authority == authority }
         }<% if (!reactive) { %>
         .orElse(false)<% } %>
-}

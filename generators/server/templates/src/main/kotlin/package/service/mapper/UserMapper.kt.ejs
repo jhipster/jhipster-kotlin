@@ -35,24 +35,19 @@ import org.springframework.stereotype.Service
 @Service
 class UserMapper {
 
-    fun usersToUserDTOs(users: List<<%= asEntity('User') %>?>): MutableList<<%= asDto('User') %>> {
-        return users.asSequence()
+    fun usersToUserDTOs(users: List<<%= asEntity('User') %>?>): MutableList<<%= asDto('User') %>> =
+        users.asSequence()
             .filterNotNull()
-            .mapTo(mutableListOf()) { this.userToUserDTO(it) }
-    }
+            .mapTo(mutableListOf()) { userToUserDTO(it) }
 
-    fun userToUserDTO(user: <%= asEntity('User') %>): <%= asDto('User') %> {
-        return <%= asDto('User') %>(user)
-    }
+    fun userToUserDTO(user: <%= asEntity('User') %>): <%= asDto('User') %> = <%= asDto('User') %>(user)
 
-    fun userDTOsToUsers(userDTOs: List<<%= asDto('User') %>?>): MutableList<<%= asEntity('User') %>> {
-        return userDTOs.asSequence()
-            .map { userDTOToUser(it) }
-            .filterNotNullTo(mutableListOf())
-    }
+    fun userDTOsToUsers(userDTOs: List<<%= asDto('User') %>?>) =
+        userDTOs.asSequence()
+            .mapNotNullTo(mutableListOf()) { userDTOToUser(it) }
 
-    fun userDTOToUser(userDTO: <%= asDto('User') %>?): <%= asEntity('User') %>? {
-        return when (userDTO) {
+    fun userDTOToUser(userDTO: <%= asDto('User') %>?) =
+        when (userDTO) {
             null -> null
             else -> {
                 <%= asEntity('User') %>(
@@ -75,21 +70,16 @@ class UserMapper {
                 )
             }
         }
-    }
     <%_ if (databaseType === 'sql' || databaseType === 'mongodb') { _%>
 
-    private fun authoritiesFromStrings(authoritiesAsString: Set<String>?): MutableSet<Authority> {
-        return authoritiesAsString?.mapTo(mutableSetOf()) { Authority(name = it) } ?: mutableSetOf()
-    }
+    private fun authoritiesFromStrings(authoritiesAsString: Set<String>?): MutableSet<Authority> =
+        authoritiesAsString?.mapTo(mutableSetOf()) { Authority(name = it) } ?: mutableSetOf()
     <%_ } _%>
     <%_ if (databaseType === 'cassandra' || databaseType === 'couchbase') { _%>
 
-    private fun cleanNullStringAuthorities(authoritiesAsString: Set<String?>?): MutableSet<String> {
-        return authoritiesAsString?.filterNotNullTo(mutableSetOf()) ?: mutableSetOf()
-    }
+    private fun cleanNullStringAuthorities(authoritiesAsString: Set<String?>?): MutableSet<String> =
+        authoritiesAsString?.filterNotNullTo(mutableSetOf()) ?: mutableSetOf()
     <%_ } _%>
 
-    fun userFromId(id: <% if (databaseType === 'mongodb' || databaseType === 'couchbase' || databaseType === 'cassandra' || authenticationType === 'oauth2') { %>String<% } else { %>Long<% } %>?): <%= asEntity('User') %>? {
-        return id?.let { <%= asEntity('User') %>(id = it) }
-    }
+    fun userFromId(id: <% if (databaseType === 'mongodb' || databaseType === 'couchbase' || databaseType === 'cassandra' || authenticationType === 'oauth2') { %>String<% } else { %>Long<% } %>?) = id?.let { <%= asEntity('User') %>(id = it) }
 }

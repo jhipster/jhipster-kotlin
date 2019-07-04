@@ -22,8 +22,14 @@
     const mapper = entityInstance + 'Mapper';
     const entityListToDtoListReference = mapper + '.' + 'toDto';
     const entityToDtoReference = mapper + '::'+ 'toDto';
-    if (jpaMetamodelFiltering) {  %>
-    fun getAll<%= entityClassPlural %>(criteria: <%= entityClass %>Criteria<% if (pagination != 'no') { %>, pageable: Pageable, @RequestParam queryParams: MultiValueMap<String, String>, uriBuilder: UriComponentsBuilder<% } %>): ResponseEntity<MutableList<<%= instanceType %>>> {
+    if (jpaMetamodelFiltering) {
+    _%>
+    fun getAll<%= entityClassPlural %>(
+        criteria: <%= entityClass %>Criteria<% if (pagination != 'no') { %>,
+        pageable: Pageable,
+        @RequestParam queryParams: MultiValueMap<String, String>,
+        uriBuilder: UriComponentsBuilder<% } %>
+    ): ResponseEntity<MutableList<<%= instanceType %>>> {
         log.debug("REST request to get <%= entityClassPlural %> by criteria: {}", criteria)
     <%_ if (pagination === 'no') { _%>
         val entityList = <%= entityInstance %>QueryService.findByCriteria(criteria)
@@ -55,7 +61,13 @@
         return <%= entityListToDtoListReference %>(<%= entityInstancePlural %>)<% } else { %>
         return <%= entityInstance %>Repository.<% if (fieldsContainOwnerManyToMany) { %>findAllWithEagerRelationships<% } else { %>findAll<% } %>()<% } %>
     <%_ } if (pagination !== 'no') { _%>
-    fun getAll<%= entityClassPlural %>(pageable: Pageable, @RequestParam queryParams: MultiValueMap<String, String>, uriBuilder: UriComponentsBuilder<% if (fieldsContainNoOwnerOneToOne) { %>, @RequestParam(required = false) filter: String?<% } %><% if (fieldsContainOwnerManyToMany) { %>, @RequestParam(required = false, defaultValue = "false") eagerload: Boolean<% } %>): ResponseEntity<MutableList<<%= instanceType %>>> {<%- include('get_all_stream_template', {viaService: viaService}); -%>
+    fun getAll<%= entityClassPlural %>(
+        pageable: Pageable,
+        @RequestParam queryParams: MultiValueMap<String, String>,
+        uriBuilder: UriComponentsBuilder<% if (fieldsContainNoOwnerOneToOne) { %>,
+        @RequestParam(required = false) filter: String?<% } if (fieldsContainOwnerManyToMany) { %>,
+        @RequestParam(required = false, defaultValue = "false") eagerload: Boolean<% } %>
+    ) : ResponseEntity<MutableList<<%= instanceType %>>> {<%- include('get_all_stream_template', {viaService: viaService}); -%>
         log.debug("REST request to get a page of <%= entityClassPlural %>")
     <%_ if (viaService) { _%>
         <%_ if (fieldsContainOwnerManyToMany) { _%>

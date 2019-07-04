@@ -35,17 +35,13 @@ class CustomN1qlCouchbaseRepository<T, ID : Serializable>
  * @param metadata            the Metadata for the entity.
  * @param couchbaseOperations the reference to the template used.
  */
-(metadata: CouchbaseEntityInformation<T, String>, couchbaseOperations: CouchbaseOperations) : N1qlCouchbaseRepository<T, ID>(metadata, couchbaseOperations) {
+    (metadata: CouchbaseEntityInformation<T, String>, couchbaseOperations: CouchbaseOperations) :
+    N1qlCouchbaseRepository<T, ID>(metadata, couchbaseOperations) {
 
-    private val persistentEntity: CouchbasePersistentEntity<*>?
+    private val persistentEntity: CouchbasePersistentEntity<*>? =
+        getCouchbaseOperations().converter.mappingContext.getPersistentEntity(entityInformation.javaType)
 
-    init {
-        persistentEntity = getCouchbaseOperations().converter.mappingContext.getPersistentEntity(entityInformation.javaType)
-    }
-
-    override fun <S : T> save(entity: S): S {
-        return super.save(populateIdIfNecessary(entity))
-    }
+    override fun <S : T> save(entity: S): S = super.save(populateIdIfNecessary(entity))
 
     /**
      * Add generated ID to entity if not already set.

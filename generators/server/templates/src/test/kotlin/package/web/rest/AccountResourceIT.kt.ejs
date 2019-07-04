@@ -92,8 +92,10 @@ class AccountResourceIT <% if (databaseType === 'cassandra') { %>: AbstractCassa
     @Test
     @Throws(Exception::class)
     fun testNonAuthenticatedUser() {
-        restUserMockMvc.perform(get("/api/authenticate")
-            .accept(MediaType.APPLICATION_JSON))
+        restUserMockMvc.perform(
+            get("/api/authenticate")
+                .accept(MediaType.APPLICATION_JSON)
+        )
             .andExpect(status().isOk)
             .andExpect(content().string(""))
     }
@@ -130,8 +132,10 @@ class AccountResourceIT <% if (databaseType === 'cassandra') { %>: AbstractCassa
         val authentication = OAuth2AuthenticationToken(user, authorities, "oidc")
         TestSecurityContextHolder.getContext().authentication = authentication
 
-        restUserMockMvc.perform(get("/api/account")
-            .accept(MediaType.APPLICATION_JSON))
+        restUserMockMvc.perform(
+            get("/api/account")
+                .accept(MediaType.APPLICATION_JSON)
+        )
             .andExpect(status().isOk)
             .andExpect(content().contentType(MediaType.APPLICATION_JSON_UTF8_VALUE))
             .andExpect(jsonPath("\$.login").value("test"))
@@ -142,8 +146,10 @@ class AccountResourceIT <% if (databaseType === 'cassandra') { %>: AbstractCassa
     @Test
     @Throws(Exception::class)
     fun testGetUnknownAccount() {
-        restUserMockMvc.perform(get("/api/account")
-            .accept(MediaType.APPLICATION_JSON))
+        restUserMockMvc.perform(
+            get("/api/account")
+                .accept(MediaType.APPLICATION_JSON)
+        )
             .andExpect(status().isInternalServerError)
     }
 }
@@ -296,7 +302,9 @@ import org.assertj.core.api.Assertions.assertThat
 import org.hamcrest.Matchers.hasItem
 <%_ } _%>
 <%_ if (!reactive) { _%>
+    <%_ if (authenticationType === 'session') { _%>
 import org.springframework.test.web.servlet.request.MockMvcRequestBuilders.delete
+    <%_ } _%>
 import org.springframework.test.web.servlet.request.MockMvcRequestBuilders.get
 import org.springframework.test.web.servlet.request.MockMvcRequestBuilders.post
 import org.springframework.test.web.servlet.result.MockMvcResultMatchers.content

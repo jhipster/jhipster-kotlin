@@ -38,6 +38,13 @@ import javax.servlet.http.HttpServletResponse
 import java.io.IOException
 
 /**
+ * Number of seconds before expiry to start refreshing access tokens so we don't run into race conditions when forwarding
+ * requests downstream. Otherwise, access tokens may still be valid when we check here but may then be expired
+ * when relayed to another microservice a wee bit later.
+ */
+private const val REFRESH_WINDOW_SECS = 30
+
+/**
  * Filters incoming requests and refreshes the access token before it expires.
  */
 class RefreshTokenFilter(
@@ -48,7 +55,7 @@ class RefreshTokenFilter(
     private val tokenStore: TokenStore
 ) : GenericFilterBean() {
 
-    private val log = LoggerFactory.getLogger(RefreshTokenFilter::class.java)
+    private val log = LoggerFactory.getLogger(javaClass)
 
     /**
      * Check access token cookie and refresh it, if it is either not present, expired or about to expire.
@@ -77,20 +84,23 @@ class RefreshTokenFilter(
      * @return a new request to use downstream that contains the new cookies, if they had to be refreshed.
      * @throws InvalidTokenException if the tokens could not be refreshed.
      */
-    fun refreshTokensIfExpiring(httpServletRequest: HttpServletRequest, httpServletResponse: HttpServletResponse): HttpServletRequest {
+    fun refreshTokensIfExpiring(
+        httpServletRequest: HttpServletRequest,
+        httpServletResponse: HttpServletResponse
+    ): HttpServletRequest {
         var newHttpServletRequest = httpServletRequest
-        //get access token from cookie
+        // get access token from cookie
         val accessTokenCookie = OAuth2CookieHelper.getAccessTokenCookie(httpServletRequest)
-        if (mustRefreshToken(accessTokenCookie)) {        //we either have no access token, or it is expired, or it is about to expire
-            //get the refresh token cookie and, if present, request new tokens
+        if (mustRefreshToken(accessTokenCookie)) { // we either have no access token, or it is expired, or it is about to expire
+            // get the refresh token cookie and, if present, request new tokens
             val refreshCookie = OAuth2CookieHelper.getRefreshTokenCookie(httpServletRequest)
             if (refreshCookie != null) {
                 try {
-                    newHttpServletRequest = authenticationService.refreshToken(httpServletRequest, httpServletResponse, refreshCookie)
+                    newHttpServletRequest =
+                        authenticationService.refreshToken(httpServletRequest, httpServletResponse, refreshCookie)
                 } catch (ex: HttpClientErrorException) {
                     throw UnauthorizedClientException("could not refresh OAuth2 token", ex)
                 }
-
             } else if (accessTokenCookie != null) {
                 log.warn("access token found, but no refresh token, stripping them all")
                 val token = tokenStore.readAccessToken(accessTokenCookie.value)
@@ -114,16 +124,7 @@ class RefreshTokenFilter(
             return true
         }
         val token = tokenStore.readAccessToken(accessTokenCookie.value)
-        //check if token is expired or about to expire
+        // check if token is expired or about to expire
         return token.isExpired || token.expiresIn < REFRESH_WINDOW_SECS
-    }
-
-    companion object {
-        /**
-         * Number of seconds before expiry to start refreshing access tokens so we don't run into race conditions when forwarding
-         * requests downstream. Otherwise, access tokens may still be valid when we check here but may then be expired
-         * when relayed to another microservice a wee bit later.
-         */
-        private const val REFRESH_WINDOW_SECS = 30
     }
 }

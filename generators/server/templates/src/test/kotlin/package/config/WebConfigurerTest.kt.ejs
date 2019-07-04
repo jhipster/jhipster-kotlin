@@ -74,10 +74,10 @@ class WebConfigurerTest {
     @BeforeEach
     fun setup() {
         servletContext = spy(MockServletContext())
-        doReturn(mock<FilterRegistration.Dynamic>(FilterRegistration.Dynamic::class.java))
-            .`when`<MockServletContext>(servletContext).addFilter(anyString(), any(Filter::class.java))
-        doReturn(mock<ServletRegistration.Dynamic>(ServletRegistration.Dynamic::class.java))
-            .`when`<MockServletContext>(servletContext).addServlet(anyString(), any(Servlet::class.java))
+        doReturn(mock(FilterRegistration.Dynamic::class.java))
+            .`when`(servletContext).addFilter(anyString(), any(Filter::class.java))
+        doReturn(mock(ServletRegistration.Dynamic::class.java))
+            .`when`(servletContext).addServlet(anyString(), any(Servlet::class.java))
 
         env = MockEnvironment()
         props = JHipsterProperties()
@@ -92,11 +92,11 @@ class WebConfigurerTest {
         webConfigurer.onStartup(servletContext)
 
         <%_ if (!skipClient) { _%>
-        verify<MockServletContext>(servletContext)
+        verify(servletContext)
             .addFilter(ArgumentMatchers.eq("cachingHttpHeadersFilter"), any(CachingHttpHeadersFilter::class.java))
         <%_ } _%>
         <%_ if (devDatabaseType === 'h2Disk' || devDatabaseType === 'h2Memory') { _%>
-        verify<MockServletContext>(servletContext, never())
+        verify(servletContext, never())
             .addServlet(ArgumentMatchers.eq("H2Console"), any(WebServlet::class.java))
         <%_ } _%>
     }
@@ -108,11 +108,11 @@ class WebConfigurerTest {
         webConfigurer.onStartup(servletContext)
 
         <%_ if (!skipClient) { _%>
-        verify<MockServletContext>(servletContext, never())
+        verify(servletContext, never())
             .addFilter(ArgumentMatchers.eq("cachingHttpHeadersFilter"), any(CachingHttpHeadersFilter::class.java))
          <%_ } _%>
         <%_ if (devDatabaseType === 'h2Disk' || devDatabaseType === 'h2Memory') { _%>
-        verify<MockServletContext>(servletContext)
+        verify(servletContext)
             .addServlet(ArgumentMatchers.eq("H2Console"), any(WebServlet::class.java))
         <%_ } _%>
     }

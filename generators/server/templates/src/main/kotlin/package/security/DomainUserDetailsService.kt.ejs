@@ -47,7 +47,7 @@ import java.util.Locale
 @Component("userDetailsService")
 class DomainUserDetailsService(private val userRepository: UserRepository) : <% if (reactive) { %>Reactive<% } %>UserDetailsService {
 
-    private val log = LoggerFactory.getLogger(DomainUserDetailsService::class.java)
+    private val log = LoggerFactory.getLogger(javaClass)
 
     <%_ if (databaseType === 'sql') { _%>
     @Transactional
@@ -73,13 +73,16 @@ class DomainUserDetailsService(private val userRepository: UserRepository) : <% 
             .orElseThrow { UsernameNotFoundException("User $lowercaseLogin was not found in the database") }<% } %>
     }
 
-    private fun createSpringSecurityUser(lowercaseLogin: String, user: <%= asEntity('User') %>): org.springframework.security.core.userdetails.User {
+    private fun createSpringSecurityUser(lowercaseLogin: String, user: <%= asEntity('User') %>)
+        : org.springframework.security.core.userdetails.User {
         if (!user.activated) {
             throw UserNotActivatedException("User $lowercaseLogin was not activated")
         }
         val grantedAuthorities = user.authorities.map { SimpleGrantedAuthority(it<% if (databaseType === 'sql' || databaseType === 'mongodb') { %>.name<% } %>) }
-        return org.springframework.security.core.userdetails.User(user.login!!,
+        return org.springframework.security.core.userdetails.User(
+            user.login!!,
             user.password!!,
-            grantedAuthorities)
+            grantedAuthorities
+        )
     }
 }

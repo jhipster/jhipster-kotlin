@@ -41,7 +41,7 @@ class UaaSignatureVerifierClient(
     protected val oAuth2Properties: OAuth2Properties
 ) : OAuth2SignatureVerifierClient {
 
-    private val log = LoggerFactory.getLogger(UaaSignatureVerifierClient::class.java)
+    private val log = LoggerFactory.getLogger(javaClass)
 
     init {
         // Load available UAA servers
@@ -53,8 +53,8 @@ class UaaSignatureVerifierClient(
      *
      * @return the public key used to verify JWT tokens; or `null`.
      */
-    override fun getSignatureVerifier(): SignatureVerifier? {
-        return try {
+    override fun getSignatureVerifier(): SignatureVerifier? =
+        try {
             val request = HttpEntity<Void>(HttpHeaders())
             val key = restTemplate
                 .exchange(getPublicKeyEndpoint(), HttpMethod.GET, request, Map::class.java).body!!["value"] as String
@@ -63,16 +63,13 @@ class UaaSignatureVerifierClient(
             log.warn("could not contact UAA to get public key")
             null
         }
-    }
 
     /**
      * Returns the configured endpoint URI to retrieve the public key.
      *
      * @return the configured endpoint URI to retrieve the public key.
      */
-    private fun getPublicKeyEndpoint(): String {
-        return oAuth2Properties.signatureVerification.publicKeyEndpointUri
+    private fun getPublicKeyEndpoint() =
+        oAuth2Properties.signatureVerification.publicKeyEndpointUri
             ?: throw InvalidClientException("no token endpoint configured in application properties")
-
-    }
 }

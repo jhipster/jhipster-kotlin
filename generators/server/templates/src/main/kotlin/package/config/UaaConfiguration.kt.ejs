@@ -51,6 +51,11 @@ import org.springframework.web.filter.CorsFilter
 
 import javax.servlet.http.HttpServletResponse
 
+/**
+ * Access tokens will not expire any earlier than this.
+ */
+private const val MIN_ACCESS_TOKEN_VALIDITY_SECS = 60
+
 @Configuration
 @EnableAuthorizationServer
 class UaaConfiguration(
@@ -159,9 +164,7 @@ class UaaConfiguration(
      * @return the [JwtTokenStore] managing the tokens.
      */
     @Bean
-    fun tokenStore(): JwtTokenStore {
-        return JwtTokenStore(jwtAccessTokenConverter())
-    }
+    fun tokenStore() = JwtTokenStore(jwtAccessTokenConverter())
 
     /**
      * This bean generates an token enhancer, which manages the exchange between JWT access tokens and Authentication
@@ -184,12 +187,5 @@ class UaaConfiguration(
     @Throws(Exception::class)
     override fun configure(oauthServer: AuthorizationServerSecurityConfigurer?) {
         oauthServer!!.tokenKeyAccess("permitAll()").checkTokenAccess("isAuthenticated()")
-    }
-
-    companion object {
-        /**
-         * Access tokens will not expire any earlier than this.
-         */
-        private const val MIN_ACCESS_TOKEN_VALIDITY_SECS = 60
     }
 }

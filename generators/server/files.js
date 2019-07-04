@@ -1941,7 +1941,7 @@ function writeFiles() {
                 </dependencies>`;
                 this.addMavenPlugin('org.jetbrains.kotlin', 'kotlin-maven-plugin', '${kotlin.version}', kotlinOther);
 
-                removeDefaultMavenCompilerPlugin(this);
+                updatePom(this);
                 const defaultCompileOther = `                <executions>
                     <!-- Replacing default-compile as it is treated specially by maven -->
                     <execution>
@@ -2099,25 +2099,31 @@ function writeFilesToDisk(files, generator, returnFiles, prefix) {
 }
 
 /**
- * remove the default <maven-compiler-plugin> configuration from pom.xml.
+ * Manually updates the pom.xml file to perform the following operations:
+ * 1. Set the Kotlin source directories as the default (Needed for the ktlint plugin to properly format the sources)
+ * 2. Remove the default <maven-compiler-plugin> configuration.
  */
-function removeDefaultMavenCompilerPlugin(generator) {
+function updatePom(generator) {
     const _this = generator || this;
 
     const fullPath = path.join(process.cwd(), 'pom.xml');
     const artifactId = 'maven-compiler-plugin';
 
     const xml = _this.fs.read(fullPath).toString();
-
     const $ = cheerio.load(xml, { xmlMode: true });
 
+    // 1. Set the Kotlin source directories as the default
+    $('build > defaultGoal').after(`
+
+        <sourceDirectory>src/main/kotlin</sourceDirectory>
+        <testSourceDirectory>src/test/kotlin</testSourceDirectory>
+`);
+    // 2. Remove the default <maven-compiler-plugin> configuration
     $(`build > plugins > plugin > artifactId:contains('${artifactId}')`)
         .parent()
         .remove();
 
-    const modifiedXml = $.xml();
-
-    _this.fs.write(fullPath, modifiedXml);
+    _this.fs.write(fullPath, $.xml());
 }
 
 module.exports = {

@@ -33,34 +33,27 @@ import <%=packageName%>.security.oauth2.CachedUserInfoTokenServices
 import <%=packageName%>.security.oauth2.SimpleAuthoritiesExtractor
 import <%=packageName%>.security.oauth2.SimplePrincipalExtractor
 
+private const val OAUTH2_PRINCIPAL_ATTRIBUTE = "preferred_username"
+private const val OAUTH2_AUTHORITIES_ATTRIBUTE = "roles"
+
 @Configuration
 public class OAuth2TokenServicesConfiguration<% if (applicationType === 'microservice' && cacheProvider !== 'no') { %>(private val resourceServerProperties: ResourceServerProperties)<% } %> {
 <%_ if (applicationType === 'microservice' && cacheProvider !== 'no') { _%>
 
     @Bean
-    fun userInfoTokenServices(principalExtractor: PrincipalExtractor, authoritiesExtractor: AuthoritiesExtractor): UserInfoTokenServices {
-        return CachedUserInfoTokenServices(resourceServerProperties.userInfoUri, resourceServerProperties.clientId).apply {
+    fun userInfoTokenServices(
+        principalExtractor: PrincipalExtractor,
+        authoritiesExtractor: AuthoritiesExtractor
+    ): UserInfoTokenServices =
+        CachedUserInfoTokenServices(resourceServerProperties.userInfoUri, resourceServerProperties.clientId).apply {
             this.principalExtractor = principalExtractor
             this.authoritiesExtractor = authoritiesExtractor
         }
-    }
 <%_ } _%>
 
     @Bean
-    fun principalExtractor(): PrincipalExtractor {
-        return SimplePrincipalExtractor(OAUTH2_PRINCIPAL_ATTRIBUTE)
-    }
+    fun principalExtractor() = SimplePrincipalExtractor(OAUTH2_PRINCIPAL_ATTRIBUTE)
 
     @Bean
-    fun authoritiesExtractor(): AuthoritiesExtractor {
-        return SimpleAuthoritiesExtractor(OAUTH2_AUTHORITIES_ATTRIBUTE)
-    }
-
-    companion object {
-
-        private const val OAUTH2_PRINCIPAL_ATTRIBUTE = "preferred_username"
-        private const val OAUTH2_AUTHORITIES_ATTRIBUTE = "roles"
-
-    }
-
+    fun authoritiesExtractor() = SimpleAuthoritiesExtractor(OAUTH2_AUTHORITIES_ATTRIBUTE)
 }

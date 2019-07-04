@@ -53,7 +53,11 @@ class AuditResource(private val auditEventService: AuditEventService) {
      * @return the `ResponseEntity` with status `200 (OK)` and the list of `AuditEvent`s in body.
      */
     @GetMapping
-    fun getAll(@RequestParam queryParams: MultiValueMap<String, String>, uriBuilder: UriComponentsBuilder, pageable: Pageable): ResponseEntity<List<AuditEvent>> {
+    fun getAll(
+        @RequestParam queryParams: MultiValueMap<String, String>,
+        uriBuilder: UriComponentsBuilder,
+        pageable: Pageable
+    ): ResponseEntity<List<AuditEvent>> {
         val page = auditEventService.findAll(pageable)
         val headers = PaginationUtil.generatePaginationHttpHeaders(uriBuilder.queryParams(queryParams), page)
         return ResponseEntity(page.content, headers, HttpStatus.OK)
@@ -75,12 +79,14 @@ class AuditResource(private val auditEventService: AuditEventService) {
         @RequestParam(value = "toDate") toDate: LocalDate,
         @RequestParam queryParams: MultiValueMap<String, String>,
         uriBuilder: UriComponentsBuilder,
-        pageable: Pageable): ResponseEntity<List<AuditEvent>> {
+        pageable: Pageable
+    ): ResponseEntity<List<AuditEvent>> {
 
         val page = auditEventService.findByDates(
             fromDate.atStartOfDay(ZoneId.systemDefault()).toInstant(),
             toDate.atStartOfDay(ZoneId.systemDefault()).plusDays(1).toInstant(),
-            pageable)
+            pageable
+        )
         val headers = PaginationUtil.generatePaginationHttpHeaders(uriBuilder.queryParams(queryParams), page)
         return ResponseEntity(page.content, headers, HttpStatus.OK)
     }
@@ -92,7 +98,6 @@ class AuditResource(private val auditEventService: AuditEventService) {
      * @return the `ResponseEntity` with status `200 (OK)` and the AuditEvent in body, or status `404 (Not Found)`.
      */
     @GetMapping("/{id:.+}")
-    fun get(@PathVariable id: <% if (databaseType === 'sql') { %>Long<% } %><% if (databaseType === 'mongodb' || databaseType === 'couchbase') { %>String<% } %>?): ResponseEntity<AuditEvent> {
-        return ResponseUtil.wrapOrNotFound(auditEventService.find(id!!))
-    }
+    fun get(@PathVariable id: <% if (databaseType === 'sql') { %>Long<% } %><% if (databaseType === 'mongodb' || databaseType === 'couchbase') { %>String<% } %>?): ResponseEntity<AuditEvent> =
+        ResponseUtil.wrapOrNotFound(auditEventService.find(id!!))
 }

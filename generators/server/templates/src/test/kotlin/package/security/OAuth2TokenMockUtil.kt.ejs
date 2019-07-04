@@ -44,11 +44,12 @@ class OAuth2TokenMockUtil {
     private lateinit var tokenServices: ResourceServerTokenServices
 
     private fun createAuthentication(username: String, scopes: Set<String>, roles: Set<String>): OAuth2Authentication {
-        val authorities = roles.map{ SimpleGrantedAuthority(it) }
+        val authorities = roles.map { SimpleGrantedAuthority(it) }
 
         val principal = User(username, "test", true, true, true, true, authorities)
-        val authentication = UsernamePasswordAuthenticationToken(principal, principal.password,
-            principal.authorities)
+        val authentication = UsernamePasswordAuthenticationToken(
+            principal, principal.password, principal.authorities
+        )
 
         // Create the authorization request and OAuth2Authentication object
         val authRequest = OAuth2Request(null, "testClient", null, true, scopes, null, null, null, null)
@@ -56,7 +57,11 @@ class OAuth2TokenMockUtil {
     }
 
     @JvmOverloads
-    fun oauth2Authentication(username: String, scopes: Set<String> = emptySet(), roles: Set<String> = emptySet()): RequestPostProcessor {
+    fun oauth2Authentication(
+        username: String,
+        scopes: Set<String> = emptySet(),
+        roles: Set<String> = emptySet()
+    ): RequestPostProcessor {
         val uuid = UUID.randomUUID().toString()
 
         given(tokenServices.loadAuthentication(uuid))
@@ -69,10 +74,7 @@ class OAuth2TokenMockUtil {
 
     class OAuth2PostProcessor(private val token: String) : RequestPostProcessor {
 
-        override fun postProcessRequest(mockHttpServletRequest: MockHttpServletRequest): MockHttpServletRequest {
-            mockHttpServletRequest.addHeader("Authorization", "Bearer $token")
-
-            return mockHttpServletRequest
-        }
+        override fun postProcessRequest(mockHttpServletRequest: MockHttpServletRequest) =
+            mockHttpServletRequest.apply { addHeader("Authorization", "Bearer $token") }
     }
 }

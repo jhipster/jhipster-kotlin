@@ -52,12 +52,11 @@ private val mapper = createObjectMapper()
 @JvmField
 val APPLICATION_JSON_UTF8: MediaType = MediaType.APPLICATION_JSON_UTF8
 
-private fun createObjectMapper(): ObjectMapper {
-    return ObjectMapper().apply {
+private fun createObjectMapper() =
+    ObjectMapper().apply {
         setSerializationInclusion(JsonInclude.Include.NON_EMPTY)
         registerModule(JavaTimeModule())
     }
-}
 
 /**
  * Convert an object to JSON byte array.
@@ -67,9 +66,7 @@ private fun createObjectMapper(): ObjectMapper {
  * @throws IOException
  */
 @Throws(IOException::class)
-fun convertObjectToJsonBytes(`object`: Any): ByteArray {
-    return mapper.writeValueAsBytes(`object`)
-}
+fun convertObjectToJsonBytes(`object`: Any): ByteArray = mapper.writeValueAsBytes(`object`)
 
 /**
  * Create a byte array with a specific size filled with specified data.
@@ -78,20 +75,14 @@ fun convertObjectToJsonBytes(`object`: Any): ByteArray {
  * @param data the data to put in the byte array.
  * @return the JSON byte array.
  */
-fun createByteArray(size: Int, data: String): ByteArray {
-    val byteArray = ByteArray(size)
-    for (i in 0 until size) {
-        byteArray[i] = java.lang.Byte.parseByte(data, 2)
-    }
-    return byteArray
-}
+fun createByteArray(size: Int, data: String) = ByteArray(size) { java.lang.Byte.parseByte(data, 2) }
 <%_ if (databaseType === 'couchbase') { _%>
 
 /**
  * Mock user authentication for Spring SpEL expression used in [<%=packageName%>.repository.N1qlCouchbaseRepository].
  */
 fun mockAuthentication() {
-    TestSecurityContextHolder.getContext().setAuthentication(TestingAuthenticationToken("user", null))
+    TestSecurityContextHolder.getContext().authentication = TestingAuthenticationToken("user", null)
 }
 <%_ } _%>
 
@@ -123,9 +114,7 @@ class ZonedDateTimeMatcher(private val date: ZonedDateTime) : TypeSafeDiagnosing
  * Creates a matcher that matches when the examined string represents the same instant as the reference datetime.
  * @param date the reference datetime against which the examined string is checked.
  */
-fun sameInstant(date: ZonedDateTime): ZonedDateTimeMatcher {
-    return ZonedDateTimeMatcher(date)
-}
+fun sameInstant(date: ZonedDateTime) = ZonedDateTimeMatcher(date)
 
 /**
  * Verifies the equals/hashcode contract on the domain object.

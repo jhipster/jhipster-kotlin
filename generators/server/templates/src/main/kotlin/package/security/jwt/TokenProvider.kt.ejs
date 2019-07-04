@@ -40,10 +40,12 @@ import io.jsonwebtoken.UnsupportedJwtException
 import io.jsonwebtoken.io.Decoders
 import io.jsonwebtoken.security.Keys
 
+private const val AUTHORITIES_KEY = "auth"
+
 @Component
 class TokenProvider(private val jHipsterProperties: JHipsterProperties) : InitializingBean {
 
-    private val log = LoggerFactory.getLogger(TokenProvider::class.java)
+    private val log = LoggerFactory.getLogger(javaClass)
 
     private var key: Key? = null
 
@@ -69,7 +71,7 @@ class TokenProvider(private val jHipsterProperties: JHipsterProperties) : Initia
     }
 
     fun createToken(authentication: Authentication, rememberMe: Boolean): String {
-        val authorities =  authentication.authorities.asSequence()
+        val authorities = authentication.authorities.asSequence()
             .map { it.authority }
             .joinToString(separator = ",")
 
@@ -95,7 +97,7 @@ class TokenProvider(private val jHipsterProperties: JHipsterProperties) : Initia
             .body
 
         val authorities = claims[AUTHORITIES_KEY].toString().splitToSequence(",")
-            .mapTo(mutableListOf()) { SimpleGrantedAuthority(it)}
+            .mapTo(mutableListOf()) { SimpleGrantedAuthority(it) }
 
         val principal = User(claims.subject, "", authorities)
 
@@ -124,9 +126,5 @@ class TokenProvider(private val jHipsterProperties: JHipsterProperties) : Initia
         }
 
         return false
-    }
-
-    companion object {
-        private const val AUTHORITIES_KEY = "auth"
     }
 }

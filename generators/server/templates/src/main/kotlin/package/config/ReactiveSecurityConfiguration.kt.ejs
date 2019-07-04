@@ -44,7 +44,6 @@ import org.springframework.security.config.web.server.ServerHttpSecurity
 <%_ if (!skipUserManagement) { _%>
 import org.springframework.security.core.userdetails.ReactiveUserDetailsService
 import org.springframework.security.crypto.bcrypt.BCryptPasswordEncoder
-import org.springframework.security.crypto.password.PasswordEncoder
 <%_ } _%>
 import org.springframework.security.web.server.SecurityWebFilterChain
 <%_ if (authenticationType === 'session') { _%>
@@ -78,16 +77,13 @@ class SecurityConfiguration(
 
     <%_ if (!skipUserManagement) { _%>
     @Bean
-    fun passwordEncoder(): PasswordEncoder {
-        return BCryptPasswordEncoder()
-    }
+    fun passwordEncoder() = BCryptPasswordEncoder()
 
     @Bean
-    fun reactiveAuthenticationManager(): ReactiveAuthenticationManager {
-        return UserDetailsRepositoryReactiveAuthenticationManager(userDetailsService).apply {
+    fun reactiveAuthenticationManager() =
+        UserDetailsRepositoryReactiveAuthenticationManager(userDetailsService).apply {
             setPasswordEncoder(passwordEncoder())
         }
-    }
 
     <%_ } _%>
     @Bean
@@ -160,11 +156,8 @@ class SecurityConfiguration(
     companion object {
 
         @JvmStatic
-        private fun setStatusCode(exchange: WebFilterExchange, status: HttpStatus): Mono<Void> {
-            return Mono.fromRunnable { exchange.exchange.response.statusCode = status }
-        }
-
+        private fun setStatusCode(exchange: WebFilterExchange, status: HttpStatus): Mono<Void> =
+            Mono.fromRunnable { exchange.exchange.response.statusCode = status }
     }
-
     <%_ } _%>
 }

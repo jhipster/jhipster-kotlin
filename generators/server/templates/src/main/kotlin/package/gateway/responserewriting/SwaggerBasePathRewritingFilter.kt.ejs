@@ -40,24 +40,19 @@ import java.util.zip.GZIPOutputStream
  */
 class SwaggerBasePathRewritingFilter : SendResponseFilter(ZuulProperties()) {
 
-    private val log = LoggerFactory.getLogger(SwaggerBasePathRewritingFilter::class.java)
+    private val log = LoggerFactory.getLogger(javaClass)
 
     private val mapper = ObjectMapper()
 
-    override fun filterType(): String {
-        return "post"
-    }
+    override fun filterType() = "post"
 
-    override fun filterOrder(): Int {
-        return 100
-    }
+    override fun filterOrder() = 100
 
     /**
      * Filter requests to micro-services Swagger docs.
      */
-    override fun shouldFilter(): Boolean {
-        return RequestContext.getCurrentContext().request.requestURI.endsWith(Swagger2Controller.DEFAULT_URL)
-    }
+    override fun shouldFilter(): Boolean =
+        RequestContext.getCurrentContext().request.requestURI.endsWith(Swagger2Controller.DEFAULT_URL)
 
     override fun run(): Any? {
         val context = RequestContext.getCurrentContext()
@@ -71,7 +66,6 @@ class SwaggerBasePathRewritingFilter : SendResponseFilter(ZuulProperties()) {
             } catch (e: IOException) {
                 log.error("Swagger-docs filter error", e)
             }
-
         } else {
             context.responseBody = rewrittenResponse
         }

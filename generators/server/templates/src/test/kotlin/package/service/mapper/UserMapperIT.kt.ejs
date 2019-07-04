@@ -42,6 +42,15 @@ import org.assertj.core.api.Assertions.assertThat
 import kotlin.test.assertNotNull
 import kotlin.test.assertNull
 
+private const val DEFAULT_LOGIN = "johndoe"
+<%_ if (databaseType === 'sql' && authenticationType !== 'oauth2') { _%>
+private const val DEFAULT_ID = 1L
+<%_ } else if (databaseType === 'couchbase'){ _%>
+private const val DEFAULT_ID = <%= asEntity('User') %>.PREFIX + DEFAULT_LOGIN
+<%_ } else { _%>
+private const val DEFAULT_ID = "id1"
+<%_ } _%>
+
 /**
  * Integration tests for [UserMapper].
  */
@@ -172,17 +181,5 @@ class UserMapperIT <% if (databaseType === 'cassandra') { %>: AbstractCassandraT
     fun testUserFromId() {
         assertThat(userMapper.userFromId(DEFAULT_ID)?.id).isEqualTo(DEFAULT_ID)
         assertNull(userMapper.userFromId(null))
-    }
-
-    companion object {
-        private const val DEFAULT_LOGIN = "johndoe"
-
-        <%_ if (databaseType === 'sql' && authenticationType !== 'oauth2') { _%>
-        private const val DEFAULT_ID = 1L
-        <%_ } else if (databaseType === 'couchbase'){ _%>
-        private const val DEFAULT_ID = <%= asEntity('User') %>.PREFIX + DEFAULT_LOGIN
-        <%_ } else { _%>
-        private const val DEFAULT_ID = "id1"
-        <%_ } _%>
     }
 }

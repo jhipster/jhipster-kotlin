@@ -30,6 +30,11 @@ import javax.servlet.http.HttpServletRequest
 import javax.servlet.http.HttpServletResponse
 
 /**
+ * Number of milliseconds to cache refresh token grants so we don't have to repeat them in case of parallel requests.
+ */
+private const val REFRESH_TOKEN_VALIDITY_MILLIS = 10000L
+
+/**
  * Manages authentication cases for OAuth2 updating the cookies holding access and refresh tokens accordingly.
  *
  * It can authenticate users, refresh the token cookies should they expire and log users out.
@@ -42,31 +47,32 @@ class OAuth2AuthenticationService(
     /**
      * Helps us with cookie handling.
      */
-    private val cookieHelper: OAuth2CookieHelper) {
+    private val cookieHelper: OAuth2CookieHelper
+) {
 
-    private val log = LoggerFactory.getLogger(OAuth2AuthenticationService::class.java)
+    private val log = LoggerFactory.getLogger(javaClass)
 
     /**
      * Caches Refresh grant results for a refresh token value so we can reuse them.
      * This avoids hammering UAA in case of several multi-threaded requests arriving in parallel.
      */
-    private val recentlyRefreshed: PersistentTokenCache<OAuth2Cookies>
-
-    init {
-        recentlyRefreshed = PersistentTokenCache(REFRESH_TOKEN_VALIDITY_MILLIS)
-    }
+    private val recentlyRefreshed: PersistentTokenCache<OAuth2Cookies> =
+        PersistentTokenCache(REFRESH_TOKEN_VALIDITY_MILLIS)
 
     /**
      * Authenticate the user by username and password.
      *
-     * @param request  the request coming from the client.
+     * @param request the request coming from the client.
      * @param response the response going back to the server.
-     * @param params   the params holding the username, password and rememberMe.
+     * @param params the params holding the username, password and rememberMe.
      * @return the [OAuth2AccessToken] as a [ResponseEntity]. Will return `OK (200)`, if successful.
      * If the UAA cannot authenticate the user, the status code returned by UAA will be returned.
      */
-    fun authenticate(request: HttpServletRequest, response: HttpServletResponse,
-                     params: Map<String, String>): ResponseEntity<OAuth2AccessToken> {
+    fun authenticate(
+        request: HttpServletRequest,
+        response: HttpServletResponse,
+        params: Map<String, String>
+    ): ResponseEntity<OAuth2AccessToken> {
         try {
             val username = params["username"]
             val password = params["password"]
@@ -92,33 +98,37 @@ class OAuth2AuthenticationService(
      * so we need to cache results for a certain duration and synchronize threads to avoid sending
      * multiple requests in parallel.
      *
-     * @param request       the request potentially holding the refresh token.
-     * @param response      the response setting the new cookies (if refresh was successful).
+     * @param request the request potentially holding the refresh token.
+     * @param response the response setting the new cookies (if refresh was successful).
      * @param refreshCookie the refresh token cookie. Must not be null.
      * @return the new servlet request containing the updated cookies for relaying downstream.
      */
-    fun refreshToken(request: HttpServletRequest, response: HttpServletResponse, refreshCookie: Cookie): HttpServletRequest {
-        //check if non-remember-me session has expired
+    fun refreshToken(
+        request: HttpServletRequest,
+        response: HttpServletResponse,
+        refreshCookie: Cookie
+    ): HttpServletRequest {
+        // check if non-remember-me session has expired
         if (cookieHelper.isSessionExpired(refreshCookie)) {
             log.info("session has expired due to inactivity")
-            logout(request, response)       //logout to clear cookies in browser
-            return stripTokens(request)            //don't include cookies downstream
+            logout(request, response) // logout to clear cookies in browser
+            return stripTokens(request) // don't include cookies downstream
         }
         val cookies = getCachedCookies(refreshCookie.value)
         synchronized(cookies) {
-            //check if we have a result from another thread already
-            if (cookies.accessTokenCookie == null) {            //no, we are first!
-                //send a refresh_token grant to UAA, getting new tokens
+            // check if we have a result from another thread already
+            if (cookies.accessTokenCookie == null) { // no, we are first!
+                // send a refresh_token grant to UAA, getting new tokens
                 val refreshCookieValue = OAuth2CookieHelper.getRefreshTokenValue(refreshCookie)
                 val accessToken = authorizationClient.sendRefreshGrant(refreshCookieValue)
                 val rememberMe = OAuth2CookieHelper.isRememberMe(refreshCookie)
                 cookieHelper.createCookies(request, accessToken, rememberMe, cookies)
-                //add cookies to response to update browser
+                // add cookies to response to update browser
                 cookies.addCookiesTo(response)
             } else {
                 log.debug("reusing cached refresh_token grant")
             }
-            //replace cookies in original request with new ones
+            // replace cookies in original request with new ones
             val requestCookies = CookieCollection(*request.cookies)
             cookies.accessTokenCookie?.apply { requestCookies.add(this) }
             cookies.refreshTokenCookie?.apply { requestCookies.add(this) }
@@ -147,7 +157,7 @@ class OAuth2AuthenticationService(
     /**
      * Logs the user out by clearing all cookies.
      *
-     * @param httpServletRequest  the request containing the Cookies.
+     * @param httpServletRequest the request containing the Cookies.
      * @param httpServletResponse the response used to clear them.
      */
     fun logout(httpServletRequest: HttpServletRequest, httpServletResponse: HttpServletResponse) {
@@ -164,12 +174,5 @@ class OAuth2AuthenticationService(
     fun stripTokens(httpServletRequest: HttpServletRequest): HttpServletRequest {
         val cookies = cookieHelper.stripCookies(httpServletRequest.cookies)
         return CookiesHttpServletRequestWrapper(httpServletRequest, cookies)
-    }
-
-    companion object {
-        /**
-         * Number of milliseconds to cache refresh token grants so we don't have to repeat them in case of parallel requests.
-         */
-        private const val REFRESH_TOKEN_VALIDITY_MILLIS = 10000L
     }
 }

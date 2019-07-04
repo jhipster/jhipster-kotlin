@@ -63,7 +63,7 @@ class CassandraConfiguration : InitializingBean {
     @Autowired(required = false)
     internal var metricRegistry: MetricRegistry? = null
 
-    private val log = LoggerFactory.getLogger(CassandraConfiguration::class.java)
+    private val log = LoggerFactory.getLogger(javaClass)
 
     @Autowired
     private lateinit var cluster: Cluster
@@ -102,12 +102,11 @@ class CassandraConfiguration : InitializingBean {
 
         private lateinit var type: TupleType
 
-        override fun convert(source: ZonedDateTime): TupleValue? {
-            return type.newValue().apply {
+        override fun convert(source: ZonedDateTime): TupleValue? =
+            type.newValue().apply {
                 setTimestamp(0, Date.from(source.toLocalDateTime().toInstant(ZoneOffset.UTC)))
                 setString(1, source.zone.toString())
             }
-        }
 
         internal operator fun invoke(
             version: ProtocolVersion,
@@ -119,19 +118,16 @@ class CassandraConfiguration : InitializingBean {
     }
 
     @Bean
-    internal fun clusterBuilderCustomizer(properties: CassandraProperties): ClusterBuilderCustomizer {
-        return ClusterBuilderCustomizer {
+    internal fun clusterBuilderCustomizer(properties: CassandraProperties) =
+        ClusterBuilderCustomizer {
             it
                 .withProtocolVersion(protocolVersion)
                 .withPort(getPort(properties))
                 .withoutJMXReporting()
                 .withoutMetrics()
         }
-    }
 
-    protected fun getPort(properties: CassandraProperties): Int {
-        return properties.port
-    }
+    protected fun getPort(properties: CassandraProperties) = properties.port
 
     @Bean(destroyMethod = "close")
     fun session(properties: CassandraProperties, cluster: Cluster): Session {

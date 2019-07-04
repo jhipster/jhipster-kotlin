@@ -40,20 +40,18 @@ import reactor.core.publisher.Mono
 @RequestMapping("/api/<%= apiPrefix %>")
 class <%= controllerClass %> {
 
-    private val log = LoggerFactory.getLogger(this.javaClass)
+    private val log = LoggerFactory.getLogger(javaClass)
 
     <%_ for(let idx in controllerActions) { _%>
     /**
     * <%= controllerActions[idx].actionMethod.toUpperCase() %> <%= controllerActions[idx].actionName %>
     */
     @<%= controllerActions[idx].actionMethod %>Mapping("/<%= (controllerActions[idx].actionPath) %>")
-    fun <%= controllerActions[idx].actionName %>(): <% if (reactiveController) { %>Mono<String><% } else { %>String<% } %> {
+    fun <%= controllerActions[idx].actionName %>(): <% if (reactiveController) { %>Mono<String><% } else { %>String<% } %> =
         <%_ if (reactiveController) { _%>
-        return Mono.just("<%= controllerActions[idx].actionName %>")
+        Mono.just("<%= controllerActions[idx].actionName %>")
         <%_ } else { _%>
-        return "<%= controllerActions[idx].actionName %>"
+        "<%= controllerActions[idx].actionName %>"
         <%_ } _%>
-    }
-
     <%_ } _%>
 }
