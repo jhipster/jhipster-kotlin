@@ -26,9 +26,8 @@
     _%>
     fun getAll<%= entityClassPlural %>(
         criteria: <%= entityClass %>Criteria<% if (pagination != 'no') { %>,
-        pageable: Pageable,
-        @RequestParam queryParams: MultiValueMap<String, String>,
-        uriBuilder: UriComponentsBuilder<% } %>
+        pageable: Pageable
+        <% if (reactive) { %>, request: ServerHttpRequest<% } %><% } %>
     ): ResponseEntity<MutableList<<%= instanceType %>>> {
         log.debug("REST request to get <%= entityClassPlural %> by criteria: {}", criteria)
     <%_ if (pagination === 'no') { _%>
@@ -36,7 +35,7 @@
         return ResponseEntity.ok().body(entityList)
     <%_ } else { _%>
         val page = <%= entityInstance %>QueryService.findByCriteria(criteria, pageable)
-        val headers = PaginationUtil.generatePaginationHttpHeaders(uriBuilder.queryParams(queryParams), page)
+        val headers = PaginationUtil.generatePaginationHttpHeaders(<% if (!reactive) { %>ServletUriComponentsBuilder.fromCurrentRequest()<% } else { %>UriComponentsBuilder.fromHttpRequest(request)<% } %>, page)
         return ResponseEntity.ok().headers(headers).body(page.content)
     <%_ } _%>
     }
@@ -62,9 +61,8 @@
         return <%= entityInstance %>Repository.<% if (fieldsContainOwnerManyToMany) { %>findAllWithEagerRelationships<% } else { %>findAll<% } %>()<% } %>
     <%_ } if (pagination !== 'no') { _%>
     fun getAll<%= entityClassPlural %>(
-        pageable: Pageable,
-        @RequestParam queryParams: MultiValueMap<String, String>,
-        uriBuilder: UriComponentsBuilder<% if (fieldsContainNoOwnerOneToOne) { %>,
+        pageable: Pageable<% if (reactive) { %>,
+        request: ServerHttpRequest<% } %><% if (fieldsContainNoOwnerOneToOne) { %>,
         @RequestParam(required = false) filter: String?<% } if (fieldsContainOwnerManyToMany) { %>,
         @RequestParam(required = false, defaultValue = "false") eagerload: Boolean<% } %>
     ) : ResponseEntity<MutableList<<%= instanceType %>>> {<%- include('get_all_stream_template', {viaService: viaService}); -%>
@@ -76,10 +74,10 @@
         } else {
             <%= entityInstance %>Service.findAll(pageable)
         }
-        val headers = PaginationUtil.generatePaginationHttpHeaders(uriBuilder.queryParams(queryParams), page)
+        val headers = PaginationUtil.generatePaginationHttpHeaders(<% if (!reactive) { %>ServletUriComponentsBuilder.fromCurrentRequest()<% } else { %>UriComponentsBuilder.fromHttpRequest(request)<% } %>, page)
         <%_ } else { _%>
         val page = <%= entityInstance %>Service.findAll(pageable)
-        val headers = PaginationUtil.generatePaginationHttpHeaders(uriBuilder.queryParams(queryParams), page)
+        val headers = PaginationUtil.generatePaginationHttpHeaders(<% if (!reactive) { %>ServletUriComponentsBuilder.fromCurrentRequest()<% } else { %>UriComponentsBuilder.fromHttpRequest(request)<% } %>, page)
         <%_ } _%>
     <%_ } else { _%>
         <%_ if (fieldsContainOwnerManyToMany) { _%>
@@ -88,10 +86,10 @@
         } else {
             <%= entityInstance %>Repository.findAll(pageable)<% if (dto === 'mapstruct') { %>.map(<%= entityToDtoReference %>)<% } %>
         }
-        val headers = PaginationUtil.generatePaginationHttpHeaders(uriBuilder.queryParams(queryParams), page)
+        val headers = PaginationUtil.generatePaginationHttpHeaders(<% if (!reactive) { %>ServletUriComponentsBuilder.fromCurrentRequest()<% } else { %>UriComponentsBuilder.fromHttpRequest(request)<% } %>, page)
         <%_ } else { _%>
         val page = <%= entityInstance %>Repository.findAll(pageable)<% if (dto === 'mapstruct') { %>.map(<%= entityToDtoReference %>)<% } %>
-        val headers = PaginationUtil.generatePaginationHttpHeaders(uriBuilder.queryParams(queryParams), page)
+        val headers = PaginationUtil.generatePaginationHttpHeaders(<% if (!reactive) { %>ServletUriComponentsBuilder.fromCurrentRequest()<% } else { %>UriComponentsBuilder.fromHttpRequest(request)<% } %>, page)
         <%_ } _%>
     <%_ } _%>
         return ResponseEntity.ok().headers(headers).body(page.content)

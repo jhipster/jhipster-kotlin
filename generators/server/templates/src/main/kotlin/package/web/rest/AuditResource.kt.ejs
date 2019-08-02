@@ -26,13 +26,19 @@ import org.springframework.boot.actuate.audit.AuditEvent
 import org.springframework.data.domain.Pageable
 import org.springframework.http.HttpStatus
 import org.springframework.http.ResponseEntity
-import org.springframework.util.MultiValueMap
+<%_ if (reactive) { _%>
+import org.springframework.http.server.reactive.ServerHttpRequest
+<%_ } _%>
 import org.springframework.web.bind.annotation.GetMapping
 import org.springframework.web.bind.annotation.PathVariable
 import org.springframework.web.bind.annotation.RequestMapping
 import org.springframework.web.bind.annotation.RequestParam
 import org.springframework.web.bind.annotation.RestController
+<%_ if (!reactive) { _%>
+import org.springframework.web.servlet.support.ServletUriComponentsBuilder
+<%_ } else { _%>
 import org.springframework.web.util.UriComponentsBuilder
+<%_ } _%>
 
 import java.time.LocalDate
 import java.time.ZoneId
@@ -47,19 +53,19 @@ class AuditResource(private val auditEventService: AuditEventService) {
     /**
      * `GET /audits` : get a page of `AuditEvent`s.
      *
-     * @param queryParams a [MultiValueMap] query parameters.
-     * @param uriBuilder a [UriComponentsBuilder] URI builder.
+     <%_ if (reactive) { _%>
+     * @param request a {@link ServerHttpRequest} request.
+     <%_ } _%>
      * @param pageable the pagination information.
      * @return the `ResponseEntity` with status `200 (OK)` and the list of `AuditEvent`s in body.
      */
     @GetMapping
     fun getAll(
-        @RequestParam queryParams: MultiValueMap<String, String>,
-        uriBuilder: UriComponentsBuilder,
+        <% if (reactive) { %>request: ServerHttpRequest, <% } %>
         pageable: Pageable
     ): ResponseEntity<List<AuditEvent>> {
         val page = auditEventService.findAll(pageable)
-        val headers = PaginationUtil.generatePaginationHttpHeaders(uriBuilder.queryParams(queryParams), page)
+        val headers = PaginationUtil.generatePaginationHttpHeaders(<% if (!reactive) { %>ServletUriComponentsBuilder.fromCurrentRequest()<% } else { %>UriComponentsBuilder.fromHttpRequest(request)<% } %>, page)
         return ResponseEntity(page.content, headers, HttpStatus.OK)
     }
 
@@ -68,8 +74,9 @@ class AuditResource(private val auditEventService: AuditEventService) {
      *
      * @param fromDate the start of the time period of `AuditEvent`s to get.
      * @param toDate the end of the time period of `AuditEvent`s to get.
-     * @param queryParams a [MultiValueMap] query parameters.
-     * @param uriBuilder a [UriComponentsBuilder] URI builder.
+     <%_ if (reactive) { _%>
+     * @param request a {@link ServerHttpRequest} request.
+     <%_ } _%>
      * @param pageable the pagination information.
      * @return the `ResponseEntity` with status `200 (OK)` and the list of `AuditEvent`s in body.
      */
@@ -77,8 +84,9 @@ class AuditResource(private val auditEventService: AuditEventService) {
     fun getByDates(
         @RequestParam(value = "fromDate") fromDate: LocalDate,
         @RequestParam(value = "toDate") toDate: LocalDate,
-        @RequestParam queryParams: MultiValueMap<String, String>,
-        uriBuilder: UriComponentsBuilder,
+        <%_ if (reactive) { _%>
+        request: ServerHttpRequest,
+        <%_ } _%>
         pageable: Pageable
     ): ResponseEntity<List<AuditEvent>> {
 
@@ -87,7 +95,7 @@ class AuditResource(private val auditEventService: AuditEventService) {
             toDate.atStartOfDay(ZoneId.systemDefault()).plusDays(1).toInstant(),
             pageable
         )
-        val headers = PaginationUtil.generatePaginationHttpHeaders(uriBuilder.queryParams(queryParams), page)
+        val headers = PaginationUtil.generatePaginationHttpHeaders(<% if (!reactive) { %>ServletUriComponentsBuilder.fromCurrentRequest()<% } else { %>UriComponentsBuilder.fromHttpRequest(request)<% } %>, page)
         return ResponseEntity(page.content, headers, HttpStatus.OK)
     }
 

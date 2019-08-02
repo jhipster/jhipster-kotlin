@@ -20,6 +20,10 @@
 
 package <%=packageName%>.security
 
+import org.springframework.security.core.GrantedAuthority
+<%_ if (authenticationType === 'oauth2') { _%>
+import org.springframework.security.core.authority.SimpleGrantedAuthority
+<%_ } _%>
 <%_ if (reactive) { _%>
 import org.springframework.security.core.context.ReactiveSecurityContextHolder
 import org.springframework.security.core.context.SecurityContext
@@ -30,6 +34,7 @@ import org.springframework.security.core.context.SecurityContextHolder
 import org.springframework.security.core.userdetails.UserDetails
 <%_ if (authenticationType === 'oauth2') { _%>
 import org.springframework.security.oauth2.core.oidc.user.DefaultOidcUser
+import org.springframework.security.oauth2.server.resource.authentication.JwtAuthenticationToken
 <%_ } _%>
 <%_ if (reactive) { _%>
 import reactor.core.publisher.Mono
@@ -55,6 +60,7 @@ fun getCurrentUserLogin(): <% if (!reactive) { %>Optional<% } else { %>Mono<% } 
             when (val principal = authentication.principal) {
                 is UserDetails -> principal.username
                 <%_ if (authenticationType === 'oauth2') { _%>
+                is JwtAuthenticationToken -> (authentication as JwtAuthenticationToken).token.claims as String
                 is DefaultOidcUser -> {
                     if(principal.attributes.containsKey("preferred_username")) {
                         principal.attributes["preferred_username"].toString()
@@ -97,8 +103,19 @@ fun isAuthenticated(): <% if (!reactive) { %>Boolean<% } else { %>Mono<Boolean><
     ReactiveSecurityContextHolder.getContext()
         .map(SecurityContext::getAuthentication)
     <%_ } _%>
-        .map { authentication ->
-            authentication.authorities.none { it.authority == ANONYMOUS }
+        .map { 
+<%_ if (authenticationType === 'oauth2') { _%>
+            val authorities = when (it) {
+                    is JwtAuthenticationToken ->
+                        extractAuthorityFromClaims(it.token.claims)
+                    else ->
+                        it.authorities
+                }
+<%_ } _%>
+<%_ if (authenticationType !== 'oauth2') { _%>
+            val authorities = it.authorities
+<%_ } _%>
+            authorities.none { authority -> authority.authority == ANONYMOUS }
         }<% if (!reactive) { %>
         .orElse(false)<% } %>
 
@@ -117,7 +134,35 @@ fun isCurrentUserInRole(authority: String): <% if (!reactive) { %>Boolean<% } el
     ReactiveSecurityContextHolder.getContext()
         .map(SecurityContext::getAuthentication)
     <%_ } _%>
-        .map { authentication ->
-            authentication.authorities.any { it.authority == authority }
+        .map { 
+            <%_ if (authenticationType === 'oauth2') { _%>
+            val authorities = when (it) {
+                    is JwtAuthenticationToken ->
+                        extractAuthorityFromClaims(it.token.claims)
+                    else ->
+                        it.authorities
+                }
+            <%_ } _%>
+            <%_ if (authenticationType !== 'oauth2') { _%>
+            val authorities = it.authorities
+            <%_ } _%>
+            authorities.any { auth -> auth.authority.equals(authority) }
         }<% if (!reactive) { %>
         .orElse(false)<% } %>
+
+<%_ if (authenticationType === 'oauth2') { _%>
+    fun extractAuthorityFromClaims(claims: Map<String, Any>): List<GrantedAuthority>   {
+        return mapRolesToGrantedAuthorities(getRolesFromClaims(claims))
+    }
+
+    @Suppress("UNCHECKED_CAST")
+    fun getRolesFromClaims(claims: Map<String, Any>): Collection<String> {
+        return claims.getOrDefault("groups", claims.getOrDefault("roles", listOf<String>())) as Collection<String>
+    }
+
+    fun mapRolesToGrantedAuthorities(roles: Collection<String>): List<GrantedAuthority> {
+        return roles
+            .filter { it.startsWith("ROLE_") }
+            .map { SimpleGrantedAuthority(it) }
+    }
+<%_ } _%>

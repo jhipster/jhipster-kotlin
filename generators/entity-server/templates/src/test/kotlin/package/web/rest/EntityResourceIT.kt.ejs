@@ -154,7 +154,7 @@ import org.springframework.test.web.servlet.result.MockMvcResultMatchers.status
 <%_ } } _%>
 
 /**
- * Test class for the <%= entityClass %>Resource REST controller.
+ * Integration tests for the {@link <%= entityClass %>Resource} REST controller.
  *
  * @see <%= entityClass %>Resource
  */
@@ -575,40 +575,79 @@ class <%= entityClass %>ResourceIT <% if (databaseType === 'cassandra') { %>: Ab
 <%_
             }
             // the range criterias
-            if (['Byte', 'Short', 'Integer', 'Long', 'LocalDate', 'ZonedDateTime'].includes(searchBy.fieldType)) {
+            if (['BigDecimal', 'Byte', 'Double', 'Duration', 'Float', 'Short', 
+                 'Integer', 'Long', 'LocalDate', 'ZonedDateTime'].includes(searchBy.fieldType)) {
               var defaultValue = 'DEFAULT_' + searchBy.fieldNameUnderscored.toUpperCase();
               var biggerValue = 'UPDATED_' + searchBy.fieldNameUnderscored.toUpperCase();
+              var smallerValue = 'SMALLER_' + searchBy.fieldNameUnderscored.toUpperCase();
               if (searchBy.fieldValidate === true && searchBy.fieldValidateRules.includes('max')) {
                   // if maximum is specified the updated variable is smaller than the default one!
-                  biggerValue = '{' + defaultValue + ' + 1}';
+                  if (searchBy.fieldType === 'BigDecimal') {
+                      biggerValue = '(' + defaultValue + '.add(BigDecimal.ONE))';
+                  } else if (['Duration', 'LocalDate', 'ZonedDateTime'].includes(searchBy.fieldType)) {
+                      biggerValue = '(' + defaultValue + '.plus(1, ChronoUnit.DAYS))';
+                  } else {
+                      biggerValue = '(' + defaultValue + ' + 1)';
+                  }
               }
             _%>
 
     @Test<% if (databaseType === 'sql') { %>
     @Transactional<% } %>
+    @Throws(Exception::class)
     fun getAll<%= entityClassPlural %>By<%= searchBy.fieldInJavaBeanMethod %>IsGreaterThanOrEqualToSomething() {
         // Initialize the database
         <%= entityInstance %>Repository.saveAndFlush(<%= asEntity(entityInstance) %>)
 
-        // Get all the <%= entityInstance %>List where <%= searchBy.fieldName %> greater than or equals to <%= defaultValue %>
-        default<%= entityClass %>ShouldBeFound("<%= searchBy.fieldName %>.greaterOrEqualThan=$<%= defaultValue %>")
+        // Get all the <%= entityInstance %>List where <%= searchBy.fieldName %> is greater than or equal to <%= defaultValue %>
+        default<%= entityClass %>ShouldBeFound("<%= searchBy.fieldName %>.greaterThanOrEqual=" + <%= defaultValue %>)
 
-        // Get all the <%= entityInstance %>List where <%= searchBy.fieldName %> greater than or equals to <%= biggerValue %>
-        default<%= entityClass %>ShouldNotBeFound("<%= searchBy.fieldName %>.greaterOrEqualThan=$<%= biggerValue %>")
+        // Get all the <%= entityInstance %>List where <%= searchBy.fieldName %> is greater than or equal to <%= biggerValue %>
+        default<%= entityClass %>ShouldNotBeFound("<%= searchBy.fieldName %>.greaterThanOrEqual=" + <%= biggerValue %>)
     }
 
     @Test<% if (databaseType === 'sql') { %>
     @Transactional<% } %>
+    @Throws(Exception::class)
+    fun getAll<%= entityClassPlural %>By<%= searchBy.fieldInJavaBeanMethod %>IsLessThanOrEqualToSomething() {
+        // Initialize the database
+        <%= entityInstance %>Repository.saveAndFlush(<%= asEntity(entityInstance) %>)
+
+        // Get all the <%= entityInstance %>List where <%= searchBy.fieldName %> is less than or equal to <%= defaultValue %>
+        default<%= entityClass %>ShouldBeFound("<%= searchBy.fieldName %>.lessThanOrEqual=" + <%= defaultValue %>)
+
+        // Get all the <%= entityInstance %>List where <%= searchBy.fieldName %> is less than or equal to <%= smallerValue %>
+        default<%= entityClass %>ShouldNotBeFound("<%= searchBy.fieldName %>.lessThanOrEqual=" + <%= smallerValue %>)
+    }
+
+    @Test<% if (databaseType === 'sql') { %>
+    @Transactional<% } %>
+    @Throws(Exception::class)
     fun getAll<%= entityClassPlural %>By<%= searchBy.fieldInJavaBeanMethod %>IsLessThanSomething() {
         // Initialize the database
         <%= entityInstance %>Repository.saveAndFlush(<%= asEntity(entityInstance) %>)
 
-        // Get all the <%= entityInstance %>List where <%= searchBy.fieldName %> less than or equals to <%= defaultValue %>
-        default<%= entityClass %>ShouldNotBeFound("<%= searchBy.fieldName %>.lessThan=$<%= defaultValue %>")
+        // Get all the <%= entityInstance %>List where <%= searchBy.fieldName %> is less than <%= defaultValue %>
+        default<%= entityClass %>ShouldNotBeFound("<%= searchBy.fieldName %>.lessThan=" + <%= defaultValue %>)
 
-        // Get all the <%= entityInstance %>List where <%= searchBy.fieldName %> less than or equals to <%= biggerValue %>
-        default<%= entityClass %>ShouldBeFound("<%= searchBy.fieldName %>.lessThan=$<%= biggerValue %>")
+        // Get all the <%= entityInstance %>List where <%= searchBy.fieldName %> is less than <%= biggerValue %>
+        default<%= entityClass %>ShouldBeFound("<%= searchBy.fieldName %>.lessThan=" + <%= biggerValue %>)
     }
+
+    @Test<% if (databaseType === 'sql') { %>
+    @Transactional<% } %>
+    @Throws(Exception::class)
+    fun getAll<%= entityClassPlural %>By<%= searchBy.fieldInJavaBeanMethod %>IsGreaterThanSomething() {
+        // Initialize the database
+        <%= entityInstance %>Repository.saveAndFlush(<%= asEntity(entityInstance) %>)
+
+        // Get all the <%= entityInstance %>List where <%= searchBy.fieldName %> is greater than <%= defaultValue %>
+        default<%= entityClass %>ShouldNotBeFound("<%= searchBy.fieldName %>.greaterThan=" + <%= defaultValue %>)
+
+        // Get all the <%= entityInstance %>List where <%= searchBy.fieldName %> is greater than <%= smallerValue %>
+        default<%= entityClass %>ShouldBeFound("<%= searchBy.fieldName %>.greaterThan=" + <%= smallerValue %>)
+    }
+    
 <%_         } _%>
 <%_     }); _%>
 <%_ relationships.forEach((relationship) => { _%>
@@ -936,6 +975,7 @@ class <%= entityClass %>ResourceIT <% if (databaseType === 'cassandra') { %>: Ab
         <%_ for (idx in fields) {
         const defaultValueName = 'DEFAULT_' + fields[idx].fieldNameUnderscored.toUpperCase();
         const updatedValueName = 'UPDATED_' + fields[idx].fieldNameUnderscored.toUpperCase();
+        const smallerValueName = 'SMALLER_' + fields[idx].fieldNameUnderscored.toUpperCase();
 
         let defaultValue = 1;
         let updatedValue = 2;
@@ -1031,22 +1071,27 @@ class <%= entityClass %>ResourceIT <% if (databaseType === 'cassandra') { %>: Ab
 
         private const val <%=defaultValueName %>: Int = <%= defaultValue %>
         private const val <%=updatedValueName %>: Int = <%= updatedValue %>
+        private const val <%=smallerValueName %>: Int = <%= defaultValue %> - 1
         <%_ } else if (fieldType === 'Long') { _%>
 
         private const val <%=defaultValueName %>: Long = <%= defaultValue %>L
         private const val <%=updatedValueName %>: Long = <%= updatedValue %>L
+        private const val <%=smallerValueName %>: Long = <%= defaultValue %>L - 1L
         <%_ } else if (fieldType === 'Float') { _%>
 
         private const val <%=defaultValueName %>: <%=fieldType %> = <%= defaultValue %>F
         private const val <%=updatedValueName %>: <%=fieldType %> = <%= updatedValue %>F
+        private const val <%=smallerValueName %>: <%=fieldType %> = <%= defaultValue %>F - 1F
         <%_ } else if (fieldType === 'Double') { _%>
 
         private const val <%=defaultValueName %>: <%=fieldType %> = <%= defaultValue %>.0
         private const val <%=updatedValueName %>: <%=fieldType %> = <%= updatedValue %>.0
+        private const val <%=smallerValueName %>: <%=fieldType %> = <%= defaultValue %>.0 - 1.0
         <%_ } else if (fieldType === 'BigDecimal') { _%>
 
         private val <%=defaultValueName %>: BigDecimal = BigDecimal(<%= defaultValue %>)
         private val <%=updatedValueName %>: BigDecimal = BigDecimal(<%= updatedValue %>)
+        private val <%=smallerValueName %>: BigDecimal = BigDecimal(<%= defaultValue %> - 1)
         <%_ } else if (fieldType === 'UUID') { _%>
 
         private val <%=defaultValueName %>: UUID = UUID.randomUUID()
@@ -1055,18 +1100,22 @@ class <%= entityClass %>ResourceIT <% if (databaseType === 'cassandra') { %>: Ab
 
         private val <%=defaultValueName %>: LocalDate = LocalDate.ofEpochDay(0L)
         private val <%=updatedValueName %>: LocalDate = LocalDate.now(ZoneId.systemDefault())
+        private val <%=smallerValueName %>: LocalDate = LocalDate.ofEpochDay(-1L)
         <%_ } else if (fieldType === 'Instant') { _%>
 
         private val <%=defaultValueName %>: Instant = Instant.ofEpochMilli(0L)
         private val <%=updatedValueName %>: Instant = Instant.now().truncatedTo(ChronoUnit.MILLIS)
+        private val <%=smallerValueName %>: Instant = Instant.ofEpochMilli(-1L)
         <%_ } else if (fieldType === 'ZonedDateTime') { _%>
 
         private val <%=defaultValueName %>: ZonedDateTime = ZonedDateTime.ofInstant(Instant.ofEpochMilli(0L), ZoneOffset.UTC)
         private val <%=updatedValueName %>: ZonedDateTime = ZonedDateTime.now(ZoneId.systemDefault()).withNano(0)
+        private val <%=smallerValueName %>: ZonedDateTime = ZonedDateTime.ofInstant(Instant.ofEpochMilli(-1L), ZoneOffset.UTC)
         <%_ } else if (fieldType === 'Duration') { _%>
 
         private val <%=defaultValueName %>: Duration = Duration.ofHours(6)
         private val <%=updatedValueName %>: Duration = Duration.ofHours(12)
+        private val <%=smallerValueName %>: Duration = Duration.ofHours(5)
         <%_ } else if (fieldType === 'Boolean') { _%>
 
         private const val <%=defaultValueName %>: Boolean = false

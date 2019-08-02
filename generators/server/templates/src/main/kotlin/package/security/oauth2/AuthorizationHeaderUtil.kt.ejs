@@ -18,31 +18,140 @@
 -%>
 package <%=packageName%>.security.oauth2
 
-import org.springframework.security.authentication.AbstractAuthenticationToken
+import org.slf4j.LoggerFactory
+import org.springframework.boot.web.client.RestTemplateBuilder
+import org.springframework.http.MediaType
+import org.springframework.http.RequestEntity
+import org.springframework.http.converter.FormHttpMessageConverter
 import org.springframework.security.core.context.SecurityContextHolder
 import org.springframework.security.oauth2.client.OAuth2AuthorizedClient
 import org.springframework.security.oauth2.client.OAuth2AuthorizedClientService
 import org.springframework.security.oauth2.client.authentication.OAuth2AuthenticationToken
+import org.springframework.security.oauth2.client.http.OAuth2ErrorResponseErrorHandler
+import org.springframework.security.oauth2.core.*
+import org.springframework.security.oauth2.core.endpoint.OAuth2AccessTokenResponse
+import org.springframework.security.oauth2.core.endpoint.OAuth2ParameterNames
+import org.springframework.security.oauth2.core.http.converter.OAuth2AccessTokenResponseHttpMessageConverter
 import org.springframework.security.oauth2.server.resource.authentication.JwtAuthenticationToken
 import org.springframework.stereotype.Component
+import org.springframework.util.LinkedMultiValueMap
+import org.springframework.web.client.RestTemplate
+import java.net.URI
+import java.time.Duration
+import java.time.Instant
+import java.util.*
+import java.util.regex.Pattern
+
 
 @Component
-class AuthorizationHeaderUtil(private val clientService: OAuth2AuthorizedClientService) {
+class AuthorizationHeaderUtil(
+    private val clientService: OAuth2AuthorizedClientService,
+    private val restTemplateBuilder: RestTemplateBuilder
+) {
 
-    fun getAuthorizationHeader(): String? {
+    private val log = LoggerFactory.getLogger(javaClass)
+
+
+    fun getAuthorizationHeader(): Optional<String> {
+
         val authentication = SecurityContextHolder.getContext().authentication
-        var accessToken: String? = null
-        val authToken = authentication as AbstractAuthenticationToken
-        if (authToken is OAuth2AuthenticationToken) {
-            val client: OAuth2AuthorizedClient = clientService.loadAuthorizedClient(
-                authToken.authorizedClientRegistrationId,
-                authToken.name
-            )
-            accessToken = client.accessToken.tokenValue
-        } else if (authToken is JwtAuthenticationToken) {
-            accessToken = authToken.token.tokenValue
+        when (authentication) {
+            is OAuth2AuthenticationToken -> {
+                val name = authentication.name
+                val registrationId = authentication.authorizedClientRegistrationId
+                val client = clientService.loadAuthorizedClient<OAuth2AuthorizedClient>(registrationId, name)
+                    ?: throw OAuth2AuthorizationException(OAuth2Error("access_denied", "The token is expired", null))
+                val accessToken = client.accessToken ?: return Optional.empty()
+
+                val tokenType = accessToken.tokenType.value
+
+                if(isExpired(accessToken)) {
+                    log.info("AccessToken expired, refreshing automatically")
+                    val accessTokenValue = refreshToken(client, authentication)
+
+                    if (accessTokenValue == null) {
+                        SecurityContextHolder.getContext().authentication = null
+                        throw OAuth2AuthorizationException(OAuth2Error("access_denied", "The token is expired", null))
+                    }
+
+                    return Optional.of("$tokenType $accessTokenValue")
+                }
+            }
+            is JwtAuthenticationToken -> {
+                val tokenValue = authentication.token.tokenValue
+                return Optional.of("${OAuth2AccessToken.TokenType.BEARER.value} $tokenValue")
+            }
+        }
+        return Optional.empty()
+    }
+
+    private fun refreshToken(client: OAuth2AuthorizedClient, oauthToken: OAuth2AuthenticationToken): String? {
+        val atr = refreshTokenClient(client)
+        if (atr?.accessToken == null) {
+            log.info("Failed to refresh token for user")
+            return null
         }
 
-        return if (accessToken == null) null else "Bearer $accessToken"
+        val refreshToken = atr.refreshToken?: client.refreshToken
+        val updatedClient = OAuth2AuthorizedClient(
+            client.clientRegistration,
+            client.principalName,
+            atr.accessToken,
+            refreshToken
+        )
+
+        clientService.saveAuthorizedClient(updatedClient, oauthToken)
+        return atr.accessToken.tokenValue
+
+    }
+
+    private fun refreshTokenClient(currentClient: OAuth2AuthorizedClient): OAuth2AccessTokenResponse? {
+        val formParameters = LinkedMultiValueMap<String, String>()
+        formParameters.add(OAuth2ParameterNames.GRANT_TYPE, AuthorizationGrantType.REFRESH_TOKEN.value)
+        formParameters.add(OAuth2ParameterNames.REFRESH_TOKEN, currentClient.refreshToken.tokenValue)
+        formParameters.add(OAuth2ParameterNames.CLIENT_ID, currentClient.clientRegistration.clientId)
+        val requestEntity = RequestEntity
+            .post(URI.create(currentClient.clientRegistration.providerDetails.tokenUri))
+            .contentType(MediaType.APPLICATION_FORM_URLENCODED)
+            .body(formParameters)
+        try {
+            val r = restTemplate(currentClient.clientRegistration.clientId, currentClient.clientRegistration.clientSecret)
+            val responseEntity = r.exchange(requestEntity, OAuthIdpTokenResponseDTO::class.java)
+            return toOAuth2AccessTokenResponse(responseEntity.body)
+        } catch (e: OAuth2AuthorizationException) {
+            log.error("Unable to refresh token", e)
+            throw OAuth2AuthenticationException(e.error, e)
+        }
+
+    }
+
+    private fun toOAuth2AccessTokenResponse(oAuthIdpResponse: OAuthIdpTokenResponseDTO): OAuth2AccessTokenResponse {
+        val additionalParameters = hashMapOf<String, Any>()
+        additionalParameters["id_token"] = oAuthIdpResponse.idToken
+        additionalParameters["not-before-policy"] = oAuthIdpResponse.notBefore
+        additionalParameters["refresh_expires_in"] = oAuthIdpResponse.refreshExpiresIn
+        additionalParameters["session_state"] = oAuthIdpResponse.sessionState
+
+        return OAuth2AccessTokenResponse.withToken(oAuthIdpResponse.accessToken)
+            .expiresIn(oAuthIdpResponse.expiresIn)
+            .refreshToken(oAuthIdpResponse.refreshToken)
+            .scopes(Pattern.compile("\\s").split(oAuthIdpResponse.scope).toHashSet())
+            .build()
+    }
+
+    private fun restTemplate(clientId: String?, clientSecret: String?): RestTemplate {
+        return restTemplateBuilder
+            .additionalMessageConverters(
+                FormHttpMessageConverter(),
+                OAuth2AccessTokenResponseHttpMessageConverter()
+            ).errorHandler(OAuth2ErrorResponseErrorHandler())
+            .basicAuthentication(clientId, clientSecret)
+            .build()
+    }
+
+    private fun isExpired(accessToken: OAuth2AccessToken): Boolean {
+        val now = Instant.now()
+        val expiresAt = accessToken.expiresAt
+        return now.isAfter(expiresAt.minus(Duration.ofMinutes(1L)))
     }
 }

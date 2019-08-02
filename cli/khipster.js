@@ -43,8 +43,24 @@ if (process.argv.includes('upgrade') && !process.argv.includes('--prefer-local')
 }
 
 // Pass in kotlin as a blueprint module.
-if (!process.argv.includes('kotlin')) {
-    process.argv.push('--blueprint');
+// User passes in blueprints flag but without Kotlin :> append Kotlin
+if (!process.argv.includes('kotlin') && process.argv.includes('--blueprints')) {
+    for (let i = 0; i < process.argv.length; i++) {
+        if (process.argv[i] === '--blueprints') {
+            process.argv[i + 1] = `${process.argv[i + 1].split(',')},kotlin`;
+        }
+    }
+    // User passes in blueprint flag but without Kotlin :> append Kotlin
+} else if (!process.argv.includes('kotlin') && process.argv.includes('--blueprint')) {
+    for (let i = 0; i < process.argv.length; i++) {
+        if (process.argv[i] === '--blueprint') {
+            process.argv[i] = '--blueprints';
+            process.argv[i + 1] = `${process.argv[i + 1]},kotlin`;
+        }
+    }
+    // User donot pass in blueprints or blueprint flag but without Kotlin :> append Kotlin
+} else if (!process.argv.includes('kotlin') && !process.argv.includes('--blueprint') && !process.argv.includes('--blueprints')) {
+    process.argv.push('--blueprints');
     process.argv.push('kotlin');
 }
 

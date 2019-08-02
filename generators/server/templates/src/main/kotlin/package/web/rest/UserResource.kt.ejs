@@ -58,8 +58,10 @@ import org.springframework.data.domain.Pageable
 <%_ } _%>
 import org.springframework.http.HttpStatus
 import org.springframework.http.ResponseEntity
+<%_ if (reactive) { _%>
+import org.springframework.http.server.reactive.ServerHttpRequest
+<%_ } _%>
 import org.springframework.security.access.prepost.PreAuthorize
-import org.springframework.util.MultiValueMap
 import org.springframework.web.bind.annotation.DeleteMapping
 import org.springframework.web.bind.annotation.GetMapping
 import org.springframework.web.bind.annotation.PathVariable
@@ -72,9 +74,12 @@ import org.springframework.web.bind.annotation.RequestParam
 import org.springframework.web.bind.annotation.ResponseStatus
 <%_ } _%>
 import org.springframework.web.bind.annotation.RestController
-import org.springframework.web.util.UriComponentsBuilder
+<%_ if (!reactive) { _%>
+import org.springframework.web.servlet.support.ServletUriComponentsBuilder
+<%_ } _%>
 <%_ if (reactive) { _%>
 import org.springframework.web.server.ResponseStatusException
+import org.springframework.web.util.UriComponentsBuilder
 import reactor.core.publisher.Flux
 import reactor.core.publisher.Mono
 <%_ } _%>
@@ -256,32 +261,28 @@ class UserResource(
     /**
      * `GET /users` : get all users.
      *<% if (databaseType === 'sql' || databaseType === 'mongodb' || databaseType === 'couchbase') { %>
-     * @param queryParams a [MultiValueMap] query parameters.
-     * @param uriBuilder a [UriComponentsBuilder] URI builder.
+     <%_ if (reactive) { _%>
+     * @param request a {@link ServerHttpRequest} request.
+     <%_ } _%>
      * @param pageable the pagination information.<% } %>
      * @return the `ResponseEntity` with status `200 (OK)` and with body all users.
      */
     @GetMapping("/users")
     <%_ if (databaseType === 'sql' || databaseType === 'mongodb' || databaseType === 'couchbase') { _%>
         <%_ if (!reactive) { _%>
-    fun getAllUsers(
-        @RequestParam queryParams: MultiValueMap<String, String>,
-        uriBuilder: UriComponentsBuilder,
-        pageable: Pageable
-    ): ResponseEntity<List<<%= asDto('User') %>>> {
+    fun getAllUsers(pageable: Pageable): ResponseEntity<List<<%= asDto('User') %>>> {
         val page = userService.getAllManagedUsers(pageable)
-        val headers = PaginationUtil.generatePaginationHttpHeaders(uriBuilder.queryParams(queryParams), page)
+        val headers = PaginationUtil.generatePaginationHttpHeaders(ServletUriComponentsBuilder.fromCurrentRequest(), page)
         return ResponseEntity(page.content, headers, HttpStatus.OK)
     }
         <%_ } else { _%>
     fun getAllUsers(
-        @RequestParam queryParams: MultiValueMap<String, String>,
-        uriBuilder: UriComponentsBuilder,
+        request: ServerHttpRequest,
         pageable: Pageable
     ): Mono<ResponseEntity<Flux<<%= asDto('User') %>>>> =
         userService.countManagedUsers()
             .map { total -> PageImpl(mutableListOf<<%= asDto('User') %>>(), pageable, total!!) }
-            .map { page -> PaginationUtil.generatePaginationHttpHeaders(uriBuilder.queryParams(queryParams), page) }
+            .map { page -> PaginationUtil.generatePaginationHttpHeaders(UriComponentsBuilder.fromHttpRequest(request), page) }
             .map { headers -> ResponseEntity.ok().headers(headers).body(userService.getAllManagedUsers(pageable)) }
         <%_ } _%>
 
