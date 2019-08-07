@@ -577,17 +577,19 @@ class <%= entityClass %>ResourceIT <% if (databaseType === 'cassandra') { %>: Ab
             // the range criterias
             if (['BigDecimal', 'Byte', 'Double', 'Duration', 'Float', 'Short',
                  'Integer', 'Long', 'LocalDate', 'ZonedDateTime'].includes(searchBy.fieldType)) {
-              var defaultValue = `DEFAULT_${searchBy.fieldNameUnderscored.toUpperCase()}`;
-              var biggerValue = `UPDATED_${searchBy.fieldNameUnderscored.toUpperCase()}`;
-              var smallerValue = `SMALLER_${searchBy.fieldNameUnderscored.toUpperCase()}`;
+              var valUpperCase = searchBy.fieldNameUnderscored.toUpperCase();
+              var defaultValue = `DEFAULT_${valUpperCase}`;
+              var biggerValue = `UPDATED_${valUpperCase}`;
+              var smallerValue = `SMALLER_${valUpperCase}`;
+
               if (searchBy.fieldValidate === true && searchBy.fieldValidateRules.includes('max')) {
                   // if maximum is specified the updated variable is smaller than the default one!
                   if (searchBy.fieldType === 'BigDecimal') {
-                      biggerValue = `(${defaultValue}.add(BigDecimal.ONE))`;
+                      biggerValue = `{${defaultValue}.add(BigDecimal.ONE)}`;
                   } else if (['Duration', 'LocalDate', 'ZonedDateTime'].includes(searchBy.fieldType)) {
-                      biggerValue = `(${defaultValue}.plus(1, ChronoUnit.DAYS))`;
+                      biggerValue = `{${defaultValue}.plus(1, ChronoUnit.DAYS)}`;
                   } else {
-                      biggerValue = `(${defaultValue + 1})`;
+                      biggerValue = `{${defaultValue} + 1}`;
                   }
               }
             _%>
