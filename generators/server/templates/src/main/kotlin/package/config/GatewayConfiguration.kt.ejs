@@ -20,11 +20,13 @@ package <%=packageName%>.config
 
 import io.github.jhipster.config.JHipsterProperties
 
-import <%=packageName%>.gateway.ratelimiting.RateLimitingFilter
 import <%=packageName%>.gateway.accesscontrol.AccessControlFilter
 import <%=packageName%>.gateway.responserewriting.SwaggerBasePathRewritingFilter
-
+<%_ if (cacheProvider === 'hazelcast') { _%>
+import <%=packageName%>.gateway.ratelimiting.RateLimitingFilter
 import org.springframework.boot.autoconfigure.condition.ConditionalOnProperty
+<%_ } _%>
+
 import org.springframework.cloud.netflix.zuul.filters.RouteLocator
 import org.springframework.context.annotation.Bean
 import org.springframework.context.annotation.Configuration
@@ -45,6 +47,7 @@ class GatewayConfiguration {
             AccessControlFilter(routeLocator, jHipsterProperties)
     }
 
+    <%_ if (cacheProvider === 'hazelcast') { _%>
     /**
      * Configures the Zuul filter that limits the number of API calls per user.
      *
@@ -57,4 +60,5 @@ class GatewayConfiguration {
         @Bean
         fun rateLimitingFilter() = RateLimitingFilter(jHipsterProperties)
     }
+    <%_ } _%>
 }

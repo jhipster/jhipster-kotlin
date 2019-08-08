@@ -318,6 +318,16 @@ const serverFiles = {
                     file: 'package/security/oauth2/AudienceValidator.kt',
                     renameTo: generator => `${generator.javaDir}security/oauth2/AudienceValidator.kt`,
                     useBluePrint: true
+                },
+                {
+                    file: 'package/security/oauth2/JwtAuthorityExtractor.kt',
+                    renameTo: generator => `${generator.javaDir}security/oauth2/JwtAuthorityExtractor.kt`,
+                    useBluePrint: true
+                },
+                {
+                    file: 'package/security/oauth2/OAuthIdpTokenResponseDTO.kt',
+                    renameTo: generator => `${generator.javaDir}security/oauth2/OAuthIdpTokenResponseDTO.kt`,
+                    useBluePrint: true
                 }
             ]
         },
@@ -386,11 +396,6 @@ const serverFiles = {
                     useBluePrint: true
                 },
                 {
-                    file: 'package/gateway/ratelimiting/RateLimitingFilter.kt',
-                    renameTo: generator => `${generator.javaDir}gateway/ratelimiting/RateLimitingFilter.kt`,
-                    useBluePrint: true
-                },
-                {
                     file: 'package/gateway/accesscontrol/AccessControlFilter.kt',
                     renameTo: generator => `${generator.javaDir}gateway/accesscontrol/AccessControlFilter.kt`,
                     useBluePrint: true
@@ -408,6 +413,18 @@ const serverFiles = {
                 {
                     file: 'package/web/rest/GatewayResource.kt',
                     renameTo: generator => `${generator.javaDir}web/rest/GatewayResource.kt`,
+                    useBluePrint: true
+                }
+            ]
+        },
+        {
+            condition: generator =>
+                generator.applicationType === 'gateway' && generator.serviceDiscoveryType && generator.cacheProvider === 'hazelcast',
+            path: SERVER_MAIN_KOTLIN_SRC_DIR,
+            templates: [
+                {
+                    file: 'package/gateway/ratelimiting/RateLimitingFilter.kt',
+                    renameTo: generator => `${generator.javaDir}gateway/ratelimiting/RateLimitingFilter.kt`,
                     useBluePrint: true
                 }
             ]
