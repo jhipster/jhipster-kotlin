@@ -2,6 +2,10 @@
 
 # [1.1.0](https://github.com/jhipster/jhipster-kotlin/compare/1.0.0...1.1.0) (YTR)
 - Upgraded JHipster support to 6.2.0
+- Upgraded Kotlin support to 1.3.41
+- Upgraded Detekt support to 1.0.0-RC16
+- Upgraded ktlint-maven-plugin to 1.2.0
+- Upgraded ktlint-gradle to 8.2.0
 
 <a name="1.0.0"></a>
 
