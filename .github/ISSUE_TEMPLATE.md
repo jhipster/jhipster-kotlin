@@ -3,6 +3,6 @@
 ## Reproduce the error
 ## Related issues
 ## Link to PR (if any)
-## JHipster Version(s)
+## KHipster Version(s)
 
-- [ ] Checking this box is mandatory (this is just to show you read everything)
+- [] Checking this box is mandatory (this is just to show you read everything)
