@@ -1,6 +1,6 @@
 <a name="1.1.0"></a>
 
-# [1.1.0](https://github.com/jhipster/jhipster-kotlin/compare/1.0.0...1.1.0) (YTR)
+# [1.1.0](https://github.com/jhipster/jhipster-kotlin/compare/1.0.0...1.1.0) (2019-08-15)
 - Upgraded JHipster support to 6.2.0
 - Upgraded Kotlin support to 1.3.41
 - Upgraded Detekt support to 1.0.0-RC16
