@@ -38,7 +38,6 @@ import org.springframework.web.socket.server.HandshakeInterceptor
 import org.springframework.web.socket.server.support.DefaultHandshakeHandler
 
 import java.security.Principal
-import java.util.Optional
 
 @Configuration
 @EnableWebSocketMessageBroker
@@ -49,10 +48,9 @@ class WebsocketConfiguration(private val jHipsterProperties: JHipsterProperties)
     }
 
     override fun registerStompEndpoints(registry: StompEndpointRegistry?) {
-        val allowedOrigins =
-            Optional.ofNullable(jHipsterProperties.cors.allowedOrigins)
-                .map { origins -> origins.toTypedArray() }
-                .orElse(arrayOfNulls(0))
+        val allowedOrigins = jHipsterProperties.cors.allowedOrigins
+            ?.let { origins -> origins.toTypedArray() }
+            ?: arrayOfNulls(0)
 
         registry!!.addEndpoint("/websocket/tracker")
             .setHandshakeHandler(defaultHandshakeHandler())

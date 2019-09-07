@@ -295,7 +295,6 @@ import java.time.LocalDate
 <%_ if (!(databaseType === 'sql' || databaseType === 'mongodb' || databaseType === 'couchbase')) { _%>
 import java.util.Date
 <%_ } _%>
-import java.util.Optional
 <%_ if (databaseType === 'cassandra') { _%>
 import java.util.UUID
 <%_ } _%>
@@ -470,13 +469,11 @@ class AccountResourceIT <% if (databaseType === 'cassandra') { %>: AbstractCassa
             langKey = "en",
             authorities = authorities
         )
-        whenever(mockUserService.getUserWithAuthorities()).thenReturn(<% if (reactive) { %>Mono.just<% } else { %>Optional.of<% } %>(user))
+        whenever(mockUserService.getUserWithAuthorities()).thenReturn(<% if (reactive) { %>Mono.just(user)<% } else { %>user<% } %>)
 
         <%_ if (!reactive) { _%>
         restUserMockMvc.perform(
-            get("/api/account")
-                .accept(MediaType.APPLICATION_JSON)
-        )
+            get("/api/account").accept(MediaType.APPLICATION_JSON))
             .andExpect(status().isOk)
             .andExpect(content().contentType(MediaType.APPLICATION_JSON_UTF8_VALUE))
             .andExpect(jsonPath("\$.login").value("test"))
@@ -511,12 +508,10 @@ class AccountResourceIT <% if (databaseType === 'cassandra') { %>: AbstractCassa
     <%_ if (!reactive) { _%>
     @Throws(Exception::class)
     fun testGetUnknownAccount() {
-        whenever(mockUserService.getUserWithAuthorities()).thenReturn(Optional.empty())
+        whenever(mockUserService.getUserWithAuthorities()).thenReturn(null)
 
         restUserMockMvc.perform(
-            get("/api/account")
-                .accept(MediaType.APPLICATION_PROBLEM_JSON)
-        )
+            get("/api/account").accept(MediaType.APPLICATION_PROBLEM_JSON))
             .andExpect(status().isInternalServerError)
     <%_ } else { _%>
     fun testGetUnknownAccount() {
@@ -545,7 +540,8 @@ class AccountResourceIT <% if (databaseType === 'cassandra') { %>: AbstractCassa
             langKey = DEFAULT_LANGUAGE
             authorities = setOf(USER)
         }
-        assertThat(userRepository.findOneByLogin("test-register-valid")<% if (reactive) { %>.blockOptional()<% } %>.isPresent).isFalse()
+        <% if (reactive) { _%>assertThat(userRepository.findOneByLogin("test-register-valid").blockOptional().isPresent).isFalse()
+        <% } else { _%>assertThat(userRepository.findOneByLogin("test-register-valid")).isNull()<% } %>
 
         <%_ if (!reactive) { _%>
         restMvc.perform(
@@ -562,7 +558,8 @@ class AccountResourceIT <% if (databaseType === 'cassandra') { %>: AbstractCassa
             .expectStatus().isCreated
         <%_ } _%>
 
-        assertThat(userRepository.findOneByLogin("test-register-valid")<% if (reactive) { %>.blockOptional()<% } %>.isPresent).isTrue()
+        <% if (reactive) { _%> assertThat(userRepository.findOneByLogin("test-register-valid").blockOptional().isPresent).isTrue()
+        <% } else { _%>assertThat(userRepository.findOneByLogin("test-register-valid")).isNotNull<% } %>
     }
 
     @Test<% if (databaseType === 'sql') { %>
@@ -599,7 +596,8 @@ class AccountResourceIT <% if (databaseType === 'cassandra') { %>: AbstractCassa
         <%_ } _%>
 
         val user = userRepository.findOneByEmailIgnoreCase("funky@example.com")<% if (reactive) { %>.blockOptional()<% } %>
-        assertThat(user.isPresent).isFalse()
+        <% if (reactive) { _%> assertThat(user.isPresent).isFalse()
+        <% } else { _%>assertThat(user).isNull()<% } %>
     }
 
     @Test<% if (databaseType === 'sql') { %>
@@ -636,7 +634,8 @@ class AccountResourceIT <% if (databaseType === 'cassandra') { %>: AbstractCassa
         <%_ } _%>
 
         val user = userRepository.findOneByLogin("bob")<% if (reactive) { %>.blockOptional()<% } %>
-        assertThat(user.isPresent).isFalse()
+        <% if (reactive) { _%> assertThat(user.isPresent).isFalse
+        <% } else { _%>assertThat(user).isNull()<% } %>
     }
 
     @Test<% if (databaseType === 'sql') { %>
@@ -673,7 +672,8 @@ class AccountResourceIT <% if (databaseType === 'cassandra') { %>: AbstractCassa
         <%_ } _%>
 
         val user = userRepository.findOneByLogin("bob")<% if (reactive) { %>.blockOptional()<% } %>
-        assertThat(user.isPresent).isFalse()
+        <% if (reactive) { _%> assertThat(user.isPresent).isFalse
+        <% } else { _%>assertThat(user).isNull()<% } %>
     }
 
     @Test<% if (databaseType === 'sql') { %>
@@ -710,7 +710,8 @@ class AccountResourceIT <% if (databaseType === 'cassandra') { %>: AbstractCassa
         <%_ } _%>
 
         val user = userRepository.findOneByLogin("bob")<% if (reactive) { %>.blockOptional()<% } %>
-        assertThat(user.isPresent).isFalse()
+        <% if (reactive) { _%> assertThat(user.isPresent).isFalse
+        <% } else { _%>assertThat(user).isNull()<% } %>
     }
 
     @Test<% if (databaseType === 'sql') { %>
@@ -783,10 +784,17 @@ class AccountResourceIT <% if (databaseType === 'cassandra') { %>: AbstractCassa
             .expectStatus().isCreated
         <%_ } _%>
 
-        val testUser = userRepository.findOneByEmailIgnoreCase("alice2@example.com")<% if (reactive) { %>.blockOptional()<% } %>
+        <%_ if (reactive) { _%>
+        val testUser = userRepository.findOneByEmailIgnoreCase("alice2@example.com").blockOptional()
         assertThat(testUser.isPresent).isTrue()
         testUser.get().activated = true
-        userRepository.save(testUser.get())<% if (reactive) { %>.block()<% } %>
+        userRepository.save(testUser.get()).block()    
+        <%_ } else { _%>
+        val testUser = userRepository.findOneByEmailIgnoreCase("alice2@example.com")
+        assertThat(testUser).isNotNull()
+        testUser?.activated = true
+        userRepository.save(testUser)
+        <%_ } _%>
 
         // Second (already activated) user
         <%_ if (!reactive) { _%>
@@ -840,7 +848,9 @@ class AccountResourceIT <% if (databaseType === 'cassandra') { %>: AbstractCassa
         <%_ } _%>
 
         val testUser1 = userRepository.findOneByLogin("test-register-duplicate-email")<% if (reactive) { %>.blockOptional()<% } %>
-        assertThat(testUser1.isPresent).isTrue()
+        
+        <% if (reactive) { _%>assertThat(testUser1.isPresent).isTrue()
+        <% } else { _%>assertThat(testUser1).isNotNull<% } %>
 
         // Duplicate email, different login
         val secondUser = ManagedUserVM().apply {
@@ -873,10 +883,12 @@ class AccountResourceIT <% if (databaseType === 'cassandra') { %>: AbstractCassa
         <%_ } _%>
 
         val testUser2 = userRepository.findOneByLogin("test-register-duplicate-email")<% if (reactive) { %>.blockOptional()<% } %>
-        assertThat(testUser2.isPresent).isFalse()
+        <% if (reactive) { _%>assertThat(testUser2.isPresent).isFalse()
+        <% } else { _%>assertThat(testUser2).isNull()<% } %>
 
         val testUser3 = userRepository.findOneByLogin("test-register-duplicate-email-2")<% if (reactive) { %>.blockOptional()<% } %>
-        assertThat(testUser3.isPresent).isTrue()
+        <% if (reactive) { _%>assertThat(testUser3.isPresent).isTrue()
+        <% } else { _%>assertThat(testUser3).isNotNull<% } %>
 
         // Duplicate email - with uppercase email address
         val userWithUpperCaseEmail = ManagedUserVM().apply {
@@ -910,11 +922,19 @@ class AccountResourceIT <% if (databaseType === 'cassandra') { %>: AbstractCassa
         <%_ } _%>
 
         val testUser4 = userRepository.findOneByLogin("test-register-duplicate-email-3")<% if (reactive) { %>.blockOptional()<% } %>
+        <%_ if (reactive) { _%>
         assertThat(testUser4.isPresent).isTrue()
         assertThat(testUser4.get().email).isEqualTo("test-register-duplicate-email@example.com")
 
         testUser4.get().activated = true
-        userService.updateUser((<%= asDto('User') %>(testUser4.get())))<% if (reactive) { %>.block()<% } %>
+        userService.updateUser((<%= asDto('User') %>(testUser4.get()))).block()
+        <%_ } else { _%>
+        assertThat(testUser4).isNotNull
+        assertThat(testUser4?.email).isEqualTo("test-register-duplicate-email@example.com")
+    
+        testUser4?.activated = true
+        userService.updateUser((<%= asDto('User') %>(testUser4!!)))
+        <%_ } _%>
 
         // Register 4th (already activated) user
         <%_ if (!reactive) { _%>
@@ -967,8 +987,13 @@ class AccountResourceIT <% if (databaseType === 'cassandra') { %>: AbstractCassa
         <%_ } _%>
 
         val userDup = userRepository.findOneByLogin("badguy")<% if (reactive) { %>.blockOptional()<% } %>
+        <%_ if (reactive) { _%>
         assertThat(userDup.isPresent).isTrue()
         assertThat(userDup.get().authorities).hasSize(1)
+        <%_ } else { _%>
+        assertThat(userDup).isNotNull
+        assertThat(userDup?.authorities).hasSize(1)
+        <%_ } _%>
             .containsExactly(<% if (databaseType === 'sql' || databaseType === 'mongodb') { %>authorityRepository.findById(USER).<% if (reactive) { %>block<% } else { %>get<% } %>()<% } %><% if (databaseType === 'cassandra' || databaseType === 'couchbase') { %>USER<% } %>)
     }
 
@@ -1001,7 +1026,7 @@ class AccountResourceIT <% if (databaseType === 'cassandra') { %>: AbstractCassa
             .expectStatus().isOk
         <%_ } _%>
 
-        user = userRepository.findOneByLogin(user.login!!)<% if (!reactive) { %>.orElse(null)<% } else { %>.block()!!<% } %>
+        user = userRepository.findOneByLogin(user.login!!)<% if (reactive) { %>.block()<% } %>!!
         assertThat(user.activated).isTrue()
     }
 
@@ -1065,7 +1090,7 @@ class AccountResourceIT <% if (databaseType === 'cassandra') { %>: AbstractCassa
             .expectStatus().isOk
         <%_ } _%>
 
-        val updatedUser = userRepository.findOneByLogin(user.login!!)<% if (!reactive) { %>.orElse(null)<% } else { %>.block()
+        val updatedUser = userRepository.findOneByLogin(user.login!!)<% if (!reactive) { %>!!<% } else { %>.block()
         assertNotNull(updatedUser)<% } %>
         assertThat(updatedUser.firstName).isEqualTo(userDTO.firstName)
         assertThat(updatedUser.lastName).isEqualTo(userDTO.lastName)
@@ -1124,7 +1149,7 @@ class AccountResourceIT <% if (databaseType === 'cassandra') { %>: AbstractCassa
             .expectStatus().isBadRequest
         <%_ } _%>
 
-        assertThat(userRepository.findOneByEmailIgnoreCase("invalid email")<% if (reactive) { %>.blockOptional()<% } %>).isNotPresent
+        assertThat(userRepository.findOneByEmailIgnoreCase("invalid email")<% if (reactive) { %>.blockOptional()).isNotPresent<% } else { %>).isNull()<% } %>
     }
 
     @Test<% if (databaseType === 'sql') { %>
@@ -1186,9 +1211,14 @@ class AccountResourceIT <% if (databaseType === 'cassandra') { %>: AbstractCassa
             .expectStatus().isBadRequest
         <%_ } _%>
 
+        <%_ if (!reactive) { _%>
+        val updatedUser = userRepository.findOneByLogin("save-existing-email")
+        assertThat(updatedUser?.email).isEqualTo("save-existing-email@example.com")
+        <%_ } else { _%>
         val updatedUser = userRepository.findOneByLogin("save-existing-email")<% if (!reactive) { %>.orElse(null)<% } else { %>.block()
         assertNotNull(updatedUser)<% } %>
         assertThat(updatedUser.email).isEqualTo("save-existing-email@example.com")
+        <%_ } _%>
     }
 
     @Test<% if (databaseType === 'sql') { %>
@@ -1236,9 +1266,14 @@ class AccountResourceIT <% if (databaseType === 'cassandra') { %>: AbstractCassa
             .expectStatus().isOk
         <%_ } _%>
 
-        val updatedUser = userRepository.findOneByLogin("save-existing-email-and-login")<% if (!reactive) { %>.orElse(null)<% } else { %>.block()
-        assertNotNull(updatedUser)<% } %>
+        <%_ if (reactive) { _%>
+        val updatedUser = userRepository.findOneByLogin("save-existing-email").block()
+        assertNotNull(updatedUser)
         assertThat(updatedUser.email).isEqualTo("save-existing-email-and-login@example.com")
+        <%_ } else { _%>
+        val updatedUser = userRepository.findOneByLogin("save-existing-email-and-login")
+        assertThat(updatedUser?.email).isEqualTo("save-existing-email-and-login@example.com")    
+        <%_ } _%>
     }
 
     @Test<% if (databaseType === 'sql') { %>
@@ -1273,10 +1308,16 @@ class AccountResourceIT <% if (databaseType === 'cassandra') { %>: AbstractCassa
             .expectStatus().isBadRequest
         <%_ } _%>
 
-        val updatedUser = userRepository.findOneByLogin("change-password-wrong-existing-password")<% if (!reactive) { %>.orElse(null)<% } else { %>.block()
-        assertNotNull(updatedUser)<% } %>
+        <%_ if (reactive) { _%>
+        val updatedUser = userRepository.findOneByLogin("change-password-wrong-existing-password").block()
+        assertNotNull(updatedUser)
         assertThat(passwordEncoder.matches("new password", updatedUser.password)).isFalse()
         assertThat(passwordEncoder.matches(currentPassword, updatedUser.password)).isTrue()
+        <%_ } else { _%>
+        val updatedUser = userRepository.findOneByLogin("change-password-wrong-existing-password")
+        assertThat(passwordEncoder.matches("new password", updatedUser?.password)).isFalse()
+        assertThat(passwordEncoder.matches(currentPassword, updatedUser?.password)).isTrue()    
+        <%_ } _%>
     }
 
     @Test<% if (databaseType === 'sql') { %>
@@ -1311,9 +1352,14 @@ class AccountResourceIT <% if (databaseType === 'cassandra') { %>: AbstractCassa
             .expectStatus().isOk
         <%_ } _%>
 
-        val updatedUser = userRepository.findOneByLogin("change-password")<% if (!reactive) { %>.orElse(null)<% } else { %>.block()
-        assertNotNull(updatedUser)<% } %>
-        assertThat(passwordEncoder.matches("new password", updatedUser.password)).isTrue()
+        <%_ if (reactive) { _%>
+        val updatedUser = userRepository.findOneByLogin("change-password").block()
+        assertNotNull(updatedUser)
+        assertThat(passwordEncoder.matches("new password", updatedUser.password)).isTrue
+        <%_ } else { _%>
+        val updatedUser = userRepository.findOneByLogin("change-password")
+        assertThat(passwordEncoder.matches("new password", updatedUser?.password)).isTrue
+        <%_ } _%>
     }
 
     @Test<% if (databaseType === 'sql') { %>
@@ -1349,10 +1395,15 @@ class AccountResourceIT <% if (databaseType === 'cassandra') { %>: AbstractCassa
             .exchange()
             .expectStatus().isBadRequest
         <%_ } _%>
-
-        val updatedUser = userRepository.findOneByLogin("change-password-too-small")<% if (!reactive) { %>.orElse(null)<% } else { %>.block()
-        assertNotNull(updatedUser)<% } %>
+        
+        <%_ if (reactive) { _%>
+        val updatedUser = userRepository.findOneByLogin("change-password-too-small").block()
+        assertNotNull(updatedUser)
         assertThat(updatedUser.password).isEqualTo(user.password)
+        <%_ } else { _%>
+        val updatedUser = userRepository.findOneByLogin("change-password-too-small")
+        assertThat(updatedUser?.password).isEqualTo(user.password)
+        <%_ } _%>
     }
 
     @Test<% if (databaseType === 'sql') { %>
@@ -1389,9 +1440,14 @@ class AccountResourceIT <% if (databaseType === 'cassandra') { %>: AbstractCassa
             .expectStatus().isBadRequest
         <%_ } _%>
 
-        val updatedUser = userRepository.findOneByLogin("change-password-too-long")<% if (!reactive) { %>.orElse(null)<% } else { %>.block()
-        assertNotNull(updatedUser)<% } %>
+        <%_ if (reactive) { _%>
+        val updatedUser = userRepository.findOneByLogin("change-password-too-long").block()
+        assertNotNull(updatedUser)
         assertThat(updatedUser.password).isEqualTo(user.password)
+        <%_ } else { _%>
+        val updatedUser = userRepository.findOneByLogin("change-password-too-long")
+        assertThat(updatedUser?.password).isEqualTo(user.password)
+        <%_ } _%>
     }
 
     @Test<% if (databaseType === 'sql') { %>
@@ -1426,9 +1482,14 @@ class AccountResourceIT <% if (databaseType === 'cassandra') { %>: AbstractCassa
             .expectStatus().isBadRequest
         <%_ } _%>
 
-        val updatedUser = userRepository.findOneByLogin("change-password-empty")<% if (!reactive) { %>.orElse(null)<% } else { %>.block()
-        assertNotNull(updatedUser)<% } %>
+        <%_ if (reactive) { _%>
+        val updatedUser = userRepository.findOneByLogin("change-password-empty").block()
+        assertNotNull(updatedUser)
         assertThat(updatedUser.password).isEqualTo(user.password)
+        <%_ } else { _%>
+        val updatedUser = userRepository.findOneByLogin("change-password-empty")
+        assertThat(updatedUser?.password).isEqualTo(user.password)
+        <%_ } _%>
     }
     <%_ if (authenticationType === 'session' && !reactive) { _%>
 
@@ -1625,9 +1686,14 @@ class AccountResourceIT <% if (databaseType === 'cassandra') { %>: AbstractCassa
             .expectStatus().isOk
         <%_ } _%>
 
-        val updatedUser = userRepository.findOneByLogin(user.login!!)<% if (!reactive) { %>.orElse(null)<% } else { %>.block()
-        assertNotNull(updatedUser)<% } %>
+        <%_ if (reactive) { _%>
+        val updatedUser = userRepository.findOneByLogin(user.login!!).block()
+        assertNotNull(updatedUser)
         assertThat(passwordEncoder.matches(keyAndPassword.newPassword, updatedUser.password)).isTrue()
+        <%_ } else { _%>
+        val updatedUser = userRepository.findOneByLogin(user.login!!)
+        assertThat(passwordEncoder.matches(keyAndPassword.newPassword, updatedUser?.password)).isTrue()
+        <%_ } _%>
     }
 
     @Test<% if (databaseType === 'sql') { %>
@@ -1664,9 +1730,14 @@ class AccountResourceIT <% if (databaseType === 'cassandra') { %>: AbstractCassa
             .expectStatus().isBadRequest
         <%_ } _%>
 
-        val updatedUser = userRepository.findOneByLogin(user.login!!)<% if (!reactive) { %>.orElse(null)<% } else { %>.block()
-        assertNotNull(updatedUser)<% } %>
+        <%_ if (reactive) { _%>
+        val updatedUser = userRepository.findOneByLogin(user.login!!).block()
+        assertNotNull(updatedUser)
         assertThat(passwordEncoder.matches(keyAndPassword.newPassword, updatedUser.password)).isFalse()
+        <%_ } else { _%>
+        val updatedUser = userRepository.findOneByLogin(user.login!!)
+        assertThat(passwordEncoder.matches(keyAndPassword.newPassword, updatedUser?.password)).isFalse()
+        <%_ } _%>
     }
 
     @Test<% if (databaseType === 'sql') { %>

@@ -59,18 +59,22 @@ class DomainUserDetailsService(private val userRepository: UserRepository) : <% 
             return userRepository.<% if (databaseType === 'sql') { %>findOneWithAuthoritiesByEmailIgnoreCase<% } else { %>findOneByEmailIgnoreCase<% } %>(login)
                 <%_ if (reactive) { _%>
                 .switchIfEmpty(Mono.error(UsernameNotFoundException("User with email $login was not found in the database")))
+                .map { createSpringSecurityUser(login, it) }
+                <%_ } else { _%>
+                ?.let { createSpringSecurityUser(login, it) }<% if (!reactive) { %>
                 <%_ } _%>
-                .map { createSpringSecurityUser(login, it) }<% if (!reactive) { %>
-                .orElseThrow { UsernameNotFoundException("User with email $login was not found in the database") }<% } %>
+                ?: throw UsernameNotFoundException("User with email $login was not found in the database")<% } %>
         }
 
         val lowercaseLogin = login.toLowerCase(Locale.ENGLISH)
         return userRepository.findOne<% if (databaseType === 'sql') { %>WithAuthorities<% } %>ByLogin(lowercaseLogin)
             <%_ if (reactive) { _%>
             .switchIfEmpty(Mono.error(UsernameNotFoundException("User $lowercaseLogin was not found in the database")))
+            .map { createSpringSecurityUser(lowercaseLogin, it) }
+            <%_ } else { _%>
+            ?.let { createSpringSecurityUser(lowercaseLogin, it) }<% if (!reactive) { %>
             <%_ } _%>
-            .map { createSpringSecurityUser(lowercaseLogin, it) }<% if (!reactive) { %>
-            .orElseThrow { UsernameNotFoundException("User $lowercaseLogin was not found in the database") }<% } %>
+            ?: throw UsernameNotFoundException("User $lowercaseLogin was not found in the database")<% } %>
     }
 
     private fun createSpringSecurityUser(lowercaseLogin: String, user: <%= asEntity('User') %>)

@@ -69,9 +69,6 @@ import javax.validation.ConstraintViolation
 import javax.validation.ConstraintViolationException
 import javax.validation.Validator
 <%_ } _%>
-<%_ if (!reactive) { _%>
-import java.util.Optional
-<%_ } _%>
 <%_ if (databaseType !== 'cassandra') { _%>
 import java.time.Instant
 <%_ } _%>
@@ -99,17 +96,14 @@ import <%=packageName%>.config.ID_DELIMITER
  */
 <%_ } _%>
 <%_
-    let optionalOrMono = 'Optional';
-    if (reactive) {
-        optionalOrMono = 'Mono';
-    }
+    let nullableOrMonoUser = nullableOrMono(asEntity('User'))
 _%>
 <%_ if (databaseType === 'sql' || databaseType === 'mongodb' || databaseType === 'couchbase') { _%>
 @Repository
 interface UserRepository : <% if (databaseType === 'sql') { %>JpaRepository<<%= asEntity('User') %>, <% if (authenticationType === 'oauth2') { %>String<% } else { %>Long<% } %>><% } %><% if (databaseType === 'mongodb') { %><% if (reactive) { %>Reactive<% } %>MongoRepository<<%= asEntity('User') %>, String><% } %><% if (databaseType === 'couchbase') { %>N1qlCouchbaseRepository<<%= asEntity('User') %>, String><% } %> {
     <%_ if (authenticationType !== 'oauth2') { _%>
 
-    fun findOneByActivationKey(activationKey: String): <%= optionalOrMono %><<%= asEntity('User') %>>
+    fun findOneByActivationKey(activationKey: String): <%- nullableOrMonoUser %>
     <%_ } _%>
     <%_ if (authenticationType !== 'oauth2') { _%>
 
@@ -117,7 +111,7 @@ interface UserRepository : <% if (databaseType === 'sql') { %>JpaRepository<<%= 
     <%_ } _%>
     <%_ if (authenticationType !== 'oauth2') { _%>
 
-    fun findOneByResetKey(resetKey: String): <%= optionalOrMono %><<%= asEntity('User') %>>
+    fun findOneByResetKey(resetKey: String): <%- nullableOrMonoUser %>
     <%_ } _%>
 
     <%_ if (databaseType === 'couchbase' || databaseType === 'mongodb') { _%>
@@ -125,40 +119,40 @@ interface UserRepository : <% if (databaseType === 'sql') { %>JpaRepository<<%= 
     @Cacheable(cacheNames = [USERS_BY_EMAIL_CACHE])
         <%_ } _%>
     <%_ } _%>
-    fun findOneByEmailIgnoreCase(email: String?): <%= optionalOrMono %><<%= asEntity('User') %>>
+    fun findOneByEmailIgnoreCase(email: String?): <%- nullableOrMonoUser %>
 
     <%_ if (databaseType === 'couchbase') { _%>
         <%_ if (cacheManagerIsAvailable === true) { _%>
     @Cacheable(cacheNames = [USERS_BY_LOGIN_CACHE])
         <%_ } _%>
     @JvmDefault
-    fun findOneByLogin(login: String): Optional<<%= asEntity('User') %>> {
+    fun findOneByLogin(login: String): <%= asEntity('User') %>? {
         return findById(<%= asEntity('User') %>.PREFIX + ID_DELIMITER + login)
     }
     <%_ } else if (databaseType === 'mongodb') { _%>
         <%_ if (cacheManagerIsAvailable === true) { _%>
     @Cacheable(cacheNames = [USERS_BY_LOGIN_CACHE])
         <%_ } _%>
-    fun findOneByLogin(login: String): <%= optionalOrMono %><<%= asEntity('User') %>>
+    fun findOneByLogin(login: String):  <%- nullableOrMonoUser %>
     <%_ } else { _%>
-    fun findOneByLogin(login: String): Optional<<%= asEntity('User') %>>
+    fun findOneByLogin(login: String): <%= asEntity('User') %>?
     <%_ } _%>
     <%_ if (databaseType === 'sql') { _%>
 
     @EntityGraph(attributePaths = ["authorities"])
-    fun findOneWithAuthoritiesById(id: <%= pkType %>): Optional<<%= asEntity('User') %>>
+    fun findOneWithAuthoritiesById(id: <%= pkType %>): <%= asEntity('User') %>?
 
     @EntityGraph(attributePaths = ["authorities"])
     <%_ if (cacheManagerIsAvailable === true) { _%>
     @Cacheable(cacheNames = [USERS_BY_LOGIN_CACHE])
     <%_ } _%>
-    fun findOneWithAuthoritiesByLogin(login: String): Optional<<%= asEntity('User') %>>
+    fun findOneWithAuthoritiesByLogin(login: String): <%= asEntity('User') %>?
 
     @EntityGraph(attributePaths = ["authorities"])
     <%_ if (cacheManagerIsAvailable === true) { _%>
     @Cacheable(cacheNames = [USERS_BY_EMAIL_CACHE])
     <%_ } _%>
-    fun findOneWithAuthoritiesByEmailIgnoreCase(email: String): Optional<<%= asEntity('User') %>>
+    fun findOneWithAuthoritiesByEmailIgnoreCase(email: String): <%= asEntity('User') %>?
     <%_ } _%>
 
     fun findAllByLoginNot(pageable: Pageable, login: String): <% if (reactive) { %>Flux<% } else { %>Page<% } %><<%= asEntity('User') %>>
@@ -269,9 +263,9 @@ class UserRepository(
 
     private val truncateByEmailStmt = session.prepare("TRUNCATE user_by_email")<% if(reactive) { %>.block()<% } %>
 
-    fun findById(id: String): <%= optionalOrMono %><<%= asEntity('User') %>> {
+    fun findById(id: String): <%- nullableOrMonoUser %> {
         <%_ if(!reactive) { _%>
-        return Optional.ofNullable(mapper.get(id))
+        return mapper.get(id)
         <%_ } else { _%>
         return cqlTemplate.selectOneById(id, User::class.java)
             .map { user ->
@@ -283,13 +277,13 @@ class UserRepository(
         <%_ } _%>
     }
 
-    fun findOneByActivationKey(activationKey: String): <%= optionalOrMono %><<%= asEntity('User') %>> {
+    fun findOneByActivationKey(activationKey: String): <%- nullableOrMonoUser %> {
         val stmt = findOneByActivationKeyStmt.bind()
         stmt.setString("activation_key", activationKey)
         return findOneFromIndex(stmt)
     }
 
-    fun findOneByResetKey(resetKey: String): <%= optionalOrMono %><<%= asEntity('User') %>> {
+    fun findOneByResetKey(resetKey: String): <%- nullableOrMonoUser %> {
         val stmt = findOneByResetKeyStmt.bind()
         stmt.setString("reset_key", resetKey)
         return findOneFromIndex(stmt)
@@ -298,7 +292,7 @@ class UserRepository(
     <%_ if (cacheManagerIsAvailable === true) { _%>
     @Cacheable(cacheNames = [USERS_BY_EMAIL_CACHE])
     <%_ } _%>
-    fun findOneByEmailIgnoreCase(email: String?): <%= optionalOrMono %><<%= asEntity('User') %>> {
+    fun findOneByEmailIgnoreCase(email: String?): <%-nullableOrMonoUser%> {
         val stmt = findOneByEmailStmt.bind()
         stmt.setString("email", email?.toLowerCase())
         return findOneFromIndex(stmt)
@@ -307,7 +301,7 @@ class UserRepository(
     <%_ if (cacheManagerIsAvailable === true) { _%>
     @Cacheable(cacheNames = [USERS_BY_LOGIN_CACHE])
     <%_ } _%>
-    fun findOneByLogin(login: String): <%= optionalOrMono %><<%= asEntity('User') %>> {
+    fun findOneByLogin(login: String): <%-nullableOrMonoUser%> {
         val stmt = findOneByLoginStmt.bind()
         stmt.setString("login", login)
         return findOneFromIndex(stmt)
@@ -450,14 +444,13 @@ class UserRepository(
     }
 
     <%_ if(!reactive) { _%>
-    private fun findOneFromIndex(stmt: BoundStatement): Optional<<%= asEntity('User') %>> {
+    private fun findOneFromIndex(stmt: BoundStatement): <%= asEntity('User') %>? {
         val rs = session.execute(stmt)
         if (rs.isExhausted) {
-            return Optional.empty()
+            return null
         }
-        return Optional.ofNullable(rs.one().getString("id"))
-            .map { id -> Optional.ofNullable(mapper.get(id)) }
-            .get()
+        return rs.one().getString("id")
+            .let { id -> mapper.get(id) }
     }
 
     fun deleteAll() {

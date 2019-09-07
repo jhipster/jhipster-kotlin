@@ -31,7 +31,8 @@ import io.github.jhipster.security.PersistentTokenCache
 import io.github.jhipster.security.RandomUtil
 
 import org.slf4j.LoggerFactory<% if (databaseType === 'sql' || databaseType === 'mongodb' || databaseType === 'couchbase') { %>
-import org.springframework.dao.DataAccessException<%}%>
+import org.springframework.dao.DataAccessException
+import org.springframework.data.repository.findByIdOrNull<%}%>
 import org.springframework.security.core.Authentication
 import org.springframework.security.core.userdetails.UserDetails
 import org.springframework.security.core.userdetails.UsernameNotFoundException
@@ -164,7 +165,7 @@ class PersistentTokenRememberMeServices(
         val login = successfulAuthentication.name
 
         log.debug("Creating new persistent login for user {}", login)
-        val token = userRepository.findOneByLogin(login).map { u ->
+        val token = userRepository.findOneByLogin(login)?.let { u ->
             PersistentToken(
                 series = RandomUtil.generateRandomAlphanumericString(),
                 <%_ if (databaseType === 'sql' || databaseType === 'mongodb') { _%>
@@ -180,7 +181,7 @@ class PersistentTokenRememberMeServices(
                 ipAddress = request.remoteAddr,
                 userAgent = request.getHeader("User-Agent")
             )
-        }.orElseThrow { UsernameNotFoundException("User $login was not found in the database") }
+        } ?: throw UsernameNotFoundException("User $login was not found in the database")
         try {
             <% if (databaseType === 'sql') { %>persistentTokenRepository.saveAndFlush(token)<% } else { %>persistentTokenRepository.save(token)<% } %>
             addCookie(token, request, response)<% if (databaseType === 'sql' || databaseType === 'mongodb' || databaseType === 'couchbase') { %>
@@ -237,15 +238,12 @@ class PersistentTokenRememberMeServices(
         val presentedSeries = cookieTokens[0]
         val presentedToken = cookieTokens[1]
         <%_ if (databaseType === 'couchbase') { _%>
-        val optionalToken = Optional.of(persistentTokenRepository.findBySeries(presentedSeries))
+        val optionalToken = persistentTokenRepository.findBySeries(presentedSeries)
         <%_ } else { _%>
-        val optionalToken = persistentTokenRepository.findById(presentedSeries)
+        val optionalToken = persistentTokenRepository.findByIdOrNull(presentedSeries)
         <%_ } _%>
-        if (!optionalToken.isPresent) {
-            // No series match, so we can't authenticate using this cookie
-            throw RememberMeAuthenticationException("No persistent token found for series id: $presentedSeries")
-        }
-        val token = optionalToken.get()
+        val token = optionalToken ?: throw RememberMeAuthenticationException("No persistent token found for series id: $presentedSeries")
+
         // We have a match for this user/series combination
         log.info("presentedToken={} / tokenValue={}", presentedToken, token.tokenValue)
         if (presentedToken != token.tokenValue) {

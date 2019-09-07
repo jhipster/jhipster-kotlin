@@ -19,7 +19,6 @@
 package <%=packageName%>.config
 
 import java.lang.reflect.Method
-import java.util.Optional
 
 import org.springframework.beans.factory.annotation.Qualifier
 import org.springframework.core.MethodParameter
@@ -156,29 +155,25 @@ constructor(
     ): Pageable {
         assertPageableUniqueness(methodParameter)
 
-        val defaultOrFallback = getDefaultFromAnnotationOrFallback(methodParameter)!!.toOptional()
+        val defaultOrFallback = getDefaultFromAnnotationOrFallback(methodParameter)
 
         val page = parseAndApplyBoundaries(pageString, Integer.MAX_VALUE, true)
         val pageSize = parseAndApplyBoundaries(pageSizeString, maxPageSize, false)
 
-        if (!(page.isPresent && pageSize.isPresent) && !defaultOrFallback.isPresent) {
+        if (page != null && pageSize != null && defaultOrFallback == null) {
             return Pageable.unpaged()
         }
 
-        val p = page.orElseGet {
-            defaultOrFallback.map { it.pageNumber }.orElseThrow { IllegalStateException() }
-        }
-        var ps = pageSize.orElseGet {
-            defaultOrFallback.map { it.pageSize }.orElseThrow { IllegalStateException() }
-        }
-
+        val p = page ?: defaultOrFallback?.pageNumber ?: throw IllegalStateException()
+        var ps = pageSize ?: defaultOrFallback?.pageSize ?: throw IllegalStateException()
+    
         // Limit lower bound
-        ps =
-            if (ps < 1) defaultOrFallback.map { it.pageSize }.orElseThrow { IllegalStateException() } else ps
+        ps = if (ps < 1) defaultOrFallback?.pageSize ?: throw IllegalStateException() else ps
         // Limit upper bound
         ps = if (ps > maxPageSize) maxPageSize else ps
-
-        return PageRequest.of(p, ps, defaultOrFallback.map<Sort> { it.sort }.orElseGet { Sort.unsorted() })
+    
+        return PageRequest.of(p, ps, defaultOrFallback?.sort ?: Sort.unsorted())
+        
     }
 
     /**
@@ -218,16 +213,16 @@ constructor(
      * @param shiftIndex whether to shift the index if [.oneIndexedParameters] is set to true.
      * @return the parsed integer.
      */
-    private fun parseAndApplyBoundaries(@Nullable parameter: String?, upper: Int, shiftIndex: Boolean): Optional<Int> {
+    private fun parseAndApplyBoundaries(@Nullable parameter: String?, upper: Int, shiftIndex: Boolean): Int? {
         if (!StringUtils.hasText(parameter)) {
-            return Optional.empty()
+            return null
         }
 
         return try {
             val parsed = Integer.parseInt(parameter!!) - if (isOneIndexedParameters && shiftIndex) 1 else 0
-            Optional.of(if (parsed < 0) 0 else if (parsed > upper) upper else parsed)
+            if (parsed < 0) 0 else if (parsed > upper) upper else parsed
         } catch (e: NumberFormatException) {
-            Optional.of(0)
+            0
         }
     }
 

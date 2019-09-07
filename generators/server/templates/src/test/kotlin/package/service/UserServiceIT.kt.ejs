@@ -252,13 +252,13 @@ class UserServiceIT <% if (databaseType === 'cassandra') { %>: AbstractCassandra
     fun assertThatUserMustExistToResetPassword() {
         userRepository.save<% if (databaseType === 'sql') { %>AndFlush<% } %>(user)<% if (reactive) { %>.block()<% } %>
         var maybeUser = userService.requestPasswordReset("invalid.login@localhost")<% if (reactive) { %>.blockOptional()<% } %>
-        assertThat(maybeUser).isNotPresent
+        assertThat(maybeUser).isNull()
 
         maybeUser = userService.requestPasswordReset(user.email!!)<% if (reactive) { %>.blockOptional()<% } %>
-        assertThat(maybeUser).isPresent
-        assertThat(maybeUser.orElse(null).email).isEqualTo(user.email)
-        assertThat(maybeUser.orElse(null).resetDate).isNotNull()
-        assertThat(maybeUser.orElse(null).resetKey).isNotNull()
+        assertThat(maybeUser).isNotNull
+        assertThat(maybeUser?.email).isEqualTo(user.email)
+        assertThat(maybeUser?.resetDate).isNotNull()
+        assertThat(maybeUser?.resetKey).isNotNull()
     }
 
     @Test
@@ -270,7 +270,7 @@ class UserServiceIT <% if (databaseType === 'cassandra') { %>: AbstractCassandra
         userRepository.save<% if (databaseType === 'sql') { %>AndFlush<% } %>(user)<% if (reactive) { %>.block()<% } %>
 
         val maybeUser = userService.requestPasswordReset(user.login!!)<% if (reactive) { %>.blockOptional()<% } %>
-        assertThat(maybeUser).isNotPresent
+        assertThat(maybeUser).isNull()
         userRepository.delete(user)<% if (reactive) { %>.block()<% } %>
     }
 
@@ -287,7 +287,7 @@ class UserServiceIT <% if (databaseType === 'cassandra') { %>: AbstractCassandra
         userRepository.save<% if (databaseType === 'sql') { %>AndFlush<% } %>(user)<% if (reactive) { %>.block()<% } %>
 
         val maybeUser = userService.completePasswordReset("johndoe2", user.resetKey!!)<% if (reactive) { %>.blockOptional()<% } %>
-        assertThat(maybeUser).isNotPresent
+        assertThat(maybeUser).isNotNull
         userRepository.delete(user)<% if (reactive) { %>.block()<% } %>
     }
 
@@ -303,7 +303,7 @@ class UserServiceIT <% if (databaseType === 'cassandra') { %>: AbstractCassandra
         userRepository.save<% if (databaseType === 'sql') { %>AndFlush<% } %>(user)<% if (reactive) { %>.block()<% } %>
 
         val maybeUser = userService.completePasswordReset("johndoe2", user.resetKey!!)<% if (reactive) { %>.blockOptional()<% } %>
-        assertThat(maybeUser).isNotPresent
+        assertThat(maybeUser).isNotNull
         userRepository.delete(user)<% if (reactive) { %>.block()<% } %>
     }
 
@@ -321,10 +321,10 @@ class UserServiceIT <% if (databaseType === 'cassandra') { %>: AbstractCassandra
         userRepository.save<% if (databaseType === 'sql') { %>AndFlush<% } %>(user)<% if (reactive) { %>.block()<% } %>
 
         val maybeUser = userService.completePasswordReset("johndoe2", user.resetKey!!)<% if (reactive) { %>.blockOptional()<% } %>
-        assertThat(maybeUser).isPresent
-        assertThat(maybeUser.orElse(null).resetDate).isNull()
-        assertThat(maybeUser.orElse(null).resetKey).isNull()
-        assertThat(maybeUser.orElse(null).password).isNotEqualTo(oldPassword)
+        assertThat(maybeUser).isNotNull
+        assertThat(maybeUser?.resetDate).isNull()
+        assertThat(maybeUser?.resetKey).isNull()
+        assertThat(maybeUser?.password).isNotEqualTo(oldPassword)
 
         userRepository.delete(user)<% if (reactive) { %>.block()<% } %>
     }
@@ -420,7 +420,8 @@ class UserServiceIT <% if (databaseType === 'cassandra') { %>: AbstractCassandra
         user.id = ANONYMOUS_USER
         <%_ } _%>
         user.login = ANONYMOUS_USER
-        if (!userRepository.findOneByLogin(ANONYMOUS_USER)<% if (reactive) { %>.blockOptional()<% } %>.isPresent) {
+        if (<%_ if (reactive) { _%>!userRepository.findOneByLogin(ANONYMOUS_USER).blockOptional().isPresent
+        <%_ } else { _%>userRepository.findOneByLogin(ANONYMOUS_USER) == null <%_ } _%>) {
             userRepository.save<% if (databaseType === 'sql') { %>AndFlush<% } %>(user)<% if (reactive) { %>.block()<% } %>
         }<% if (databaseType === 'sql' || databaseType === 'mongodb' || databaseType === 'couchbase') { %>
         val pageable = PageRequest.of(0, userRepository.count()<% if (reactive) { %>.block()!!<% } %>.toInt())

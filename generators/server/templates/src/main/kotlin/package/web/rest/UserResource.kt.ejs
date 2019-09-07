@@ -46,6 +46,7 @@ import io.github.jhipster.web.util.PaginationUtil
 <%_ } _%>
 <%_ if (!reactive) { _%>
 import io.github.jhipster.web.util.ResponseUtil
+import java.util.Optional
 <%_ } _%>
 
 import org.slf4j.LoggerFactory
@@ -160,9 +161,9 @@ class UserResource(
             throw BadRequestAlertException("A new user cannot already have an ID", "userManagement", "idexists")
             // Lowercase the user login before comparing with database
         <%_ if (!reactive) { _%>
-        } else if (userRepository.findOneByLogin(userDTO.login!!.toLowerCase()).isPresent) {
+        } else if (userRepository.findOneByLogin(userDTO.login!!.toLowerCase()) == null) {
             throw LoginAlreadyUsedException()
-        } else if (userRepository.findOneByEmailIgnoreCase(userDTO.email).isPresent) {
+        } else if (userRepository.findOneByEmailIgnoreCase(userDTO.email) == null) {
             throw EmailAlreadyUsedException()
         } else {
             val newUser = userService.createUser(userDTO)
@@ -215,17 +216,17 @@ class UserResource(
     fun updateUser(@Valid @RequestBody userDTO: <%= asDto('User') %>): ResponseEntity<<%= asDto('User') %>> {
         log.debug("REST request to update User : {}", userDTO)
         var existingUser = userRepository.findOneByEmailIgnoreCase(userDTO.email)
-        if (existingUser.isPresent && existingUser.get().id != userDTO.id) {
+        if (existingUser?.id != userDTO.id) {
             throw EmailAlreadyUsedException()
         }
         existingUser = userRepository.findOneByLogin(userDTO.login!!.toLowerCase())
-        if (existingUser.isPresent && existingUser.get().id != userDTO.id) {
+        if (existingUser?.id != userDTO.id) {
             throw LoginAlreadyUsedException()
         }
         val updatedUser = userService.updateUser(userDTO)
 
         return ResponseUtil.wrapOrNotFound(
-            updatedUser,
+            Optional.ofNullable(updatedUser),
             HeaderUtil.createAlert(applicationName, <% if (enableTranslation) { %>"userManagement.updated"<% } else { %>"A user is updated with identifier $userDTO.login"<% } %>, userDTO.login)
         )
     <%_ } else { _%>
@@ -307,9 +308,8 @@ class UserResource(
     <%_ if (!reactive) { _%>
     fun getUser(@PathVariable login: String): ResponseEntity<<%= asDto('User') %>> {
         log.debug("REST request to get User : {}", login)
-        return ResponseUtil.wrapOrNotFound(
-            userService.getUserWithAuthoritiesByLogin(login)
-                .map { <%= asDto('User') %>(it) })
+        val userDto = userService.getUserWithAuthoritiesByLogin(login)?.let { <%= asDto('User') %>(it) }
+        return ResponseUtil.wrapOrNotFound(Optional.ofNullable(userDto))
     <%_ } else { _%>
     fun getUser(@PathVariable login: String): Mono<<%= asDto('User') %>> {
         log.debug("REST request to get User : {}", login)

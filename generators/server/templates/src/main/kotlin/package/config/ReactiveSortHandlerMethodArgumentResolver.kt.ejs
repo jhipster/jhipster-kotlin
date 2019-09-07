@@ -18,8 +18,6 @@
 -%>
 package <%=packageName%>.config
 
-import java.util.Optional
-
 import org.springframework.beans.factory.annotation.Qualifier
 import org.springframework.core.MethodParameter
 import org.springframework.core.annotation.AnnotationUtils
@@ -133,13 +131,10 @@ class ReactiveSortHandlerMethodArgumentResolver : SyncHandlerMethodArgumentResol
         }
 
         if (annotatedDefaults != null) {
-
             var sort = Sort.unsorted()
-
             for (currentAnnotatedDefault in annotatedDefaults.value) {
                 sort = appendOrCreateSortTo(currentAnnotatedDefault, sort)
             }
-
             return sort
         }
 
@@ -200,15 +195,15 @@ class ReactiveSortHandlerMethodArgumentResolver : SyncHandlerMethodArgumentResol
             val elements = part.split(delimiter.toRegex()).dropLastWhile { it.isEmpty() }.toTypedArray()
 
             val direction = if (elements.isEmpty()) {
-                Optional.empty()
+                null
             } else {
-                Direction.fromOptionalString(elements[elements.size - 1])
+                Direction.fromString(elements[elements.size - 1])
             }
 
-            val lastIndex = direction.map { elements.size - 1 }.orElseGet { elements.size }
+            val lastIndex = direction?.let { elements.size - 1 } ?: elements.size
 
             for (i in 0 until lastIndex) {
-                toOrder(elements[i], direction).ifPresent { allOrders.add(it) }
+                toOrder(elements[i], direction)?.let { allOrders.add(it) }
             }
         }
 
@@ -335,11 +330,11 @@ class ReactiveSortHandlerMethodArgumentResolver : SyncHandlerMethodArgumentResol
         private val SORT_DEFAULTS_NAME = SortDefaults::class.java.simpleName
         private val SORT_DEFAULT_NAME = SortDefault::class.java.simpleName
 
-        private fun toOrder(property: String, direction: Optional<Direction>) =
+        private fun toOrder(property: String, direction: Direction?) =
             if (!StringUtils.hasText(property)) {
-                Optional.empty()
+                null
             } else {
-                Optional.of(direction.map { Order(it, property) }.orElseGet { Order.by(property) })
+                direction?.let { Order(it, property) } ?: Order.by(property)
             }
 
         /**

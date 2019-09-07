@@ -104,8 +104,8 @@ import reactor.core.publisher.Flux
 import javax.validation.Valid
 <%_ } _%>
 import java.net.URI
-import java.net.URISyntaxException<% if (isUsingMapsId === true) { %>
-import java.util.Objects<% } %>
+import java.net.URISyntaxException
+import java.util.*
 <%_ if (databaseType === 'cassandra') { _%>
 import java.util.UUID
 <%_ } _%>
@@ -255,7 +255,7 @@ _%><%- include('../../common/inject_template', {viaService: viaService, construc
     <%_ } _%>
     fun get<%= entityClass %>(@PathVariable id: <%= primaryKeyType %>): ResponseEntity<<%= instanceType %>> {
         log.debug("REST request to get <%= entityClass %> : {}", id)<%- include('../../common/get_template', {asEntity, asDto, viaService, returnDirectly:false}); -%>
-        return ResponseUtil.wrapOrNotFound(<%= instanceName %>)
+        return ResponseUtil.wrapOrNotFound(Optional.ofNullable(<%= instanceName %>))
     }
 <%_ if (!readOnly) { _%>
     /**

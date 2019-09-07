@@ -43,6 +43,8 @@ package <%= packageName %>.service<% if (service === 'serviceImpl') { %>.impl<% 
 import <%= packageName %>.service.<%= entityClass %>Service<% } %>
 import <%= packageName %>.domain.<%= asEntity(entityClass) %>
 import <%= packageName %>.repository.<%= entityClass %>Repository
+import org.springframework.data.repository.findByIdOrNull
+
 <%_ if (isUsingMapsId === true) { _%>
 import <%=packageName%>.repository.<%= mapsIdAssoc.otherEntityNameCapitalized %>Repository
 <%_ } _%>
@@ -70,7 +72,6 @@ import org.springframework.transaction.annotation.Transactional
 import reactor.core.publisher.Flux
 <%_ } _%>
 
-import java.util.Optional
 <%_ if (databaseType === 'cassandra') { _%>
 import java.util.UUID
 <%_ } _%>
@@ -153,7 +154,7 @@ class <%= serviceClassName %>(
     <%_ if (databaseType === 'sql') { _%>
     @Transactional(readOnly = true)
     <%_ } _%>
-    <% if (service === 'serviceImpl') { %>override <% } %>fun findOne(id: <%= primaryKeyType %>): Optional<<%= instanceType %>> {
+    <% if (service === 'serviceImpl') { %>override <% } %>fun findOne(id: <%= primaryKeyType %>): <%= instanceType %>? {
         log.debug("Request to get <%= entityClass %> : {}", id)<%- include('../../common/get_template', {asEntity, asDto, viaService, returnDirectly:true}); -%>
     }
 

@@ -55,6 +55,7 @@ import org.springframework.cache.CacheManager
 <%_ if (databaseType === 'sql' || databaseType === 'mongodb' || databaseType === 'couchbase') { _%>
     <%_ if (!reactive) { _%>
 import org.springframework.data.domain.Page
+import org.springframework.data.repository.findByIdOrNull
     <%_ } _%>
 import org.springframework.data.domain.Pageable
     <%_ if (authenticationType !== 'oauth2') { _%>
@@ -91,7 +92,6 @@ import java.time.temporal.ChronoUnit
 <%_ if (authenticationType === 'oauth2') { _%>
 import java.util.Date
 <%_ } _%>
-import java.util.Optional
 <%_ if (databaseType === 'cassandra') { _%>
 import java.util.UUID
 <%_ } _%>
@@ -115,10 +115,10 @@ class UserService<% if (databaseType !== 'no') { %>(
     private val log = LoggerFactory.getLogger(javaClass)
 <%_ if (authenticationType !== 'oauth2') { _%>
 
-    fun activateRegistration(key: String): <% if (reactive) { %>Mono<% } else { %>Optional<% } %><<%= asEntity('User') %>> {
+    fun activateRegistration(key: String): <%-nullableOrMono(asEntity('User'))%> {
         log.debug("Activating user for activation key {}", key)
         return userRepository.findOneByActivationKey(key)
-            .<% if (reactive) { %>flatMap<% } else { %>map<% } %> { user ->
+            <% if (reactive) { %>.flatMap<% } else { %>?.let<% } %> { user ->
                 // activate given user for the registration key.
                 user.activated = true
                 user.activationKey = null
@@ -145,11 +145,11 @@ class UserService<% if (databaseType !== 'no') { %>(
             <%_ } _%>
     }
 
-    fun completePasswordReset(newPassword: String, key: String): <% if (reactive) { %>Mono<% } else { %>Optional<% } %><<%= asEntity('User') %>> {
+    fun completePasswordReset(newPassword: String, key: String): <%-nullableOrMono(asEntity('User'))%> {
         log.debug("Reset user password for reset key {}", key)
         return userRepository.findOneByResetKey(key)
-            .filter { user -> user.resetDate?.isAfter(Instant.now().minusSeconds(86400)) ?: false }
-            .<% if (reactive) { %>flatMap<% } else { %>map<% } %> { user ->
+            <% if (reactive) { %>.filter<% } else { %>?.takeIf<% } %> { user -> user.resetDate?.isAfter(Instant.now().minusSeconds(86400)) ?: false }
+            <% if (reactive) { %>.flatMap<% } else { %>?.let<% } %> { user ->
                 user.password = passwordEncoder.encode(newPassword)
                 user.resetKey = null
                 user.resetDate = null
@@ -169,10 +169,10 @@ class UserService<% if (databaseType !== 'no') { %>(
             <%_ } _%>
     }
 
-    fun requestPasswordReset(mail: String): <% if (reactive) { %>Mono<% } else { %>Optional<% } %><<%= asEntity('User') %>> {
+    fun requestPasswordReset(mail: String): <%-nullableOrMono(asEntity('User'))%> {
         return userRepository.findOneByEmailIgnoreCase(mail)
-            .filter(<%= asEntity('User') %>::activated)
-            .<% if (reactive) { %>flatMap<% } else { %>map<% } %> { user ->
+            <% if (reactive) { %>.filter(<%= asEntity('User') %>::activated)<% } else { %>?.takeIf { it.activated }<% } %>
+            <% if (reactive) { %>.flatMap<% } else { %>?.let<% } %> { user ->
                 user.resetKey = RandomUtil.generateResetKey()
                 user.resetDate = Instant.now()
             <%_ if (!reactive) { _%>
@@ -195,18 +195,20 @@ class UserService<% if (databaseType !== 'no') { %>(
         val login = userDTO.login ?: throw IllegalArgumentException("Empty login not allowed")
         val email = userDTO.email
     <%_ if (!reactive) { _%>
-        userRepository.findOneByLogin(login.toLowerCase()).ifPresent { existingUser ->
-            val removed = removeNonActivatedUser(existingUser)
-            if (!removed) {
-                throw UsernameAlreadyUsedException()
+        userRepository.findOneByLogin(login.toLowerCase())
+            ?.let { existingUser ->
+                 val removed = removeNonActivatedUser(existingUser)
+                if (!removed) {
+                    throw UsernameAlreadyUsedException()
+                }
             }
-        }
-        userRepository.findOneByEmailIgnoreCase(email).ifPresent { existingUser ->
-            val removed = removeNonActivatedUser(existingUser)
-            if (!removed) {
-                throw EmailAlreadyUsedException()
+        userRepository.findOneByEmailIgnoreCase(email)
+            ?.let { existingUser ->
+                val removed = removeNonActivatedUser(existingUser)
+                if (!removed) {
+                    throw EmailAlreadyUsedException()
+                }
             }
-        }
         val newUser = <%= asEntity('User') %>()
         <%_ if (databaseType === 'cassandra') { _%>
         newUser.id = UUID.randomUUID().toString()
@@ -343,11 +345,11 @@ class UserService<% if (databaseType !== 'no') { %>(
     <%_ if (!reactive) { _%>
         <%_ if (['sql', 'mongodb'].includes(databaseType)) { _%>
         userDTO.authorities?.apply {
-            val authorities = this.asSequence()
-                .map(authorityRepository::findById)
-                .filter(Optional<Authority>::isPresent)
-                .mapTo(mutableSetOf()) { it.get() }
-            user.authorities = authorities
+        val authorities = this.asSequence()
+            .map(authorityRepository::findByIdOrNull)
+            .filterNotNull()
+            .mapTo(mutableSetOf()) { it }
+        user.authorities = authorities
         }
         <%_ } else { _%>
         user.authorities = userDTO.authorities?.toMutableSet() ?: mutableSetOf()
@@ -363,7 +365,7 @@ class UserService<% if (databaseType !== 'no') { %>(
         return user
     <%_ } else { _%>
         <%_ if (['sql', 'mongodb'].includes(databaseType)) { _%>
-        return Flux.fromIterable(Optional.ofNullable(userDTO.authorities).orElse(mutableSetOf()))
+        return Flux.fromIterable(userDTO.authorities ?: mutableSetOf())
             .flatMap<Authority>(authorityRepository::findById)
             .doOnNext { authority -> user.authorities.add(authority) }
             .then(createUser(user))
@@ -392,8 +394,13 @@ class UserService<% if (databaseType !== 'no') { %>(
      */
     fun updateUser(firstName: String?, lastName: String?, email: String?, langKey: String?<% if (databaseType === 'mongodb' || databaseType === 'couchbase' || databaseType === 'sql') { %>, imageUrl: String?<% } %>)<% if (reactive) { %>: Mono<Void><% } %> {
         <% if (reactive) { %>return <% } %>getCurrentUserLogin()
+        <%_ if (reactive) { _%>
             .flatMap(userRepository::findOneByLogin)
-            .<% if (reactive) { %>flatMap<% } else { %>ifPresent<% } %> { user ->
+            .flatMap { user ->
+        <%_ } else { _%>
+            ?.let { userRepository.findOneByLogin(it) }
+            ?.let { user ->
+        <%_ } _%>
                 user.firstName = firstName
                 user.lastName = lastName
                 user.email = email?.toLowerCase()
@@ -430,12 +437,10 @@ class UserService<% if (databaseType !== 'no') { %>(
      * @param userDTO user to update.
      * @return updated user.
      */
-    fun updateUser(userDTO: <%= asDto('User') %>): <% if (reactive) { %>Mono<% } else { %>Optional<% } %><<%= asDto('User') %>> {
+    fun updateUser(userDTO: <%= asDto('User') %>): <%- nullableOrMono(asDto('User')) %> {
         <%_ if (!reactive) { _%>
-        return Optional.of(userRepository.findById(userDTO.id!!))
-            .filter(Optional<<%= asEntity('User') %>>::isPresent)
-            .map { it.get() }
-            .map { user ->
+        return userRepository.findByIdOrNull(userDTO.id!!)
+            ?.let { user ->
         <%_ } else { _%>
         return userRepository.findById(userDTO.id!!)
             .<%_ if (['sql', 'mongodb'].includes(databaseType)) { _%>flatMap<% } else { %>map<% } %> { user ->
@@ -486,6 +491,7 @@ class UserService<% if (databaseType !== 'no') { %>(
                 log.debug("Changed Information for User: {}", user)
                 user
             }
+            ?.let { UserDTO(it) }
         <%_ } else { // reactive _%>
                 <%_ if (['sql', 'mongodb'].includes(databaseType)) { _%>
                 Flux.fromIterable(userDTO.authorities!!)
@@ -503,11 +509,12 @@ class UserService<% if (databaseType !== 'no') { %>(
             .doOnNext { log.debug("Changed Information for User: {}", it) }
         <%_ } _%>
             .map { <%= asDto('User') %>(it) }
+        <%_ } _%>
     }
 
     <%_ if (!reactive) { _%>
     fun deleteUser(login: String) {
-        userRepository.findOneByLogin(login).ifPresent { user ->
+        userRepository.findOneByLogin(login)?.let { user ->
             userRepository.delete(user)
             <%_ if (searchEngine === 'elasticsearch') { _%>
             userSearchRepository.delete(user)
@@ -560,8 +567,8 @@ class UserService<% if (databaseType !== 'no') { %>(
 
     fun changePassword(currentClearTextPassword: String, newPassword: String)<% if (reactive) { %>: Mono<Void><% } %> {
         <% if (reactive) { %>return <% } %>getCurrentUserLogin()
-            .flatMap(userRepository::findOneByLogin)
-            .<% if (reactive) { %>flatMap<% } else { %>ifPresent<% } %> { user ->
+            <% if (reactive) { %>.flatMap(userRepository::findOneByLogin)<% } else { %>?.let { userRepository.findOneByLogin(it) }<% } %>
+            <% if (reactive) { %>.flatMap<% } else { %>?.let<% } %> { user ->
                 val currentEncryptedPassword = user.password
                 if (!passwordEncoder.matches(currentClearTextPassword, currentEncryptedPassword)) {
                     throw InvalidPasswordException()
@@ -609,21 +616,22 @@ class UserService<% if (databaseType !== 'no') { %>(
     <%_ if (databaseType === 'sql') { _%>
     @Transactional(readOnly = true)
     <%_ } _%>
-    fun getUserWithAuthoritiesByLogin(login: String): <% if (reactive) { %>Mono<% } else { %>Optional<% } %><<%= asEntity('User') %>> =
+    fun getUserWithAuthoritiesByLogin(login: String): <%- nullableOrMono(asEntity('User')) %> =
         userRepository.<% if (databaseType === 'sql') { %>findOneWithAuthoritiesByLogin(login)<% } else { %>findOneByLogin(login)<% } %>
 
     @Suppress("unused")
     <%_ if (databaseType === 'sql') { _%>
     @Transactional(readOnly = true)
     <%_ } _%>
-    fun getUserWithAuthorities(id: <% if (pkType === 'UUID') { %>String<% } else { %><%= pkType %><% } %>): <% if (reactive) { %>Mono<% } else { %>Optional<% } %><<%= asEntity('User') %>> =
-        userRepository.<% if (databaseType === 'sql') { %>findOneWithAuthoritiesById(id)<% } else { %>findById(id)<% } %>
+    fun getUserWithAuthorities(id: <% if (pkType === 'UUID') { %>String<% } else { %><%= pkType %><% } %>): <%- nullableOrMono(asEntity('User')) %> =
+        userRepository.<% if (databaseType === 'sql') { %>findOneWithAuthoritiesById(id)<%} else if (reactive) { %>findById(id)<% } else { %>findByIdOrNull(id)<% } %>
 
     <%_ if (databaseType === 'sql') { _%>
     @Transactional(readOnly = true)
     <%_ } _%>
-    fun getUserWithAuthorities(): <% if (reactive) { %>Mono<% } else { %>Optional<% } %><<%= asEntity('User') %>> =
-        getCurrentUserLogin().flatMap(userRepository::findOne<% if (databaseType === 'sql') { %>WithAuthorities<% } %>ByLogin)
+    fun getUserWithAuthorities(): <%- nullableOrMono(asEntity('User')) %> =
+        getCurrentUserLogin()<%_ if (reactive) { _%>.flatMap<%_ } else { _%>?.let<%_ } _%> { userRepository.findOne<% if (databaseType === 'sql') { %>WithAuthorities<% } %>ByLogin(it) }
+
     <%_ if ((databaseType === 'sql' || databaseType === 'mongodb' || databaseType === 'couchbase') && authenticationType === 'session' && !reactive) { _%>
 
     /**
@@ -703,10 +711,10 @@ class UserService<% if (databaseType !== 'no') { %>(
         }
         // save account in to sync users between IdP and JHipster's local database
         val existingUser = userRepository.findOneByLogin(user.login!!)
-        if (existingUser.isPresent) {
+        if (existingUser != null) {
             // if IdP sends last updated information, use it to determine if an update should happen
             if (details["updated_at"] != null) {
-                val dbModifiedDate = existingUser.get().lastModifiedDate
+                val dbModifiedDate = existingUser.lastModifiedDate
                 val idpModifiedDate = Date((details["updated_at"] as Int).toLong()).toInstant()
                 if (idpModifiedDate.isAfter(dbModifiedDate)) {
                     log.debug("Updating user '{}' in local database", user.login)

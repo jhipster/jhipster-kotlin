@@ -48,6 +48,7 @@ import reactor.core.publisher.switchIfEmpty
 <%_ } _%>
 
 import java.time.Instant
+import java.util.Optional
 import java.time.LocalDate
 import java.time.ZoneId
 
@@ -129,7 +130,7 @@ class AuditResource(private val auditEventService: AuditEventService) {
     @GetMapping("/{id:.+}")
     <%_ if (!reactive) { _%>
     fun get(@PathVariable id: <% if (databaseType === 'sql') { %>Long<% } %><% if (databaseType === 'mongodb' || databaseType === 'couchbase') { %>String<% } %>?): ResponseEntity<AuditEvent> =
-        ResponseUtil.wrapOrNotFound(auditEventService.find(id!!))
+        ResponseUtil.wrapOrNotFound(Optional.ofNullable(auditEventService.find(id!!)))
     <%_ } else { _%>
     fun get(@PathVariable id: String?) = auditEventService.find(id!!)
         .switchIfEmpty { Mono.error(ResponseStatusException(HttpStatus.NOT_FOUND)) }

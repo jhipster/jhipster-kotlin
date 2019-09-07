@@ -115,4 +115,16 @@ module.exports = class extends ServerGenerator {
         // Here we are not overriding this phase and hence its being handled by JHipster
         return super._end();
     }
+
+    /**
+     * Construct nullable or Mono (for reactive) type
+     * @param {String} classType entity name
+     */
+    // TODO test me
+    nullableOrMono(classType) {
+        if (this.reactive) {
+            return `Mono<${classType}>`;
+        }
+        return `${classType}?`;
+    }
 };
