@@ -24,7 +24,7 @@ describe('JHipster generator for entity', () => {
                         })
                         .withGenerators([
                             [
-                                require('../generators/entity-server/index.js'), // eslint-disable-line global-require
+                                require('../generators/entity-server'), // eslint-disable-line global-require
                                 'jhipster-kotlin:entity-server',
                                 path.join(__dirname, '../generators/entity-server/index.js')
                             ]
@@ -65,7 +65,7 @@ describe('JHipster generator for entity', () => {
                         })
                         .withGenerators([
                             [
-                                require('../generators/entity-server/index.js'), // eslint-disable-line global-require
+                                require('../generators/entity-server'), // eslint-disable-line global-require
                                 'jhipster-kotlin:entity-server',
                                 path.join(__dirname, '../generators/entity-server/index.js')
                             ]
@@ -124,7 +124,7 @@ describe('JHipster generator for entity', () => {
                         })
                         .withGenerators([
                             [
-                                require('../generators/entity-server/index.js'), // eslint-disable-line global-require
+                                require('../generators/entity-server'), // eslint-disable-line global-require
                                 'jhipster-kotlin:entity-server',
                                 path.join(__dirname, '../generators/entity-server/index.js')
                             ]
@@ -183,7 +183,7 @@ describe('JHipster generator for entity', () => {
                         })
                         .withGenerators([
                             [
-                                require('../generators/entity-server/index.js'), // eslint-disable-line global-require
+                                require('../generators/entity-server'), // eslint-disable-line global-require
                                 'jhipster-kotlin:entity-server',
                                 path.join(__dirname, '../generators/entity-server/index.js')
                             ]
@@ -222,7 +222,7 @@ describe('JHipster generator for entity', () => {
                         })
                         .withGenerators([
                             [
-                                require('../generators/entity-server/index.js'), // eslint-disable-line global-require
+                                require('../generators/entity-server'), // eslint-disable-line global-require
                                 'jhipster-kotlin:entity-server',
                                 path.join(__dirname, '../generators/entity-server/index.js')
                             ]
@@ -261,7 +261,7 @@ describe('JHipster generator for entity', () => {
                         })
                         .withGenerators([
                             [
-                                require('../generators/entity-server/index.js'), // eslint-disable-line global-require
+                                require('../generators/entity-server'), // eslint-disable-line global-require
                                 'jhipster-kotlin:entity-server',
                                 path.join(__dirname, '../generators/entity-server/index.js')
                             ]
@@ -300,7 +300,7 @@ describe('JHipster generator for entity', () => {
                         })
                         .withGenerators([
                             [
-                                require('../generators/entity-server/index.js'), // eslint-disable-line global-require
+                                require('../generators/entity-server'), // eslint-disable-line global-require
                                 'jhipster-kotlin:entity-server',
                                 path.join(__dirname, '../generators/entity-server/index.js')
                             ]
@@ -343,7 +343,7 @@ describe('JHipster generator for entity', () => {
                         })
                         .withGenerators([
                             [
-                                require('../generators/entity-server/index.js'), // eslint-disable-line global-require
+                                require('../generators/entity-server'), // eslint-disable-line global-require
                                 'jhipster-kotlin:entity-server',
                                 path.join(__dirname, '../generators/entity-server/index.js')
                             ]
@@ -387,7 +387,7 @@ describe('JHipster generator for entity', () => {
                         })
                         .withGenerators([
                             [
-                                require('../generators/entity-server/index.js'), // eslint-disable-line global-require
+                                require('../generators/entity-server'), // eslint-disable-line global-require
                                 'jhipster-kotlin:entity-server',
                                 path.join(__dirname, '../generators/entity-server/index.js')
                             ]
@@ -428,7 +428,7 @@ describe('JHipster generator for entity', () => {
                         })
                         .withGenerators([
                             [
-                                require('../generators/entity-server/index.js'), // eslint-disable-line global-require
+                                require('../generators/entity-server'), // eslint-disable-line global-require
                                 'jhipster-kotlin:entity-server',
                                 path.join(__dirname, '../generators/entity-server/index.js')
                             ]
@@ -469,7 +469,7 @@ describe('JHipster generator for entity', () => {
                         })
                         .withGenerators([
                             [
-                                require('../generators/entity-server/index.js'), // eslint-disable-line global-require
+                                require('../generators/entity-server'), // eslint-disable-line global-require
                                 'jhipster-kotlin:entity-server',
                                 path.join(__dirname, '../generators/entity-server/index.js')
                             ]
@@ -513,7 +513,7 @@ describe('JHipster generator for entity', () => {
                         })
                         .withGenerators([
                             [
-                                require('../generators/entity-server/index.js'), // eslint-disable-line global-require
+                                require('../generators/entity-server'), // eslint-disable-line global-require
                                 'jhipster-kotlin:entity-server',
                                 path.join(__dirname, '../generators/entity-server/index.js')
                             ]
@@ -555,9 +555,9 @@ describe('JHipster generator for entity', () => {
                         })
                         .withGenerators([
                             [
-                                require('../generators/entity-server/index.js'), // eslint-disable-line global-require
-                                'generator-jhipster-kotlin:entity-server',
-                                path.join(__dirname, '../generators/entity-server')
+                                require('../generators/entity-server'), // eslint-disable-line global-require
+                                'jhipster-kotlin:entity-server',
+                                path.join(__dirname, '../generators/entity-server/index.js')
                             ]
                         ])
                         .inTmpDir(dir => {
@@ -594,7 +594,7 @@ describe('JHipster generator for entity', () => {
                         })
                         .withGenerators([
                             [
-                                require('../generators/entity-server/index.js'), // eslint-disable-line global-require
+                                require('../generators/entity-server'), // eslint-disable-line global-require
                                 'jhipster-kotlin:entity-server',
                                 path.join(__dirname, '../generators/entity-server/index.js')
                             ]
@@ -637,7 +637,7 @@ describe('JHipster generator for entity', () => {
                         })
                         .withGenerators([
                             [
-                                require('../generators/entity-server/index.js'), // eslint-disable-line global-require
+                                require('../generators/entity-server'), // eslint-disable-line global-require
                                 'jhipster-kotlin:entity-server',
                                 path.join(__dirname, '../generators/entity-server/index.js')
                             ]
@@ -677,7 +677,7 @@ describe('JHipster generator for entity', () => {
                         })
                         .withGenerators([
                             [
-                                require('../generators/entity-server/index.js'), // eslint-disable-line global-require
+                                require('../generators/entity-server'), // eslint-disable-line global-require
                                 'jhipster-kotlin:entity-server',
                                 path.join(__dirname, '../generators/entity-server/index.js')
                             ]
@@ -719,7 +719,7 @@ describe('JHipster generator for entity', () => {
                         })
                         .withGenerators([
                             [
-                                require('../generators/entity-server/index.js'), // eslint-disable-line global-require
+                                require('../generators/entity-server'), // eslint-disable-line global-require
                                 'jhipster-kotlin:entity-server',
                                 path.join(__dirname, '../generators/entity-server/index.js')
                             ]
@@ -758,7 +758,7 @@ describe('JHipster generator for entity', () => {
                         })
                         .withGenerators([
                             [
-                                require('../generators/entity-server/index.js'), // eslint-disable-line global-require
+                                require('../generators/entity-server'), // eslint-disable-line global-require
                                 'jhipster-kotlin:entity-server',
                                 path.join(__dirname, '../generators/entity-server/index.js')
                             ]
@@ -803,7 +803,7 @@ describe('JHipster generator for entity', () => {
                         })
                         .withGenerators([
                             [
-                                require('../generators/entity-server/index.js'), // eslint-disable-line global-require
+                                require('../generators/entity-server'), // eslint-disable-line global-require
                                 'jhipster-kotlin:entity-server',
                                 path.join(__dirname, '../generators/entity-server/index.js')
                             ]
@@ -843,7 +843,7 @@ describe('JHipster generator for entity', () => {
                         })
                         .withGenerators([
                             [
-                                require('../generators/entity-server/index.js'), // eslint-disable-line global-require
+                                require('../generators/entity-server'), // eslint-disable-line global-require
                                 'jhipster-kotlin:entity-server',
                                 path.join(__dirname, '../generators/entity-server/index.js')
                             ]
@@ -887,7 +887,7 @@ describe('JHipster generator for entity', () => {
                         })
                         .withGenerators([
                             [
-                                require('../generators/entity-server/index.js'), // eslint-disable-line global-require
+                                require('../generators/entity-server'), // eslint-disable-line global-require
                                 'jhipster-kotlin:entity-server',
                                 path.join(__dirname, '../generators/entity-server/index.js')
                             ]
@@ -929,7 +929,7 @@ describe('JHipster generator for entity', () => {
                         })
                         .withGenerators([
                             [
-                                require('../generators/entity-server/index.js'), // eslint-disable-line global-require
+                                require('../generators/entity-server'), // eslint-disable-line global-require
                                 'jhipster-kotlin:entity-server',
                                 path.join(__dirname, '../generators/entity-server/index.js')
                             ]
