@@ -20,44 +20,51 @@
 
 package <%=packageName%>.service.util
 
+import java.security.SecureRandom
 import org.apache.commons.lang3.RandomStringUtils
 
 private const val DEF_COUNT = 20
 
-/**
- * Generate a password.
- *
- * @return the generated password.
- */
-fun generatePassword(): String = RandomStringUtils.randomAlphanumeric(DEF_COUNT)
+private val secureRandom: SecureRandom = SecureRandom().apply{ nextBytes(ByteArray(64)) }
+
+private fun generateRandomAlphanumericString(): String {
+    return RandomStringUtils.random(DEF_COUNT, 0, 0, true, true, null, secureRandom)
+}
 
 /**
- * Generate an activation key.
- *
- * @return the generated activation key.
- */
-fun generateActivationKey(): String = RandomStringUtils.randomNumeric(DEF_COUNT)
+* Generate a password.
+*
+* @return the generated password.
+*/
+fun generatePassword(): String = generateRandomAlphanumericString()
 
 /**
- * Generate a reset key.
- *
- * @return the generated reset key.
- */
-fun generateResetKey(): String = RandomStringUtils.randomNumeric(DEF_COUNT)
+* Generate an activation key.
+*
+* @return the generated activation key.
+*/
+fun generateActivationKey(): String = generateRandomAlphanumericString()
+
+/**
+* Generate a reset key.
+*
+* @return the generated reset key.
+*/
+fun generateResetKey(): String = generateRandomAlphanumericString()
 <%_ if (authenticationType === 'session' && !reactive) { _%>
 
 /**
- * Generate a unique series to validate a persistent token, used in the
- * authentication remember-me mechanism.
- *
- * @return the generated series data.
- */
-fun generateSeriesData(): String = RandomStringUtils.randomAlphanumeric(DEF_COUNT)
+* Generate a unique series to validate a persistent token, used in the
+* authentication remember-me mechanism.
+*
+* @return the generated series data.
+*/
+fun generateSeriesData(): String = generateRandomAlphanumericString()
 
 /**
- * Generate a persistent token, used in the authentication remember-me mechanism.
- *
- * @return the generated token data.
- */
-fun generateTokenData(): String = RandomStringUtils.randomAlphanumeric(DEF_COUNT)
+* Generate a persistent token, used in the authentication remember-me mechanism.
+*
+* @return the generated token data.
+*/
+fun generateTokenData(): String = generateRandomAlphanumericString()
 <%_ } _%>
