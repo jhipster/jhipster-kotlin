@@ -16,8 +16,9 @@
  See the License for the specific language governing permissions and
  limitations under the License.
 -%>
-package <%=packageName%>.repository
-
+package <%=packageName%>.repository<%
+const primaryKeyType = getPkTypeBasedOnDBAndAssociation(authenticationType, databaseType, relationships);
+%>
 import <%=packageName%>.domain.<%= asEntity(entityClass) %>
 <%_ if (fieldsContainOwnerManyToMany) { _%>
 import org.springframework.data.domain.Page
@@ -59,7 +60,7 @@ import java.util.UUID
 @Suppress("unused")
 <%_ } _%>
 @Repository
-interface <%=entityClass%>Repository : <% if (databaseType === 'sql') { %>JpaRepository<% } %><% if (databaseType === 'mongodb') { %>MongoRepository<% } %><% if (databaseType === 'cassandra') { %>CassandraRepository<% } %><% if (databaseType === 'couchbase') { %>N1qlCouchbaseRepository<% } %><<%=asEntity(entityClass)%>, <%= pkType %>><% if (jpaMetamodelFiltering) { %>, JpaSpecificationExecutor<<%= asEntity(entityClass) %>><% } %> {
+interface <%=entityClass%>Repository : <% if (databaseType === 'sql') { %>JpaRepository<% } %><% if (databaseType === 'mongodb') { %>MongoRepository<% } %><% if (databaseType === 'cassandra') { %>CassandraRepository<% } %><% if (databaseType === 'couchbase') { %>N1qlCouchbaseRepository<% } %><<%=asEntity(entityClass)%>, <%= primaryKeyType %>><% if (jpaMetamodelFiltering) { %>, JpaSpecificationExecutor<<%= asEntity(entityClass) %>><% } %> {
     <%_ for (idx in relationships) {
         if (relationships[idx].relationshipType === 'many-to-one' && relationships[idx].otherEntityName === 'user' && databaseType === 'sql') { _%>
 
@@ -82,7 +83,7 @@ interface <%=entityClass%>Repository : <% if (databaseType === 'sql') { %>JpaRep
 
     @Query("select <%= entityInstance %> from <%= asEntity(entityClass) %> <%= entityInstance %><% for (idx in relationships) {
     if (relationships[idx].relationshipType === 'many-to-many' && relationships[idx].ownerSide === true) { %> left join fetch <%=entityInstance%>.<%=relationships[idx].relationshipFieldNamePlural%><%} }%> where <%=entityInstance%>.id =:id")
-    fun findOneWithEagerRelationships(@Param("id") id: <%= pkType %>): Optional<<%= asEntity(entityClass) %>>
+    fun findOneWithEagerRelationships(@Param("id") id: <%= primaryKeyType %>): Optional<<%= asEntity(entityClass) %>>
     <%_
         } else if (databaseType === 'mongodb')  { _%>
 
@@ -93,7 +94,7 @@ interface <%=entityClass%>Repository : <% if (databaseType === 'sql') { %>JpaRep
     fun findAllWithEagerRelationships(): MutableList<<%= asEntity(entityClass) %>>
 
     @Query("{'id': ?0}")
-    fun findOneWithEagerRelationships(id: <%= pkType %>): Optional<<%= asEntity(entityClass) %>>
+    fun findOneWithEagerRelationships(id: <%= primaryKeyType %>): Optional<<%= asEntity(entityClass) %>>
     <%_ }
     } _%>
 }

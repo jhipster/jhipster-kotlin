@@ -136,7 +136,7 @@ _%>
     : <%- returnType %>  {
     <%_ } _%>
         val result = ex.bindingResult
-        val fieldErrors = result.fieldErrors.map { FieldErrorVM(it.objectName, it.field, it.code) }
+        val fieldErrors = result.fieldErrors.map { FieldErrorVM(it.objectName.replaceFirst("<%= dtoSuffix %>$", ""), it.field, it.code) }
 
         val problem = Problem.builder()
             .withType(CONSTRAINT_VIOLATION_TYPE)
@@ -159,9 +159,29 @@ _%>
     }
     <%_ } _%>
 
+    <%_ if (!skipUserManagement) { _%>
+    @ExceptionHandler
+    fun handleEmailAlreadyUsedException(ex: <%=packageName%>.service.EmailAlreadyUsedException, request: <%= requestClass %>): <%- returnType %> {
+        val problem = EmailAlreadyUsedException()
+        return create(problem, request, HeaderUtil.createFailureAlert(applicationName,  <%= enableTranslation %>, problem.entityName, problem.errorKey, problem.message))
+    }
+
+    @ExceptionHandler
+    fun handleUsernameAlreadyUsedException(ex: <%=packageName%>.service.UsernameAlreadyUsedException, request: <%= requestClass %>): <%- returnType %> {
+        val problem = LoginAlreadyUsedException()
+        return create(problem, request, HeaderUtil.createFailureAlert(applicationName,  <%= enableTranslation %>, problem.entityName, problem.errorKey, problem.message))
+    }
+
+    @ExceptionHandler
+    fun handleInvalidPasswordException(ex: <%=packageName%>.service.InvalidPasswordException, request: <%= requestClass %>): <%- returnType %> {
+        return create(InvalidPasswordException(), request)
+    }
+    <%_ } _%>
+
     @ExceptionHandler
     fun handleBadRequestAlertException(
-        ex: BadRequestAlertException, request: <%= requestClass %>
+        ex: BadRequestAlertException,
+        request: <%= requestClass %>
     ): <%- returnType %> =
         create(
             ex, request,

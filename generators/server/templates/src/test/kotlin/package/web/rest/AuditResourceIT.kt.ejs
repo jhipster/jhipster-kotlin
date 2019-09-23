@@ -22,6 +22,7 @@ import <%=packageName%>.<%= mainClass %>
 <%_ if (authenticationType === 'oauth2') { _%>
 import <%=packageName%>.config.TestSecurityConfiguration
 <%_ } _%>
+import io.github.jhipster.config.JHipsterProperties
 import <%=packageName%>.config.audit.AuditEventConverter
 import <%=packageName%>.domain.PersistentAuditEvent
 import <%=packageName%>.repository.PersistenceAuditEventRepository
@@ -86,6 +87,9 @@ class AuditResourceIT {
     private lateinit var jacksonMessageConverter: MappingJackson2HttpMessageConverter
 
     @Autowired
+    private lateinit var jhipsterProperties: JHipsterProperties
+
+    @Autowired
     @Qualifier("mvcConversionService")
     private lateinit var formattingConversionService: FormattingConversionService
 
@@ -99,7 +103,7 @@ class AuditResourceIT {
     @BeforeEach
     fun setup() {
         MockitoAnnotations.initMocks(this)
-        val auditEventService = AuditEventService(auditEventRepository, auditEventConverter)
+        val auditEventService = AuditEventService(auditEventRepository, auditEventConverter, jhipsterProperties)
         val auditResource = AuditResource(auditEventService)
         this.restAuditMockMvc = MockMvcBuilders.standaloneSetup(auditResource)
             .setCustomArgumentResolvers(pageableArgumentResolver)

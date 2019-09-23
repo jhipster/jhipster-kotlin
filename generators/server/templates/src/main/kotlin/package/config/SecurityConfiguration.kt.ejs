@@ -20,7 +20,9 @@ package <%= packageName %>.config
 
 <%_ if (authenticationType === 'session' || authenticationType === 'jwt' || authenticationType === 'oauth2') { _%>
 import <%= packageName %>.security.ADMIN
+<%_ if (authenticationType === 'oauth2' && applicationType !== 'microservice') { _%>
 import <%= packageName %>.security.extractAuthorityFromClaims
+<%_ } _%>
 <%_ if (authenticationType === 'jwt') { _%>
 import <%= packageName %>.security.jwt.JWTConfigurer
 import <%= packageName %>.security.jwt.TokenProvider
@@ -61,7 +63,7 @@ import org.springframework.security.oauth2.jwt.JwtDecoder
 import org.springframework.security.oauth2.jwt.JwtDecoders
 import org.springframework.security.oauth2.jwt.JwtValidators
 import org.springframework.security.oauth2.jwt.NimbusJwtDecoderJwkSupport
-    <%_ if (applicationType === 'gateway') { _%>
+    <%_ if (applicationType === 'gateway' && serviceDiscoveryType) { _%>
 import <%=packageName%>.security.oauth2.AuthorizationHeaderFilter
 import <%=packageName%>.security.oauth2.AuthorizationHeaderUtil
     <%_ } _%>
@@ -198,9 +200,9 @@ class SecurityConfiguration(
         .and()
             .headers()
             <%_ if (clientTheme !== 'none') { _%>
-            .contentSecurityPolicy("default-src 'self'; script-src 'self' 'unsafe-inline' 'unsafe-eval' https://storage.googleapis.com; style-src 'self' https://fonts.googleapis.com 'unsafe-inline'; img-src 'self' data:; font-src 'self' https://fonts.gstatic.com data:")
+            .contentSecurityPolicy("default-src 'self'; frame-src 'self' data:; script-src 'self' 'unsafe-inline' 'unsafe-eval' https://storage.googleapis.com; style-src 'self' https://fonts.googleapis.com 'unsafe-inline'; img-src 'self' data:; font-src 'self' https://fonts.gstatic.com data:")
             <%_ } else { _%>
-            .contentSecurityPolicy("default-src 'self'; script-src 'self' 'unsafe-inline' 'unsafe-eval' https://storage.googleapis.com; style-src 'self' 'unsafe-inline'; img-src 'self' data:; font-src 'self' data:")
+            .contentSecurityPolicy("default-src 'self'; frame-src 'self' data:; script-src 'self' 'unsafe-inline' 'unsafe-eval' https://storage.googleapis.com; style-src 'self' 'unsafe-inline'; img-src 'self' data:; font-src 'self' data:")
             <%_ } _%>
         .and()
             .referrerPolicy(ReferrerPolicyHeaderWriter.ReferrerPolicy.STRICT_ORIGIN_WHEN_CROSS_ORIGIN)
@@ -297,7 +299,7 @@ class SecurityConfiguration(
 
         return jwtDecoder
     }
-        <%_ if (applicationType === 'gateway') { _%>
+        <%_ if (applicationType === 'gateway' && serviceDiscoveryType) { _%>
 
     @Bean
     fun authHeaderFilter(headerUtil: AuthorizationHeaderUtil) = AuthorizationHeaderFilter(headerUtil)

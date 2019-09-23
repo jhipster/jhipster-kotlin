@@ -225,7 +225,7 @@ function writeFiles() {
 
                 const serverCacheKt = new NeedleServerChacheKt(this);
 
-                if (['ehcache', 'infinispan'].includes(this.cacheProvider) && this.enableHibernateCache) {
+                if (['ehcache', 'caffeine', 'infinispan'].includes(this.cacheProvider) && this.enableHibernateCache) {
                     serverCacheKt.addEntityToCache(
                         this.asEntity(this.entityClass),
                         this.relationships,

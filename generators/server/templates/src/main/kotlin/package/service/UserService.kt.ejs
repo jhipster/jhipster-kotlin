@@ -46,9 +46,6 @@ import <%=packageName%>.service.dto.<%= asDto('User') %>
 import <%=packageName%>.service.util.generateActivationKey
 import <%=packageName%>.service.util.generatePassword
 import <%=packageName%>.service.util.generateResetKey
-import <%=packageName%>.web.rest.errors.EmailAlreadyUsedException
-import <%=packageName%>.web.rest.errors.InvalidPasswordException
-import <%=packageName%>.web.rest.errors.LoginAlreadyUsedException
 <%_ } _%>
 
 <%_ if (databaseType !== 'no') { _%>
@@ -203,7 +200,7 @@ class UserService<% if (databaseType !== 'no') { %>(
         userRepository.findOneByLogin(login.toLowerCase()).ifPresent { existingUser ->
             val removed = removeNonActivatedUser(existingUser)
             if (!removed) {
-                throw LoginAlreadyUsedException()
+                throw UsernameAlreadyUsedException()
             }
         }
         userRepository.findOneByEmailIgnoreCase(email).ifPresent { existingUser ->
@@ -255,7 +252,7 @@ class UserService<% if (databaseType !== 'no') { %>(
                     <%_ } _%>
                     userRepository.delete(existingUser)
                 } else {
-                    throw LoginAlreadyUsedException()
+                    throw UsernameAlreadyUsedException()
                 }
             }
             .then(userRepository.findOneByEmailIgnoreCase(email))
@@ -621,7 +618,7 @@ class UserService<% if (databaseType !== 'no') { %>(
     <%_ if (databaseType === 'sql') { _%>
     @Transactional(readOnly = true)
     <%_ } _%>
-    fun getUserWithAuthorities(id: <%= pkType %>): <% if (reactive) { %>Mono<% } else { %>Optional<% } %><<%= asEntity('User') %>> =
+    fun getUserWithAuthorities(id: <% if (pkType === 'UUID') { %>String<% } else { %><%= pkType %><% } %>): <% if (reactive) { %>Mono<% } else { %>Optional<% } %><<%= asEntity('User') %>> =
         userRepository.<% if (databaseType === 'sql') { %>findOneWithAuthoritiesById(id)<% } else { %>findById(id)<% } %>
 
     <%_ if (databaseType === 'sql') { _%>
@@ -755,7 +752,7 @@ class UserService<% if (databaseType !== 'no') { %>(
         val user = getUser(attributes)
         user.authorities = authToken.authorities.asSequence()
             .map(GrantedAuthority::getAuthority)
-            <%_ if (databaseType !== 'no') { _%>
+            <%_ if (databaseType === 'sql' || databaseType === 'mongodb') { _%>
             .map { Authority(name = it) }
             <%_ } _%>
             .toMutableSet()
