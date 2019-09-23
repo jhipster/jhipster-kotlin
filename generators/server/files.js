@@ -1553,24 +1553,6 @@ const serverFiles = {
             ]
         },
         {
-            // TODO : add tests for reactive
-            condition: generator =>
-                !generator.reactive && !generator.skipUserManagement && ['sql', 'mongodb', 'couchbase'].includes(generator.databaseType),
-            path: SERVER_TEST_SRC_KOTLIN_DIR,
-            templates: [
-                {
-                    file: 'package/web/rest/AuditResourceIT.kt',
-                    renameTo: generator => `${generator.testDir}web/rest/AuditResourceIT.kt`,
-                    useBluePrint: true
-                },
-                {
-                    file: 'package/service/AuditEventServiceIT.kt',
-                    renameTo: generator => `${generator.testDir}service/AuditEventServiceIT.kt`,
-                    useBluePrint: true
-                }
-            ]
-        },
-        {
             condition: generator => generator.authenticationType === 'oauth2' && ['sql', 'mongodb'].includes(generator.databaseType),
             path: SERVER_TEST_SRC_KOTLIN_DIR,
             templates: [
@@ -1751,6 +1733,11 @@ const serverFiles = {
                     file: 'package/web/rest/AuditResourceIT.kt',
                     renameTo: generator => `${generator.testDir}web/rest/AuditResourceIT.kt`,
                     useBluePrint: true
+                },
+                {
+                    file: 'package/service/AuditEventServiceIT.kt',
+                    renameTo: generator => `${generator.testDir}service/AuditEventServiceIT.kt`,
+                    useBluePrint: true
                 }
             ]
         },
@@ -1870,7 +1857,7 @@ function writeFiles() {
                 this.addMavenPluginRepository('jcenter', 'https://jcenter.bintray.com/');
 
                 this.addMavenProperty('kotlin.version', kotlinConstants.KOTLIN_VERSION);
-            this.addMavenProperty('ktlint-maven-plugin.version', kotlinConstants.KTLINT_MAVEN_VERSION);
+                this.addMavenProperty('ktlint-maven-plugin.version', kotlinConstants.KTLINT_MAVEN_VERSION);
                 this.addMavenProperty('maven-antrun-plugin.version', kotlinConstants.MAVEN_ANTRUN_VERSION);
                 this.addMavenProperty('detekt.version', kotlinConstants.DETEKT_VERSION);
                 this.addMavenProperty('detekt.configFile', `$\{project.basedir}/${kotlinConstants.DETEKT_CONFIG_FILE}`);
