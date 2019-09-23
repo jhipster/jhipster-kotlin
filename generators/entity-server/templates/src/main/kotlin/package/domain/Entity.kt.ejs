@@ -23,6 +23,7 @@ let importJsonIgnoreProperties = false;
 let importSet = false;
 let hasDto = dto === 'mapstruct';
 let isUsingMapsId = false;
+let primaryKeyType = pkType;
 let hasTextBlob = false;
 let hasRelationship = relationships.length !== 0;
 let fieldsContainEnum = false;
@@ -48,6 +49,7 @@ const uniqueEnums = {}; %><%- include imports -%>
     for (idx in relationships) {
         isUsingMapsId = relationships[idx].useJPADerivedIdentifier;
         if ( isUsingMapsId === true) {
+            primaryKeyType = (relationships[idx].otherEntityName === 'user'  && authenticationType === 'oauth2') ? 'String' : pkType;
             break;
         }
         isUsingMapsId = false;
@@ -216,7 +218,7 @@ class <%= asEntity(entityClass) %>(
     <%_ if (searchEngine === 'elasticsearch') { _%>
     @org.springframework.data.elasticsearch.annotations.Field(type = FieldType.Keyword)
     <%_ } _%>
-    var id: <%= pkType %>? = null,
+    var id: <%= primaryKeyType %>? = null,
 
 <%_
 for (var idx in fields) {

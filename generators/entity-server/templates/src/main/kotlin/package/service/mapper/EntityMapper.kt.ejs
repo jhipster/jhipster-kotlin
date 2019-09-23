@@ -73,9 +73,13 @@ _%>
 <%_
 // DTO -> entity mapping
 var mappedRelsDto = [];
+let primaryKeyType = pkType;
 for (idx in relationships) {
     const relationshipType = relationships[idx].relationshipType;
+    const otherEntityName = relationships[idx].otherEntityName;
     const ownerSide = relationships[idx].ownerSide;
+    const isUsingMapsId = relationships[idx].useJPADerivedIdentifier;
+    primaryKeyType = (isUsingMapsId === true && otherEntityName === 'user' && authenticationType === 'oauth2') ? 'String' : primaryKeyType;
     if (relationshipType === 'many-to-one' || (relationshipType === 'one-to-one' && ownerSide === true) ||
         (relationshipType === 'many-to-many' && ownerSide === false) ||
         relationshipType === 'one-to-many' ||
@@ -119,6 +123,6 @@ _%>
     <%_ } _%>
     <%_ if (databaseType === 'sql' || databaseType === 'mongodb') { _%>
 
-    fun fromId(id: <%= pkType %>?) = id?.let { <%= asEntity(entityClass) %>(it) }
+    fun fromId(id: <%= primaryKeyType %>?) = id?.let { <%= asEntity(entityClass) %>(it) }
 <%_ } _%>
 }

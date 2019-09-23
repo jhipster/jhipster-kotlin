@@ -18,8 +18,14 @@
 -%>
 package <%= packageName %>.web.rest
 
+<%_ if (reactive) { _%>
+import <%= packageName %>.config.ANONYMOUS_USER
+<%_ } _%>
 import <%= packageName %>.security.jwt.JWTFilter
 import <%= packageName %>.security.jwt.TokenProvider
+<%_ if (reactive) { _%>
+import <%= packageName %>.service.AuditEventService
+<%_ } _%>
 import <%= packageName %>.web.rest.vm.LoginVM
 
 import com.fasterxml.jackson.annotation.JsonProperty
@@ -31,6 +37,9 @@ import org.springframework.http.ResponseEntity
 import org.springframework.security.authentication.ReactiveAuthenticationManager
 <%_ } _%>
 import org.springframework.security.authentication.UsernamePasswordAuthenticationToken
+<%_ if (reactive) { _%>
+import org.springframework.security.core.Authentication
+<%_ } _%>
 <%_ if (!reactive) { _%>
 import org.springframework.security.config.annotation.authentication.builders.AuthenticationManagerBuilder
 import org.springframework.security.core.context.SecurityContextHolder
@@ -44,9 +53,6 @@ import reactor.core.publisher.Mono
 <%_ } _%>
 
 import javax.validation.Valid
-<%_ if (reactive) { _%>
-import java.util.Optional
-<%_ } _%>
 
 /**
  * Controller to authenticate users.
@@ -55,7 +61,10 @@ import java.util.Optional
 @RequestMapping("/api")
 class UserJWTController(
     private val tokenProvider: TokenProvider,
-    <% if (!reactive) { %>private val authenticationManagerBuilder: AuthenticationManagerBuilder <% } else { %>private val authenticationManager: ReactiveAuthenticationManager <% } %>
+    <% if (!reactive) { %>private val authenticationManagerBuilder: AuthenticationManagerBuilder <% } else { %>
+    private val authenticationManager: ReactiveAuthenticationManager,
+    private val auditEventService: AuditEventService
+    <% } %>
 ) {
     <%_ if (!reactive) { _%>
     @PostMapping("/authenticate")
@@ -74,17 +83,34 @@ class UserJWTController(
     <%_ } else { _%>
     @PostMapping("/authenticate")
     fun authorize(@Valid @RequestBody loginVM: Mono<LoginVM>): Mono<ResponseEntity<JWTToken>> =
-        loginVM
-            .flatMap { login ->
-                authenticationManager
-                    .authenticate(UsernamePasswordAuthenticationToken(login.username, login.password))
-                    .map { auth -> tokenProvider.createToken(auth, Optional.ofNullable(login.isRememberMe).orElse(false)) }
-            }
-            .map { jwt ->
-                val httpHeaders = HttpHeaders()
-                httpHeaders.add(JWTFilter.AUTHORIZATION_HEADER, "Bearer $jwt")
-                ResponseEntity(JWTToken(jwt), httpHeaders, HttpStatus.OK)
-            }
+        loginVM.flatMap { login ->
+            authenticationManager.authenticate(UsernamePasswordAuthenticationToken(login.username, login.password))
+                .onErrorResume { onAuthenticationError(login, it) }
+                .flatMap { onAuthenticationSuccess(login, it) }
+                .map { tokenProvider.createToken(it, true == login.isRememberMe) }
+        }.map{
+            jwt ->
+            val httpHeaders = HttpHeaders()
+            httpHeaders.add(JWTFilter.AUTHORIZATION_HEADER, "Bearer $jwt")
+            ResponseEntity(JWTToken(jwt), httpHeaders, HttpStatus.OK)
+        }
+
+    private fun onAuthenticationSuccess(login: LoginVM, auth: Authentication): Mono<Authentication> {
+        return Mono.just(login)
+            .map {it.username}
+            .filter { ANONYMOUS_USER != it }
+            .flatMap { auditEventService.saveAuthenticationSuccess(it) }
+            .thenReturn(auth)
+    }
+
+    private fun onAuthenticationError(login: LoginVM, throwable: Throwable): Mono<Authentication> {
+        return Mono.just(login)
+                .map {it.username}
+                .filter { ANONYMOUS_USER != it }
+                .flatMap { auditEventService.saveAuthenticationError(it, throwable) }
+                .then(Mono.error(throwable))
+    }
+
     <%_ } _%>
 
     /**

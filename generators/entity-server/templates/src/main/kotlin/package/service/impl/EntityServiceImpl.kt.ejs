@@ -28,11 +28,13 @@ package <%= packageName %>.service<% if (service === 'serviceImpl') { %>.impl<% 
     const repository = entityInstance  + 'Repository';
     const searchRepository = entityInstance  + 'SearchRepository';
     let isUsingMapsId = false;
+    let primaryKeyType = pkType;
     let mapsIdAssoc;
     for (idx in relationships) {
         isUsingMapsId = relationships[idx].useJPADerivedIdentifier;
         if ( isUsingMapsId === true) {
             mapsIdAssoc = relationships[idx];
+            primaryKeyType = (relationships[idx].otherEntityName === 'user'  && authenticationType === 'oauth2') ? 'String' : pkType;
             break;
         }
         isUsingMapsId = false;
@@ -151,7 +153,7 @@ class <%= serviceClassName %>(
     <%_ if (databaseType === 'sql') { _%>
     @Transactional(readOnly = true)
     <%_ } _%>
-    <% if (service === 'serviceImpl') { %>override <% } %>fun findOne(id: <%= pkType %>): Optional<<%= instanceType %>> {
+    <% if (service === 'serviceImpl') { %>override <% } %>fun findOne(id: <%= primaryKeyType %>): Optional<<%= instanceType %>> {
         log.debug("Request to get <%= entityClass %> : {}", id)<%- include('../../common/get_template', {asEntity, asDto, viaService, returnDirectly:true}); -%>
     }
 
@@ -160,7 +162,7 @@ class <%= serviceClassName %>(
      *
      * @param id the id of the entity.
      */
-    <% if (service === 'serviceImpl') { %>override <% } %>fun delete(id: <%= pkType %>) {
+    <% if (service === 'serviceImpl') { %>override <% } %>fun delete(id: <%= primaryKeyType %>) {
         log.debug("Request to delete <%= entityClass %> : {}", id)
 <%- include('../../common/delete_template', {viaService: viaService}); -%>
     }

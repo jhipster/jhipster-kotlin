@@ -26,6 +26,9 @@ import <%=packageName%>.<%= mainClass %>
 import <%=packageName%>.domain.<%= asEntity('User') %>
 import <%=packageName%>.repository<% if (reactive) { %>.reactive<% } %>.UserRepository
 <%_ } _%>
+<%_ if (reactive) { _%>
+import <%= packageName %>.service.AuditEventService
+<%_ } _%>
 import <%=packageName%>.security.jwt.TokenProvider
 import <%=packageName%>.web.rest.errors.ExceptionTranslator
 import <%=packageName%>.web.rest.vm.LoginVM
@@ -85,6 +88,12 @@ class UserJWTControllerIT <% if (databaseType === 'cassandra') { %>: AbstractCas
     @Autowired
     private lateinit var authenticationManager: <% if (reactive) { %>Reactive<% } %>AuthenticationManager<% if (!reactive) { %>Builder<% } %>
 
+    <%_ if (reactive) { _%>
+    @Autowired
+    private lateinit var auditEventService: AuditEventService
+
+    <%_ }  _%>
+
 <%_ if (!skipUserManagement) { _%>
     @Autowired
     private lateinit var userRepository: UserRepository
@@ -104,7 +113,7 @@ class UserJWTControllerIT <% if (databaseType === 'cassandra') { %>: AbstractCas
 
     @BeforeEach
     fun setup() {
-        val userJWTController = UserJWTController(tokenProvider, authenticationManager)
+        val userJWTController = UserJWTController(tokenProvider, authenticationManager<% if (reactive) { %>, auditEventService<% } %>)
         <%_ if (!reactive) { _%>
         this.mockMvc = MockMvcBuilders.standaloneSetup(userJWTController)
             .setControllerAdvice(exceptionTranslator)
