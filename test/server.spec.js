@@ -72,7 +72,6 @@ describe('JHipster server generator', () => {
     describe('generate server with caffeine', () => {
         before(done => {
             helpers
-                .run(path.join(__dirname, '../generators/server'))
                 .run('generator-jhipster/generators/server')
                 .withOptions({
                     'from-cli': true,

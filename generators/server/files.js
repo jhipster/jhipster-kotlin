@@ -1553,14 +1553,11 @@ const serverFiles = {
             ]
         },
         {
-            condition: generator => generator.authenticationType === 'oauth2' && ['sql', 'mongodb'].includes(generator.databaseType),
+            // TODO : add tests for reactive
+            condition: generator =>
+                !generator.reactive && !generator.skipUserManagement && ['sql', 'mongodb', 'couchbase'].includes(generator.databaseType),
             path: SERVER_TEST_SRC_KOTLIN_DIR,
             templates: [
-                {
-                    file: 'package/repository/CustomAuditEventRepositoryIT.kt',
-                    renameTo: generator => `${generator.testDir}repository/CustomAuditEventRepositoryIT.kt`,
-                    useBluePrint: true
-                },
                 {
                     file: 'package/web/rest/AuditResourceIT.kt',
                     renameTo: generator => `${generator.testDir}web/rest/AuditResourceIT.kt`,
@@ -1569,6 +1566,17 @@ const serverFiles = {
                 {
                     file: 'package/service/AuditEventServiceIT.kt',
                     renameTo: generator => `${generator.testDir}service/AuditEventServiceIT.kt`,
+                    useBluePrint: true
+                }
+            ]
+        },
+        {
+            condition: generator => generator.authenticationType === 'oauth2' && ['sql', 'mongodb'].includes(generator.databaseType),
+            path: SERVER_TEST_SRC_KOTLIN_DIR,
+            templates: [
+                {
+                    file: 'package/repository/CustomAuditEventRepositoryIT.kt',
+                    renameTo: generator => `${generator.testDir}repository/CustomAuditEventRepositoryIT.kt`,
                     useBluePrint: true
                 }
             ]
