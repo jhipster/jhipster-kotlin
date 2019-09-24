@@ -1,3 +1,4 @@
+
 <%#
  Copyright 2013-2019 the original author or authors from the JHipster project.
 
@@ -41,7 +42,7 @@ import <%= packageName %>.config.TestSecurityConfiguration
 import java.time.Instant
 import java.time.temporal.ChronoUnit
 
-import static org.assertj.core.api.Assertions.assertThat
+import org.assertj.core.api.Assertions.assertThat
 
 /**
  * Integration tests for {@link AuditEventService}.
@@ -50,14 +51,14 @@ import static org.assertj.core.api.Assertions.assertThat
 @EmbeddedKafka
 <%_ } _%>
 <%_ if (authenticationType === 'oauth2') { _%>
-@SpringBootTest(classes = {<%= mainClass %>.class, TestSecurityConfiguration.class})
+@SpringBootTest(classes = [<%= mainClass %>::class, TestSecurityConfiguration::class])
 <%_ } else { _%>
-@SpringBootTest(classes = <%= mainClass %>.class)
+@SpringBootTest(classes = [<%= mainClass %>::class])
 <%_ } _%>
 <%_ if (databaseType === 'sql') { _%>
 @Transactional
 <%_ } _%>
-public class AuditEventServiceIT {
+class AuditEventServiceIT {
     @Autowired
     private lateinit var auditEventService: AuditEventService
 
@@ -79,19 +80,19 @@ public class AuditEventServiceIT {
         mockAuthentication()
         <%_ } _%>
         auditEventOld = PersistentAuditEvent()
-        auditEventOld.setAuditEventDate(Instant.now().minus(jHipsterProperties.getAuditEvents().getRetentionPeriod() + 1, ChronoUnit.DAYS))
-        auditEventOld.setPrincipal("test-user-old")
-        auditEventOld.setAuditEventType("test-type")
+        auditEventOld.auditEventDate = Instant.now().minus((jHipsterProperties.auditEvents.retentionPeriod + 1).toLong(), ChronoUnit.DAYS)
+        auditEventOld.principal = "test-user-old"
+        auditEventOld.auditEventType = "test-type"
 
         auditEventWithinRetention = PersistentAuditEvent()
-        auditEventWithinRetention.setAuditEventDate(Instant.now().minus(jHipsterProperties.getAuditEvents().getRetentionPeriod() - 1, ChronoUnit.DAYS))
-        auditEventWithinRetention.setPrincipal("test-user-retention")
-        auditEventWithinRetention.setAuditEventType("test-type")
+        auditEventWithinRetention.auditEventDate = Instant.now().minus((jHipsterProperties.auditEvents.retentionPeriod - 1).toLong(), ChronoUnit.DAYS)
+        auditEventWithinRetention.principal = "test-user-retention"
+        auditEventWithinRetention.auditEventType = "test-type"
 
         auditEventNew = PersistentAuditEvent()
-        auditEventNew.setAuditEventDate(Instant.now())
-        auditEventNew.setPrincipal("test-user-new")
-        auditEventNew.setAuditEventType("test-type")
+        auditEventNew.auditEventDate = Instant.now()
+        auditEventNew.principal = "test-user-new"
+        auditEventNew.auditEventType = "test-type"
     }
 
     @Test
@@ -110,7 +111,7 @@ public class AuditEventServiceIT {
         <% if (databaseType === 'sql') { %>
         persistenceAuditEventRepository.flush()
         <% } %>
-        assertThat(persistenceAuditEventRepository.findAll().size()).isEqualTo(2)
+        assertThat(persistenceAuditEventRepository.findAll().size).isEqualTo(2)
         assertThat(persistenceAuditEventRepository.findByPrincipal("test-user-old")).isEmpty()
         assertThat(persistenceAuditEventRepository.findByPrincipal("test-user-retention")).isNotEmpty()
         assertThat(persistenceAuditEventRepository.findByPrincipal("test-user-new")).isNotEmpty()
