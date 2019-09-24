@@ -691,7 +691,7 @@ class <%= entityClass %>ResourceIT <% if (databaseType === 'cassandra') { %>: Ab
         rest<%= entityClass %>MockMvc.perform(get("/api/<%= entityApiUrl %>?sort=id,desc&$filter"))
             .andExpect(status().isOk)
             .andExpect(content().contentType(MediaType.APPLICATION_JSON_UTF8_VALUE))
-            .andExpect(jsonPath("$.[*].id").value(hasItem(<%= asEntity(entityInstance) %><% if (databaseType === 'sql' && hasOauthUser === true) { %>.id<% } else { %>.id.toInt()<% } %>)))<% fields.forEach((field) => { %>
+            .andExpect(jsonPath("$.[*].id").value(hasItem(<%= asEntity(entityInstance) %><% if (databaseType === 'sql' && hasOauthUser === true) { %>.id<% } else { %>.id?.toInt()<% } %>)))<% fields.forEach((field) => { %>
             <%_ if ((field.fieldType === 'byte[]' || field.fieldType === 'ByteBuffer') && field.fieldTypeBlobContent !== 'text') { _%>
             .andExpect(jsonPath("$.[*].<%=field.fieldName%>ContentType").value(hasItem(<%='DEFAULT_' + field.fieldNameUnderscored.toUpperCase()%>_CONTENT_TYPE)))
             <%_ } _%>
