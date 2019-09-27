@@ -92,7 +92,7 @@ class AuditEventService(
             <%_ } else { _%>
             flatMap {
                 log.debug("Deleting audit data {}", it);
-                return persistenceAuditEventRepository.delete(it);
+                persistenceAuditEventRepository.delete(it);
             }.blockLast()
             <%_ } _%>
     }
@@ -132,7 +132,7 @@ class AuditEventService(
         persistentAuditEvent.principal = login
         persistentAuditEvent.auditEventType = AUTHENTICATION_FAILURE
         persistentAuditEvent.auditEventDate = Instant.now()
-        val eventData = HashMap<String, String>()
+        val eventData = mutableMapOf<String, String?>()
         eventData["type"] = e::class.java.name
         eventData["message"] = e.message
         persistentAuditEvent.data = truncate(eventData)
@@ -142,9 +142,8 @@ class AuditEventService(
     /**
      * Truncate event data that might exceed column length.
      */
-    private fun truncate(data: Map<String, String>):  Map<String, String> {
-        val results = HashMap<String, String>()
-
+    private fun truncate(data: MutableMap<String, String?>): MutableMap<String, String?> {
+        val results = mutableMapOf<String, String?>()
         data.entries.forEach {
             var value = it.value
             if (value != null) {
@@ -154,8 +153,8 @@ class AuditEventService(
                     log.warn("Event data for {} too long ({}) has been truncated to {}. Consider increasing column width.",
                         it.key, length, EVENT_DATA_COLUMN_MAX_LENGTH)
                 }
-                results[it.key] = value;
             }
+            results[it.key] = value
         }
         return results
     }
