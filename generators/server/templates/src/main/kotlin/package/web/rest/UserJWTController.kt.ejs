@@ -99,7 +99,7 @@ class UserJWTController(
         return Mono.just(login)
             .map {it.username}
             .filter { ANONYMOUS_USER != it }
-            .flatMap { auditEventService.saveAuthenticationSuccess(it) }
+            .flatMap { auditEventService.saveAuthenticationSuccess(it!!) }
             .thenReturn(auth)
     }
 
@@ -107,7 +107,7 @@ class UserJWTController(
         return Mono.just(login)
                 .map {it.username}
                 .filter { ANONYMOUS_USER != it }
-                .flatMap { auditEventService.saveAuthenticationError(it, throwable) }
+                .flatMap { auditEventService.saveAuthenticationError(it!!, throwable) }
                 .then(Mono.error(throwable))
     }
 
