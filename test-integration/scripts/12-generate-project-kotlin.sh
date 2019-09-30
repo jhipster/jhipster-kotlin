@@ -39,8 +39,10 @@ else
     mkdir -p "$JHI_FOLDER_APP"
     cp -f "$JHI_SAMPLES"/"$JHI_APP"/.yo-rc.json "$JHI_FOLDER_APP"/
     cd "$JHI_FOLDER_APP"
+    cat package.json
     npm link generator-jhipster-kotlin
-    jhipster --force --no-insight --skip-checks --with-entities --from-cli --blueprint kotlin
+    khipster --force --no-insight --skip-checks --with-entities --from-cli
+    cat yarn-error.log
 
 fi
 
