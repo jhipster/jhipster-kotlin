@@ -41,8 +41,6 @@ else
     cd "$JHI_FOLDER_APP"
     npm link generator-jhipster-kotlin
     khipster --force --no-insight --skip-checks --with-entities --from-cli
-    cat package.json
-    cat yarn-error.log
 
 fi
 
