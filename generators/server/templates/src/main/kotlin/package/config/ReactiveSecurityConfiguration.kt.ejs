@@ -24,6 +24,7 @@ import <%= packageName %>.security.jwt.JWTFilter
 import <%= packageName %>.security.jwt.TokenProvider
 <%_ } _%>
 <%_ if (authenticationType === 'session') { _%>
+import <%= packageName %>.service.AuditEventService
 import io.github.jhipster.web.filter.reactive.CookieCsrfFilter
 <%_ } _%>
 import org.springframework.context.annotation.Bean
@@ -41,9 +42,16 @@ import org.springframework.security.config.annotation.method.configuration.Enabl
 import org.springframework.security.config.annotation.web.reactive.EnableWebFluxSecurity
 import org.springframework.security.config.web.server.SecurityWebFiltersOrder
 import org.springframework.security.config.web.server.ServerHttpSecurity
+<%_ if (authenticationType === 'session') { _%>
+import org.springframework.security.core.Authentication
+import org.springframework.security.core.AuthenticationException
+<%_ } _%>
 <%_ if (!skipUserManagement) { _%>
 import org.springframework.security.core.userdetails.ReactiveUserDetailsService
 import org.springframework.security.crypto.bcrypt.BCryptPasswordEncoder
+<%_ } _%>
+<%_ if (authenticationType === 'session') { _%>
+import org.springframework.security.core.userdetails.User
 <%_ } _%>
 import org.springframework.security.web.server.SecurityWebFilterChain
 <%_ if (authenticationType === 'session') { _%>
@@ -71,6 +79,9 @@ class SecurityConfiguration(
 <%_ } _%>
 <%_ if (authenticationType === 'jwt') { _%>
     private val tokenProvider: TokenProvider,
+<%_ } _%>
+<%_ if (authenticationType === 'session') { _%>
+    private val auditEventService: AuditEventService,
 <%_ } _%>
     private val problemSupport: SecurityProblemSupport
 ) {
@@ -120,8 +131,8 @@ class SecurityConfiguration(
             .formLogin()
             .requiresAuthenticationMatcher(pathMatchers(HttpMethod.POST, "/api/authentication"))
             .authenticationEntryPoint(HttpStatusServerEntryPoint(HttpStatus.OK))
-            .authenticationSuccessHandler { exchange, _ -> setStatusCode(exchange, HttpStatus.OK) }
-            .authenticationFailureHandler { exchange, _ -> setStatusCode(exchange, HttpStatus.UNAUTHORIZED) }
+            .authenticationSuccessHandler { exchange, authentication -> onAuthenticationSuccess(exchange, authentication) }
+            .authenticationFailureHandler { exchange, exception -> onAuthenticationError(exchange, exception) }
         .and()
             .logout()
             .logoutUrl("/api/logout")
@@ -153,11 +164,24 @@ class SecurityConfiguration(
     }
     <%_ if (authenticationType === 'session') { _%>
 
-    companion object {
+    private fun onAuthenticationError(exchange: WebFilterExchange, e: AuthenticationException): Mono<Void>  {
+        exchange.exchange.response.statusCode = HttpStatus.UNAUTHORIZED
+        return exchange.exchange()
+                .formData
+                .map { it.getFirst("username") }
+                .filter { !Constants.ANONYMOUS_USER.equals(it) }
+                .flatMap { auditEventService.saveAuthenticationError(it, e) }
+                .then()
+    }
 
-        @JvmStatic
-        private fun setStatusCode(exchange: WebFilterExchange, status: HttpStatus): Mono<Void> =
-            Mono.fromRunnable { exchange.exchange.response.statusCode = status }
+    private fun onAuthenticationSuccess(exchange: WebFilterExchange, authentication: Authentication): Mono<Void> {
+        exchange.exchange.response.statusCode = HttpStatus.OK
+        return Mono.just(authentication.principal)
+                .filter { it instanceof User }
+                .map { (it as User).username }
+                .filter { !Constants.ANONYMOUS_USER.equals(it) }
+                .flatMap { auditEventService.saveAuthenticationSuccess(it) }
+                .then()
     }
     <%_ } _%>
 }

@@ -16,41 +16,54 @@
  See the License for the specific language governing permissions and
  limitations under the License.
 -%>
-package <%=packageName%>.repository
+package <%=packageName%>.repository<% if (reactive) { %>.reactive<% } %>
 
 import <%=packageName%>.domain.PersistentAuditEvent
+<%_ if (!reactive) { _%>
 import org.springframework.data.domain.Page
-import org.springframework.data.domain.Pageable<% if (databaseType === 'sql') { %>
-import org.springframework.data.jpa.repository.JpaRepository<% } %><% if (databaseType === 'mongodb') { %>
-import org.springframework.data.mongodb.repository.MongoRepository<% } %>
+<%_ } _%>
+import org.springframework.data.domain.Pageable
 
+<%_ if (databaseType === 'sql') { _%>
+import org.springframework.data.jpa.repository.JpaRepository
+<%_ } _%>
+
+<%_ if (databaseType === 'mongodb') { _%>
+import org.springframework.data.mongodb.repository.<% if (reactive) { %>Reactive<% } %>MongoRepository
+<%_ } _%>
+<%_ if (reactive) { _%>
+import reactor.core.publisher.Flux
+import reactor.core.publisher.Mono
+<%_ } _%>
 import java.time.Instant
 
-<% if (databaseType === 'sql') { %>/**
- * Spring Data JPA repository for the [PersistentAuditEvent] entity.
- */<% } %><% if (databaseType === 'mongodb') { %>/**
- * Spring Data MongoDB repository for the [PersistentAuditEvent] entity.
- */<% } %><% if (databaseType === 'couchbase') { %>/**
- * Spring Data Couchbase repository for the [PersistentAuditEvent] entity.
- */<% } %>
-interface PersistenceAuditEventRepository : <% if (databaseType === 'sql') { %>JpaRepository<PersistentAuditEvent, Long><% } %><% if (databaseType === 'mongodb') { %>MongoRepository<% } %><% if (databaseType === 'couchbase') { %>N1qlCouchbaseRepository<% } %><% if (databaseType === 'mongodb' || databaseType === 'couchbase') {
+/**
+ * Spring Data <% if (databaseType === 'sql') { %>JPA<% } else if (databaseType === 'mongodb') { %>MongoDB<% } else if (databaseType === 'couchbase') { %>Couchbase<% } %> repository for the [PersistentAuditEvent] entity.
+ */
+interface PersistenceAuditEventRepository : <% if (reactive) { %>Reactive<% } %><% if (databaseType === 'sql') { %>JpaRepository<PersistentAuditEvent, Long><% } %><% if (databaseType === 'mongodb') { %>MongoRepository<% } %><% if (databaseType === 'couchbase') { %>N1qlCouchbaseRepository<% } %><% if (databaseType === 'mongodb' || databaseType === 'couchbase') {
  %><PersistentAuditEvent, String><% } %> {
 
+    <%_ if (!reactive) { _%>
     fun findByPrincipal(principal: String): List<PersistentAuditEvent>
-
-    fun findByAuditEventDateAfter(after: Instant): List<PersistentAuditEvent>
-
-    fun findByPrincipalAndAuditEventDateAfter(principal: String, after: Instant): List<PersistentAuditEvent>
 
     fun findByPrincipalAndAuditEventDateAfterAndAuditEventType(
         principal: String,
         after: Instant,
         type: String
     ): List<PersistentAuditEvent>
+    <%_ } _%>
 
     fun findAllByAuditEventDateBetween(
         fromDate: Instant,
         toDate: Instant,
         pageable: Pageable
-    ): Page<PersistentAuditEvent>
+    ): <% if (reactive) { %>Flux<% } else { %>Page<% } %><PersistentAuditEvent>
+
+    fun findByAuditEventDateBefore(before: Instant): <% if (reactive) { %>Flux<% } else { %>List<% } %><PersistentAuditEvent>
+    <%_ if (reactive) { _%>
+
+    fun findAllBy(pageable: Pageable): Flux<PersistentAuditEvent>
+
+    fun countByAuditEventDateBetween(fromDate: Instant, toDate: Instant): Mono<Long>
+    <%_ } _%>
 }

@@ -21,10 +21,12 @@ package <%=packageName%>.web.rest
 <%_ const viaService = service !== 'no';
     let isUsingMapsId = false;
     let mapsIdAssoc;
+    let primaryKeyType = pkType;
     for (idx in relationships) {
         isUsingMapsId = relationships[idx].useJPADerivedIdentifier;
         if ( isUsingMapsId === true) {
             mapsIdAssoc = relationships[idx];
+            primaryKeyType = (relationships[idx].otherEntityName === 'user'  && authenticationType === 'oauth2') ? 'String' : pkType;
             break;
         }
         isUsingMapsId = false;
@@ -247,7 +249,7 @@ _%><%- include('../../common/inject_template', {viaService: viaService, construc
     <%_ if (databaseType === 'sql' && isUsingMapsId === true && !viaService) { _%>
     @Transactional(readOnly = true)
     <%_ } _%>
-    fun get<%= entityClass %>(@PathVariable id: <%= pkType %>): ResponseEntity<<%= instanceType %>> {
+    fun get<%= entityClass %>(@PathVariable id: <%= primaryKeyType %>): ResponseEntity<<%= instanceType %>> {
         log.debug("REST request to get <%= entityClass %> : {}", id)<%- include('../../common/get_template', {asEntity, asDto, viaService, returnDirectly:false}); -%>
         return ResponseUtil.wrapOrNotFound(<%= instanceName %>)
     }
@@ -259,7 +261,7 @@ _%><%- include('../../common/inject_template', {viaService: viaService, construc
      * @return the [ResponseEntity] with status `204 (NO_CONTENT)`.
      */
     @DeleteMapping("/<%= entityApiUrl %>/{id}")
-    fun delete<%= entityClass %>(@PathVariable id: <%= pkType %>): ResponseEntity<Void> {
+    fun delete<%= entityClass %>(@PathVariable id: <%= primaryKeyType %>): ResponseEntity<Void> {
         log.debug("REST request to delete <%= entityClass %> : {}", id)
 <%- include('../../common/delete_template', {viaService: viaService}); -%>
         return ResponseEntity.noContent()

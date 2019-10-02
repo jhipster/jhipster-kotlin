@@ -29,6 +29,17 @@ import org.ehcache.jsr107.Eh107Configuration
 import io.github.jhipster.config.JHipsterProperties
 
 <%_ } _%>
+<%_ if (cacheProvider === 'caffeine') { _%>
+import com.github.benmanes.caffeine.jcache.configuration.CaffeineConfiguration
+import java.util.OptionalLong
+import java.util.concurrent.TimeUnit
+
+<%_ if (enableHibernateCache) { _%>
+import org.hibernate.cache.jcache.ConfigSettings
+<%_ } _%>
+import io.github.jhipster.config.JHipsterProperties
+
+<%_ } _%>
 <%_ if (cacheProvider === 'hazelcast') { _%>
 import io.github.jhipster.config.JHipsterConstants
 import io.github.jhipster.config.JHipsterProperties
@@ -46,7 +57,7 @@ import org.slf4j.LoggerFactory
 import org.springframework.beans.factory.annotation.Autowired
     <%_ } _%>
 <%_ } _%>
-<%_ if (cacheProvider === 'ehcache') { _%>
+<%_ if (cacheProvider === 'ehcache' || cacheProvider === 'caffeine') { _%>
 import org.springframework.boot.autoconfigure.cache.JCacheManagerCustomizer
 <%_ } _%>
 <%_ if (cacheProvider === 'hazelcast') { _%>
@@ -135,14 +146,15 @@ import io.github.jhipster.config.JHipsterProperties
 <%_ if (cacheProvider === 'infinispan') { _%>
 @Import(InfinispanEmbeddedCacheManagerAutoConfiguration::class)
 <%_ } _%>
-class CacheConfiguration<%_ if (cacheProvider === 'ehcache') { _%>(jHipsterProperties: JHipsterProperties)<%_ } %><%_ if (cacheProvider === 'hazelcast') { %>(private val env: Environment<%_ if (serviceDiscoveryType === 'eureka' || serviceDiscoveryType === 'consul') { %>,
+class CacheConfiguration<%_ if (cacheProvider === 'ehcache' || cacheProvider === 'caffeine') { _%>(jHipsterProperties: JHipsterProperties)<%_ } %><%_ if (cacheProvider === 'hazelcast') { %>(private val env: Environment<%_ if (serviceDiscoveryType === 'eureka' || serviceDiscoveryType === 'consul') { %>,
     private val serverProperties: ServerProperties,
     private val discoveryClient: DiscoveryClient<%_ } %>)<% } %><% if (cacheProvider === 'hazelcast') { %> : DisposableBean<% } %> {
-    <%_ if (cacheProvider === 'ehcache') { _%>
+    <%_ if (cacheProvider === 'ehcache' || cacheProvider === 'caffeine') { _%>
 
     private val jcacheConfiguration: javax.cache.configuration.Configuration<Any, Any>
 
     init {
+        <%_ if (cacheProvider === 'ehcache') { _%>
         val ehcache = jHipsterProperties.cache.ehcache
 
         jcacheConfiguration = Eh107Configuration.fromEhcacheCacheConfiguration(
@@ -153,6 +165,16 @@ class CacheConfiguration<%_ if (cacheProvider === 'ehcache') { _%>(jHipsterPrope
                 .withExpiry(ExpiryPolicyBuilder.timeToLiveExpiration(Duration.ofSeconds(ehcache.timeToLiveSeconds.toLong())))
                 .build()
         )
+        <%_ } else { _%>
+        val caffeine = jHipsterProperties.cache.caffeine
+
+        val caffeineConfiguration = CaffeineConfiguration<Any, Any>()
+        caffeineConfiguration.maximumSize = OptionalLong.of(caffeine.maxEntries)
+        caffeineConfiguration.expireAfterWrite = OptionalLong.of(TimeUnit.SECONDS.toNanos(caffeine.timeToLiveSeconds.toLong()))
+        caffeineConfiguration.isStatisticsEnabled = true
+        jcacheConfiguration = caffeineConfiguration
+
+        <%_ } _%>
     }
 
     @Bean
@@ -174,7 +196,12 @@ class CacheConfiguration<%_ if (cacheProvider === 'ehcache') { _%>(jHipsterPrope
                     <%_ } _%>
                 <%_ } _%>
             <%_ } _%>
+            <%_ if (cacheProvider === 'ehcache') { _%>
             // jhipster-needle-ehcache-add-entry
+            <%_ } _%>
+            <%_ if (cacheProvider === 'caffeine') { _%>
+            // jhipster-needle-caffeine-add-entry
+            <%_ } _%>
         }
     }
 

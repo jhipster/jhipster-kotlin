@@ -178,7 +178,8 @@ const serverFiles = {
     serverJavaAuthConfig: [
         {
             condition: generator =>
-                generator.databaseType === 'sql' || generator.databaseType === 'mongodb' || generator.databaseType === 'couchbase',
+                !generator.reactive &&
+                (generator.databaseType === 'sql' || generator.databaseType === 'mongodb' || generator.databaseType === 'couchbase'),
             path: SERVER_MAIN_KOTLIN_SRC_DIR,
             templates: [
                 {
@@ -617,7 +618,8 @@ const serverFiles = {
             ]
         },
         {
-            condition: generator => generator.authenticationType === 'oauth2' && generator.applicationType === 'gateway',
+            condition: generator =>
+                generator.authenticationType === 'oauth2' && generator.applicationType === 'gateway' && generator.serviceDiscoveryType,
             path: SERVER_MAIN_KOTLIN_SRC_DIR,
             templates: [
                 {
@@ -703,6 +705,16 @@ const serverFiles = {
                 {
                     file: 'package/ApplicationWebXml.kt',
                     renameTo: generator => `${generator.javaDir}ApplicationWebXml.kt`,
+                    useBluePrint: true
+                }
+            ]
+        },
+        {
+            path: SERVER_TEST_SRC_KOTLIN_DIR,
+            templates: [
+                {
+                    file: 'package/ArchTest.kt',
+                    renameTo: generator => `${generator.testDir}ArchTest.kt`,
                     useBluePrint: true
                 }
             ]
@@ -794,7 +806,7 @@ const serverFiles = {
         },
         {
             condition: generator =>
-                ['ehcache', 'hazelcast', 'infinispan', 'memcached'].includes(generator.cacheProvider) ||
+                ['ehcache', 'caffeine', 'hazelcast', 'infinispan', 'memcached'].includes(generator.cacheProvider) ||
                 generator.applicationType === 'gateway',
             path: SERVER_MAIN_KOTLIN_SRC_DIR,
             templates: [
@@ -957,6 +969,29 @@ const serverFiles = {
         }
     ],
     serverJavaPackageInfo: [],
+    serverJavaServiceError: [
+        {
+            condition: generator => !generator.skipUserManagement,
+            path: SERVER_MAIN_KOTLIN_SRC_DIR,
+            templates: [
+                {
+                    file: 'package/service/EmailAlreadyUsedException.kt',
+                    renameTo: generator => `${generator.javaDir}service/EmailAlreadyUsedException.kt`,
+                    useBluePrint: true
+                },
+                {
+                    file: 'package/service/InvalidPasswordException.kt',
+                    renameTo: generator => `${generator.javaDir}service/InvalidPasswordException.kt`,
+                    useBluePrint: true
+                },
+                {
+                    file: 'package/service/UsernameAlreadyUsedException.kt',
+                    renameTo: generator => `${generator.javaDir}service/UsernameAlreadyUsedException.kt`,
+                    useBluePrint: true
+                }
+            ]
+        }
+    ],
     serverJavaService: [
         {
             condition: generator => !generator.skipUserManagement,
@@ -1492,18 +1527,14 @@ const serverFiles = {
             path: SERVER_MAIN_KOTLIN_SRC_DIR,
             templates: [
                 {
-                    file: 'package/repository/CustomAuditEventRepository.kt',
-                    renameTo: generator => `${generator.javaDir}repository/CustomAuditEventRepository.kt`,
-                    useBluePrint: true
-                },
-                {
                     file: 'package/repository/AuthorityRepository.kt',
                     renameTo: generator => `${generator.javaDir}repository/AuthorityRepository.kt`,
                     useBluePrint: true
                 },
                 {
                     file: 'package/repository/PersistenceAuditEventRepository.kt',
-                    renameTo: generator => `${generator.javaDir}repository/PersistenceAuditEventRepository.kt`,
+                    renameTo: generator =>
+                        `${generator.javaDir}repository/${generator.reactiveRepository}PersistenceAuditEventRepository.kt`,
                     useBluePrint: true
                 },
                 {
@@ -1519,14 +1550,33 @@ const serverFiles = {
             ]
         },
         {
-            condition: generator => generator.authenticationType === 'oauth2' && ['sql', 'mongodb'].includes(generator.databaseType),
+            condition: generator =>
+                !generator.reactive && generator.authenticationType === 'oauth2' && ['sql', 'mongodb'].includes(generator.databaseType),
+            path: SERVER_MAIN_KOTLIN_SRC_DIR,
+            templates: [
+                {
+                    file: 'package/repository/CustomAuditEventRepository.kt',
+                    renameTo: generator => `${generator.javaDir}repository/CustomAuditEventRepository.kt`,
+                    useBluePrint: true
+                }
+            ]
+        },
+        {
+            condition: generator =>
+                !generator.reactive && generator.authenticationType === 'oauth2' && ['sql', 'mongodb'].includes(generator.databaseType),
             path: SERVER_TEST_SRC_KOTLIN_DIR,
             templates: [
                 {
                     file: 'package/repository/CustomAuditEventRepositoryIT.kt',
                     renameTo: generator => `${generator.testDir}repository/CustomAuditEventRepositoryIT.kt`,
                     useBluePrint: true
-                },
+                }
+            ]
+        },
+        {
+            condition: generator => generator.authenticationType === 'oauth2' && ['sql', 'mongodb'].includes(generator.databaseType),
+            path: SERVER_TEST_SRC_KOTLIN_DIR,
+            templates: [
                 {
                     file: 'package/web/rest/AuditResourceIT.kt',
                     renameTo: generator => `${generator.testDir}web/rest/AuditResourceIT.kt`,
@@ -1553,18 +1603,14 @@ const serverFiles = {
                     useBluePrint: true
                 },
                 {
-                    file: 'package/repository/CustomAuditEventRepository.kt',
-                    renameTo: generator => `${generator.javaDir}repository/CustomAuditEventRepository.kt`,
-                    useBluePrint: true
-                },
-                {
                     file: 'package/repository/AuthorityRepository.kt',
                     renameTo: generator => `${generator.javaDir}repository/${generator.reactiveRepository}AuthorityRepository.kt`,
                     useBluePrint: true
                 },
                 {
                     file: 'package/repository/PersistenceAuditEventRepository.kt',
-                    renameTo: generator => `${generator.javaDir}repository/PersistenceAuditEventRepository.kt`,
+                    renameTo: generator =>
+                        `${generator.javaDir}repository/${generator.reactiveRepository}PersistenceAuditEventRepository.kt`,
                     useBluePrint: true
                 },
                 {
@@ -1575,6 +1621,18 @@ const serverFiles = {
                 {
                     file: 'package/web/rest/AuditResource.kt',
                     renameTo: generator => `${generator.javaDir}web/rest/AuditResource.kt`,
+                    useBluePrint: true
+                }
+            ]
+        },
+        {
+            condition: generator =>
+                !generator.reactive && !generator.skipUserManagement && ['sql', 'mongodb', 'couchbase'].includes(generator.databaseType),
+            path: SERVER_MAIN_KOTLIN_SRC_DIR,
+            templates: [
+                {
+                    file: 'package/repository/CustomAuditEventRepository.kt',
+                    renameTo: generator => `${generator.javaDir}repository/CustomAuditEventRepository.kt`,
                     useBluePrint: true
                 }
             ]
@@ -1704,11 +1762,17 @@ const serverFiles = {
                     file: 'package/web/rest/AuditResourceIT.kt',
                     renameTo: generator => `${generator.testDir}web/rest/AuditResourceIT.kt`,
                     useBluePrint: true
+                },
+                {
+                    file: 'package/service/AuditEventServiceIT.kt',
+                    renameTo: generator => `${generator.testDir}service/AuditEventServiceIT.kt`,
+                    useBluePrint: true
                 }
             ]
         },
         {
-            condition: generator => !generator.skipUserManagement && ['sql', 'mongodb', 'couchbase'].includes(generator.databaseType),
+            condition: generator =>
+                !generator.reactive && !generator.skipUserManagement && ['sql', 'mongodb', 'couchbase'].includes(generator.databaseType),
             path: SERVER_TEST_SRC_KOTLIN_DIR,
             templates: [
                 {

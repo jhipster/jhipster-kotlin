@@ -21,6 +21,7 @@ let importApiModelProperty = false;
 let importJsonIgnore = false;
 let importJsonIgnoreProperties = false;
 let importSet = false;
+const primaryKeyType = getPkTypeBasedOnDBAndAssociation(authenticationType, databaseType, relationships);
 const uniqueEnums = {};
 %><%- include ../../domain/imports -%>
 
@@ -63,9 +64,9 @@ import java.util.UUID
 <%_ if (fieldsContainBlob && databaseType === 'sql') { _%>
 import javax.persistence.Lob
 <%_ } _%>
-<%_ for (idx in fields) { if (fields[idx].fieldIsEnum) { _%>
-import <%=packageName%>.domain.enumeration.<%= fields[idx].fieldType %>
-<%_ } } _%>
+<%_ Object.keys(uniqueEnums).forEach(function(element) { _%>
+    import <%=packageName%>.domain.enumeration.<%= element %>
+<%_ }); _%>
 <%_
 var mappedRels = [];
 relationships.forEach((relationship) => {
@@ -85,7 +86,7 @@ _%>
 <%_ } _%>
 data class <%= asDto(entityClass) %>(
 
-    var id: <%= pkType %>? = null,
+    var id: <%= primaryKeyType %>? = null,
     <%_ for (idx in fields) {
         if (typeof fields[idx].javadoc !== 'undefined') { _%>
 <%- formatAsFieldJavadoc(fields[idx].javadoc) %>
@@ -147,7 +148,7 @@ data class <%= asDto(entityClass) %>(
             }
     _%>
 
-    var <%= relationshipFieldName %>Id: <% if (relationshipFieldName === 'user' && authenticationType === 'oauth2') { %>String<% } else { %><%= pkType %><% } %>? = null<%= comma %>
+    var <%= relationshipFieldName %>Id: <% if (relationshipFieldName === 'user' && authenticationType === 'oauth2') { %>String<% } else { %><%= primaryKeyType %><% } %>? = null<%= comma %>
     <%_ if (otherEntityFieldCapitalized !== 'Id' && otherEntityFieldCapitalized !== '') {
             comma = index === (mappedRels.length - 1) ?  '' : ',';
     _%>
