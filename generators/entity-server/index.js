@@ -24,14 +24,9 @@ const writeFiles = require('./files').writeFiles;
 module.exports = class extends EntityServerGenerator {
     constructor(args, opts) {
         super(args, { fromBlueprint: true, ...opts }); // fromBlueprint variable is important
-
-        const jhContext = (this.jhipsterContext = this.options.jhipsterContext || opts.jhipsterContext);
-
-        if (!jhContext) {
+        if (!this.jhipsterContext) {
             this.error(`This is a JHipster blueprint and should be used only like ${chalk.yellow('jhipster --blueprint kotlin')}`);
         }
-
-        this.configOptions = jhContext.configOptions || {};
     }
 
     get writing() {

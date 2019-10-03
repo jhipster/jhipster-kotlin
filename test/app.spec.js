@@ -30,7 +30,7 @@ describe('JHipster generator', () => {
                     })
                     .withGenerators([
                         [
-                            require('../generators/server/index.js'), // eslint-disable-line global-require
+                            require('../generators/server'), // eslint-disable-line global-require
                             'jhipster-kotlin:server',
                             path.join(__dirname, '../generators/server/index.js')
                         ]
@@ -108,7 +108,7 @@ describe('JHipster generator', () => {
                     })
                     .withGenerators([
                         [
-                            require('../generators/server/index.js'), // eslint-disable-line global-require
+                            require('../generators/server'), // eslint-disable-line global-require
                             'jhipster-kotlin:server',
                             path.join(__dirname, '../generators/server/index.js')
                         ]
@@ -179,7 +179,7 @@ describe('JHipster generator', () => {
                     })
                     .withGenerators([
                         [
-                            require('../generators/server/index.js'), // eslint-disable-line global-require
+                            require('../generators/server'), // eslint-disable-line global-require
                             'jhipster-kotlin:server',
                             path.join(__dirname, '../generators/server/index.js')
                         ]
@@ -247,7 +247,7 @@ describe('JHipster generator', () => {
                     })
                     .withGenerators([
                         [
-                            require('../generators/server/index.js'), // eslint-disable-line global-require
+                            require('../generators/server'), // eslint-disable-line global-require
                             'jhipster-kotlin:server',
                             path.join(__dirname, '../generators/server/index.js')
                         ]
@@ -307,7 +307,7 @@ describe('JHipster generator', () => {
                     })
                     .withGenerators([
                         [
-                            require('../generators/server/index.js'), // eslint-disable-line global-require
+                            require('../generators/server'), // eslint-disable-line global-require
                             'jhipster-kotlin:server',
                             path.join(__dirname, '../generators/server/index.js')
                         ]
@@ -384,7 +384,7 @@ describe('JHipster generator', () => {
                     })
                     .withGenerators([
                         [
-                            require('../generators/server/index.js'), // eslint-disable-line global-require
+                            require('../generators/server'), // eslint-disable-line global-require
                             'jhipster-kotlin:server',
                             path.join(__dirname, '../generators/server/index.js')
                         ]
@@ -446,7 +446,7 @@ describe('JHipster generator', () => {
                     })
                     .withGenerators([
                         [
-                            require('../generators/server/index.js'), // eslint-disable-line global-require
+                            require('../generators/server'), // eslint-disable-line global-require
                             'jhipster-kotlin:server',
                             path.join(__dirname, '../generators/server/index.js')
                         ]
@@ -509,7 +509,7 @@ describe('JHipster generator', () => {
                     })
                     .withGenerators([
                         [
-                            require('../generators/server/index.js'), // eslint-disable-line global-require
+                            require('../generators/server'), // eslint-disable-line global-require
                             'jhipster-kotlin:server',
                             path.join(__dirname, '../generators/server/index.js')
                         ]
@@ -561,7 +561,7 @@ describe('JHipster generator', () => {
                     })
                     .withGenerators([
                         [
-                            require('../generators/server/index.js'), // eslint-disable-line global-require
+                            require('../generators/server'), // eslint-disable-line global-require
                             'jhipster-kotlin:server',
                             path.join(__dirname, '../generators/server/index.js')
                         ]
@@ -613,7 +613,7 @@ describe('JHipster generator', () => {
                     })
                     .withGenerators([
                         [
-                            require('../generators/server/index.js'), // eslint-disable-line global-require
+                            require('../generators/server'), // eslint-disable-line global-require
                             'jhipster-kotlin:server',
                             path.join(__dirname, '../generators/server/index.js')
                         ]
@@ -667,7 +667,7 @@ describe('JHipster generator', () => {
                     })
                     .withGenerators([
                         [
-                            require('../generators/server/index.js'), // eslint-disable-line global-require
+                            require('../generators/server'), // eslint-disable-line global-require
                             'jhipster-kotlin:server',
                             path.join(__dirname, '../generators/server/index.js')
                         ]
@@ -719,7 +719,7 @@ describe('JHipster generator', () => {
                     })
                     .withGenerators([
                         [
-                            require('../generators/server/index.js'), // eslint-disable-line global-require
+                            require('../generators/server'), // eslint-disable-line global-require
                             'jhipster-kotlin:server',
                             path.join(__dirname, '../generators/server/index.js')
                         ]
@@ -766,7 +766,7 @@ describe('JHipster generator', () => {
                     })
                     .withGenerators([
                         [
-                            require('../generators/server/index.js'), // eslint-disable-line global-require
+                            require('../generators/server'), // eslint-disable-line global-require
                             'jhipster-kotlin:server',
                             path.join(__dirname, '../generators/server/index.js')
                         ]
@@ -816,7 +816,7 @@ describe('JHipster generator', () => {
                     })
                     .withGenerators([
                         [
-                            require('../generators/server/index.js'), // eslint-disable-line global-require
+                            require('../generators/server'), // eslint-disable-line global-require
                             'jhipster-kotlin:server',
                             path.join(__dirname, '../generators/server/index.js')
                         ]
@@ -871,7 +871,7 @@ describe('JHipster generator', () => {
                     })
                     .withGenerators([
                         [
-                            require('../generators/server/index.js'), // eslint-disable-line global-require
+                            require('../generators/server'), // eslint-disable-line global-require
                             'jhipster-kotlin:server',
                             path.join(__dirname, '../generators/server/index.js')
                         ]
@@ -921,7 +921,7 @@ describe('JHipster generator', () => {
                     })
                     .withGenerators([
                         [
-                            require('../generators/server/index.js'), // eslint-disable-line global-require
+                            require('../generators/server'), // eslint-disable-line global-require
                             'jhipster-kotlin:server',
                             path.join(__dirname, '../generators/server/index.js')
                         ]
@@ -969,7 +969,7 @@ describe('JHipster generator', () => {
                     })
                     .withGenerators([
                         [
-                            require('../generators/server/index.js'), // eslint-disable-line global-require
+                            require('../generators/server'), // eslint-disable-line global-require
                             'jhipster-kotlin:server',
                             path.join(__dirname, '../generators/server/index.js')
                         ]
@@ -1015,7 +1015,7 @@ describe('JHipster generator', () => {
                     })
                     .withGenerators([
                         [
-                            require('../generators/server/index.js'), // eslint-disable-line global-require
+                            require('../generators/server'), // eslint-disable-line global-require
                             'jhipster-kotlin:server',
                             path.join(__dirname, '../generators/server/index.js')
                         ]
@@ -1064,7 +1064,7 @@ describe('JHipster generator', () => {
                     })
                     .withGenerators([
                         [
-                            require('../generators/server/index.js'), // eslint-disable-line global-require
+                            require('../generators/server'), // eslint-disable-line global-require
                             'jhipster-kotlin:server',
                             path.join(__dirname, '../generators/server/index.js')
                         ]
@@ -1114,7 +1114,7 @@ describe('JHipster generator', () => {
                     })
                     .withGenerators([
                         [
-                            require('../generators/server/index.js'), // eslint-disable-line global-require
+                            require('../generators/server'), // eslint-disable-line global-require
                             'jhipster-kotlin:server',
                             path.join(__dirname, '../generators/server/index.js')
                         ]
@@ -1165,7 +1165,7 @@ describe('JHipster generator', () => {
                     })
                     .withGenerators([
                         [
-                            require('../generators/server/index.js'), // eslint-disable-line global-require
+                            require('../generators/server'), // eslint-disable-line global-require
                             'jhipster-kotlin:server',
                             path.join(__dirname, '../generators/server/index.js')
                         ]
@@ -1215,7 +1215,7 @@ describe('JHipster generator', () => {
                     })
                     .withGenerators([
                         [
-                            require('../generators/server/index.js'), // eslint-disable-line global-require
+                            require('../generators/server'), // eslint-disable-line global-require
                             'jhipster-kotlin:server',
                             path.join(__dirname, '../generators/server/index.js')
                         ]
@@ -1273,7 +1273,7 @@ describe('JHipster generator', () => {
                     })
                     .withGenerators([
                         [
-                            require('../generators/server/index.js'), // eslint-disable-line global-require
+                            require('../generators/server'), // eslint-disable-line global-require
                             'jhipster-kotlin:server',
                             path.join(__dirname, '../generators/server/index.js')
                         ]
@@ -1334,7 +1334,7 @@ describe('JHipster generator', () => {
                     })
                     .withGenerators([
                         [
-                            require('../generators/server/index.js'), // eslint-disable-line global-require
+                            require('../generators/server'), // eslint-disable-line global-require
                             'jhipster-kotlin:server',
                             path.join(__dirname, '../generators/server/index.js')
                         ]
@@ -1396,7 +1396,7 @@ describe('JHipster generator', () => {
                     })
                     .withGenerators([
                         [
-                            require('../generators/server/index.js'), // eslint-disable-line global-require
+                            require('../generators/server'), // eslint-disable-line global-require
                             'jhipster-kotlin:server',
                             path.join(__dirname, '../generators/server/index.js')
                         ]
@@ -1443,7 +1443,7 @@ describe('JHipster generator', () => {
                     })
                     .withGenerators([
                         [
-                            require('../generators/server/index.js'), // eslint-disable-line global-require
+                            require('../generators/server'), // eslint-disable-line global-require
                             'jhipster-kotlin:server',
                             path.join(__dirname, '../generators/server/index.js')
                         ]
@@ -1492,7 +1492,7 @@ describe('JHipster generator', () => {
                     })
                     .withGenerators([
                         [
-                            require('../generators/server/index.js'), // eslint-disable-line global-require
+                            require('../generators/server'), // eslint-disable-line global-require
                             'jhipster-kotlin:server',
                             path.join(__dirname, '../generators/server/index.js')
                         ]
@@ -1540,7 +1540,7 @@ describe('JHipster generator', () => {
                     })
                     .withGenerators([
                         [
-                            require('../generators/server/index.js'), // eslint-disable-line global-require
+                            require('../generators/server'), // eslint-disable-line global-require
                             'jhipster-kotlin:server',
                             path.join(__dirname, '../generators/server/index.js')
                         ]
@@ -1584,7 +1584,7 @@ describe('JHipster generator', () => {
                     })
                     .withGenerators([
                         [
-                            require('../generators/server/index.js'), // eslint-disable-line global-require
+                            require('../generators/server'), // eslint-disable-line global-require
                             'jhipster-kotlin:server',
                             path.join(__dirname, '../generators/server/index.js')
                         ]
@@ -1644,7 +1644,7 @@ describe('JHipster generator', () => {
                     })
                     .withGenerators([
                         [
-                            require('../generators/server/index.js'), // eslint-disable-line global-require
+                            require('../generators/server'), // eslint-disable-line global-require
                             'jhipster-kotlin:server',
                             path.join(__dirname, '../generators/server/index.js')
                         ]
@@ -1697,7 +1697,7 @@ describe('JHipster generator', () => {
                     })
                     .withGenerators([
                         [
-                            require('../generators/server/index.js'), // eslint-disable-line global-require
+                            require('../generators/server'), // eslint-disable-line global-require
                             'jhipster-kotlin:server',
                             path.join(__dirname, '../generators/server/index.js')
                         ]
@@ -1752,7 +1752,7 @@ describe('JHipster generator', () => {
                     })
                     .withGenerators([
                         [
-                            require('../generators/server/index.js'), // eslint-disable-line global-require
+                            require('../generators/server'), // eslint-disable-line global-require
                             'jhipster-kotlin:server',
                             path.join(__dirname, '../generators/server/index.js')
                         ]
@@ -1815,7 +1815,7 @@ describe('JHipster generator', () => {
                     })
                     .withGenerators([
                         [
-                            require('../generators/server/index.js'), // eslint-disable-line global-require
+                            require('../generators/server'), // eslint-disable-line global-require
                             'jhipster-kotlin:server',
                             path.join(__dirname, '../generators/server/index.js')
                         ]
@@ -1874,7 +1874,7 @@ describe('JHipster generator', () => {
                     })
                     .withGenerators([
                         [
-                            require('../generators/server/index.js'), // eslint-disable-line global-require
+                            require('../generators/server'), // eslint-disable-line global-require
                             'jhipster-kotlin:server',
                             path.join(__dirname, '../generators/server/index.js')
                         ]
@@ -1945,7 +1945,7 @@ describe('JHipster generator', () => {
                     })
                     .withGenerators([
                         [
-                            require('../generators/server/index.js'), // eslint-disable-line global-require
+                            require('../generators/server'), // eslint-disable-line global-require
                             'jhipster-kotlin:server',
                             path.join(__dirname, '../generators/server/index.js')
                         ]
@@ -2014,7 +2014,7 @@ describe('JHipster generator', () => {
                     })
                     .withGenerators([
                         [
-                            require('../generators/server/index.js'), // eslint-disable-line global-require
+                            require('../generators/server'), // eslint-disable-line global-require
                             'jhipster-kotlin:server',
                             path.join(__dirname, '../generators/server/index.js')
                         ]
@@ -2065,7 +2065,7 @@ describe('JHipster generator', () => {
                     })
                     .withGenerators([
                         [
-                            require('../generators/server/index.js'), // eslint-disable-line global-require
+                            require('../generators/server'), // eslint-disable-line global-require
                             'jhipster-kotlin:server',
                             path.join(__dirname, '../generators/server/index.js')
                         ]
@@ -2116,7 +2116,7 @@ describe('JHipster generator', () => {
                     })
                     .withGenerators([
                         [
-                            require('../generators/server/index.js'), // eslint-disable-line global-require
+                            require('../generators/server'), // eslint-disable-line global-require
                             'jhipster-kotlin:server',
                             path.join(__dirname, '../generators/server/index.js')
                         ]
@@ -2167,7 +2167,7 @@ describe('JHipster generator', () => {
                     })
                     .withGenerators([
                         [
-                            require('../generators/server/index.js'), // eslint-disable-line global-require
+                            require('../generators/server'), // eslint-disable-line global-require
                             'jhipster-kotlin:server',
                             path.join(__dirname, '../generators/server/index.js')
                         ]
@@ -2217,7 +2217,7 @@ describe('JHipster generator', () => {
                     })
                     .withGenerators([
                         [
-                            require('../generators/server/index.js'), // eslint-disable-line global-require
+                            require('../generators/server'), // eslint-disable-line global-require
                             'jhipster-kotlin:server',
                             path.join(__dirname, '../generators/server/index.js')
                         ]
@@ -2269,7 +2269,7 @@ describe('JHipster generator', () => {
                     })
                     .withGenerators([
                         [
-                            require('../generators/server/index.js'), // eslint-disable-line global-require
+                            require('../generators/server'), // eslint-disable-line global-require
                             'jhipster-kotlin:server',
                             path.join(__dirname, '../generators/server/index.js')
                         ]
@@ -2322,7 +2322,7 @@ describe('JHipster generator', () => {
                     })
                     .withGenerators([
                         [
-                            require('../generators/server/index.js'), // eslint-disable-line global-require
+                            require('../generators/server'), // eslint-disable-line global-require
                             'jhipster-kotlin:server',
                             path.join(__dirname, '../generators/server/index.js')
                         ]
@@ -2370,7 +2370,7 @@ describe('JHipster generator', () => {
                     })
                     .withGenerators([
                         [
-                            require('../generators/server/index.js'), // eslint-disable-line global-require
+                            require('../generators/server'), // eslint-disable-line global-require
                             'jhipster-kotlin:server',
                             path.join(__dirname, '../generators/server/index.js')
                         ]
@@ -2427,7 +2427,7 @@ describe('JHipster generator', () => {
                     })
                     .withGenerators([
                         [
-                            require('../generators/server/index.js'), // eslint-disable-line global-require
+                            require('../generators/server'), // eslint-disable-line global-require
                             'jhipster-kotlin:server',
                             path.join(__dirname, '../generators/server/index.js')
                         ]
@@ -2477,7 +2477,7 @@ describe('JHipster generator', () => {
                     })
                     .withGenerators([
                         [
-                            require('../generators/server/index.js'), // eslint-disable-line global-require
+                            require('../generators/server'), // eslint-disable-line global-require
                             'jhipster-kotlin:server',
                             path.join(__dirname, '../generators/server/index.js')
                         ]
@@ -2527,7 +2527,7 @@ describe('JHipster generator', () => {
                     })
                     .withGenerators([
                         [
-                            require('../generators/server/index.js'), // eslint-disable-line global-require
+                            require('../generators/server'), // eslint-disable-line global-require
                             'jhipster-kotlin:server',
                             path.join(__dirname, '../generators/server/index.js')
                         ]
@@ -2578,7 +2578,7 @@ describe('JHipster generator', () => {
                     })
                     .withGenerators([
                         [
-                            require('../generators/server/index.js'), // eslint-disable-line global-require
+                            require('../generators/server'), // eslint-disable-line global-require
                             'jhipster-kotlin:server',
                             path.join(__dirname, '../generators/server/index.js')
                         ]
@@ -2628,7 +2628,7 @@ describe('JHipster generator', () => {
                     })
                     .withGenerators([
                         [
-                            require('../generators/server/index.js'), // eslint-disable-line global-require
+                            require('../generators/server'), // eslint-disable-line global-require
                             'jhipster-kotlin:server',
                             path.join(__dirname, '../generators/server/index.js')
                         ]
@@ -2679,7 +2679,7 @@ describe('JHipster generator', () => {
                     })
                     .withGenerators([
                         [
-                            require('../generators/server/index.js'), // eslint-disable-line global-require
+                            require('../generators/server'), // eslint-disable-line global-require
                             'jhipster-kotlin:server',
                             path.join(__dirname, '../generators/server/index.js')
                         ]
