@@ -1,3 +1,15 @@
+<a name="1.2.0"></a>
+
+# [1.2.0](https://github.com/jhipster/jhipster-kotlin/compare/1.1.0...1.2.0) (2019-10-06)
+- ⚠️️️️️️️ Fixed [security issue](https://nvd.nist.gov/vuln/detail/CVE-2019-16303)  ⚠️️️️️️️
+- Upgraded JHipster support to 6.3.1
+- Upgraded Kotlin support to 1.3.50
+- Upgraded Mockito support to 2.2.0
+- Upgraded Detekt support to 1.1.0
+- Upgraded ktlint-maven-plugin to 1.2.2
+- Upgraded ktlint-gradle to 9.0.0
+- Updated Readme and Contributing instructions
+
 <a name="1.1.0"></a>
 
 # [1.1.0](https://github.com/jhipster/jhipster-kotlin/compare/1.0.0...1.1.0) (2019-08-15)
