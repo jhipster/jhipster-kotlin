@@ -19,6 +19,9 @@
 package <%= packageName %>.web.rest
 
 import <%= packageName %>.<%= mainClass %>
+<%_ if (cacheProvider === 'redis') { _%>
+import <%=packageName%>.RedisTestContainerExtension
+<%_ } _%>
 <%_ if (authenticationType === 'uaa') { _%>
 import <%=packageName%>.config.SecurityBeanOverrideConfiguration
 <%_ } _%>
@@ -26,19 +29,25 @@ import <%=packageName%>.config.SecurityBeanOverrideConfiguration
 import <%=packageName%>.config.TestSecurityConfiguration
 <%_ } _%>
 import <%= packageName %>.service.<%= upperFirstCamelCase(baseName) %>KafkaProducer
+import <%= packageName %>.service.<%= upperFirstCamelCase(baseName) %>KafkaConsumer
+import org.assertj.core.api.Assertions
+import org.junit.jupiter.api.BeforeAll
 import org.junit.jupiter.api.BeforeEach
 import org.junit.jupiter.api.Test
+import org.junit.jupiter.api.TestInstance
 import org.springframework.beans.factory.annotation.Autowired
+<%_ if (cacheProvider === 'redis') { _%>
+import org.junit.jupiter.api.extension.ExtendWith
+<%_ } _%>
 import org.springframework.boot.test.context.SpringBootTest
-import org.springframework.kafka.test.context.EmbeddedKafka
+import org.springframework.test.annotation.DirtiesContext
 import org.springframework.test.web.servlet.MockMvc
 import org.springframework.test.web.servlet.setup.MockMvcBuilders
+import org.testcontainers.containers.KafkaContainer
 
-import org.junit.jupiter.api.Assertions.*
 import org.springframework.test.web.servlet.request.MockMvcRequestBuilders.post
 import org.springframework.test.web.servlet.result.MockMvcResultMatchers.status
 
-@EmbeddedKafka
 <%_ if (authenticationType === 'oauth2') { _%>
 @SpringBootTest(classes = [<%= mainClass %>::class, TestSecurityConfiguration::class])
 <%_ } else if (authenticationType === 'uaa' && applicationType !== 'uaa') { _%>
@@ -46,22 +55,75 @@ import org.springframework.test.web.servlet.result.MockMvcResultMatchers.status
 <%_ } else { _%>
 @SpringBootTest(classes = [<%= mainClass %>::class])
 <%_ } _%>
-class <%= upperFirstCamelCase(baseName) %>KafkaResourceIT(
-    private val kafkaProducer: <%= upperFirstCamelCase(baseName) %>KafkaProducer
-) {
+@DirtiesContext(classMode = DirtiesContext.ClassMode.BEFORE_CLASS)
+@TestInstance(TestInstance.Lifecycle.PER_CLASS)
+<%_ if (cacheProvider === 'redis') { _%>
+@ExtendWith(RedisTestContainerExtension::class)
+<%_ } _%>
+class <%= upperFirstCamelCase(baseName) %>KafkaResourceIT {
+
+    @Autowired
+    private lateinit var producer: <%= upperFirstCamelCase(baseName) %>KafkaProducer
+    
+    @Autowired
+    private lateinit var consumer: <%= upperFirstCamelCase(baseName) %>KafkaConsumer
 
     private lateinit var restMockMvc: MockMvc
 
+    private var started = false
+
+    private lateinit var kafkaContainer: KafkaContainer
+
+    private var MAX_ATTEMPT = 5
+
+    @BeforeAll
+    fun startServer() {
+        if (!started) {
+            startTestcontainer()
+            started = true
+        }
+    }
+
+    private fun startTestcontainer() {
+        kafkaContainer = KafkaContainer("<%= KAFKA_VERSION %>")
+        kafkaContainer.start()
+        System.setProperty("kafkaBootstrapServers", kafkaContainer.getBootstrapServers())
+    }
+
+
     @BeforeEach
     fun setup() {
-        val kafkaResource = <%= upperFirstCamelCase(baseName) %>KafkaResource(kafkaProducer)
+        val kafkaResource = <%= upperFirstCamelCase(baseName) %>KafkaResource(producer)
 
         this.restMockMvc = MockMvcBuilders.standaloneSetup(kafkaResource)
             .build()
+
+        producer.init()
+        consumer.start()
     }
 
     @Test
-    fun sendMessageToKafkaTopic() =
-        restMockMvc.perform(post("/api/<%= dasherizedBaseName %>-kafka/publish?message=yolo"))
+    @Throws(Exception::class)
+    fun producedMessageHasBeenConsumed() {
+        restMockMvc.perform(post("/api/<%= dasherizedBaseName %>-kafka/publish?message=test"))
             .andExpect(status().isOk)
+
+        val metrics = consumer.getKafkaConsumer().metrics();
+
+        val recordsConsumedTotalMetric =
+            metrics.entries.first { "records-consumed-total" == it.key.name() }.value
+
+        val expectedTotalConsumedMessage = 1.0
+        var totalConsumedMessage: Double
+        var attempt = 0
+
+        do {
+            totalConsumedMessage = recordsConsumedTotalMetric.metricValue() as Double
+            Thread.sleep(200)
+        } while(!totalConsumedMessage.equals(expectedTotalConsumedMessage) && attempt++ < MAX_ATTEMPT)
+
+        Assertions.assertThat(attempt).isLessThan(MAX_ATTEMPT)
+        Assertions.assertThat(totalConsumedMessage).isEqualTo(expectedTotalConsumedMessage)
+    }
+
 }

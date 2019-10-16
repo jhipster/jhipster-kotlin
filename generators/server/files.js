@@ -806,7 +806,7 @@ const serverFiles = {
         },
         {
             condition: generator =>
-                ['ehcache', 'caffeine', 'hazelcast', 'infinispan', 'memcached'].includes(generator.cacheProvider) ||
+                ['ehcache', 'caffeine', 'hazelcast', 'infinispan', 'memcached', 'redis'].includes(generator.cacheProvider) ||
                 generator.applicationType === 'gateway',
             path: SERVER_MAIN_KOTLIN_SRC_DIR,
             templates: [
@@ -824,6 +824,17 @@ const serverFiles = {
                 {
                     file: 'package/config/CacheFactoryConfiguration.kt',
                     renameTo: generator => `${generator.javaDir}config/CacheFactoryConfiguration.kt`,
+                    useBluePrint: true
+                }
+            ]
+        },
+        {
+            condition: generator => generator.cacheProvider === 'redis',
+            path: SERVER_TEST_SRC_KOTLIN_DIR,
+            templates: [
+                {
+                    file: 'package/RedisTestContainerExtension.kt',
+                    renameTo: generator => `${generator.testDir}RedisTestContainerExtension.kt`,
                     useBluePrint: true
                 }
             ]
@@ -883,14 +894,12 @@ const serverFiles = {
             templates: [
                 {
                     file: 'package/repository/reactive/ReactiveN1qlCouchbaseRepository.kt',
-                    renameTo: generator =>
-                        `${generator.javaDir}repository/${generator.reactiveRepository}ReactiveN1qlCouchbaseRepository.kt`,
+                    renameTo: generator => `${generator.javaDir}repository/ReactiveN1qlCouchbaseRepository.kt`,
                     useBluePrint: true
                 },
                 {
                     file: 'package/repository/reactive/CustomReactiveN1qlCouchbaseRepository.kt',
-                    renameTo: generator =>
-                        `${generator.javaDir}repository/${generator.reactiveRepository}CustomReactiveN1qlCouchbaseRepository.kt`,
+                    renameTo: generator => `${generator.javaDir}repository/CustomReactiveN1qlCouchbaseRepository.kt`,
                     useBluePrint: true
                 }
             ]
@@ -1018,6 +1027,11 @@ const serverFiles = {
                     file: 'package/service/KafkaProducer.kt',
                     renameTo: generator =>
                         `${generator.javaDir}service/${generator.upperFirstCamelCase(generator.baseName)}KafkaProducer.kt`,
+                    useBluePrint: true
+                },
+                {
+                    file: 'package/config/KafkaProperties.kt',
+                    renameTo: generator => `${generator.javaDir}config/KafkaProperties.kt`,
                     useBluePrint: true
                 }
             ]
@@ -1533,8 +1547,7 @@ const serverFiles = {
                 },
                 {
                     file: 'package/repository/PersistenceAuditEventRepository.kt',
-                    renameTo: generator =>
-                        `${generator.javaDir}repository/${generator.reactiveRepository}PersistenceAuditEventRepository.kt`,
+                    renameTo: generator => `${generator.javaDir}repository/PersistenceAuditEventRepository.kt`,
                     useBluePrint: true
                 },
                 {
@@ -1604,13 +1617,12 @@ const serverFiles = {
                 },
                 {
                     file: 'package/repository/AuthorityRepository.kt',
-                    renameTo: generator => `${generator.javaDir}repository/${generator.reactiveRepository}AuthorityRepository.kt`,
+                    renameTo: generator => `${generator.javaDir}repository/AuthorityRepository.kt`,
                     useBluePrint: true
                 },
                 {
                     file: 'package/repository/PersistenceAuditEventRepository.kt',
-                    renameTo: generator =>
-                        `${generator.javaDir}repository/${generator.reactiveRepository}PersistenceAuditEventRepository.kt`,
+                    renameTo: generator => `${generator.javaDir}repository/PersistenceAuditEventRepository.kt`,
                     useBluePrint: true
                 },
                 {
@@ -1649,7 +1661,7 @@ const serverFiles = {
                 },
                 {
                     file: 'package/repository/UserRepository.kt',
-                    renameTo: generator => `${generator.javaDir}repository/${generator.reactiveRepository}UserRepository.kt`,
+                    renameTo: generator => `${generator.javaDir}repository/UserRepository.kt`,
                     useBluePrint: true
                 },
 

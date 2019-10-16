@@ -18,22 +18,59 @@
 -%>
 package <%=packageName%>.service
 
+import <%= packageName %>.config.KafkaProperties
+import org.apache.kafka.clients.consumer.KafkaConsumer
+import org.apache.kafka.common.errors.WakeupException
 import org.slf4j.LoggerFactory
-import org.springframework.kafka.annotation.KafkaListener
 import org.springframework.stereotype.Service
-
-import java.io.IOException
+import java.time.Duration
+import java.util.Collections.singletonList
+import java.util.concurrent.atomic.AtomicBoolean
 
 private const val TOPIC = "topic_<%= baseName.toLowerCase() %>"
 
 @Service
-class <%= upperFirstCamelCase(baseName) %>KafkaConsumer {
+class <%= upperFirstCamelCase(baseName) %>KafkaConsumer(private val kafkaProperties: KafkaProperties) {
 
     private val log = LoggerFactory.getLogger(javaClass)
 
-    @KafkaListener(topics = ["topic_<%= baseName.toLowerCase() %>"], groupId = "group_id")
-    @Throws(IOException::class)
-    fun consume(message: String) {
-        log.info("Consumed message in {} : {}", TOPIC, message)
+    private val closed = AtomicBoolean(false)
+    private lateinit var kafkaConsumer: KafkaConsumer<String, String>
+    fun start() {
+        log.info("Kafka consumer starting...")
+        this.kafkaConsumer = KafkaConsumer(kafkaProperties.getConsumerProps()!!)
+        Runtime.getRuntime().addShutdownHook(Thread(Runnable { this.shutdown() }))
+
+        val consumerThread = Thread {
+            try {
+                kafkaConsumer.subscribe(singletonList(TOPIC))
+                log.info("Kafka consumer started")
+                while (!closed.get()) {
+                    val records = kafkaConsumer.poll(Duration.ofSeconds(3))
+                    for (record in records) {
+                        log.info("Consumed message in {} : {}", TOPIC, record.value())
+                    }
+                }
+                kafkaConsumer.commitSync()
+            } catch (e: WakeupException) {
+                // Ignore exception if closing
+                if (!closed.get()) throw e
+            } catch (e: Exception) {
+                log.error(e.message, e)
+            } finally {
+                kafkaConsumer.close()
+            }
+        }
+        consumerThread.start()
+    }
+
+    fun getKafkaConsumer(): KafkaConsumer<String, String> {
+        return kafkaConsumer
+    }
+
+    fun shutdown() {
+        log.info("Shutdown Kafka consumer")
+        closed.set(true)
+        kafkaConsumer.wakeup()
     }
 }

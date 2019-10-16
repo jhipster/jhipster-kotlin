@@ -21,11 +21,17 @@ package <%=packageName%>.service
 import <%=packageName%>.config.DEFAULT_LANGUAGE
 <% if (databaseType === 'cassandra') { %>
 import <%=packageName%>.AbstractCassandraTest<% } %>
+<%_ if (cacheProvider === 'redis') { _%>
+import <%=packageName%>.RedisTestContainerExtension
+<%_ } _%>
 import <%=packageName%>.<%= mainClass %>
 import <%=packageName%>.domain.<%= asEntity('User') %>
 import io.github.jhipster.config.JHipsterProperties
 import org.junit.jupiter.api.BeforeEach
 import org.junit.jupiter.api.Test
+<%_ if (cacheProvider === 'redis') { _%>
+import org.junit.jupiter.api.extension.ExtendWith
+<%_ } _%>
 import org.mockito.ArgumentCaptor
 import org.mockito.ArgumentMatchers.any
 import org.mockito.Captor
@@ -36,9 +42,6 @@ import org.mockito.MockitoAnnotations
 import org.mockito.Spy
 import org.springframework.beans.factory.annotation.Autowired
 import org.springframework.boot.test.context.SpringBootTest
-<%_ if (messageBroker === 'kafka') { _%>
-import org.springframework.kafka.test.context.EmbeddedKafka
-<%_ } _%>
 import org.springframework.context.MessageSource
 import org.springframework.mail.MailSendException
 import org.springframework.mail.javamail.JavaMailSenderImpl
@@ -70,10 +73,10 @@ private val PATTERN_LOCALE_2 = Pattern.compile("([a-z]{2})-([a-z]{2})")
 /**
  * Integration tests for [MailService].
  */
-<%_ if (messageBroker === 'kafka') { _%>
-@EmbeddedKafka
-<%_ } _%>
 @SpringBootTest(classes = [<%= mainClass %>::class])
+<%_ if (cacheProvider === 'redis') { _%>
+@ExtendWith(RedisTestContainerExtension::class)
+<%_ } _%>
 class MailServiceIT <% if (databaseType === 'cassandra') { %>: AbstractCassandraTest() <% } %>{
 
     @Autowired

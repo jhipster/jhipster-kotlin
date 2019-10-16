@@ -23,15 +23,19 @@ import org.springframework.security.oauth2.core.OAuth2Error
 import org.springframework.security.oauth2.core.OAuth2TokenValidator
 import org.springframework.security.oauth2.core.OAuth2TokenValidatorResult
 import org.springframework.security.oauth2.jwt.Jwt
+import org.springframework.util.Assert
 
-class AudienceValidator : OAuth2TokenValidator<Jwt> {
+class AudienceValidator(val allowedAudience: List<String>) : OAuth2TokenValidator<Jwt> {
     private val log = LoggerFactory.getLogger(javaClass)
     private val error = OAuth2Error("invalid_token", "The required audience is missing", null)
 
+    init {
+        Assert.notEmpty(allowedAudience, "Allowed audience should not be null or empty.")
+    }
+
     override fun validate(jwt: Jwt): OAuth2TokenValidatorResult {
         val audience = jwt.audience
-        // Keycloak and Okta's default audiences, respectively
-        return if (audience.contains("account") || audience.contains("api://default")) {
+        return if (audience.any{allowedAudience.contains(it)}) {
             OAuth2TokenValidatorResult.success()
         } else {
             log.warn("Invalid audience: {}", audience)

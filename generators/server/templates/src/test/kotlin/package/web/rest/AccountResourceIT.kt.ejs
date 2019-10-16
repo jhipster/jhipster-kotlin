@@ -22,6 +22,9 @@ package <%= packageName %>.web.rest
 <%_ if (databaseType === 'cassandra') { _%>
 import <%= packageName %>.AbstractCassandraTest
 <%_ } _%>
+<%_ if (cacheProvider === 'redis') { _%>
+import <%=packageName%>.RedisTestContainerExtension
+<%_ } _%>
 import <%= packageName %>.config.TestSecurityConfiguration
 import <%= packageName %>.<%= mainClass %>
 import <%= packageName %>.security.ADMIN
@@ -31,14 +34,14 @@ import <%= packageName %>.web.rest.errors.ExceptionTranslator
 
 import org.junit.jupiter.api.BeforeEach
 import org.junit.jupiter.api.Test
+<%_ if (cacheProvider === 'redis') { _%>
+import org.junit.jupiter.api.extension.ExtendWith
+<%_ } _%>
 
 import org.mockito.MockitoAnnotations
 import org.springframework.beans.factory.annotation.Autowired
 import org.springframework.boot.test.context.SpringBootTest
 import org.springframework.http.MediaType
-<%_ if (messageBroker === 'kafka') { _%>
-import org.springframework.kafka.test.context.EmbeddedKafka
-<%_ } _%>
 import org.springframework.security.core.GrantedAuthority
 import org.springframework.security.core.authority.SimpleGrantedAuthority
 import org.springframework.security.oauth2.client.authentication.OAuth2AuthenticationToken
@@ -62,10 +65,10 @@ import org.springframework.test.web.servlet.result.MockMvcResultMatchers.status
 /**
  * Integration tests for the [AccountResource] REST controller.
  */
-<%_ if (messageBroker === 'kafka') { _%>
-@EmbeddedKafka
-<%_ } _%>
 @SpringBootTest(classes = [<%= mainClass %>::class, TestSecurityConfiguration::class])
+<%_ if (cacheProvider === 'redis') { _%>
+@ExtendWith(RedisTestContainerExtension::class)
+<%_ } _%>
 class AccountResourceIT <% if (databaseType === 'cassandra') { %>: AbstractCassandraTest() <% } %>{
 
     @Autowired
@@ -157,17 +160,20 @@ class AccountResourceIT <% if (databaseType === 'cassandra') { %>: AbstractCassa
 <%_ if (databaseType === 'cassandra') { _%>
 import <%= packageName %>.AbstractCassandraTest
 <%_ } _%>
+<%_ if (cacheProvider === 'redis') { _%>
+import <%=packageName%>.RedisTestContainerExtension
+<%_ } _%>
 import <%= packageName %>.<%= mainClass %>
 import <%= packageName %>.security.ADMIN
 import <%= packageName %>.web.rest.errors.ExceptionTranslator
 import org.junit.jupiter.api.BeforeEach
 import org.junit.jupiter.api.Test
+<%_ if (cacheProvider === 'redis') { _%>
+import org.junit.jupiter.api.extension.ExtendWith
+<%_ } _%>
 import org.springframework.beans.factory.annotation.Autowired
 import org.springframework.boot.test.context.SpringBootTest
 import org.springframework.http.MediaType
-<%_ if (messageBroker === 'kafka') { _%>
-import org.springframework.kafka.test.context.EmbeddedKafka
-<%_ } _%>
 import org.springframework.security.test.context.support.WithMockUser
 import org.springframework.test.web.servlet.MockMvc
 import org.springframework.test.web.servlet.setup.MockMvcBuilders
@@ -178,10 +184,10 @@ import org.springframework.test.web.servlet.result.MockMvcResultMatchers.*
 /**
  * Integration tests for the {@link AccountResource} REST controller.
  */
-<%_ if (messageBroker === 'kafka') { _%>
-@EmbeddedKafka
-<%_ } _%>
 @SpringBootTest(classes = [<%= mainClass %>::class])
+<%_ if (cacheProvider === 'redis') { _%>
+@ExtendWith(RedisTestContainerExtension::class)
+<%_ } _%>
 class AccountResourceIT <% if (databaseType === 'cassandra') { %>: AbstractCassandraTest() <% } %>{
 
     @Autowired
@@ -235,12 +241,12 @@ import <%= packageName %>.domain.PersistentToken
 <%_ } _%>
 import <%= packageName %>.domain.<%= asEntity('User') %>
 <%_ if (databaseType === 'sql' || databaseType === 'mongodb' || databaseType === 'couchbase') { _%>
-import <%= packageName %>.repository<% if (reactive) { %>.reactive<% } %>.AuthorityRepository
+import <%= packageName %>.repository.AuthorityRepository
 <%_ } _%>
 <%_ if (authenticationType === 'session' && !reactive) { _%>
 import <%= packageName %>.repository.PersistentTokenRepository
 <%_ } _%>
-import <%= packageName %>.repository<% if (reactive) { %>.reactive<% } %>.UserRepository
+import <%= packageName %>.repository.UserRepository
 import <%= packageName %>.security.ADMIN
 import <%= packageName %>.security.USER
 import <%= packageName %>.service.MailService
@@ -264,9 +270,6 @@ import org.springframework.http.HttpStatus
 import org.springframework.http.MediaType
 <%_ if (!reactive) { _%>
 import org.springframework.http.converter.HttpMessageConverter
-<%_ if (messageBroker === 'kafka') { _%>
-import org.springframework.kafka.test.context.EmbeddedKafka
-<%_ } _%>
 <%_ } _%>
 import org.springframework.security.crypto.password.PasswordEncoder
 import org.springframework.security.test.context.support.WithMockUser
@@ -323,9 +326,6 @@ import kotlin.test.assertNotNull
 /**
  * Integrations tests for the [AccountResource] REST controller.
  */
-<%_ if (messageBroker === 'kafka') { _%>
-@EmbeddedKafka
-<%_ } _%>
 @SpringBootTest(classes = [<%= mainClass %>::class])
 class AccountResourceIT <% if (databaseType === 'cassandra') { %>: AbstractCassandraTest() <% } %>{
 

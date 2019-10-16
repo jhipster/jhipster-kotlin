@@ -1202,6 +1202,56 @@ describe('JHipster generator', () => {
             });
         });
 
+        describe('Redis', () => {
+            before(done => {
+                helpers
+                    .run('generator-jhipster/generators/app')
+                    .withOptions({
+                        'from-cli': true,
+                        skipInstall: true,
+                        skipChecks: true,
+                        blueprint: 'kotlin',
+                        'skip-ktlint-format': true
+                    })
+                    .withGenerators([
+                        [
+                            require('../generators/server'), // eslint-disable-line global-require
+                            'jhipster-kotlin:server',
+                            path.join(__dirname, '../generators/server/index.js')
+                        ]
+                    ])
+                    .withPrompts({
+                        baseName: 'jhipster',
+                        packageName: 'com.mycompany.myapp',
+                        packageFolder: 'com/mycompany/myapp',
+                        clientFramework: 'angularX',
+                        serviceDiscoveryType: false,
+                        authenticationType: 'jwt',
+                        cacheProvider: 'redis',
+                        enableHibernateCache: true,
+                        databaseType: 'sql',
+                        devDatabaseType: 'h2Memory',
+                        prodDatabaseType: 'mysql',
+                        enableTranslation: true,
+                        nativeLanguage: 'en',
+                        languages: ['fr'],
+                        buildTool: 'maven',
+                        rememberMeKey: '5c37379956bd1242f5636c8cb322c2966ad81277',
+                        serverSideOptions: []
+                    })
+                    .on('end', done);
+            });
+            it('creates expected files with "Redis"', () => {
+                assert.file(expectedFiles.common);
+                assert.file(expectedFiles.server);
+                assert.file(expectedFiles.userManagementServer);
+                assert.file(expectedFiles.client);
+                assert.file(expectedFiles.redis);
+                assert.file(expectedFiles.mysql);
+                assert.file(expectedFiles.hibernateTimeZoneConfig);
+            });
+        });
+
         describe('Messaging with Kafka configuration', () => {
             before(done => {
                 helpers
