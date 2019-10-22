@@ -24,6 +24,11 @@ import <%=packageName%>.client.OAuth2InterceptedFeignConfiguration
 import <%=packageName%>.config.ApplicationProperties
 import <%=packageName%>.config.addDefaultProfile
 
+<%_ if (messageBroker === 'kafka') { _%>
+import <%=packageName%>.service.<%= upperFirstCamelCase(baseName) %>KafkaConsumer
+import <%=packageName%>.service.<%= upperFirstCamelCase(baseName) %>KafkaProducer
+import org.springframework.context.ConfigurableApplicationContext
+<%_ } _%>
 import io.github.jhipster.config.JHipsterConstants
 
 import org.slf4j.LoggerFactory
@@ -107,7 +112,14 @@ class <%= mainClass %>(private val env: Environment) : InitializingBean {
          */
         @JvmStatic
         fun main(args: Array<String>) {
+            <%_ if (messageBroker === 'kafka') { _%>
+            val applicationContext = runApplication<<%= mainClass %>>(*args) { addDefaultProfile(this) }
+            applicationContext.getBean(<%= upperFirstCamelCase(baseName) %>KafkaProducer::class.java).init()
+            applicationContext.getBean(<%= upperFirstCamelCase(baseName) %>KafkaConsumer::class.java).start()
+            val env = applicationContext.environment
+            <%_ } else {_%>
             val env = runApplication<<%= mainClass %>>(*args) { addDefaultProfile(this) }.environment
+            <%_ } _%>
             logApplicationStartup(env)
         }
 

@@ -18,29 +18,29 @@
 -%>
 package <%=packageName%>.config
 
-import org.hibernate.service.ServiceRegistry
-import org.infinispan.hibernate.cache.v53.InfinispanRegionFactory
-import org.infinispan.manager.EmbeddedCacheManager
-import org.springframework.stereotype.Component
+import org.springframework.boot.context.properties.ConfigurationProperties
+import org.springframework.context.annotation.Configuration
 
-import java.util.Properties
+@Configuration
+@ConfigurationProperties(prefix="kafka", ignoreUnknownFields = true)
+class KafkaProperties {
+    private var consumer: Map<String, String>? = null
 
-/**
- * Factory class for initializing Hibernate 2nd-level cache with Infinispan cache.
- *
- */
-@Component
-class CacheFactoryConfiguration: InfinispanRegionFactory {
+    private var producer: Map<String, String>? = null
 
-    constructor(cacheManager: EmbeddedCacheManager): super() {
-        this.cacheManager = cacheManager
+    fun getConsumerProps(): Map<String, String>? {
+        return consumer
     }
 
-    override fun createCacheManager(properties: Properties?, serviceRegistry: ServiceRegistry?): EmbeddedCacheManager {
-        return cacheManager
+    fun setConsumer(consumer: Map<String, String>) {
+        this.consumer = consumer
     }
-    
-    companion object {
-        private const val serialVersionUID = 1L
+
+    fun getProducerProps(): Map<String, String>? {
+        return producer
+    }
+
+    fun setProducer(producer: Map<String, String>) {
+        this.producer = producer
     }
 }

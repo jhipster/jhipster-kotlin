@@ -21,18 +21,21 @@ package <%= packageName %>.security
 <%_ if (databaseType === 'cassandra') { _%>
 import <%= packageName %>.AbstractCassandraTest
 <%_ } _%>
+<%_ if (cacheProvider === 'redis') { _%>
+import <%=packageName%>.RedisTestContainerExtension
+<%_ } _%>
 import <%= packageName %>.<%= mainClass %>
 import <%= packageName %>.domain.<%= asEntity('User') %>
-import <%= packageName %>.repository.<% if (reactive) { %>reactive.<% } %>UserRepository
+import <%= packageName %>.repository.UserRepository
 
 import org.apache.commons.lang3.RandomStringUtils
 import org.junit.jupiter.api.BeforeEach
 import org.junit.jupiter.api.Test
+<%_ if (cacheProvider === 'redis') { _%>
+import org.junit.jupiter.api.extension.ExtendWith
+<%_ } _%>
 import org.springframework.beans.factory.annotation.Autowired
 import org.springframework.boot.test.context.SpringBootTest
-<%_ if (messageBroker === 'kafka') { _%>
-import org.springframework.kafka.test.context.EmbeddedKafka
-<%_ } _%>
 <%_ if (reactive) { _%>
 import org.springframework.security.core.userdetails.ReactiveUserDetailsService
 <%_ } _%>
@@ -67,15 +70,15 @@ private const val USER_THREE_EMAIL = "test-user-three@localhost"
 /**
  * Integration tests for [DomainUserDetailsService].
  */
-<%_ if (messageBroker === 'kafka') { _%>
-@EmbeddedKafka
-<%_ } _%>
 @SpringBootTest(classes = [<%= mainClass %>::class])
 <%_ if (databaseType === 'sql') { _%>
 @Transactional
 <%_ } _%>
 <%_ if (databaseType === 'couchbase') { _%>
 @WithMockUser("test-user-one")
+<%_ } _%>
+<%_ if (cacheProvider === 'redis') { _%>
+@ExtendWith(RedisTestContainerExtension::class)
 <%_ } _%>
 class DomainUserDetailsServiceIT <% if (databaseType === 'cassandra') { %>: AbstractCassandraTest() <% } %>{
 

@@ -107,19 +107,21 @@ import java.net.URI
 import java.net.URISyntaxException<% if (isUsingMapsId === true) { %>
 import java.util.Objects<% } %>
 <%_ if (databaseType === 'cassandra') { _%>
-import java.util.UUID<% } %><% if (searchEngine === 'elasticsearch') { %>
-
+import java.util.UUID
+<%_ } _%>
+<%_ if (searchEngine === 'elasticsearch') { _%>
 import org.elasticsearch.index.query.QueryBuilders.queryStringQuery
 <%_ } _%>
-
+<%_ if (!readOnly) { _%>
 <%_
 let entityName = entityInstance;
 if (clientRootFolder && !skipUiGrouping) {
     entityName = _.camelCase(`${clientRootFolder}${entityClass}`)
 }
 _%>
-private const val ENTITY_NAME = "<%= entityName %>"
 
+private const val ENTITY_NAME = "<%= entityName %>"
+<%_ } _%>
 /**
  * REST controller for managing [<%= packageName %>.domain.<%= asEntity(entityClass) %>].
  */
@@ -134,10 +136,12 @@ _%><%- include('../../common/inject_template', {viaService: viaService, construc
 ) {
 
     private val log = LoggerFactory.getLogger(javaClass)
-
+    <%_ if (!readOnly) { _%>
     @Value("\${jhipster.clientApp.name}")
     private var applicationName: String? = null
+    <%_ } _%>
 
+    <%_ if (!readOnly) { _%>
     /**
      * `POST  /<%= entityApiUrl %>` : Create a new <%= entityInstance %>.
      *
@@ -200,7 +204,7 @@ _%><%- include('../../common/inject_template', {viaService: viaService, construc
             )
             .body(result)
     }
-
+<%_ } _%>
     /**
      * `GET  /<%= entityApiUrl %>` : get all the <%= entityInstancePlural %>.
      *
@@ -253,7 +257,7 @@ _%><%- include('../../common/inject_template', {viaService: viaService, construc
         log.debug("REST request to get <%= entityClass %> : {}", id)<%- include('../../common/get_template', {asEntity, asDto, viaService, returnDirectly:false}); -%>
         return ResponseUtil.wrapOrNotFound(<%= instanceName %>)
     }
-
+<%_ if (!readOnly) { _%>
     /**
      *  `DELETE  /<%= entityApiUrl %>/:id` : delete the "id" <%= entityInstance %>.
      *
@@ -266,7 +270,9 @@ _%><%- include('../../common/inject_template', {viaService: viaService, construc
 <%- include('../../common/delete_template', {viaService: viaService}); -%>
         return ResponseEntity.noContent()
             .headers(HeaderUtil.createEntityDeletionAlert(applicationName, <%= enableTranslation %>, ENTITY_NAME, id<% if (pkType !== 'String') { %>.toString()<% } %>)).build()
-    }<% if (searchEngine === 'elasticsearch') { %>
+    }
+<%_ } _%>
+<%_ if (searchEngine === 'elasticsearch') { _%>
 
     /**
      * `SEARCH  /_search/<%= entityApiUrl %>?query=:query` : search for the <%= entityInstance %> corresponding
@@ -281,5 +287,6 @@ _%><%- include('../../common/inject_template', {viaService: viaService, construc
     <%_ } _%>
      * @return the result of the search.
      */
-    @GetMapping("/_search/<%= entityApiUrl %>")<%- include('../../common/search_template', {asEntity, asDto, viaService}); -%><% } %>
+    @GetMapping("/_search/<%= entityApiUrl %>")<%- include('../../common/search_template', {asEntity, asDto, viaService}); -%>
+<%_ } _%>
 }

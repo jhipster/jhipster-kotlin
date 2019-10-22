@@ -218,14 +218,16 @@ function writeFiles() {
             writeFilesToDisk(serverFiles, this, false, this.fetchFromInstalledJHipster('entity-server/templates'));
 
             if (this.databaseType === 'sql') {
-                if (this.fieldsContainOwnerManyToMany || this.fieldsContainOwnerOneToOne || this.fieldsContainManyToOne) {
-                    this.addConstraintsChangelogToLiquibase(`${this.changelogDate}_added_entity_constraints_${this.entityClass}`);
+                if (!this.skipDbChangelog) {
+                    if (this.fieldsContainOwnerManyToMany || this.fieldsContainOwnerOneToOne || this.fieldsContainManyToOne) {
+                        this.addConstraintsChangelogToLiquibase(`${this.changelogDate}_added_entity_constraints_${this.entityClass}`);
+                    }
+                    this.addChangelogToLiquibase(`${this.changelogDate}_added_entity_${this.entityClass}`);
                 }
-                this.addChangelogToLiquibase(`${this.changelogDate}_added_entity_${this.entityClass}`);
 
                 const serverCacheKt = new NeedleServerChacheKt(this);
 
-                if (['ehcache', 'caffeine', 'infinispan'].includes(this.cacheProvider) && this.enableHibernateCache) {
+                if (['ehcache', 'caffeine', 'infinispan', 'redis'].includes(this.cacheProvider) && this.enableHibernateCache) {
                     serverCacheKt.addEntityToCache(
                         this.asEntity(this.entityClass),
                         this.relationships,

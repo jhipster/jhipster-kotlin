@@ -20,6 +20,7 @@
 
 package <%=packageName%>.security
 
+import org.springframework.security.core.Authentication
 import org.springframework.security.core.GrantedAuthority
 <%_ if (authenticationType === 'oauth2') { _%>
 import org.springframework.security.core.authority.SimpleGrantedAuthority
@@ -39,9 +40,13 @@ import org.springframework.security.oauth2.server.resource.authentication.JwtAut
 <%_ if (reactive) { _%>
 import reactor.core.publisher.Mono
 <%_ } _%>
-<%_ if (!reactive) { _%>
-
+<%_ if (authenticationType === 'oauth2') { _%>
 import java.util.Optional
+<%_ } _%>
+<%_ if (!reactive) { _%>
+  <%_ if (authenticationType !== 'oauth2') { _%>
+import java.util.Optional
+  <%_ } _%>
 <%_ } _%>
 
 /**
@@ -96,28 +101,26 @@ fun getCurrentUserJWT(): <% if (!reactive) { %>Optional<% } else { %>Mono<% } %>
  *
  * @return true if the user is authenticated, false otherwise.
  */
-fun isAuthenticated(): <% if (!reactive) { %>Boolean<% } else { %>Mono<Boolean><% } %> =
+fun isAuthenticated(): <% if (!reactive) { %>Boolean<% } else { %>Mono<Boolean><% } %> {
     <%_ if (!reactive) { _%>
-    Optional.ofNullable(SecurityContextHolder.getContext().authentication)
+    val authentication = SecurityContextHolder.getContext().authentication
+
+    if (authentication != null) {
+        return getAuthorities(authentication).none { it == ANONYMOUS }
+    }
+
+    return false;
     <%_ } else { _%>
-    ReactiveSecurityContextHolder.getContext()
+    return ReactiveSecurityContextHolder.getContext()
         .map(SecurityContext::getAuthentication)
+        .map(Authentication::getAuthorities)
+        .map {
+            it
+            .map(GrantedAuthority::getAuthority)
+            .none { it == ANONYMOUS }
+        }
     <%_ } _%>
-        .map { 
-<%_ if (authenticationType === 'oauth2') { _%>
-            val authorities = when (it) {
-                    is JwtAuthenticationToken ->
-                        extractAuthorityFromClaims(it.token.claims)
-                    else ->
-                        it.authorities
-                }
-<%_ } _%>
-<%_ if (authenticationType !== 'oauth2') { _%>
-            val authorities = it.authorities
-<%_ } _%>
-            authorities.none { authority -> authority.authority == ANONYMOUS }
-        }<% if (!reactive) { %>
-        .orElse(false)<% } %>
+}
 
 /**
  * If the current user has a specific authority (security role).
@@ -127,28 +130,43 @@ fun isAuthenticated(): <% if (!reactive) { %>Boolean<% } else { %>Mono<Boolean><
  * @param authority the authority to check.
  * @return true if the current user has the authority, false otherwise.
  */
-fun isCurrentUserInRole(authority: String): <% if (!reactive) { %>Boolean<% } else { %>Mono<Boolean><% } %> =
-    <%_ if (!reactive) { _%>
-    Optional.ofNullable(SecurityContextHolder.getContext().authentication)
-    <%_ } else { _%>
-    ReactiveSecurityContextHolder.getContext()
-        .map(SecurityContext::getAuthentication)
-    <%_ } _%>
-        .map { 
-            <%_ if (authenticationType === 'oauth2') { _%>
-            val authorities = when (it) {
-                    is JwtAuthenticationToken ->
-                        extractAuthorityFromClaims(it.token.claims)
-                    else ->
-                        it.authorities
-                }
-            <%_ } _%>
-            <%_ if (authenticationType !== 'oauth2') { _%>
-            val authorities = it.authorities
-            <%_ } _%>
-            authorities.any { auth -> auth.authority.equals(authority) }
-        }<% if (!reactive) { %>
-        .orElse(false)<% } %>
+fun isCurrentUserInRole(authority: String): <% if (!reactive) { %>Boolean<% } else { %>Mono<Boolean><% } %> {
+  <%_ if (!reactive) { _%>
+  val authentication = SecurityContextHolder.getContext().authentication
+
+  if (authentication != null) {
+      return getAuthorities(authentication).any { it == authority }
+  }
+
+  return false;
+  <%_ } else { _%>
+  return ReactiveSecurityContextHolder.getContext()
+      .map(SecurityContext::getAuthentication)
+      .map(Authentication::getAuthorities)
+      .map {
+          it
+          .map(GrantedAuthority::getAuthority)
+          .any { it == authority }
+      }
+  <%_ } _%>
+}
+
+<%_ if (!reactive) { _%>
+fun getAuthorities(authentication: Authentication): List<String> {
+  <%_ if (authenticationType === 'oauth2') { _%>
+    val authorities = when (val auth = authentication) {
+        is JwtAuthenticationToken ->
+            extractAuthorityFromClaims(auth.token.claims)
+        else ->
+            auth.authorities
+    }
+    return authorities
+  <%_ } else { _%>
+    return authentication.authorities
+  <%_ } _%>
+        .map(GrantedAuthority::getAuthority)
+}
+<%_ } _%>
 
 <%_ if (authenticationType === 'oauth2') { _%>
     fun extractAuthorityFromClaims(claims: Map<String, Any>): List<GrantedAuthority>   {

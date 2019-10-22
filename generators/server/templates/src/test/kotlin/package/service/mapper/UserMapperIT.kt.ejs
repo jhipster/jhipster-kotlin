@@ -21,6 +21,9 @@ package <%= packageName %>.service.mapper
 <%_ if (databaseType === 'cassandra') { _%>
 import <%=packageName%>.AbstractCassandraTest
 <%_ } _%>
+<%_ if (cacheProvider === 'redis') { _%>
+import <%=packageName%>.RedisTestContainerExtension
+<%_ } _%>
 import <%= packageName %>.<%= mainClass %>
 <%_ if (authenticationType === 'oauth2') { _%>
 import <%=packageName%>.config.TestSecurityConfiguration
@@ -34,9 +37,6 @@ import org.junit.jupiter.api.BeforeEach
 import org.junit.jupiter.api.Test
 import org.springframework.beans.factory.annotation.Autowired
 import org.springframework.boot.test.context.SpringBootTest
-<%_ if (messageBroker === 'kafka') { _%>
-import org.springframework.kafka.test.context.EmbeddedKafka
-<%_ } _%>
 
 import org.assertj.core.api.Assertions.assertThat
 import kotlin.test.assertNotNull
@@ -54,13 +54,13 @@ private const val DEFAULT_ID = "id1"
 /**
  * Integration tests for [UserMapper].
  */
-<%_ if (messageBroker === 'kafka') { _%>
-@EmbeddedKafka
-<%_ } _%>
 <%_ if (authenticationType === 'oauth2') { _%>
 @SpringBootTest(classes = [<%= mainClass %>::class, TestSecurityConfiguration::class])
 <%_ } else { _%>
 @SpringBootTest(classes = [<%= mainClass %>::class])
+<%_ } _%>
+<%_ if (cacheProvider === 'redis') { _%>
+@ExtendWith(RedisTestContainerExtension::class)
 <%_ } _%>
 class UserMapperIT <% if (databaseType === 'cassandra') { %>: AbstractCassandraTest() <% } %>{
 

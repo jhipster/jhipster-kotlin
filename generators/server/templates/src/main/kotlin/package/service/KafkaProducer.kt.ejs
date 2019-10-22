@@ -18,19 +18,42 @@
 -%>
 package <%=packageName%>.service
 
+import <%=packageName%>.config.KafkaProperties
+import org.apache.kafka.clients.producer.KafkaProducer
 import org.slf4j.LoggerFactory
-import org.springframework.kafka.core.KafkaTemplate
 import org.springframework.stereotype.Service
+import org.apache.kafka.clients.producer.ProducerRecord
 
 private const val TOPIC = "topic_<%= baseName.toLowerCase() %>"
 
 @Service
-class <%= upperFirstCamelCase(baseName) %>KafkaProducer(private val kafkaTemplate: KafkaTemplate<String, String>) {
+class <%= upperFirstCamelCase(baseName) %>KafkaProducer(private val kafkaProperties: KafkaProperties) {
 
-    private val log = LoggerFactory.getLogger(javaClass)
+  private val log = LoggerFactory.getLogger(javaClass)
 
-    fun sendMessage(message: String) {
-        log.info("Producing message to {} : {}", TOPIC, message)
-        this.kafkaTemplate.send(TOPIC, message)
-    }
+  private lateinit var kafkaProducer: KafkaProducer<String, String>
+
+  fun init() {
+      log.info("Kafka producer initializing...")
+      kafkaProducer = KafkaProducer(kafkaProperties.getProducerProps())
+      Runtime.getRuntime().addShutdownHook(Thread{
+          this.shutdown()
+      })
+      log.info("Kafka producer initialized")
+
+  }
+
+  fun send(message: String) {
+      val record = ProducerRecord<String, String>(TOPIC, message)
+      try {
+          kafkaProducer.send(record)
+      } catch (e: Exception) {
+          log.error(e.message, e)
+      }
+  }
+
+  fun shutdown() {
+      log.info("Shutdown Kafka producer")
+      kafkaProducer.close()
+  }
 }
