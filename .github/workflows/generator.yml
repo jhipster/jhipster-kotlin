@@ -1,0 +1,28 @@
+name: CI
+
+on: [push, pull_request]
+
+jobs:
+  khipster:
+    name: KHipster generator unit test suite
+    runs-on: ${{ matrix.os }}
+    timeout-minutes: 20
+    strategy:
+      fail-fast: true
+      matrix:
+        node_version: [10.x, 12.x]
+        os: [ubuntu-latest]
+    steps:
+    - uses: actions/checkout@v1
+    - uses: actions/setup-node@v1
+      with:
+        node_version: ${{ matrix.node_version }}
+    - run: git --no-pager log -n 10 --graph --pretty='%Cred%h%Creset -%C(yellow)%d%Creset %s %Cgreen(%cr) %C(bold blue) <%an>%Creset' --abbrev-commit
+      shell: bash
+    - name: config git variables
+      env:
+        KHI_SCRIPTS: ./test-integration/scripts
+      run: $KHI_SCRIPTS/04-git-config.sh
+      shell: bash
+    - run: npm ci
+    - run: npm test
