@@ -82,9 +82,6 @@ import org.springframework.test.web.servlet.setup.MockMvcBuilders
 import org.springframework.transaction.annotation.Transactional
 <%_ } _%>
 
-<%_ if (databaseType === 'sql') { _%>
-import javax.persistence.EntityManager
-<%_ } _%>
 <%_ if (databaseType !== 'cassandra') { _%>
 import java.time.Instant
 <%_ } _%>
@@ -158,11 +155,6 @@ class UserResourceIT <% if (databaseType === 'cassandra') { %>: AbstractCassandr
     <%_ } _%>
     @Autowired
     private lateinit var exceptionTranslator: ExceptionTranslator
-    <%_ if (databaseType === 'sql') { _%>
-
-    @Autowired
-    private lateinit var em: EntityManager
-    <%_ } _%>
     <%_ if (cacheManagerIsAvailable === true) { _%>
 
     @Autowired
@@ -208,7 +200,7 @@ class UserResourceIT <% if (databaseType === 'cassandra') { %>: AbstractCassandr
         user = createEntity()
         <%_ } _%>
         <%_ if (databaseType === 'sql') { _%>
-        user = createEntity(em).apply {
+        user = createEntity().apply {
             login = DEFAULT_LOGIN
             email = DEFAULT_EMAIL
         }
@@ -1075,7 +1067,7 @@ class UserResourceIT <% if (databaseType === 'cassandra') { %>: AbstractCassandr
          * if they test an entity which has a required relationship to the User entity.
          */
         @JvmStatic
-        fun createEntity(<% if (databaseType === 'sql') { %>em: EntityManager?<% } %>): <%= asEntity('User') %> {
+        fun createEntity(): <%= asEntity('User') %> {
             return <%= asEntity('User') %>(
                 <%_ if (databaseType === 'cassandra' || (authenticationType === 'oauth2' && databaseType !== 'couchbase')) { _%>
                 id = UUID.randomUUID().toString(),
