@@ -91,6 +91,6 @@ npm ci
 npm link
 npm link generator-jhipster
 
-if [[ "$JHI_APP" == "" || "$JHI_APP" == "ms-micro-consul" ]]; then
+if [[ "$JHI_APP" == "" ]]; then
     npm test
 fi

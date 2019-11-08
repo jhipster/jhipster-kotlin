@@ -1,0 +1,37 @@
+name: KHipster Generator CI
+on: [push, pull_request]
+env:
+    JHI_RUN_APP: 1
+    JHI_PROTRACTOR: 0
+    JHI_JDK: 11
+    JHI_LIB_REPO: https://github.com/jhipster/jhipster.git
+    JHI_LIB_BRANCH: release
+    JHI_GEN_REPO: https://github.com/jhipster/generator-jhipster.git
+    JHI_GEN_BRANCH: v6.4.1
+    SPRING_OUTPUT_ANSI_ENABLED: ALWAYS
+    SPRING_JPA_SHOW_SQL: false
+    JHI_DISABLE_WEBPACK_LOGS: true
+    JHI_E2E_HEADLESS: true
+    JHI_SCRIPTS: $HOME/generator-jhipster/test-integration/scripts
+    KOTLIN_JHI_SCRIPTS: ${{ github.workspace }}/test-integration/scripts
+    JHI_GITHUB_CI: true
+    JHI_APP: ''
+jobs:
+    kotlin-hipster:
+        name: KHipster generator unit test suite
+        runs-on: ${{ matrix.os }}
+        timeout-minutes: 20
+        strategy:
+            fail-fast: false
+            matrix:
+                node_version: [10.x, 12.x]
+                os: [ubuntu-latest]
+        steps:
+            - uses: actions/checkout@v1
+            - uses: actions/setup-node@v1
+              with:
+                  node-version: ${{ matrix.node_version }}
+            - name: Config git variables
+              run: $KOTLIN_JHI_SCRIPTS/04-git-config.sh
+            - name: Install and execute unit tests
+              run: $KOTLIN_JHI_SCRIPTS/10-install-jhipster-kotlin.sh
