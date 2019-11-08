@@ -190,6 +190,40 @@ const serverFiles = {
                     renameTo: generator => `gatling/user-files/simulations/${generator.entityClass}GatlingTest.scala`
                 }
             ]
+        },
+        {
+            path: SERVER_TEST_SRC_KOTLIN_DIR,
+            templates: [
+                {
+                    file: 'package/domain/EntityTest.kt',
+                    renameTo: generator => `${generator.packageFolder}/domain/${generator.entityClass}Test.kt`,
+                    useBluePrint: true
+                }
+            ]
+        },
+        {
+            condition: generator => generator.dto === 'mapstruct',
+            path: SERVER_TEST_SRC_KOTLIN_DIR,
+            templates: [
+                {
+                    file: 'package/service/dto/EntityDTOTest.kt',
+                    renameTo: generator => `${generator.packageFolder}/service/dto/${generator.asDto(generator.entityClass)}Test.kt`,
+                    useBluePrint: true
+                }
+            ]
+        },
+        {
+            condition: generator =>
+                generator.dto === 'mapstruct' &&
+                (generator.databaseType === 'sql' || generator.databaseType === 'mongodb' || generator.databaseType === 'couchbase'),
+            path: SERVER_TEST_SRC_KOTLIN_DIR,
+            templates: [
+                {
+                    file: 'package/service/mapper/EntityMapperTest.kt',
+                    renameTo: generator => `${generator.packageFolder}/service/mapper/${generator.entityClass}MapperTest.kt`,
+                    useBluePrint: true
+                }
+            ]
         }
     ]
 };

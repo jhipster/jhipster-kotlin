@@ -538,7 +538,24 @@ class <%= entityClass %>ResourceIT <% if (databaseType === 'cassandra') { %>: Ab
             <%_ } _%>
             .andExpect(jsonPath("$.<%=fields[idx].fieldName%>").value(<% if ((fields[idx].fieldType === 'byte[]' || fields[idx].fieldType === 'ByteBuffer') && fields[idx].fieldTypeBlobContent !== 'text') { %>Base64Utils.encodeToString(<% } else if (fields[idx].fieldType === 'ZonedDateTime') { %>sameInstant(<% } %><%='DEFAULT_' + fields[idx].fieldNameUnderscored.toUpperCase()%><% if ((fields[idx].fieldType === 'byte[]' || fields[idx].fieldType === 'ByteBuffer') && fields[idx].fieldTypeBlobContent !== 'text') { %><% if (databaseType === 'cassandra') { %>.array()<% } %>)<% } else if (fields[idx].fieldType === 'Integer') { %><% } else if (fields[idx].fieldType === 'Long') { %>.toInt()<% } else if (fields[idx].fieldType === 'Float') { %>.toDouble()<% } else if (fields[idx].fieldType === 'Double') { %><% } else if (fields[idx].fieldType === 'BigDecimal') { %>.toInt()<% } else if (fields[idx].fieldType === 'Boolean') { %><% } else if (fields[idx].fieldType === 'ZonedDateTime') { %>)<% } else if (fields[idx].fieldType === 'String'  || fields[idx].fieldTypeBlobContent === 'text') {%><% } else if (fields[idx].fieldType !== 'String') { %>.toString()<% } %>))<% } %>
     }
-<%_ if (jpaMetamodelFiltering) {
+<%_ if (jpaMetamodelFiltering) {  %>
+    @Test<% if (databaseType === 'sql') { %>
+    @Transactional<% } %>
+    fun get<%= entityClassPlural %>ByIdFiltering()  {
+      // Initialize the database
+      <%= entityInstance %>Repository.saveAndFlush(<%= asEntity(entityInstance) %>)
+      val id = <%= asEntity(entityInstance) %>.id
+
+      default<%= entityClass %>ShouldBeFound("id.equals=" + id)
+      default<%= entityClass %>ShouldNotBeFound("id.notEquals=" + id)
+
+      default<%= entityClass %>ShouldBeFound("id.greaterThanOrEqual=" + id)
+      default<%= entityClass %>ShouldNotBeFound("id.greaterThan=" + id)
+
+      default<%= entityClass %>ShouldBeFound("id.lessThanOrEqual=" + id)
+      default<%= entityClass %>ShouldNotBeFound("id.lessThan=" + id)
+    }
+<%_
         fields.forEach((searchBy) => {
             // we can't filter by all the fields.
             if (isFilterableType(searchBy.fieldType)) {
@@ -983,53 +1000,6 @@ class <%= entityClass %>ResourceIT <% if (databaseType === 'cassandra') { %>: Ab
             <%_ } _%>
             .andExpect(jsonPath("$.[*].<%=fields[idx].fieldName%>").value(hasItem(<% if ((fields[idx].fieldType === 'byte[]' || fields[idx].fieldType === 'ByteBuffer') && fields[idx].fieldTypeBlobContent !== 'text') { %>Base64Utils.encodeToString(<% } else if (fields[idx].fieldType === 'ZonedDateTime') { %>sameInstant(<% } %><%='DEFAULT_' + fields[idx].fieldNameUnderscored.toUpperCase()%><% if ((fields[idx].fieldType === 'byte[]' || fields[idx].fieldType === 'ByteBuffer') && fields[idx].fieldTypeBlobContent !== 'text') { %><% if (databaseType === 'cassandra') { %>.array()<% } %>)<% } else if (fields[idx].fieldType === 'Integer') { %><% } else if (fields[idx].fieldType === 'Long') { %>.toInt()<% } else if (fields[idx].fieldType === 'Float') { %>.toDouble()<% } else if (fields[idx].fieldType === 'Double') { %><% } else if (fields[idx].fieldType === 'BigDecimal') { %>.toInt()<% } else if (fields[idx].fieldType === 'Boolean') { %><% } else if (fields[idx].fieldType === 'ZonedDateTime') { %>)<% } else if (fields[idx].fieldType === 'String' || fields[idx].fieldTypeBlobContent === 'text') { %><% } else if (fields[idx].fieldType !== 'String') { %>.toString()<% } %>)))<% } %>;
     }
-    <%_ } _%>
-
-    @Test<% if (databaseType === 'sql') { %>
-    @Transactional<% } %>
-    fun equalsVerifier() {
-        equalsVerifier(<%= asEntity(entityClass) %>::class)
-        val <%= asEntity(entityInstance) %>1 = <%= asEntity(entityClass) %>()
-        <%= asEntity(entityInstance) %>1.id = <% if (databaseType === 'sql' && hasOauthUser === true) { %>UUID.randomUUID().toString()<% } else if (databaseType === 'sql') { %>1L<% } else if (databaseType === 'mongodb' || databaseType === 'couchbase') { %>"id1"<% } else if (databaseType === 'cassandra') { %>UUID.randomUUID()<% } %>
-        val <%= asEntity(entityInstance) %>2 = <%= asEntity(entityClass) %>()
-        <%= asEntity(entityInstance) %>2.id = <%= asEntity(entityInstance) %>1.id
-        assertThat(<%= asEntity(entityInstance) %>1).isEqualTo(<%= asEntity(entityInstance) %>2)
-        <%= asEntity(entityInstance) %>2.id = <% if (databaseType === 'sql' && hasOauthUser === true) { %>UUID.randomUUID().toString()<% } else if (databaseType === 'sql') { %>2L<% } else if (databaseType === 'mongodb' || databaseType === 'couchbase') { %>"id2"<% } else if (databaseType === 'cassandra') { %>UUID.randomUUID()<% } %>
-        assertThat(<%= asEntity(entityInstance) %>1).isNotEqualTo(<%= asEntity(entityInstance) %>2)
-        <%= asEntity(entityInstance) %>1.id = null
-        assertThat(<%= asEntity(entityInstance) %>1).isNotEqualTo(<%= asEntity(entityInstance) %>2)
-    }
-    <%_ if (dto === 'mapstruct') { _%>
-
-    @Test<% if (databaseType === 'sql') { %>
-    @Transactional<% } %>
-    fun dtoEqualsVerifier() {
-        equalsVerifier(<%= asDto(entityClass) %>::class)
-        val <%= asDto(entityInstance) %>1 = <%= asDto(entityClass) %>()
-        <%= asDto(entityInstance) %>1.id = <% if (databaseType === 'sql' && hasOauthUser === true) { %>UUID.randomUUID().toString()<% } else if (databaseType === 'sql') { %>1L<% } else if (databaseType === 'mongodb' || databaseType === 'couchbase') { %>"id1"<% } else if (databaseType === 'cassandra') { %>UUID.randomUUID()<% } %>
-        val <%= asDto(entityInstance) %>2 = <%= asDto(entityClass) %>()
-        assertThat(<%= asDto(entityInstance) %>1).isNotEqualTo(<%= asDto(entityInstance) %>2)
-        <%= asDto(entityInstance) %>2.id = <%= asDto(entityInstance) %>1.id
-        assertThat(<%= asDto(entityInstance) %>1).isEqualTo(<%= asDto(entityInstance) %>2)
-        <%= asDto(entityInstance) %>2.id = <% if (databaseType === 'sql' && hasOauthUser === true) { %>UUID.randomUUID().toString()<% } else if (databaseType === 'sql') {  %>2L<% } else if (databaseType === 'mongodb' || databaseType === 'couchbase') { %>"id2"<% } else if (databaseType === 'cassandra') { %>UUID.randomUUID()<% } %>
-        assertThat(<%= asDto(entityInstance) %>1).isNotEqualTo(<%= asDto(entityInstance) %>2)
-        <%= asDto(entityInstance) %>1.id = null
-        assertThat(<%= asDto(entityInstance) %>1).isNotEqualTo(<%= asDto(entityInstance) %>2)
-    }
-        <%_ if (databaseType === 'sql') { _%>
-
-    @Test<% if (databaseType === 'sql') { %>
-    @Transactional<% } %>
-    fun testEntityFromId() {
-            <%_ if (databaseType === 'sql' && hasOauthUser === true) { _%>
-        assertThat(<%= entityInstance %>Mapper.fromId("42L")?.id).isEqualTo("42L");
-        assertThat(<%= entityInstance %>Mapper.fromId(null)).isNull();
-            <%_ } else if (databaseType === 'sql') { _%>
-        assertThat(<%= entityInstance %>Mapper.fromId(42L)?.id).isEqualTo(42)
-        assertThat(<%= entityInstance %>Mapper.fromId(null)).isNull()
-            <%_ } _%>
-    }
-         <%_ } _%>
     <%_ } _%>
 
     companion object {

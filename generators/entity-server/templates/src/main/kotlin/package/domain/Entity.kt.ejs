@@ -29,6 +29,7 @@ let hasRelationship = relationships.length !== 0;
 let fieldsContainEnum = false;
 let fieldsContainManyToMany = false;
 let fieldsContainOneToOne = false;
+let fieldContainOwnerSide = false;
 const uniqueEnums = {}; %><%- include imports -%>
 <%_
     //todo: maybe move to generator-jhipster/generators/entity/index.js
@@ -57,6 +58,12 @@ const uniqueEnums = {}; %><%- include imports -%>
     for (idx in fields) {
         if ((prodDatabaseType === 'postgresql' || devDatabaseType === 'postgresql') && fields[idx].fieldTypeBlobContent === 'text') {
             hasTextBlob = true;
+            break;
+        }
+    }
+    for (idx in relationships) {
+        if(relationships[idx].ownerSide) {
+            fieldContainOwnerSide = relationships[idx].ownerSide;
             break;
         }
     }
@@ -118,6 +125,7 @@ import javax.persistence.ManyToMany
     <%_ } _%>
     <%_ if (fieldsContainManyToOne) { _%>
 import javax.persistence.ManyToOne
+import javax.persistence.FetchType
     <%_ } _%>
     <%_ if (isUsingMapsId) { _%>
 import javax.persistence.MapsId
@@ -127,6 +135,9 @@ import javax.persistence.OneToMany
     <%_ } _%>
     <%_ if (fieldsContainOneToOne) { _%>
 import javax.persistence.OneToOne
+    <%_ if (databaseType === 'sql' && fieldContainOwnerSide && !fieldsContainManyToOne) { _%>
+import javax.persistence.FetchType
+    <%_ } _%>
     <%_ } _%>
     <%_ if (!(prodDatabaseType === 'mysql' || prodDatabaseType === 'mariadb')) { _%>
 import javax.persistence.SequenceGenerator
@@ -335,7 +346,7 @@ for (var idx in fields) {
     <%_ } else if (relationshipType === 'many-to-one') {
             if (databaseType === 'sql') {
     _%>
-    @ManyToOne<% if (relationshipRequired) { %>(optional = false)<% } %>
+    @ManyToOne(fetch = FetchType.LAZY<% if (relationshipRequired) { %>, optional = false<% } %>)
         <%_ if (relationshipValidate) { _%>
     <%- include relationship_validators -%>
         <%_ }
@@ -376,7 +387,7 @@ for (var idx in fields) {
     <%_ } else {
         if (databaseType === 'sql') {
             if (ownerSide) { _%>
-    @OneToOne<%_ if (relationshipRequired) { _%>(optional = false)<%_ } _%>
+    @OneToOne(fetch = FetchType.LAZY<%_ if (relationshipRequired) { _%>, optional = false<%_ } _%>)
             <%_ if (relationshipValidate) { _%>
     <%- include relationship_validators -%>
             <%_ }_%>

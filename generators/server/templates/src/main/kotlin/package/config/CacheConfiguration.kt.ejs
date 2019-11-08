@@ -405,14 +405,24 @@ class CacheConfiguration<%_ if (cacheProvider === 'ehcache' || cacheProvider ===
                     .enabled(jHipsterProperties.cache.infinispan.isStatsEnabled)
                     .allowDuplicateDomains(true).build()
             }
-        }
-        return InfinispanGlobalConfigurer {
+        } else if (discoveryClient.getInstances(registration..getServiceId()).size == 0) {
+          return InfinispanGlobalConfigurer {
             GlobalConfigurationBuilder
                 .defaultClusteredBuilder().defaultCacheName("infinispan-<%=baseName%>-cluster-cache").transport()
-                .transport(JGroupsTransport(getTransportChannel()))
+                .transport(JGroupsTransport())
                 .clusterName("infinispan-<%=baseName%>-cluster").globalJmxStatistics()
                 .enabled(jHipsterProperties.cache.infinispan.isStatsEnabled)
                 .allowDuplicateDomains(true).build()
+          }
+        } else {
+          return InfinispanGlobalConfigurer {
+              GlobalConfigurationBuilder
+                  .defaultClusteredBuilder().defaultCacheName("infinispan-<%=baseName%>-cluster-cache").transport()
+                  .transport(JGroupsTransport(getTransportChannel()))
+                  .clusterName("infinispan-<%=baseName%>-cluster").globalJmxStatistics()
+                  .enabled(jHipsterProperties.cache.infinispan.isStatsEnabled)
+                  .allowDuplicateDomains(true).build()
+          }
         }
         <%_ } else { _%>
         return InfinispanGlobalConfigurer {
