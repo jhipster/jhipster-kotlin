@@ -124,12 +124,12 @@ module.exports = class extends BaseGenerator {
 
                 this.mappingImports = this.usedMethods.map(method => `org.springframework.web.bind.annotation.${method}Mapping`);
                 this.mockRequestImports = this.usedMethods.map(
-                    method => `static org.springframework.test.web.servlet.request.MockMvcRequestBuilders.${method.toLowerCase()}`
+                    method => `org.springframework.test.web.servlet.request.MockMvcRequestBuilders.${method.toLowerCase()}`
                 );
 
                 this.mockRequestImports =
                     this.mockRequestImports.length > 3
-                        ? ['static org.springframework.test.web.servlet.request.MockMvcRequestBuilders.*']
+                        ? ['org.springframework.test.web.servlet.request.MockMvcRequestBuilders.*']
                         : this.mockRequestImports;
 
                 this.mainClass = this.getMainClassName();
