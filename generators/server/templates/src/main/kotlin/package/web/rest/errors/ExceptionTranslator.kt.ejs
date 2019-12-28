@@ -50,9 +50,6 @@ import reactor.core.publisher.Mono
 <%_ if (!reactive) { _%>
 import javax.servlet.http.HttpServletRequest
 <%_ } _%>
-<%_ if (!reactive) { _%>
-import java.util.NoSuchElementException
-<%_ } _%>
 
 private const val FIELD_ERRORS_KEY = "fieldErrors"
 private const val MESSAGE_KEY = "message"
@@ -147,17 +144,6 @@ _%>
             .build()
         return create(ex, problem, request)
     }
-    <%_ if (!reactive) { _%>
-
-    @ExceptionHandler
-    fun handleNoSuchElementException(ex: NoSuchElementException, request: NativeWebRequest): ResponseEntity<Problem> {
-        val problem = Problem.builder()
-            .withStatus(Status.NOT_FOUND)
-            .with(MESSAGE_KEY, ENTITY_NOT_FOUND_TYPE)
-            .build()
-        return create(ex, problem, request)
-    }
-    <%_ } _%>
 
     <%_ if (!skipUserManagement) { _%>
     @ExceptionHandler

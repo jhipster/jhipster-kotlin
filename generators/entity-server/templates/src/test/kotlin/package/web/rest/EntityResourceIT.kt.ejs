@@ -1003,12 +1003,6 @@ class <%= entityClass %>ResourceIT <% if (databaseType === 'cassandra') { %>: Ab
     <%_ } _%>
 
     companion object {
-    <%_
-        let oldSource = '';
-        try {
-            oldSource = this.fs.readFileSync(this.SERVER_TEST_SRC_DIR + packageFolder + '/web/rest/' + entityClass + 'ResourceIT.kt', 'utf8');
-        } catch (e) {}
-    _%>
         <%_ for (idx in fields) {
         const defaultValueName = 'DEFAULT_' + fields[idx].fieldNameUnderscored.toUpperCase();
         const updatedValueName = 'UPDATED_' + fields[idx].fieldNameUnderscored.toUpperCase();
@@ -1068,23 +1062,11 @@ class <%= entityClass %>ResourceIT <% if (databaseType === 'cassandra') { %>: Ab
                 updatedTextString += "B";
             }
             if (!this._.isUndefined(fields[idx].fieldValidateRulesPattern)) {
-                if (oldSource !== '') {
-                    // Check for old values
-                    const sampleTextStringSearchResult = new RegExp('private const val ' + defaultValueName + ': String = "(.*)"', 'm').exec(oldSource);
-                    if (sampleTextStringSearchResult != null) {
-                        sampleTextString = sampleTextStringSearchResult[1];
-                    }
-                    const updatedTextStringSearchResult = new RegExp('private const val ' + updatedValueName + ': String = "(.*)"', 'm').exec(oldSource);
-                    if (updatedTextStringSearchResult != null) {
-                        updatedTextString = updatedTextStringSearchResult[1];
-                    }
-                }
                 // Generate Strings, using pattern
                 try {
                     const patternRegExp = new RegExp(fields[idx].fieldValidateRulesPattern);
                     const randExp = new this.randexp(fields[idx].fieldValidateRulesPattern);
                     // set infinite repetitionals max range
-                    randExp.max = 1;
                     if (!patternRegExp.test(sampleTextString.replace(/\\"/g, '"').replace(/\\\\/g, '\\'))) {
                         sampleTextString = randExp.gen().replace(/\\/g, '\\\\').replace(/"/g, '\\"');
                     }

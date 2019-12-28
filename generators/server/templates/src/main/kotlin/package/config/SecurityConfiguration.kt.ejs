@@ -48,7 +48,9 @@ import org.springframework.http.HttpMethod
 import org.springframework.security.config.annotation.web.builders.WebSecurity;
     <%_ } _%>
   <%_ } _%>
+  <%_ if (authenticationType !== 'oauth2') { _%>
 import org.springframework.security.config.annotation.method.configuration.EnableGlobalMethodSecurity
+  <%_ } _%>
 import org.springframework.security.config.annotation.web.builders.HttpSecurity
 <%_ if (authenticationType !== 'uaa' && !(applicationType === 'microservice' && authenticationType === 'oauth2')) { _%>
 import org.springframework.security.config.annotation.web.builders.WebSecurity
@@ -105,7 +107,9 @@ import org.springframework.web.filter.CorsFilter
 import org.zalando.problem.spring.web.advice.security.SecurityProblemSupport
 
 @EnableWebSecurity
+  <%_ if (authenticationType !== 'oauth2') { _%>
 @EnableGlobalMethodSecurity(prePostEnabled = true, securedEnabled = true)
+  <%_ } _%>
 @Import(SecurityProblemSupport::class)
 class SecurityConfiguration(
     <%_ if (authenticationType === 'session' && !skipUserManagement) { _%>
@@ -189,9 +193,7 @@ class SecurityConfiguration(
                 <%_ } _%>
             <%_ } _%>
             .exceptionHandling()
-            <%_ if (authenticationType !== 'oauth2') { _%>
             .authenticationEntryPoint(problemSupport)
-            <%_ } _%>
             .accessDeniedHandler(problemSupport)
             <%_ if (authenticationType === 'session') { _%>
                 <%_ if (!skipUserManagement) { _%>
@@ -333,7 +335,6 @@ import org.springframework.beans.factory.annotation.Qualifier
 import org.springframework.cloud.client.loadbalancer.RestTemplateCustomizer
 import org.springframework.context.annotation.Bean
 import org.springframework.context.annotation.Configuration
-import org.springframework.security.config.annotation.method.configuration.EnableGlobalMethodSecurity
 import org.springframework.security.config.annotation.web.builders.HttpSecurity
 import org.springframework.security.config.http.SessionCreationPolicy
 import org.springframework.security.oauth2.config.annotation.web.configuration.EnableResourceServer
@@ -350,7 +351,6 @@ import org.springframework.web.client.RestTemplate
 
 @Configuration
 @EnableResourceServer
-@EnableGlobalMethodSecurity(prePostEnabled = true, securedEnabled = true)
 class SecurityConfiguration(private val oAuth2Properties: OAuth2Properties<% if (applicationType === 'gateway') { %>, private val corsFilter: CorsFilter<% } %>) : ResourceServerConfigurerAdapter() {
 
     @Throws(Exception::class)
