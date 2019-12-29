@@ -141,8 +141,6 @@ import org.redisson.Redisson
 import org.redisson.config.Config
 import org.redisson.jcache.configuration.RedissonConfiguration
 import org.springframework.boot.autoconfigure.cache.JCacheManagerCustomizer
-import org.springframework.context.annotation.Bean
-import org.springframework.context.annotation.Configuration
     <%_ if (enableHibernateCache) { _%>
 import org.springframework.boot.autoconfigure.orm.jpa.HibernatePropertiesCustomizer
 import org.hibernate.cache.jcache.ConfigSettings
@@ -627,7 +625,7 @@ class CacheConfiguration<%_ if (cacheProvider === 'ehcache' || cacheProvider ===
     @Bean
     fun memcachedCacheManager(jHipsterProperties: JHipsterProperties, caches: List<CacheFactory>): CacheManager {
 
-        if (!jHipsterProperties.cache.memcached.enabled) {
+        if (!jHipsterProperties.cache.memcached.isEnabled) {
             // Note that Memcached cannot work with Spring Boot devtools
             // So it should be disabled in development mode
             log.debug("Memcached is disabled")
@@ -647,16 +645,16 @@ class CacheConfiguration<%_ if (cacheProvider === 'ehcache' || cacheProvider ===
     <%_ if (databaseType !== 'no') { _%>
 
     @Bean
-    fun usersByLoginCache(jHipsterProperties: JHipsterProperties): CacheFactory =
+    fun usersByLoginCache(jHipsterProperties: JHipsterProperties): CacheFactory? =
         createCache(UserRepository.USERS_BY_LOGIN_CACHE, jHipsterProperties)
 
     @Bean
-    fun usersByEmailCache(jHipsterProperties: JHipsterProperties): CacheFactory =
+    fun usersByEmailCache(jHipsterProperties: JHipsterProperties): CacheFactory? =
         createCache(UserRepository.USERS_BY_EMAIL_CACHE, jHipsterProperties)
     <%_ } _%>
 
-    private fun createCache(cacheName: String,jHipsterProperties: JHipsterProperties): CacheFactory{
-        if (!jHipsterProperties.cache.memcached.enabled) {
+    private fun createCache(cacheName: String,jHipsterProperties: JHipsterProperties): CacheFactory? {
+        if (!jHipsterProperties.cache.memcached.isEnabled) {
             // Note that Memcached cannot work with Spring Boot devtools
             // So it should be disabled in development mode
             return null
@@ -671,8 +669,8 @@ class CacheConfiguration<%_ if (cacheProvider === 'ehcache' || cacheProvider ===
         }
 
         val cacheConfiguration = com.google.code.ssm.providers.CacheConfiguration().apply {
-            consistentHashing = true
-            useBinaryProtocol = jHipsterProperties.cache.memcached.useBinaryProtocol
+            isConsistentHashing = true
+            isUseBinaryProtocol = jHipsterProperties.cache.memcached.isUseBinaryProtocol
         }
         defaultCache.configuration = cacheConfiguration
 
@@ -685,8 +683,8 @@ class CacheConfiguration<%_ if (cacheProvider === 'ehcache' || cacheProvider ===
         val jcacheConfig = MutableConfiguration<Object, Object>()
         val config = Config()
         config.useSingleServer().setAddress(jHipsterProperties.cache.redis.server)
-        jcacheConfig.statisticsEnabled = true
-        jcacheConfig.expiryPolicyFactory = CreatedExpiryPolicy.factoryOf(Duration(TimeUnit.SECONDS, jHipsterProperties.cache.redis.expiration))
+        jcacheConfig.isStatisticsEnabled = true
+        jcacheConfig.setExpiryPolicyFactory(CreatedExpiryPolicy.factoryOf(Duration(TimeUnit.SECONDS, jHipsterProperties.cache.redis.expiration as Long)))
         return RedissonConfiguration.fromInstance(Redisson.create(config), jcacheConfig)
     }
 
@@ -699,17 +697,17 @@ class CacheConfiguration<%_ if (cacheProvider === 'ehcache' || cacheProvider ===
 
     @Bean
     fun cacheManagerCustomizer(jcacheConfiguration: javax.cache.configuration.Configuration<Object, Object> ): JCacheManagerCustomizer {
-        return cm -> {
+        return JCacheManagerCustomizer {
             <%_ if (!skipUserManagement || (authenticationType === 'oauth2' && databaseType !== 'no')) { _%>
-            createCache(cm, <%=packageName%>.repository<% if (reactive) { %>.reactive<% } %>.UserRepository.USERS_BY_LOGIN_CACHE, jcacheConfiguration);
-            createCache(cm, <%=packageName%>.repository<% if (reactive) { %>.reactive<% } %>.UserRepository.USERS_BY_EMAIL_CACHE, jcacheConfiguration);
+            createCache(it, <%=packageName%>.repository<% if (reactive) { %>.reactive<% } %>.UserRepository.USERS_BY_LOGIN_CACHE, jcacheConfiguration);
+            createCache(it, <%=packageName%>.repository<% if (reactive) { %>.reactive<% } %>.UserRepository.USERS_BY_EMAIL_CACHE, jcacheConfiguration);
                 <%_ if (enableHibernateCache) { _%>
-            createCache(cm, <%=packageName%>.domain.<%= asEntity('User') %>::class.java.name, jcacheConfiguration);
-            createCache(cm, <%=packageName%>.domain.Authority::class.java.name, jcacheConfiguration);
-            createCache(cm, <%=packageName%>.domain.<%= asEntity('User') %>::class.java.name + ".authorities", jcacheConfiguration);
+            createCache(it, <%=packageName%>.domain.<%= asEntity('User') %>::class.java.name, jcacheConfiguration);
+            createCache(it, <%=packageName%>.domain.Authority::class.java.name, jcacheConfiguration);
+            createCache(it, <%=packageName%>.domain.<%= asEntity('User') %>::class.java.name + ".authorities", jcacheConfiguration);
                     <%_ if (authenticationType === 'session') { _%>
-            createCache(cm, <%=packageName%>.domain.PersistentToken::class.java.name, jcacheConfiguration);
-            createCache(cm, <%=packageName%>.domain.<%= asEntity('User') %>::class.java.name + ".persistentTokens", jcacheConfiguration);
+            createCache(it, <%=packageName%>.domain.PersistentToken::class.java.name, jcacheConfiguration);
+            createCache(it, <%=packageName%>.domain.<%= asEntity('User') %>::class.java.name + ".persistentTokens", jcacheConfiguration);
                     <%_ } _%>
                 <%_ } _%>
             <%_ } _%>
@@ -717,8 +715,8 @@ class CacheConfiguration<%_ if (cacheProvider === 'ehcache' || cacheProvider ===
         };
     }
 
-    private fun createCache(javax.cache.CacheManager cm, String cacheName, javax.cache.configuration.Configuration<Object, Object> jcacheConfiguration): Unit {
-        javax.cache.Cache<Object, Object> cache = cm.getCache(cacheName);
+    private fun createCache(cm: javax.cache.CacheManager, cacheName: String, jcacheConfiguration: javax.cache.configuration.Configuration<Object, Object>): Unit {
+        val cache = cm.getCache<Object, Object>(cacheName)
         if (cache != null) {
             cm.destroyCache(cacheName);
         }
