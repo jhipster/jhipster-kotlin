@@ -1212,11 +1212,11 @@ describe('JHipster generator for entity', () => {
 
                     assert.fileContent(
                         `${SERVER_TEST_SRC_DIR}com/mycompany/myapp/web/rest/FooResourceIT.kt`,
-                        /DEFAULT_NUMBER_PATTERN_REQUIRED = "387"/
+                        /DEFAULT_NUMBER_PATTERN_REQUIRED = "099573"/
                     );
                     assert.fileContent(
                         `${SERVER_TEST_SRC_DIR}com/mycompany/myapp/web/rest/FooResourceIT.kt`,
-                        /UPDATED_NUMBER_PATTERN_REQUIRED = "468439"/
+                        /UPDATED_NUMBER_PATTERN_REQUIRED = "5"/
                     );
                 });
             });
