@@ -45,7 +45,6 @@ else
 fi
 
 cd "$JHI_FOLDER_APP"
-npm i --save-dev webdriver-manager@12.1.7
 
 #-------------------------------------------------------------------------------
 # Check folder where the app is generated
