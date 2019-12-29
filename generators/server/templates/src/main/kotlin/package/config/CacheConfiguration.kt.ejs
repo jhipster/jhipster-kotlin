@@ -28,6 +28,10 @@ import org.ehcache.jsr107.Eh107Configuration
 
 import io.github.jhipster.config.JHipsterProperties
 
+    <%_ if (enableHibernateCache) { _%>
+import org.hibernate.cache.jcache.ConfigSettings
+    <%_ } _%>
+
 <%_ } _%>
 <%_ if (cacheProvider === 'caffeine') { _%>
 import com.github.benmanes.caffeine.jcache.configuration.CaffeineConfiguration
@@ -59,6 +63,9 @@ import org.springframework.beans.factory.annotation.Autowired
 <%_ } _%>
 <%_ if (cacheProvider === 'ehcache' || cacheProvider === 'caffeine') { _%>
 import org.springframework.boot.autoconfigure.cache.JCacheManagerCustomizer
+    <%_ if (enableHibernateCache) { _%>
+import org.springframework.boot.autoconfigure.orm.jpa.HibernatePropertiesCustomizer
+    <%_ } _%>
 <%_ } _%>
 <%_ if (cacheProvider === 'hazelcast') { _%>
     <%_ if (serviceDiscoveryType === 'eureka' || serviceDiscoveryType === 'consul') { _%>
@@ -187,6 +194,13 @@ class CacheConfiguration<%_ if (cacheProvider === 'ehcache' || cacheProvider ===
 
         <%_ } _%>
     }
+
+    <%_ if (enableHibernateCache) { _%>
+    @Bean
+    fun hibernatePropertiesCustomizer(cacheManager: javax.cache.CacheManager) =  HibernatePropertiesCustomizer  {
+        hibernateProperties -> hibernateProperties[ConfigSettings.CACHE_MANAGER] = cacheManager
+    }
+    <%_ } _%>
 
     @Bean
     fun cacheManagerCustomizer(): JCacheManagerCustomizer {
