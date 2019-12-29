@@ -31,7 +31,6 @@ import org.assertj.core.api.Assertions
 import org.junit.jupiter.api.BeforeAll
 import org.junit.jupiter.api.BeforeEach
 import org.junit.jupiter.api.Test
-import org.springframework.http.MediaType
 
 <%_ if (!reactive) { _%>
 import org.springframework.http.MediaType
@@ -114,9 +113,9 @@ class <%= upperFirstCamelCase(baseName) %>KafkaResourceIT {
             .expectHeader().contentType(MediaType.APPLICATION_JSON_UTF8)
         <%_ } _%>
 
-        val consumerProps = hashMapOf<String, Any>(getConsumerProps("group-produce"))
+        val consumerProps = getConsumerProps("group-produce")
         val consumer = KafkaConsumer<String, String>(consumerProps)
-        consumer.subscribe(Collections.singletonList("topic-produce"))
+        consumer.subscribe(listOf("topic-produce"))
         val records = consumer.poll(Duration.ofSeconds(1))
 
         assertThat(records.count()).isEqualTo(1)
@@ -129,10 +128,10 @@ class <%= upperFirstCamelCase(baseName) %>KafkaResourceIT {
     @Throws(Exception::class)
     <%_ } _%>
     fun consumesMessages() {
-        val producerProps = hashMapOf<String, Any>(getProducerProps())
+        val producerProps = getProducerProps()
         val producer = KafkaProducer<String, String>(producerProps)
 
-        producer.send(ProducerRecord<>("topic-consume", "value-consume"))
+        producer.send(ProducerRecord<String, String>("topic-consume", "value-consume"))
 
         <%_ if (!reactive) { _%>
         val mvcResult = restMockMvc.perform(get("/api/<%= dasherizedBaseName %>-kafka/consume?topic=topic-consume"))
