@@ -693,12 +693,12 @@ class CacheConfiguration<%_ if (cacheProvider === 'ehcache' || cacheProvider ===
     <%_ } _%>
     <%_ if (cacheProvider === 'redis') { _%>
     @Bean
-    fun jcacheConfiguration(jHipsterProperties: JHipsterProperties): javax.cache.configuration.Configuration<Object, Object>  {
-        val jcacheConfig = MutableConfiguration<Object, Object>()
+    fun jcacheConfiguration(jHipsterProperties: JHipsterProperties): javax.cache.configuration.Configuration<Any, Any>  {
+        val jcacheConfig = MutableConfiguration<Any, Any>()
         val config = Config()
         config.useSingleServer().setAddress(jHipsterProperties.cache.redis.server)
         jcacheConfig.isStatisticsEnabled = true
-        jcacheConfig.setExpiryPolicyFactory(CreatedExpiryPolicy.factoryOf(Duration(TimeUnit.SECONDS, jHipsterProperties.cache.redis.expiration as Long)))
+        jcacheConfig.setExpiryPolicyFactory(CreatedExpiryPolicy.factoryOf(Duration(TimeUnit.SECONDS, jHipsterProperties.cache.redis.expiration.toLong())))
         return RedissonConfiguration.fromInstance(Redisson.create(config), jcacheConfig)
     }
 
@@ -710,7 +710,7 @@ class CacheConfiguration<%_ if (cacheProvider === 'ehcache' || cacheProvider ===
     <%_ } _%>
 
     @Bean
-    fun cacheManagerCustomizer(jcacheConfiguration: javax.cache.configuration.Configuration<Object, Object> ): JCacheManagerCustomizer {
+    fun cacheManagerCustomizer(jcacheConfiguration: javax.cache.configuration.Configuration<Any, Any> ): JCacheManagerCustomizer {
         return JCacheManagerCustomizer {
             <%_ if (!skipUserManagement || (authenticationType === 'oauth2' && databaseType !== 'no')) { _%>
             createCache(it, <%=packageName%>.repository<% if (reactive) { %>.reactive<% } %>.UserRepository.USERS_BY_LOGIN_CACHE, jcacheConfiguration);
@@ -729,8 +729,8 @@ class CacheConfiguration<%_ if (cacheProvider === 'ehcache' || cacheProvider ===
         };
     }
 
-    private fun createCache(cm: javax.cache.CacheManager, cacheName: String, jcacheConfiguration: javax.cache.configuration.Configuration<Object, Object>): Unit {
-        val cache = cm.getCache<Object, Object>(cacheName)
+    private fun createCache(cm: javax.cache.CacheManager, cacheName: String, jcacheConfiguration: javax.cache.configuration.Configuration<Any, Any>): Unit {
+        val cache = cm.getCache<Any, Any>(cacheName)
         if (cache != null) {
             cm.destroyCache(cacheName);
         }
