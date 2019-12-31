@@ -1,6 +1,11 @@
 <a name="1.4.0"></a>
 # [1.4.0](https://github.com/jhipster/jhipster-kotlin/compare/1.3.0...1.4.0) (2019-11-12)
-- Upgraded JHipster support to 6.5.1
+- Upgraded JHipster support to 6.6.0 
+    - Changelog for 6.6.0 [here](https://www.jhipster.tech/2019/12/22/jhipster-release-6.6.0.html) 
+    - Changelog for 6.5.1 [here](https://www.jhipster.tech/2019/11/19/jhipster-release-6.5.1.html)
+    - Changelog for 6.5.0 [here](https://www.jhipster.tech/2019/11/10/jhipster-release-6.5.0.html)
+- Changed CI to use only Azure and GitHub CI
+- Fixed CacheConfiguration errors
 
 <a name="1.3.0"></a>
 # [1.3.0](https://github.com/jhipster/jhipster-kotlin/compare/1.2.0...1.3.0) (2019-10-22)
