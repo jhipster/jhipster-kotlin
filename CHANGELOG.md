@@ -1,3 +1,7 @@
+<a name="1.4.0"></a>
+# [1.4.0](https://github.com/jhipster/jhipster-kotlin/compare/1.3.0...1.4.0) (2019-11-12)
+- Upgraded JHipster support to 6.5.1
+
 <a name="1.3.0"></a>
 # [1.3.0](https://github.com/jhipster/jhipster-kotlin/compare/1.2.0...1.3.0) (2019-10-22)
 - Upgraded JHipster support to 6.4.1

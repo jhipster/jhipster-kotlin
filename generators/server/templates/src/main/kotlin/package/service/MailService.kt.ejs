@@ -87,6 +87,10 @@ class MailService(
 
     @Async
     fun sendEmailFromTemplate(user: <%= asEntity('User') %>, templateName: String, titleKey: String) {
+        if (user.email == null) {
+            log.debug("Email doesn't exist for user '{}'", user.login)
+            return
+        }
         val locale = Locale.forLanguageTag(user.langKey)
         val context = Context(locale).apply {
             setVariable(USER, user)

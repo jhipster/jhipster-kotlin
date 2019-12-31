@@ -17,8 +17,8 @@
  * limitations under the License.
  */
 const _ = require('lodash');
-const randexp = require('randexp');
 const chalk = require('chalk');
+const faker = require('faker');
 const fs = require('fs');
 const utils = require('generator-jhipster/generators/utils');
 const constants = require('generator-jhipster/generators/generator-constants');
@@ -31,6 +31,9 @@ const INTERPOLATE_REGEX = constants.INTERPOLATE_REGEX;
 const TEST_DIR = constants.TEST_DIR;
 const SERVER_MAIN_SRC_KOTLIN_DIR = `${constants.MAIN_DIR}kotlin/`;
 const SERVER_TEST_SRC_KOTLIN_DIR = `${constants.TEST_DIR}kotlin/`;
+
+/* Use customized randexp */
+const randexp = utils.RandexpWithFaker;
 
 /**
  * The default is to use a file path string. It implies use of the template method.
@@ -190,6 +193,40 @@ const serverFiles = {
                     renameTo: generator => `gatling/user-files/simulations/${generator.entityClass}GatlingTest.scala`
                 }
             ]
+        },
+        {
+            path: SERVER_TEST_SRC_KOTLIN_DIR,
+            templates: [
+                {
+                    file: 'package/domain/EntityTest.kt',
+                    renameTo: generator => `${generator.packageFolder}/domain/${generator.entityClass}Test.kt`,
+                    useBluePrint: true
+                }
+            ]
+        },
+        {
+            condition: generator => generator.dto === 'mapstruct',
+            path: SERVER_TEST_SRC_KOTLIN_DIR,
+            templates: [
+                {
+                    file: 'package/service/dto/EntityDTOTest.kt',
+                    renameTo: generator => `${generator.packageFolder}/service/dto/${generator.asDto(generator.entityClass)}Test.kt`,
+                    useBluePrint: true
+                }
+            ]
+        },
+        {
+            condition: generator =>
+                generator.dto === 'mapstruct' &&
+                (generator.databaseType === 'sql' || generator.databaseType === 'mongodb' || generator.databaseType === 'couchbase'),
+            path: SERVER_TEST_SRC_KOTLIN_DIR,
+            templates: [
+                {
+                    file: 'package/service/mapper/EntityMapperTest.kt',
+                    renameTo: generator => `${generator.packageFolder}/service/mapper/${generator.entityClass}MapperTest.kt`,
+                    useBluePrint: true
+                }
+            ]
         }
     ]
 };
@@ -209,6 +246,13 @@ function writeFiles() {
                 `${this.microservicePath}/${this.jhipsterConfigDirectory}/${this.entityNameCapitalized}.json`,
                 this.destinationPath(`${this.jhipsterConfigDirectory}/${this.entityNameCapitalized}.json`)
             );
+        },
+
+        setupReproducibility() {
+            if (this.skipServer) return;
+
+            // In order to have consistent results with Faker, restart seed with current entity name hash.
+            faker.seed(utils.stringHashCode(this.name.toLowerCase()));
         },
 
         writeServerFiles() {

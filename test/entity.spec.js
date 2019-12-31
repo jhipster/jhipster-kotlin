@@ -7,6 +7,8 @@ const expectedFiles = require('./utils/expected-files').entity;
 
 const CLIENT_MAIN_SRC_DIR = constants.CLIENT_MAIN_SRC_DIR;
 const SERVER_MAIN_SRC_DIR = `${constants.MAIN_DIR}kotlin/`;
+const SERVER_MAIN_RES_DIR = constants.SERVER_MAIN_RES_DIR;
+const SERVER_TEST_SRC_DIR = `${constants.TEST_DIR}kotlin/`;
 
 describe('JHipster generator for entity', () => {
     context('creation from CLI', () => {
@@ -870,6 +872,131 @@ describe('JHipster generator for entity', () => {
                 });
             });
         });
+
+        describe('with creation timestamp', () => {
+            before(done => {
+                helpers
+                    .run('generator-jhipster/generators/entity')
+                    .withOptions({
+                        'from-cli': true,
+                        skipInstall: true,
+                        blueprint: 'kotlin',
+                        skipChecks: true,
+                        'skip-ktlint-format': true,
+                        creationTimestamp: '2016-01-20',
+                        withEntities: true
+                    })
+                    .withGenerators([
+                        [
+                            require('../generators/entity-server'), // eslint-disable-line global-require
+                            'jhipster-kotlin:entity-server',
+                            path.join(__dirname, '../generators/entity-server/index.js')
+                        ]
+                    ])
+                    .inTmpDir(dir => {
+                        fse.copySync(path.join(__dirname, '../test/templates/default-ng2'), dir);
+                    })
+                    .withArguments(['foo'])
+                    .withPrompts({
+                        fieldAdd: false,
+                        relationshipAdd: false,
+                        dto: 'no',
+                        service: 'no',
+                        pagination: 'pagination'
+                    })
+                    .on('end', done);
+            });
+
+            it('creates expected default files', () => {
+                assert.file(expectedFiles.server);
+                assert.file(expectedFiles.serverLiquibase);
+                assert.file(expectedFiles.clientNg2);
+                assert.file(expectedFiles.gatling);
+            });
+        });
+
+        describe('with formated creation timestamp', () => {
+            before(done => {
+                helpers
+                    .run('generator-jhipster/generators/entity')
+                    .withOptions({
+                        'from-cli': true,
+                        skipInstall: true,
+                        blueprint: 'kotlin',
+                        skipChecks: true,
+                        'skip-ktlint-format': true,
+                        creationTimestamp: '2016-01-20T00:00:00.000Z',
+                        withEntities: true
+                    })
+                    .withGenerators([
+                        [
+                            require('../generators/entity-server'), // eslint-disable-line global-require
+                            'jhipster-kotlin:entity-server',
+                            path.join(__dirname, '../generators/entity-server/index.js')
+                        ]
+                    ])
+                    .inTmpDir(dir => {
+                        fse.copySync(path.join(__dirname, '../test/templates/default-ng2'), dir);
+                    })
+                    .withArguments(['foo'])
+                    .withPrompts({
+                        fieldAdd: false,
+                        relationshipAdd: false,
+                        dto: 'no',
+                        service: 'no',
+                        pagination: 'pagination'
+                    })
+                    .on('end', done);
+            });
+
+            it('creates expected default files', () => {
+                assert.file(expectedFiles.server);
+                assert.file(expectedFiles.serverLiquibase);
+                assert.file(expectedFiles.clientNg2);
+                assert.file(expectedFiles.gatling);
+            });
+        });
+
+        describe('with wrong base changelog date', () => {
+            before(done => {
+                helpers
+                    .run('generator-jhipster/generators/entity')
+                    .withOptions({
+                        'from-cli': true,
+                        skipInstall: true,
+                        blueprint: 'kotlin',
+                        skipChecks: true,
+                        'skip-ktlint-format': true,
+                        baseChangelogDate: '20-01-2016'
+                    })
+                    .withGenerators([
+                        [
+                            require('../generators/entity-server'), // eslint-disable-line global-require
+                            'jhipster-kotlin:entity-server',
+                            path.join(__dirname, '../generators/entity-server/index.js')
+                        ]
+                    ])
+                    .inTmpDir(dir => {
+                        fse.copySync(path.join(__dirname, '../test/templates/default-ng2'), dir);
+                    })
+                    .withArguments(['foo'])
+                    .withPrompts({
+                        fieldAdd: false,
+                        relationshipAdd: false,
+                        dto: 'no',
+                        service: 'no',
+                        pagination: 'pagination'
+                    })
+                    .on('end', done);
+            });
+
+            it('creates expected default files', () => {
+                assert.file(expectedFiles.server);
+                assert.noFile(expectedFiles.serverLiquibase);
+                assert.file(expectedFiles.clientNg2);
+                assert.file(expectedFiles.gatling);
+            });
+        });
     });
 
     context('regeneration from json file', () => {
@@ -1045,6 +1172,52 @@ describe('JHipster generator for entity', () => {
                 it('generates swagger annotations on DTO', () => {
                     assert.noFileContent(`${SERVER_MAIN_SRC_DIR}com/mycompany/myapp/domain/Foo.kt`, /@ApiModelProperty/);
                     assert.fileContent(`${SERVER_MAIN_SRC_DIR}com/mycompany/myapp/service/dto/FooDTO.kt`, /@ApiModelProperty/);
+                });
+            });
+        });
+
+        context('reproducible build', () => {
+            describe('no dto, no service, no pagination', () => {
+                before(done => {
+                    helpers
+                        .run('generator-jhipster/generators/entity')
+                        .withOptions({
+                            'from-cli': true,
+                            skipInstall: true,
+                            blueprint: 'kotlin',
+                            skipChecks: true,
+                            'skip-ktlint-format': true
+                        })
+                        .withGenerators([
+                            [
+                                require('../generators/entity-server'), // eslint-disable-line global-require
+                                'jhipster-kotlin:entity-server',
+                                path.join(__dirname, '../generators/entity-server/index.js')
+                            ]
+                        ])
+                        .inTmpDir(dir => {
+                            fse.copySync(path.join(__dirname, '../test/templates/reproducible'), dir);
+                        })
+                        .withArguments(['foo'])
+                        .on('end', done);
+                });
+
+                it('creates expected default files', () => {
+                    assert.file(expectedFiles.server);
+                    assert.file(expectedFiles.clientNg2);
+                    assert.file(expectedFiles.gatling);
+                    assert.file(expectedFiles.fakeData);
+
+                    assert.fileContent(`${SERVER_MAIN_RES_DIR}config/liquibase/fake-data/foo.csv`, /1;Junction;"03508"/);
+
+                    assert.fileContent(
+                        `${SERVER_TEST_SRC_DIR}com/mycompany/myapp/web/rest/FooResourceIT.kt`,
+                        /DEFAULT_NUMBER_PATTERN_REQUIRED = "099573"/
+                    );
+                    assert.fileContent(
+                        `${SERVER_TEST_SRC_DIR}com/mycompany/myapp/web/rest/FooResourceIT.kt`,
+                        /UPDATED_NUMBER_PATTERN_REQUIRED = "5"/
+                    );
                 });
             });
         });

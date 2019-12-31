@@ -24,23 +24,59 @@ import org.springframework.context.annotation.Configuration
 @Configuration
 @ConfigurationProperties(prefix="kafka", ignoreUnknownFields = true)
 class KafkaProperties {
-    private var consumer: Map<String, String>? = null
 
-    private var producer: Map<String, String>? = null
+    private var bootStrapServers: String = "localhost:9092"
 
-    fun getConsumerProps(): Map<String, String>? {
-        return consumer
+    private var consumer: MutableMap<String, Any> = hashMapOf()
+
+    private var producer: MutableMap<String, Any> = hashMapOf()
+
+    fun getBootStrapServers(): String {
+        return bootStrapServers
     }
 
-    fun setConsumer(consumer: Map<String, String>) {
+    fun setBootStrapServers(bootStrapServers: String) {
+        this.bootStrapServers = bootStrapServers
+    }
+
+    fun getConsumerProps(): MutableMap<String, Any> {
+        val properties = consumer
+        if (!properties.containsKey("bootstrap.servers")) {
+            properties["bootstrap.servers"] = bootStrapServers
+        }
+        return properties
+    }
+
+    fun setConsumer(consumer: MutableMap<String, Any>) {
         this.consumer = consumer
     }
 
-    fun getProducerProps(): Map<String, String>? {
-        return producer
+    fun getProducerProps(): MutableMap<String, Any> {
+        val properties = producer
+        if (!properties.containsKey("bootstrap.servers")) {
+            properties["bootstrap.servers"] = bootStrapServers
+        }
+
+        if(producer["key"] != null) {
+            val key = producer["key"] as Map<String, Any>
+            val serializer = key["serializer"]
+            if (serializer != null) {
+                properties["key.serializer"] = serializer
+            }
+        }
+
+        if(producer["value"] != null) {
+            val value = producer["value"] as Map<String, Any>
+            val serializer = value["serializer"]
+            if (serializer != null) {
+                properties["value.serializer"] = serializer
+            }
+        }
+
+        return properties
     }
 
-    fun setProducer(producer: Map<String, String>) {
+    fun setProducer(producer: MutableMap<String, Any>) {
         this.producer = producer
     }
 }

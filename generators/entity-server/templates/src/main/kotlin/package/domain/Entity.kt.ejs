@@ -29,6 +29,7 @@ let hasRelationship = relationships.length !== 0;
 let fieldsContainEnum = false;
 let fieldsContainManyToMany = false;
 let fieldsContainOneToOne = false;
+let fieldContainOwnerSide = false;
 const uniqueEnums = {}; %><%- include imports -%>
 <%_
     //todo: maybe move to generator-jhipster/generators/entity/index.js
@@ -57,6 +58,12 @@ const uniqueEnums = {}; %><%- include imports -%>
     for (idx in fields) {
         if ((prodDatabaseType === 'postgresql' || devDatabaseType === 'postgresql') && fields[idx].fieldTypeBlobContent === 'text') {
             hasTextBlob = true;
+            break;
+        }
+    }
+    for (idx in relationships) {
+        if(relationships[idx].ownerSide) {
+            fieldContainOwnerSide = relationships[idx].ownerSide;
             break;
         }
     }
@@ -335,7 +342,7 @@ for (var idx in fields) {
     <%_ } else if (relationshipType === 'many-to-one') {
             if (databaseType === 'sql') {
     _%>
-    @ManyToOne<% if (relationshipRequired) { %>(optional = false)<% } %>
+    @ManyToOne<%_ if (relationshipRequired) { _%>(optional = false)<%_ } _%>
         <%_ if (relationshipValidate) { _%>
     <%- include relationship_validators -%>
         <%_ }
@@ -383,7 +390,7 @@ for (var idx in fields) {
             <%_ if (isUsingMapsId === true) { %>
     @MapsId
     @JoinColumn(name = "id")
-            <%_ } else { %>
+            <%_ } else { _%>
     @JoinColumn(unique = true)
             <%_ } _%>
         <%_ } else { _%>

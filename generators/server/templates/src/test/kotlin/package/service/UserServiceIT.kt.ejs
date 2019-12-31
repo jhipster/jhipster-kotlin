@@ -49,7 +49,7 @@ import <%= packageName %>.repository.UserRepository
 import <%= packageName %>.security.ANONYMOUS
 <%_ } _%>
 <%_ if (authenticationType !== 'oauth2' && (databaseType === 'sql' || databaseType === 'mongodb' || databaseType === 'couchbase')) { _%>
-import <%= packageName %>.service.util.generateResetKey
+import io.github.jhipster.security.RandomUtil
 <%_ } _%>
 
 <%_ if (authenticationType !== 'oauth2') { _%>
@@ -280,7 +280,7 @@ class UserServiceIT <% if (databaseType === 'cassandra') { %>: AbstractCassandra
     <%_ } _%>
     fun assertThatResetKeyMustNotBeOlderThan24Hours() {
         val daysAgo = Instant.now().minus(25, ChronoUnit.HOURS)
-        val resetKey = generateResetKey()
+        val resetKey = RandomUtil.generateResetKey()
         user.activated = true
         user.resetDate = daysAgo
         user.resetKey = resetKey
@@ -314,7 +314,7 @@ class UserServiceIT <% if (databaseType === 'cassandra') { %>: AbstractCassandra
     fun assertThatUserCanResetPassword() {
         val oldPassword = user.password
         val daysAgo = Instant.now().minus(2, ChronoUnit.HOURS)
-        val resetKey = generateResetKey()
+        val resetKey = RandomUtil.generateResetKey()
         user.activated = true
         user.resetDate = daysAgo
         user.resetKey = resetKey
