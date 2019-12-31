@@ -291,6 +291,21 @@ const serverFiles = {
         },
         {
             condition: generator =>
+                !generator.reactive &&
+                (generator.applicationType === 'uaa' ||
+                    generator.authenticationType === 'uaa' ||
+                    generator.authenticationType === 'oauth2'),
+            path: SERVER_MAIN_KOTLIN_SRC_DIR,
+            templates: [
+                {
+                    file: 'package/config/MethodSecurityConfiguration.kt',
+                    renameTo: generator => `${generator.javaDir}config/MethodSecurityConfiguration.kt`,
+                    useBluePrint: true
+                }
+            ]
+        },
+        {
+            condition: generator =>
                 !shouldSkipUserManagement(generator) && generator.authenticationType === 'session' && !generator.reactive,
             path: SERVER_MAIN_KOTLIN_SRC_DIR,
             templates: [
@@ -730,11 +745,6 @@ const serverFiles = {
                     useBluePrint: true
                 },
                 {
-                    file: 'package/config/DefaultProfileUtil.kt',
-                    renameTo: generator => `${generator.javaDir}config/DefaultProfileUtil.kt`,
-                    useBluePrint: true
-                },
-                {
                     file: 'package/config/AsyncConfiguration.kt',
                     renameTo: generator => `${generator.javaDir}config/AsyncConfiguration.kt`,
                     useBluePrint: true
@@ -1003,32 +1013,9 @@ const serverFiles = {
     ],
     serverJavaService: [
         {
-            condition: generator => !generator.skipUserManagement,
-            path: SERVER_MAIN_KOTLIN_SRC_DIR,
-            templates: [
-                {
-                    file: 'package/service/util/RandomUtil.kt',
-                    renameTo: generator => `${generator.javaDir}service/util/RandomUtil.kt`,
-                    useBluePrint: true
-                }
-            ]
-        },
-        {
             condition: generator => generator.messageBroker === 'kafka',
             path: SERVER_MAIN_KOTLIN_SRC_DIR,
             templates: [
-                {
-                    file: 'package/service/KafkaConsumer.kt',
-                    renameTo: generator =>
-                        `${generator.javaDir}service/${generator.upperFirstCamelCase(generator.baseName)}KafkaConsumer.kt`,
-                    useBluePrint: true
-                },
-                {
-                    file: 'package/service/KafkaProducer.kt',
-                    renameTo: generator =>
-                        `${generator.javaDir}service/${generator.upperFirstCamelCase(generator.baseName)}KafkaProducer.kt`,
-                    useBluePrint: true
-                },
                 {
                     file: 'package/config/KafkaProperties.kt',
                     renameTo: generator => `${generator.javaDir}config/KafkaProperties.kt`,
@@ -1191,8 +1178,8 @@ const serverFiles = {
             path: SERVER_TEST_SRC_KOTLIN_DIR,
             templates: [
                 {
-                    file: 'package/web/rest/ClientForwardControllerIT.kt',
-                    renameTo: generator => `${generator.testDir}web/rest/ClientForwardControllerIT.kt`,
+                    file: 'package/web/rest/ClientForwardControllerTest.kt',
+                    renameTo: generator => `${generator.testDir}web/rest/ClientForwardControllerTest.kt`,
                     useBluePrint: true
                 }
             ]
@@ -1489,8 +1476,8 @@ const serverFiles = {
             path: SERVER_TEST_SRC_KOTLIN_DIR,
             templates: [
                 {
-                    file: 'package/service/mapper/UserMapperIT.kt',
-                    renameTo: generator => `${generator.testDir}service/mapper/UserMapperIT.kt`,
+                    file: 'package/service/mapper/UserMapperTest.kt',
+                    renameTo: generator => `${generator.testDir}service/mapper/UserMapperTest.kt`,
                     useBluePrint: true
                 },
                 {
@@ -1834,8 +1821,8 @@ const serverFiles = {
                     useBluePrint: true
                 },
                 {
-                    file: 'package/service/mapper/UserMapperIT.kt',
-                    renameTo: generator => `${generator.testDir}service/mapper/UserMapperIT.kt`,
+                    file: 'package/service/mapper/UserMapperTest.kt',
+                    renameTo: generator => `${generator.testDir}service/mapper/UserMapperTest.kt`,
                     useBluePrint: true
                 },
                 {

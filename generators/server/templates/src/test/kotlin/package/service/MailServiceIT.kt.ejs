@@ -61,6 +61,7 @@ import java.util.Properties
 import java.util.regex.Pattern
 
 import org.assertj.core.api.Assertions.assertThat
+import org.assertj.core.api.Assertions.fail
 import org.mockito.Mockito.atLeastOnce
 import kotlin.test.assertNotNull
 
@@ -235,7 +236,11 @@ class MailServiceIT <% if (databaseType === 'cassandra') { %>: AbstractCassandra
         doThrow(MailSendException::class.java)
             .`when`(javaMailSender)
             .send(any(MimeMessage::class.java))
-        mailService.sendEmail("john.doe@example.com", "testSubject", "testContent", isMultipart = false, isHtml = false)
+        try {
+            mailService.sendEmail("john.doe@example.com", "testSubject", "testContent", isMultipart = false, isHtml = false)
+        } catch (e: Exception) {
+            fail<String>("Exception shouldn't have been thrown");
+        }
     }
 
     @Test

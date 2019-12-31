@@ -37,6 +37,7 @@ import java.nio.file.Files
 import java.nio.file.Paths
 import java.time.Duration
 
+
 /**
  * Base class for starting/stopping Cassandra during tests.
  */
@@ -48,7 +49,7 @@ open class AbstractCassandraTest {
         const val CASSANDRA_TEST_PORT = 9042
 
         @JvmField
-        val CASSANDRA_CONTAINER: GenericContainer<*> = KGenericContainer()
+        val CASSANDRA_CONTAINER = KGenericContainer("<%= DOCKER_CASSANDRA %>")
             .waitingFor(Wait.forListeningPort().withStartupTimeout(Duration.ofSeconds(30)))
             .withExposedPorts(CASSANDRA_TEST_PORT)
 
@@ -107,6 +108,6 @@ open class AbstractCassandraTest {
         }
     }
 
-    private class KGenericContainer : GenericContainer<KGenericContainer>("<%= DOCKER_CASSANDRA %>")
-
+    // Workaround for Testcointainers issue https://github.com/testcontainers/testcontainers-java/issues/318#issuecomment-290692749
+    class KGenericContainer(imageName: String) : GenericContainer<KGenericContainer>(imageName)
 }

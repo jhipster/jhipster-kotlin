@@ -27,6 +27,10 @@ class ClientForwardController {
      * Forwards any unmapped paths (except those containing a period) to the client `index.html`.
      * @return forward to client `index.html`.
      */
-    @GetMapping(value = ["/**/{path:<% if (websocket === 'spring-websocket') { %>^(?!websocket)<% } %>[^\\.]*}"])
+    <%_ if (websocket === 'spring-websocket') { _%>
+    @GetMapping(value = ["/{path:[^\\.]*}", "/{path:^(?!websocket).*}/**/{path:[^\\.]*}"])
+    <%_ } else { _%>
+    @GetMapping(value = ["/**/{path:[^\\.]*}"])
+    <%_ } _%>
     fun forward() = "forward:/"
 }
