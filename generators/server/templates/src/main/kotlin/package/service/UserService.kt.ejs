@@ -491,7 +491,7 @@ class UserService<% if (databaseType !== 'no') { %>(
                 log.debug("Changed Information for User: {}", user)
                 user
             }
-            ?.let { UserDTO(it) }
+            ?.let { <%= asDto('User') %>(it) }
         <%_ } else { // reactive _%>
                 <%_ if (['sql', 'mongodb'].includes(databaseType)) { _%>
                 Flux.fromIterable(userDTO.authorities!!)
@@ -507,9 +507,8 @@ class UserService<% if (databaseType !== 'no') { %>(
             .doOnNext(this::clearUserCaches)
             <%_ } _%>
             .doOnNext { log.debug("Changed Information for User: {}", it) }
-        <%_ } _%>
             .map { <%= asDto('User') %>(it) }
-        <%_ } _%>
+            <%_ } _%>
     }
 
     <%_ if (!reactive) { _%>
