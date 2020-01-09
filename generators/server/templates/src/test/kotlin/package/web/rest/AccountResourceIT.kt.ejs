@@ -559,7 +559,7 @@ class AccountResourceIT <% if (databaseType === 'cassandra') { %>: AbstractCassa
         <%_ } _%>
 
         <% if (reactive) { _%> assertThat(userRepository.findOneByLogin("test-register-valid").blockOptional().isPresent).isTrue()
-        <% } else { _%>assertThat(userRepository.findOneByLogin("test-register-valid")).isNotNull<% } %>
+        <% } else { _%>assertThat(userRepository.findOneByLogin("test-register-valid")).isNotNull()<% } %>
     }
 
     @Test<% if (databaseType === 'sql') { %>
@@ -634,7 +634,7 @@ class AccountResourceIT <% if (databaseType === 'cassandra') { %>: AbstractCassa
         <%_ } _%>
 
         val user = userRepository.findOneByLogin("bob")<% if (reactive) { %>.blockOptional()<% } %>
-        <% if (reactive) { _%> assertThat(user.isPresent).isFalse
+        <% if (reactive) { _%> assertThat(user.isPresent).isFalse()
         <% } else { _%>assertThat(user).isNull()<% } %>
     }
 
@@ -672,7 +672,7 @@ class AccountResourceIT <% if (databaseType === 'cassandra') { %>: AbstractCassa
         <%_ } _%>
 
         val user = userRepository.findOneByLogin("bob")<% if (reactive) { %>.blockOptional()<% } %>
-        <% if (reactive) { _%> assertThat(user.isPresent).isFalse
+        <% if (reactive) { _%> assertThat(user.isPresent).isFalse()
         <% } else { _%>assertThat(user).isNull()<% } %>
     }
 
@@ -710,7 +710,7 @@ class AccountResourceIT <% if (databaseType === 'cassandra') { %>: AbstractCassa
         <%_ } _%>
 
         val user = userRepository.findOneByLogin("bob")<% if (reactive) { %>.blockOptional()<% } %>
-        <% if (reactive) { _%> assertThat(user.isPresent).isFalse
+        <% if (reactive) { _%> assertThat(user.isPresent).isFalse()
         <% } else { _%>assertThat(user).isNull()<% } %>
     }
 
@@ -850,7 +850,7 @@ class AccountResourceIT <% if (databaseType === 'cassandra') { %>: AbstractCassa
         val testUser1 = userRepository.findOneByLogin("test-register-duplicate-email")<% if (reactive) { %>.blockOptional()<% } %>
 
         <% if (reactive) { _%>assertThat(testUser1.isPresent).isTrue()
-        <% } else { _%>assertThat(testUser1).isNotNull<% } %>
+        <% } else { _%>assertThat(testUser1).isNotNull()<% } %>
 
         // Duplicate email, different login
         val secondUser = ManagedUserVM().apply {
@@ -888,7 +888,7 @@ class AccountResourceIT <% if (databaseType === 'cassandra') { %>: AbstractCassa
 
         val testUser3 = userRepository.findOneByLogin("test-register-duplicate-email-2")<% if (reactive) { %>.blockOptional()<% } %>
         <% if (reactive) { _%>assertThat(testUser3.isPresent).isTrue()
-        <% } else { _%>assertThat(testUser3).isNotNull<% } %>
+        <% } else { _%>assertThat(testUser3).isNotNull()<% } %>
 
         // Duplicate email - with uppercase email address
         val userWithUpperCaseEmail = ManagedUserVM().apply {
@@ -929,7 +929,7 @@ class AccountResourceIT <% if (databaseType === 'cassandra') { %>: AbstractCassa
         testUser4.get().activated = true
         userService.updateUser((<%= asDto('User') %>(testUser4.get()))).block()
         <%_ } else { _%>
-        assertThat(testUser4).isNotNull
+        assertThat(testUser4).isNotNull()
         assertThat(testUser4?.email).isEqualTo("test-register-duplicate-email@example.com")
 
         testUser4?.activated = true
@@ -991,7 +991,7 @@ class AccountResourceIT <% if (databaseType === 'cassandra') { %>: AbstractCassa
         assertThat(userDup.isPresent).isTrue()
         assertThat(userDup.get().authorities).hasSize(1)
         <%_ } else { _%>
-        assertThat(userDup).isNotNull
+        assertThat(userDup).isNotNull()
         assertThat(userDup?.authorities).hasSize(1)
         <%_ } _%>
             .containsExactly(<% if (databaseType === 'sql' || databaseType === 'mongodb') { %>authorityRepository.findById(USER).<% if (reactive) { %>block<% } else { %>get<% } %>()<% } %><% if (databaseType === 'cassandra' || databaseType === 'couchbase') { %>USER<% } %>)

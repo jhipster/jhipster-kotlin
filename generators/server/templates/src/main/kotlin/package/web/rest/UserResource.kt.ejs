@@ -161,9 +161,9 @@ class UserResource(
             throw BadRequestAlertException("A new user cannot already have an ID", "userManagement", "idexists")
             // Lowercase the user login before comparing with database
         <%_ if (!reactive) { _%>
-        } else if (userRepository.findOneByLogin(userDTO.login!!.toLowerCase()) == null) {
+        } else if (userRepository.findOneByLogin(userDTO.login!!.toLowerCase()) != null) {
             throw LoginAlreadyUsedException()
-        } else if (userRepository.findOneByEmailIgnoreCase(userDTO.email) == null) {
+        } else if (userRepository.findOneByEmailIgnoreCase(userDTO.email) != null) {
             throw EmailAlreadyUsedException()
         } else {
             val newUser = userService.createUser(userDTO)
@@ -216,11 +216,11 @@ class UserResource(
     fun updateUser(@Valid @RequestBody userDTO: <%= asDto('User') %>): ResponseEntity<<%= asDto('User') %>> {
         log.debug("REST request to update User : {}", userDTO)
         var existingUser = userRepository.findOneByEmailIgnoreCase(userDTO.email)
-        if (existingUser?.id != userDTO.id) {
+        if (existingUser != null && existingUser.id != userDTO.id) {
             throw EmailAlreadyUsedException()
         }
         existingUser = userRepository.findOneByLogin(userDTO.login!!.toLowerCase())
-        if (existingUser?.id != userDTO.id) {
+        if (existingUser != null && existingUser.id != userDTO.id) {
             throw LoginAlreadyUsedException()
         }
         val updatedUser = userService.updateUser(userDTO)
