@@ -208,7 +208,7 @@ import org.springframework.data.couchbase.core.mapping.id.GenerationStrategy.UNI
 <%_ } if (searchEngine === 'elasticsearch') { _%>
 @org.springframework.data.elasticsearch.annotations.Document(indexName = "<%= entityInstance.toLowerCase() %>")
 <%_ } _%>
-class <%= asEntity(entityClass) %>(
+data class <%= asEntity(entityClass) %>(
 
     @Id
     <%_ if (databaseType === 'sql' && isUsingMapsId === false) { _%>
@@ -458,31 +458,6 @@ for (var idx in fields) {
     <%_ } _%>
 <%_ } _%>
     // jhipster-needle-entity-add-getters-setters - JHipster will add getters and setters here, do not remove
-
-    override fun equals(other: Any?): Boolean {
-        if (this === other) return true
-        if (other !is <%= asEntity(entityClass) %>) return false
-        if (other.id == null || id == null) return false
-
-        return id == other.id
-    }
-
-    override fun hashCode() = 31
-
-    override fun toString() = "<%= asEntity(entityClass) %>{" +
-        "id=$id" +
-        <%_ for (idx in fields) {
-            const fieldType = fields[idx].fieldType;
-            const fieldTypeBlobContent = fields[idx].fieldTypeBlobContent;
-            const fieldName = fields[idx].fieldName;
-            const fieldInJavaBeanMethod = fields[idx].fieldInJavaBeanMethod;
-            const isNumeric = ['integer', 'long', 'float', 'double', 'bigdecimal'].includes(fieldType.toLowerCase());_%>
-        ", <%= fieldName %>=<% if (! isNumeric) { %>'<% } %>$<%= fieldName %><% if (! isNumeric) { %>'<% } %>" +
-            <%_ if ((fieldType === 'byte[]' || fieldType === 'ByteBuffer') && fieldTypeBlobContent !== 'text') { _%>
-        ", <%= fieldName %>ContentType='$<%= fieldName %>ContentType'" +
-            <%_ } _%>
-        <%_ } _%>
-        "}"
 
 
     companion object {
