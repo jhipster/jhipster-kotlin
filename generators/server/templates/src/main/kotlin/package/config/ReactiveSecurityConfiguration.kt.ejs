@@ -23,18 +23,40 @@ import <%= packageName %>.security.ADMIN
 import <%= packageName %>.security.jwt.JWTFilter
 import <%= packageName %>.security.jwt.TokenProvider
 <%_ } _%>
-<%_ if (authenticationType === 'session') { _%>
+<%_ if (authenticationType === 'session' || authenticationType === 'oauth2') { _%>
+    <%_ if (authenticationType === 'oauth2') { _%>
+import <%= packageName %>.security.SecurityUtils
+import <%= packageName %>.security.oauth2.AudienceValidator
+import <%= packageName %>.security.oauth2.JwtAuthorityExtractor
 import <%= packageName %>.service.AuditEventService
+import org.springframework.security.authentication.AbstractAuthenticationToken
+import org.springframework.security.oauth2.server.resource.authentication.JwtAuthenticationConverter
+    <%_ } _%>
+    <%_ if (!skipUserManagement) { _%>
+import <%= packageName %>.service.AuditEventService
+    <%_ } _%>
 import io.github.jhipster.web.filter.reactive.CookieCsrfFilter
 <%_ } _%>
+<%_ if (authenticationType === 'oauth2') { _%>
+import org.springframework.beans.factory.annotation.Value
+import io.github.jhipster.config.JHipsterProperties
+<%_ } _%>
+<%_ if (skipUserManagement && authenticationType !== 'oauth2') { _%>
+import org.springframework.boot.autoconfigure.security.SecurityProperties
+<%_ } _%>
+<%_ if (!skipClient) { _%>
+import <%= packageName %>.web.filter.SpaWebFilter
+<%_ } _%>
 import org.springframework.context.annotation.Bean
-import org.springframework.context.annotation.Configuration
 import org.springframework.context.annotation.Import
+<%_ if (authenticationType === 'oauth2') { _%>
+import org.springframework.core.convert.converter.Converter
+<%_ } _%>
 import org.springframework.http.HttpMethod
 <%_ if (authenticationType === 'session') { _%>
 import org.springframework.http.HttpStatus
 <%_ } _%>
-<%_ if (!skipUserManagement) { _%>
+<%_ if (authenticationType !== 'oauth2') { _%>
 import org.springframework.security.authentication.ReactiveAuthenticationManager
 import org.springframework.security.authentication.UserDetailsRepositoryReactiveAuthenticationManager
 <%_ } _%>
@@ -46,12 +68,40 @@ import org.springframework.security.config.web.server.ServerHttpSecurity
 import org.springframework.security.core.Authentication
 import org.springframework.security.core.AuthenticationException
 <%_ } _%>
-<%_ if (!skipUserManagement) { _%>
+<%_ if (authenticationType === 'oauth2') { _%>
+import org.springframework.security.core.Authentication
+import org.springframework.security.core.GrantedAuthority
+import org.springframework.security.oauth2.client.oidc.userinfo.OidcReactiveOAuth2UserService
+import org.springframework.security.oauth2.client.oidc.userinfo.OidcUserRequest
+import org.springframework.security.oauth2.client.userinfo.ReactiveOAuth2UserService
+import org.springframework.security.oauth2.core.DelegatingOAuth2TokenValidator
+import org.springframework.security.oauth2.core.OAuth2TokenValidator
+import org.springframework.security.oauth2.core.oidc.user.DefaultOidcUser
+import org.springframework.security.oauth2.core.oidc.user.OidcUser
+import org.springframework.security.oauth2.core.oidc.user.OidcUserAuthority
+// TODO
+import org.springframework.security.oauth2.jwt.*
+import org.springframework.security.oauth2.server.resource.authentication.JwtAuthenticationConverter
+import org.springframework.security.oauth2.server.resource.authentication.ReactiveJwtAuthenticationConverterAdapter
+import org.springframework.security.web.server.csrf.CookieServerCsrfTokenRepository
+import org.springframework.security.web.server.header.ReferrerPolicyServerHttpHeadersWriter
+import org.springframework.security.web.server.WebFilterExchange
+import org.springframework.security.web.server.authentication.RedirectServerAuthenticationSuccessHandler
+import org.springframework.security.web.server.authentication.ServerAuthenticationSuccessHandler
+<%_ } _%>
+<%_ if (authenticationType !== 'oauth2') { _%>
+    <%_ if (!skipUserManagement) { _%>
+import org.springframework.security.core.userdetails.MapReactiveUserDetailsService
+    <%_ } _%>
 import org.springframework.security.core.userdetails.ReactiveUserDetailsService
 import org.springframework.security.crypto.bcrypt.BCryptPasswordEncoder
 <%_ } _%>
-<%_ if (authenticationType === 'session') { _%>
+    <%_ if (authenticationType === 'session' || skipUserManagement) { _%>
 import org.springframework.security.core.userdetails.User
+    <%_ } _%>
+    <%_ if (skipUserManagement) { _%>
+import org.springframework.security.core.userdetails.UserDetails
+    <%_ } _%>
 <%_ } _%>
 import org.springframework.security.web.server.SecurityWebFilterChain
 <%_ if (authenticationType === 'session') { _%>
@@ -60,16 +110,19 @@ import org.springframework.security.web.server.authentication.HttpStatusServerEn
 import org.springframework.security.web.server.authentication.logout.HttpStatusReturningServerLogoutSuccessHandler
 import org.springframework.security.web.server.csrf.CookieServerCsrfTokenRepository
 <%_ } _%>
+import org.springframework.security.web.server.header.ReferrerPolicyServerHttpHeadersWriter
 import org.springframework.security.web.server.util.matcher.NegatedServerWebExchangeMatcher
 import org.springframework.security.web.server.util.matcher.OrServerWebExchangeMatcher
+<%_ if (skipUserManagement && authenticationType !== 'oauth2') { _%>
+import org.springframework.util.StringUtils
+<%_ } _%>
 import org.zalando.problem.spring.webflux.advice.security.SecurityProblemSupport
-<%_ if (authenticationType === 'session') { _%>
+<%_ if (authenticationType === 'session' || authenticationType === 'oauth2') { _%>
 import reactor.core.publisher.Mono
 <%_ } _%>
 
 import org.springframework.security.web.server.util.matcher.ServerWebExchangeMatchers.pathMatchers
 
-@Configuration
 @EnableWebFluxSecurity
 @EnableReactiveMethodSecurity
 @Import(SecurityProblemSupport::class)
@@ -80,13 +133,17 @@ class SecurityConfiguration(
 <%_ if (authenticationType === 'jwt') { _%>
     private val tokenProvider: TokenProvider,
 <%_ } _%>
-<%_ if (authenticationType === 'session') { _%>
+<%_ if (authenticationType === 'session' && !skipUserManagement || authenticationType === 'oauth2') { _%>
     private val auditEventService: AuditEventService,
+<%_ } _%>
+<%_ if (authenticationType === 'oauth2') { _%>
+    @Value("\${spring.security.oauth2.client.provider.oidc.issuer-uri}") issuerUri: String,
+    private val jHipsterProperties: JHipsterProperties,
 <%_ } _%>
     private val problemSupport: SecurityProblemSupport
 ) {
 
-    <%_ if (!skipUserManagement) { _%>
+    <%_ if (!skipUserManagement && authenticationType !== 'oauth2') { _%>
     @Bean
     fun passwordEncoder() = BCryptPasswordEncoder()
 
@@ -96,9 +153,28 @@ class SecurityConfiguration(
             setPasswordEncoder(passwordEncoder())
         }
 
+    <%_ } else if (authenticationType !== 'oauth2') { _%>
+
+    @Bean
+    fun userDetailsService(properties: SecurityProperties): MapReactiveUserDetailsService {
+        val user = properties.user
+        val userDetails = User
+            .withUsername(user.name)
+            .password("{noop}" + user.password)
+            .roles(StringUtils.toStringArray(user.roles))
+            .build()
+        return MapReactiveUserDetailsService(userDetails);
+    }
+
+    @Bean
+    fun reactiveAuthenticationManager(userDetailsService: ReactiveUserDetailsService): ReactiveAuthenticationManager {
+        return UserDetailsRepositoryReactiveAuthenticationManager(userDetailsService);
+    }
+
     <%_ } _%>
     @Bean
     fun springSecurityFilterChain(http: ServerHttpSecurity): SecurityWebFilterChain {
+        // @formatter:off
         http
             .securityMatcher(
                 NegatedServerWebExchangeMatcher(
@@ -114,13 +190,16 @@ class SecurityConfiguration(
         .and()
             // See https://github.com/spring-projects/spring-security/issues/5766
             .addFilterAt(CookieCsrfFilter(), SecurityWebFiltersOrder.REACTOR_CONTEXT)
-            <%_ } else{ _%>
+            <%_ } else { _%>
             .disable()
+            <%_ } _%>
+            <%_ if (!skipClient) { _%>
+            .addFilterAt(SpaWebFilter(), SecurityWebFiltersOrder.AUTHENTICATION)
             <%_ } _%>
             <%_ if (authenticationType === 'jwt') { _%>
             .addFilterAt(JWTFilter(tokenProvider), SecurityWebFiltersOrder.HTTP_BASIC)
             <%_ } _%>
-            <%_ if (!skipUserManagement) { _%>
+            <%_ if (!skipUserManagement && authenticationType !== 'oauth2') { _%>
             .authenticationManager(reactiveAuthenticationManager())
             <%_ } _%>
             .exceptionHandling()
@@ -140,8 +219,13 @@ class SecurityConfiguration(
             <%_ } _%>
         .and()
             .headers()
-            .frameOptions()
-            .disable()
+            .contentSecurityPolicy("default-src 'self'; frame-src 'self' data:; script-src 'self' 'unsafe-inline' 'unsafe-eval' https://storage.googleapis.com; style-src 'self' 'unsafe-inline'; img-src 'self' data:; font-src 'self' data:")
+        .and()
+            .referrerPolicy(ReferrerPolicyServerHttpHeadersWriter.ReferrerPolicy.STRICT_ORIGIN_WHEN_CROSS_ORIGIN)
+        .and()
+            .featurePolicy("geolocation 'none'; midi 'none'; sync-xhr 'none'; microphone 'none'; camera 'none'; magnetometer 'none'; gyroscope 'none'; speaker 'none'; fullscreen 'self'; payment 'none'")
+        .and()
+            .frameOptions().disable()
         .and()
             .authorizeExchange()
             <%_ if (!skipClient) { _%>
@@ -155,33 +239,116 @@ class SecurityConfiguration(
             .pathMatchers("/api/account/reset-password/init").permitAll()
             .pathMatchers("/api/account/reset-password/finish").permitAll()
             <%_ } _%>
+            .pathMatchers("/api/auth-info").permitAll()
             .pathMatchers("/api/**").authenticated()
             .pathMatchers("/management/health").permitAll()
             .pathMatchers("/management/info").permitAll()
             .pathMatchers("/management/prometheus").permitAll()
             .pathMatchers("/management/**").hasAuthority(ADMIN)
+        <%_ if (authenticationType === 'oauth2') { _%>
+
+        http<%_ if (['monolith', 'gateway'].includes(applicationType)) { _%>.oauth2Login()
+            .authenticationSuccessHandler{ exchange, authentication -> onAuthenticationSuccess(exchange, authentication) }
+        .and()
+            <%_ } _%>.oauth2ResourceServer()
+            .jwt()
+            .jwtAuthenticationConverter(grantedAuthoritiesExtractor())
+        .and()
+            .and()
+            .oauth2Client()
+            <%_ } _%>
+        // @formatter:on
         return http.build()
     }
+    <%_ if (authenticationType === 'oauth2') { _%>
+
+    fun grantedAuthoritiesExtractor(): Converter<Jwt, Mono<AbstractAuthenticationToken>>  {
+        val jwtAuthenticationConverter = JwtAuthenticationConverter()
+        jwtAuthenticationConverter.setJwtGrantedAuthoritiesConverter(JwtAuthorityExtractor())
+        return ReactiveJwtAuthenticationConverterAdapter(jwtAuthenticationConverter)
+    }
+
+    /**
+    * Map authorities from "groups" or "roles" claim in ID Token.
+    *
+    * @return a {@link ReactiveOAuth2UserService} that has the groups from the IdP.
+    */
+    @Bean
+    fun oidcUserService(): ReactiveOAuth2UserService<OidcUserRequest, OidcUser> {
+        val delegate = OidcReactiveOAuth2UserService()
+
+        return (userRequest) -> {
+            // Delegate to the default implementation for loading a user
+            return delegate.loadUser(userRequest).map{ user -> {
+                val mappedAuthorities = hashSetOf<GrantedAuthority>()
+
+                user.getAuthorities().forEach(authority -> {
+                    if (authority instanceof OidcUserAuthority) {
+                        val oidcUserAuthority = (OidcUserAuthority) authority
+                        mappedAuthorities.addAll(SecurityUtils.extractAuthorityFromClaims(oidcUserAuthority.getUserInfo().getClaims()))
+                    }
+                });
+
+                return DefaultOidcUser(mappedAuthorities, user.getIdToken(), user.getUserInfo())
+            }}
+        };
+    }
+
+    @Bean
+    fun jwtDecoder(): ReactiveJwtDecoder {
+        val jwtDecoder = (NimbusReactiveJwtDecoder) ReactiveJwtDecoders.fromOidcIssuerLocation(issuerUri)
+
+        val audienceValidator = new AudienceValidator(jHipsterProperties.getSecurity().getOauth2().getAudience())
+        val withIssuer = JwtValidators.createDefaultWithIssuer(issuerUri)
+        val withAudience = new DelegatingOAuth2TokenValidator<>(withIssuer, audienceValidator)
+
+        jwtDecoder.setJwtValidator(withAudience)
+
+        return jwtDecoder
+    }
+
+    // @JVMField ???
+    // TODO ....
+    private val redirectServerAuthenticationSuccessHandler = RedirectServerAuthenticationSuccessHandler()
+
+    fun onAuthenticationSuccess(exchange: WebFilterExchange, authentication: Authentication): Mono<Void>  {
+        return redirectServerAuthenticationSuccessHandler.onAuthenticationSuccess(exchange, authentication)
+            .thenReturn(authentication.getPrincipal())
+            .filter { principal -> principal instanceof OidcUser }
+            .map { (it as OidcUser).preferredUsername }
+            .filter { !Constants.ANONYMOUS_USER.equals(it) }
+            .flatMap { auditEventService.saveAuthenticationError(it) }
+            .then()
+    }
+    <%_ } _%>
     <%_ if (authenticationType === 'session') { _%>
 
     private fun onAuthenticationError(exchange: WebFilterExchange, e: AuthenticationException): Mono<Void>  {
         exchange.exchange.response.statusCode = HttpStatus.UNAUTHORIZED
+        <%_ if (!skipUserManagement) { _%>
         return exchange.exchange()
                 .formData
                 .map { it.getFirst("username") }
                 .filter { !Constants.ANONYMOUS_USER.equals(it) }
                 .flatMap { auditEventService.saveAuthenticationError(it, e) }
                 .then()
+        <%_ } else { _%>
+        return Mono.empty();
+        <%_ } _%>
     }
 
     private fun onAuthenticationSuccess(exchange: WebFilterExchange, authentication: Authentication): Mono<Void> {
         exchange.exchange.response.statusCode = HttpStatus.OK
+        <%_ if (!skipUserManagement) { _%>
         return Mono.just(authentication.principal)
                 .filter { it instanceof User }
                 .map { (it as User).username }
                 .filter { !Constants.ANONYMOUS_USER.equals(it) }
                 .flatMap { auditEventService.saveAuthenticationSuccess(it) }
                 .then()
+        <%_ } else { _%>
+        return Mono.empty();
+        <%_ } _%>
     }
     <%_ } _%>
 }

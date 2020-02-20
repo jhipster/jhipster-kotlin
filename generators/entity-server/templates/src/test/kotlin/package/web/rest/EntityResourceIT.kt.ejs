@@ -16,7 +16,7 @@
  See the License for the specific language governing permissions and
  limitations under the License.
 -%>
-package <%=packageName%>.web.rest
+package <%= packageName %>.web.rest
 
 <%_ let isUsingMapsId = false;
     let mapsIdAssoc;
@@ -37,19 +37,19 @@ package <%=packageName%>.web.rest
     }
 _%>
 <%_ if (databaseType === 'cassandra') { _%>
-import <%=packageName%>.AbstractCassandraTest
+import <%= packageName %>.AbstractCassandraTest
 <%_ } _%>
 <%_ if (cacheProvider === 'redis') { _%>
-import <%=packageName%>.RedisTestContainerExtension
+import <%= packageName %>.RedisTestContainerExtension
 <%_ } _%>
-import <%=packageName%>.<%= mainClass %>
+import <%= packageName %>.<%= mainClass %>
 <%_ if (authenticationType === 'uaa') { _%>
-import <%=packageName%>.config.SecurityBeanOverrideConfiguration
+import <%= packageName %>.config.SecurityBeanOverrideConfiguration
 <%_ } _%>
 <%_ if (authenticationType === 'oauth2') { _%>
-import <%=packageName%>.config.TestSecurityConfiguration
+import <%= packageName %>.config.TestSecurityConfiguration
 <%_ } _%>
-import <%=packageName%>.domain.<%= asEntity(entityClass) %>
+import <%= packageName %>.domain.<%= asEntity(entityClass) %>
 <%_
     var imported = [];
     for (idx in relationships) { // import entities in required relationships
@@ -58,32 +58,32 @@ import <%=packageName%>.domain.<%= asEntity(entityClass) %>
         const isUsingMapsIdL1 = relationships[idx].useJPADerivedIdentifier;
         if(imported.indexOf(otherEntityNameCapitalized) === -1 && asEntity(entityClass) !== asEntity(otherEntityNameCapitalized)) {
             if ((relationshipValidate !== null && relationshipValidate === true) || jpaMetamodelFiltering || (isUsingMapsIdL1 === true)) { _%>
-import <%=packageName%>.domain.<%= asEntity(otherEntityNameCapitalized) %>
+import <%= packageName %>.domain.<%= asEntity(otherEntityNameCapitalized) %>
 <%_         imported.push(otherEntityNameCapitalized);
         } } } _%>
 <%_ if (saveUserSnapshot) { _%>
-import <%=packageName%>.repository.UserRepository
+import <%= packageName %>.repository.UserRepository
 <%_ } _%>
-import <%=packageName%>.repository.<%= entityClass %>Repository
+import <%= packageName %>.repository.<%= entityClass %>Repository
 <%_ if (isUsingMapsId === true && ( dto !== 'mapstruct' && service === 'no')) { _%>
-import <%=packageName%>.repository.<%= mapsIdAssoc.otherEntityNameCapitalized %>Repository
+import <%= packageName %>.repository.<%= mapsIdAssoc.otherEntityNameCapitalized %>Repository
 <%_ } _%>
 <%_ if (searchEngine === 'elasticsearch') { _%>
-import <%=packageName%>.repository.search.<%= entityClass %>SearchRepository
+import <%= packageName %>.repository.search.<%= entityClass %>SearchRepository
 <%_ } _%>
 <%_ if (service !== 'no') { _%>
-import <%=packageName%>.service.<%= entityClass %>Service
+import <%= packageName %>.service.<%= entityClass %>Service
 <%_ } else if (reactiveRepositories) { _%>
-import <%=packageName%>.repository.reactive.<%= entityClass %>ReactiveRepository
+import <%= packageName %>.repository.reactive.<%= entityClass %>ReactiveRepository
 <%_ } _%>
 <%_ if (dto === 'mapstruct') { _%>
-import <%=packageName%>.service.dto.<%= asDto(entityClass) %>
-import <%=packageName%>.service.mapper.<%= entityClass %>Mapper
+import <%= packageName %>.service.dto.<%= asDto(entityClass) %>
+import <%= packageName %>.service.mapper.<%= entityClass %>Mapper
 <%_ } _%>
-import <%=packageName%>.web.rest.errors.ExceptionTranslator
+import <%= packageName %>.web.rest.errors.ExceptionTranslator
 <%_ if (jpaMetamodelFiltering) { _%>
-import <%=packageName%>.service.dto.<%= entityClass %>Criteria
-import <%=packageName%>.service.<%= entityClass %>QueryService
+import <%= packageName %>.service.dto.<%= entityClass %>Criteria
+import <%= packageName %>.service.<%= entityClass %>QueryService
 <%_ } _%>
 
 import kotlin.test.assertNotNull
@@ -155,7 +155,7 @@ import org.springframework.test.web.servlet.result.MockMvcResultMatchers.content
 import org.springframework.test.web.servlet.result.MockMvcResultMatchers.jsonPath
 import org.springframework.test.web.servlet.result.MockMvcResultMatchers.status
 
-<%_ for (idx in fields) { if (fields[idx].fieldIsEnum === true) { _%>import <%=packageName%>.domain.enumeration.<%= fields[idx].fieldType %>
+<%_ for (idx in fields) { if (fields[idx].fieldIsEnum === true) { _%>import <%= packageName %>.domain.enumeration.<%= fields[idx].fieldType %>
 <%_ } } _%>
 
 /**
@@ -213,7 +213,7 @@ class <%= entityClass %>ResourceIT <% if (databaseType === 'cassandra') { %>: Ab
     <%_ } if (searchEngine === 'elasticsearch') { _%>
 
     /**
-     * This repository is mocked in the <%=packageName%>.repository.search test package.
+     * This repository is mocked in the <%= packageName %>.repository.search test package.
      *
      * @see <%= packageName %>.repository.search.<%=entityClass%>SearchRepositoryMockConfiguration
      */
@@ -450,7 +450,7 @@ class <%= entityClass %>ResourceIT <% if (databaseType === 'cassandra') { %>: Ab
         // Get all the <%= entityInstance %>List
         rest<%= entityClass %>MockMvc.perform(get("/api/<%= entityApiUrl %><% if (databaseType !== 'cassandra') { %>?sort=id,desc<% } %>"))
             .andExpect(status().isOk)
-            .andExpect(content().contentType(MediaType.APPLICATION_JSON_UTF8_VALUE))<% if (databaseType === 'sql' && hasOauthUser === true) { %>
+            .andExpect(content().contentType(MediaType.APPLICATION_JSON_VALUE))<% if (databaseType === 'sql' && hasOauthUser === true) { %>
             .andExpect(jsonPath("$.[*].id").value(hasItem(<%= asEntity(entityInstance) %>.id)))<% } else if (databaseType === 'sql') { %>
             .andExpect(jsonPath("$.[*].id").value(hasItem(<%= asEntity(entityInstance) %>.id?.toInt())))<% } %><% if (databaseType === 'mongodb' || databaseType === 'couchbase') { %>
             .andExpect(jsonPath("$.[*].id").value(hasItem(<%= asEntity(entityInstance) %>.id)))<% } %><% if (databaseType === 'cassandra') { %>
@@ -528,7 +528,7 @@ class <%= entityClass %>ResourceIT <% if (databaseType === 'cassandra') { %>: Ab
         // Get the <%= entityInstance %>
         rest<%= entityClass %>MockMvc.perform(get("/api/<%= entityApiUrl %>/{id}", id))
             .andExpect(status().isOk)
-            .andExpect(content().contentType(MediaType.APPLICATION_JSON_UTF8_VALUE))<% if (databaseType === 'sql' && hasOauthUser === true) { %>
+            .andExpect(content().contentType(MediaType.APPLICATION_JSON_VALUE))<% if (databaseType === 'sql' && hasOauthUser === true) { %>
             .andExpect(jsonPath("$.id").value(<%= asEntity(entityInstance) %>.id))<% } else if (databaseType === 'sql') { %>
             .andExpect(jsonPath("$.id").value(id.toInt()))<% } %><% if (databaseType === 'mongodb' || databaseType === 'couchbase') { %>
             .andExpect(jsonPath("$.id").value(id))<% } %><% if (databaseType === 'cassandra') { %>
@@ -760,7 +760,7 @@ class <%= entityClass %>ResourceIT <% if (databaseType === 'cassandra') { %>: Ab
     private fun default<%= entityClass %>ShouldBeFound(filter: String) {
         rest<%= entityClass %>MockMvc.perform(get("/api/<%= entityApiUrl %>?sort=id,desc&$filter"))
             .andExpect(status().isOk)
-            .andExpect(content().contentType(MediaType.APPLICATION_JSON_UTF8_VALUE))
+            .andExpect(content().contentType(MediaType.APPLICATION_JSON_VALUE))
             .andExpect(jsonPath("$.[*].id").value(hasItem(<%= asEntity(entityInstance) %><% if (databaseType === 'sql' && hasOauthUser === true) { %>.id?<% } else { %>.id?.toInt()<% } %>)))<% fields.forEach((field) => { %>
             <%_ if ((field.fieldType === 'byte[]' || field.fieldType === 'ByteBuffer') && field.fieldTypeBlobContent !== 'text') { _%>
             .andExpect(jsonPath("$.[*].<%=field.fieldName%>ContentType").value(hasItem(<%='DEFAULT_' + field.fieldNameUnderscored.toUpperCase()%>_CONTENT_TYPE)))
@@ -770,7 +770,7 @@ class <%= entityClass %>ResourceIT <% if (databaseType === 'cassandra') { %>: Ab
         // Check, that the count call also returns 1
         rest<%= entityClass %>MockMvc.perform(get("/api/<%= entityApiUrl %>/count?sort=id,desc&$filter"))
             .andExpect(status().isOk)
-            .andExpect(content().contentType(MediaType.APPLICATION_JSON_UTF8_VALUE))
+            .andExpect(content().contentType(MediaType.APPLICATION_JSON_VALUE))
             .andExpect(content().string("1"))
     }
 
@@ -780,14 +780,14 @@ class <%= entityClass %>ResourceIT <% if (databaseType === 'cassandra') { %>: Ab
     private fun default<%= entityClass %>ShouldNotBeFound(filter: String) {
         rest<%= entityClass %>MockMvc.perform(get("/api/<%= entityApiUrl %>?sort=id,desc&$filter"))
             .andExpect(status().isOk)
-            .andExpect(content().contentType(MediaType.APPLICATION_JSON_UTF8_VALUE))
+            .andExpect(content().contentType(MediaType.APPLICATION_JSON_VALUE))
             .andExpect(jsonPath("$").isArray)
             .andExpect(jsonPath("$").isEmpty)
 
         // Check, that the count call also returns 0
         rest<%= entityClass %>MockMvc.perform(get("/api/<%= entityApiUrl %>/count?sort=id,desc&$filter"))
             .andExpect(status().isOk)
-            .andExpect(content().contentType(MediaType.APPLICATION_JSON_UTF8_VALUE))
+            .andExpect(content().contentType(MediaType.APPLICATION_JSON_VALUE))
             .andExpect(content().string("0"))
     }
 <%_  } _%>
@@ -990,7 +990,7 @@ class <%= entityClass %>ResourceIT <% if (databaseType === 'cassandra') { %>: Ab
         // Search the <%= entityInstance %>
         rest<%= entityClass %>MockMvc.perform(get("/api/_search/<%= entityApiUrl %>?query=id:" + <%= asEntity(entityInstance) %>.id))
             .andExpect(status().isOk)
-            .andExpect(content().contentType(MediaType.APPLICATION_JSON_UTF8_VALUE))<% if (databaseType === 'sql' && hasOauthUser === true) { %>
+            .andExpect(content().contentType(MediaType.APPLICATION_JSON_VALUE))<% if (databaseType === 'sql' && hasOauthUser === true) { %>
             .andExpect(jsonPath("$.[*].id").value(hasItem(<%= asEntity(entityInstance) %>.getId())))<% } else if (databaseType === 'sql') { %>
             .andExpect(jsonPath("$.[*].id").value(hasItem(<%= asEntity(entityInstance) %>.id?.toInt())))<% } %><% if (databaseType === 'mongodb' || databaseType === 'couchbase') { %>
             .andExpect(jsonPath("$.[*].id").value(hasItem(<%= asEntity(entityInstance) %>.id)))<% } %><% if (databaseType === 'cassandra') { %>

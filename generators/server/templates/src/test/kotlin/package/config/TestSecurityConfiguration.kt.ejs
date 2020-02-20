@@ -16,20 +16,21 @@
  See the License for the specific language governing permissions and
  limitations under the License.
 -%>
-package <%=packageName%>.config
+package <%= packageName %>.config
 
 import org.springframework.boot.test.context.TestConfiguration
 import org.springframework.context.annotation.Bean
-import org.springframework.security.oauth2.client.InMemoryOAuth2AuthorizedClientService
+import org.springframework.security.oauth2.client.InMemory<% if (reactive) { %>Reactive<% } %>OAuth2AuthorizedClientService
 import org.springframework.security.oauth2.client.OAuth2AuthorizedClientService
+import org.springframework.security.oauth2.client.<% if (reactive) { %>Reactive<% } %>OAuth2AuthorizedClientService
 import org.springframework.security.oauth2.client.registration.ClientRegistration
-import org.springframework.security.oauth2.client.registration.ClientRegistrationRepository
-import org.springframework.security.oauth2.client.registration.InMemoryClientRegistrationRepository
+import org.springframework.security.oauth2.client.registration.<% if (reactive) { %>Reactive<% } %>ClientRegistrationRepository
+import org.springframework.security.oauth2.client.registration.InMemory<% if (reactive) { %>Reactive<% } %>ClientRegistrationRepository
 import org.springframework.security.oauth2.client.web.AuthenticatedPrincipalOAuth2AuthorizedClientRepository
 import org.springframework.security.oauth2.client.web.OAuth2AuthorizedClientRepository
 import org.springframework.security.oauth2.core.AuthorizationGrantType
 import org.springframework.security.oauth2.core.ClientAuthenticationMethod
-import org.springframework.security.oauth2.jwt.JwtDecoder
+import org.springframework.security.oauth2.jwt.<% if (reactive) { %>Reactive<% } %>JwtDecoder
 
 import org.mockito.Mockito.mock
 
@@ -41,7 +42,7 @@ class TestSecurityConfiguration {
     private val clientRegistration: ClientRegistration = clientRegistration().build()
 
     @Bean
-    fun clientRegistrationRepository() = InMemoryClientRegistrationRepository(clientRegistration)
+    fun clientRegistrationRepository() = InMemory<% if (reactive) { %>Reactive<% } %>ClientRegistrationRepository(clientRegistration)
 
     private fun clientRegistration(): ClientRegistration.Builder {
         val metadata = mutableMapOf<String, Any>()
@@ -64,11 +65,11 @@ class TestSecurityConfiguration {
     }
 
     @Bean
-    fun jwtDecoder(): JwtDecoder = mock(JwtDecoder::class.java)
+    fun jwtDecoder(): JwtDecoder = mock(<% if (reactive) { %>Reactive<% } %>JwtDecoder::class.java)
 
     @Bean
     fun authorizedClientService(clientRegistrationRepository: ClientRegistrationRepository) =
-        InMemoryOAuth2AuthorizedClientService(clientRegistrationRepository)
+        InMemory<% if (reactive) { %>Reactive<% } %>OAuth2AuthorizedClientService(clientRegistrationRepository)
 
     @Bean
     fun authorizedClientRepository(authorizedClientService: OAuth2AuthorizedClientService) =

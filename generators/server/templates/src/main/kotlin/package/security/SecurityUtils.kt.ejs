@@ -18,7 +18,7 @@
 -%>
 @file:JvmName("SecurityUtils")
 
-package <%=packageName%>.security
+package <%= packageName %>.security
 
 import org.springframework.security.core.Authentication
 import org.springframework.security.core.GrantedAuthority
@@ -56,28 +56,37 @@ import java.util.Optional
  */
 fun getCurrentUserLogin(): <% if (!reactive) { %>Optional<% } else { %>Mono<% } %><String> =
     <%_ if (!reactive) { _%>
-    Optional.ofNullable(SecurityContextHolder.getContext().authentication)
+    Optional.ofNullable(extractPrincipal(SecurityContextHolder.getContext().authentication))
     <%_ } else { _%>
     ReactiveSecurityContextHolder.getContext()
         .map(SecurityContext::getAuthentication)
+        .flatMap { Mono.justOrEmpty(extractPrincipal(it)) }
     <%_ } _%>
-        .map { authentication ->
-            when (val principal = authentication.principal) {
-                is UserDetails -> principal.username
-                <%_ if (authenticationType === 'oauth2') { _%>
-                is JwtAuthenticationToken -> (authentication as JwtAuthenticationToken).token.claims as String
-                is DefaultOidcUser -> {
-                    if(principal.attributes.containsKey("preferred_username")) {
-                        principal.attributes["preferred_username"].toString()
-                    } else {
-                        null
-                    }
-                }
-                <%_ } _%>
-                is String -> principal
-                else -> null
+
+
+fun extractPrincipal(authentication?: Authentication): String {
+
+    if(authentication == null) {
+        return null;
+    }
+
+    when (val principal = authentication.principal) {
+        is UserDetails -> principal.username
+        <%_ if (authenticationType === 'oauth2') { _%>
+        is JwtAuthenticationToken -> (authentication as JwtAuthenticationToken).token.claims as String
+        is DefaultOidcUser -> {
+            if(principal.attributes.containsKey("preferred_username")) {
+                principal.attributes["preferred_username"].toString()
+            } else {
+                null
             }
         }
+        <%_ } _%>
+        is String -> principal
+        else -> null
+    }
+}
+
 <%_ if (authenticationType === 'jwt') { _%>
 
 /**

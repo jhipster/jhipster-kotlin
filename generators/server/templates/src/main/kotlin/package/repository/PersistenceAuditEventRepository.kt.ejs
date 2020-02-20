@@ -16,9 +16,9 @@
  See the License for the specific language governing permissions and
  limitations under the License.
 -%>
-package <%=packageName%>.repository
+package <%= packageName %>.repository
 
-import <%=packageName%>.domain.PersistentAuditEvent
+import <%= packageName %>.domain.PersistentAuditEvent
 <%_ if (!reactive) { _%>
 import org.springframework.data.domain.Page
 <%_ } _%>
@@ -43,9 +43,9 @@ import java.time.Instant
 interface PersistenceAuditEventRepository : <% if (reactive) { %>Reactive<% } %><% if (databaseType === 'sql') { %>JpaRepository<PersistentAuditEvent, Long><% } %><% if (databaseType === 'mongodb') { %>MongoRepository<% } %><% if (databaseType === 'couchbase') { %>N1qlCouchbaseRepository<% } %><% if (databaseType === 'mongodb' || databaseType === 'couchbase') {
  %><PersistentAuditEvent, String><% } %> {
 
-    <%_ if (!reactive) { _%>
-    fun findByPrincipal(principal: String): List<PersistentAuditEvent>
+    fun findByPrincipal(principal: String): <% if (reactive) { %>Flux<% } else { %>List<% } %><PersistentAuditEvent>
 
+    <%_ if (!reactive) { _%>
     fun findByPrincipalAndAuditEventDateAfterAndAuditEventType(
         principal: String,
         after: Instant,

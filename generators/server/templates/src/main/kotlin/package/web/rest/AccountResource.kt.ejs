@@ -16,19 +16,26 @@ WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
 See the License for the specific language governing permissions and
 limitations under the License.
 -%>
-package <%=packageName%>.web.rest
+package <%= packageName %>.web.rest
 
 <%_ if (authenticationType === 'oauth2') { _%>
-import <%=packageName%>.service.UserService
-import <%=packageName%>.service.dto.<%= asDto('User') %>
+    <%_ if (reactive) { _%>
+import <%= packageName %>.security.SecurityUtils
+    <%_ } _%>
+import <%= packageName %>.service.UserService
+import <%= packageName %>.service.dto.<%= asDto('User') %>
 
 import org.slf4j.LoggerFactory
 import org.springframework.security.authentication.AbstractAuthenticationToken;
 import org.springframework.web.bind.annotation.GetMapping
 import org.springframework.web.bind.annotation.RequestMapping
 import org.springframework.web.bind.annotation.RestController
-
+<%_ if (reactive) { _%>
+import reactor.core.publisher.Mono
+<%_ } else { _%>
 import javax.servlet.http.HttpServletRequest
+<%_ } _%>
+
 import java.security.Principal
 
 /**
@@ -45,13 +52,19 @@ class AccountResource(private val userService: UserService) {
     /**
      * `GET  /authenticate` : check if the user is authenticated, and return its login.
      *
+     <%_ if (!reactive) { _%>
      * @param request the HTTP request.
+     <%_ } _%>
      * @return the login if the user is authenticated.
      */
     @GetMapping("/authenticate")
-    fun isAuthenticated(request: HttpServletRequest): String? {
+    fun isAuthenticated(<% if (!reactive) { %>request: HttpServletRequest<% } %>): <% if (reactive) { %>Mono<String><% } else { %>String?<% } %> {
         log.debug("REST request to check if the current user is authenticated")
+        <%_ if (reactive) { _%>
+        return SecurityUtils.currentUserLogin
+        <%_ } else { _%>
         return request.remoteUser
+        <%_ } _%>
     }
 
     /**
@@ -62,22 +75,36 @@ class AccountResource(private val userService: UserService) {
      * @throws AccountResourceException `500 (Internal Server Error)` if the user couldn't be returned.
      */
     @GetMapping("/account")
-    fun getAccount(principal: Principal?): <%= asDto('User') %> =
+    fun getAccount(principal: Principal?): <% if (reactive) { %>Mono<<%= asDto('User') %>><% } else { %><%= asDto('User') %><% } %> =
         if (principal is AbstractAuthenticationToken) {
             userService.getUserFromAuthentication(principal)
         } else {
             throw AccountResourceException("User could not be found")
         }
+
+    companion object {
+        private const val serialVersionUID = 1L
+    }
 }
 <%_ } else if (skipUserManagement) { _%>
-import <%=packageName%>.security.getCurrentUserLogin
-
+<%_ if (!reactive) { _%>
+import <%= packageName %>.security.getCurrentUserLogin
+<%_ } _%>
 import com.fasterxml.jackson.annotation.JsonCreator
 import org.springframework.security.core.GrantedAuthority
+<%_ if (!reactive) { _%>
 import org.springframework.security.core.context.SecurityContextHolder
+<%_ } else { _%>
+import org.springframework.security.core.context.ReactiveSecurityContextHolder
+import org.springframework.security.core.context.SecurityContext
+import org.springframework.security.core.userdetails.UserDetails
+<%_ } _%>
 import org.springframework.web.bind.annotation.GetMapping
 import org.springframework.web.bind.annotation.RequestMapping
 import org.springframework.web.bind.annotation.RestController
+<%_ if (reactive) { _%>
+import reactor.core.publisher.Mono
+<%_ } _%>
 
 @RestController
 @RequestMapping("/api")
@@ -92,12 +119,34 @@ class AccountResource {
      * @throws AccountResourceException {@code 500 (Internal Server Error)} if the user couldn't be returned.
      */
     @GetMapping("/account")
+    <%_ if (!reactive) { _%>
     fun getAccount(): UserVM {
         val login = getCurrentUserLogin()
             .orElseThrow { AccountResourceException() }
         val authorities = SecurityContextHolder.getContext().authentication.authorities
             .mapNotNullTo(mutableSetOf()) { it.authority }
         return UserVM(login, authorities)
+    <%_ } else { _%>
+    fun getAccount(): Mono<UserVM> {
+        return ReactiveSecurityContextHolder.getContext()
+            .map { SecurityContext.getAuthentication(it) }
+            .map { authentication -> {
+                String login;
+                // TODO
+                if (authentication.getPrincipal() instanceof UserDetails) {
+                    login = ((UserDetails) authentication.getPrincipal()).getUsername();
+                } else if (authentication.getPrincipal() instanceof String) {
+                    login = authentication.getPrincipal();
+                } else {
+                    throw AccountResourceException();
+                }
+                val authorities = authentication.getAuthorities().stream()
+                    .map { GrantedAuthority.getAuthority(it) }
+                    .toSet()
+                return UserVM(login, authorities)
+            }}
+            .switchIfEmpty(Mono.error(AccountResourceException()))
+    <%_ } _%>
     }
 
     data class UserVM @JsonCreator constructor(val login: String, val authorities: Set<String>) {
@@ -107,21 +156,21 @@ class AccountResource {
 }
 <%_ } else { _%>
 <%_ if (authenticationType === 'session' && !reactive) { _%>
-import <%=packageName%>.domain.PersistentToken
-import <%=packageName%>.repository.PersistentTokenRepository
+import <%= packageName %>.domain.PersistentToken
+import <%= packageName %>.repository.PersistentTokenRepository
 <%_ } _%>
-import <%=packageName%>.repository.UserRepository
-import <%=packageName%>.security.getCurrentUserLogin
-import <%=packageName%>.service.MailService
-import <%=packageName%>.service.UserService
-import <%=packageName%>.service.dto.PasswordChangeDTO
-import <%=packageName%>.service.dto.<%= asDto('User') %>
-import <%=packageName%>.web.rest.errors.EmailAlreadyUsedException
-import <%=packageName%>.web.rest.errors.EmailNotFoundException
-import <%=packageName%>.web.rest.errors.InvalidPasswordException
-import <%=packageName%>.web.rest.errors.LoginAlreadyUsedException
-import <%=packageName%>.web.rest.vm.KeyAndPasswordVM
-import <%=packageName%>.web.rest.vm.ManagedUserVM
+import <%= packageName %>.repository.UserRepository
+import <%= packageName %>.security.getCurrentUserLogin
+import <%= packageName %>.service.MailService
+import <%= packageName %>.service.UserService
+import <%= packageName %>.service.dto.PasswordChangeDTO
+import <%= packageName %>.service.dto.<%= asDto('User') %>
+import <%= packageName %>.web.rest.errors.EmailAlreadyUsedException
+import <%= packageName %>.web.rest.errors.EmailNotFoundException
+import <%= packageName %>.web.rest.errors.InvalidPasswordException
+import <%= packageName %>.web.rest.errors.LoginAlreadyUsedException
+import <%= packageName %>.web.rest.vm.KeyAndPasswordVM
+import <%= packageName %>.web.rest.vm.ManagedUserVM
 
 <% if (authenticationType === 'session' && !reactive) { %>
 import org.apache.commons.lang3.StringUtils
@@ -352,10 +401,14 @@ class AccountResource(
             .flatMap(userRepository::findOneByLogin)
             .ifPresent { u ->
                 persistentTokenRepository.findByUser(u).stream()
-                    .filter { persistentToken -> StringUtils.equals(persistentToken.series, decodedSeries) }<% if (databaseType === 'sql' || databaseType === 'mongodb') { %>
-                    .findAny().ifPresent { persistentTokenRepository.deleteById(decodedSeries) }<% } else if (databaseType === 'couchbase'){ %>
-                .findAny().ifPresent { persistentTokenRepository.deleteBySeries(decodedSeries) }<% } else { %>
-                    .findAny().ifPresent(persistentTokenRepository::delete)<% } %>
+                    .filter { persistentToken -> StringUtils.equals(persistentToken.series, decodedSeries) }
+                    <%_ if (databaseType === 'sql' || databaseType === 'mongodb') { _%>
+                    .findAny().ifPresent { persistentTokenRepository.deleteById(decodedSeries) }
+                    <%_ } else if (databaseType === 'couchbase'){ _%>
+                .findAny().ifPresent { persistentTokenRepository.deleteBySeries(decodedSeries) }
+                <%_ } else { _%>
+                    .findAny().ifPresent(persistentTokenRepository::delete)
+                <%_ } _%>
             }
     }<% } %>
 
@@ -363,21 +416,31 @@ class AccountResource(
      * POST   /account/reset-password/init : Send an email to reset the password of the user
      *
      * @param mail the mail of the user
-     * @throws EmailNotFoundException `400 (Bad Request)` if the email address is not registered
      */
     @PostMapping(path = ["/account/reset-password/init"])
     <%_ if (!reactive) { _%>
     fun requestPasswordReset(@RequestBody mail: String) {
-        mailService.sendPasswordResetMail(
-            userService.requestPasswordReset(mail)
-                .orElseThrow { EmailNotFoundException() }
-        )
+        val user = userService.requestPasswordReset(mail)
+        if (user.isPresent()) {
+            mailService.sendPasswordResetMail(user.get())
+        } else {
+            // Pretend the request has been successful to prevent checking which emails really exist
+            // but log that an invalid attempt has been made
+            log.warn("Password reset requested for non existing mail '{}'", mail);
+        }
     }
     <%_ } else { _%>
     fun requestPasswordReset(@RequestBody mail: String): Mono<Void> =
         userService.requestPasswordReset(mail)
-            .switchIfEmpty(Mono.error(EmailNotFoundException()))
-            .doOnSuccess(mailService::sendPasswordResetMail)
+            .doOnSuccess(user -> {
+                if (Objects.nonNull(user)) {
+                    mailService.sendPasswordResetMail(user);
+                } else {
+                    // Pretend the request has been successful to prevent checking which emails really exist
+                    // but log that an invalid attempt has been made
+                    log.warn("Password reset requested for non existing mail '{}'", mail);
+                }
+            })
             .then()
     <%_ } _%>
 

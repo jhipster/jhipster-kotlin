@@ -291,21 +291,6 @@ const serverFiles = {
         },
         {
             condition: generator =>
-                !generator.reactive &&
-                (generator.applicationType === 'uaa' ||
-                    generator.authenticationType === 'uaa' ||
-                    generator.authenticationType === 'oauth2'),
-            path: SERVER_MAIN_KOTLIN_SRC_DIR,
-            templates: [
-                {
-                    file: 'package/config/MethodSecurityConfiguration.kt',
-                    renameTo: generator => `${generator.javaDir}config/MethodSecurityConfiguration.kt`,
-                    useBluePrint: true
-                }
-            ]
-        },
-        {
-            condition: generator =>
                 !shouldSkipUserManagement(generator) && generator.authenticationType === 'session' && !generator.reactive,
             path: SERVER_MAIN_KOTLIN_SRC_DIR,
             templates: [
@@ -453,6 +438,17 @@ const serverFiles = {
                 {
                     file: 'package/gateway/TokenRelayFilter.kt',
                     renameTo: generator => `${generator.javaDir}gateway/TokenRelayFilter.kt`,
+                    useBluePrint: true
+                }
+            ]
+        },
+        {
+            condition: generator => generator.applicationType === 'gateway' && !generator.serviceDiscoveryType,
+            path: SERVER_MAIN_KOTLIN_SRC_DIR,
+            templates: [
+                {
+                    file: 'package/web/filter/RouteDetectorFilter.kt',
+                    renameTo: generator => `${generator.javaDir}web/filter/RouteDetectorFilter.kt`,
                     useBluePrint: true
                 }
             ]
@@ -678,7 +674,7 @@ const serverFiles = {
             ]
         },
         {
-            condition: generator => generator.authenticationType === 'oauth2',
+            condition: generator => !generator.reactive && generator.authenticationType === 'oauth2',
             path: SERVER_MAIN_KOTLIN_SRC_DIR,
             templates: [
                 {
@@ -1060,11 +1056,6 @@ const serverFiles = {
                     useBluePrint: true
                 },
                 {
-                    file: 'package/web/rest/errors/EmailNotFoundException.kt',
-                    renameTo: generator => `${generator.javaDir}web/rest/errors/EmailNotFoundException.kt`,
-                    useBluePrint: true
-                },
-                {
                     file: 'package/web/rest/errors/InvalidPasswordException.kt',
                     renameTo: generator => `${generator.javaDir}web/rest/errors/InvalidPasswordException.kt`,
                     useBluePrint: true
@@ -1085,6 +1076,17 @@ const serverFiles = {
                 {
                     file: 'package/web/rest/ClientForwardController.kt',
                     renameTo: generator => `${generator.javaDir}web/rest/ClientForwardController.kt`,
+                    useBluePrint: true
+                }
+            ]
+        },
+        {
+            condition: generator => !generator.skipClient && generator.reactive,
+            path: SERVER_MAIN_KOTLIN_SRC_DIR,
+            templates: [
+                {
+                    file: 'package/web/filter/SpaWebFilter.kt',
+                    renameTo: generator => `${generator.javaDir}web/filter/SpaWebFilter.kt`,
                     useBluePrint: true
                 }
             ]
@@ -1753,8 +1755,7 @@ const serverFiles = {
         },
         {
             // TODO : add tests for reactive
-            condition: generator =>
-                !generator.reactive && !generator.skipUserManagement && ['sql', 'mongodb', 'couchbase'].includes(generator.databaseType),
+            condition: generator => !generator.skipUserManagement && ['sql', 'mongodb', 'couchbase'].includes(generator.databaseType),
             path: SERVER_TEST_SRC_KOTLIN_DIR,
             templates: [
                 {

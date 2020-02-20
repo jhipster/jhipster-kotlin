@@ -16,32 +16,32 @@
  See the License for the specific language governing permissions and
  limitations under the License.
 -%>
-package <%=packageName%>.service
+package <%= packageName %>.service
 
-import <%=packageName%>.config.ANONYMOUS_USER
-import <%=packageName%>.config.DEFAULT_LANGUAGE
-import <%=packageName%>.config.SYSTEM_ACCOUNT
+import <%= packageName %>.config.ANONYMOUS_USER
+import <%= packageName %>.config.DEFAULT_LANGUAGE
+import <%= packageName %>.config.SYSTEM_ACCOUNT
 <%_ if (databaseType === 'sql' || databaseType === 'mongodb' || databaseType === 'couchbase') { _%>
-import <%=packageName%>.domain.Authority
+import <%= packageName %>.domain.Authority
 <%_ } _%>
 <%_ if (databaseType !== 'no') { _%>
-import <%=packageName%>.domain.<%= asEntity('User') %>
+import <%= packageName %>.domain.<%= asEntity('User') %>
     <%_ if (databaseType === 'sql' || databaseType === 'mongodb' || databaseType === 'couchbase') { _%>
-import <%=packageName%>.repository.AuthorityRepository
+import <%= packageName %>.repository.AuthorityRepository
         <%_ if (authenticationType === 'session' && !reactive) { _%>
-import <%=packageName%>.repository.PersistentTokenRepository
+import <%= packageName %>.repository.PersistentTokenRepository
         <%_ } _%>
     <%_ } _%>
-import <%=packageName%>.repository.UserRepository
+import <%= packageName %>.repository.UserRepository
     <%_ if (searchEngine === 'elasticsearch') { _%>
-import <%=packageName%>.repository.search.UserSearchRepository
+import <%= packageName %>.repository.search.UserSearchRepository
     <%_ } _%>
     <%_ if (authenticationType !== 'oauth2') { _%>
-import <%=packageName%>.security.USER
+import <%= packageName %>.security.USER
     <%_ } _%>
-import <%=packageName%>.security.getCurrentUserLogin
+import <%= packageName %>.security.getCurrentUserLogin
 <%_ } _%>
-import <%=packageName%>.service.dto.<%= asDto('User') %>
+import <%= packageName %>.service.dto.<%= asDto('User') %>
 <%_ if (authenticationType !== 'oauth2') { _%>
 import io.github.jhipster.security.RandomUtil
 <%_ } _%>
@@ -198,13 +198,13 @@ class UserService<% if (databaseType !== 'no') { %>(
         userRepository.findOneByLogin(login.toLowerCase()).ifPresent { existingUser ->
             val removed = removeNonActivatedUser(existingUser)
             if (!removed) {
-                throw UsernameAlreadyUsedException()
+                throw Mono.error(UsernameAlreadyUsedException())
             }
         }
         userRepository.findOneByEmailIgnoreCase(email).ifPresent { existingUser ->
             val removed = removeNonActivatedUser(existingUser)
             if (!removed) {
-                throw EmailAlreadyUsedException()
+                throw Mono.error(EmailAlreadyUsedException())
             }
         }
         val newUser = <%= asEntity('User') %>()
@@ -564,7 +564,7 @@ class UserService<% if (databaseType !== 'no') { %>(
             .<% if (reactive) { %>flatMap<% } else { %>ifPresent<% } %> { user ->
                 val currentEncryptedPassword = user.password
                 if (!passwordEncoder.matches(currentClearTextPassword, currentEncryptedPassword)) {
-                    throw InvalidPasswordException()
+                    throw Mono.error(InvalidPasswordException())
                 }
                 val encryptedPassword = passwordEncoder.encode(newPassword)
                 user.password = encryptedPassword
@@ -686,8 +686,9 @@ class UserService<% if (databaseType !== 'no') { %>(
     <%_ } _%>
     <%_ if (authenticationType === 'oauth2') { _%>
 
-    private fun syncUserWithIdP(details: Map<String, Any>, user: <%= asEntity('User') %>): <%= asEntity('User') %> {
+    private fun syncUserWithIdP(details: Map<String, Any>, user: <%= asEntity('User') %>): <% if (reactive) { %>Mono<<%= asEntity('User') %>><% } else { %><%= asEntity('User') %><% } %> {
         // save authorities in to sync user roles/groups between IdP and JHipster's local database
+        <%_ if (!reactive) { _%>
         val dbAuthorities = getAuthorities()
         <%_ if (databaseType !== 'couchbase') { _%>
         val userAuthorities = user.authorities.asSequence().mapTo(mutableListOf(), Authority::name)
@@ -725,6 +726,47 @@ class UserService<% if (databaseType !== 'no') { %>(
             <%_ } _%>
         }
         return user
+        <%_ } else { _%>
+            // TODO write this method with Intellij
+        val userAuthorities =
+            user.authorities.map{ it.name }.toList()
+
+        return getAuthorities().collectList()
+            .flatMapMany(dbAuthorities -> {
+                List<Authority> authoritiesToSave = userAuthorities.stream()
+                    .filter(authority -> !dbAuthorities.contains(authority))
+                    .map(authority -> {
+                        Authority authorityToSave = new Authority();
+                        authorityToSave.setName(authority);
+                        return authorityToSave;
+                    })
+                    .collect(Collectors.toList());
+                return Flux.fromIterable(authoritiesToSave);
+            })
+            .doOnNext(authority -> log.debug("Saving authority '{}' in local database", authority))
+            .flatMap(authorityRepository::save)
+            .then(userRepository.findOneByLogin(user.getLogin()))
+            .switchIfEmpty(userRepository.save(user))
+            .flatMap(existingUser -> {
+                // if IdP sends last updated information, use it to determine if an update should happen
+                if (details.get("updated_at") != null) {
+                    Instant dbModifiedDate = existingUser.getLastModifiedDate();
+                    Instant idpModifiedDate = Date.from((Instant) details.get("updated_at")).toInstant();
+                    if (idpModifiedDate.isAfter(dbModifiedDate)) {
+                        log.debug("Updating user '{}' in local database", user.getLogin());
+                        return updateUser(user.getFirstName(), user.getLastName(), user.getEmail(),
+                            user.getLangKey(), user.getImageUrl());
+                    }
+                    // no last updated info, blindly update
+                } else {
+                    log.debug("Updating user '{}' in local database", user.getLogin());
+                    return updateUser(user.getFirstName(), user.getLastName(), user.getEmail(),
+                        user.getLangKey(), user.getImageUrl());
+                }
+                return Mono.empty();
+            })
+            .thenReturn(user);
+            <%_ } _%>
     }
     <%_ } _%>
 
@@ -739,7 +781,7 @@ class UserService<% if (databaseType !== 'no') { %>(
      * @param authToken the authentication token.
      * @return the user from the authentication.
      */
-    fun getUserFromAuthentication(authToken: AbstractAuthenticationToken): UserDTO {
+    fun getUserFromAuthentication(authToken: AbstractAuthenticationToken): <% if (!reactive) { %>UserDTO<% } else { %>Mono<UserDTO><% } %> {
         val attributes: Map<String, Any> =
             when (authToken) {
                 is OAuth2AuthenticationToken -> authToken.principal.attributes
@@ -754,7 +796,7 @@ class UserService<% if (databaseType !== 'no') { %>(
             .map { Authority(name = it) }
             <%_ } _%>
             .toMutableSet()
-        return <% if (databaseType !== 'no') { %>UserDTO(syncUserWithIdP(attributes, user))<% } else { %>user<% } %>
+        return <% if (databaseType !== 'no' && !reactive) { %>UserDTO(syncUserWithIdP(attributes, user))<% } else if (!reactive) { %>user<% } %><% if (databaseType === 'no' && reactive) { %>Mono.just(user)<% } else if (reactive) { %>syncUserWithIdP(attributes, user).flatMap { Mono.just(UserDTO(it)) }<% } %>
     }
     <%_ } _%>
     <%_ if (cacheManagerIsAvailable === true && databaseType !== 'no') { _%>

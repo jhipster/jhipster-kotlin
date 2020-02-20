@@ -22,11 +22,11 @@ package <%= packageName %>.service
 import <%= packageName %>.AbstractCassandraTest
 <%_ } _%>
 <%_ if (cacheProvider === 'redis') { _%>
-import <%=packageName%>.RedisTestContainerExtension
+import <%= packageName %>.RedisTestContainerExtension
 <%_ } _%>
 import <%= packageName %>.<%= mainClass %>
-import <%=packageName%>.config.ANONYMOUS_USER
-import <%=packageName%>.config.DEFAULT_LANGUAGE
+import <%= packageName %>.config.ANONYMOUS_USER
+import <%= packageName %>.config.DEFAULT_LANGUAGE
 <%_ if (authenticationType === 'oauth2') { _%>
 import <%= packageName %>.config.TestSecurityConfiguration
 <%_ } _%>
@@ -156,7 +156,7 @@ class UserServiceIT <% if (databaseType === 'cassandra') { %>: AbstractCassandra
     <%_ if (searchEngine === 'elasticsearch') { _%>
 
     /**
-     * This repository is mocked in the <%=packageName%>.repository.search test package.
+     * This repository is mocked in the <%= packageName %>.repository.search test package.
      *
      * @see <%= packageName %>.repository.search.UserSearchRepositoryMockConfiguration
      */
@@ -442,7 +442,7 @@ class UserServiceIT <% if (databaseType === 'cassandra') { %>: AbstractCassandra
     <%_ } _%>
     fun testDefaultUserDetails() {
         val authentication = createMockOAuth2AuthenticationToken(userDetails)
-        val userDTO = userService.getUserFromAuthentication(authentication)
+        val userDTO = userService.getUserFromAuthentication(authentication)<% if (reactive) { %>.block()<% } %>
 
         assertThat(userDTO.login).isEqualTo(DEFAULT_LOGIN)
         assertThat(userDTO.firstName).isEqualTo(DEFAULT_FIRSTNAME)
@@ -460,7 +460,7 @@ class UserServiceIT <% if (databaseType === 'cassandra') { %>: AbstractCassandra
     <%_ } _%>
     fun testUserDetailsWithUsername() {
         userDetails["preferred_username"] = "TEST"
-        val authentication = createMockOAuth2AuthenticationToken(userDetails)
+        val authentication = createMockOAuth2AuthenticationToken(userDetails)<% if (reactive) { %>.block()<% } %>
         val userDTO = userService.getUserFromAuthentication(authentication)
         assertThat(userDTO.login).isEqualTo("test")
     }
@@ -473,7 +473,7 @@ class UserServiceIT <% if (databaseType === 'cassandra') { %>: AbstractCassandra
         userDetails["langKey"] = DEFAULT_LANGKEY
         userDetails["locale"] = "en-US"
         val authentication = createMockOAuth2AuthenticationToken(userDetails)
-        val userDTO = userService.getUserFromAuthentication(authentication)
+        val userDTO = userService.getUserFromAuthentication(authentication)<% if (reactive) { %>.block()<% } %>
         assertThat(userDTO.langKey).isEqualTo(DEFAULT_LANGKEY)
     }
 
@@ -484,7 +484,7 @@ class UserServiceIT <% if (databaseType === 'cassandra') { %>: AbstractCassandra
     fun testUserDetailsWithLocale() {
         userDetails["locale"] = "it-IT"
         val authentication = createMockOAuth2AuthenticationToken(userDetails)
-        val userDTO = userService.getUserFromAuthentication(authentication)
+        val userDTO = userService.getUserFromAuthentication(authentication)<% if (reactive) { %>.block()<% } %>
         assertThat(userDTO.langKey).isEqualTo("it")
     }
 
@@ -495,7 +495,7 @@ class UserServiceIT <% if (databaseType === 'cassandra') { %>: AbstractCassandra
     fun testUserDetailsWithUSLocaleUnderscore() {
         userDetails["locale"] = "en_US"
         val authentication = createMockOAuth2AuthenticationToken(userDetails)
-        val userDTO = userService.getUserFromAuthentication(authentication)
+        val userDTO = userService.getUserFromAuthentication(authentication)<% if (reactive) { %>.block()<% } %>
         assertThat(userDTO.langKey).isEqualTo("en")
     }
 
@@ -506,7 +506,7 @@ class UserServiceIT <% if (databaseType === 'cassandra') { %>: AbstractCassandra
     fun testUserDetailsWithUSLocaleDash() {
         userDetails["locale"] = "en-US"
         val authentication = createMockOAuth2AuthenticationToken(userDetails)
-        val userDTO = userService.getUserFromAuthentication(authentication)
+        val userDTO = userService.getUserFromAuthentication(authentication)<% if (reactive) { %>.block()<% } %>
         assertThat(userDTO.langKey).isEqualTo("en")
     }
 

@@ -16,7 +16,7 @@
  See the License for the specific language governing permissions and
  limitations under the License.
 -%>
-package <%=packageName%>.config
+package <%= packageName %>.config
 
 <%_ if (cacheProvider === 'ehcache') { _%>
 import java.time.Duration
@@ -76,7 +76,7 @@ import org.springframework.cache.CacheManager
 <%_ } _%>
 <%_ if (cacheProvider === 'memcached') { _%>
     <%_ if (databaseType !== 'no') { _%>
-import <%=packageName%>.repository.UserRepository
+import <%= packageName %>.repository.UserRepository
     <%_ } _%>
 
 import org.slf4j.LoggerFactory
@@ -98,9 +98,9 @@ import org.springframework.context.annotation.Configuration
 import org.springframework.context.annotation.Import
 <%_ } _%>
 <%_ if (cacheProvider === 'hazelcast') { _%>
-import org.springframework.beans.factory.DisposableBean
 import org.springframework.core.env.Environment
 import org.springframework.core.env.Profiles
+import javax.annotation.PreDestroy
 <%_ } _%>
 <%_ if (cacheProvider === 'infinispan') { _%>
 import org.infinispan.configuration.cache.CacheMode
@@ -166,7 +166,7 @@ import io.github.jhipster.config.JHipsterProperties
 @EnableCaching
 class CacheConfiguration<%_ if (cacheProvider === 'ehcache' || cacheProvider === 'caffeine') { _%>(jHipsterProperties: JHipsterProperties)<%_ } %><%_ if (cacheProvider === 'hazelcast') { %>(private val env: Environment<%_ if (serviceDiscoveryType === 'eureka' || serviceDiscoveryType === 'consul') { %>,
     private val serverProperties: ServerProperties,
-    private val discoveryClient: DiscoveryClient<%_ } %>)<% } %><% if (cacheProvider === 'hazelcast') { %> : DisposableBean<% } %> {
+    private val discoveryClient: DiscoveryClient<%_ } %>)<% } %> {
     <%_ if (cacheProvider === 'ehcache' || cacheProvider === 'caffeine') { _%>
 
     private val jcacheConfiguration: javax.cache.configuration.Configuration<Any, Any>
@@ -209,15 +209,15 @@ class CacheConfiguration<%_ if (cacheProvider === 'ehcache' || cacheProvider ===
             createCache(cm, "oAuth2Authentication")
             <%_ } _%>
             <%_ if (!skipUserManagement || (authenticationType === 'oauth2' && databaseType !== 'no')) { _%>
-            createCache(cm, <%=packageName%>.repository.UserRepository.USERS_BY_LOGIN_CACHE)
-            createCache(cm, <%=packageName%>.repository.UserRepository.USERS_BY_EMAIL_CACHE)
+            createCache(cm, <%= packageName %>.repository.UserRepository.USERS_BY_LOGIN_CACHE)
+            createCache(cm, <%= packageName %>.repository.UserRepository.USERS_BY_EMAIL_CACHE)
                 <%_ if (enableHibernateCache) { _%>
-            createCache(cm, <%=packageName%>.domain.<%= asEntity('User') %>::class.java.name)
-            createCache(cm, <%=packageName%>.domain.Authority::class.java.name)
-            createCache(cm, <%=packageName%>.domain.<%= asEntity('User') %>::class.java.name + ".authorities")
+            createCache(cm, <%= packageName %>.domain.<%= asEntity('User') %>::class.java.name)
+            createCache(cm, <%= packageName %>.domain.Authority::class.java.name)
+            createCache(cm, <%= packageName %>.domain.<%= asEntity('User') %>::class.java.name + ".authorities")
                     <%_ if (authenticationType === 'session') { _%>
-            createCache(cm, <%=packageName%>.domain.PersistentToken::class.java.name)
-            createCache(cm, <%=packageName%>.domain.<%= asEntity('User') %>::class.java.name + ".persistentTokens")
+            createCache(cm, <%= packageName %>.domain.PersistentToken::class.java.name)
+            createCache(cm, <%= packageName %>.domain.<%= asEntity('User') %>::class.java.name + ".persistentTokens")
                     <%_ } _%>
                 <%_ } _%>
             <%_ } _%>
@@ -252,8 +252,8 @@ class CacheConfiguration<%_ if (cacheProvider === 'ehcache' || cacheProvider ===
 
         <%_ } _%>
 
-    @Throws(Exception::class)
-    override fun destroy() {
+    @PreDestroy
+    fun destroy() {
         log.info("Closing Cache Manager")
         Hazelcast.shutdownAll()
     }
@@ -323,7 +323,7 @@ class CacheConfiguration<%_ if (cacheProvider === 'ehcache' || cacheProvider ===
         // Full reference is available at: http://docs.hazelcast.org/docs/management-center/3.9/manual/html/Deploying_and_Starting.html
         config.managementCenterConfig = initializeDefaultManagementCenterConfig(jHipsterProperties)
         <%_ if (enableHibernateCache) { _%>
-        config.mapConfigs["<%=packageName%>.domain.*"] = initializeDomainMapConfig(jHipsterProperties)
+        config.mapConfigs["<%= packageName %>.domain.*"] = initializeDomainMapConfig(jHipsterProperties)
         <%_ } _%>
         return Hazelcast.newHazelcastInstance(config)
     }
@@ -464,7 +464,7 @@ class CacheConfiguration<%_ if (cacheProvider === 'ehcache' || cacheProvider ===
      *      @Autowired (or) @Inject
      *      private lateinit val cacheManager: EmbeddedCacheManager
      *
-     *      fun cacheSample(){
+     *      fun cacheSample() {
      *          cacheManager.getCache("dist-app-data")["hi"] = "there"
      *      }
      * ```
@@ -515,7 +515,7 @@ class CacheConfiguration<%_ if (cacheProvider === 'ehcache' || cacheProvider ===
                 .simpleCache(true).transaction().transactionMode(TransactionMode.NON_TRANSACTIONAL).expiration().maxIdle(60000).template(true).build())
 
             <%_ if (!skipUserManagement || (authenticationType === 'oauth2' && databaseType !== 'no')) { _%>
-            Stream.of(<%=packageName%>.repository.UserRepository.USERS_BY_LOGIN_CACHE, <%=packageName%>.repository.UserRepository.USERS_BY_EMAIL_CACHE)
+            Stream.of(<%= packageName %>.repository.UserRepository.USERS_BY_LOGIN_CACHE, <%= packageName %>.repository.UserRepository.USERS_BY_EMAIL_CACHE)
                 .forEach { cacheName -> manager.defineConfiguration(cacheName, ConfigurationBuilder().clustering()
                     .cacheMode(CacheMode.INVALIDATION_SYNC)
                     .jmxStatistics()
@@ -713,15 +713,15 @@ class CacheConfiguration<%_ if (cacheProvider === 'ehcache' || cacheProvider ===
     fun cacheManagerCustomizer(jcacheConfiguration: javax.cache.configuration.Configuration<Any, Any> ): JCacheManagerCustomizer {
         return JCacheManagerCustomizer {
             <%_ if (!skipUserManagement || (authenticationType === 'oauth2' && databaseType !== 'no')) { _%>
-            createCache(it, <%=packageName%>.repository<% if (reactive) { %>.reactive<% } %>.UserRepository.USERS_BY_LOGIN_CACHE, jcacheConfiguration);
-            createCache(it, <%=packageName%>.repository<% if (reactive) { %>.reactive<% } %>.UserRepository.USERS_BY_EMAIL_CACHE, jcacheConfiguration);
+            createCache(it, <%= packageName %>.repository<% if (reactive) { %>.reactive<% } %>.UserRepository.USERS_BY_LOGIN_CACHE, jcacheConfiguration);
+            createCache(it, <%= packageName %>.repository<% if (reactive) { %>.reactive<% } %>.UserRepository.USERS_BY_EMAIL_CACHE, jcacheConfiguration);
                 <%_ if (enableHibernateCache) { _%>
-            createCache(it, <%=packageName%>.domain.<%= asEntity('User') %>::class.java.name, jcacheConfiguration);
-            createCache(it, <%=packageName%>.domain.Authority::class.java.name, jcacheConfiguration);
-            createCache(it, <%=packageName%>.domain.<%= asEntity('User') %>::class.java.name + ".authorities", jcacheConfiguration);
+            createCache(it, <%= packageName %>.domain.<%= asEntity('User') %>::class.java.name, jcacheConfiguration);
+            createCache(it, <%= packageName %>.domain.Authority::class.java.name, jcacheConfiguration);
+            createCache(it, <%= packageName %>.domain.<%= asEntity('User') %>::class.java.name + ".authorities", jcacheConfiguration);
                     <%_ if (authenticationType === 'session') { _%>
-            createCache(it, <%=packageName%>.domain.PersistentToken::class.java.name, jcacheConfiguration);
-            createCache(it, <%=packageName%>.domain.<%= asEntity('User') %>::class.java.name + ".persistentTokens", jcacheConfiguration);
+            createCache(it, <%= packageName %>.domain.PersistentToken::class.java.name, jcacheConfiguration);
+            createCache(it, <%= packageName %>.domain.<%= asEntity('User') %>::class.java.name + ".persistentTokens", jcacheConfiguration);
                     <%_ } _%>
                 <%_ } _%>
             <%_ } _%>

@@ -16,25 +16,25 @@
  See the License for the specific language governing permissions and
  limitations under the License.
 -%>
-package <%=packageName%>.web.rest
+package <%= packageName %>.web.rest
 
 <%_ if (databaseType === 'cassandra') { _%>
-import <%=packageName%>.AbstractCassandraTest
+import <%= packageName %>.AbstractCassandraTest
 <%_ } _%>
 <%_ if (cacheProvider === 'redis') { _%>
-import <%=packageName%>.RedisTestContainerExtension
+import <%= packageName %>.RedisTestContainerExtension
 <%_ } _%>
-import <%=packageName%>.<%= mainClass %>
+import <%= packageName %>.<%= mainClass %>
 <%_ if (!skipUserManagement) { _%>
-import <%=packageName%>.domain.<%= asEntity('User') %>
-import <%=packageName%>.repository.UserRepository
+import <%= packageName %>.domain.<%= asEntity('User') %>
+import <%= packageName %>.repository.UserRepository
 <%_ } _%>
 <%_ if (reactive) { _%>
 import <%= packageName %>.service.AuditEventService
 <%_ } _%>
-import <%=packageName%>.security.jwt.TokenProvider
-import <%=packageName%>.web.rest.errors.ExceptionTranslator
-import <%=packageName%>.web.rest.vm.LoginVM
+import <%= packageName %>.security.jwt.TokenProvider
+import <%= packageName %>.web.rest.errors.ExceptionTranslator
+import <%= packageName %>.web.rest.vm.LoginVM
 import org.junit.jupiter.api.BeforeEach
 import org.junit.jupiter.api.Test
 <%_ if (cacheProvider === 'redis') { _%>
@@ -72,7 +72,8 @@ import org.springframework.test.web.servlet.result.MockMvcResultMatchers.jsonPat
 import org.springframework.test.web.servlet.result.MockMvcResultMatchers.status
 import org.springframework.test.web.servlet.result.MockMvcResultMatchers.header
 import org.hamcrest.Matchers.nullValue
-import org.hamcrest.Matchers.isEmptyString
+import org.hamcrest.Matchers.emptyString
+import org.hamcrest.Matchers.is
 import org.hamcrest.Matchers.not
 <%_ } _%>
 
@@ -91,7 +92,7 @@ class UserJWTControllerIT <% if (databaseType === 'cassandra') { %>: AbstractCas
     @Autowired
     private lateinit var authenticationManager: <% if (reactive) { %>Reactive<% } %>AuthenticationManager<% if (!reactive) { %>Builder<% } %>
 
-    <%_ if (reactive) { _%>
+    <%_ if (reactive && !skipUserManagement) { _%>
     @Autowired
     private lateinit var auditEventService: AuditEventService
 
@@ -116,7 +117,7 @@ class UserJWTControllerIT <% if (databaseType === 'cassandra') { %>: AbstractCas
 
     @BeforeEach
     fun setup() {
-        val userJWTController = UserJWTController(tokenProvider, authenticationManager<% if (reactive) { %>, auditEventService<% } %>)
+        val userJWTController = UserJWTController(tokenProvider, authenticationManager<% if (reactive  && !skipUserManagement) { %>, auditEventService<% } %>)
         <%_ if (!reactive) { _%>
         this.mockMvc = MockMvcBuilders.standaloneSetup(userJWTController)
             .setControllerAdvice(exceptionTranslator)
@@ -159,17 +160,17 @@ class UserJWTControllerIT <% if (databaseType === 'cassandra') { %>: AbstractCas
         <%_ if (!reactive) { _%>
         mockMvc.perform(
             post("/api/authenticate")
-                .contentType(APPLICATION_JSON_UTF8)
+                .contentType(APPLICATION_JSON)
                 .content(convertObjectToJsonBytes(login))
         )
             .andExpect(status().isOk)
             .andExpect(jsonPath("\$.id_token").isString)
             .andExpect(jsonPath("\$.id_token").isNotEmpty)
             .andExpect(header().string("Authorization", not(nullValue())))
-            .andExpect(header().string("Authorization", not(isEmptyString())))
+            .andExpect(header().string("Authorization", not(is(emptyString()))))
         <%_ } else { _%>
         webTestClient.post().uri("/api/authenticate")
-            .contentType(APPLICATION_JSON_UTF8)
+            .contentType(APPLICATION_JSON)
             .syncBody(convertObjectToJsonBytes(login))
             .exchange()
             .expectStatus().isOk
@@ -219,17 +220,17 @@ class UserJWTControllerIT <% if (databaseType === 'cassandra') { %>: AbstractCas
         <%_ if (!reactive) { _%>
         mockMvc.perform(
             post("/api/authenticate")
-                .contentType(APPLICATION_JSON_UTF8)
+                .contentType(APPLICATION_JSON)
                 .content(convertObjectToJsonBytes(login))
         )
             .andExpect(status().isOk)
             .andExpect(jsonPath("\$.id_token").isString)
             .andExpect(jsonPath("\$.id_token").isNotEmpty)
             .andExpect(header().string("Authorization", not(nullValue())))
-            .andExpect(header().string("Authorization", not(isEmptyString())))
+            .andExpect(header().string("Authorization", not(is(emptyString()))))
         <%_ } else { _%>
         webTestClient.post().uri("/api/authenticate")
-            .contentType(APPLICATION_JSON_UTF8)
+            .contentType(APPLICATION_JSON)
             .syncBody(convertObjectToJsonBytes(login))
             .exchange()
             .expectStatus().isOk

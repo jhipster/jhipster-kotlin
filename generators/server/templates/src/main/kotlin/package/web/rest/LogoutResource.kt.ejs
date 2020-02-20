@@ -16,33 +16,41 @@
  See the License for the specific language governing permissions and
  limitations under the License.
 -%>
-package <%=packageName%>.web.rest
+package <%= packageName %>.web.rest
 
 import org.springframework.http.ResponseEntity
 import org.springframework.security.core.annotation.AuthenticationPrincipal
 import org.springframework.security.oauth2.client.registration.ClientRegistration
-import org.springframework.security.oauth2.client.registration.ClientRegistrationRepository
+import org.springframework.security.oauth2.client.registration.<% if (reactive) { %>Reactive<% } %>ClientRegistrationRepository
 import org.springframework.security.oauth2.core.oidc.OidcIdToken
 import org.springframework.web.bind.annotation.PostMapping
 import org.springframework.web.bind.annotation.RestController
 
+<%_ if (!reactive) { _%>
 import javax.servlet.http.HttpServletRequest
+<%_ } else { _%>
+import org.springframework.web.server.WebSession
+import reactor.core.publisher.Mono
+<%_ } _%>
 
 /**
  * REST controller for managing global OIDC logout.
  */
 @RestController
-class LogoutResource(registrations: ClientRegistrationRepository) {
+class LogoutResource(registrations: <% if (reactive) { %>Mono<<% } %>ClientRegistration<% if (reactive) { %>><% } %>) {
     private val registration: ClientRegistration = registrations.findByRegistrationId("oidc")
 
     /**
      * `POST  /api/logout` : logout the current user.
      *
+     <%_ if (!reactive) { _%>
      * @param request the [HttpServletRequest].
+     <%_ } _%>
      * @param idToken the ID token.
      * @return the [ResponseEntity] with status `200 (OK)` and a body with a global logout URL and ID token.
      */
     @PostMapping("/api/logout")
+<%_ if (!reactive) { _%>
     fun logout(
         request: HttpServletRequest,
         @AuthenticationPrincipal(expression = "idToken") idToken: OidcIdToken?
@@ -56,4 +64,17 @@ class LogoutResource(registrations: ClientRegistrationRepository) {
         request.session.invalidate()
         return ResponseEntity.ok().body(logoutDetails)
     }
+<%_ } else { _%>
+    fun logout(@AuthenticationPrincipal(expression = "idToken") idToken: OidcIdToken, session: WebSession): Mono<Map<String, String>>  {
+        return session.invalidate().then(
+            this.registration.map { it.getProviderDetails().getConfigurationMetadata().get("end_session_endpoint").toString() }
+                .map {
+                    val logoutDetails = hashMapOf<String, String>()
+                    logoutDetails.put("logoutUrl", logoutUrl)
+                    logoutDetails.put("idToken", idToken.getTokenValue())
+                    return logoutDetails
+                }
+        )
+    }
+<%_ } _%>
 }

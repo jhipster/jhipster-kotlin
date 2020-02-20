@@ -16,28 +16,28 @@
  See the License for the specific language governing permissions and
  limitations under the License.
 -%>
-package <%=packageName%>.web.rest
+package <%= packageName %>.web.rest
 
-import <%=packageName%>.config.LOGIN_REGEX
+import <%= packageName %>.config.LOGIN_REGEX
 <%_ if (authenticationType !== 'oauth2' || searchEngine === 'elasticsearch') { _%>
-import <%=packageName%>.domain.<%= asEntity('User') %>
+import <%= packageName %>.domain.<%= asEntity('User') %>
 <%_ } _%>
 <%_ if (authenticationType !== 'oauth2') { _%>
-import <%=packageName%>.repository.UserRepository
+import <%= packageName %>.repository.UserRepository
 <%_ } _%>
 <%_ if (searchEngine === 'elasticsearch') { _%>
-import <%=packageName%>.repository.search.UserSearchRepository
+import <%= packageName %>.repository.search.UserSearchRepository
 <%_ } _%>
-import <%=packageName%>.security.ADMIN
+import <%= packageName %>.security.ADMIN
 <%_ if (authenticationType !== 'oauth2') { _%>
-import <%=packageName%>.service.MailService
+import <%= packageName %>.service.MailService
 <%_ } _%>
-import <%=packageName%>.service.UserService
-import <%=packageName%>.service.dto.<%= asDto('User') %>
+import <%= packageName %>.service.UserService
+import <%= packageName %>.service.dto.<%= asDto('User') %>
 <%_ if (authenticationType !== 'oauth2') { _%>
-import <%=packageName%>.web.rest.errors.BadRequestAlertException
-import <%=packageName%>.web.rest.errors.EmailAlreadyUsedException
-import <%=packageName%>.web.rest.errors.LoginAlreadyUsedException
+import <%= packageName %>.web.rest.errors.BadRequestAlertException
+import <%= packageName %>.web.rest.errors.EmailAlreadyUsedException
+import <%= packageName %>.web.rest.errors.LoginAlreadyUsedException
 <%_ } _%>
 
 import io.github.jhipster.web.util.HeaderUtil
@@ -99,7 +99,7 @@ import org.elasticsearch.index.query.QueryBuilders.queryStringQuery
 /**
  * REST controller for managing users.
  *
- * This class accesses the [<% if (!(authenticationType !== 'oauth2' || searchEngine === 'elasticsearch')) { %><%=packageName%>.domain.<% } %><%= asEntity('User') %>] entity, and needs to fetch its collection of authorities.
+ * This class accesses the [<% if (!(authenticationType !== 'oauth2' || searchEngine === 'elasticsearch')) { %><%= packageName %>.domain.<% } %><%= asEntity('User') %>] entity, and needs to fetch its collection of authorities.
  *
  * For a normal use-case, it would be better to have an eager relationship between User and Authority,
  * and send everything to the client side: there would be no View Model and DTO, a lot less code, and an outer-join
@@ -177,14 +177,14 @@ class UserResource(
             .hasElement()
             .flatMap { loginExists ->
                 if (loginExists!!) {
-                    throw LoginAlreadyUsedException()
+                    return Mono.error(LoginAlreadyUsedException())
                 }
                 userRepository.findOneByEmailIgnoreCase(userDTO.email)
             }
             .hasElement()
             .flatMap { emailExists ->
                 if (emailExists!!) {
-                    throw EmailAlreadyUsedException()
+                    return Mono.error(EmailAlreadyUsedException())
                 }
                 userService.createUser(userDTO)
             }
@@ -236,7 +236,7 @@ class UserResource(
             .hasElement()
             .flatMap { emailExists ->
                 if (emailExists!!) {
-                    throw EmailAlreadyUsedException()
+                    return Mono.error(EmailAlreadyUsedException())
                 }
                 userRepository.findOneByLogin(userDTO.login!!.toLowerCase())
             }
@@ -244,7 +244,7 @@ class UserResource(
             .hasElement()
             .flatMap { loginExists ->
                 if (loginExists!!) {
-                    throw LoginAlreadyUsedException()
+                    return Mono.error(LoginAlreadyUsedException())
                 }
                 userService.updateUser(userDTO)
             }

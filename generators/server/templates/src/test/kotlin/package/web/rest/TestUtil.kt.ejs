@@ -18,21 +18,35 @@
 -%>
 @file:JvmName("TestUtil")
 
-package <%=packageName%>.web.rest
+package <%= packageName %>.web.rest
 
 import com.fasterxml.jackson.annotation.JsonInclude
 import com.fasterxml.jackson.databind.ObjectMapper
+import com.fasterxml.jackson.databind.SerializationFeature
 import com.fasterxml.jackson.datatype.jsr310.JavaTimeModule
+<%_ if (authenticationType === 'oauth2') { _%>
+import <%= packageName %>.security.SecurityUtils
+<%_ } _%>
 import org.hamcrest.Description
 import org.hamcrest.TypeSafeDiagnosingMatcher
+<%_ if (!reactive) { _%>
 import org.springframework.format.datetime.standard.DateTimeFormatterRegistrar
 import org.springframework.format.support.DefaultFormattingConversionService
 import org.springframework.format.support.FormattingConversionService
+<%_ } _%>
 import org.springframework.http.MediaType
 <%_ if (databaseType === 'couchbase') { _%>
 import org.springframework.security.authentication.TestingAuthenticationToken
 import org.springframework.security.test.context.TestSecurityContextHolder
 <%_ } _%>
+<%_ if (authenticationType === 'oauth2') { _%>
+import org.springframework.security.core.GrantedAuthority
+import org.springframework.security.oauth2.client.authentication.OAuth2AuthenticationToken
+import org.springframework.security.oauth2.core.oidc.OidcIdToken
+import org.springframework.security.oauth2.core.oidc.user.DefaultOidcUser
+import org.springframework.security.oauth2.core.oidc.user.OidcUser
+<%_ } _%>
+
 <%_ if (databaseType === 'sql') { _%>
 import javax.persistence.EntityManager
 <%_ } _%>
@@ -48,12 +62,15 @@ import org.assertj.core.api.Assertions.assertThat
 
 private val mapper = createObjectMapper()
 
-/** MediaType for JSON UTF8  */
+/**
+ * MediaType for JSON
+ */
 @JvmField
-val APPLICATION_JSON_UTF8: MediaType = MediaType.APPLICATION_JSON_UTF8
+val APPLICATION_JSON: MediaType = MediaType.APPLICATION_JSON
 
 private fun createObjectMapper() =
     ObjectMapper().apply {
+        configure(SerializationFeature.WRITE_DURATIONS_AS_TIMESTAMPS, false)
         setSerializationInclusion(JsonInclude.Include.NON_EMPTY)
         registerModule(JavaTimeModule())
     }
@@ -79,7 +96,7 @@ fun createByteArray(size: Int, data: String) = ByteArray(size) { java.lang.Byte.
 <%_ if (databaseType === 'couchbase') { _%>
 
 /**
- * Mock user authentication for Spring SpEL expression used in [<%=packageName%>.repository.N1qlCouchbaseRepository].
+ * Mock user authentication for Spring SpEL expression used in [<%= packageName %>.repository.N1qlCouchbaseRepository].
  */
 fun mockAuthentication() {
     TestSecurityContextHolder.getContext().authentication = TestingAuthenticationToken("user", null)
@@ -136,6 +153,7 @@ fun <T : Any> equalsVerifier(clazz: KClass<T>) {
     assertThat(domainObject1.hashCode()).isEqualTo(domainObject2.hashCode())
     <%_ } _%>
 }
+<%_ if (!reactive) { _%>
 
 /**
  * Create a [FormattingConversionService] which use ISO date format, instead of the localized one.
@@ -148,7 +166,7 @@ fun createFormattingConversionService(): FormattingConversionService {
     registrar.registerFormatters(dfcs)
     return dfcs
 }
-
+<%_ } _%>
 <%_ if (databaseType === 'sql') { _%>
 /**
  * Finds stored objects of the specified type.
@@ -162,5 +180,20 @@ fun <T : Any> EntityManager.findAll(clazz: KClass<T>): List<T> {
     val rootEntry = cq.from(clazz.java)
     val all = cq.select(rootEntry)
     return this.createQuery(all).resultList
+}
+<%_ } _%>
+
+<%_ if (authenticationType === 'oauth2') { _%>
+@JvmField
+val ID_TOKEN = "eyJ0eXAiOiJKV1QiLCJhbGciOiJIUzI1NiJ9" +
+    ".eyJzdWIiOiIxMjM0NTY3ODkwIiwibmFtZSI6IkpvaG4gRG9lIiwiYWRtaW4iOnRydWUsIm" +
+    "p0aSI6ImQzNWRmMTRkLTA5ZjYtNDhmZi04YTkzLTdjNmYwMzM5MzE1OSIsImlhdCI6MTU0M" +
+    "Tk3MTU4MywiZXhwIjoxNTQxOTc1MTgzfQ.QaQOarmV8xEUYV7yvWzX3cUE_4W1luMcWCwpr" +
+    "oqqUrg";
+
+fun authenticationToken(idToken: OidcIdToken): OAuth2AuthenticationToken {
+    val authorities = SecurityUtils.extractAuthorityFromClaims(idToken.claims)
+    val user = DefaultOidcUser(authorities, idToken)
+    return OAuth2AuthenticationToken(user, authorities, "oidc")
 }
 <%_ } _%>

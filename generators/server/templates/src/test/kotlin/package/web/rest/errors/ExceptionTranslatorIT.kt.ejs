@@ -22,7 +22,7 @@ package <%= packageName %>.web.rest.errors
 import <%= packageName %>.AbstractCassandraTest
 <%_ } _%>
 <%_ if (cacheProvider === 'redis') { _%>
-import <%=packageName%>.RedisTestContainerExtension
+import <%= packageName %>.RedisTestContainerExtension
 <%_ } _%>
 import <%= packageName %>.<%= mainClass %>
 <%_ if (authenticationType === 'uaa') { _%>
@@ -189,7 +189,11 @@ import org.springframework.web.server.adapter.WebHttpHandlerBuilder
 /**
  * Integration tests [ExceptionTranslator] controller advice.
  */
+<%_ if (authenticationType === 'oauth2') { _%>
+@SpringBootTest(classes = [<%= mainClass %>::class, TestSecurityConfiguration::class])
+<%_ } else { _%>
 @SpringBootTest(classes = [<%= mainClass %>::class])
+<%_ } _%>
 class ExceptionTranslatorIT {
 
     @Autowired
@@ -237,7 +241,7 @@ class ExceptionTranslatorIT {
     fun testMethodArgumentNotValid() {
         webTestClient.post().uri("/test/method-argument")
             .contentType(MediaType.APPLICATION_JSON)
-            .syncBody("{}")
+            .bodyValue("{}")
             .exchange()
             .expectHeader().contentType(MediaType.APPLICATION_PROBLEM_JSON)
             .expectBody()

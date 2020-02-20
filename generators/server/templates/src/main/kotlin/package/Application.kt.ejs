@@ -16,18 +16,17 @@
  See the License for the specific language governing permissions and
  limitations under the License.
 -%>
-package <%=packageName%>
+package <%= packageName %>
 
 <%_ if (applicationType === 'microservice' && authenticationType === 'uaa') { _%>
-import <%=packageName%>.client.OAuth2InterceptedFeignConfiguration
+import <%= packageName %>.client.OAuth2InterceptedFeignConfiguration
 <%_ } _%>
-import <%=packageName%>.config.ApplicationProperties
+import <%= packageName %>.config.ApplicationProperties
 import io.github.jhipster.config.DefaultProfileUtil
 
 import io.github.jhipster.config.JHipsterConstants
 
 import org.slf4j.LoggerFactory
-import org.springframework.beans.factory.InitializingBean
 import org.springframework.boot.runApplication
 import org.springframework.boot.autoconfigure.SpringBootApplication
 <%_ if (databaseType === 'sql') { _%>
@@ -37,7 +36,7 @@ import org.springframework.boot.context.properties.EnableConfigurationProperties
 <%_ if (serviceDiscoveryType) { _%>
 import org.springframework.cloud.client.discovery.EnableDiscoveryClient
 <%_ } _%>
-<%_ if (applicationType === 'gateway' && serviceDiscoveryType) { _%>
+<%_ if (applicationType === 'gateway') { _%>
 import org.springframework.cloud.netflix.zuul.EnableZuulProxy
 <%_ } _%>
 <%_ if (applicationType === 'microservice' && authenticationType === 'uaa') { _%>
@@ -46,6 +45,7 @@ import org.springframework.context.annotation.FilterType
 <%_ } _%>
 import org.springframework.core.env.Environment
 
+import javax.annotation.PostConstruct
 import java.net.InetAddress
 import java.net.UnknownHostException
 
@@ -62,10 +62,10 @@ import java.net.UnknownHostException
 <%_ if (serviceDiscoveryType) { _%>
 @EnableDiscoveryClient
 <%_ } _%>
-<%_ if (applicationType === 'gateway'  && serviceDiscoveryType) { _%>
+<%_ if (applicationType === 'gateway') { _%>
 @EnableZuulProxy
 <%_ } _%>
-class <%= mainClass %>(private val env: Environment) : InitializingBean {
+class <%= mainClass %>(private val env: Environment) {
 
     private val log = LoggerFactory.getLogger(javaClass)
 
@@ -76,8 +76,8 @@ class <%= mainClass %>(private val env: Environment) : InitializingBean {
      *
      * You can find more information on how profiles work with JHipster on [https://www.jhipster.tech/profiles/]("https://www.jhipster.tech/profiles/").
      */
-    @Throws(Exception::class)
-    override fun afterPropertiesSet() {
+    @PostConstruct
+    fun initApplication() {
         val activeProfiles = env.activeProfiles
         if (
             activeProfiles.contains(JHipsterConstants.SPRING_PROFILE_DEVELOPMENT) &&

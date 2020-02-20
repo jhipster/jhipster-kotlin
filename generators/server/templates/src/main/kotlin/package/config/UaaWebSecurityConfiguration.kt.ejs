@@ -16,10 +16,9 @@
  See the License for the specific language governing permissions and
  limitations under the License.
 -%>
-package <%=packageName%>.config
+package <%= packageName %>.config
 
 import org.springframework.beans.factory.BeanInitializationException
-import org.springframework.beans.factory.InitializingBean
 import org.springframework.context.annotation.Bean
 import org.springframework.context.annotation.Configuration
 import org.springframework.http.HttpMethod
@@ -31,14 +30,17 @@ import org.springframework.security.core.userdetails.UserDetailsService
 import org.springframework.security.crypto.bcrypt.BCryptPasswordEncoder
 import org.springframework.security.data.repository.query.SecurityEvaluationContextExtension
 
+import javax.annotation.PostConstruct
+
 @Configuration
 class UaaWebSecurityConfiguration(
     private val userDetailsService: UserDetailsService,
     private val authenticationManagerBuilder: AuthenticationManagerBuilder
-) : WebSecurityConfigurerAdapter(), InitializingBean {
+) : WebSecurityConfigurerAdapter() {
 
+    @PostConstruct
     @Throws(Exception::class)
-    override fun afterPropertiesSet() {
+    fun init() {
         try {
             authenticationManagerBuilder
                 .userDetailsService(userDetailsService)
