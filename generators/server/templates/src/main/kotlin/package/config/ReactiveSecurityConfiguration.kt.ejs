@@ -25,12 +25,10 @@ import <%= packageName %>.security.jwt.TokenProvider
 <%_ } _%>
 <%_ if (authenticationType === 'session' || authenticationType === 'oauth2') { _%>
     <%_ if (authenticationType === 'oauth2') { _%>
-import <%= packageName %>.security.SecurityUtils
 import <%= packageName %>.security.oauth2.AudienceValidator
 import <%= packageName %>.security.oauth2.JwtAuthorityExtractor
 import <%= packageName %>.service.AuditEventService
 import org.springframework.security.authentication.AbstractAuthenticationToken
-import org.springframework.security.oauth2.server.resource.authentication.JwtAuthenticationConverter
     <%_ } _%>
     <%_ if (!skipUserManagement) { _%>
 import <%= packageName %>.service.AuditEventService
@@ -83,7 +81,6 @@ import org.springframework.security.oauth2.jwt.*
 import org.springframework.security.oauth2.server.resource.authentication.JwtAuthenticationConverter
 import org.springframework.security.oauth2.server.resource.authentication.ReactiveJwtAuthenticationConverterAdapter
 import org.springframework.security.web.server.csrf.CookieServerCsrfTokenRepository
-import org.springframework.security.web.server.header.ReferrerPolicyServerHttpHeadersWriter
 import org.springframework.security.web.server.WebFilterExchange
 import org.springframework.security.web.server.authentication.RedirectServerAuthenticationSuccessHandler
 import org.springframework.security.web.server.authentication.ServerAuthenticationSuccessHandler
@@ -275,31 +272,22 @@ class SecurityConfiguration(
         val delegate = OidcReactiveOAuth2UserService()
 
         // Delegate to the default implementation for loading a user
-        return delegate.loadUser(userRequest).map{ user -> {
-            return ReactiveOAuth2UserService { userRequest ->
-                delegate.loadUser(userRequest).map {
-                    val mappedAuthorities = hashSetOf<GrantedAuthority>()
-                    user.getAuthorities().forEach(authority -> {
-                        if (authority instanceof OidcUserAuthority) {
-                            val oidcUserAuthority = (OidcUserAuthority) authority
-                            mappedAuthorities.addAll(SecurityUtils.extractAuthorityFromClaims(oidcUserAuthority.getUserInfo().getClaims()))
-                            it.authorities.forEach { authority ->
-                                if (authority is OidcUserAuthority) {
-                                    val oidcUserAuthority = authority as OidcUserAuthority
-                                    extractAuthorityFromClaims(oidcUserAuthority.userInfo.claims)?.let { grantedAuthorities -> mappedAuthorities.addAll(grantedAuthorities) }
-                                }
-                            });
-                        }
-                    DefaultOidcUser(mappedAuthorities, it.idToken, it.userInfo)
-                   }
+        return ReactiveOAuth2UserService { userRequest ->
+            delegate.loadUser(userRequest).map { oidcUser ->
+                val mappedAuthorities = hashSetOf<GrantedAuthority>()
+                oidcUser.authorities.forEach { grantedAuthority ->
+                    if (grantedAuthority is OidcUserAuthority) {
+                        extractAuthorityFromClaims(grantedAuthority.userInfo.claims)?.let { userInfoClaim -> mappedAuthorities.addAll(userInfoClaim) }
+                    }
                 }
+                DefaultOidcUser(mappedAuthorities, oidcUser.idToken, oidcUser.userInfo)
             }
-        } }
+        }
     }
 
     @Bean
     fun jwtDecoder(): ReactiveJwtDecoder {
-        val jwtDecoder = ReactiveJwtDecoders.fromOidcIssuerLocation(issuerUri) as NimbusReactiveJwtDecoder  
+        val jwtDecoder = ReactiveJwtDecoders.fromOidcIssuerLocation(issuerUri) as NimbusReactiveJwtDecoder
 
         val audienceValidator = AudienceValidator(jHipsterProperties.security.oauth2.audience)
         val withIssuer = JwtValidators.createDefaultWithIssuer(issuerUri)

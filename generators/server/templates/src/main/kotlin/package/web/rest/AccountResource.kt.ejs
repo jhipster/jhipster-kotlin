@@ -132,15 +132,14 @@ class AccountResource {
             .map { SecurityContext.getAuthentication(it) }
             .map { authentication -> {
                 String login;
-                // TODO
-                if (authentication.getPrincipal() instanceof UserDetails) {
-                    login = ((UserDetails) authentication.getPrincipal()).getUsername();
-                } else if (authentication.getPrincipal() instanceof String) {
-                    login = authentication.getPrincipal();
+                if (authentication.principal is UserDetails) {
+                    login = authentication.principal.username
+                } else if (authentication.principal is String) {
+                    login = authentication.principal
                 } else {
-                    throw AccountResourceException();
+                    throw AccountResourceException()
                 }
-                val authorities = authentication.getAuthorities().stream()
+                val authorities = authentication.authorities()
                     .map { GrantedAuthority.getAuthority(it) }
                     .toSet()
                 return UserVM(login, authorities)

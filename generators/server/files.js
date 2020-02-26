@@ -1290,7 +1290,8 @@ const serverFiles = {
         {
             condition: generator =>
                 generator.authenticationType === 'oauth2' &&
-                (generator.applicationType === 'monolith' || generator.applicationType === 'gateway'),
+                (generator.applicationType === 'monolith' || generator.applicationType === 'gateway') &&
+                !generator.reactive,
             path: SERVER_TEST_SRC_KOTLIN_DIR,
             templates: [
                 {

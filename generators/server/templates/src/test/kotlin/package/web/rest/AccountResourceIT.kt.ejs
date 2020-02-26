@@ -76,8 +76,8 @@ import org.springframework.test.web.servlet.result.MockMvcResultMatchers.jsonPat
 import org.springframework.test.web.servlet.result.MockMvcResultMatchers.status
 
 <%_ if (reactive) { _%>
-import <%= packageName %>.web.rest.TestUtil.ID_TOKEN
-import org.springframework.security.test.web.reactive.server.SecurityMockServerConfigurers.springSecurity
+import <%= packageName %>.web.rest.ID_TOKEN
+import org.springframework.security.test.web.reactive.server.SecurityMockServerConfigurers.*
 <%_ } _%>
 
 /**
@@ -150,6 +150,10 @@ class AccountResourceIT <% if (databaseType === 'cassandra') { %>: AbstractCassa
     <%_ } _%>
     }
 
+    <%#
+        Blocked by the issue https://github.com/spring-projects/spring-framework/issues/20606
+    -%>
+    <% if (!reactive) { %>
     @Test
     <% if (!reactive) { %>@Throws(Exception::class)<% } %>
     fun testAuthenticatedUser() {
@@ -176,6 +180,7 @@ class AccountResourceIT <% if (databaseType === 'cassandra') { %>: AbstractCassa
             .expectBody<String>().isEqualTo("user")
     <%_ } _%>
     }
+    <% } %>
 
     @Test<% if (databaseType === 'sql') { %>
     @Transactional<% } %>
@@ -208,7 +213,7 @@ class AccountResourceIT <% if (databaseType === 'cassandra') { %>: AbstractCassa
             .andExpect(jsonPath("\$.authorities").value(ADMIN))
     <%_ } else { _%>
         webTestClient
-            .mutateWith(mockAuthentication(TestUtil.authenticationToken(idToken)))
+            .mutateWith(mockAuthentication(authenticationToken(idToken)))
             .mutateWith(csrf())
             .get().uri("/api/account")
             .accept(MediaType.APPLICATION_JSON)
