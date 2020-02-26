@@ -54,7 +54,7 @@ import java.util.Optional
  *
  * @return the login of the current user.
  */
-fun getCurrentUserLogin(): <% if (!reactive) { %>Optional<% } else { %>Mono<% } %><String> =
+fun getCurrentUserLogin(): <% if (!reactive) { %>Optional?<% } else { %>Mono<% } %><String> =
     <%_ if (!reactive) { _%>
     Optional.ofNullable(extractPrincipal(SecurityContextHolder.getContext().authentication))
     <%_ } else { _%>
@@ -64,13 +64,13 @@ fun getCurrentUserLogin(): <% if (!reactive) { %>Optional<% } else { %>Mono<% } 
     <%_ } _%>
 
 
-fun extractPrincipal(authentication?: Authentication): String {
+fun extractPrincipal(authentication: Authentication?): String? {
 
     if(authentication == null) {
         return null;
     }
 
-    when (val principal = authentication.principal) {
+    return when (val principal = authentication.principal) {
         is UserDetails -> principal.username
         <%_ if (authenticationType === 'oauth2') { _%>
         is JwtAuthenticationToken -> (authentication as JwtAuthenticationToken).token.claims as String
@@ -115,10 +115,13 @@ fun isAuthenticated(): <% if (!reactive) { %>Boolean<% } else { %>Mono<Boolean><
     val authentication = SecurityContextHolder.getContext().authentication
 
     if (authentication != null) {
-        return getAuthorities(authentication).none { it == ANONYMOUS }
+        val isAnonymousUser = getAuthorities(authentication)?.none { it == ANONYMOUS }
+        if(isAnonymousUser != null) {
+            return isAnonymousUser
+        }
     }
 
-    return false;
+    return false
     <%_ } else { _%>
     return ReactiveSecurityContextHolder.getContext()
         .map(SecurityContext::getAuthentication)
@@ -144,10 +147,13 @@ fun isCurrentUserInRole(authority: String): <% if (!reactive) { %>Boolean<% } el
   val authentication = SecurityContextHolder.getContext().authentication
 
   if (authentication != null) {
-      return getAuthorities(authentication).any { it == authority }
+    val isUserPresent = getAuthorities(authentication)?.any { it == authority }
+    if(isUserPresent != null) {
+        return isUserPresent
+    }
   }
 
-  return false;
+  return false
   <%_ } else { _%>
   return ReactiveSecurityContextHolder.getContext()
       .map(SecurityContext::getAuthentication)
@@ -161,24 +167,24 @@ fun isCurrentUserInRole(authority: String): <% if (!reactive) { %>Boolean<% } el
 }
 
 <%_ if (!reactive) { _%>
-fun getAuthorities(authentication: Authentication): List<String> {
+fun getAuthorities(authentication: Authentication): List<String>? {
   <%_ if (authenticationType === 'oauth2') { _%>
-    val authorities = when (val auth = authentication) {
+    val authorities = when (authentication) {
         is JwtAuthenticationToken ->
-            extractAuthorityFromClaims(auth.token.claims)
+            extractAuthorityFromClaims(authentication.token.claims)
         else ->
-            auth.authorities
+            authentication.authorities
     }
-    return authorities
+    return authorities?
   <%_ } else { _%>
-    return authentication.authorities
+    return authentication.authorities?
   <%_ } _%>
         .map(GrantedAuthority::getAuthority)
 }
 <%_ } _%>
 
 <%_ if (authenticationType === 'oauth2') { _%>
-    fun extractAuthorityFromClaims(claims: Map<String, Any>): List<GrantedAuthority>   {
+    fun extractAuthorityFromClaims(claims: Map<String, Any>): List<GrantedAuthority>? {
         return mapRolesToGrantedAuthorities(getRolesFromClaims(claims))
     }
 

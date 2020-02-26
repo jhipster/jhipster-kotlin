@@ -61,9 +61,11 @@ import org.springframework.security.oauth2.core.oidc.OidcIdToken
 import org.springframework.security.oauth2.jwt.Jwt
 import org.springframework.security.web.server.context.SecurityContextServerWebExchangeWebFilter
 import org.springframework.test.web.reactive.server.WebTestClient
+import org.springframework.test.web.reactive.server.WebTestClientConfigurer
 
 import java.time.Instant
 <%_ } _%>
+import org.springframework.test.web.reactive.server.expectBody
 
 <%_ if (!reactive) { _%>
 import org.springframework.security.test.web.servlet.setup.SecurityMockMvcConfigurers.springSecurity
@@ -115,13 +117,13 @@ class AccountResourceIT <% if (databaseType === 'cassandra') { %>: AbstractCassa
             .build()
     <%_ } else { _%>
         this.webTestClient = WebTestClient.bindToController(accountResource)
-            .apply(springSecurity())
+            .apply<WebTestClient.ControllerSpec>(springSecurity())
             .controllerAdvice(exceptionTranslator)
-            .webFilter(SecurityContextServerWebExchangeWebFilter())
+            .webFilter<WebTestClient.ControllerSpec>(SecurityContextServerWebExchangeWebFilter())
             .build()
 
         val claims: MutableMap<String, Any> = hashMapOf();
-        claims.put("groups", listOf(AuthoritiesConstants.ADMIN));
+        claims.put("groups", listOf(ADMIN));
         claims.put("sub", "jane");
         claims.put("email", "jane.doe@jhipster.com");
         this.idToken = OidcIdToken(ID_TOKEN, Instant.now(),
@@ -143,8 +145,8 @@ class AccountResourceIT <% if (databaseType === 'cassandra') { %>: AbstractCassa
         webTestClient.get().uri("/api/authenticate")
             .accept(MediaType.APPLICATION_JSON)
             .exchange()
-            .expectStatus().isOk()
-            .expectBody().isEmpty()
+            .expectStatus().isOk
+            .expectBody().isEmpty
     <%_ } _%>
     }
 
@@ -170,8 +172,8 @@ class AccountResourceIT <% if (databaseType === 'cassandra') { %>: AbstractCassa
             .get().uri("/api/authenticate")
             .accept(MediaType.APPLICATION_JSON)
             .exchange()
-            .expectStatus().isOk()
-            .expectBody(String.class).isEqualTo("user")
+            .expectStatus().isOk
+            .expectBody<String>().isEqualTo("user")
     <%_ } _%>
     }
 
@@ -211,12 +213,12 @@ class AccountResourceIT <% if (databaseType === 'cassandra') { %>: AbstractCassa
             .get().uri("/api/account")
             .accept(MediaType.APPLICATION_JSON)
             .exchange()
-            .expectStatus().isOk()
+            .expectStatus().isOk
             .expectHeader().contentType(MediaType.APPLICATION_JSON_VALUE)
             .expectBody()
             .jsonPath("$.login").isEqualTo("jane")
             .jsonPath("$.email").isEqualTo("jane.doe@jhipster.com")
-            .jsonPath("$.authorities").isEqualTo(AuthoritiesConstants.ADMIN)
+            .jsonPath("$.authorities").isEqualTo(ADMIN)
     <%_ } _%>
     }
 
@@ -233,7 +235,7 @@ class AccountResourceIT <% if (databaseType === 'cassandra') { %>: AbstractCassa
         webTestClient.get().uri("/api/account")
             .accept(MediaType.APPLICATION_JSON)
             .exchange()
-            .expectStatus().is5xxServerError()
+            .expectStatus().is5xxServerError
     <%_ } _%>
     }
 }
@@ -314,11 +316,11 @@ class AccountResourceIT <% if (databaseType === 'cassandra') { %>: AbstractCassa
             webTestClient.get().uri("/api/account")
                 .accept(MediaType.APPLICATION_JSON)
                 .exchange()
-                .expectStatus().isOk()
+                .expectStatus().isOk
                 .expectHeader().contentType(MediaType.APPLICATION_JSON)
                 .expectBody()
                 .jsonPath("$.login").isEqualTo("test")
-                .jsonPath("$.authorities").isEqualTo(AuthoritiesConstants.ADMIN)
+                .jsonPath("$.authorities").isEqualTo(ADMIN)
         <%_ } _%>
     }
 
@@ -335,7 +337,7 @@ class AccountResourceIT <% if (databaseType === 'cassandra') { %>: AbstractCassa
         webTestClient.get().uri("/api/account")
             .accept(MediaType.APPLICATION_JSON)
             .exchange()
-            .expectStatus().is5xxServerError()
+            .expectStatus().is5xxServerError
         <%_ } _%>
     }
 }
@@ -555,7 +557,7 @@ class AccountResourceIT <% if (databaseType === 'cassandra') { %>: AbstractCassa
             .accept(MediaType.APPLICATION_JSON)
             .exchange()
             .expectStatus().isOk
-            .expectBody(String::class.java).isEqualTo<Nothing>("user")
+            .expectBody<String>.isEqualTo("user")
     <%_ } _%>
     }
 
@@ -1186,7 +1188,7 @@ class AccountResourceIT <% if (databaseType === 'cassandra') { %>: AbstractCassa
         assertThat(updatedUser.password).isEqualTo(user.password)<% if (['sql', 'mongodb', 'couchbase'].includes(databaseType)) { %>
         assertThat(updatedUser.imageUrl).isEqualTo(userDTO.imageUrl)<% } %>
         assertThat(updatedUser.activated).isEqualTo(true)
-        assertThat(updatedUser.authorities).isEmpty()
+        assertThat(updatedUser.authorities).isEmpty
     }
 
     @Test<% if (databaseType === 'sql') { %>
@@ -1617,7 +1619,7 @@ class AccountResourceIT <% if (databaseType === 'cassandra') { %>: AbstractCassa
         restMvc.perform(delete("/api/account/sessions/invalidate-session"))
             .andExpect(status().isOk)
 
-        assertThat(persistentTokenRepository.findByUser(user)).isEmpty()
+        assertThat(persistentTokenRepository.findByUser(user)).isEmpty
     }
     <%_ } _%>
 

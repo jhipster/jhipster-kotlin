@@ -79,7 +79,6 @@ import org.springframework.security.oauth2.core.OAuth2TokenValidator
 import org.springframework.security.oauth2.core.oidc.user.DefaultOidcUser
 import org.springframework.security.oauth2.core.oidc.user.OidcUser
 import org.springframework.security.oauth2.core.oidc.user.OidcUserAuthority
-// TODO
 import org.springframework.security.oauth2.jwt.*
 import org.springframework.security.oauth2.server.resource.authentication.JwtAuthenticationConverter
 import org.springframework.security.oauth2.server.resource.authentication.ReactiveJwtAuthenticationConverterAdapter
@@ -94,8 +93,6 @@ import org.springframework.security.web.server.authentication.ServerAuthenticati
 import org.springframework.security.core.userdetails.MapReactiveUserDetailsService
     <%_ } _%>
 import org.springframework.security.core.userdetails.ReactiveUserDetailsService
-import org.springframework.security.crypto.bcrypt.BCryptPasswordEncoder
-<%_ } _%>
     <%_ if (authenticationType === 'session' || skipUserManagement) { _%>
 import org.springframework.security.core.userdetails.User
     <%_ } _%>
@@ -137,7 +134,7 @@ class SecurityConfiguration(
     private val auditEventService: AuditEventService,
 <%_ } _%>
 <%_ if (authenticationType === 'oauth2') { _%>
-    @Value("\${spring.security.oauth2.client.provider.oidc.issuer-uri}") issuerUri: String,
+    @Value("\${spring.security.oauth2.client.provider.oidc.issuer-uri}") private val issuerUri: String,
     private val jHipsterProperties: JHipsterProperties,
 <%_ } _%>
     private val problemSupport: SecurityProblemSupport
@@ -277,47 +274,51 @@ class SecurityConfiguration(
     fun oidcUserService(): ReactiveOAuth2UserService<OidcUserRequest, OidcUser> {
         val delegate = OidcReactiveOAuth2UserService()
 
-        return (userRequest) -> {
-            // Delegate to the default implementation for loading a user
-            return delegate.loadUser(userRequest).map{ user -> {
-                val mappedAuthorities = hashSetOf<GrantedAuthority>()
-
-                user.getAuthorities().forEach(authority -> {
-                    if (authority instanceof OidcUserAuthority) {
-                        val oidcUserAuthority = (OidcUserAuthority) authority
-                        mappedAuthorities.addAll(SecurityUtils.extractAuthorityFromClaims(oidcUserAuthority.getUserInfo().getClaims()))
-                    }
-                });
-
-                return DefaultOidcUser(mappedAuthorities, user.getIdToken(), user.getUserInfo())
-            }}
-        };
+        // Delegate to the default implementation for loading a user
+        return delegate.loadUser(userRequest).map{ user -> {
+            return ReactiveOAuth2UserService { userRequest ->
+                delegate.loadUser(userRequest).map {
+                    val mappedAuthorities = hashSetOf<GrantedAuthority>()
+                    user.getAuthorities().forEach(authority -> {
+                        if (authority instanceof OidcUserAuthority) {
+                            val oidcUserAuthority = (OidcUserAuthority) authority
+                            mappedAuthorities.addAll(SecurityUtils.extractAuthorityFromClaims(oidcUserAuthority.getUserInfo().getClaims()))
+                            it.authorities.forEach { authority ->
+                                if (authority is OidcUserAuthority) {
+                                    val oidcUserAuthority = authority as OidcUserAuthority
+                                    extractAuthorityFromClaims(oidcUserAuthority.userInfo.claims)?.let { grantedAuthorities -> mappedAuthorities.addAll(grantedAuthorities) }
+                                }
+                            });
+                        }
+                    DefaultOidcUser(mappedAuthorities, it.idToken, it.userInfo)
+                   }
+                }
+            }
+        } }
     }
 
     @Bean
     fun jwtDecoder(): ReactiveJwtDecoder {
-        val jwtDecoder = (NimbusReactiveJwtDecoder) ReactiveJwtDecoders.fromOidcIssuerLocation(issuerUri)
+        val jwtDecoder = ReactiveJwtDecoders.fromOidcIssuerLocation(issuerUri) as NimbusReactiveJwtDecoder  
 
-        val audienceValidator = new AudienceValidator(jHipsterProperties.getSecurity().getOauth2().getAudience())
+        val audienceValidator = AudienceValidator(jHipsterProperties.security.oauth2.audience)
         val withIssuer = JwtValidators.createDefaultWithIssuer(issuerUri)
-        val withAudience = new DelegatingOAuth2TokenValidator<>(withIssuer, audienceValidator)
+        val withAudience = DelegatingOAuth2TokenValidator<Jwt>(withIssuer, audienceValidator)
 
         jwtDecoder.setJwtValidator(withAudience)
 
         return jwtDecoder
     }
 
-    // @JVMField ???
-    // TODO ....
     private val redirectServerAuthenticationSuccessHandler = RedirectServerAuthenticationSuccessHandler()
 
     fun onAuthenticationSuccess(exchange: WebFilterExchange, authentication: Authentication): Mono<Void>  {
         return redirectServerAuthenticationSuccessHandler.onAuthenticationSuccess(exchange, authentication)
-            .thenReturn(authentication.getPrincipal())
-            .filter { principal -> principal instanceof OidcUser }
+            .thenReturn(authentication.principal)
+            .filter { it is OidcUser }
             .map { (it as OidcUser).preferredUsername }
-            .filter { !Constants.ANONYMOUS_USER.equals(it) }
-            .flatMap { auditEventService.saveAuthenticationError(it) }
+            .filter { ANONYMOUS_USER != it }
+            .flatMap { auditEventService.saveAuthenticationSuccess(it) }
             .then()
     }
     <%_ } _%>

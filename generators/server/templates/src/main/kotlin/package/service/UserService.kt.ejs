@@ -727,45 +727,40 @@ class UserService<% if (databaseType !== 'no') { %>(
         }
         return user
         <%_ } else { _%>
-            // TODO write this method with Intellij
         val userAuthorities =
-            user.authorities.map{ it.name }.toList()
+            user.authorities.map { it.name }.toList()
 
         return getAuthorities().collectList()
-            .flatMapMany(dbAuthorities -> {
-                List<Authority> authoritiesToSave = userAuthorities.stream()
-                    .filter(authority -> !dbAuthorities.contains(authority))
-                    .map(authority -> {
-                        Authority authorityToSave = new Authority();
-                        authorityToSave.setName(authority);
-                        return authorityToSave;
-                    })
-                    .collect(Collectors.toList());
-                return Flux.fromIterable(authoritiesToSave);
-            })
-            .doOnNext(authority -> log.debug("Saving authority '{}' in local database", authority))
-            .flatMap(authorityRepository::save)
-            .then(userRepository.findOneByLogin(user.getLogin()))
+            .flatMapMany { dbAuthorities: List<String?> ->
+                val authoritiesToSave = userAuthorities.filter { authority: String? -> !dbAuthorities.contains(authority) }
+                    .map { authority: String? ->
+                        val authorityToSave = Authority()
+                        authorityToSave.name = authority
+                        authorityToSave
+                    }
+                Flux.fromIterable(authoritiesToSave)
+            }
+            .doOnNext { authority: Authority? -> log.debug("Saving authority '{}' in local database", authority) }
+            .flatMap<Authority> { authorityRepository.save(it) }
+            .then(userRepository.findOneByLogin(user.login!!))
             .switchIfEmpty(userRepository.save(user))
-            .flatMap(existingUser -> {
+            .flatMap<Any> { existingUser: User ->
                 // if IdP sends last updated information, use it to determine if an update should happen
-                if (details.get("updated_at") != null) {
-                    Instant dbModifiedDate = existingUser.getLastModifiedDate();
-                    Instant idpModifiedDate = Date.from((Instant) details.get("updated_at")).toInstant();
+                if (details["updated_at"] != null) {
+                    val dbModifiedDate = existingUser.lastModifiedDate
+                    val idpModifiedDate = Date.from(details["updated_at"] as Instant?).toInstant()
                     if (idpModifiedDate.isAfter(dbModifiedDate)) {
-                        log.debug("Updating user '{}' in local database", user.getLogin());
-                        return updateUser(user.getFirstName(), user.getLastName(), user.getEmail(),
-                            user.getLangKey(), user.getImageUrl());
+                        log.debug("Updating user '{}' in local database", user.login)
+                        return@flatMap updateUser(user.firstName, user.lastName, user.email, user.langKey, user.imageUrl)
                     }
                     // no last updated info, blindly update
                 } else {
-                    log.debug("Updating user '{}' in local database", user.getLogin());
-                    return updateUser(user.getFirstName(), user.getLastName(), user.getEmail(),
-                        user.getLangKey(), user.getImageUrl());
+                    log.debug("Updating user '{}' in local database", user.login)
+                    return@flatMap updateUser(user.firstName, user.lastName, user.email, user.langKey, user.imageUrl)
                 }
-                return Mono.empty();
-            })
-            .thenReturn(user);
+                Mono.empty()
+            }
+            .thenReturn<User>(user)
             <%_ } _%>
     }
     <%_ } _%>

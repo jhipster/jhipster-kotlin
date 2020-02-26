@@ -39,6 +39,7 @@ import org.springframework.security.core.context.SecurityContextHolder
 import org.springframework.security.oauth2.client.registration.<% if (reactive) { %>Reactive<% } %>ClientRegistrationRepository
 import org.springframework.security.oauth2.core.oidc.OidcIdToken
 <%_ if (!reactive) { _%>
+import org.springframework.security.web.servletapi.SecurityContextHolderAwareRequestFilter
 import org.springframework.test.web.servlet.MockMvc
 import org.springframework.test.web.servlet.setup.MockMvcBuilders
 import org.springframework.web.context.WebApplicationContext
@@ -48,8 +49,6 @@ import org.springframework.test.web.reactive.server.WebTestClient
 
 import java.time.Instant
 
-import <%= packageName %>.web.rest.TestUtil.ID_TOKEN
-import <%= packageName %>.web.rest.TestUtil.authenticationToken
 <%_ if (!reactive) { _%>
 import org.springframework.test.web.servlet.request.MockMvcRequestBuilders.post
 import org.springframework.test.web.servlet.result.MockMvcResultMatchers.content
@@ -98,10 +97,10 @@ class LogoutResourceIT {
 
         restLogoutMockMvc = MockMvcBuilders.webAppContextSetup(this.context).build()
         <%_ } else { _%>
-        webTestClient = WebTestClient.bindToApplicationContext(this.context)
-            .apply(springSecurity())
-            .configureClient()
-            .build();
+        val springSecurity = springSecurity()
+        val webTestClient: WebTestClient.MockServerSpec<*> = WebTestClient
+            .bindToApplicationContext(context!!)
+            .apply(springSecurity!!)
         <%_ } _%>
     }
 
@@ -118,7 +117,7 @@ class LogoutResourceIT {
             .andExpect(jsonPath("\$.idToken").value(ID_TOKEN))
     <%_ } else { _%>
         val logoutUrl = this.registrations.findByRegistrationId("oidc")
-            .map { oidc.providerDetails.configurationMetadata.get("end_session_endpoint").toString() }
+            .map { it.providerDetails.configurationMetadata["end_session_endpoint"].toString() }
             .block()
 
         this.webTestClient.mutateWith(csrf())

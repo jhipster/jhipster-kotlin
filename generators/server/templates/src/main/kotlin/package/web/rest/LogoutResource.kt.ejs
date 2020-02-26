@@ -1,4 +1,4 @@
-<%#
+    <%#
  Copyright 2013-2018 the original author or authors from the JHipster project.
 
  This file is part of the JHipster project, see https://www.jhipster.tech/
@@ -37,8 +37,8 @@ import reactor.core.publisher.Mono
  * REST controller for managing global OIDC logout.
  */
 @RestController
-class LogoutResource(registrations: <% if (reactive) { %>Mono<<% } %>ClientRegistration<% if (reactive) { %>><% } %>) {
-    private val registration: ClientRegistration = registrations.findByRegistrationId("oidc")
+class LogoutResource(registrations: <% if (reactive) { %>Reactive<% } %>ClientRegistrationRepository) {
+    private val registration = registrations.findByRegistrationId("oidc")
 
     /**
      * `POST  /api/logout` : logout the current user.
@@ -55,7 +55,7 @@ class LogoutResource(registrations: <% if (reactive) { %>Mono<<% } %>ClientRegis
         request: HttpServletRequest,
         @AuthenticationPrincipal(expression = "idToken") idToken: OidcIdToken?
     ): ResponseEntity<*> {
-        val logoutUrl = registration.providerDetails.configurationMetadata["end_session_endpoint"].toString()
+        val logoutUrl = registration?.providerDetails?.configurationMetadata?.get("end_session_endpoint").toString()
 
         val logoutDetails = mutableMapOf(
             "logoutUrl" to logoutUrl,
@@ -65,14 +65,14 @@ class LogoutResource(registrations: <% if (reactive) { %>Mono<<% } %>ClientRegis
         return ResponseEntity.ok().body(logoutDetails)
     }
 <%_ } else { _%>
-    fun logout(@AuthenticationPrincipal(expression = "idToken") idToken: OidcIdToken, session: WebSession): Mono<Map<String, String>>  {
+    fun logout(@AuthenticationPrincipal(expression = "idToken") idToken: OidcIdToken, session: WebSession): Mono<HashMap<String, String>>  {
         return session.invalidate().then(
-            this.registration.map { it.getProviderDetails().getConfigurationMetadata().get("end_session_endpoint").toString() }
+            registration.map { it.providerDetails.configurationMetadata["end_session_endpoint"].toString() }
                 .map {
                     val logoutDetails = hashMapOf<String, String>()
-                    logoutDetails.put("logoutUrl", logoutUrl)
-                    logoutDetails.put("idToken", idToken.getTokenValue())
-                    return logoutDetails
+                    logoutDetails["logoutUrl"] = it
+                    logoutDetails["idToken"] = idToken.tokenValue
+                    logoutDetails
                 }
         )
     }

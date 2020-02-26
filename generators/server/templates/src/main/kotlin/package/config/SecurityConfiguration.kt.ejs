@@ -73,7 +73,7 @@ import org.springframework.security.oauth2.jwt.Jwt
 import org.springframework.security.oauth2.jwt.JwtDecoder
 import org.springframework.security.oauth2.jwt.JwtDecoders
 import org.springframework.security.oauth2.jwt.JwtValidators
-import org.springframework.security.oauth2.jwt.NimbusJwtDecoderJwkSupport
+import org.springframework.security.oauth2.jwt.NimbusJwtDecoder
 import org.springframework.security.oauth2.server.resource.authentication.JwtAuthenticationConverter
     <%_ if (applicationType === 'gateway' && serviceDiscoveryType) { _%>
 import <%= packageName %>.security.oauth2.AuthorizationHeaderFilter
@@ -301,13 +301,11 @@ class SecurityConfiguration(
         GrantedAuthoritiesMapper { authorities ->
             val mappedAuthorities = mutableSetOf<GrantedAuthority>()
 
-            authorities.forEach { authority ->
+            authorities.forEach {
                 // Check for OidcUserAuthority because Spring Security 5.2 returns
                 // each scope as a GrantedAuthority, which we don't care about.
-                if (oidcUserAuthority is OidcUserAuthority) {
-                    mappedAuthorities.addAll(
-                        extractAuthorityFromClaims(
-                            oidcUserAuthority.userInfo.claims))
+                if (it is OidcUserAuthority) {
+                    extractAuthorityFromClaims(it.userInfo.claims)?.let (mappedAuthorities::addAll)
                 }
             }
             mappedAuthorities

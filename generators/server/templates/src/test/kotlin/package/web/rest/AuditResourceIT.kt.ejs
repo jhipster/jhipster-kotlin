@@ -118,9 +118,6 @@ class AuditResourceIT {
     @Qualifier("<% if (!reactive) { %>mvc<% } else { %>webFlux<% } %>ConversionService")
     private lateinit var formattingConversionService: FormattingConversionService
 
-    @Autowired
-    private lateinit var pageableArgumentResolver: PageableHandlerMethodArgumentResolver
-
     private lateinit var auditEvent: PersistentAuditEvent
 
     <%_ if (!reactive) { _%>
@@ -141,12 +138,12 @@ class AuditResourceIT {
             .setMessageConverters(jacksonMessageConverter)
         <%_ } else { _%>
         this.webTestClient = WebTestClient.bindToController(auditResource)
-            .argumentResolvers(configurer -> configurer.addCustomResolver(ReactivePageableHandlerMethodArgumentResolver()))
-            .formatters(registry -> {
-                DateTimeFormatterRegistrar registrar = DateTimeFormatterRegistrar();
-                registrar.setUseIsoFormat(true);
-                registrar.registerFormatters(registry);
-            })
+            .argumentResolvers { it.addCustomResolver(ReactivePageableHandlerMethodArgumentResolver()) }
+            .formatters {
+                val registrar = DateTimeFormatterRegistrar()
+                registrar.setUseIsoFormat(true)
+                registrar.registerFormatters(it)
+            }
         <%_ } _%>
             .build()
     }
@@ -198,7 +195,7 @@ class AuditResourceIT {
             .andExpect(content().contentType(MediaType.APPLICATION_JSON_VALUE))
             .andExpect(jsonPath("\$.principal").value(SAMPLE_PRINCIPAL))
         <%_ } else { _%>
-        webTestClient.get().uri("/management/audits/{id}", auditEvent.getId())
+        webTestClient.get().uri("/management/audits/{id}", auditEvent.id)
             .exchange()
             .expectStatus().isOk()
             .expectHeader().contentType(MediaType.APPLICATION_JSON)
