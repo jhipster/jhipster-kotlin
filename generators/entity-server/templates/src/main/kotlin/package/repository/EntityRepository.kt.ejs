@@ -43,9 +43,22 @@ import org.springframework.data.mongodb.repository.MongoRepository
 import org.springframework.data.cassandra.repository.CassandraRepository
 <%_ } _%>
 import org.springframework.stereotype.Repository
-<%_ if (databaseType === 'sql' || databaseType === 'mongodb') { _%>
-<%_ if (fieldsContainOwnerManyToMany) { _%>
+<%_
+if (databaseType === 'sql' || databaseType === 'mongodb'|| databaseType === 'couchbase') {
+    let importList = fieldsContainOwnerManyToMany;
+    for (r of relationships) {
+        if (r.relationshipType === 'many-to-one' && r.otherEntityName === 'user') {
+            importList = true;
+        }
+    }
+_%>
+    <%_ if (importList || fieldsContainOwnerManyToMany) { _%>
 
+    <%_ } _%>
+    <%_ if (importList) { _%>
+import java.util.List;
+    <%_ } _%>
+    <%_ if (fieldsContainOwnerManyToMany) { _%>
 import java.util.Optional
     <%_ } _%>
 <%_ } _%>

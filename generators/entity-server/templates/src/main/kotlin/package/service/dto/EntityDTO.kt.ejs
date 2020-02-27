@@ -16,14 +16,17 @@
  See the License for the specific language governing permissions and
  limitations under the License.
 -%>
-package <%= packageName %>.service.dto<%
+package <%= packageName %>.service.dto
+
+<%_
 let importApiModelProperty = false;
 let importJsonIgnore = false;
 let importJsonIgnoreProperties = false;
 let importSet = false;
 const primaryKeyType = getPkTypeBasedOnDBAndAssociation(authenticationType, databaseType, relationships);
 const uniqueEnums = {};
-%><%- include ../../domain/imports -%>
+_%>
+<%- include ../../domain/imports -%>
 
 <%_ if (typeof javadoc != 'undefined') { _%>
 import io.swagger.annotations.ApiModel
@@ -131,6 +134,7 @@ data class <%= asDto(entityClass) %>(
         const relationshipFieldName = relationship.relationshipFieldName;
         const relationshipFieldNamePlural = relationship.relationshipFieldNamePlural;
         const relationshipType = relationship.relationshipType;
+        const otherEntityName = relationships[idx].otherEntityName;
         const otherEntityNameCapitalized = relationship.otherEntityNameCapitalized;
         const otherEntityFieldCapitalized = relationship.otherEntityFieldCapitalized;
         const ownerSide = relationship.ownerSide;
@@ -148,7 +152,7 @@ data class <%= asDto(entityClass) %>(
             }
     _%>
 
-    var <%= relationshipFieldName %>Id: <% if (relationshipFieldName === 'user' && authenticationType === 'oauth2') { %>String<% } else { %><%= primaryKeyType %><% } %>? = null<%= comma %>
+    var <%= relationshipFieldName %>Id: <% if (otherEntityName === 'user' && authenticationType === 'oauth2') { %>String<% } else { %><%= primaryKeyType %><% } %>? = null<%= comma %>
     <%_ if (otherEntityFieldCapitalized !== 'Id' && otherEntityFieldCapitalized !== '') {
             comma = index === (mappedRels.length - 1) ?  '' : ',';
     _%>

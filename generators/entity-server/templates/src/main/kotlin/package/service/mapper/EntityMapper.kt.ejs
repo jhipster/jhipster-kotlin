@@ -18,23 +18,48 @@
 -%>
 package <%= packageName %>.service.mapper
 
+<%_
+let existingMappings = [];
+let uuidMapMethod = false;
+let byteMapMethod = false;
+for (idx in relationships) {
+    if ((relationships[idx].relationshipType === 'many-to-many' && relationships[idx].ownerSide === true) || relationships[idx].relationshipType === 'many-to-one' || (relationships[idx].relationshipType === 'one-to-one' && relationships[idx].ownerSide === true)) {
+        // if the entity is mapped twice, we should implement the mapping once
+        if (!existingMappings.includes(relationships[idx].otherEntityNameCapitalized) && asEntity(relationships[idx].otherEntityNameCapitalized) !== asEntity(entityClass)) {
+            existingMappings.push(relationships[idx].otherEntityNameCapitalized);
+        }
+        let otherEntity = getExistingEntities().find(e => e.name === relationships[idx].otherEntityNameCapitalized);
+        if (otherEntity) {
+            let otherEntityField = otherEntity.definition.fields.find(f => f.fieldName === relationships[idx].otherEntityField);
+            if (otherEntityField) {
+                if (otherEntityField.fieldType === 'UUID') {
+                    uuidMapMethod = true;
+                }
+                if (otherEntityField.fieldType === 'byte[]') {
+                    byteMapMethod = true;
+                }
+            }
+        }
+    }
+}
+_%>
+
 import <%= packageName %>.domain.<%= asEntity(entityClass) %>
 import <%= packageName %>.service.dto.<%= asDto(entityClass) %>
 
 import org.mapstruct.Mapper
 import org.mapstruct.Mapping
 import org.mapstruct.Mappings
+<%_ if (uuidMapMethod) { _%>
+
+import java.util.Objects;
+import java.util.UUID;
+<%_ } _%>
 
 /**
  * Mapper for the entity [<%= asEntity(entityClass) %>] and its DTO [<%= asDto(entityClass) %>].
  */
-@Mapper(componentModel = "spring", uses = [<% var existingMappings = [];
-  for (idx in relationships) {
-    if ((relationships[idx].relationshipType === 'many-to-many' && relationships[idx].ownerSide === true)|| relationships[idx].relationshipType === 'many-to-one' ||(relationships[idx].relationshipType === 'one-to-one' && relationships[idx].ownerSide === true)){
-      // if the entity is mapped twice, we should implement the mapping once
-      if (!existingMappings.includes(relationships[idx].otherEntityNameCapitalized) && asEntity(relationships[idx].otherEntityNameCapitalized) !== entityClass) {
-          existingMappings.push(relationships[idx].otherEntityNameCapitalized);
-      } } } %><%= existingMappings.map(otherEntityNameCapitalized => otherEntityNameCapitalized + 'Mapper::class').join(', ') %>])
+@Mapper(componentModel = "spring", uses = {<%= existingMappings.map(otherEntityNameCapitalized => otherEntityNameCapitalized + 'Mapper::class').join(', ') %>})
 interface <%= entityClass %>Mapper :
     EntityMapper<<%= asDto(entityClass) %>, <%= asEntity(entityClass) %>> {
 <%_
@@ -124,5 +149,17 @@ _%>
     <%_ if (databaseType === 'sql' || databaseType === 'mongodb' || databaseType === 'couchbase') { _%>
 
     fun fromId(id: <%= primaryKeyType %>?) = id?.let { <%= asEntity(entityClass) %>(it) }
+<%_ } _%>
+
+<%_ if (uuidMapMethod) { _%>
+    fun map(value: UUID): String {
+        return Objects.toString(value, null)
+    }
+<%_ } _%>
+<%_ if (byteMapMethod) { _%>
+
+    fun map(value: byteArray): String {
+        return String(value)
+    }
 <%_ } _%>
 }
