@@ -293,9 +293,9 @@ class AccountResourceIT <% if (databaseType === 'cassandra') { %>: AbstractCassa
 
     @BeforeEach
     fun setup() {
-        val accountResource = AccountResource()
+        val accountUserMockResource = AccountResource()
         <%_ if (!reactive) { _%>
-        this.mockMvc = MockMvcBuilders.standaloneSetup(accountResource)
+        this.mockMvc = MockMvcBuilders.standaloneSetup(accountUserMockResource)
             .setControllerAdvice(exceptionTranslator)
         <%_ } else { _%>
         this.webTestClient = WebTestClient.bindToController(accountUserMockResource)
@@ -501,21 +501,21 @@ class AccountResourceIT <% if (databaseType === 'cassandra') { %>: AbstractCassa
         doNothing().whenever(mockMailService).sendActivationEmail(any())
         val accountResource = AccountResource(userRepository, userService, mockMailService<% if (authenticationType === 'session' && !reactive) { %>, persistentTokenRepository<% } %>)
 
-        val accountResource =
+        val accountUserMockResource =
             AccountResource(userRepository, mockUserService, mockMailService<% if (authenticationType === 'session' && !reactive) { %>, persistentTokenRepository<% } %>)
         <%_ if (!reactive) { _%>
         this.restMvc = MockMvcBuilders.standaloneSetup(accountResource)
             .setMessageConverters(*httpMessageConverters)
             .setControllerAdvice(exceptionTranslator)
             .build()
-        this.restUserMockMvc = MockMvcBuilders.standaloneSetup(accountResource)
+        this.restUserMockMvc = MockMvcBuilders.standaloneSetup(accountUserMockResource)
             .setControllerAdvice(exceptionTranslator)
             .build()
         <%_ } else { _%>
         this.webTestClient = WebTestClient.bindToController(accountResource)
             .controllerAdvice(exceptionTranslator)
             .build()
-        this.userWebTestClient = WebTestClient.bindToController(accountResource)
+        this.userWebTestClient = WebTestClient.bindToController(accountUserMockResource)
             .webFilter<WebTestClient.ControllerSpec>(SecurityContextServerWebExchangeWebFilter())
             .controllerAdvice(exceptionTranslator)
             .build()

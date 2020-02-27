@@ -198,13 +198,13 @@ class UserService<% if (databaseType !== 'no') { %>(
         userRepository.findOneByLogin(login.toLowerCase()).ifPresent { existingUser ->
             val removed = removeNonActivatedUser(existingUser)
             if (!removed) {
-                throw Mono.error(UsernameAlreadyUsedException())
+                throw UsernameAlreadyUsedException()
             }
         }
         userRepository.findOneByEmailIgnoreCase(email).ifPresent { existingUser ->
             val removed = removeNonActivatedUser(existingUser)
             if (!removed) {
-                throw Mono.error(EmailAlreadyUsedException())
+                throw EmailAlreadyUsedException()
             }
         }
         val newUser = <%= asEntity('User') %>()
@@ -250,7 +250,7 @@ class UserService<% if (databaseType !== 'no') { %>(
                     <%_ } _%>
                     userRepository.delete(existingUser)
                 } else {
-                    throw UsernameAlreadyUsedException()
+                    throw Mono.error(UsernameAlreadyUsedException())
                 }
             }
             .then(userRepository.findOneByEmailIgnoreCase(email))
@@ -261,7 +261,7 @@ class UserService<% if (databaseType !== 'no') { %>(
                     <%_ } _%>
                     userRepository.delete(existingUser)
                 } else {
-                    throw EmailAlreadyUsedException()
+                    throw Mono.error(EmailAlreadyUsedException())
                 }
             }
             .thenReturn(<%= asEntity('User') %>())
@@ -564,7 +564,7 @@ class UserService<% if (databaseType !== 'no') { %>(
             .<% if (reactive) { %>flatMap<% } else { %>ifPresent<% } %> { user ->
                 val currentEncryptedPassword = user.password
                 if (!passwordEncoder.matches(currentClearTextPassword, currentEncryptedPassword)) {
-                    throw Mono.error(InvalidPasswordException())
+                    <% if (reactive) { %>return Mono.error(InvalidPasswordException())<% } else { %>throw InvalidPasswordException()<% } %>
                 }
                 val encryptedPassword = passwordEncoder.encode(newPassword)
                 user.password = encryptedPassword
