@@ -28,9 +28,6 @@ import <%= packageName %>.<%= mainClass %>
 <%_ if (authenticationType === 'oauth2') { _%>
 import <%= packageName %>.config.TestSecurityConfiguration
 <%_ } _%>
-<%_ if (reactive) { _%>
-import <%= packageName %>.config.ReactivePageableHandlerMethodArgumentResolver
-<%_ } _%>
 <%_ if (databaseType !== 'cassandra' && databaseType !== 'couchbase') { _%>
 import <%= packageName %>.domain.Authority
 <%_ } _%>
@@ -41,12 +38,8 @@ import <%= packageName %>.repository.search.UserSearchRepository
 <%_ } _%>
 import <%= packageName %>.security.ADMIN
 import <%= packageName %>.security.USER
-<%_ if (authenticationType !== 'oauth2') { _%>
-import <%= packageName %>.service.MailService<% } %>
-import <%= packageName %>.service.UserService
 import <%= packageName %>.service.dto.<%= asDto('User') %>
 import <%= packageName %>.service.mapper.UserMapper
-import <%= packageName %>.web.rest.errors.ExceptionTranslator
 <%_ if (authenticationType !== 'oauth2') { _%>
 import <%= packageName %>.web.rest.vm.ManagedUserVM
 <%_ } _%>
@@ -57,6 +50,11 @@ import org.junit.jupiter.api.Test
 import org.junit.jupiter.api.extension.ExtendWith
 <%_ } _%>
 import org.springframework.beans.factory.annotation.Autowired
+<%_ if (!reactive) { _%>
+import org.springframework.boot.test.autoconfigure.web.servlet.AutoConfigureMockMvc
+<%_ } else { _%>
+import org.springframework.boot.test.autoconfigure.web.reactive.AutoConfigureWebTestClient
+<%_ } _%>
 import org.springframework.boot.test.context.SpringBootTest
 <%_ if (cacheManagerIsAvailable === true) { _%>
 import org.springframework.cache.CacheManager
@@ -64,19 +62,17 @@ import org.springframework.cache.CacheManager
 <%_ if (cacheProvider === 'memcached' ) { _%>
 import org.springframework.cache.support.NoOpCacheManager
 <%_ } _%>
-<%_ if (!reactive) { _%>
-import org.springframework.data.web.PageableHandlerMethodArgumentResolver
-<%_ } _%>
 import org.springframework.http.MediaType
-<%_ if (!reactive) { _%>
+<%_ if (databaseType === 'couchbase') { _%>
 import org.springframework.http.converter.json.MappingJackson2HttpMessageConverter
+import org.springframework.security.test.context.TestSecurityContextHolder.context as testSecurityContext
 <%_ } _%>
+import org.springframework.security.test.context.support.WithMockUser
 <%_ if (reactive) { _%>
 import org.springframework.test.web.reactive.server.WebTestClient
 <%_ } _%>
 <%_ if (!reactive) { _%>
 import org.springframework.test.web.servlet.MockMvc
-import org.springframework.test.web.servlet.setup.MockMvcBuilders
 <%_ } _%>
 <%_ if (databaseType === 'sql') { _%>
 import org.springframework.transaction.annotation.Transactional
@@ -88,6 +84,7 @@ import javax.persistence.EntityManager
 <%_ if (databaseType !== 'cassandra') { _%>
 import java.time.Instant
 <%_ } _%>
+import java.util.function.Consumer
 <%_ if (databaseType === 'cassandra' || (authenticationType === 'oauth2' && databaseType !== 'couchbase')) { _%>
 import java.util.UUID
 <%_ } _%>
@@ -98,6 +95,9 @@ import org.assertj.core.api.Assertions.assertThat
 import org.hamcrest.Matchers.hasItems
     <%_ } _%>
 import org.hamcrest.Matchers.hasItem
+<%_ if (testsNeedCsrf) { _%>
+import org.springframework.security.test.web.servlet.request.SecurityMockMvcRequestPostProcessors.csrf
+<%_ } _%>
 import org.springframework.test.web.servlet.request.MockMvcRequestBuilders.delete
 import org.springframework.test.web.servlet.request.MockMvcRequestBuilders.get
 import org.springframework.test.web.servlet.request.MockMvcRequestBuilders.post
@@ -105,6 +105,8 @@ import org.springframework.test.web.servlet.request.MockMvcRequestBuilders.put
 import org.springframework.test.web.servlet.result.MockMvcResultMatchers.content
 import org.springframework.test.web.servlet.result.MockMvcResultMatchers.jsonPath
 import org.springframework.test.web.servlet.result.MockMvcResultMatchers.status
+<%_ } else if (testsNeedCsrf) { _%>
+import org.springframework.security.test.web.reactive.server.SecurityMockServerConfigurers.csrf
 <%_ } _%>
 import kotlin.test.assertNotNull
 <%_ if (cacheManagerIsAvailable === true) { _%>
@@ -114,6 +116,12 @@ import kotlin.test.assertNull
 /**
  * Integration tests for the [UserResource] REST controller.
  */
+ <%_ if (!reactive) { _%>
+@AutoConfigureMockMvc
+<%_ } else { _%>
+@AutoConfigureWebTestClient
+<%_ } _%>
+@WithMockUser(authorities = [ADMIN])
 <%_ if (authenticationType === 'oauth2') { _%>
 @SpringBootTest(classes = [<%= mainClass %>::class, TestSecurityConfiguration::class])
 <%_ } else { _%>
@@ -136,28 +144,10 @@ class UserResourceIT <% if (databaseType === 'cassandra') { %>: AbstractCassandr
     @Autowired
     private lateinit var mockUserSearchRepository: UserSearchRepository
     <%_ } _%>
-    <%_ if (authenticationType !== 'oauth2') { _%>
-
-    @Autowired
-    private lateinit var mailService: MailService
-    <%_ } _%>
-
-    @Autowired
-    private lateinit var userService: UserService
 
     @Autowired
     private lateinit var userMapper: UserMapper
 
-    <%_ if (!reactive) { _%>
-    @Autowired
-    private lateinit var jacksonMessageConverter: MappingJackson2HttpMessageConverter
-
-    @Autowired
-    private lateinit var pageableArgumentResolver: PageableHandlerMethodArgumentResolver
-
-    <%_ } _%>
-    @Autowired
-    private lateinit var exceptionTranslator: ExceptionTranslator
     <%_ if (databaseType === 'sql') { _%>
 
     @Autowired
@@ -169,6 +159,7 @@ class UserResourceIT <% if (databaseType === 'cassandra') { %>: AbstractCassandr
     private lateinit var cacheManager: CacheManager
     <%_ } _%>
 
+    @Autowired
     <%_ if (reactive) { _%>
     private lateinit var webTestClient: WebTestClient
     <%_ } else { _%>
@@ -177,32 +168,23 @@ class UserResourceIT <% if (databaseType === 'cassandra') { %>: AbstractCassandr
 
     private lateinit var user: <%= asEntity('User') %>
 
+    <%_ if (cacheManagerIsAvailable === true) { _%>
     @BeforeEach
     fun setup() {
-        <%_ if (cacheManagerIsAvailable === true) { _%>
         cacheManager.getCache(UserRepository.USERS_BY_LOGIN_CACHE)!!.clear()
         cacheManager.getCache(UserRepository.USERS_BY_EMAIL_CACHE)!!.clear()
-        <%_ } _%>
-        val userResource = UserResource(userService<% if (authenticationType !== 'oauth2') { %>, userRepository, mailService<% } %><% if (searchEngine === 'elasticsearch') { %>, mockUserSearchRepository<% } %>)
-
-        <%_ if (reactive) { _%>
-        this.webTestClient = WebTestClient.bindToController(userResource)
-            .argumentResolvers { configurer -> configurer.addCustomResolver(ReactivePageableHandlerMethodArgumentResolver()) }
-            .controllerAdvice(exceptionTranslator)
-        <%_ } else { _%>
-        this.restUserMockMvc = MockMvcBuilders.standaloneSetup(userResource)
-            .setCustomArgumentResolvers(pageableArgumentResolver)
-            .setControllerAdvice(exceptionTranslator)
-            .setMessageConverters(jacksonMessageConverter)
-        <%_ } _%>
-            .build()
     }
+
+    <%_ } _%>
+    <%_ if (reactive && testsNeedCsrf) { _%>
+    @BeforeEach
+    fun setupCsrf() {
+        webTestClient = webTestClient.mutateWith(csrf())
+    }
+    <%_ } _%>
 
     @BeforeEach
     fun initTest() {
-        <%_ if (databaseType === 'couchbase') { _%>
-        mockAuthentication()
-        <%_ } _%>
         <%_ if (databaseType !== 'sql') { _%>
         userRepository.deleteAll()<% if (reactive) { %>.block()<% } %>
         user = createEntity()
@@ -244,7 +226,8 @@ class UserResourceIT <% if (databaseType === 'cassandra') { %>: AbstractCassandr
         restUserMockMvc.perform(
             post("/api/users")
                 .contentType(APPLICATION_JSON)
-                .content(convertObjectToJsonBytes(managedUserVM))
+                .content(convertObjectToJsonBytes(managedUserVM))<% if (testsNeedCsrf) { %>
+                .with(csrf())<% } %>
         )
             .andExpect(status().isCreated)
         <%_ } else { _%>
@@ -255,19 +238,19 @@ class UserResourceIT <% if (databaseType === 'cassandra') { %>: AbstractCassandr
             .expectStatus().isCreated
         <%_ } _%>
 
-        // Validate the User in the database
-        val userList = userRepository.findAll()<% if (reactive) { %>.collectList().block()
-        assertNotNull(userList)<% } %>
-        assertThat(userList).hasSize(databaseSizeBeforeCreate + 1)
-        val testUser = userList[userList.size - 1]
-        assertThat(testUser.login).isEqualTo(DEFAULT_LOGIN)
-        assertThat(testUser.firstName).isEqualTo(DEFAULT_FIRSTNAME)
-        assertThat(testUser.lastName).isEqualTo(DEFAULT_LASTNAME)
-        assertThat(testUser.email).isEqualTo(DEFAULT_EMAIL)
-        <%_ if (databaseType !== 'cassandra') { _%>
-        assertThat(testUser.imageUrl).isEqualTo(DEFAULT_IMAGEURL)
-        <%_ } _%>
-        assertThat(testUser.langKey).isEqualTo(DEFAULT_LANGKEY)
+        assertPersistedUsers { userList ->
+            // Validate the User in the database
+            assertThat(userList).hasSize(databaseSizeBeforeCreate + 1)
+            val testUser = userList[userList.size - 1]
+            assertThat(testUser.login).isEqualTo(DEFAULT_LOGIN)
+            assertThat(testUser.firstName).isEqualTo(DEFAULT_FIRSTNAME)
+            assertThat(testUser.lastName).isEqualTo(DEFAULT_LASTNAME)
+            assertThat(testUser.email).isEqualTo(DEFAULT_EMAIL)
+            <%_ if (databaseType !== 'cassandra') { _%>
+            assertThat(testUser.imageUrl).isEqualTo(DEFAULT_IMAGEURL)
+            <%_ } _%>
+            assertThat(testUser.langKey).isEqualTo(DEFAULT_LANGKEY)
+        }
     }
 
     @Test
@@ -305,7 +288,8 @@ class UserResourceIT <% if (databaseType === 'cassandra') { %>: AbstractCassandr
         restUserMockMvc.perform(
             post("/api/users")
                 .contentType(APPLICATION_JSON)
-                .content(convertObjectToJsonBytes(managedUserVM))
+                .content(convertObjectToJsonBytes(managedUserVM))<% if (testsNeedCsrf) { %>
+                .with(csrf())<% } %>
         )
             .andExpect(status().isBadRequest)
         <%_ } else { _%>
@@ -316,9 +300,10 @@ class UserResourceIT <% if (databaseType === 'cassandra') { %>: AbstractCassandr
             .expectStatus().isBadRequest
         <%_ } _%>
 
-        // Validate the User in the database
-        val userList = userRepository.findAll()<% if (reactive) { %>.collectList().block()<% } %>
-        assertThat(userList).hasSize(databaseSizeBeforeCreate)
+        assertPersistedUsers { userList ->
+            // Validate the User in the database
+            assertThat(userList).hasSize(databaseSizeBeforeCreate)
+        }
     }
 
     @Test
@@ -354,7 +339,8 @@ class UserResourceIT <% if (databaseType === 'cassandra') { %>: AbstractCassandr
         restUserMockMvc.perform(
             post("/api/users")
                 .contentType(APPLICATION_JSON)
-                .content(convertObjectToJsonBytes(managedUserVM))
+                .content(convertObjectToJsonBytes(managedUserVM))<% if (testsNeedCsrf) { %>
+                .with(csrf())<% } %>
         )
             .andExpect(status().isBadRequest)
         <%_ } else { _%>
@@ -365,9 +351,7 @@ class UserResourceIT <% if (databaseType === 'cassandra') { %>: AbstractCassandr
             .expectStatus().isBadRequest
         <%_ } _%>
 
-        // Validate the User in the database
-        val userList = userRepository.findAll()<% if (reactive) { %>.collectList().block()<% } %>
-        assertThat(userList).hasSize(databaseSizeBeforeCreate)
+        assertPersistedUsers { userList -> assertThat(userList).hasSize(databaseSizeBeforeCreate) }
     }
 
     @Test
@@ -403,7 +387,8 @@ class UserResourceIT <% if (databaseType === 'cassandra') { %>: AbstractCassandr
         restUserMockMvc.perform(
             post("/api/users")
                 .contentType(APPLICATION_JSON)
-                .content(convertObjectToJsonBytes(managedUserVM))
+                .content(convertObjectToJsonBytes(managedUserVM))<% if (testsNeedCsrf) { %>
+                .with(csrf())<% } %>
         )
             .andExpect(status().isBadRequest)
         <%_ } else { _%>
@@ -414,9 +399,7 @@ class UserResourceIT <% if (databaseType === 'cassandra') { %>: AbstractCassandr
             .expectStatus().isBadRequest
         <%_ } _%>
 
-        // Validate the User in the database
-        val userList = userRepository.findAll()<% if (reactive) { %>.collectList().block()<% } %>
-        assertThat(userList).hasSize(databaseSizeBeforeCreate)
+        assertPersistedUsers { userList -> assertThat(userList).hasSize(databaseSizeBeforeCreate) }
     }
 <%_ } _%>
 
@@ -588,7 +571,8 @@ class UserResourceIT <% if (databaseType === 'cassandra') { %>: AbstractCassandr
         restUserMockMvc.perform(
             put("/api/users")
                 .contentType(APPLICATION_JSON)
-                .content(convertObjectToJsonBytes(managedUserVM))
+                .content(convertObjectToJsonBytes(managedUserVM))<% if (testsNeedCsrf) { %>
+                .with(csrf())<% } %>
         )
             .andExpect(status().isOk)
         <%_ } else { _%>
@@ -599,18 +583,17 @@ class UserResourceIT <% if (databaseType === 'cassandra') { %>: AbstractCassandr
             .expectStatus().isOk
         <%_ } _%>
 
-        // Validate the User in the database
-        val userList = userRepository.findAll()<% if (reactive) { %>.collectList().block()
-        assertNotNull(userList)<% } %>
-        assertThat(userList).hasSize(databaseSizeBeforeUpdate)
-        val testUser = userList[userList.size - 1]
-        assertThat(testUser.firstName).isEqualTo(UPDATED_FIRSTNAME)
-        assertThat(testUser.lastName).isEqualTo(UPDATED_LASTNAME)
-        assertThat(testUser.email).isEqualTo(UPDATED_EMAIL)
-        <%_ if (databaseType !== 'cassandra') { _%>
-        assertThat(testUser.imageUrl).isEqualTo(UPDATED_IMAGEURL)
-        <%_ } _%>
-        assertThat(testUser.langKey).isEqualTo(UPDATED_LANGKEY)
+        assertPersistedUsers { userList ->
+            assertThat(userList).hasSize(databaseSizeBeforeUpdate)
+            val testUser = userList[userList.size - 1]
+            assertThat(testUser.firstName).isEqualTo(UPDATED_FIRSTNAME)
+            assertThat(testUser.lastName).isEqualTo(UPDATED_LASTNAME)
+            assertThat(testUser.email).isEqualTo(UPDATED_EMAIL)
+            <%_ if (databaseType !== 'cassandra') { _%>
+            assertThat(testUser.imageUrl).isEqualTo(UPDATED_IMAGEURL)
+            <%_ } _%>
+            assertThat(testUser.langKey).isEqualTo(UPDATED_LANGKEY)
+        }
     }
 
     @Test
@@ -656,7 +639,8 @@ class UserResourceIT <% if (databaseType === 'cassandra') { %>: AbstractCassandr
         restUserMockMvc.perform(
             put("/api/users")
                 .contentType(APPLICATION_JSON)
-                .content(convertObjectToJsonBytes(managedUserVM))
+                .content(convertObjectToJsonBytes(managedUserVM))<% if (testsNeedCsrf) { %>
+                .with(csrf())<% } %>
         )
             .andExpect(status().isOk)
         <%_ } else { _%>
@@ -667,19 +651,18 @@ class UserResourceIT <% if (databaseType === 'cassandra') { %>: AbstractCassandr
             .expectStatus().isOk
         <%_ } _%>
 
-        // Validate the User in the database
-        val userList = userRepository.findAll()<% if (reactive) { %>.collectList().block()
-        assertNotNull(userList)<% } %>
-        assertThat(userList).hasSize(databaseSizeBeforeUpdate)
-        val testUser = userList[userList.size - 1]
-        assertThat(testUser.login).isEqualTo(UPDATED_LOGIN)
-        assertThat(testUser.firstName).isEqualTo(UPDATED_FIRSTNAME)
-        assertThat(testUser.lastName).isEqualTo(UPDATED_LASTNAME)
-        assertThat(testUser.email).isEqualTo(UPDATED_EMAIL)
-        <%_ if (databaseType !== 'cassandra') { _%>
-        assertThat(testUser.imageUrl).isEqualTo(UPDATED_IMAGEURL)
-        <%_ } _%>
-        assertThat(testUser.langKey).isEqualTo(UPDATED_LANGKEY)
+        assertPersistedUsers { userList ->
+            assertThat(userList).hasSize(databaseSizeBeforeUpdate)
+            val testUser = userList[userList.size - 1]
+            assertThat(testUser.login).isEqualTo(UPDATED_LOGIN)
+            assertThat(testUser.firstName).isEqualTo(UPDATED_FIRSTNAME)
+            assertThat(testUser.lastName).isEqualTo(UPDATED_LASTNAME)
+            assertThat(testUser.email).isEqualTo(UPDATED_EMAIL)
+            <%_ if (databaseType !== 'cassandra') { _%>
+            assertThat(testUser.imageUrl).isEqualTo(UPDATED_IMAGEURL)
+            <%_ } _%>
+            assertThat(testUser.langKey).isEqualTo(UPDATED_LANGKEY)
+        }
     }
 
     @Test
@@ -743,7 +726,8 @@ class UserResourceIT <% if (databaseType === 'cassandra') { %>: AbstractCassandr
         restUserMockMvc.perform(
             put("/api/users")
                 .contentType(APPLICATION_JSON)
-                .content(convertObjectToJsonBytes(managedUserVM))
+                .content(convertObjectToJsonBytes(managedUserVM))<% if (testsNeedCsrf) { %>
+                .with(csrf())<% } %>
         )
             .andExpect(status().isBadRequest)
         <%_ } else { _%>
@@ -816,7 +800,8 @@ class UserResourceIT <% if (databaseType === 'cassandra') { %>: AbstractCassandr
         restUserMockMvc.perform(
             put("/api/users")
                 .contentType(APPLICATION_JSON)
-                .content(convertObjectToJsonBytes(managedUserVM))
+                .content(convertObjectToJsonBytes(managedUserVM))<% if (testsNeedCsrf) { %>
+                .with(csrf())<% } %>
         )
             .andExpect(status().isBadRequest)
         <%_ } else { _%>
@@ -848,7 +833,8 @@ class UserResourceIT <% if (databaseType === 'cassandra') { %>: AbstractCassandr
         <%_ if (!reactive) { _%>
         restUserMockMvc.perform(
             delete("/api/users/{login}", user.login)
-                .accept(APPLICATION_JSON)
+                .accept(APPLICATION_JSON)<% if (testsNeedCsrf) { %>
+                .with(csrf())<% } %>
         )
             .andExpect(status().isNoContent)
         <%_ } else { _%>
@@ -862,9 +848,8 @@ class UserResourceIT <% if (databaseType === 'cassandra') { %>: AbstractCassandr
         assertNull(cacheManager.getCache(UserRepository.USERS_BY_LOGIN_CACHE)!!.get(user.login!!))
         <%_ } _%>
 
-        // Validate the database is empty
-        val userList = userRepository.findAll()<% if (reactive) { %>.collectList().block()<% } %>
-        assertThat(userList).hasSize(databaseSizeBeforeDelete - 1)
+        assertPersistedUsers { userList -> assertThat(userList).hasSize(databaseSizeBeforeDelete - 1) }
+
     }
     <%_ } _%>
     <%_ if ((databaseType === 'sql' || databaseType === 'mongodb' || databaseType === 'couchbase')
@@ -1094,5 +1079,13 @@ class UserResourceIT <% if (databaseType === 'cassandra') { %>: AbstractCassandr
                 langKey = DEFAULT_LANGKEY
             )
         }
+    }
+
+    fun assertPersistedUsers(userAssertion: (List<<%= asEntity('User') %>>) -> Unit) {
+        <%_ if (databaseType === 'couchbase') { _%>
+        // The security filter chain clears the security context after remote calls
+        SecurityContextHolder.setContext(testSecurityContext);
+        <%_ } _%>
+        userAssertion(userRepository.findAll()<% if (reactive) { %>.collectList().block()<% } %>)
     }
 }

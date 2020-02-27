@@ -32,22 +32,18 @@ import <%= packageName %>.repository.UserRepository
 <%_ if (reactive) { _%>
 import <%= packageName %>.service.AuditEventService
 <%_ } _%>
-import <%= packageName %>.security.jwt.TokenProvider
-import <%= packageName %>.web.rest.errors.ExceptionTranslator
 import <%= packageName %>.web.rest.vm.LoginVM
-import org.junit.jupiter.api.BeforeEach
 import org.junit.jupiter.api.Test
 <%_ if (cacheProvider === 'redis') { _%>
 import org.junit.jupiter.api.extension.ExtendWith
 <%_ } _%>
 import org.springframework.beans.factory.annotation.Autowired
-import org.springframework.boot.test.context.SpringBootTest
-<%_ if (reactive) { _%>
-import org.springframework.security.authentication.ReactiveAuthenticationManager
-<%_ } _%>
 <%_ if (!reactive) { _%>
-import org.springframework.security.config.annotation.authentication.builders.AuthenticationManagerBuilder
+import org.springframework.boot.test.autoconfigure.web.servlet.AutoConfigureMockMvc
+<%_ } else { _%>
+import org.springframework.boot.test.autoconfigure.web.reactive.AutoConfigureWebTestClient
 <%_ } _%>
+import org.springframework.boot.test.context.SpringBootTest
 <%_ if (!skipUserManagement) { _%>
 import org.springframework.security.crypto.password.PasswordEncoder
 <%_ } _%>
@@ -77,53 +73,31 @@ import org.hamcrest.Matchers.*
 /**
  * Integration tests for the [UserJWTController] REST controller.
  */
+ <%_ if (!reactive) { _%>
+@AutoConfigureMockMvc
+<%_ } else { _%>
+@AutoConfigureWebTestClient
+<%_ } _%>
 @SpringBootTest(classes = [<%= mainClass %>::class])
 <%_ if (cacheProvider === 'redis') { _%>
 @ExtendWith(RedisTestContainerExtension::class)
 <%_ } _%>
 class UserJWTControllerIT <% if (databaseType === 'cassandra') { %>: AbstractCassandraTest() <% } %>{
 
-    @Autowired
-    private lateinit var tokenProvider: TokenProvider
-
-    @Autowired
-    private lateinit var authenticationManager: <% if (reactive) { %>Reactive<% } %>AuthenticationManager<% if (!reactive) { %>Builder<% } %>
-
-    <%_ if (reactive && !skipUserManagement) { _%>
-    @Autowired
-    private lateinit var auditEventService: AuditEventService
-
-    <%_ }  _%>
-
 <%_ if (!skipUserManagement) { _%>
     @Autowired
     private lateinit var userRepository: UserRepository
+<%_ }  _%>
 
     @Autowired
     private lateinit var passwordEncoder: PasswordEncoder
-<%_ }  _%>
 
     @Autowired
-    private lateinit var exceptionTranslator: ExceptionTranslator
-
     <%_ if (reactive) { _%>
     private lateinit var webTestClient: WebTestClient
     <%_ } else { _%>
     private lateinit var mockMvc: MockMvc
     <%_ }  _%>
-
-    @BeforeEach
-    fun setup() {
-        val userJWTController = UserJWTController(tokenProvider, authenticationManager<% if (reactive  && !skipUserManagement) { %>, auditEventService<% } %>)
-        <%_ if (!reactive) { _%>
-        this.mockMvc = MockMvcBuilders.standaloneSetup(userJWTController)
-            .setControllerAdvice(exceptionTranslator)
-        <%_ } else { _%>
-        this.webTestClient = WebTestClient.bindToController(userJWTController)
-            .controllerAdvice(exceptionTranslator)
-        <%_ }  _%>
-            .build()
-    }
 
     @Test
 <%_ if (!skipUserManagement) { _%>

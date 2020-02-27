@@ -963,6 +963,17 @@ const serverFiles = {
                     useBluePrint: true
                 }
             ]
+        },
+        {
+            condition: generator => generator.searchEngine === 'elasticsearch',
+            path: SERVER_TEST_SRC_KOTLIN_DIR,
+            templates: [
+                {
+                    file: 'package/config/ElasticsearchTestConfiguration.kt',
+                    renameTo: generator => `${generator.testDir}config/ElasticsearchTestConfiguration.kt`,
+                    useBluePrint: true
+                }
+            ]
         }
     ],
     serverJavaDomain: [
@@ -1249,6 +1260,11 @@ const serverFiles = {
             condition: generator => generator.authenticationType === 'uaa',
             path: SERVER_TEST_SRC_KOTLIN_DIR,
             templates: [
+                {
+                    file: 'package/config/OAuth2TestConfiguration.kt',
+                    renameTo: generator => `${generator.testDir}config/OAuth2TestConfiguration.kt`,
+                    useBluePrint: true
+                },
                 {
                     file: 'package/security/OAuth2TokenMockUtil.kt',
                     renameTo: generator => `${generator.testDir}security/OAuth2TokenMockUtil.kt`,
@@ -1833,8 +1849,24 @@ const serverFiles = {
                     useBluePrint: true
                 },
                 {
+                    file: 'package/config/NoOpMailConfiguration.kt',
+                    renameTo: generator => `${generator.testDir}config/NoOpMailConfiguration.kt`,
+                    useBluePrint: true
+                },
+                {
                     file: 'package/web/rest/UserResourceIT.kt',
                     renameTo: generator => `${generator.testDir}web/rest/UserResourceIT.kt`,
+                    useBluePrint: true
+                }
+            ]
+        },
+        {
+            condition: generator => !generator.skipUserManagement && generator.authenticationType !== 'oauth2',
+            path: SERVER_TEST_SRC_KOTLIN_DIR,
+            templates: [
+                {
+                    file: 'package/web/rest/WithUnauthenticatedMockUser.kt',
+                    renameTo: generator => `${generator.testDir}web/rest/WithUnauthenticatedMockUser.kt`,
                     useBluePrint: true
                 }
             ]

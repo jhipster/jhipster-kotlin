@@ -232,10 +232,9 @@ class CacheConfiguration<%_ if (cacheProvider === 'ehcache' || cacheProvider ===
 
     private fun createCache(cm: javax.cache.CacheManager, cacheName: String) {
         val cache: javax.cache.Cache<Any, Any>? = cm.getCache(cacheName)
-        if (cache != null) {
-            cm.destroyCache(cacheName)
+        if (cache == null) {
+            cm.createCache(cacheName, jcacheConfiguration)
         }
-        cm.createCache(cacheName, jcacheConfiguration)
     }
     <%_ } _%>
     <%_ if (cacheProvider === 'hazelcast') { _%>
@@ -523,14 +522,14 @@ class CacheConfiguration<%_ if (cacheProvider === 'ehcache' || cacheProvider ===
                     .locking()
                     .concurrencyLevel(1000)
                     .lockAcquisitionTimeout(15000)
-                    .build())};
+                    .build())}
             <%_ } _%>
             <%_ if (authenticationType === 'oauth2' && applicationType === 'microservice') { _%>
             manager.defineConfiguration("oAuth2Authentication", ConfigurationBuilder()
                 .clustering().cacheMode(CacheMode.LOCAL)
                 .jmxStatistics().enabled(cacheInfo.isStatsEnabled())
                 .memory().evictionType(EvictionType.COUNT).size(cacheInfo.getLocal().getMaxEntries()).expiration()
-                .lifespan(cacheInfo.getLocal().getTimeToLiveSeconds(), TimeUnit.SECONDS).build());
+                .lifespan(cacheInfo.getLocal().getTimeToLiveSeconds(), TimeUnit.SECONDS).build())
             <%_ } _%>
 
             cacheManager = manager
@@ -713,28 +712,27 @@ class CacheConfiguration<%_ if (cacheProvider === 'ehcache' || cacheProvider ===
     fun cacheManagerCustomizer(jcacheConfiguration: javax.cache.configuration.Configuration<Any, Any> ): JCacheManagerCustomizer {
         return JCacheManagerCustomizer {
             <%_ if (!skipUserManagement || (authenticationType === 'oauth2' && databaseType !== 'no')) { _%>
-            createCache(it, <%= packageName %>.repository<% if (reactive) { %>.reactive<% } %>.UserRepository.USERS_BY_LOGIN_CACHE, jcacheConfiguration);
-            createCache(it, <%= packageName %>.repository<% if (reactive) { %>.reactive<% } %>.UserRepository.USERS_BY_EMAIL_CACHE, jcacheConfiguration);
+            createCache(it, <%= packageName %>.repository<% if (reactive) { %>.reactive<% } %>.UserRepository.USERS_BY_LOGIN_CACHE, jcacheConfiguration)
+            createCache(it, <%= packageName %>.repository<% if (reactive) { %>.reactive<% } %>.UserRepository.USERS_BY_EMAIL_CACHE, jcacheConfiguration)
                 <%_ if (enableHibernateCache) { _%>
-            createCache(it, <%= packageName %>.domain.<%= asEntity('User') %>::class.java.name, jcacheConfiguration);
-            createCache(it, <%= packageName %>.domain.Authority::class.java.name, jcacheConfiguration);
-            createCache(it, <%= packageName %>.domain.<%= asEntity('User') %>::class.java.name + ".authorities", jcacheConfiguration);
+            createCache(it, <%= packageName %>.domain.<%= asEntity('User') %>::class.java.name, jcacheConfiguration)
+            createCache(it, <%= packageName %>.domain.Authority::class.java.name, jcacheConfiguration)
+            createCache(it, <%= packageName %>.domain.<%= asEntity('User') %>::class.java.name + ".authorities", jcacheConfiguration)
                     <%_ if (authenticationType === 'session') { _%>
-            createCache(it, <%= packageName %>.domain.PersistentToken::class.java.name, jcacheConfiguration);
-            createCache(it, <%= packageName %>.domain.<%= asEntity('User') %>::class.java.name + ".persistentTokens", jcacheConfiguration);
+            createCache(it, <%= packageName %>.domain.PersistentToken::class.java.name, jcacheConfiguration)
+            createCache(it, <%= packageName %>.domain.<%= asEntity('User') %>::class.java.name + ".persistentTokens", jcacheConfiguration)
                     <%_ } _%>
                 <%_ } _%>
             <%_ } _%>
             // jhipster-needle-redis-add-entry
-        };
+        }
     }
 
     private fun createCache(cm: javax.cache.CacheManager, cacheName: String, jcacheConfiguration: javax.cache.configuration.Configuration<Any, Any>): Unit {
         val cache = cm.getCache<Any, Any>(cacheName)
-        if (cache != null) {
-            cm.destroyCache(cacheName);
+        if (cache == null) {
+            cm.createCache(cacheName, jcacheConfiguration)
         }
-        cm.createCache(cacheName, jcacheConfiguration);
     }
 
     <%_ } _%>

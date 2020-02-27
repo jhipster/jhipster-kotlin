@@ -225,8 +225,10 @@ const expectedFiles = {
         `${SERVER_MAIN_SRC_DIR}com/mycompany/myapp/web/rest/UserResource.kt`,
         `${SERVER_MAIN_SRC_DIR}com/mycompany/myapp/web/rest/vm/KeyAndPasswordVM.kt`,
         `${SERVER_MAIN_SRC_DIR}com/mycompany/myapp/web/rest/vm/ManagedUserVM.kt`,
+        `${SERVER_TEST_SRC_DIR}com/mycompany/myapp/config/NoOpMailConfiguration.kt`,
         `${SERVER_TEST_SRC_DIR}com/mycompany/myapp/web/rest/AuditResourceIT.kt`,
         `${SERVER_TEST_SRC_DIR}com/mycompany/myapp/web/rest/UserResourceIT.kt`,
+        `${SERVER_TEST_SRC_DIR}com/mycompany/myapp/web/rest/WithUnauthenticatedMockUser.kt`,
         `${SERVER_TEST_SRC_DIR}com/mycompany/myapp/service/UserServiceIT.kt`,
         `${SERVER_TEST_SRC_DIR}com/mycompany/myapp/service/MailServiceIT.kt`,
         `${SERVER_TEST_SRC_DIR}com/mycompany/myapp/service/AuditEventServiceIT.kt`,
@@ -596,6 +598,7 @@ const expectedFiles = {
         `${SERVER_MAIN_SRC_DIR}com/mycompany/myapp/config/UaaConfiguration.kt`,
         `${SERVER_MAIN_SRC_DIR}com/mycompany/myapp/config/UaaProperties.kt`,
         `${SERVER_MAIN_SRC_DIR}com/mycompany/myapp/security/IatTokenEnhancer.kt`,
+        `${SERVER_TEST_SRC_DIR}com/mycompany/myapp/config/OAuth2TestConfiguration.kt`,
         `${SERVER_TEST_SRC_DIR}com/mycompany/myapp/config/SecurityBeanOverrideConfiguration.kt`,
         `${SERVER_TEST_SRC_DIR}com/mycompany/myapp/security/OAuth2TokenMockUtil.kt`
     ],
@@ -723,6 +726,7 @@ const expectedFiles = {
 
     elasticsearch: [
         `${DOCKER_DIR}elasticsearch.yml`,
+        `${SERVER_TEST_SRC_DIR}com/mycompany/myapp/config/ElasticsearchTestConfiguration.kt`,
         `${SERVER_MAIN_SRC_DIR}com/mycompany/myapp/repository/search/UserSearchRepository.kt`,
         `${SERVER_TEST_SRC_DIR}com/mycompany/myapp/repository/search/UserSearchRepositoryMockConfiguration.kt`
     ],
