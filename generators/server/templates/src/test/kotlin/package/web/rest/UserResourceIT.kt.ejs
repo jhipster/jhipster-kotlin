@@ -64,8 +64,8 @@ import org.springframework.cache.support.NoOpCacheManager
 <%_ } _%>
 import org.springframework.http.MediaType
 <%_ if (databaseType === 'couchbase') { _%>
-import org.springframework.http.converter.json.MappingJackson2HttpMessageConverter
-import org.springframework.security.test.context.TestSecurityContextHolder.context as testSecurityContext
+import org.springframework.security.core.context.SecurityContextHolder
+import org.springframework.security.test.context.TestSecurityContextHolder
 <%_ } _%>
 import org.springframework.security.test.context.support.WithMockUser
 <%_ if (reactive) { _%>
@@ -1084,7 +1084,7 @@ class UserResourceIT <% if (databaseType === 'cassandra') { %>: AbstractCassandr
     fun assertPersistedUsers(userAssertion: (List<<%= asEntity('User') %>>) -> Unit) {
         <%_ if (databaseType === 'couchbase') { _%>
         // The security filter chain clears the security context after remote calls
-        SecurityContextHolder.setContext(testSecurityContext);
+        SecurityContextHolder.setContext(TestSecurityContextHolder.getContext())
         <%_ } _%>
         userAssertion(userRepository.findAll()<% if (reactive) { %>.collectList().block()<% } %>)
     }
