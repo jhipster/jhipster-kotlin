@@ -406,22 +406,21 @@ class AccountResource(
         } else {
             // Pretend the request has been successful to prevent checking which emails really exist
             // but log that an invalid attempt has been made
-            log.warn("Password reset requested for non existing mail '{}'", mail);
+            log.warn("Password reset requested for non existing mail '$mail'");
         }
     }
     <%_ } else { _%>
     fun requestPasswordReset(@RequestBody mail: String): Mono<Void> =
         userService.requestPasswordReset(mail)
-            .doOnSuccess(user -> {
-                if (Objects.nonNull(user)) {
-                    mailService.sendPasswordResetMail(user);
+            .doOnSuccess {
+                if (it != null)  {
+                    mailService.sendPasswordResetMail(it)
                 } else {
                     // Pretend the request has been successful to prevent checking which emails really exist
                     // but log that an invalid attempt has been made
-                    log.warn("Password reset requested for non existing mail '{}'", mail);
+                    log.warn("Password reset request for non existing email '$mail'")
                 }
-            })
-            .then()
+            }.then()
     <%_ } _%>
 
     /**
