@@ -28,7 +28,7 @@ import reactor.core.publisher.Mono
 class SpaWebFilter : WebFilter {
     override fun filter(exchange: ServerWebExchange, chain: WebFilterChain): Mono<Void> {
         val path = exchange.request.uri.path
-        if(path.startsWith("/api") && !path.startsWith("/management")<% if (authenticationType === 'oauth2') { %> && !path.startsWith("/login")<% } %> && path.matches(Regex("[^\\\\.]*"))) {
+        if(!path.startsWith("/api") && !path.startsWith("/management")<% if (authenticationType === 'oauth2') { %> && !path.startsWith("/login")<% } %> && path.matches(Regex("[^\\\\.]*"))) {
             return chain.filter(exchange.mutate().request(exchange.request.mutate().path("/index.html").build()).build())
         }
         return chain.filter(exchange)
