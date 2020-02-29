@@ -219,15 +219,16 @@ const expectedFiles = {
         `${SERVER_MAIN_SRC_DIR}com/mycompany/myapp/service/dto/PasswordChangeDTO.kt`,
         `${SERVER_MAIN_SRC_DIR}com/mycompany/myapp/service/mapper/UserMapper.kt`,
         `${SERVER_MAIN_SRC_DIR}com/mycompany/myapp/web/rest/errors/EmailAlreadyUsedException.kt`,
-        `${SERVER_MAIN_SRC_DIR}com/mycompany/myapp/web/rest/errors/EmailNotFoundException.kt`,
         `${SERVER_MAIN_SRC_DIR}com/mycompany/myapp/web/rest/errors/InvalidPasswordException.kt`,
         `${SERVER_MAIN_SRC_DIR}com/mycompany/myapp/web/rest/errors/LoginAlreadyUsedException.kt`,
         `${SERVER_MAIN_SRC_DIR}com/mycompany/myapp/web/rest/AuditResource.kt`,
         `${SERVER_MAIN_SRC_DIR}com/mycompany/myapp/web/rest/UserResource.kt`,
         `${SERVER_MAIN_SRC_DIR}com/mycompany/myapp/web/rest/vm/KeyAndPasswordVM.kt`,
         `${SERVER_MAIN_SRC_DIR}com/mycompany/myapp/web/rest/vm/ManagedUserVM.kt`,
+        `${SERVER_TEST_SRC_DIR}com/mycompany/myapp/config/NoOpMailConfiguration.kt`,
         `${SERVER_TEST_SRC_DIR}com/mycompany/myapp/web/rest/AuditResourceIT.kt`,
         `${SERVER_TEST_SRC_DIR}com/mycompany/myapp/web/rest/UserResourceIT.kt`,
+        `${SERVER_TEST_SRC_DIR}com/mycompany/myapp/web/rest/WithUnauthenticatedMockUser.kt`,
         `${SERVER_TEST_SRC_DIR}com/mycompany/myapp/service/UserServiceIT.kt`,
         `${SERVER_TEST_SRC_DIR}com/mycompany/myapp/service/MailServiceIT.kt`,
         `${SERVER_TEST_SRC_DIR}com/mycompany/myapp/service/AuditEventServiceIT.kt`,
@@ -445,7 +446,6 @@ const expectedFiles = {
         `${CLIENT_MAIN_SRC_DIR}app/shared/constants/pagination.constants.ts`,
         `${CLIENT_MAIN_SRC_DIR}app/shared/language/find-language-from-key.pipe.ts`,
         `${CLIENT_MAIN_SRC_DIR}app/core/language/language.constants.ts`,
-        `${CLIENT_MAIN_SRC_DIR}app/core/language/language.helper.ts`,
         `${CLIENT_MAIN_SRC_DIR}app/core/login/login.model.ts`,
         `${CLIENT_MAIN_SRC_DIR}app/core/login/login-modal.service.ts`,
         `${CLIENT_MAIN_SRC_DIR}app/shared/login/login.component.html`,
@@ -532,7 +532,6 @@ const expectedFiles = {
         `${CLIENT_MAIN_SRC_DIR}i18n/en/global.json`,
         `${CLIENT_MAIN_SRC_DIR}i18n/fr/global.json`,
         `${CLIENT_MAIN_SRC_DIR}app/core/language/language.constants.ts`,
-        `${CLIENT_MAIN_SRC_DIR}app/core/language/language.helper.ts`,
         `${CLIENT_MAIN_SRC_DIR}app/shared/language/find-language-from-key.pipe.ts`
     ],
 
@@ -543,7 +542,6 @@ const expectedFiles = {
         `${CLIENT_MAIN_SRC_DIR}i18n/ar-ly/global.json`,
         `${CLIENT_MAIN_SRC_DIR}app/core/language/language.constants.ts`,
         `${CLIENT_MAIN_SRC_DIR}content/scss/rtl.scss`,
-        `${CLIENT_MAIN_SRC_DIR}app/core/language/language.helper.ts`,
         `${CLIENT_MAIN_SRC_DIR}app/shared/language/find-language-from-key.pipe.ts`
     ],
 
@@ -600,6 +598,7 @@ const expectedFiles = {
         `${SERVER_MAIN_SRC_DIR}com/mycompany/myapp/config/UaaConfiguration.kt`,
         `${SERVER_MAIN_SRC_DIR}com/mycompany/myapp/config/UaaProperties.kt`,
         `${SERVER_MAIN_SRC_DIR}com/mycompany/myapp/security/IatTokenEnhancer.kt`,
+        `${SERVER_TEST_SRC_DIR}com/mycompany/myapp/config/OAuth2TestConfiguration.kt`,
         `${SERVER_TEST_SRC_DIR}com/mycompany/myapp/config/SecurityBeanOverrideConfiguration.kt`,
         `${SERVER_TEST_SRC_DIR}com/mycompany/myapp/security/OAuth2TokenMockUtil.kt`
     ],
@@ -727,6 +726,7 @@ const expectedFiles = {
 
     elasticsearch: [
         `${DOCKER_DIR}elasticsearch.yml`,
+        `${SERVER_TEST_SRC_DIR}com/mycompany/myapp/config/ElasticsearchTestConfiguration.kt`,
         `${SERVER_MAIN_SRC_DIR}com/mycompany/myapp/repository/search/UserSearchRepository.kt`,
         `${SERVER_TEST_SRC_DIR}com/mycompany/myapp/repository/search/UserSearchRepositoryMockConfiguration.kt`
     ],

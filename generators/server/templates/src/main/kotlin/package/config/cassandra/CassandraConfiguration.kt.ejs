@@ -16,7 +16,7 @@
  See the License for the specific language governing permissions and
  limitations under the License.
 -%>
-package <%=packageName%>.config.cassandra
+package <%= packageName %>.config.cassandra
 
 import com.codahale.metrics.MetricRegistry
 import com.datastax.driver.core.Cluster
@@ -31,7 +31,6 @@ import com.datastax.driver.extras.codecs.jdk8.LocalDateCodec
 import com.datastax.driver.extras.codecs.jdk8.ZonedDateTimeCodec
 import io.github.jhipster.config.JHipsterConstants
 import org.slf4j.LoggerFactory
-import org.springframework.beans.factory.InitializingBean
 import org.springframework.beans.factory.annotation.Autowired
 import org.springframework.beans.factory.annotation.Value
 import org.springframework.boot.autoconfigure.cassandra.CassandraProperties
@@ -47,6 +46,7 @@ import org.springframework.data.cassandra.core.convert.CassandraCustomConversion
 import org.springframework.data.convert.ReadingConverter
 import org.springframework.data.convert.WritingConverter
 
+import javax.annotation.PostConstruct
 import java.time.ZoneId
 import java.time.ZoneOffset
 import java.time.ZonedDateTime
@@ -55,7 +55,7 @@ import java.util.Date
 @Configuration<% if (applicationType === 'gateway' && databaseType !== 'cassandra') { %>
 @ConditionalOnProperty("jhipster.gateway.rate-limiting.enabled")<% } %>
 @Profile(JHipsterConstants.SPRING_PROFILE_DEVELOPMENT, JHipsterConstants.SPRING_PROFILE_PRODUCTION)
-class CassandraConfiguration : InitializingBean {
+class CassandraConfiguration {
 
     @Value("\${spring.data.cassandra.protocolVersion:V4}")
     private lateinit var protocolVersion: ProtocolVersion
@@ -68,7 +68,8 @@ class CassandraConfiguration : InitializingBean {
     @Autowired
     private lateinit var cluster: Cluster
 
-    override fun afterPropertiesSet() {
+    @PostConstruct
+    fun postConstruct() {
         val tupleType = cluster.metadata.newTupleType(DataType.timestamp(), DataType.varchar())
 
         cluster.configuration.codecRegistry

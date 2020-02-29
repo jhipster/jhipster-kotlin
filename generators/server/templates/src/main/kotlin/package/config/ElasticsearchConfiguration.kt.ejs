@@ -16,8 +16,9 @@
  See the License for the specific language governing permissions and
  limitations under the License.
 -%>
-package <%=packageName%>.config
+package <%= packageName %>.config
 
+import com.fasterxml.jackson.core.type.TypeReference
 import com.fasterxml.jackson.databind.DeserializationFeature
 import com.fasterxml.jackson.databind.ObjectMapper
 import com.fasterxml.jackson.databind.SerializationFeature
@@ -42,6 +43,7 @@ import org.springframework.data.mapping.model.SimpleTypeHolder
 import org.springframework.data.elasticsearch.core.convert.MappingElasticsearchConverter
 import org.springframework.data.elasticsearch.core.mapping.SimpleElasticsearchPersistentEntity
 <%_ } _%>
+import org.springframework.data.mapping.MappingException
 
 import java.io.IOException
 
@@ -91,6 +93,22 @@ class ElasticsearchConfiguration(private val mapper: ObjectMapper) {
 
         @Throws(IOException::class)
         override fun <T> mapToObject(source: String, clazz: Class<T>) = objectMapper.readValue(source, clazz)
+
+        override fun mapObject(source: Any): Map<String, Any> {
+            try {
+                return objectMapper.readValue(mapToString(source), object: TypeReference<HashMap<String, Any>>() {})
+            } catch (e: IOException) {
+                throw MappingException(e.message, e)
+            }
+        }
+
+        override fun <T> readObject(source: Map<String, Any>, targetType: Class<T>): T {
+            try {
+                return mapToObject(mapToString(source), targetType)
+            } catch (e: IOException) {
+                throw MappingException(e.message, e)
+            }
+        }
     }
 }
 <%_ if (databaseType === 'mongodb') { _%>

@@ -16,14 +16,14 @@
  See the License for the specific language governing permissions and
  limitations under the License.
 -%>
-package <%=packageName%>.security.jwt
+package <%= packageName %>.security.jwt
 
 import java.nio.charset.StandardCharsets
 import java.security.Key
 import java.util.Date
+import javax.annotation.PostConstruct
 
 import org.slf4j.LoggerFactory
-import org.springframework.beans.factory.InitializingBean
 import org.springframework.security.authentication.UsernamePasswordAuthenticationToken
 import org.springframework.security.core.Authentication
 import org.springframework.security.core.authority.SimpleGrantedAuthority
@@ -41,7 +41,7 @@ import io.jsonwebtoken.security.Keys
 private const val AUTHORITIES_KEY = "auth"
 
 @Component
-class TokenProvider(private val jHipsterProperties: JHipsterProperties) : InitializingBean {
+class TokenProvider(private val jHipsterProperties: JHipsterProperties) {
 
     private val log = LoggerFactory.getLogger(javaClass)
 
@@ -51,8 +51,8 @@ class TokenProvider(private val jHipsterProperties: JHipsterProperties) : Initia
 
     private var tokenValidityInMillisecondsForRememberMe: Long = 0
 
-    @Throws(Exception::class)
-    override fun afterPropertiesSet() {
+    @PostConstruct
+    fun init() {
         val keyBytes: ByteArray
         val secret = jHipsterProperties.security.authentication.jwt.secret
         keyBytes = if (!StringUtils.isEmpty(secret)) {

@@ -20,96 +20,96 @@ package <%= packageName %>.config
 
 <%_ if (authenticationType === 'session' || authenticationType === 'jwt' || authenticationType === 'oauth2') { _%>
 import <%= packageName %>.security.ADMIN
-<%_ if (authenticationType === 'oauth2' && applicationType !== 'microservice') { _%>
+    <%_ if (authenticationType === 'oauth2' && applicationType !== 'microservice') { _%>
 import <%= packageName %>.security.extractAuthorityFromClaims
-<%_ } _%>
-<%_ if (authenticationType === 'jwt') { _%>
+    <%_ } _%>
+    <%_ if (authenticationType === 'jwt') { _%>
 import <%= packageName %>.security.jwt.JWTConfigurer
 import <%= packageName %>.security.jwt.TokenProvider
-<%_ } _%>
-<%_ if (authenticationType === 'session') { _%>
-    <%_ if (!skipUserManagement) { _%>
-import io.github.jhipster.config.JHipsterProperties
     <%_ } _%>
+    <%_ if (authenticationType === 'session') { _%>
+        <%_ if (!skipUserManagement) { _%>
+import io.github.jhipster.config.JHipsterProperties
+        <%_ } _%>
 import io.github.jhipster.security.AjaxAuthenticationFailureHandler
 import io.github.jhipster.security.AjaxAuthenticationSuccessHandler
 import io.github.jhipster.security.AjaxLogoutSuccessHandler
-<%_ } _%>
-<%_ if (authenticationType === 'oauth2') { _%>
+    <%_ } _%>
+    <%_ if (authenticationType === 'oauth2') { _%>
 import io.github.jhipster.config.JHipsterProperties
-<%_ } _%>
+    <%_ } _%>
 
 import org.springframework.context.annotation.Bean
 import org.springframework.context.annotation.Import
-  <%_ if (authenticationType !== 'uaa' && !(applicationType === 'microservice' && authenticationType === 'oauth2')) { _%>
-import org.springframework.http.HttpMethod
-  <%_ } else { _%>
-    <%_ if (devDatabaseType === 'h2Disk' || devDatabaseType === 'h2Memory') { _%>
-import org.springframework.security.config.annotation.web.builders.WebSecurity;
+    <%_ if (authenticationType === 'oauth2') { _%>
+import org.springframework.core.convert.converter.Converter
     <%_ } _%>
-  <%_ } _%>
-  <%_ if (authenticationType !== 'oauth2') { _%>
+    <%_ if (authenticationType !== 'uaa' && !(applicationType === 'microservice' && authenticationType === 'oauth2')) { _%>
+import org.springframework.http.HttpMethod
+    <%_ } else { _%>
+        <%_ if (devDatabaseType === 'h2Disk' || devDatabaseType === 'h2Memory') { _%>
+import org.springframework.security.config.annotation.web.builders.WebSecurity;
+        <%_ } _%>
+    <%_ } _%>
 import org.springframework.security.config.annotation.method.configuration.EnableGlobalMethodSecurity
-  <%_ } _%>
 import org.springframework.security.config.annotation.web.builders.HttpSecurity
-<%_ if (authenticationType !== 'uaa' && !(applicationType === 'microservice' && authenticationType === 'oauth2')) { _%>
+    <%_ if (authenticationType !== 'uaa' && !(applicationType === 'microservice' && authenticationType === 'oauth2')) { _%>
 import org.springframework.security.config.annotation.web.builders.WebSecurity
-<%_ } _%>
+    <%_ } _%>
 import org.springframework.security.config.annotation.web.configuration.EnableWebSecurity
 import org.springframework.security.config.annotation.web.configuration.WebSecurityConfigurerAdapter
-<%_ if (authenticationType === 'jwt' || (authenticationType === 'oauth2' && applicationType === 'microservice')) { _%>
+    <%_ if (authenticationType === 'jwt' || (authenticationType === 'oauth2' && applicationType === 'microservice')) { _%>
 import org.springframework.security.config.http.SessionCreationPolicy
-<%_ } _%>
-<%_ if (authenticationType !== 'oauth2' && !skipUserManagement) { _%>
+    <%_ } _%>
+    <%_ if (authenticationType !== 'oauth2' && !skipUserManagement) { _%>
 import org.springframework.security.crypto.bcrypt.BCryptPasswordEncoder
-import org.springframework.security.crypto.password.PasswordEncoder
-<%_ } _%>
-<%_ if (authenticationType === 'oauth2') { _%>
+    <%_ } _%>
+    <%_ if (authenticationType === 'oauth2') { _%>
 import <%= packageName %>.security.oauth2.AudienceValidator
+import org.springframework.security.authentication.AbstractAuthenticationToken
 import org.springframework.security.oauth2.core.DelegatingOAuth2TokenValidator
 import org.springframework.security.oauth2.jwt.Jwt
 import org.springframework.security.oauth2.jwt.JwtDecoder
 import org.springframework.security.oauth2.jwt.JwtDecoders
 import org.springframework.security.oauth2.jwt.JwtValidators
-import org.springframework.security.oauth2.jwt.NimbusJwtDecoderJwkSupport
-    <%_ if (applicationType === 'gateway' && serviceDiscoveryType) { _%>
-import <%=packageName%>.security.oauth2.AuthorizationHeaderFilter
-import <%=packageName%>.security.oauth2.AuthorizationHeaderUtil
-    <%_ } _%>
+import org.springframework.security.oauth2.jwt.NimbusJwtDecoder
+import org.springframework.security.oauth2.server.resource.authentication.JwtAuthenticationConverter
+        <%_ if (applicationType === 'gateway' && serviceDiscoveryType) { _%>
+import <%= packageName %>.security.oauth2.AuthorizationHeaderFilter
+import <%= packageName %>.security.oauth2.AuthorizationHeaderUtil
+        <%_ } _%>
 import org.springframework.beans.factory.annotation.Value
 import org.springframework.security.core.GrantedAuthority
-    <%_ if (applicationType !== 'microservice') { _%>
+        <%_ if (applicationType !== 'microservice') { _%>
 import org.springframework.security.core.authority.mapping.GrantedAuthoritiesMapper
 import org.springframework.security.oauth2.core.oidc.user.OidcUserAuthority
+        <%_ } _%>
     <%_ } _%>
-<%_ } _%>
-<%_ if (authenticationType === 'session') { _%>
-    <%_ if (!skipUserManagement) { _%>
+    <%_ if (authenticationType === 'session') { _%>
+        <%_ if (!skipUserManagement) { _%>
 import org.springframework.security.web.authentication.RememberMeServices
+        <%_ } _%>
+import org.springframework.security.web.csrf.CookieCsrfTokenRepository
+import org.springframework.security.web.csrf.CsrfFilter
     <%_ } _%>
+    <%_ if (authenticationType === 'oauth2' && applicationType !== 'microservice') { _%>
 import org.springframework.security.web.csrf.CookieCsrfTokenRepository
 import org.springframework.security.web.csrf.CsrfFilter
-<%_ } _%>
-<%_ if (authenticationType === 'oauth2' && applicationType !== 'microservice') { _%>
-import org.springframework.security.web.csrf.CookieCsrfTokenRepository
-import org.springframework.security.web.csrf.CsrfFilter
-<%_ } _%>
+    <%_ } _%>
     <%_ if (authenticationType === 'oauth2') { _%>
-import <%=packageName%>.security.oauth2.JwtAuthorityExtractor
+import <%= packageName %>.security.oauth2.JwtAuthorityExtractor
     <%_ } _%>
-<%_ if (authenticationType === 'jwt' && applicationType !== 'microservice') { _%>
+    <%_ if (authenticationType === 'jwt' && applicationType !== 'microservice') { _%>
 import org.springframework.security.web.authentication.UsernamePasswordAuthenticationFilter
-<%_ } _%>
+    <%_ } _%>
 import org.springframework.security.web.header.writers.ReferrerPolicyHeaderWriter
-<%_ if (applicationType !== 'microservice') { _%>
+    <%_ if (applicationType !== 'microservice') { _%>
 import org.springframework.web.filter.CorsFilter
-<%_ } _%>
+    <%_ } _%>
 import org.zalando.problem.spring.web.advice.security.SecurityProblemSupport
 
 @EnableWebSecurity
-  <%_ if (authenticationType !== 'oauth2') { _%>
 @EnableGlobalMethodSecurity(prePostEnabled = true, securedEnabled = true)
-  <%_ } _%>
 @Import(SecurityProblemSupport::class)
 class SecurityConfiguration(
     <%_ if (authenticationType === 'session' && !skipUserManagement) { _%>
@@ -123,7 +123,6 @@ class SecurityConfiguration(
     private val corsFilter: CorsFilter,
     <%_ } _%>
     <%_ if (authenticationType === 'oauth2') { _%>
-    private val jwtAuthorityExtractor: JwtAuthorityExtractor,
     private val jHipsterProperties: JHipsterProperties,
     <%_ } _%>
     private val problemSupport: SecurityProblemSupport
@@ -170,7 +169,7 @@ class SecurityConfiguration(
 
     override fun configure(web: WebSecurity?) {
         web!!.ignoring()
-            .antMatchers("/h2-console/**");        
+            .antMatchers("/h2-console/**");
     }
         <%_ } _%>
     <%_ } _%>
@@ -271,7 +270,7 @@ class SecurityConfiguration(
         .and()
             .oauth2ResourceServer()
                 .jwt()
-                .jwtAuthenticationConverter(jwtAuthorityExtractor)
+                .jwtAuthenticationConverter(grantedAuthoritiesExtractor())
                 .and()
             .and()
                 .oauth2Client()
@@ -282,6 +281,12 @@ class SecurityConfiguration(
     private fun securityConfigurerAdapter() = JWTConfigurer(tokenProvider)
     <%_ } _%>
     <%_ if (authenticationType === 'oauth2') { _%>
+
+    fun grantedAuthoritiesExtractor(): Converter<Jwt, AbstractAuthenticationToken> {
+        val jwtAuthenticationConverter = JwtAuthenticationConverter()
+        jwtAuthenticationConverter.setJwtGrantedAuthoritiesConverter(JwtAuthorityExtractor())
+        return jwtAuthenticationConverter
+    }
 
     <%_ if (applicationType !== 'microservice') { _%>
     /**
@@ -295,11 +300,12 @@ class SecurityConfiguration(
         GrantedAuthoritiesMapper { authorities ->
             val mappedAuthorities = mutableSetOf<GrantedAuthority>()
 
-            authorities.forEach { authority ->
-                val oidcUserAuthority = authority as OidcUserAuthority
-                mappedAuthorities.addAll(
-                    extractAuthorityFromClaims(
-                        oidcUserAuthority.userInfo.claims))
+            authorities.forEach {
+                // Check for OidcUserAuthority because Spring Security 5.2 returns
+                // each scope as a GrantedAuthority, which we don't care about.
+                if (it is OidcUserAuthority) {
+                    extractAuthorityFromClaims(it.userInfo.claims)?.let (mappedAuthorities::addAll)
+                }
             }
             mappedAuthorities
         }
@@ -307,7 +313,7 @@ class SecurityConfiguration(
 
     @Bean
     fun jwtDecoder(): JwtDecoder {
-        val jwtDecoder = JwtDecoders.fromOidcIssuerLocation(issuerUri) as NimbusJwtDecoderJwkSupport
+        val jwtDecoder = JwtDecoders.fromOidcIssuerLocation(issuerUri) as NimbusJwtDecoder
 
         val audienceValidator = AudienceValidator(jHipsterProperties.security.oauth2.audience)
         val withIssuer = JwtValidators.createDefaultWithIssuer(issuerUri)
