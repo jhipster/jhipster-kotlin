@@ -1,3 +1,11 @@
+<a name="1.5.0"></a>
+# [1.5.0](https://github.com/jhipster/jhipster-kotlin/compare/1.4.0...1.5.0) (2020-03-01)
+- Upgraded JHipster support to 6.7.1
+    - Changelog for 6.7.1 [here](https://www.jhipster.tech/2020/02/12/jhipster-release-6.7.1.html) 
+    - Changelog for 6.7.0 [here](https://www.jhipster.tech/2020/02/06/jhipster-release-6.7.0.html)
+- Reactive Support ✨
+- Show KHipster banner when running KHipster command
+
 <a name="1.4.0"></a>
 # [1.4.0](https://github.com/jhipster/jhipster-kotlin/compare/1.3.0...1.4.0) (2019-12-31)
 - Upgraded JHipster support to 6.6.0 
