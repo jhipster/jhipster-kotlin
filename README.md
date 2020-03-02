@@ -1,6 +1,6 @@
 <div align="center">
 	<a href="https://github.com/jhipster/jhipster-kotlin">
-		<img width="320" height="160" src="https://github.com/jhipster/jhipster-kotlin/blob/master/logo-khipster.png">
+		<img width="320" height="160" src="https://raw.githubusercontent.com/jhipster/jhipster-kotlin/master/logo-khipster.png">
 	</a>
 </div>
 
