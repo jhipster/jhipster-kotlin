@@ -4,6 +4,14 @@
 	</a>
 </div>
 
+# Build status
+
+![Angular](https://github.com/jhipster/jhipster-kotlin/workflows/Angular/badge.svg)
+
+![React](https://github.com/jhipster/jhipster-kotlin/workflows/React/badge.svg)
+
+![KHipster Generated Applications CI](https://github.com/jhipster/jhipster-kotlin/workflows/KHipster%20Generated%20Applications%20CI/badge.svg)
+
 # Greetings, Kotlin Hipster!
 
 [![NPM version][npm-image]][npm-url]
