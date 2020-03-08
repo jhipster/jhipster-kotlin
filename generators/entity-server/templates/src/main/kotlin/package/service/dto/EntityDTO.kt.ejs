@@ -88,8 +88,9 @@ _%>
 @ApiModel(description = "<%- formatAsApiDescription(javadoc) %>")
 <%_ } _%>
 data class <%= asDto(entityClass) %>(
-
+    <% if (!embedded) { %>
     var id: <%= primaryKeyType %>? = null,
+    <%_ } _%>
     <%_ for (idx in fields) {
         if (typeof fields[idx].javadoc !== 'undefined') { _%>
 <%- formatAsFieldJavadoc(fields[idx].javadoc) %>
@@ -137,15 +138,19 @@ data class <%= asDto(entityClass) %>(
         const otherEntityName = relationship.otherEntityName;
         const otherEntityNameCapitalized = relationship.otherEntityNameCapitalized;
         const otherEntityFieldCapitalized = relationship.otherEntityFieldCapitalized;
+        const otherEntityIsEmbedded = relationship.otherEntityIsEmbedded;
         const ownerSide = relationship.ownerSide;
         var comma = index === (mappedRels.length - 1) ?  '' : ',';
         if (typeof relationship.javadoc != 'undefined') { _%>
 <%- formatAsFieldJavadoc(relationship.javadoc) %>
     @ApiModelProperty(value = "<%- formatAsApiDescription(relationship.javadoc) %>")
     <%_ }
-        if (relationshipType === 'many-to-many' && ownerSide === true) { _%>
+        if ((relationshipType === 'many-to-many' && ownerSide === true)
+            || (relationshipType === 'one-to-many' && otherEntityIsEmbedded)) { _%>
 
     var <%= relationshipFieldNamePlural %>: MutableSet<<%= asDto(otherEntityNameCapitalized) %>> = mutableSetOf()<%= comma %>
+    <%_ } else if (relationshipType === 'one-to-one' && ownerSide === true && otherEntityIsEmbedded) { _%>
+    var <%= relationshipFieldName %>: <%= asDto(otherEntityNameCapitalized) %><%= comma %>
     <%_ } else if (relationshipType === 'many-to-one' || (relationshipType === 'one-to-one' && ownerSide === true)) {
             if(index === (mappedRels.length - 1) && otherEntityFieldCapitalized !== 'Id' && otherEntityFieldCapitalized !== '') {
                 comma = ',';

@@ -29,6 +29,10 @@ module.exports = class extends EntityServerGenerator {
         }
     }
 
+    get initializing() {
+        return super._initializing();
+    }
+
     get writing() {
         return writeFiles();
     }

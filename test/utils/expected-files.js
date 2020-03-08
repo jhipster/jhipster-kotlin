@@ -521,7 +521,7 @@ const expectedFiles = {
         `${CLIENT_TEST_SRC_DIR}spec/helpers/mock-state-storage.service.ts`,
         `${CLIENT_TEST_SRC_DIR}spec/helpers/spyobject.ts`,
         `${CLIENT_TEST_SRC_DIR}spec/test.module.ts`,
-        'tsconfig-app.json',
+        'tsconfig.app.json',
         'tsconfig.json',
         'tslint.json',
         'webpack/logo-jhipster.png',

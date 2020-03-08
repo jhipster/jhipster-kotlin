@@ -49,7 +49,13 @@ const serverFiles = {
                     file: 'package/domain/Entity.kt',
                     renameTo: generator => `${generator.packageFolder}/domain/${generator.asEntity(generator.entityClass)}.kt`,
                     useBluePrint: true
-                },
+                }
+            ]
+        },
+        {
+            condition: generator => !generator.embedded,
+            path: SERVER_MAIN_SRC_KOTLIN_DIR,
+            templates: [
                 {
                     file: 'package/repository/EntityRepository.kt',
                     renameTo: generator => `${generator.packageFolder}/repository/${generator.entityClass}Repository.kt`,
@@ -90,7 +96,8 @@ const serverFiles = {
             ]
         },
         {
-            condition: generator => generator.reactive && ['mongodb', 'cassandra', 'couchbase'].includes(generator.databaseType),
+            condition: generator =>
+                generator.reactive && ['mongodb', 'cassandra', 'couchbase'].includes(generator.databaseType) && !generator.embedded,
             path: SERVER_MAIN_SRC_KOTLIN_DIR,
             templates: [
                 {
@@ -101,7 +108,7 @@ const serverFiles = {
             ]
         },
         {
-            condition: generator => generator.service === 'serviceImpl',
+            condition: generator => generator.service === 'serviceImpl' && !generator.embedded,
             path: SERVER_MAIN_SRC_KOTLIN_DIR,
             templates: [
                 {
@@ -117,7 +124,7 @@ const serverFiles = {
             ]
         },
         {
-            condition: generator => generator.service === 'serviceClass',
+            condition: generator => generator.service === 'serviceClass' && !generator.embedded,
             path: SERVER_MAIN_SRC_KOTLIN_DIR,
             templates: [
                 {
@@ -152,7 +159,7 @@ const serverFiles = {
     test: [
         {
             // TODO: add test for reactive
-            condition: generator => !generator.reactive,
+            condition: generator => !generator.reactive && !generator.embedded,
             path: SERVER_TEST_SRC_KOTLIN_DIR,
             templates: [
                 {

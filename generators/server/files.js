@@ -33,6 +33,7 @@ const SERVER_MAIN_RES_DIR = constants.SERVER_MAIN_RES_DIR;
 const SERVER_TEST_SRC_DIR = constants.SERVER_TEST_SRC_DIR;
 const SERVER_TEST_RES_DIR = constants.SERVER_TEST_RES_DIR;
 const TEST_DIR = constants.TEST_DIR;
+const REACT = constants.SUPPORTED_CLIENT_FRAMEWORKS.REACT;
 
 // TODO: Do a PR in the parent JHipster project to export and re-use here as well in order to have a single source of truth!!!
 const shouldSkipUserManagement = generator =>
@@ -68,7 +69,7 @@ const serverFiles = {
             ]
         },
         {
-            condition: generator => generator.clientFramework === 'react',
+            condition: generator => generator.clientFramework === REACT,
             path: SERVER_MAIN_RES_DIR,
             templates: [
                 {
@@ -80,7 +81,7 @@ const serverFiles = {
             ]
         },
         {
-            condition: generator => generator.clientFramework !== 'react',
+            condition: generator => generator.clientFramework !== REACT,
             path: SERVER_MAIN_RES_DIR,
             templates: [{ file: 'banner.txt', method: 'copy', noEjs: true }]
         },
@@ -148,6 +149,44 @@ const serverFiles = {
                 'config/couchmove/changelog/V0.1__initial_setup/user__anonymoususer.json',
                 'config/couchmove/changelog/V0.1__initial_setup/user__system.json',
                 'config/couchmove/changelog/V0.1__initial_setup/user__user.json'
+            ]
+        },
+        {
+            condition: generator =>
+                generator.databaseType === 'neo4j' && (!generator.skipUserManagement || generator.authenticationType === 'oauth2'),
+            path: SERVER_MAIN_SRC_DIR,
+            templates: [
+                {
+                    file: 'package/config/neo4j/Neo4jMigrations.java',
+                    renameTo: generator => `${generator.javaDir}config/neo4j/Neo4jMigrations.java`
+                },
+                {
+                    file: 'package/config/neo4j/package-info.java',
+                    renameTo: generator => `${generator.javaDir}config/neo4j/package-info.java`
+                }
+            ]
+        },
+        {
+            condition: generator =>
+                generator.databaseType === 'neo4j' && (!generator.skipUserManagement || generator.authenticationType === 'oauth2'),
+            path: SERVER_MAIN_RES_DIR,
+            templates: [
+                {
+                    file: 'config/couchmove/changelog/V0.1__initial_setup/user__admin.json',
+                    renameTo: () => 'config/neo4j/migrations/user__admin.json'
+                },
+                {
+                    file: 'config/couchmove/changelog/V0.1__initial_setup/user__anonymoususer.json',
+                    renameTo: () => 'config/neo4j/migrations/user__anonymoususer.json'
+                },
+                {
+                    file: 'config/couchmove/changelog/V0.1__initial_setup/user__system.json',
+                    renameTo: () => 'config/neo4j/migrations/user__system.json'
+                },
+                {
+                    file: 'config/couchmove/changelog/V0.1__initial_setup/user__user.json',
+                    renameTo: () => 'config/neo4j/migrations/user__user.json'
+                }
             ]
         },
         {
@@ -242,6 +281,17 @@ const serverFiles = {
             ]
         },
         {
+            condition: generator => generator.reactive && generator.applicationType === 'gateway' && generator.authenticationType === 'jwt',
+            path: SERVER_MAIN_KOTLIN_SRC_DIR,
+            templates: [
+                {
+                    file: 'package/security/jwt/JWTRelayGatewayFilterFactory.kt',
+                    renameTo: generator => `${generator.testDir}security/jwt/JWTRelayGatewayFilterFactory.kt`,
+                    useBluePrint: true
+                }
+            ]
+        },
+        {
             condition: generator => !generator.reactive && generator.applicationType !== 'uaa',
             path: SERVER_MAIN_KOTLIN_SRC_DIR,
             templates: [
@@ -321,8 +371,8 @@ const serverFiles = {
                     useBluePrint: true
                 },
                 {
-                    file: 'package/security/oauth2/JwtAuthorityExtractor.kt',
-                    renameTo: generator => `${generator.javaDir}security/oauth2/JwtAuthorityExtractor.kt`,
+                    file: 'package/security/oauth2/JwtGrantedAuthorityConverter.kt',
+                    renameTo: generator => `${generator.javaDir}security/oauth2/JwtGrantedAuthorityConverter.kt`,
                     useBluePrint: true
                 },
                 {
@@ -383,7 +433,7 @@ const serverFiles = {
     ],
     serverJavaGateway: [
         {
-            condition: generator => generator.applicationType === 'gateway' && generator.serviceDiscoveryType,
+            condition: generator => !generator.reactive && generator.applicationType === 'gateway' && generator.serviceDiscoveryType,
             path: SERVER_MAIN_KOTLIN_SRC_DIR,
             templates: [
                 {
@@ -405,7 +455,13 @@ const serverFiles = {
                     file: 'package/gateway/responserewriting/SwaggerBasePathRewritingFilter.kt',
                     renameTo: generator => `${generator.javaDir}gateway/responserewriting/SwaggerBasePathRewritingFilter.kt`,
                     useBluePrint: true
-                },
+                }
+            ]
+        },
+        {
+            condition: generator => generator.applicationType === 'gateway' && generator.serviceDiscoveryType,
+            path: SERVER_MAIN_KOTLIN_SRC_DIR,
+            templates: [
                 {
                     file: 'package/web/rest/vm/RouteVM.kt',
                     renameTo: generator => `${generator.javaDir}web/rest/vm/RouteVM.kt`,
@@ -414,6 +470,18 @@ const serverFiles = {
                 {
                     file: 'package/web/rest/GatewayResource.kt',
                     renameTo: generator => `${generator.javaDir}web/rest/GatewayResource.kt`,
+                    useBluePrint: true
+                }
+            ]
+        },
+        {
+            condition: generator =>
+                generator.reactive && (generator.applicationType === 'gateway' || generator.applicationType === 'monolith'),
+            path: SERVER_MAIN_KOTLIN_SRC_DIR,
+            templates: [
+                {
+                    file: 'package/config/apidoc/SwaggerConfiguration.kt',
+                    renameTo: generator => `${generator.javaDir}config/apidoc/SwaggerConfiguration.kt`,
                     useBluePrint: true
                 }
             ]
@@ -432,7 +500,10 @@ const serverFiles = {
         },
         {
             condition: generator =>
-                generator.applicationType === 'gateway' && generator.authenticationType === 'jwt' && generator.serviceDiscoveryType,
+                !generator.reactive &&
+                generator.applicationType === 'gateway' &&
+                generator.authenticationType === 'jwt' &&
+                generator.serviceDiscoveryType,
             path: SERVER_MAIN_KOTLIN_SRC_DIR,
             templates: [
                 {
@@ -443,7 +514,7 @@ const serverFiles = {
             ]
         },
         {
-            condition: generator => generator.applicationType === 'gateway' && !generator.serviceDiscoveryType,
+            condition: generator => !generator.reactive && generator.applicationType === 'gateway' && !generator.serviceDiscoveryType,
             path: SERVER_MAIN_KOTLIN_SRC_DIR,
             templates: [
                 {
@@ -630,7 +701,10 @@ const serverFiles = {
         },
         {
             condition: generator =>
-                generator.authenticationType === 'oauth2' && generator.applicationType === 'gateway' && generator.serviceDiscoveryType,
+                !generator.reactive &&
+                generator.authenticationType === 'oauth2' &&
+                generator.applicationType === 'gateway' &&
+                generator.serviceDiscoveryType,
             path: SERVER_MAIN_KOTLIN_SRC_DIR,
             templates: [
                 {
@@ -642,6 +716,7 @@ const serverFiles = {
         },
         {
             condition: generator =>
+                !generator.reactive &&
                 generator.authenticationType === 'oauth2' &&
                 (generator.applicationType === 'microservice' || generator.applicationType === 'gateway'),
             path: SERVER_MAIN_KOTLIN_SRC_DIR,
@@ -694,7 +769,7 @@ const serverFiles = {
                     )
                 ) && generator.applicationType === 'microservice',
             path: SERVER_MAIN_RES_DIR,
-            templates: [{ file: 'static/microservices_index.html', method: 'copy', renameTo: () => 'static/index.html' }]
+            templates: [{ file: 'static/microservices_index.html', renameTo: () => 'static/index.html' }]
         }
     ],
     ...baseServerFiles.serverResource.serverMicroserviceAndGateway,
@@ -847,7 +922,10 @@ const serverFiles = {
         },
         {
             condition: generator =>
-                generator.databaseType === 'sql' || generator.databaseType === 'mongodb' || generator.databaseType === 'couchbase',
+                generator.databaseType === 'sql' ||
+                generator.databaseType === 'mongodb' ||
+                generator.databaseType === 'neo4j' ||
+                generator.databaseType === 'couchbase',
             path: SERVER_MAIN_KOTLIN_SRC_DIR,
             templates: [
                 {
@@ -879,7 +957,7 @@ const serverFiles = {
             ]
         },
         {
-            condition: generator => generator.databaseType === 'couchbase',
+            condition: generator => !generator.reactive && generator.databaseType === 'couchbase',
             path: SERVER_MAIN_KOTLIN_SRC_DIR,
             templates: [
                 {
@@ -978,7 +1056,7 @@ const serverFiles = {
     ],
     serverJavaDomain: [
         {
-            condition: generator => ['sql', 'mongodb', 'couchbase'].includes(generator.databaseType),
+            condition: generator => ['sql', 'mongodb', 'neo4j', 'couchbase'].includes(generator.databaseType),
             path: SERVER_MAIN_KOTLIN_SRC_DIR,
             templates: [
                 {
@@ -1167,6 +1245,17 @@ const serverFiles = {
             ]
         },
         {
+            condition: generator => generator.databaseType === 'neo4j',
+            path: SERVER_TEST_SRC_KOTLIN_DIR,
+            templates: [
+                {
+                    file: 'package/AbstractNeo4jIT.kt',
+                    renameTo: generator => `${generator.testDir}/AbstractNeo4jIT.kt`,
+                    useBluePrint: true
+                }
+            ]
+        },
+        {
             path: SERVER_TEST_SRC_KOTLIN_DIR,
             templates: [
                 {
@@ -1240,7 +1329,7 @@ const serverFiles = {
             ]
         },
         {
-            condition: generator => generator.applicationType === 'gateway' && generator.serviceDiscoveryType,
+            condition: generator => !generator.reactive && generator.applicationType === 'gateway' && generator.serviceDiscoveryType,
             path: SERVER_TEST_SRC_KOTLIN_DIR,
             templates: [
                 // Create Gateway tests files
@@ -1543,7 +1632,8 @@ const serverFiles = {
             ]
         },
         {
-            condition: generator => generator.authenticationType === 'oauth2' && ['sql', 'mongodb'].includes(generator.databaseType),
+            condition: generator =>
+                generator.authenticationType === 'oauth2' && ['sql', 'mongodb', 'couchbase'].includes(generator.databaseType),
             path: SERVER_MAIN_KOTLIN_SRC_DIR,
             templates: [
                 {
@@ -1570,7 +1660,9 @@ const serverFiles = {
         },
         {
             condition: generator =>
-                !generator.reactive && generator.authenticationType === 'oauth2' && ['sql', 'mongodb'].includes(generator.databaseType),
+                !generator.reactive &&
+                generator.authenticationType === 'oauth2' &&
+                ['sql', 'mongodb', 'couchbase'].includes(generator.databaseType),
             path: SERVER_MAIN_KOTLIN_SRC_DIR,
             templates: [
                 {
@@ -1582,7 +1674,9 @@ const serverFiles = {
         },
         {
             condition: generator =>
-                !generator.reactive && generator.authenticationType === 'oauth2' && ['sql', 'mongodb'].includes(generator.databaseType),
+                !generator.reactive &&
+                generator.authenticationType === 'oauth2' &&
+                ['sql', 'mongodb', 'couchbase'].includes(generator.databaseType),
             path: SERVER_TEST_SRC_KOTLIN_DIR,
             templates: [
                 {
@@ -1593,7 +1687,8 @@ const serverFiles = {
             ]
         },
         {
-            condition: generator => generator.authenticationType === 'oauth2' && ['sql', 'mongodb'].includes(generator.databaseType),
+            condition: generator =>
+                generator.authenticationType === 'oauth2' && ['sql', 'mongodb', 'couchbase'].includes(generator.databaseType),
             path: SERVER_TEST_SRC_KOTLIN_DIR,
             templates: [
                 {
@@ -1613,7 +1708,8 @@ const serverFiles = {
             ]
         },
         {
-            condition: generator => !generator.skipUserManagement && ['sql', 'mongodb', 'couchbase'].includes(generator.databaseType),
+            condition: generator =>
+                !generator.skipUserManagement && ['sql', 'mongodb', 'couchbase', 'neo4j'].includes(generator.databaseType),
             path: SERVER_MAIN_KOTLIN_SRC_DIR,
             templates: [
                 {

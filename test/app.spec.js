@@ -93,10 +93,10 @@ describe('JHipster generator', () => {
                 assert.fileContent('webpack/webpack.dev.js', / {2}devtool:/);
                 assert.fileContent('tsconfig.json', / {2}"compilerOptions":/);
             });
-            it('uses correct prettier formatting for Java file', () => {
+            it('uses correct prettier formatting for Kotlin file', () => {
                 // tabWidth = 4 (see generators/common/templates/.prettierrc.ejs)
-                assert.fileContent('src/main/java/com/mycompany/myapp/JhipsterApp.kt', / {4}fun main(args: Array<String>)/);
-                assert.fileContent('src/main/java/com/mycompany/myapp/JhipsterApp.kt', / {8}val env = runApplication/);
+                assert.fileContent('src/main/kotlin/com/mycompany/myapp/JhipsterApp.kt', / {4}fun main(args: Array<String>)/);
+                assert.fileContent('src/main/kotlin/com/mycompany/myapp/JhipsterApp.kt', / {8}val env = runApplication/);
             });
         });
 
@@ -649,7 +649,7 @@ describe('JHipster generator', () => {
                     .on('end', done);
             });
 
-             it('creates expected files with "Neo4j"', () => {
+            it('creates expected files with "Neo4j"', () => {
                 assert.file(expectedFiles.neo4j);
             });
             it("doesn't setup liquibase", () => {
