@@ -24,19 +24,22 @@ import <%= packageName %>.AbstractCassandraTest
 <%_ if (cacheProvider === 'redis') { _%>
 import <%= packageName %>.RedisTestContainerExtension
 <%_ } _%>
+<%_ if (databaseType === 'neo4j') { _%>
+import <%= packageName %>.AbstractNeo4jIT
+<%_ } _%>
 import <%= packageName %>.<%= mainClass %>
 import <%= packageName %>.config.ANONYMOUS_USER
 import <%= packageName %>.config.DEFAULT_LANGUAGE
 <%_ if (authenticationType === 'oauth2') { _%>
 import <%= packageName %>.config.TestSecurityConfiguration
 <%_ } _%>
-<%_ if ((databaseType === 'sql' || databaseType === 'mongodb' || databaseType === 'couchbase') && authenticationType === 'session' && !reactive) { _%>
+<%_ if ((databaseType === 'sql' || databaseType === 'mongodb' || databaseType === 'neo4j' || databaseType === 'couchbase') && authenticationType === 'session' && !reactive) { _%>
 import <%= packageName %>.domain.PersistentToken
 <%_ } _%>
 <%_ if (databaseType !== 'no') { _%>
 import <%= packageName %>.domain.<%= asEntity('User') %>
 <%_ } _%>
-<%_ if ((databaseType === 'sql' || databaseType === 'mongodb' || databaseType === 'couchbase') && authenticationType === 'session' && !reactive) { _%>
+<%_ if ((databaseType === 'sql' || databaseType === 'mongodb' || databaseType === 'neo4j' || databaseType === 'couchbase') && authenticationType === 'session' && !reactive) { _%>
 import <%= packageName %>.repository.PersistentTokenRepository
 <%_ } _%>
 <%_ if (searchEngine === 'elasticsearch') { _%>
@@ -48,7 +51,7 @@ import <%= packageName %>.repository.UserRepository
 <%_ if (authenticationType === 'oauth2') { _%>
 import <%= packageName %>.security.ANONYMOUS
 <%_ } _%>
-<%_ if (authenticationType !== 'oauth2' && (databaseType === 'sql' || databaseType === 'mongodb' || databaseType === 'couchbase')) { _%>
+<%_ if (authenticationType !== 'oauth2' && (databaseType === 'sql' || databaseType === 'mongodb' || databaseType === 'neo4j' || databaseType === 'couchbase')) { _%>
 import io.github.jhipster.security.RandomUtil
 <%_ } _%>
 
@@ -69,7 +72,7 @@ import org.springframework.boot.test.context.SpringBootTest
 import org.springframework.data.auditing.AuditingHandler
 import org.springframework.data.auditing.DateTimeProvider
 <%_ } _%>
-<%_ if (databaseType === 'sql' || databaseType === 'mongodb' || databaseType === 'couchbase') { _%>
+<%_ if (databaseType === 'sql' || databaseType === 'mongodb' || databaseType === 'neo4j' || databaseType === 'couchbase') { _%>
 import org.springframework.data.domain.PageRequest
 <%_ } _%>
 <%_ if (authenticationType === 'oauth2') { _%>
@@ -94,7 +97,7 @@ import java.time.temporal.ChronoUnit
 <%_ if (databaseType === 'sql') { _%>
 import java.time.temporal.TemporalAccessor
 <%_ } _%>
-<%_ if ((databaseType === 'sql' || databaseType === 'mongodb' || databaseType === 'couchbase') && authenticationType === 'session' && !reactive) { _%>
+<%_ if ((databaseType === 'sql' || databaseType === 'mongodb' || databaseType === 'neo4j' || databaseType === 'couchbase') && authenticationType === 'session' && !reactive) { _%>
 import java.time.LocalDate
 <%_ } _%>
 <%_ if (databaseType === 'sql') { _%>
@@ -142,8 +145,8 @@ private const val DEFAULT_LANGKEY = "dummy"
 <%_ if (databaseType === 'sql') { _%>
 @Transactional
 <%_ } _%>
-class UserServiceIT <% if (databaseType === 'cassandra') { %>: AbstractCassandraTest() <% } %>{
-    <%_ if ((databaseType === 'sql' || databaseType === 'mongodb' || databaseType === 'couchbase') && authenticationType === 'session' && !reactive) { _%>
+class UserServiceIT <% if (databaseType === 'cassandra') { %>: AbstractCassandraTest() <% } %><% if (databaseType === 'neo4j') { %>: AbstractNeo4jIT() <% } %>{
+    <%_ if ((databaseType === 'sql' || databaseType === 'mongodb' || databaseType === 'neo4j' || databaseType === 'couchbase') && authenticationType === 'session' && !reactive) { _%>
 
     @Autowired
     private lateinit var persistentTokenRepository: PersistentTokenRepository
@@ -188,10 +191,10 @@ class UserServiceIT <% if (databaseType === 'cassandra') { %>: AbstractCassandra
         <%_ if (databaseType === 'couchbase') { _%>
         mockAuthentication()
         <%_ } _%>
-        <%_ if ((databaseType === 'sql' || databaseType === 'mongodb' || databaseType === 'couchbase') && authenticationType === 'session' && !reactive) { _%>
+        <%_ if ((databaseType === 'sql' || databaseType === 'mongodb' || databaseType === 'neo4j' || databaseType === 'couchbase') && authenticationType === 'session' && !reactive) { _%>
         persistentTokenRepository.deleteAll()
         <%_ } _%>
-        <%_ if (databaseType === 'mongodb' || databaseType === 'cassandra' || databaseType === 'couchbase') { _%>
+        <%_ if (databaseType === 'mongodb' || databaseType === 'neo4j' || databaseType === 'cassandra' || databaseType === 'couchbase') { _%>
         userRepository.deleteAll()<% if (reactive) { %>.block()<% } %>
         <%_ } _%>
         <%_ if (databaseType !== 'no') { _%>
@@ -229,7 +232,7 @@ class UserServiceIT <% if (databaseType === 'cassandra') { %>: AbstractCassandra
         auditingHandler.setDateTimeProvider(dateTimeProvider)
         <%_ } _%>
     }
-    <%_ if ((databaseType === 'sql' || databaseType === 'mongodb' || databaseType === 'couchbase') && authenticationType === 'session' && !reactive) { _%>
+    <%_ if ((databaseType === 'sql' || databaseType === 'neo4j' || databaseType === 'mongodb' || databaseType === 'couchbase') && authenticationType === 'session' && !reactive) { _%>
 
     @Test
     <%_ if (databaseType === 'sql') { _%>
@@ -246,7 +249,7 @@ class UserServiceIT <% if (databaseType === 'cassandra') { %>: AbstractCassandra
         assertThat(persistentTokenRepository.findByUser(user)).hasSize(existingCount + 1)
     }
     <%_ } _%>
-    <%_ if (authenticationType !== 'oauth2' && (databaseType === 'sql' || databaseType === 'mongodb' || databaseType === 'couchbase')) { _%>
+    <%_ if (authenticationType !== 'oauth2' && (databaseType === 'sql' || databaseType === 'neo4j' || databaseType === 'mongodb' || databaseType === 'couchbase')) { _%>
 
     @Test
     <%_ if (databaseType === 'sql') { _%>
@@ -392,7 +395,7 @@ class UserServiceIT <% if (databaseType === 'cassandra') { %>: AbstractCassandra
         <%_ } _%>
     }
     <%_ } _%>
-    <%_ if ((databaseType === 'sql' || databaseType === 'mongodb' || databaseType === 'couchbase') && authenticationType === 'session' && !reactive) { _%>
+    <%_ if ((databaseType === 'sql' || databaseType === 'neo4j' || databaseType === 'mongodb' || databaseType === 'couchbase') && authenticationType === 'session' && !reactive) { _%>
 
     private fun generateUserToken(user: <%= asEntity('User') %>, tokenSeries: String, localDate: LocalDate) {
         val token = PersistentToken(
@@ -425,7 +428,7 @@ class UserServiceIT <% if (databaseType === 'cassandra') { %>: AbstractCassandra
         user.login = ANONYMOUS_USER
         if (!userRepository.findOneByLogin(ANONYMOUS_USER)<% if (reactive) { %>.blockOptional()<% } %>.isPresent) {
             userRepository.save<% if (databaseType === 'sql') { %>AndFlush<% } %>(user)<% if (reactive) { %>.block()<% } %>
-        }<% if (databaseType === 'sql' || databaseType === 'mongodb' || databaseType === 'couchbase') { %>
+        }<% if (databaseType === 'sql' || databaseType === 'neo4j' || databaseType === 'mongodb' || databaseType === 'couchbase') { %>
         val pageable = PageRequest.of(0, userRepository.count()<% if (reactive) { %>.block()!!<% } %>.toInt())
         val allManagedUsers = userService.getAllManagedUsers(pageable)<% if (reactive) { %>
             .collectList().block()<% } %>

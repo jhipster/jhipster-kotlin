@@ -97,7 +97,7 @@ import org.springframework.security.web.csrf.CookieCsrfTokenRepository
 import org.springframework.security.web.csrf.CsrfFilter
     <%_ } _%>
     <%_ if (authenticationType === 'oauth2') { _%>
-import <%= packageName %>.security.oauth2.JwtAuthorityExtractor
+import <%= packageName %>.security.oauth2.JwtGrantedAuthorityConverter
     <%_ } _%>
     <%_ if (authenticationType === 'jwt' && applicationType !== 'microservice') { _%>
 import org.springframework.security.web.authentication.UsernamePasswordAuthenticationFilter
@@ -270,7 +270,7 @@ class SecurityConfiguration(
         .and()
             .oauth2ResourceServer()
                 .jwt()
-                .jwtAuthenticationConverter(grantedAuthoritiesExtractor())
+                .jwtAuthenticationConverter(authenticationConverter())
                 .and()
             .and()
                 .oauth2Client()
@@ -282,9 +282,9 @@ class SecurityConfiguration(
     <%_ } _%>
     <%_ if (authenticationType === 'oauth2') { _%>
 
-    fun grantedAuthoritiesExtractor(): Converter<Jwt, AbstractAuthenticationToken> {
+    fun authenticationConverter(): Converter<Jwt, AbstractAuthenticationToken> {
         val jwtAuthenticationConverter = JwtAuthenticationConverter()
-        jwtAuthenticationConverter.setJwtGrantedAuthoritiesConverter(JwtAuthorityExtractor())
+        jwtAuthenticationConverter.setJwtGrantedAuthoritiesConverter(JwtGrantedAuthorityConverter())
         return jwtAuthenticationConverter
     }
 

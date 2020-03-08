@@ -22,6 +22,9 @@ import <%= packageName %>.<%= mainClass %>
 <%_ if (cacheProvider === 'redis') { _%>
 import <%= packageName %>.RedisTestContainerExtension
 <%_ } _%>
+<%_ if (databaseType === 'neo4j') { _%>
+import <%= packageName %>.AbstractNeo4jIT
+<%_ } _%>
 import <%= packageName %>.config.ANONYMOUS_USER
 <%_ if (authenticationType === 'oauth2') { _%>
 import <%= packageName %>.config.TestSecurityConfiguration
@@ -67,7 +70,7 @@ import org.assertj.core.api.Assertions.assertThat
 <%_ if (cacheProvider === 'redis') { _%>
 @ExtendWith(RedisTestContainerExtension::class)
 <%_ } _%>
-class CustomAuditEventRepositoryIT {
+class CustomAuditEventRepositoryIT <% if (databaseType === 'cassandra') { %>: AbstractCassandraTest() <% } %><% if (databaseType === 'neo4j') { %>: AbstractNeo4jIT() <% } %> {
 
     @Autowired
     private lateinit var persistenceAuditEventRepository: PersistenceAuditEventRepository

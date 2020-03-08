@@ -18,7 +18,7 @@
 -%>
 package <%= packageName %>.service.mapper
 
-<%_ if (databaseType === 'sql' || databaseType === 'mongodb') { _%>
+<%_ if (databaseType === 'sql' || databaseType === 'mongodb' || databaseType === 'neo4j') { _%>
 import <%= packageName %>.domain.Authority
 <%_ } _%>
 import <%= packageName %>.domain.<%= asEntity('User') %>
@@ -61,7 +61,7 @@ class UserMapper {
                     <%_ } _%>
                     activated = userDTO.activated,
                     langKey = userDTO.langKey,
-                    <%_ if (databaseType === 'sql' || databaseType === 'mongodb') { _%>
+                    <%_ if (databaseType === 'sql' || databaseType === 'mongodb' || databaseType === 'neo4j') { _%>
                     authorities = authoritiesFromStrings(userDTO.authorities)
                     <%_ } _%>
                     <%_ if (databaseType === 'cassandra' || databaseType === 'couchbase') { _%>
@@ -70,7 +70,7 @@ class UserMapper {
                 )
             }
         }
-    <%_ if (databaseType === 'sql' || databaseType === 'mongodb') { _%>
+    <%_ if (databaseType === 'sql' || databaseType === 'mongodb' || databaseType === 'neo4j') { _%>
 
     private fun authoritiesFromStrings(authoritiesAsString: Set<String>?): MutableSet<Authority> =
         authoritiesAsString?.mapTo(mutableSetOf()) { Authority(name = it) } ?: mutableSetOf()
@@ -81,5 +81,5 @@ class UserMapper {
         authoritiesAsString?.filterNotNullTo(mutableSetOf()) ?: mutableSetOf()
     <%_ } _%>
 
-    fun userFromId(id: <% if (databaseType === 'mongodb' || databaseType === 'couchbase' || databaseType === 'cassandra' || authenticationType === 'oauth2') { %>String<% } else { %>Long<% } %>?) = id?.let { <%= asEntity('User') %>(id = it) }
+    fun userFromId(id: <% if (databaseType === 'mongodb' || databaseType === 'neo4j' || databaseType === 'couchbase' || databaseType === 'cassandra' || authenticationType === 'oauth2') { %>String<% } else { %>Long<% } %>?) = id?.let { <%= asEntity('User') %>(id = it) }
 }

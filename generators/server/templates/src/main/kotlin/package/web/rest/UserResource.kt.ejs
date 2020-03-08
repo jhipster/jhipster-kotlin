@@ -41,7 +41,7 @@ import <%= packageName %>.web.rest.errors.LoginAlreadyUsedException
 <%_ } _%>
 
 import io.github.jhipster.web.util.HeaderUtil
-<%_ if (databaseType === 'sql' || databaseType === 'mongodb' || databaseType === 'couchbase') { _%>
+<%_ if (databaseType === 'sql' || databaseType === 'mongodb' || databaseType === 'neo4j' || databaseType === 'couchbase') { _%>
 import io.github.jhipster.web.util.PaginationUtil
 <%_ } _%>
 <%_ if (!reactive) { _%>
@@ -50,7 +50,7 @@ import io.github.jhipster.web.util.ResponseUtil
 
 import org.slf4j.LoggerFactory
 import org.springframework.beans.factory.annotation.Value
-<%_ if (databaseType === 'sql' || databaseType === 'mongodb' || databaseType === 'couchbase') { _%>
+<%_ if (databaseType === 'sql' || databaseType === 'mongodb' || databaseType === 'neo4j' || databaseType === 'couchbase') { _%>
     <%_ if (reactive) { _%>
 import org.springframework.data.domain.PageImpl
     <%_ } _%>
@@ -149,7 +149,7 @@ class UserResource(
      * @throws BadRequestAlertException `400 (Bad Request)` if the login or email is already in use.
      */
     @PostMapping("/users")
-    @PreAuthorize("hasRole(\"$ADMIN\")")
+    @PreAuthorize("hasAuthority(\"$ADMIN\")")
     <%_ if (!reactive) { _%>
     @Throws(URISyntaxException::class)
     <%_ } _%>
@@ -210,7 +210,7 @@ class UserResource(
      * @throws LoginAlreadyUsedException `400 (Bad Request)` if the login is already in use.
      */
     @PutMapping("/users")
-    @PreAuthorize("hasRole(\"$ADMIN\")")
+    @PreAuthorize("hasAuthority(\"$ADMIN\")")
     <%_ if (!reactive) { _%>
     fun updateUser(@Valid @RequestBody userDTO: <%= asDto('User') %>): ResponseEntity<<%= asDto('User') %>> {
         log.debug("REST request to update User : {}", userDTO)
@@ -260,7 +260,7 @@ class UserResource(
 <%_ } _%>
     /**
      * `GET /users` : get all users.
-     *<% if (databaseType === 'sql' || databaseType === 'mongodb' || databaseType === 'couchbase') { %>
+     *<% if (databaseType === 'sql' || databaseType === 'mongodb' || databaseType === 'neo4j' || databaseType === 'couchbase') { %>
      <%_ if (reactive) { _%>
      * @param request a [ServerHttpRequest] request.
      <%_ } _%>
@@ -268,7 +268,7 @@ class UserResource(
      * @return the `ResponseEntity` with status `200 (OK)` and with body all users.
      */
     @GetMapping("/users")
-    <%_ if (databaseType === 'sql' || databaseType === 'mongodb' || databaseType === 'couchbase') { _%>
+    <%_ if (databaseType === 'sql' || databaseType === 'mongodb' || databaseType === 'neo4j' || databaseType === 'couchbase') { _%>
         <%_ if (!reactive) { _%>
     fun getAllUsers(pageable: Pageable): ResponseEntity<List<<%= asDto('User') %>>> {
         val page = userService.getAllManagedUsers(pageable)
@@ -291,7 +291,7 @@ class UserResource(
      * @return a string list of all roles.
      */
     @GetMapping("/users/authorities")
-    @PreAuthorize("hasRole(\"$ADMIN\")")
+    @PreAuthorize("hasAuthority(\"$ADMIN\")")
     fun getAuthorities()<% if (reactive) { %>: Mono<List<String>><% } %> = userService.getAuthorities()<% if (reactive) { %>.collectList()<% } %>
     <%_ } else { // Cassandra _%>
     fun getAllUsers() = userService.getAllManagedUsers()
@@ -327,7 +327,7 @@ class UserResource(
      * @return the `ResponseEntity` with status `204 (NO_CONTENT)`.
      */
     @DeleteMapping("/users/{login:$LOGIN_REGEX}")
-    @PreAuthorize("hasRole(\"$ADMIN\")")
+    @PreAuthorize("hasAuthority(\"$ADMIN\")")
     <%_ if (!reactive) { _%>
     fun deleteUser(@PathVariable login: String): ResponseEntity<Void> {
         log.debug("REST request to delete User: {}", login)

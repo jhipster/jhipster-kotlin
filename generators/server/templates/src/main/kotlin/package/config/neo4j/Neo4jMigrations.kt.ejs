@@ -1,0 +1,83 @@
+<%#
+ Copyright 2013-2020 the original author or authors from the JHipster project.
+
+  This file is part of the JHipster project, see https://www.jhipster.tech/
+ for more information.
+
+  Licensed under the Apache License, Version 2.0 (the "License");
+ you may not use this file except in compliance with the License.
+ You may obtain a copy of the License at
+
+       http://www.apache.org/licenses/LICENSE-2.0
+
+  Unless required by applicable law or agreed to in writing, software
+ distributed under the License is distributed on an "AS IS" BASIS,
+ WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
+ See the License for the specific language governing permissions and
+ limitations under the License.
+-%>
+package <%= packageName %>.config.neo4j
+
+import ac.simons.neo4j.migrations.core.JavaBasedMigration
+import ac.simons.neo4j.migrations.core.MigrationContext
+
+import java.io.IOExceptiom
+import java.util.List
+import java.util.Map
+import java.util.UUID
+
+import org.neo4j.driver.Session
+import org.neo4j.driver.Values
+import org.springframework.core.io.Resource
+import org.springframework.core.io.support.PathMatchingResourcePatternResolver
+import org.springframework.core.io.support.ResourcePatternResolver
+
+import com.fasterxml.jackson.databind.JavaType
+import com.fasterxml.jackson.databind.ObjectMapper
+
+/**
+* Initial database setup for Neo4j.
+*/
+class Neo4jMigrations {
+
+     /**
+     * Load users including authorities from JSON files.
+     */
+    class V0001__CreateUsers: JavaBasedMigration {
+
+        @Throws(IOException::class)
+        override fun apply(context: MigrationContext) {
+
+            val om = ObjectMapper()
+            val resourcePatternResolver = PathMatchingResourcePatternResolver()
+            val resources = resourcePatternResolver.getResources("classpath:config/neo4j/migrations/user__*.json")
+
+            val type = om.getTypeFactory().
+                constructMapType(Map::class, String::class, Object::class)
+
+            val userLabel = "<%= jhiTablePrefix %>_user"
+            val authorityLabel = "<%= jhiTablePrefix %>_authority"
+
+            val query = String.format(""
+                    + "CREATE (u:%s) SET u = $user WITH u "
+                    + "UNWIND $authorities AS authority "
+                    + "MERGE (a:%s {name: authority}) "
+                    + "CREATE (u) - [:HAS_AUTHORITY] -> (a) ",
+                userLabel, authorityLabel
+            )
+
+             try (val session = context.getSession()) {
+
+                 for (val resource : resources) {
+                    val user = om.readValue(resource.getInputStream(), type)
+                    user["user_id", UUID.randomUUID().toString()]
+                    val authorities = user.remove("authorities") as (List<String>)
+                    user.remove("_class")
+
+                    session.writeTransaction(
+                        t -> t.run(query, Values.parameters("user", user, "authorities", authorities)).consume())
+                }
+            }
+        }
+    }
+}

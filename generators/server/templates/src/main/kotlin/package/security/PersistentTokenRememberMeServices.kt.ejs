@@ -30,7 +30,7 @@ import io.github.jhipster.config.JHipsterProperties
 import io.github.jhipster.security.PersistentTokenCache
 import io.github.jhipster.security.RandomUtil
 
-import org.slf4j.LoggerFactory<% if (databaseType === 'sql' || databaseType === 'mongodb' || databaseType === 'couchbase') { %>
+import org.slf4j.LoggerFactory<% if (databaseType === 'sql' || databaseType === 'mongodb' || databaseType === 'neo4j' || databaseType === 'couchbase') { %>
 import org.springframework.dao.DataAccessException<%}%>
 import org.springframework.security.core.Authentication
 import org.springframework.security.core.userdetails.UserDetails
@@ -44,7 +44,7 @@ import org.springframework.stereotype.Service
 import javax.servlet.http.HttpServletRequest
 import javax.servlet.http.HttpServletResponse
 import java.io.Serializable
-<%_ if (databaseType === 'sql' || databaseType === 'mongodb' || databaseType === 'couchbase') { _%>
+<%_ if (databaseType === 'sql' || databaseType === 'mongodb' || databaseType === 'neo4j' || databaseType === 'couchbase') { _%>
 import java.time.LocalDate
 <%_ } _%>
 <%_ if (databaseType === 'cassandra') { _%>
@@ -127,7 +127,7 @@ class PersistentTokenRememberMeServices(
                 // Token also matches, so login is valid. Update the token value, keeping the *same* series number.
                 log.debug("Refreshing persistent login token for user '{}', series '{}'", login, token.series)
                 token.apply {
-                    <%_ if (databaseType === 'sql' || databaseType === 'mongodb' || databaseType === 'couchbase') { _%>
+                    <%_ if (databaseType === 'sql' || databaseType === 'mongodb' || databaseType === 'neo4j' || databaseType === 'couchbase') { _%>
                     tokenDate = LocalDate.now()
                     <%_ } _%>
                     <%_ if (databaseType === 'cassandra') { _%>
@@ -139,7 +139,7 @@ class PersistentTokenRememberMeServices(
                 }
                 try {
                     <% if (databaseType === 'sql') { %>persistentTokenRepository.saveAndFlush(token)<% } else { %>persistentTokenRepository.save(token)<% } %>
-                    <%_ if (databaseType === 'sql' || databaseType === 'mongodb' || databaseType === 'couchbase') { _%>
+                    <%_ if (databaseType === 'sql' || databaseType === 'mongodb' || databaseType === 'neo4j' || databaseType === 'couchbase') { _%>
                 } catch (e: DataAccessException) {
                     <%_ } else { _%>
                 } catch (e: DriverException) {
@@ -183,7 +183,7 @@ class PersistentTokenRememberMeServices(
         }.orElseThrow { UsernameNotFoundException("User $login was not found in the database") }
         try {
             <% if (databaseType === 'sql') { %>persistentTokenRepository.saveAndFlush(token)<% } else { %>persistentTokenRepository.save(token)<% } %>
-            addCookie(token, request, response)<% if (databaseType === 'sql' || databaseType === 'mongodb' || databaseType === 'couchbase') { %>
+            addCookie(token, request, response)<% if (databaseType === 'sql' || databaseType === 'mongodb' || databaseType === 'neo4j' || databaseType === 'couchbase') { %>
         } catch (e: DataAccessException) {<% } else { %>
         } catch (e: DriverException) {<% } %>
             log.error("Failed to save persistent token ", e)
@@ -260,7 +260,7 @@ class PersistentTokenRememberMeServices(
                 "Invalid remember-me token (Series/token) mismatch. Implies previous cookie theft attack."
             )
         }
-        <%_ if (databaseType === 'sql' || databaseType === 'mongodb' || databaseType === 'couchbase') { _%>
+        <%_ if (databaseType === 'sql' || databaseType === 'mongodb' || databaseType === 'neo4j' || databaseType === 'couchbase') { _%>
         if (token.tokenDate!!.plusDays(TOKEN_VALIDITY_DAYS.toLong()).isBefore(LocalDate.now())) {
         <%_ } _%>
         <%_ if (databaseType === 'cassandra') { _%>

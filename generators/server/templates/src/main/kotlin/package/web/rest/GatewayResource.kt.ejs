@@ -22,7 +22,14 @@ import <%= packageName %>.web.rest.vm.RouteVM
 import <%= packageName %>.security.ADMIN
 
 import org.springframework.cloud.client.discovery.DiscoveryClient
+<%_ if (!reactive) { _%>
 import org.springframework.cloud.netflix.zuul.filters.RouteLocator
+<%_ } else { _%>
+import org.springframework.beans.factory.annotation.Value
+import org.springframework.cloud.gateway.route.Route
+import org.springframework.cloud.gateway.route.RouteLocator
+import reactor.core.publisher.Flux
+<%_ } _%>
 import org.springframework.http.HttpStatus
 import org.springframework.http.ResponseEntity
 import org.springframework.security.access.annotation.Secured
@@ -35,7 +42,7 @@ import org.springframework.web.bind.annotation.RestController
  */
 @RestController
 @RequestMapping("/api/gateway")
-class GatewayResource(private val routeLocator: RouteLocator, private val discoveryClient: DiscoveryClient) {
+class GatewayResource(private val routeLocator: RouteLocator, private val discoveryClient: DiscoveryClient<% if (reactive) { %>, @Value("\${spring.application.name}") appName: String<% } %>) {
 
     /**
      * `GET  /routes` : get the active routes.
@@ -45,6 +52,7 @@ class GatewayResource(private val routeLocator: RouteLocator, private val discov
     @GetMapping("/routes")
     @Secured(ADMIN)
     fun activeRoutes(): ResponseEntity<List<RouteVM>> {
+        <%_ if (!reactive) { _%>
         val routeVMs =
             routeLocator.routes.mapNotNull { route ->
                 RouteVM(
@@ -53,6 +61,24 @@ class GatewayResource(private val routeLocator: RouteLocator, private val discov
                     serviceInstances = discoveryClient.getInstances(route.location)
                 )
             }
+        <%_ } else { _%>
+            val routes = routeLocator.getRoutes()
+            val routeVMs = listOf<RouteVM>()
+            routes.subscribe(route -> {
+                val routeVM = RouteVM()
+                // Manipulate strings to make Gateway routes look like Zuul's
+                val predicate = route.getPredicate().toString()
+                val path = predicate.substring(predicate.indexOf("[") + 1, predicate.indexOf("]"))
+                routeVM.setPath(path)
+                val serviceId = route.getId().substring(route.getId().indexOf("_") + 1).toLowerCase()
+                routeVM.setServiceId(serviceId);
+                // Exclude gateway app from routes
+                if (!serviceId.equalsIgnoreCase(appName)) {
+                    routeVM.setServiceInstances(discoveryClient.getInstances(serviceId))
+                    routeVMs.add(routeVM)
+                }
+            })
+        <%_ } _%>
         return ResponseEntity.ok(routeVMs)
     }
 }
