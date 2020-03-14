@@ -2106,14 +2106,10 @@ function writeFiles() {
                 </executions>
                 <configuration>
                     <jvmTarget>$\{java.version}</jvmTarget>
-                    <javaParameters>true</javaParameters>${
-                        this.databaseType === 'couchbase'
-                            ? `
+                    <javaParameters>true</javaParameters>
                     <args>
                         <arg>-Xjvm-default=enable</arg>
-                    </args>`
-                            : ''
-                    }
+                    </args>
                     <compilerPlugins>
                         <plugin>spring</plugin>${
                             this.databaseType === 'sql'
