@@ -74,10 +74,12 @@ for (idx in relationships) {
     if ((relationshipType === 'many-to-one' || (relationshipType === 'one-to-one' && ownerSide === true)) && !otherEntityIsEmbedded) {
         renMapAnotEnt = true;
 _%>
-    @Mapping(source = "<%= relationshipName %>.id", target = "<%= relationships[idx].relationshipFieldName %>Id")
-            <%_ if (relationships[idx].otherEntityFieldCapitalized !='Id' && relationships[idx].otherEntityFieldCapitalized !== '') { _%>
-    @Mapping(source = "<%= relationshipName %>.<%= relationships[idx].otherEntityField %>", target = "<%= relationships[idx].relationshipFieldName %><%= relationships[idx].otherEntityFieldCapitalized %>")
-            <%_ } _%>
+    @Mappings(
+        Mapping(source = "<%= relationshipName %>.id", target = "<%= relationships[idx].relationshipFieldName %>Id")
+        <%_ if (relationships[idx].otherEntityFieldCapitalized !='Id' && relationships[idx].otherEntityFieldCapitalized !== '') { _%>
+        Mapping(source = "<%= relationshipName %>.<%= relationships[idx].otherEntityField %>", target = "<%= relationships[idx].relationshipFieldName %><%= relationships[idx].otherEntityFieldCapitalized %>")
+        <%_ } _%>
+    )
         <%_ } _%>
     <%_ } _%>
     <%_ if (renMapAnotEnt === true) { _%>
@@ -101,17 +103,19 @@ for (idx in relationships) {
     if ((relationshipType === 'many-to-one' || (relationshipType === 'one-to-one' && ownerSide === true) && !otherEntityIsEmbedded)) {
         renMapAnotDto = true;
 _%>
-    @Mapping(source = "<%= relationshipName %>Id", target = "<%= relationshipName %>")
-            <%_ } else if (relationshipType === 'many-to-many' && ownerSide === false) { renMapAnotDto = true; _%>
-    @Mapping(target = "<%= relationshipNamePlural %>", ignore = true)
-            <%_ } else if (relationshipType === 'one-to-many') { renMapAnotDto = true; _%>
-    @Mapping(target = "<%= relationshipNamePlural %>", ignore = true)
-            <%_ } else if (relationshipType === 'one-to-one' && ownerSide === false) { renMapAnotDto = true; _%>
-    @Mapping(target = "<%= relationshipName %>", ignore = true)
-            <%_ }
-    if ((relationshipType === 'one-to-many' || relationshipType === 'many-to-many') && fluentMethods) { _%>
-    @Mapping(target = "remove<%= relationshipNameCapitalized %>", ignore = true)
-    <%_ } _%>
+    @Mappings(
+        Mapping(source = "<%= relationshipName %>Id", target = "<%= relationshipName %>")
+        <%_ } else if (relationshipType === 'many-to-many' && ownerSide === false) { renMapAnotDto = true; _%>
+        Mapping(target = "<%= relationshipNamePlural %>", ignore = true)
+                <%_ } else if (relationshipType === 'one-to-many') { renMapAnotDto = true; _%>
+        Mapping(target = "<%= relationshipNamePlural %>", ignore = true)
+                <%_ } else if (relationshipType === 'one-to-one' && ownerSide === false) { renMapAnotDto = true; _%>
+        Mapping(target = "<%= relationshipName %>", ignore = true)
+                <%_ }
+        if ((relationshipType === 'one-to-many' || relationshipType === 'many-to-many') && fluentMethods) { _%>
+        Mapping(target = "remove<%= relationshipNameCapitalized %>", ignore = true)
+        <%_ } _%>
+    )
     <%_ } _%>
     <%_ if (renMapAnotDto === true) { _%>
     override fun toEntity(<%= asDto(entityInstance) %>: <%= asDto(entityClass) %>): <%= asEntity(entityClass) %>
