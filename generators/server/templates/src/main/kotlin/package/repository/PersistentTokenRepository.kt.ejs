@@ -34,6 +34,8 @@ import org.springframework.data.jpa.repository.JpaRepository
 <%_ } _%>
 <%_ if (databaseType === 'mongodb') { _%>
 import org.springframework.data.mongodb.repository.MongoRepository
+<%_ } _%><%_ if (databaseType === 'neo4j') { _%>
+import org.neo4j.springframework.data.repository.Neo4jRepository
 <%_ } if (databaseType === 'cassandra') { _%>
 import org.springframework.stereotype.Repository
 
@@ -57,8 +59,8 @@ import <%= packageName %>.config.ID_DELIMITER
  * Spring Data Couchbase repository for the [PersistentToken] entity.
  */<% } %><% if (databaseType === 'cassandra') { %>/**
  * Cassandra repository for the [PersistentToken] entity.
- */<% } %><% if (databaseType === 'sql' || databaseType === 'mongodb' || databaseType === 'couchbase') { %>
-interface PersistentTokenRepository : <% if (databaseType === 'sql') { %>JpaRepository<% } %><% if (databaseType === 'mongodb') { %>MongoRepository<% } %><% if (databaseType === 'couchbase') { %>N1qlCouchbaseRepository<% } %><PersistentToken, String> {
+ */<% } %><% if (databaseType === 'sql' || databaseType === 'mongodb' || databaseType === 'neo4j' || databaseType === 'couchbase') { %>
+interface PersistentTokenRepository : <% if (databaseType === 'sql') { %>JpaRepository<% } %><% if (databaseType === 'mongodb') { %>MongoRepository<% } %><% if (databaseType === 'neo4j') { %>Neo4jRepository<% } %><% if (databaseType === 'couchbase') { %>N1qlCouchbaseRepository<% } %><PersistentToken, String> {
 <% if (databaseType === 'couchbase') { %>
     fun findBySeries(series: String): Optional<PersistentToken> {
         return findById(PersistentToken.PREFIX + ID_DELIMITER + series)

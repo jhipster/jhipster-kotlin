@@ -22,6 +22,13 @@ package <%= packageName %>.domain
 import org.springframework.data.annotation.Id
 import org.springframework.data.mongodb.core.mapping.Document
 import org.springframework.data.mongodb.core.mapping.Field
+<%_ } else if (databaseType === 'neo4j') { _%>
+import org.neo4j.springframework.data.core.schema.GeneratedValue
+import org.neo4j.springframework.data.core.schema.Id
+import org.neo4j.springframework.data.core.schema.Node
+import org.neo4j.springframework.data.core.schema.Property
+import org.neo4j.springframework.data.core.schema.Relationship
+import org.neo4j.springframework.data.core.support.UUIDStringGenerator
 <%_ } else if (databaseType === 'couchbase') { _%>
 import org.springframework.data.annotation.Id
 import com.couchbase.client.java.repository.annotation.Field
@@ -59,7 +66,8 @@ import org.springframework.data.couchbase.core.mapping.id.GenerationStrategy.UNI
  */<% if (databaseType === 'sql') { %>
 @Entity
 @Table(name = "<%= jhiTablePrefix %>_persistent_audit_event")<% } %><% if (databaseType === 'mongodb') { %>
-@Document(collection = "<%= jhiTablePrefix %>_persistent_audit_event")<% } %><% if (databaseType === 'couchbase') { %>
+@Document(collection = "<%= jhiTablePrefix %>_persistent_audit_event")<% } %><% if (databaseType === 'neo4j') { %>
+@Node("<%= jhiTablePrefix %>_persistent_audit_event")<% } %><% if (databaseType === 'couchbase') { %>
 @Document<% } %>
 class PersistentAuditEvent(
 
@@ -74,6 +82,9 @@ class PersistentAuditEvent(
     var id: Long? = null,<% } else { %>
     <%_ if (databaseType === 'couchbase') { _%>
     @GeneratedValue(strategy = UNIQUE, delimiter = ID_DELIMITER)
+    <%_ } else if (databaseType === 'neo4j') { _%>
+    @Property("event_id")
+    @GeneratedValue(UUIDStringGenerator::class)
     <%_ } _%>
     var id: String? = null,<% } %>
 

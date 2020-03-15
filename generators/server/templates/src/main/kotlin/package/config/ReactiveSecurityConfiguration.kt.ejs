@@ -26,7 +26,7 @@ import <%= packageName %>.security.jwt.TokenProvider
 <%_ if (authenticationType === 'session' || authenticationType === 'oauth2') { _%>
     <%_ if (authenticationType === 'oauth2') { _%>
 import <%= packageName %>.security.oauth2.AudienceValidator
-import <%= packageName %>.security.oauth2.JwtAuthorityExtractor
+import <%= packageName %>.security.oauth2.JwtGrantedAuthorityConverter
 import <%= packageName %>.service.AuditEventService
 import org.springframework.security.authentication.AbstractAuthenticationToken
     <%_ } _%>
@@ -99,6 +99,9 @@ import org.springframework.security.core.userdetails.User
     <%_ if (skipUserManagement) { _%>
 import org.springframework.security.core.userdetails.UserDetails
     <%_ } _%>
+<%_ } _%>
+<%_ if (databaseType === 'couchbase') { _%>
+import org.springframework.security.data.repository.query.SecurityEvaluationContextExtension
 <%_ } _%>
 import org.springframework.security.web.server.SecurityWebFilterChain
 <%_ if (authenticationType === 'session') { _%>
@@ -176,7 +179,7 @@ class SecurityConfiguration(
             .securityMatcher(
                 NegatedServerWebExchangeMatcher(
                     OrServerWebExchangeMatcher(
-                        pathMatchers("/app/**", "/i18n/**", "/content/**", "/swagger-ui/index.html", "/test/**"),
+                        pathMatchers("/app/**", "/i18n/**", "/content/**", "/swagger-ui/**", "/test/**"<% if (applicationType === 'gateway' || applicationType === 'monolith') { %>, "/webjars/**"<% } %>),
                         pathMatchers(HttpMethod.OPTIONS, "/**")
                     )
                 )
@@ -238,6 +241,9 @@ class SecurityConfiguration(
             <%_ } _%>
             .pathMatchers("/api/auth-info").permitAll()
             .pathMatchers("/api/**").authenticated()
+            <%_ if (applicationType === 'monolith' || applicationType === 'gateway') { _%>
+            .pathMatchers("/services/**", "/swagger-resources/**", "/v2/api-docs").authenticated()
+            <%_ } _%>
             .pathMatchers("/management/health").permitAll()
             .pathMatchers("/management/info").permitAll()
             .pathMatchers("/management/prometheus").permitAll()
@@ -249,7 +255,7 @@ class SecurityConfiguration(
         .and()
             <%_ } _%>.oauth2ResourceServer()
             .jwt()
-            .jwtAuthenticationConverter(grantedAuthoritiesExtractor())
+            .jwtAuthenticationConverter(jwtAuthenticationConverter())
         .and()
             .and()
             .oauth2Client()
@@ -259,9 +265,9 @@ class SecurityConfiguration(
     }
     <%_ if (authenticationType === 'oauth2') { _%>
 
-    fun grantedAuthoritiesExtractor(): Converter<Jwt, Mono<AbstractAuthenticationToken>>  {
+    fun jwtAuthenticationConverter(): Converter<Jwt, Mono<AbstractAuthenticationToken>>  {
         val jwtAuthenticationConverter = JwtAuthenticationConverter()
-        jwtAuthenticationConverter.setJwtGrantedAuthoritiesConverter(JwtAuthorityExtractor())
+        jwtAuthenticationConverter.setJwtGrantedAuthoritiesConverter(JwtGrantedAuthorityConverter())
         return ReactiveJwtAuthenticationConverterAdapter(jwtAuthenticationConverter)
     }
 
@@ -342,5 +348,16 @@ class SecurityConfiguration(
         return Mono.empty();
         <%_ } _%>
     }
+    <%_ } _%>
+
+    <%_ if(databaseType === 'couchbase') { _%>
+    /**
+    * Disables Spring security integration with SpEL expressions since it is not yet compatible with Reactor
+    */
+    @Bean
+    fun securityEvaluationContextExtension() =
+        SecurityEvaluationContextExtension() {
+            override fun getRootObject() = null
+        }
     <%_ } _%>
 }

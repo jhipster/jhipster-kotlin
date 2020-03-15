@@ -88,8 +88,9 @@ _%>
 @ApiModel(description = "<%- formatAsApiDescription(javadoc) %>")
 <%_ } _%>
 data class <%= asDto(entityClass) %>(
-
+    <% if (!embedded) { %>
     var id: <%= primaryKeyType %>? = null,
+    <%_ } _%>
     <%_ for (idx in fields) {
         if (typeof fields[idx].javadoc !== 'undefined') { _%>
 <%- formatAsFieldJavadoc(fields[idx].javadoc) %>
@@ -137,15 +138,19 @@ data class <%= asDto(entityClass) %>(
         const otherEntityName = relationship.otherEntityName;
         const otherEntityNameCapitalized = relationship.otherEntityNameCapitalized;
         const otherEntityFieldCapitalized = relationship.otherEntityFieldCapitalized;
+        const otherEntityIsEmbedded = relationship.otherEntityIsEmbedded;
         const ownerSide = relationship.ownerSide;
         var comma = index === (mappedRels.length - 1) ?  '' : ',';
         if (typeof relationship.javadoc != 'undefined') { _%>
 <%- formatAsFieldJavadoc(relationship.javadoc) %>
     @ApiModelProperty(value = "<%- formatAsApiDescription(relationship.javadoc) %>")
     <%_ }
-        if (relationshipType === 'many-to-many' && ownerSide === true) { _%>
+        if ((relationshipType === 'many-to-many' && ownerSide === true)
+            || (relationshipType === 'one-to-many' && otherEntityIsEmbedded)) { _%>
 
     var <%= relationshipFieldNamePlural %>: MutableSet<<%= asDto(otherEntityNameCapitalized) %>> = mutableSetOf()<%= comma %>
+    <%_ } else if (relationshipType === 'one-to-one' && ownerSide === true && otherEntityIsEmbedded) { _%>
+    var <%= relationshipFieldName %>: <%= asDto(otherEntityNameCapitalized) %><%= comma %>
     <%_ } else if (relationshipType === 'many-to-one' || (relationshipType === 'one-to-one' && ownerSide === true)) {
             if(index === (mappedRels.length - 1) && otherEntityFieldCapitalized !== 'Id' && otherEntityFieldCapitalized !== '') {
                 comma = ',';
@@ -165,10 +170,16 @@ data class <%= asDto(entityClass) %>(
     override fun equals(other: Any?): Boolean {
         if (this === other) return true
         if (other !is <%= asDto(entityClass) %>) return false
-        if (other.id == null || id == null) return false
-
-        return id == other.id
+        <%_ if (!embedded) { _%>
+        val <%= asDto(entityInstance) %> = other as <%= asDto(entityClass) %>
+        if (<%= asDto(entityInstance) %>.id == null || id == null) {
+            return false
+        }
+        return id == <%= asDto(entityInstance) %>.id
+        <%_ } else { _%>
+        return false
+        <%_ } _%>
     }
 
-    override fun hashCode() = id.hashCode()
+    override fun hashCode() = <% if (!embedded) { %>id.hashCode()<% } else { %>31<% } %>
 }

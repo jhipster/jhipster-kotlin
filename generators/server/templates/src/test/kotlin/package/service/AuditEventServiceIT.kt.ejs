@@ -23,6 +23,9 @@ import <%= packageName %>.domain.PersistentAuditEvent
 <%_ if (cacheProvider === 'redis') { _%>
 import <%= packageName %>.RedisTestContainerExtension
 <%_ } _%>
+<%_ if (databaseType === 'neo4j') { _%>
+import <%= packageName %>.AbstractNeo4jIT
+<%_ } _%>
 import <%= packageName %>.repository.PersistenceAuditEventRepository
 import <%= packageName %>.<%= mainClass %>
 import io.github.jhipster.config.JHipsterProperties
@@ -61,7 +64,7 @@ import org.assertj.core.api.Assertions.assertThat
 <%_ if (cacheProvider === 'redis') { _%>
 @ExtendWith(RedisTestContainerExtension::class)
 <%_ } _%>
-class AuditEventServiceIT {
+class AuditEventServiceIT <% if (databaseType === 'cassandra') { %>: AbstractCassandraTest() <% } %><% if (databaseType === 'neo4j') { %>: AbstractNeo4jIT() <% } %> {
     @Autowired
     private lateinit var auditEventService: AuditEventService
 

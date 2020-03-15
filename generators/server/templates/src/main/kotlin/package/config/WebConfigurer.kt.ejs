@@ -73,11 +73,12 @@ import org.springframework.web.filter.CorsFilter
 <%_ if (reactive) { _%>
 import org.springframework.web.cors.reactive.CorsWebFilter
 import org.springframework.web.cors.reactive.UrlBasedCorsConfigurationSource
+<%_ if (applicationType === 'monolith' || applicationType === 'gateway') { _%>
+import org.springframework.web.reactive.config.ResourceHandlerRegistry
+<%_ } _%>
 import org.springframework.web.reactive.config.WebFluxConfigurer
     <%_ if (!skipClient) { _%>
 import org.springframework.web.reactive.function.server.HandlerFunction
-import org.springframework.web.reactive.function.server.RouterFunction
-import org.springframework.web.reactive.function.server.ServerResponse
     <%_ } _%>
 import org.springframework.web.reactive.result.method.annotation.ArgumentResolverConfigurer
     <%_ if (!skipClient) { _%>
@@ -111,11 +112,7 @@ import java.net.URLDecoder.decode
 <%_ } _%>
 <%_ if (reactive && !skipClient) { _%>
 
-import java.net.URI
 import java.util.concurrent.TimeUnit
-
-import org.springframework.web.reactive.function.server.RequestPredicates.GET
-import org.springframework.web.reactive.function.server.RouterFunctions.route
 <%_ } _%>
 
 /**
@@ -271,6 +268,16 @@ class WebConfigurer(
         // Use a cache filter that only match selected paths
         return CachingHttpHeadersFilter(TimeUnit.DAYS.toMillis(jHipsterProperties.http.cache.timeToLiveInDays.toLong()))
     }
+        <%_ if (applicationType === 'monolith' || applicationType === 'gateway') { _%>
+
+    override fun addResourceHandlers(registry: ResourceHandlerRegistry) {
+        registry.addResourceHandler("/swagger-ui.html**")
+            .addResourceLocations("classpath:/META-INF/resources/")
+
+        registry.addResourceHandler("/webjars/**")
+            .addResourceLocations("classpath:/META-INF/resources/webjars/")
+    }
+               <%_ } _%>
         <%_ } _%>
     <%_ } _%>
     <%_ if (devDatabaseType === 'h2Disk' || devDatabaseType === 'h2Memory') { _%>

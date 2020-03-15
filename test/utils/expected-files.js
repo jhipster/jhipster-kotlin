@@ -243,6 +243,9 @@ const expectedFiles = {
     redis: [
         `${SERVER_MAIN_SRC_DIR}com/mycompany/myapp/config/CacheConfiguration.kt`,
         `${DOCKER_DIR}redis.yml`,
+        `${DOCKER_DIR}redis-cluster.yml`,
+        `${DOCKER_DIR}redis/connectRedisCluster.sh`,
+        `${DOCKER_DIR}redis/Redis-Cluster.Dockerfile`,
         `${SERVER_TEST_SRC_DIR}/com/mycompany/myapp/RedisTestContainerExtension.kt`
     ],
 
@@ -380,6 +383,7 @@ const expectedFiles = {
         `${CLIENT_MAIN_SRC_DIR}app/admin/configuration/configuration.service.ts`,
         `${CLIENT_MAIN_SRC_DIR}app/admin/docs/docs.component.html`,
         `${CLIENT_MAIN_SRC_DIR}app/admin/docs/docs.component.ts`,
+        `${CLIENT_MAIN_SRC_DIR}app/admin/docs/docs.scss`,
         `${CLIENT_MAIN_SRC_DIR}app/admin/docs/docs.route.ts`,
         `${CLIENT_MAIN_SRC_DIR}app/admin/docs/docs.module.ts`,
         `${CLIENT_MAIN_SRC_DIR}app/admin/health/health-modal.component.html`,
@@ -441,6 +445,7 @@ const expectedFiles = {
         `${CLIENT_MAIN_SRC_DIR}app/shared/auth/has-any-authority.directive.ts`,
         `${CLIENT_MAIN_SRC_DIR}app/core/auth/state-storage.service.ts`,
         `${CLIENT_MAIN_SRC_DIR}app/core/auth/user-route-access-service.ts`,
+        `${CLIENT_MAIN_SRC_DIR}app/shared/constants/authority.constants.ts`,
         `${CLIENT_MAIN_SRC_DIR}app/shared/constants/error.constants.ts`,
         `${CLIENT_MAIN_SRC_DIR}app/shared/constants/input.constants.ts`,
         `${CLIENT_MAIN_SRC_DIR}app/shared/constants/pagination.constants.ts`,
@@ -516,7 +521,7 @@ const expectedFiles = {
         `${CLIENT_TEST_SRC_DIR}spec/helpers/mock-state-storage.service.ts`,
         `${CLIENT_TEST_SRC_DIR}spec/helpers/spyobject.ts`,
         `${CLIENT_TEST_SRC_DIR}spec/test.module.ts`,
-        'tsconfig-aot.json',
+        'tsconfig.app.json',
         'tsconfig.json',
         'tslint.json',
         'webpack/logo-jhipster.png',
@@ -573,7 +578,7 @@ const expectedFiles = {
     oauth2: [
         `${SERVER_MAIN_SRC_DIR}com/mycompany/myapp/config/SecurityConfiguration.kt`,
         `${SERVER_MAIN_SRC_DIR}com/mycompany/myapp/domain/User.kt`,
-        `${SERVER_MAIN_SRC_DIR}com/mycompany/myapp/security/oauth2/JwtAuthorityExtractor.kt`,
+        `${SERVER_MAIN_SRC_DIR}com/mycompany/myapp/security/oauth2/JwtGrantedAuthorityConverter.kt`,
         `${SERVER_MAIN_SRC_DIR}com/mycompany/myapp/security/oauth2/AudienceValidator.kt`,
         `${SERVER_MAIN_SRC_DIR}com/mycompany/myapp/security/oauth2/OAuthIdpTokenResponseDTO.kt`,
         `${SERVER_MAIN_SRC_DIR}com/mycompany/myapp/web/rest/AccountResource.kt`,
@@ -708,6 +713,15 @@ const expectedFiles = {
         `${DOCKER_DIR}couchbase-cluster.yml`,
         `${DOCKER_DIR}couchbase/Couchbase.Dockerfile`,
         `${DOCKER_DIR}couchbase/scripts/configure-node.sh`
+    ],
+
+    neo4j: [
+        `${SERVER_TEST_SRC_DIR}com/mycompany/myapp/AbstractNeo4jIT.kt`,
+        `${SERVER_MAIN_RES_DIR}config/neo4j/migrations/user__admin.json`,
+        `${SERVER_MAIN_RES_DIR}config/neo4j/migrations/user__system.json`,
+        `${SERVER_MAIN_RES_DIR}config/neo4j/migrations/user__user.json`,
+        `${SERVER_MAIN_RES_DIR}config/neo4j/migrations/user__anonymoususer.json`,
+        `${DOCKER_DIR}neo4j.yml`
     ],
 
     cassandra: [

@@ -41,6 +41,14 @@ import org.springframework.data.annotation.Id
 import org.springframework.data.mongodb.core.index.Indexed
 import org.springframework.data.mongodb.core.mapping.Field
 <%_ } _%>
+<%_ if (databaseType === 'neo4j') { _%>
+import org.neo4j.springframework.data.core.schema.GeneratedValue
+import org.neo4j.springframework.data.core.schema.Id
+import org.neo4j.springframework.data.core.schema.Node
+import org.neo4j.springframework.data.core.schema.Property
+import org.neo4j.springframework.data.core.schema.Relationship
+import org.neo4j.springframework.data.core.support.UUIDStringGenerator
+<%_ } _%>
 <%_ if (reactive && databaseType === 'cassandra') { _%>
 import org.springframework.data.cassandra.core.mapping.Column
 import org.springframework.data.cassandra.core.mapping.PrimaryKey
@@ -99,6 +107,9 @@ import org.springframework.data.couchbase.core.mapping.id.GenerationStrategy.USE
 <%_ if (databaseType === 'mongodb') { _%>
 @org.springframework.data.mongodb.core.mapping.Document(collection = "<%= jhiTablePrefix %>_user")
 <%_ } _%>
+<%_ if (databaseType === 'neo4j') { _%>
+@Node("<%= jhiTablePrefix %>_user")
+<%_ } _%>
 <%_ if (databaseType === 'couchbase') { _%>
 @Document
 <%_ } _%>
@@ -122,6 +133,13 @@ class <%= asEntity('User') %> @JvmOverloads constructor(
     @org.springframework.data.elasticsearch.annotations.Field(type = FieldType.Keyword)
     <%_ } _%>
     var id: <% if (authenticationType === 'oauth2') { %>String?<% } else { %>Long?<% } %> = null,
+    <%_ } else if (databaseType === 'neo4j') { _%>
+    @Id
+    <%_ if (authenticationType !== 'oauth2') { _%>
+    @GeneratedValue(UUIDStringGenerator.class)
+    <%_ } _%>
+    @Property("user_id")
+    var id: String? = null,
 <%_ } else { _%>
 <%_ if (databaseType === 'mongodb' || databaseType === 'couchbase') { _%>
 
@@ -155,12 +173,14 @@ class <%= asEntity('User') %> @JvmOverloads constructor(
 
     @field:Size(max = 50)<% if (databaseType === 'sql') { %>
     @Column(name = "first_name", length = 50)<% } %><% if (databaseType === 'mongodb' || databaseType === 'couchbase') { %>
-    @Field("first_name")<% } %>
+    @Field("first_name")<% } %><% if (databaseType === 'neo4j') { %>
+    @Property("first_name")<% } %>
     var firstName: String? = null,
 
     @field:Size(max = 50)<% if (databaseType === 'sql') { %>
     @Column(name = "last_name", length = 50)<% } %><% if (databaseType === 'mongodb' || databaseType === 'couchbase') { %>
-    @Field("last_name")<% } %>
+    @Field("last_name")<% } %><% if (databaseType === 'neo4j') { %>
+    @Property("last_name")<% } %>
     var lastName: String? = null,
 
     @field:Email
@@ -177,28 +197,32 @@ class <%= asEntity('User') %> @JvmOverloads constructor(
 
     @field:Size(min = 2, max = 10)<% if (databaseType === 'sql') { %>
     @Column(name = "lang_key", length = 10)<% } %><% if (databaseType === 'mongodb' || databaseType === 'couchbase') { %>
-    @Field("lang_key")<% } %><% if (databaseType === 'cassandra') { %>
+    @Field("lang_key")<% } %><% if (databaseType === 'neo4j') { %>
+    @Property("lang_key")<% } %><% if (databaseType === 'cassandra') { %>
     @Column(<% if(!reactive) { %>name = <% } %>"lang_key")<% } %>
     var langKey: String? = null,
-    <%_ if (databaseType === 'mongodb' || databaseType === 'couchbase' || databaseType === 'sql') { _%>
+    <%_ if (databaseType === 'mongodb' || databaseType === 'neo4j' || databaseType === 'couchbase' || databaseType === 'sql') { _%>
 
     @field:Size(max = 256)<% if (databaseType === 'sql') { %>
     @Column(name = "image_url", length = 256)<% } %><% if (databaseType === 'mongodb' || databaseType === 'couchbase') { %>
-    @Field("image_url")<% } %>
+    @Field("image_url")<% } %><% if (databaseType === 'neo4j') { %>
+    @Property("image_url")<% } %>
     var imageUrl: String? = null,
     <%_ } _%>
 <%_ if (authenticationType !== 'oauth2') { _%>
 
     @field:Size(max = 20)<% if (databaseType === 'sql') { %>
     @Column(name = "activation_key", length = 20)<% } %><% if (databaseType === 'mongodb' || databaseType === 'couchbase') { %>
-    @Field("activation_key")<% } %><% if (databaseType === 'cassandra') { %>
+    @Field("activation_key")<% } %><% if (databaseType === 'neo4j') { %>
+    @Property("activation_key")<% } %><% if (databaseType === 'cassandra') { %>
     @Column(<% if(!reactive) { %>name = <% } %>"activation_key")<% } %>
     @JsonIgnore
     var activationKey: String? = null,
 
     @field:Size(max = 20)<% if (databaseType === 'sql') { %>
     @Column(name = "reset_key", length = 20)<% } %><% if (databaseType === 'mongodb' || databaseType === 'couchbase') { %>
-    @Field("reset_key")<% } %><% if (databaseType === 'cassandra') { %>
+    @Field("reset_key")<% } %><% if (databaseType === 'neo4j') { %>
+    @Property("reset_key")<% } %><% if (databaseType === 'cassandra') { %>
     @Column(<% if(!reactive) { %>name = <% } %>"reset_key")<% } %>
     @JsonIgnore
     var resetKey: String? = null,
@@ -207,11 +231,14 @@ class <%= asEntity('User') %> @JvmOverloads constructor(
     @Column(<% if(!reactive) { %>name = <% } %>"reset_date")
     <%_ } else if (databaseType === 'mongodb' || databaseType === 'couchbase') { _%>
     @Field("reset_date")
+    <%_ } else if (databaseType === 'neo4j') { _%>
+    @Property("reset_date")
     <%_ } _%>
     var resetDate: Instant? = null,
 <%_ } _%>
 
-    @JsonIgnore<% if (databaseType === 'sql') { %>
+    @JsonIgnore<% if (databaseType === 'neo4j') { %>
+    @Relationship("HAS_AUTHORITY")<% } %><% if (databaseType === 'sql') { %>
     @ManyToMany
     @JoinTable(
         name = "<%= jhiTablePrefix %>_user_authority",
@@ -221,7 +248,7 @@ class <%= asEntity('User') %> @JvmOverloads constructor(
     <%_ if (enableHibernateCache) { if (cacheProvider === 'infinispan') { _%>
     @Cache(usage = CacheConcurrencyStrategy.READ_WRITE) <%_ } else { _%>
     @Cache(usage = CacheConcurrencyStrategy.NONSTRICT_READ_WRITE) <%_ } } _%><% if (databaseType === 'sql') { %>
-    @BatchSize(size = 20)<% } %><% } %><% if (databaseType === 'sql' || databaseType === 'mongodb') { %>
+    @BatchSize(size = 20)<% } %><% } %><% if (databaseType === 'sql' || databaseType === 'mongodb' || databaseType === 'neo4j') { %>
     var authorities: MutableSet<Authority> = mutableSetOf(),<% } %><% if (databaseType === 'cassandra' || databaseType === 'couchbase') { %>
     var authorities: MutableSet<String> = mutableSetOf()<% } if (databaseType === 'couchbase') { %>,<% } if (authenticationType === 'session' && databaseType === 'sql') { %>
 
@@ -240,7 +267,7 @@ class <%= asEntity('User') %> @JvmOverloads constructor(
     lastModifiedBy: String? = null,
     lastModifiedDate: Instant? = Instant.now()
 <%_ } _%>
-) : <% if (databaseType === 'sql' || databaseType === 'mongodb' || databaseType === 'couchbase') { %>AbstractAuditingEntity(createdBy, createdDate, lastModifiedBy, lastModifiedDate), <% } %>Serializable {
+) : <% if (databaseType === 'sql' || databaseType === 'mongodb' || databaseType === 'neo4j' || databaseType === 'couchbase') { %>AbstractAuditingEntity(createdBy, createdDate, lastModifiedBy, lastModifiedDate), <% } %>Serializable {
 <%_ if (databaseType === 'couchbase') { _%>
 
     @IdPrefix
