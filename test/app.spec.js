@@ -93,11 +93,12 @@ describe('JHipster generator', () => {
                 assert.fileContent('webpack/webpack.dev.js', / {2}devtool:/);
                 assert.fileContent('tsconfig.json', / {2}"compilerOptions":/);
             });
-            it('uses correct prettier formatting for Kotlin file', () => {
-                // tabWidth = 4 (see generators/common/templates/.prettierrc.ejs)
-                assert.fileContent('src/main/kotlin/com/mycompany/myapp/JhipsterApp.kt', / {8}fun main(args: Array<String>)/);
-                assert.fileContent('src/main/kotlin/com/mycompany/myapp/JhipsterApp.kt', / {12}val env = runApplication/);
-            });
+            // it Should be a KTLINT check
+            // it('uses correct prettier formatting for Kotlin file', () => {
+            //     // tabWidth = 4 (see generators/common/templates/.prettierrc.ejs)
+            //     assert.fileContent('src/main/kotlin/com/mycompany/myapp/JhipsterApp.kt', / {8}fun main(args: Array<String>)/);
+            //     assert.fileContent('src/main/kotlin/com/mycompany/myapp/JhipsterApp.kt', / {12}val env = runApplication/);
+            // });
         });
 
         describe(REACT, () => {

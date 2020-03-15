@@ -1,38 +1,27 @@
-name: KHipster Generator CI
+name: KHipster Generator
 on: [push, pull_request]
-env:
-    JHI_RUN_APP: 1
-    JHI_PROTRACTOR: 0
-    JHI_JDK: 11
-    JHI_LIB_REPO: https://github.com/jhipster/jhipster.git
-    JHI_LIB_BRANCH: release
-    JHI_GEN_REPO: https://github.com/jhipster/generator-jhipster.git
-    JHI_GEN_BRANCH: v6.8.0
-    SPRING_OUTPUT_ANSI_ENABLED: ALWAYS
-    SPRING_JPA_SHOW_SQL: false
-    JHI_DISABLE_WEBPACK_LOGS: true
-    JHI_E2E_HEADLESS: true
-    JHI_SCRIPTS: $HOME/generator-jhipster/test-integration/scripts
-    KOTLIN_JHI_SCRIPTS: ${{ github.workspace }}/test-integration/scripts
-    JHI_GITHUB_CI: true
-    JHI_APP: ''
 jobs:
     kotlin-hipster:
-        name: KHipster generator unit test suite
+        name: npm test
         runs-on: ${{ matrix.os }}
         if: "!contains(github.event.head_commit.message, '[ci skip]') && !contains(github.event.head_commit.message, '[skip ci]')"
         timeout-minutes: 20
         strategy:
             fail-fast: false
             matrix:
-                node_version: [10.x, 12.x]
+                node_version: [12.16.1]
                 os: [ubuntu-latest]
         steps:
             - uses: actions/checkout@v2
             - uses: actions/setup-node@v1
               with:
                   node-version: ${{ matrix.node_version }}
+            - run: git --no-pager log -n 10 --graph --pretty='%Cred%h%Creset -%C(yellow)%d%Creset %s %Cgreen(%cr) %C(bold blue) <%an>%Creset' --abbrev-commit
+              shell: bash
             - name: Config git variables
+              env:
+                KOTLIN_JHI_SCRIPTS: ./test-integration/scripts
               run: $KOTLIN_JHI_SCRIPTS/04-git-config.sh
-            - name: Install and execute unit tests
-              run: $KOTLIN_JHI_SCRIPTS/10-install-jhipster-kotlin.sh
+              shell: bash
+            - run: npm ci
+            - run: npm test
