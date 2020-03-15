@@ -1,3 +1,10 @@
+<a name="1.6.0"></a>
+
+# [1.6.0](https://github.com/jhipster/jhipster-kotlin/compare/1.5.0...1.6.0) (2020-03-15)
+- Upgraded JHipster support to 6.8.0
+- Upgraded Kotlin support to 1.3.70
+- Updated Domain model to use `Data` class
+
 <a name="1.5.0"></a>
 # [1.5.0](https://github.com/jhipster/jhipster-kotlin/compare/1.4.0...1.5.0) (2020-03-01)
 - Upgraded JHipster support to 6.7.1
