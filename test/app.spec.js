@@ -95,8 +95,8 @@ describe('JHipster generator', () => {
             });
             it('uses correct prettier formatting for Kotlin file', () => {
                 // tabWidth = 4 (see generators/common/templates/.prettierrc.ejs)
-                assert.fileContent('src/main/kotlin/com/mycompany/myapp/JhipsterApp.kt', / {4}fun main(args: Array<String>)/);
-                assert.fileContent('src/main/kotlin/com/mycompany/myapp/JhipsterApp.kt', / {8}val env = runApplication/);
+                assert.fileContent('src/main/kotlin/com/mycompany/myapp/JhipsterApp.kt', / {8}fun main(args: Array<String>)/);
+                assert.fileContent('src/main/kotlin/com/mycompany/myapp/JhipsterApp.kt', / {12}val env = runApplication/);
             });
         });
 

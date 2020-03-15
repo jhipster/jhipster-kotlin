@@ -170,10 +170,16 @@ data class <%= asDto(entityClass) %>(
     override fun equals(other: Any?): Boolean {
         if (this === other) return true
         if (other !is <%= asDto(entityClass) %>) return false
-        if (other.id == null || id == null) return false
-
-        return id == other.id
+        <%_ if (!embedded) { _%>
+        val <%= asDto(entityInstance) %> = other as <%= asDto(entityClass) %>
+        if (<%= asDto(entityInstance) %>.id == null || id == null) {
+            return false
+        }
+        return id == <%= asDto(entityInstance) %>.id
+        <%_ } else { _%>
+        return false
+        <%_ } _%>
     }
 
-    override fun hashCode() = id.hashCode()
+    override fun hashCode() = <% if (!embedded) { %>id.hashCode()<% } else { %>31<% } %>
 }
