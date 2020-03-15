@@ -157,10 +157,7 @@ describe('JHipster generator for entity', () => {
                         'interface FooRepository : '
                     );
 
-                    assert.fileContent(
-                        `${SERVER_MAIN_SRC_DIR}com/mycompany/myapp/domain/FooXXX.kt`,
-                        /.+^class FooXXX\($.*^\) : Serializable {$.*/gms
-                    );
+                    assert.fileContent(`${SERVER_MAIN_SRC_DIR}com/mycompany/myapp/domain/FooXXX.kt`, /.+^data class FooXXX\($.*^\)$.*/gms);
                 });
             });
         });
