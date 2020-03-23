@@ -89,8 +89,9 @@ class TokenProvider(private val jHipsterProperties: JHipsterProperties) {
     }
 
     fun getAuthentication(token: String): Authentication {
-        val claims = Jwts.parser()
+        val claims = Jwts.parserBuilder()
             .setSigningKey(key)
+            .build()
             .parseClaimsJws(token)
             .body
 
@@ -104,7 +105,11 @@ class TokenProvider(private val jHipsterProperties: JHipsterProperties) {
 
     fun validateToken(authToken: String): Boolean {
         try {
-            Jwts.parser().setSigningKey(key).parseClaimsJws(authToken)
+            Jwts.parserBuilder()
+                .setSigningKey(key)
+                .build()
+                .parseClaimsJws(authToken)
+
             return true
         } catch (e: JwtException) {
             log.info("Invalid JWT token.")
