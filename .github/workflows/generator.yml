@@ -7,7 +7,7 @@ env:
     JHI_LIB_REPO: https://github.com/jhipster/jhipster.git
     JHI_LIB_BRANCH: release
     JHI_GEN_REPO: https://github.com/jhipster/generator-jhipster.git
-    JHI_GEN_BRANCH: v6.8.0
+    JHI_GEN_BRANCH: v6.9.0
     SPRING_OUTPUT_ANSI_ENABLED: ALWAYS
     SPRING_JPA_SHOW_SQL: false
     JHI_DISABLE_WEBPACK_LOGS: true
@@ -20,7 +20,12 @@ jobs:
     kotlin-hipster:
         name: KHipster generator unit test suite
         runs-on: ${{ matrix.os }}
-        if: "!contains(github.event.head_commit.message, '[ci skip]') && !contains(github.event.head_commit.message, '[skip ci]')"
+        if: >-
+            !contains(github.event.head_commit.message, '[ci skip]') &&
+            !contains(github.event.head_commit.message, '[skip ci]') &&
+            !contains(github.event.pull_request.title, '[skip ci]') &&
+            !contains(github.event.pull_request.title, '[ci skip]') &&
+            (github.event.pull_request.draft == false || !contains(github.event.pull_request.labels.*.name, 'pr: skip-ci'))
         timeout-minutes: 20
         strategy:
             fail-fast: false
