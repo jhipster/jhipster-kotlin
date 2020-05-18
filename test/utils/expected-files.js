@@ -151,7 +151,7 @@ const expectedFiles = {
 
     maven: ['pom.xml', 'mvnw', 'mvnw.cmd', '.mvn/wrapper/maven-wrapper.jar', '.mvn/wrapper/maven-wrapper.properties', 'checkstyle.xml'],
 
-    common: ['.prettierignore', '.prettierrc', 'README.md', '.gitignore', '.gitattributes', '.editorconfig'],
+    common: ['.prettierignore', '.prettierrc', 'README.md', '.gitignore', '.gitattributes', '.editorconfig', '.huskyrc', '.lintstagedrc.js',],
 
     server: [
         `${SERVER_MAIN_RES_DIR}banner.txt`,
@@ -508,7 +508,11 @@ const expectedFiles = {
         `${CLIENT_TEST_SRC_DIR}spec/app/admin/metrics/metrics.component.spec.ts`,
         `${CLIENT_TEST_SRC_DIR}spec/app/admin/metrics/metrics.service.spec.ts`,
         `${CLIENT_TEST_SRC_DIR}spec/app/core/user/account.service.spec.ts`,
+        `${CLIENT_TEST_SRC_DIR}spec/app/core/login/login-modal.service.spec.ts`,
+        `${CLIENT_TEST_SRC_DIR}spec/app/home/home.component.spec.ts`,
         `${CLIENT_TEST_SRC_DIR}spec/app/layouts/main/main.component.spec.ts`,
+        `${CLIENT_TEST_SRC_DIR}spec/app/layouts/navbar/navbar.component.spec.ts`,
+        `${CLIENT_TEST_SRC_DIR}spec/app/shared/alert/alert.component.spec.ts`,
         `${CLIENT_TEST_SRC_DIR}spec/app/shared/alert/alert-error.component.spec.ts`,
         `${CLIENT_TEST_SRC_DIR}spec/app/shared/login/login.component.spec.ts`,
         `${CLIENT_TEST_SRC_DIR}spec/helpers/mock-account.service.ts`,
@@ -517,6 +521,7 @@ const expectedFiles = {
         `${CLIENT_TEST_SRC_DIR}spec/helpers/mock-event-manager.service.ts`,
         `${CLIENT_TEST_SRC_DIR}spec/helpers/mock-language.service.ts`,
         `${CLIENT_TEST_SRC_DIR}spec/helpers/mock-login.service.ts`,
+        `${CLIENT_TEST_SRC_DIR}spec/helpers/mock-login-modal.service.ts`,
         `${CLIENT_TEST_SRC_DIR}spec/helpers/mock-route.service.ts`,
         `${CLIENT_TEST_SRC_DIR}spec/helpers/mock-state-storage.service.ts`,
         `${CLIENT_TEST_SRC_DIR}spec/helpers/spyobject.ts`,
@@ -674,13 +679,30 @@ const expectedFiles = {
         `${SERVER_TEST_SRC_DIR}com/mycompany/myapp/repository/timezone/DateTimeWrapperRepository.kt`
     ],
 
-    mysql: [`${SERVER_MAIN_SRC_DIR}com/mycompany/myapp/config/LiquibaseConfiguration.kt`, `${DOCKER_DIR}mysql.yml`],
+    mysql: [
+        `${SERVER_MAIN_SRC_DIR}com/mycompany/myapp/config/LiquibaseConfiguration.kt`, 
+        `${DOCKER_DIR}mysql.yml`,
+        `${SERVER_TEST_RES_DIR}/config/application-testcontainers.yml`
+    ],
 
-    mariadb: [`${SERVER_MAIN_SRC_DIR}com/mycompany/myapp/config/LiquibaseConfiguration.kt`, `${DOCKER_DIR}mariadb.yml`],
+    mariadb: [
+        `${SERVER_MAIN_SRC_DIR}com/mycompany/myapp/config/LiquibaseConfiguration.kt`,
+        `${DOCKER_DIR}mariadb.yml`
+        `${SERVER_TEST_RES_DIR}/config/application-testcontainers.yml`,
+        `${SERVER_TEST_RES_DIR}/testcontainers/mariadb/my.cnf`
+    ],
 
-    mssql: [`${SERVER_MAIN_SRC_DIR}com/mycompany/myapp/config/LiquibaseConfiguration.kt`, `${DOCKER_DIR}mssql.yml`],
+    mssql: [
+        `${SERVER_MAIN_SRC_DIR}com/mycompany/myapp/config/LiquibaseConfiguration.kt`, 
+        `${DOCKER_DIR}mssql.yml`,
+        `${SERVER_TEST_RES_DIR}/config/application-testcontainers.yml`
+    ],
 
-    postgresql: [`${SERVER_MAIN_SRC_DIR}com/mycompany/myapp/config/LiquibaseConfiguration.kt`, `${DOCKER_DIR}postgresql.yml`],
+    postgresql: [
+        `${SERVER_MAIN_SRC_DIR}com/mycompany/myapp/config/LiquibaseConfiguration.kt`,
+        `${DOCKER_DIR}postgresql.yml`,
+        `${SERVER_TEST_RES_DIR}/config/application-testcontainers.yml`
+    ],
 
     liquibase: [
         `${SERVER_MAIN_RES_DIR}config/liquibase/master.xml`,
@@ -723,6 +745,11 @@ const expectedFiles = {
         `${SERVER_MAIN_RES_DIR}config/neo4j/migrations/user__anonymoususer.json`,
         `${DOCKER_DIR}neo4j.yml`
     ],
+
+    couchbaseSearch: [
+        `${SERVER_MAIN_SRC_DIR}com/mycompany/myapp/repository/search/SearchCouchbaseRepository.java`,
+        `${SERVER_TEST_SRC_DIR}com/mycompany/myapp/repository/CustomN1qlCouchbaseRepositoryTest.java`,
+    ],	
 
     cassandra: [
         `${SERVER_MAIN_RES_DIR}config/cql/create-keyspace-prod.cql`,

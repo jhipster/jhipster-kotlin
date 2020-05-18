@@ -863,6 +863,55 @@ describe('JHipster generator', () => {
             shouldBeV3DockerfileCompatible('postgresql');
         });
 
+        describe('couchbase FTS', () => {
+            before(done => {
+                helpers
+                    .run('generator-jhipster/generators/app')
+                    .withOptions({
+                        'from-cli': true,
+                        skipInstall: true,
+                        skipChecks: true,
+                        blueprint: 'kotlin',
+                        'skip-ktlint-format': true
+                    })
+                    .withGenerators([
+                        [
+                            require('../generators/server'), // eslint-disable-line global-require
+                            'jhipster-kotlin:server',
+                            path.join(__dirname, '../generators/server/index.js')
+                        ]
+                    ])
+                    .withPrompts({
+                        baseName: 'jhipster',
+                        packageName: 'com.mycompany.myapp',
+                        packageFolder: 'com/mycompany/myapp',
+                        clientFramework: 'angularX',
+                        serviceDiscoveryType: false,
+                        authenticationType: 'jwt',
+                        cacheProvider: 'no',
+                        enableHibernateCache: false,
+                        databaseType: 'couchbase',
+                        devDatabaseType: 'couchbase',
+                        prodDatabaseType: 'couchbase',
+                        enableTranslation: true,
+                        nativeLanguage: 'en',
+                        languages: ['fr'],
+                        buildTool: 'maven',
+                        rememberMeKey: '5c37379956bd1242f5636c8cb322c2966ad81277',
+                        skipClient: false,
+                        skipUserManagement: false,
+                        serverSideOptions: ['searchEngine:couchbase'],
+                    })
+                    .on('end', done);
+            });
+
+             it('creates expected files with "Couchbbase FTS"', () => {
+                assert.file(expectedFiles.couchbase);
+                assert.file(expectedFiles.couchbaseSearch);
+            });
+            shouldBeV3DockerfileCompatible('couchbase');
+        });
+
         describe('no database', () => {
             before(done => {
                 helpers
@@ -2827,5 +2876,44 @@ describe('JHipster generator', () => {
                 assert.noFile(expectedFiles.consul);
             });
         });
+
+        // TODO: Add enum test
+
+        describe('regeneration from app generator', () => {
+            describe('with creation timestamp', () => {
+                before(done => {
+                    helpers
+                        .run('generator-jhipster/generators/app')
+                        .withOptions({
+                            'from-cli': true,
+                            skipInstall: true,
+                            skipChecks: true,
+                            blueprint: 'kotlin',
+                            'skip-ktlint-format': true
+                        })
+                        .withGenerators([
+                            [
+                                require('../generators/server'), // eslint-disable-line global-require
+                                'jhipster-kotlin:server',
+                                path.join(__dirname, '../generators/server/index.js')
+                            ]
+                        ])
+                        .inTmpDir(dir => {
+                            fse.copySync(path.join(__dirname, '../test/templates/default-ng2'), dir);
+                            const jhipsterFolder = path.join(dir, '.jhipster');
+                            fse.ensureDirSync(jhipsterFolder);
+                            fse.writeJsonSync(path.join(jhipsterFolder, 'Foo.json'), {});
+                        })
+                        .withOptions({ creationTimestamp: '2016-01-20', withEntities: true })
+                        .on('end', done);
+                });
+    
+                 it('creates expected default files', () => {
+                    assert.file(expectedFiles.server);
+                    assert.file(expectedFiles.serverLiquibase);
+                    assert.file(expectedFiles.clientNg2);
+                    assert.file(expectedFiles.gatling);
+                });
+            });
     });
 });
