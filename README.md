@@ -10,6 +10,8 @@
 
 ![React](https://github.com/jhipster/jhipster-kotlin/workflows/React/badge.svg)
 
+![Webflux](https://github.com/jhipster/jhipster-kotlin/workflows/Webflux/badge.svg)
+
 ![KHipster Generated Applications CI](https://github.com/jhipster/jhipster-kotlin/workflows/KHipster%20Generated%20Applications%20CI/badge.svg)
 
 # Greetings, Kotlin Hipster!
