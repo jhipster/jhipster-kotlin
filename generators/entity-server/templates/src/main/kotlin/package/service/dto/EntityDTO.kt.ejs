@@ -19,15 +19,8 @@
 package <%= packageName %>.service.dto
 
 <%_
-let importApiModelProperty = false;
-let importJsonIgnore = false;
-let importJsonIgnoreProperties = false;
-let importSet = false;
-const primaryKeyType = getPkTypeBasedOnDBAndAssociation(authenticationType, databaseType, relationships);
-const uniqueEnums = {};
+let { importApiModelProperty, importJsonIgnore, importJsonIgnoreProperties, importSet, uniqueEnums } = _processJavaEntityImports(fields, relationships);
 _%>
-<%- include ../../domain/imports -%>
-
 <%_ if (typeof javadoc != 'undefined') { _%>
 import io.swagger.annotations.ApiModel
 <%_ } if (importApiModelProperty === true) { _%>
@@ -114,7 +107,7 @@ data class <%= asDto(entityClass) %>(
             if (fieldValidateRules.includes('required')) {
                 required = true;
             } _%>
-    <%- include ../../common/field_validators -%>
+    <%- include('../../common/field_validators'); -%>
     <%_ } _%>
     <%_ if (typeof fields[idx].javadoc != 'undefined') { _%>
     @ApiModelProperty(value = "<%- formatAsApiDescription(fields[idx].javadoc) %>"<% if (required) { %>, required = true<% } %>)
@@ -135,7 +128,7 @@ data class <%= asDto(entityClass) %>(
         const relationshipFieldName = relationship.relationshipFieldName;
         const relationshipFieldNamePlural = relationship.relationshipFieldNamePlural;
         const relationshipType = relationship.relationshipType;
-        const otherEntityName = relationship.otherEntityName;
+        const otherEntityPrimaryKeyType = relationship.otherEntityPrimaryKeyType;
         const otherEntityNameCapitalized = relationship.otherEntityNameCapitalized;
         const otherEntityFieldCapitalized = relationship.otherEntityFieldCapitalized;
         const otherEntityIsEmbedded = relationship.otherEntityIsEmbedded;
@@ -157,7 +150,7 @@ data class <%= asDto(entityClass) %>(
             }
     _%>
 
-    var <%= relationshipFieldName %>Id: <% if (otherEntityName === 'user' && authenticationType === 'oauth2') { %>String<% } else { %><%= primaryKeyType %><% } %>? = null<%= comma %>
+    var <%= relationshipFieldName %>Id: <%= otherEntityPrimaryKeyType %>? = null<%= comma %>
     <%_ if (otherEntityFieldCapitalized !== 'Id' && otherEntityFieldCapitalized !== '') {
             comma = index === (mappedRels.length - 1) ?  '' : ',';
     _%>
@@ -171,15 +164,11 @@ data class <%= asDto(entityClass) %>(
         if (this === other) return true
         if (other !is <%= asDto(entityClass) %>) return false
         <%_ if (!embedded) { _%>
-        val <%= asDto(entityInstance) %> = other as <%= asDto(entityClass) %>
-        if (<%= asDto(entityInstance) %>.id == null || id == null) {
-            return false
-        }
-        return id == <%= asDto(entityInstance) %>.id
+        return id!= null && id == <%= asDto(entityInstance) %>.id
         <%_ } else { _%>
         return false
         <%_ } _%>
     }
 
-    override fun hashCode() = <% if (!embedded) { %>id.hashCode()<% } else { %>31<% } %>
+    override fun hashCode() = 31
 }

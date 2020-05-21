@@ -53,46 +53,40 @@
     }
 <% } else { %>
     <%_ if (pagination === 'no') { _%>
-    fun getAll<%= entityClassPlural %>(<% if (fieldsContainNoOwnerOneToOne) { %>@RequestParam(required = false) filter: String?<% } %><% if (fieldsContainOwnerManyToMany && fieldsContainNoOwnerOneToOne) { %>,<% } %><% if (fieldsContainOwnerManyToMany) { %>@RequestParam(required = false, defaultValue = "false") eagerload: Boolean<% }%>): MutableList<<%= instanceType %>> {<%- include('get_all_stream_template', {viaService: viaService}); -%>
-        log.debug("REST request to get all <%= entityClassPlural %>")<% if (viaService) { %>
-        return <%= entityInstance %>Service.findAll()<% } else if (dto === 'mapstruct') { %>
+    fun getAll<%= entityClassPlural %>(<% if (fieldsContainNoOwnerOneToOne) { %>@RequestParam(required = false) filter: String?<% } %><% if (fieldsContainOwnerManyToMany && fieldsContainNoOwnerOneToOne) { %>,<% } %><% if (fieldsContainOwnerManyToMany) { %>@RequestParam(required = false, defaultValue = "false") eagerload: Boolean<% }%>): <% if (reactive) { %>Mono<<% } %>MutableList<<%= instanceType %>><% if (reactive) { %>><% } %> {<%- include('get_all_stream_template', {viaService: viaService}); -%>
+        log.debug("REST request to get all <%= entityClassPlural %>")
+        <% if (viaService) { %>
+        return <%= entityInstance %>Service.findAll()<% if (reactive) { %>.collectList()<% } %>
+        <% } else if (dto === 'mapstruct') { %>
         val <%= entityInstancePlural %> = <%= entityInstance %>Repository.<% if (fieldsContainOwnerManyToMany) { %>findAllWithEagerRelationships<% } else { %>findAll<% } %>()
-        return <%= entityListToDtoListReference %>(<%= entityInstancePlural %>)<% } else { %>
-        return <%= entityInstance %>Repository.<% if (fieldsContainOwnerManyToMany) { %>findAllWithEagerRelationships<% } else { %>findAll<% } %>()<% } %>
-    <%_ } if (pagination !== 'no') { _%>
-    fun getAll<%= entityClassPlural %>(
-        pageable: Pageable<% if (reactive) { %>,
-        request: ServerHttpRequest<% } %><% if (fieldsContainNoOwnerOneToOne) { %>,
-        @RequestParam(required = false) filter: String?<% } if (fieldsContainOwnerManyToMany) { %>,
-        @RequestParam(required = false, defaultValue = "false") eagerload: Boolean<% } %>
-    ) : ResponseEntity<MutableList<<%= instanceType %>>> {<%- include('get_all_stream_template', {viaService: viaService}); -%>
-        log.debug("REST request to get a page of <%= entityClassPlural %>")
-    <%_ if (viaService) { _%>
-        <%_ if (fieldsContainOwnerManyToMany) { _%>
-        val page: Page<<%= instanceType %>> = if (eagerload) {
-            <%= entityInstance %>Service.findAllWithEagerRelationships(pageable)
-        } else {
-            <%= entityInstance %>Service.findAll(pageable)
-        }
-        val headers = PaginationUtil.generatePaginationHttpHeaders(<% if (!reactive) { %>ServletUriComponentsBuilder.fromCurrentRequest()<% } else { %>UriComponentsBuilder.fromHttpRequest(request)<% } %>, page)
+            <%_ if (!reactive) { _%>
+        return <%= entityListToDtoListReference %>(<%= entityInstancePlural %>)
+            <%_ } else { _%>
+        return <%= entityInstancePlural %>.map(<%= entityToDtoReference %>).collectList()
+            <%_ } _%>
         <%_ } else { _%>
-        val page = <%= entityInstance %>Service.findAll(pageable)
-        val headers = PaginationUtil.generatePaginationHttpHeaders(<% if (!reactive) { %>ServletUriComponentsBuilder.fromCurrentRequest()<% } else { %>UriComponentsBuilder.fromHttpRequest(request)<% } %>, page)
+        return <%= entityInstance %>Repository.<% if (fieldsContainOwnerManyToMany) { %>findAllWithEagerRelationships<% } else { %>findAll<% } %>()<% } %><% if (reactive) { %>.collectList()<% } %>
         <%_ } _%>
     <%_ } else { _%>
-        <%_ if (fieldsContainOwnerManyToMany) { _%>
+    fun getAll<%= entityClassPlural %>(pageable: Pageable<% if (reactive) { %>, request: ServerHttpRequest<% } %><% if (fieldsContainNoOwnerOneToOne) { %>, @RequestParam(required = false) filter: String<% } %><% if (fieldsContainOwnerManyToMany) { %>, @RequestParam(required = false, defaultValue = "false") eagerload: boolean<% } %>): <% if (reactive) { %>Mono<ResponseEntity<Flux<<%= instanceType %>>>><% } else { %>ResponseEntity<List<<%= instanceType %>>><% } %> {<%- include('get_all_stream_template', {viaService: viaService}); -%>
+        log.debug("REST request to get a page of <%= entityClassPlural %>")
+        <%_ if (!reactive) { _%>
+            <%_ if (fieldsContainOwnerManyToMany) { _%>
         val page: Page<<%= instanceType %>> = if (eagerload) {
-            <%= entityInstance %>Repository.findAllWithEagerRelationships(pageable)<% if (dto === 'mapstruct') {%>.map(<%= entityToDtoReference %>)<% } %>
+            <%= entityInstance %><%= viaService ? 'Service' : 'Repository' %>.findAllWithEagerRelationships(pageable)<% if (dto === 'mapstruct' && !viaService) { %>.map(<%= entityToDtoReference %>)<% } %>
         } else {
-            <%= entityInstance %>Repository.findAll(pageable)<% if (dto === 'mapstruct') { %>.map(<%= entityToDtoReference %>)<% } %>
+            <%= entityInstance %><%= viaService ? 'Service' : 'Repository' %>.findAll(pageable)<% if (dto === 'mapstruct' && !viaService) { %>.map(<%= entityToDtoReference %>)<% } %>
         }
         val headers = PaginationUtil.generatePaginationHttpHeaders(<% if (!reactive) { %>ServletUriComponentsBuilder.fromCurrentRequest()<% } else { %>UriComponentsBuilder.fromHttpRequest(request)<% } %>, page)
-        <%_ } else { _%>
-        val page = <%= entityInstance %>Repository.findAll(pageable)<% if (dto === 'mapstruct') { %>.map(<%= entityToDtoReference %>)<% } %>
-        val headers = PaginationUtil.generatePaginationHttpHeaders(<% if (!reactive) { %>ServletUriComponentsBuilder.fromCurrentRequest()<% } else { %>UriComponentsBuilder.fromHttpRequest(request)<% } %>, page)
-        <%_ } _%>
-    <%_ } _%>
+            <%_ } _%>
         return ResponseEntity.ok().headers(headers).body(page.content)
+        <%_ } else { _%>
+        return <%= entityInstance %><%= viaService ? 'Service.countAll' : 'Repository.count' %>()
+            <%# TODO Check the type here. %>
+            .map { PageImpl(listOf(), pageable, it) }
+            .map { PaginationUtil.generatePaginationHttpHeaders(UriComponentsBuilder.fromHttpRequest(request), it)) }
+            .map { ResponseEntity.ok().headers(headers).body(<%= entityInstance %><%= viaService ? 'Service.findAll' : 'Repository.findAllBy' %>(pageable)<% if (!viaService && dto === 'mapstruct') { %>.map(<%= entityToDtoReference %>)<% } %>) }
+        <%_ } _%>
     <%_ } _%>
     }
 <%_ } _%>

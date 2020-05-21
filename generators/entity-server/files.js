@@ -97,7 +97,19 @@ const serverFiles = {
         },
         {
             condition: generator =>
-                generator.reactive && ['mongodb', 'cassandra', 'couchbase'].includes(generator.databaseType) && !generator.embedded,
+                (!generator.reactive || !['mongodb', 'cassandra', 'couchbase', 'neo4j'].includes(generator.databaseType)) &&
+                !generator.embedded,
+            path: SERVER_MAIN_SRC_KOTLIN_DIR,
+            templates: [
+                {
+                    file: 'package/repository/EntityRepository.kt',
+                    renameTo: generator => `${generator.packageFolder}/repository/${generator.entityClass}Repository.kt`,
+                },
+            ],
+        },
+        {
+            condition: generator =>
+                generator.reactive && ['mongodb', 'cassandra', 'couchbase', 'neo4j'].includes(generator.databaseType) && !generator.embedded,
             path: SERVER_MAIN_SRC_KOTLIN_DIR,
             templates: [
                 {
@@ -158,8 +170,7 @@ const serverFiles = {
     ],
     test: [
         {
-            // TODO: add test for reactive
-            condition: generator => !generator.reactive && !generator.embedded,
+            condition: generator => !generator.embedded,
             path: SERVER_TEST_SRC_KOTLIN_DIR,
             templates: [
                 {
@@ -225,7 +236,7 @@ const serverFiles = {
         {
             condition: generator =>
                 generator.dto === 'mapstruct' &&
-                (generator.databaseType === 'sql' || generator.databaseType === 'mongodb' || generator.databaseType === 'couchbase'),
+                ['sql', 'mongodb', 'couchbase', 'neo4j'].includes(generator.databaseType),
             path: SERVER_TEST_SRC_KOTLIN_DIR,
             templates: [
                 {
@@ -292,18 +303,28 @@ function writeFiles() {
 
         writeEnumFiles() {
             this.fields.forEach(field => {
-                if (field.fieldIsEnum === true) {
-                    const fieldType = field.fieldType;
-                    const enumInfo = utils.buildEnumInfo(field, this.angularAppName, this.packageName, this.clientRootFolder);
-                    if (!this.skipServer) {
-                        this.template(
-                            `${SERVER_MAIN_SRC_KOTLIN_DIR}package/domain/enumeration/Enum.kt.ejs`,
-                            `${SERVER_MAIN_SRC_KOTLIN_DIR}${this.packageFolder}/domain/enumeration/${fieldType}.kt`,
-                            this,
-                            {},
-                            enumInfo
-                        );
-                    }
+                if (!field.fieldIsEnum) {
+                    return;
+                }
+                
+                const fieldType = field.fieldType;
+                const enumInfo = {
+                    ...utils.getEnumInfo(field, this.clientRootFolder),
+                    angularAppName: this.angularAppName,
+                    packageName: this.packageName,
+                };
+                // eslint-disable-next-line no-console
+                if (!this.skipServer) {
+                    const pathToTemplateFile = `${this.fetchFromInstalledJHipster(
+                        'entity-server/templates'
+                    )}/${SERVER_MAIN_SRC_KOTLIN_DIR}package/domain/enumeration/Enum.kt.ejs`;
+                    this.template(
+                        pathToTemplateFile,
+                        `${SERVER_MAIN_SRC_KOTLIN_DIR}${this.packageFolder}/domain/enumeration/${fieldType}.kt`,
+                        this,
+                        {},
+                        enumInfo
+                    );
                 }
             });
         }

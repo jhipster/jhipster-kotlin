@@ -19,26 +19,18 @@
 package <%= packageName %>.domain
 
 <%_
-let importApiModelProperty = false;
-let importJsonIgnore = false;
-let importJsonIgnoreProperties = false;
-let importSet = false;
+let { importApiModelProperty, importJsonIgnore, importJsonIgnoreProperties, importSet, uniqueEnums } = _processJavaEntityImports(fields, relationships);
 let hasDto = dto === 'mapstruct';
 let isUsingMapsId = false;
-let primaryKeyType = pkType;
 let hasTextBlob = false;
 let hasRelationship = relationships.length !== 0;
-const uniqueEnums = {};
 _%>
-<%- include imports -%>
 <%_
     for (idx in relationships) {
-        isUsingMapsId = relationships[idx].useJPADerivedIdentifier;
-        if ( isUsingMapsId === true) {
-            primaryKeyType = (relationships[idx].otherEntityName === 'user'  && authenticationType === 'oauth2') ? 'String' : pkType;
+        isUsingMapsId = relationships[idx].useJPADerivedIdentifier === true;
+        if (isUsingMapsId) {
             break;
         }
-        isUsingMapsId = false;
     }
     for (idx in fields) {
         if (prodDatabaseType === 'postgresql' && fields[idx].fieldTypeBlobContent === 'text') {
@@ -146,13 +138,9 @@ import org.springframework.data.couchbase.core.mapping.id.GenerationStrategy.UNI
 <%_ if (databaseType === 'sql') { _%>
 @Entity
 @Table(name = "<%= entityTableName %>")
-<%_     if (enableHibernateCache) {
-            if (cacheProvider === 'infinispan') { _%>
+<%_     if (enableHibernateCache) { _%>
 @Cache(usage = CacheConcurrencyStrategy.READ_WRITE)
-<%_         } else { _%>
-@Cache(usage = CacheConcurrencyStrategy.NONSTRICT_READ_WRITE)
-<%_         }
-        }
+<%_     }
 } if (!embedded) {
     if (databaseType === 'mongodb') { _%>
 @Document(collection = "<%= entityTableName %>")
@@ -208,7 +196,7 @@ for (idx in fields) {
         if (fieldValidateRules.includes('unique')) {
             unique = true;
         } _%>
-    <%- include ../common/field_validators -%>
+    <%- include('../common/field_validators'); -%>
     <%_ } _%>
     <%_ if (!hasDto && typeof fields[idx].javadoc != 'undefined') { _%>
     @ApiModelProperty(value = "<%- formatAsApiDescription(fields[idx].javadoc) %>"<% if (required) { %>, required = true<% } %>)
@@ -291,13 +279,9 @@ for (idx in fields) {
             if (databaseType === 'sql') {
     _%>
     @OneToMany(mappedBy = "<%= otherEntityRelationshipName %>")
-            <%_ if (enableHibernateCache) {
-                    if (cacheProvider === 'infinispan') { _%>
+            <%_ if (enableHibernateCache) { _%>
     @Cache(usage = CacheConcurrencyStrategy.READ_WRITE)
-                <%_ } else { _%>
-    @Cache(usage = CacheConcurrencyStrategy.NONSTRICT_READ_WRITE)
-                <%_ }
-            }
+            <%_ }
         } else if (databaseType === 'mongodb' || databaseType === 'couchbase') {
             if (databaseType === 'mongodb' && !otherEntityIsEmbedded) { _%>
     @DBRef
@@ -318,7 +302,7 @@ for (idx in fields) {
     _%>
     @ManyToOne<%_ if (relationshipRequired) { _%>(optional = false)<%_ } _%>
         <%_ if (relationshipValidate) { _%>
-    <%- include relationship_validators -%>
+    <%- include('relationship_validators'); -%>
         <%_ }
     } else if ((databaseType === 'mongodb' || databaseType === 'couchbase') && !otherEntityIsEmbedded) {
         if (databaseType === 'mongodb') { _%>
@@ -334,22 +318,18 @@ for (idx in fields) {
     @Relationship("<%= relationshipFieldName %>")
     <%_ } _%>
     <%_ if (otherEntityRelationshipNamePlural !==undefined && otherEntityRelationshipNamePlural !== '') { _%>
-    @JsonIgnoreProperties("<%= otherEntityRelationshipNamePlural %>")
+    @JsonIgnoreProperties(value = "<%= otherEntityRelationshipNamePlural %>", allowSetters = true)
     <%_ } _%>
     var <%= relationshipFieldName %>: <%= asEntity(otherEntityNameCapitalized) %>? = null<%= comma %>
 
     <%_ } else if (relationshipType === 'many-to-many') {
         if (databaseType === 'sql') { _%>
     @ManyToMany<% if (ownerSide === false) { %>(mappedBy = "<%= otherEntityRelationshipNamePlural %>")<% } %>
-        <%_ if (enableHibernateCache) {
-                if (cacheProvider === 'infinispan') { _%>
+        <%_ if (enableHibernateCache) { _%>
     @Cache(usage = CacheConcurrencyStrategy.READ_WRITE)
-            <%_ } else { _%>
-    @Cache(usage = CacheConcurrencyStrategy.NONSTRICT_READ_WRITE)
-            <%_ }
-        } if (ownerSide === true) {
+        <%_ } if (ownerSide === true) {
             if (relationshipValidate) { _%>
-    <%- include relationship_validators -%>
+    <%- include('relationship_validators'); -%>
         <%_ } _%>
     @JoinTable(name = "<%= joinTableName %>",
         joinColumns = [JoinColumn(name = "<%= getColumnName(name) %>_id", referencedColumnName = "id")],
@@ -375,7 +355,7 @@ for (idx in fields) {
             if (ownerSide) { _%>
     @OneToOne<%_ if (relationshipRequired) { _%>(optional = false)<%_ } _%>
             <%_ if (relationshipValidate) { _%>
-    <%- include relationship_validators -%>
+    <%- include('relationship_validators'); -%>
             <%_ }_%>
             <%_ if (isUsingMapsId === true) { %>
     @MapsId
@@ -404,7 +384,7 @@ for (idx in fields) {
 
     <%_ }
     } _%>
-    // jhipster-needle-entity-add-field - JHipster will add fields here, do not remove
+    // jhipster-needle-entity-add-field - JHipster will add fields here
 ) : Serializable {
 <%_ if (databaseType === 'couchbase' && !embedded) { _%>
 
@@ -463,7 +443,7 @@ for (idx in fields) {
         <%_ } _%>
     <%_ } _%>
 <%_ } _%>
-    // jhipster-needle-entity-add-getters-setters - JHipster will add getters and setters here, do not remove
+    // jhipster-needle-entity-add-getters-setters - JHipster will add getters and setters here
 
     override fun equals(other: Any?): Boolean {
         if (this === other) return true

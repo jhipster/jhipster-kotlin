@@ -22,5 +22,30 @@ package <%= packageName %>.domain.enumeration
  * The <%= enumName %> enumeration.
  */
 enum class <%= enumName %> {
+    <%_ if (withoutCustomValues) { _%>
+        <%= enumValues.map(enumValue => enumValue.name).join(', ') %>
+    <%_ } else {
+        enumValues.forEach((enumWithCustomValue, index) => {
+            if (enumWithCustomValue.name === enumWithCustomValue.value) { _%>
+        <%= enumWithCustomValue.name %><% if (index < enumValues.length - 1) { %>,<% } else { %><% } %>
+            <%_ } else { _%>
+        <%= enumWithCustomValue.name %>("<%= enumWithCustomValue.value %>")<% if (index < enumValues.length - 1) { %>,<% } else { %><% } %>
+            <%_ }
+        }); _%>
+    
+         private<% if (withCustomValues) { %> final<% } %> value: String
+    
+     <%_ if (withSomeCustomValues) { _%>
+        <%= enumName %>() {}
+    <%_ } _%>
+    
+        fun <%= enumName %>(value: String) {
+            this.value = value
+        }
+    
+        fun getValue(): String {
+            return value
+        }
+    <%_ } _%>
     <%= enumValues %>
 }

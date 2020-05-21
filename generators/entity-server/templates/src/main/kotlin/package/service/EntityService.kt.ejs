@@ -21,6 +21,9 @@ package <%= packageName %>.service
 const primaryKeyType = getPkTypeBasedOnDBAndAssociation(authenticationType, databaseType, relationships);
 const instanceType = (dto === 'mapstruct') ? asDto(entityClass) : asEntity(entityClass);
 const instanceName = (dto === 'mapstruct') ? asDto(entityInstance) : asEntity(entityInstance);
+const optionalOrMono = (reactive === true) ? 'Mono' : 'Optional';
+const listOrFlux = (reactive === true) ? 'Flux' : 'MutableList';
+const pageOrFlux = (reactive === true) ? 'Flux' : 'Page';
 _%>
 <%_ if (dto === 'mapstruct') { _%>
 import <%= packageName %>.service.dto.<%= asDto(entityClass) %>
@@ -28,15 +31,19 @@ import <%= packageName %>.service.dto.<%= asDto(entityClass) %>
 import <%= packageName %>.domain.<%= asEntity(entityClass) %>
 <%_ } _%>
 <%_ if (pagination !== 'no' || fieldsContainOwnerManyToMany === true) { _%>
-
+    <%_ if (!reactive) { _%>
 import org.springframework.data.domain.Page
+    <%_ } _%>
 import org.springframework.data.domain.Pageable
 <%_ } _%>
 <%_ if (reactiveRepositories) { _%>
 import reactor.core.publisher.Flux
+import reactor.core.publisher.Mono
 <%_ } _%>
 
+<%_ if (!reactive) { _%>
 import java.util.Optional
+<%_ } _%>
 <%_ if (databaseType === 'cassandra') { _%>
 import java.util.UUID
 <%_ } _%>
@@ -52,7 +59,7 @@ interface <%= entityClass %>Service {
      * @param <%= instanceName %> the entity to save.
      * @return the persisted entity.
      */
-    fun save(<%= instanceName %>: <%= instanceType %>): <%= instanceType %>
+    fun save(<%= instanceName %>: <%= instanceType %>): <% if (reactive) { %>Mono<<% } %><%= instanceType %><% if (reactive) { %>><% } %>
 
     /**
      * Get all the <%= entityInstancePlural %>.
@@ -60,14 +67,14 @@ interface <%= entityClass %>Service {
      * @param pageable the pagination information.<% } %>
      * @return the list of entities.
      */
-    fun findAll(<% if (pagination !== 'no') { %>pageable: Pageable<% } %>): <% if (pagination !== 'no') { %>Page<<%= instanceType %><% } else { %>MutableList<<%= instanceType %><% } %>>
+    fun findAll(<% if (pagination !== 'no') { %>pageable: Pageable<% } %>): <% if (pagination !== 'no') { %><%= pageOrFlux %><<%= instanceType %><% } else { %><%= listOrFlux %><<%= instanceType %><% } %>>
 <% for (idx in relationships) { if (relationships[idx].relationshipType === 'one-to-one' && relationships[idx].ownerSide !== true) { -%>
     /**
      * Get all the [<%= asDto(entityClass) %>] where <%= relationships[idx].relationshipNameCapitalized %> is `null`.
      *
-     * @return the list of entities.
+     * @return the {@link <%= listOrFlux %>} of entities.
      */
-    fun findAllWhere<%= relationships[idx].relationshipNameCapitalized %>IsNull(): MutableList<<%= instanceType %>>
+    fun findAllWhere<%= relationships[idx].relationshipNameCapitalized %>IsNull(): <%= listOrFlux %><<%= instanceType %>>
 <%_ } } _%>
 
     <%_ if (fieldsContainOwnerManyToMany === true) { _%>
@@ -76,31 +83,40 @@ interface <%= entityClass %>Service {
      *
      * @return the list of entities.
      */
-    fun findAllWithEagerRelationships(pageable: Pageable): Page<<%= instanceType %>>
+    fun findAllWithEagerRelationships(pageable: Pageable): <%= pageOrFlux %><<%= instanceType %>>
     <%_ } _%>
-    <%_ if (reactiveRepositories) { _%>
+    <%_ if (reactive) { _%>
+        /**
+         * Returns the number of <%= entityInstancePlural %> available.
+         *
+         */
+        fun countAll(): Mono<Long>
+        <%_ if (searchEngine === 'elasticsearch') { _%>
 
-    /**
-     * Get all the <%= entityInstancePlural %>.
-     * @return the [Flux] of entities.
-     */
-    fun findAllAsFlux(): Flux<<%= instanceType %>>
-
-    <%_ } _%>
+        /**
+        * Returns the number of <%= entityInstancePlural %> available in search repository.
+        *
+        */
+        fun searchCount(): Mono<Long>
+        <%_  } _%>
+    <%_  } _%>
     /**
      * Get the "id" <%= entityInstance %>.
      *
      * @param id the id of the entity.
      * @return the entity.
      */
-    fun findOne(id: <%= primaryKeyType %>): Optional<<%= instanceType %>>
+    fun findOne(id: <%= primaryKeyType %>): <%= optionalOrMono %><<%= instanceType %>>
 
     /**
      * Delete the "id" <%= entityInstance %>.
      *
      * @param id the id of the entity.
      */
-    fun delete(id: <%= primaryKeyType %>)<% if (searchEngine === 'elasticsearch') { %>
+    fun delete(id: <%= primaryKeyType %>)<% if (reactive) { %>: Mono<Unit> <% } %>
+    
+    
+    <% if (searchEngine === 'elasticsearch') { %>
 
     /**
      * Search for the <%= entityInstance %> corresponding to the query.
@@ -110,5 +126,5 @@ interface <%= entityClass %>Service {
      * @param pageable the pagination information.<% } %>
      * @return the list of entities.
      */
-    fun search(query: String<% if (pagination !== 'no') { %>, pageable: Pageable<% } %>): <% if (pagination !== 'no') { %>Page<<%= instanceType %><% } else { %>MutableList<<%= instanceType %><% } %>><% } %>
+    fun search(query: String<% if (pagination !== 'no') { %>, pageable: Pageable<% } %>): <% if (pagination !== 'no') { %><%= pageOrFlux %><<%= instanceType %><% } else { %><%= listOrFlux %><<%= instanceType %><% } %>><% } %>
 }
