@@ -89,7 +89,7 @@ import javax.validation.Valid
 import java.net.URI
 import java.net.URISyntaxException
 <%_ } _%>
-<%_ if (searchEngine === 'elasticsearch') { _%>
+<%_ if (searchEngine === 'elasticsearch' && !reactive) { _%>
 import java.util.stream.Collectors
 import java.util.stream.StreamSupport
 
@@ -343,7 +343,7 @@ class UserResource(
     <%_ } _%>
     }
 <%_ } _%>
-<%_ if (searchEngine === 'elasticsearch') { _%>
+<%_ if (searchEngine !== false) { _%>
 
     /**
      * `SEARCH /_search/users/:query` : search for the User corresponding to the query.
@@ -353,8 +353,16 @@ class UserResource(
      */
     @GetMapping("/_search/users/{query}")
     fun search(@PathVariable query: String) =
+    <%_ if (searchEngine === 'elasticsearch') { _%>
+        <%_ if (!reactive) { _%>
         StreamSupport
             .stream(userSearchRepository.search(queryStringQuery(query)).spliterator(), false)
             .collect(Collectors.toList())
+        <%_ } else { _%>
+        userSearchRepository.search(query).collectList()
+            <%_ } _%>
+        <%_ } else { _%>
+        userRepository.search(User.PREFIX, query)<% if (reactive) { %>.collectList()<% } %>;
+        <%_ } _%>
 <%_ } _%>
 }

@@ -57,9 +57,6 @@ import com.hazelcast.core.Hazelcast
 import com.hazelcast.core.HazelcastInstance
 
 import org.slf4j.LoggerFactory
-    <%_ if (serviceDiscoveryType === 'eureka' || serviceDiscoveryType === 'consul') { _%>
-import org.springframework.beans.factory.annotation.Autowired
-    <%_ } _%>
 <%_ } _%>
 <%_ if (cacheProvider === 'ehcache' || cacheProvider === 'caffeine') { _%>
 import org.springframework.boot.autoconfigure.cache.JCacheManagerCustomizer
@@ -73,6 +70,13 @@ import org.springframework.boot.autoconfigure.web.ServerProperties
     <%_ } _%>
 
 import org.springframework.cache.CacheManager
+<%_ } _%>
+<%_ if (cacheProvider !== 'no') { _%>
+import org.springframework.boot.info.BuildProperties
+import org.springframework.boot.info.GitProperties
+import org.springframework.cache.interceptor.KeyGenerator
+import org.springframework.beans.factory.annotation.Autowired
+import io.github.jhipster.config.cache.PrefixedKeyGenerator
 <%_ } _%>
 <%_ if (cacheProvider === 'memcached') { _%>
     <%_ if (!skipUserManagement || (authenticationType === 'oauth2' && databaseType !== 'no')) { _%>
@@ -106,6 +110,7 @@ import javax.annotation.PreDestroy
 import org.infinispan.configuration.cache.CacheMode
 import org.infinispan.configuration.cache.ConfigurationBuilder
 import org.infinispan.configuration.global.GlobalConfigurationBuilder
+import org.infinispan.jboss.marshalling.core.JBossUserMarshaller
 import org.slf4j.LoggerFactory
 import io.github.jhipster.config.JHipsterProperties
 import java.util.concurrent.TimeUnit
@@ -118,7 +123,6 @@ import org.infinispan.transaction.TransactionMode
 import org.springframework.boot.autoconfigure.orm.jpa.HibernatePropertiesCustomizer
 import java.util.stream.Stream
     <%_ if (serviceDiscoveryType === 'eureka' || serviceDiscoveryType === 'consul') { _%>
-import org.springframework.beans.factory.annotation.Autowired
 import org.infinispan.remoting.transport.jgroups.JGroupsTransport
 import org.jgroups.Channel
 import org.jgroups.JChannel
@@ -130,6 +134,7 @@ import org.jgroups.protocols.pbcast.STABLE
 import org.jgroups.stack.IpAddress
 import org.jgroups.stack.ProtocolStack
 import java.net.InetAddress
+import java.net.InetSocketAddress
 import org.springframework.beans.factory.BeanInitializationException
     <%_ } _%>
 <%_ } _%>
@@ -167,6 +172,10 @@ import io.github.jhipster.config.JHipsterProperties
 class CacheConfiguration<%_ if (cacheProvider === 'ehcache' || cacheProvider === 'caffeine') { _%>(jHipsterProperties: JHipsterProperties)<%_ } %><%_ if (cacheProvider === 'hazelcast') { %>(private val env: Environment<%_ if (serviceDiscoveryType === 'eureka' || serviceDiscoveryType === 'consul') { %>,
     private val serverProperties: ServerProperties,
     private val discoveryClient: DiscoveryClient<%_ } %>)<% } %> {
+    <%_ if (cacheProvider !== 'no') { _%>
+    private val gitProperties: GitProperties
+    private val buildProperties: BuildProperties
+    <%_ } _%>
     <%_ if (cacheProvider === 'ehcache' || cacheProvider === 'caffeine') { _%>
 
     private val jcacheConfiguration: javax.cache.configuration.Configuration<Any, Any>
@@ -412,27 +421,27 @@ class CacheConfiguration<%_ if (cacheProvider === 'ehcache' || cacheProvider ===
                 GlobalConfigurationBuilder
                     .defaultClusteredBuilder().defaultCacheName("infinispan-<%=baseName%>-cluster-cache").transport().defaultTransport()
                     .addProperty("configurationFile", jHipsterProperties.cache.infinispan.configFile)
-                    .clusterName("infinispan-<%=baseName%>-cluster").globalJmxStatistics()
+                    .clusterName("infinispan-<%=baseName%>-cluster").jmx()
                     .enabled(jHipsterProperties.cache.infinispan.isStatsEnabled)
-                    .allowDuplicateDomains(true).build()
+                    .serialization().marshaller(JBossUserMarshaller()).build()
             }
         } else if (discoveryClient.getInstances(registration..getServiceId()).size == 0) {
           return InfinispanGlobalConfigurer {
             GlobalConfigurationBuilder
                 .defaultClusteredBuilder().defaultCacheName("infinispan-<%=baseName%>-cluster-cache").transport()
                 .transport(JGroupsTransport())
-                .clusterName("infinispan-<%=baseName%>-cluster").globalJmxStatistics()
+                .clusterName("infinispan-<%=baseName%>-cluster").jmx()
                 .enabled(jHipsterProperties.cache.infinispan.isStatsEnabled)
-                .allowDuplicateDomains(true).build()
+                .serialization().marshaller(JBossUserMarshaller()).build()
           }
         } else {
           return InfinispanGlobalConfigurer {
               GlobalConfigurationBuilder
                   .defaultClusteredBuilder().defaultCacheName("infinispan-<%=baseName%>-cluster-cache").transport()
                   .transport(JGroupsTransport(getTransportChannel()))
-                  .clusterName("infinispan-<%=baseName%>-cluster").globalJmxStatistics()
+                  .clusterName("infinispan-<%=baseName%>-cluster").jmx()
                   .enabled(jHipsterProperties.cache.infinispan.isStatsEnabled)
-                  .allowDuplicateDomains(true).build()
+                  .serialization().marshaller(JBossUserMarshaller()).build()
           }
         }
         <%_ } else { _%>
@@ -440,9 +449,9 @@ class CacheConfiguration<%_ if (cacheProvider === 'ehcache' || cacheProvider ===
             GlobalConfigurationBuilder
                 .defaultClusteredBuilder().defaultCacheName("infinispan-<%=baseName%>-cluster-cache").transport().defaultTransport()
                 .addProperty("configurationFile", jHipsterProperties.cache.infinispan.configFile)
-                .clusterName("infinispan-<%=baseName%>-cluster").globalJmxStatistics()
+                .clusterName("infinispan-<%=baseName%>-cluster").jmx()
                 .enabled(jHipsterProperties.cache.infinispan.isStatsEnabled)
-                .allowDuplicateDomains(true).build()
+                .serialization().marshaller(JBossUserMarshaller()).build()
         }
         <%_ } _%>
     }
@@ -479,45 +488,45 @@ class CacheConfiguration<%_ if (cacheProvider === 'ehcache' || cacheProvider ===
             // initialize application cache
             manager.defineConfiguration("local-app-data", ConfigurationBuilder()
                 .clustering().cacheMode(CacheMode.LOCAL)
-                .jmxStatistics().enabled(cacheInfo.isStatsEnabled)
+                .statistics().enabled(cacheInfo.isStatsEnabled)
                 .memory().evictionType(EvictionType.COUNT).size(cacheInfo.local.maxEntries).expiration()
                 .lifespan(cacheInfo.local.timeToLiveSeconds, TimeUnit.SECONDS).build())
             manager.defineConfiguration("dist-app-data", ConfigurationBuilder()
                 .clustering().cacheMode(CacheMode.DIST_SYNC).hash().numOwners(cacheInfo.distributed.instanceCount)
-                .jmxStatistics().enabled(cacheInfo.isStatsEnabled)
+                .statistics().enabled(cacheInfo.isStatsEnabled)
                 .memory().evictionType(EvictionType.COUNT).size(cacheInfo.distributed.maxEntries).expiration()
                 .lifespan(cacheInfo.distributed.timeToLiveSeconds, TimeUnit.SECONDS).build())
             manager.defineConfiguration("repl-app-data", ConfigurationBuilder()
                 .clustering().cacheMode(CacheMode.REPL_SYNC)
-                .jmxStatistics().enabled(cacheInfo.isStatsEnabled)
+                .statistics().enabled(cacheInfo.isStatsEnabled)
                 .memory().evictionType(EvictionType.COUNT).size(cacheInfo.replicated.maxEntries).expiration()
                 .lifespan(cacheInfo.replicated.timeToLiveSeconds, TimeUnit.SECONDS).build())
 
             // initialize Hibernate L2 cache configuration templates
             manager.defineConfiguration("entity", ConfigurationBuilder().clustering().cacheMode(CacheMode.INVALIDATION_SYNC)
-                .jmxStatistics().enabled(cacheInfo.isStatsEnabled)
+                .statistics().enabled(cacheInfo.isStatsEnabled)
                 .locking().concurrencyLevel(1000).lockAcquisitionTimeout(15000).template(true).build())
             manager.defineConfiguration("replicated-entity", ConfigurationBuilder().clustering().cacheMode(CacheMode.REPL_SYNC)
-                .jmxStatistics().enabled(cacheInfo.isStatsEnabled)
+                .statistics().enabled(cacheInfo.isStatsEnabled)
                 .locking().concurrencyLevel(1000).lockAcquisitionTimeout(15000).template(true).build())
             manager.defineConfiguration("local-query", ConfigurationBuilder().clustering().cacheMode(CacheMode.LOCAL)
-                .jmxStatistics().enabled(cacheInfo.isStatsEnabled)
+                .statistics().enabled(cacheInfo.isStatsEnabled)
                 .locking().concurrencyLevel(1000).lockAcquisitionTimeout(15000).template(true).build())
             manager.defineConfiguration("replicated-query", ConfigurationBuilder().clustering().cacheMode(CacheMode.REPL_ASYNC)
-                .jmxStatistics().enabled(cacheInfo.isStatsEnabled)
+                .statistics().enabled(cacheInfo.isStatsEnabled)
                 .locking().concurrencyLevel(1000).lockAcquisitionTimeout(15000).template(true).build())
             manager.defineConfiguration("timestamps", ConfigurationBuilder().clustering().cacheMode(CacheMode.REPL_ASYNC)
-                .jmxStatistics().enabled(cacheInfo.isStatsEnabled)
+                .statistics().enabled(cacheInfo.isStatsEnabled)
                 .locking().concurrencyLevel(1000).lockAcquisitionTimeout(15000).template(true).build())
             manager.defineConfiguration("pending-puts", ConfigurationBuilder().clustering().cacheMode(CacheMode.LOCAL)
-                .jmxStatistics().enabled(cacheInfo.isStatsEnabled)
+                .statistics().enabled(cacheInfo.isStatsEnabled)
                 .simpleCache(true).transaction().transactionMode(TransactionMode.NON_TRANSACTIONAL).expiration().maxIdle(60000).template(true).build())
 
             <%_ if (!skipUserManagement || (authenticationType === 'oauth2' && databaseType !== 'no')) { _%>
             Stream.of(<%= packageName %>.repository.UserRepository.USERS_BY_LOGIN_CACHE, <%= packageName %>.repository.UserRepository.USERS_BY_EMAIL_CACHE)
                 .forEach { cacheName -> manager.defineConfiguration(cacheName, ConfigurationBuilder().clustering()
                     .cacheMode(CacheMode.INVALIDATION_SYNC)
-                    .jmxStatistics()
+                    .statistics()
                     .enabled(cacheInfo.isStatsEnabled())
                     .locking()
                     .concurrencyLevel(1000)
@@ -527,12 +536,10 @@ class CacheConfiguration<%_ if (cacheProvider === 'ehcache' || cacheProvider ===
             <%_ if (authenticationType === 'oauth2' && applicationType === 'microservice') { _%>
             manager.defineConfiguration("oAuth2Authentication", ConfigurationBuilder()
                 .clustering().cacheMode(CacheMode.LOCAL)
-                .jmxStatistics().enabled(cacheInfo.isStatsEnabled())
+                .statistics().enabled(cacheInfo.isStatsEnabled())
                 .memory().evictionType(EvictionType.COUNT).size(cacheInfo.getLocal().getMaxEntries()).expiration()
                 .lifespan(cacheInfo.getLocal().getTimeToLiveSeconds(), TimeUnit.SECONDS).build())
             <%_ } _%>
-
-            cacheManager = manager
         }
     }
 
@@ -560,12 +567,11 @@ class CacheConfiguration<%_ if (cacheProvider === 'ehcache' || cacheProvider ===
      * from registry and sends only unicast messages to the host list.
      */
     private fun getTransportChannel(): Channel {
-        val initialHosts = mutableListOf<<PhysicalAddress>>()
+        val initialHosts = mutableListOf<InetSocketAddress>()
         try {
             for (instance in discoveryClient.getInstances(registration.getServiceId())) {
-                val clusterMember = instance.getHost() + ":7800"
-                log.debug("Adding Infinispan cluster member {}", clusterMember)
-                initialHosts.add(IpAddress(clusterMember))
+                log.debug("Adding Infinispan cluster member ${instance.host}:7800")
+                initialHosts.add(InetSocketAddress(instance.host, 7800))
             }
             val tcp = TCP().apply {
                 setBindAddress(InetAddress.getLocalHost())
@@ -576,7 +582,7 @@ class CacheConfiguration<%_ if (cacheProvider === 'ehcache' || cacheProvider ===
             }
 
             val tcpping = TCPPING().apply {
-                initialHosts.add(IpAddress(InetAddress.getLocalHost(), 7800))
+                initialHosts.add(InetSocketAddress(instance.host, 7800))
                 setInitialHosts(initialHosts)
                 setErgonomics(false)
                 setPortRange(10)
@@ -622,12 +628,6 @@ class CacheConfiguration<%_ if (cacheProvider === 'ehcache' || cacheProvider ===
         }
     }
         <%_ } _%>
-
-    companion object {
-        // Initialize the cache in a non Spring-managed bean
-        @JvmField
-        var cacheManager: EmbeddedCacheManager? = null
-    }
 
     <%_ } _%>
     <%_ if (cacheProvider === 'memcached') { _%>
@@ -739,5 +739,22 @@ class CacheConfiguration<%_ if (cacheProvider === 'ehcache' || cacheProvider ===
         }
     }
 
+    <%_ } _%>
+
+    <%_ if (cacheProvider !== 'no') { _%>
+        @Autowired(required = false)
+        fun setGitProperties(gitProperties: GitProperties) {
+            this.gitProperties = gitProperties
+        }
+    
+        @Autowired(required = false)
+        fun setBuildProperties(buildProperties: BuildProperties) {
+            this.buildProperties = buildProperties
+        }
+    
+        @Bean
+        fun keyGenerator(): KeyGenerator {
+            return new PrefixedKeyGenerator(gitProperties, buildProperties);
+        }
     <%_ } _%>
 }

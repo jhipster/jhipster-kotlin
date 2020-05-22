@@ -18,18 +18,37 @@
 -%>
 package <%= packageName %>.repository
 
+<%_ if (searchEngine === 'couchbase') { _%>
+import com.couchbase.client.java.search.SearchQuery
+import com.couchbase.client.java.search.queries.AbstractFtsQuery
+import com.couchbase.client.java.search.queries.DocIdQuery
+import com.couchbase.client.java.search.queries.QueryStringQuery
+import com.couchbase.client.java.search.result.AsyncSearchQueryResult
+import com.couchbase.client.java.search.result.SearchQueryRow
+import <%= packageName %>.repository.search.SearchCouchbaseRepository
+<%_ } _%>
 import org.springframework.beans.factory.annotation.Autowired
 import org.springframework.data.couchbase.core.CouchbaseTemplate
 import org.springframework.data.couchbase.core.RxJavaCouchbaseOperations
 import org.springframework.data.couchbase.core.mapping.CouchbasePersistentEntity
 import org.springframework.data.couchbase.repository.query.CouchbaseEntityInformation
 import org.springframework.data.couchbase.repository.support.ReactiveN1qlCouchbaseRepository
+<%_ if (searchEngine === 'couchbase') { _%>
+import org.springframework.data.domain.Pageable
+<%_ } _%>
 import org.springframework.data.repository.util.QueryExecutionConverters
 import reactor.core.publisher.Flux
 import reactor.core.publisher.Mono
+<%_ if (searchEngine === 'couchbase') { _%>
+import rx.Observable
+import rx.RxReactiveStreams
+<%_ } _%>
 
 import java.io.Serializable
 import java.lang.reflect.Field
+<%_ if (searchEngine === 'couchbase') { _%>
+import java.util.LinkedList
+<%_ } _%>
 
 /**
  * A custom implementation of `CouchbaseRepository`.
@@ -44,7 +63,7 @@ class CustomReactiveN1qlCouchbaseRepository<T, ID extends Serializable>
 constructor(
     private val metadata: CouchbaseEntityInformation<T, String>,
     private val couchbaseOperations: RxJavaCouchbaseOperations
-) : ReactiveN1qlCouchbaseRepository<T, ID>(metadata, couchbaseOperations) {
+) : ReactiveN1qlCouchbaseRepository<T, ID>(metadata, couchbaseOperations)<%if (searchEngine === 'couchbase') { %>, SearchCouchbaseRepository<T, ID><% } %> {
 
     private val persistentEntity: CouchbasePersistentEntity<?>
 
@@ -71,6 +90,51 @@ constructor(
     }
 
     override fun <S extends T> save(entity: S): Mono<S>  = super.save(populateIdIfNecessary(entity))
+
+<%_ if (searchEngine === 'couchbase') { _%>
+
+    fun search(indexName: String, request: String, pageable: Pageable): Flux<T> {
+        val searchQuery = SearchQuery(indexName, queryString(request))
+            .limit(pageable.pageSize)
+            .skip(pageable.offset as Int)
+        return search(searchQuery)
+    }
+
+    override fun search(indexName: String, request: String): Flux<T>  {
+        val searchQuery = SearchQuery(indexName, queryString(request))
+        return search(searchQuery)
+    }
+
+    fun queryString(request: String): AbstractFtsQuery {
+        val ids = LinkedList<String>();
+        var req = request
+        req.split(" ")
+            .filter { it.indexOf("id:") == 0 }
+            .map { 
+                ids.add(it.substring(3))
+                req = req.replace(r, "").replaceAll("[ ]+", " ").trim()
+            }
+        val queryString = SearchQuery.queryString(req)
+        if (ids.size != 0) {
+            val docIdQuery = SearchQuery.docId(ids.mapToTypedArray { it as String })
+            if (!request.isEmpty) {
+                return SearchQuery.conjuncts(queryString, docIdQuery)
+            }
+            return docIdQuery
+        }
+        return queryString
+    }
+
+    @SuppressWarnings("unchecked")
+    private fun search(searchQuery: SearchQuery): Flux<T> {
+        val resultIdObservable = getCouchbaseOperations().getCouchbaseBucket().async().query(searchQuery)
+            .flatMap(AsyncSearchQueryResult::hits)
+            .map(SearchQueryRow::id)
+        return Flux.from(RxReactiveStreams.toPublisher(resultIdObservable))
+            .map { it as ID }
+            .flatMap(this::findById)
+    }
+<%_ } _%>
 
     /**
      * Add generated ID to entity if not already set.

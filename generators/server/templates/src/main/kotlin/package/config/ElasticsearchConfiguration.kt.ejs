@@ -22,25 +22,30 @@ import com.fasterxml.jackson.core.type.TypeReference
 import com.fasterxml.jackson.databind.DeserializationFeature
 import com.fasterxml.jackson.databind.ObjectMapper
 import com.fasterxml.jackson.databind.SerializationFeature
+<%_ if (!reactive) { _%>
 import com.github.vanroy.springdata.jest.JestElasticsearchTemplate
 import com.github.vanroy.springdata.jest.mapper.DefaultJestResultsMapper
 import io.searchbox.client.JestClient
+<%_ } _%>
 import org.springframework.boot.autoconfigure.data.elasticsearch.ElasticsearchProperties
 import org.springframework.boot.context.properties.EnableConfigurationProperties
 import org.springframework.context.annotation.Bean
 import org.springframework.context.annotation.Configuration
+<%_ if (!reactive) { _%>
 import org.springframework.context.annotation.Primary
 import org.springframework.data.elasticsearch.core.ElasticsearchOperations
-import org.springframework.data.elasticsearch.core.EntityMapper
 import org.springframework.data.elasticsearch.core.convert.ElasticsearchConverter
+<%_ } _%>
+import org.springframework.data.elasticsearch.core.EntityMapper
+<%_ if (databaseType === 'mongodb' || !reactive) { _%>
 import org.springframework.data.elasticsearch.core.mapping.SimpleElasticsearchMappingContext
+<%_ } _%>
 <%_ if (databaseType === 'mongodb') { _%>
 import org.springframework.data.elasticsearch.core.mapping.ElasticsearchPersistentProperty
 import org.springframework.data.elasticsearch.core.mapping.SimpleElasticsearchPersistentProperty
 import org.springframework.data.mapping.PersistentEntity
 import org.springframework.data.mapping.model.Property
 import org.springframework.data.mapping.model.SimpleTypeHolder
-import org.springframework.data.elasticsearch.core.convert.MappingElasticsearchConverter
 import org.springframework.data.elasticsearch.core.mapping.SimpleElasticsearchPersistentEntity
 <%_ } _%>
 import org.springframework.data.mapping.MappingException
@@ -54,29 +59,25 @@ class ElasticsearchConfiguration(private val mapper: ObjectMapper) {
     @Bean
     fun getEntityMapper() = CustomEntityMapper(mapper)
 
+<%_ if (databaseType === 'mongodb') { _%>
+
+    @Bean
+    fun mappingContext() = CustomElasticsearchMappingContext()
+<%_ } _%>
+<%_ if (!reactive) { _%>
     @Bean
     @Primary
     fun elasticsearchTemplate(
         jestClient: JestClient,
         elasticsearchConverter: ElasticsearchConverter,
-        <%_ if (databaseType !== 'mongodb') { _%>
-        simpleElasticsearchMappingContext: SimpleElasticsearchMappingContext,
-        <%_ } _%>
+        mappingContext: SimpleElasticsearchMappingContext,
         mapper: EntityMapper
-    ): ElasticsearchOperations {
-        <%_ if (databaseType === 'mongodb') { _%>
-        val mappingContext = CustomElasticsearchMappingContext()
-        <%_ } _%>
-        return JestElasticsearchTemplate(
-            jestClient,
-            <%_ if (databaseType === 'mongodb') { _%>
-            MappingElasticsearchConverter(mappingContext),
-            DefaultJestResultsMapper(mappingContext, mapper))
-            <%_ } else { _%>
-            elasticsearchConverter,
-            DefaultJestResultsMapper(simpleElasticsearchMappingContext, mapper))
-            <%_ } _%>
-    }
+    ) = JestElasticsearchTemplate(
+        jestClient, 
+        elasticsearchConverter, 
+        DefaultJestResultsMapper(mappingContext, entityMapper)
+    )
+<%_ } _%>
 
     inner class CustomEntityMapper(private val objectMapper: ObjectMapper) : EntityMapper {
 
@@ -113,6 +114,9 @@ class ElasticsearchConfiguration(private val mapper: ObjectMapper) {
 }
 <%_ if (databaseType === 'mongodb') { _%>
 
+/**
+* Custom mapping context in order to use the same entities for both MongoDB and Elasticsearch datasources
+*/
 internal class CustomElasticsearchMappingContext : SimpleElasticsearchMappingContext() {
 
     override fun createPersistentProperty(property: Property, owner: SimpleElasticsearchPersistentEntity<*>,

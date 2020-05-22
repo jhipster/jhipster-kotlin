@@ -75,7 +75,9 @@ class <%= upperFirstCamelCase(baseName) %>KafkaResourceIT {
     }
 
     private fun startTestcontainer() {
-        kafkaContainer = KafkaContainer("<%= KAFKA_VERSION %>")
+        // TODO: withNetwork will need to be removed soon
+        // See discussion at https://github.com/jhipster/generator-jhipster/issues/11544#issuecomment-609065206
+        kafkaContainer = KafkaContainer("<%= KAFKA_VERSION %>").withNetwork(null)
         kafkaContainer.start()
     }
 
@@ -155,7 +157,7 @@ class <%= upperFirstCamelCase(baseName) %>KafkaResourceIT {
             .exchange()
             .expectStatus().isOk()
             .expectHeader().contentTypeCompatibleWith(MediaType.TEXT_EVENT_STREAM)
-            .returnResult(String.class)
+            .returnResult(String::class)
             .getResponseBody().blockFirst(Duration.ofSeconds(10))
 
         assertThat(value).isEqualTo("value-consume")

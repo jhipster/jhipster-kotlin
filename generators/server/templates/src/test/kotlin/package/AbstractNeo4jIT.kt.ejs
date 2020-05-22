@@ -18,19 +18,29 @@
 -%>
 package <%= packageName %>
 
-import org.junit.jupiter.api.BeforeAll
+import org.junit.jupiter.api.extension.BeforeAllCallback
+import org.junit.jupiter.api.extension.ExtensionContext
+import org.springframework.test.context.DynamicPropertyRegistry
+import org.springframework.test.context.DynamicPropertySource
 import org.testcontainers.containers.Neo4jContainer
-import org.testcontainers.junit.jupiter.Container
-import org.testcontainers.junit.jupiter.Testcontainers
 
-@Testcontainers
-class AbstractNeo4jIT {
+import java.util.concurrent.atomic.AtomicBoolean
 
-    @Container
-    private val neo4jContainer = Neo4jContainer().withoutAuthentication()
+class AbstractNeo4jIT: BeforeAllCallback {
+    private val started = AtomicBoolean(false)
 
-    @BeforeAll
-    fun beforeAll() {
-        System.setProperty("org.neo4j.driver.uri", "bolt://" + neo4jContainer.getContainerIpAddress() + ":" + neo4jContainer.getMappedPort(7687))
+    @Throws(Exception::class)
+    override fun beforeAll(extensionContext: ExtensionContext) {
+        if(!started.get()) {
+            val redis = KGenericContainer("<%= DOCKER_NEO4J %>")
+                    .withExposedPorts(6379)
+            redis.start()
+            System.setProperty("org.neo4j.driver.uri", () -> neo4jContainer.getBoltUrl())
+            started.set(true)
+        }
     }
+
+
+    // Workaround for Testcointainers issue https://github.com/testcontainers/testcontainers-java/issues/318#issuecomment-290692749
+    class KGenericContainer(imageName: String) : GenericContainer<KGenericContainer>(imageName)
 }

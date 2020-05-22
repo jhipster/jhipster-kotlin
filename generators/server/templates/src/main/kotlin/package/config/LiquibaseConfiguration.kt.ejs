@@ -19,15 +19,24 @@
 package <%= packageName %>.config
 
 import io.github.jhipster.config.JHipsterConstants
+<%_ if (!reactive) { _%>
 import io.github.jhipster.config.liquibase.SpringLiquibaseUtil
+<%_ } else { _%>
 import io.github.jhipster.config.liquibase.AsyncSpringLiquibase
+<%_ } _%> 
 import liquibase.integration.spring.SpringLiquibase
 import org.slf4j.LoggerFactory
 import org.springframework.beans.factory.ObjectProvider
 import org.springframework.beans.factory.annotation.Qualifier
+<%_ if (!reactive) { _%>
 import org.springframework.boot.autoconfigure.jdbc.DataSourceProperties
+<%_ } _%>
 import org.springframework.boot.autoconfigure.liquibase.LiquibaseDataSource
 import org.springframework.boot.autoconfigure.liquibase.LiquibaseProperties
+<%_ if (reactive) { _%>
+import org.springframework.boot.autoconfigure.r2dbc.R2dbcProperties
+import org.springframework.boot.jdbc.DataSourceBuilder
+<%_ } _%>
 import org.springframework.context.annotation.Bean
 import org.springframework.context.annotation.Configuration
 import org.springframework.core.env.Environment
@@ -35,6 +44,9 @@ import org.springframework.core.env.Profiles
 
 import javax.sql.DataSource
 import java.util.concurrent.Executor
+<%_ if (reactive) { _%>
+import java.util.function.Supplier
+<%_ } _%>
 
 @Configuration
 class LiquibaseConfiguration(private val env: Environment) {
@@ -44,14 +56,19 @@ class LiquibaseConfiguration(private val env: Environment) {
     @Bean
     fun liquibase(
         @Qualifier("taskExecutor") executor: Executor,
+        <%_ if (!reactive) { _%>
         @LiquibaseDataSource liquibaseDataSource: ObjectProvider<DataSource>,
+        <%_ } _%>
         liquibaseProperties: LiquibaseProperties,
+        <%_ if (!reactive) { _%>
         dataSource: ObjectProvider<DataSource>,
-        dataSourceProperties: DataSourceProperties
+        <%_ } _%>
+        dataSourceProperties:  <% if (!reactive) { %>DataSourceProperties<% } else { %>R2dbcProperties<% } %>
     ) =
+       
         // If you don't want Liquibase to start asynchronously, substitute by this:
         // SpringLiquibaseUtil.createSpringLiquibase(liquibaseDataSource.ifAvailable, liquibaseProperties, dataSource.ifUnique, dataSourceProperties);
-        SpringLiquibaseUtil.createAsyncSpringLiquibase(env, executor, liquibaseDataSource.ifAvailable, liquibaseProperties, dataSource.ifUnique, dataSourceProperties).apply {
+        <% if (!reactive) { %>SpringLiquibaseUtil.<% } %>createAsyncSpringLiquibase(env, executor, liquibaseDataSource.ifAvailable, liquibaseProperties, dataSource.ifUnique, dataSourceProperties).apply {
             changeLog = "classpath:config/liquibase/master.xml"
             contexts = liquibaseProperties.contexts
             defaultSchema = liquibaseProperties.defaultSchema
@@ -72,4 +89,25 @@ class LiquibaseConfiguration(private val env: Environment) {
                 log.debug("Configuring Liquibase")
             }
         }
+
+        <%_ if (reactive) { _%>
+        fun createAsyncSpringLiquibase(env: Environment, executor: Executor,
+                liquibaseProperties: LiquibaseProperties, dataSourceProperties: R2dbcProperties): SpringLiquibase {
+            val liquibase = AsyncSpringLiquibase(executor, env)
+            liquibase.setDataSource(createNewDataSource(liquibaseProperties, dataSourceProperties))
+            return liquibase
+        }
+    
+        fun createNewDataSource(liquibaseProperties: LiquibaseProperties, dataSourceProperties: R2dbcProperties): DataSource {
+            val user = getProperty(liquibaseProperties::getUser, dataSourceProperties::determineUsername)
+            val password = getProperty(liquibaseProperties::getPassword, dataSourceProperties::determinePassword)
+            return DataSourceBuilder.create()
+                .url(liquibaseProperties.getUrl())
+                .username(user)
+                .password(password)
+                .build()
+        }
+    
+        fun getProperty(property: Supplier<String>, defaultValue: Supplier<String>) = property.get() != null ? property.get() : defaultValue.get()
+        <%_ } _%>
 }

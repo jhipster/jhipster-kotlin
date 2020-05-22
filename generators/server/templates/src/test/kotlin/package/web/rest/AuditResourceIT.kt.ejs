@@ -25,27 +25,22 @@ import <%= packageName %>.RedisTestContainerExtension
 <%_ if (databaseType === 'neo4j') { _%>
 import <%= packageName %>.AbstractNeo4jIT
 <%_ } _%>
-<%_ if (reactive) { _%>
-import <%= packageName %>.config.ReactivePageableHandlerMethodArgumentResolver
-<%_ } _%>
 <%_ if (authenticationType === 'oauth2') { _%>
 import <%= packageName %>.config.TestSecurityConfiguration
 <%_ } _%>
-import io.github.jhipster.config.JHipsterProperties
-import <%= packageName %>.config.audit.AuditEventConverter
 import <%= packageName %>.domain.PersistentAuditEvent
 import <%= packageName %>.repository.PersistenceAuditEventRepository
 import <%= packageName %>.security.ADMIN
 
-import <%= packageName %>.service.AuditEventService
 import org.junit.jupiter.api.BeforeEach
 import org.junit.jupiter.api.Test
 <%_ if (cacheProvider === 'redis') { _%>
 import org.junit.jupiter.api.extension.ExtendWith
 <%_ } _%>
-import org.mockito.MockitoAnnotations
+<%_ if (databaseType === 'neo4j') { _%>
+import org.junit.jupiter.api.extension.ExtendWith
+<%_ } _%>
 import org.springframework.beans.factory.annotation.Autowired
-import org.springframework.beans.factory.annotation.Qualifier
 <%_ if (!reactive) { _%>
 import org.springframework.boot.test.autoconfigure.web.servlet.AutoConfigureMockMvc
 <%_ } else { _%>
@@ -55,10 +50,6 @@ import org.springframework.boot.test.context.SpringBootTest
 <%_ if (!reactive) { _%>
 import org.springframework.data.web.PageableHandlerMethodArgumentResolver
 <%_ } _%>
-<%_ if (reactive) { _%>
-import org.springframework.format.datetime.standard.DateTimeFormatterRegistrar
-<%_ } _%>
-import org.springframework.format.support.FormattingConversionService
 import org.springframework.http.MediaType
 import org.springframework.security.test.context.support.WithMockUser
 <%_ if (!reactive) { _%>
@@ -70,7 +61,7 @@ import org.springframework.test.web.servlet.setup.MockMvcBuilders
 <%_ if (reactive) { _%>
 import org.springframework.test.web.reactive.server.WebTestClient
 <%_ } _%>
-<%_ if (databaseType === 'sql') { _%>
+<%_ if (databaseType === 'sql' && !reactive) { _%>
 import org.springframework.transaction.annotation.Transactional
 <%_ } _%>
 
@@ -111,7 +102,10 @@ private const val SECONDS_PER_DAY = (60 * 60 * 24).toLong()
 <%_ if (cacheProvider === 'redis') { _%>
 @ExtendWith(RedisTestContainerExtension::class)
 <%_ } _%>
-class AuditResourceIT <% if (databaseType === 'neo4j') { %>: AbstractNeo4jIT() <% } %>{
+<%_ if (databaseType === 'neo4j') { _%>
+@ExtendWith(AbstractNeo4jIT::class)
+<%_ } _%>
+class AuditResourceIT {
 
     @Autowired
     private lateinit var auditEventRepository: PersistenceAuditEventRepository
@@ -242,9 +236,6 @@ class AuditResourceIT <% if (databaseType === 'neo4j') { %>: AbstractNeo4jIT() <
     }
 
     @Test
-    <%_ if (databaseType === 'sql') { _%>
-    @Transactional
-    <%_ } _%>
     <% if (!reactive) { %>@Throws(Exception::class)<% } %>
     fun testPersistentAuditEventEquals() {
         equalsVerifier(PersistentAuditEvent::class)

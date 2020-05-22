@@ -19,9 +19,9 @@
 package <%= packageName %>.config
 
 import com.couchbase.client.java.Cluster
-import com.couchbase.client.java.bucket.BucketType
-import com.couchbase.client.java.cluster.DefaultBucketSettings
+import com.couchbase.client.java.CouchbaseCluster
 import com.couchbase.client.java.env.CouchbaseEnvironment
+import com.couchbase.client.java.env.DefaultCouchbaseEnvironment
 import org.assertj.core.util.Lists
 import org.springframework.boot.autoconfigure.couchbase.CouchbaseProperties
 import org.springframework.context.annotation.Bean
@@ -29,6 +29,7 @@ import org.springframework.context.annotation.Configuration
 import org.springframework.data.couchbase.config.AbstractCouchbaseConfiguration
 import org.springframework.data.couchbase.config.BeanNames
 import org.springframework.data.couchbase.config.CouchbaseConfigurer
+import org.testcontainers.couchbase.BucketDefinition
 import org.testcontainers.couchbase.CouchbaseContainer
 import javax.annotation.PostConstruct
 
@@ -38,6 +39,8 @@ class DatabaseConfigurationIT(
 ) : AbstractCouchbaseConfiguration() {
 
     private lateinit var couchbaseContainer: CouchbaseContainer
+    private lateinit var couchbaseEnvironment: CouchbaseEnvironment
+    private lateinit var couchbaseCluster: CouchbaseCluster
 
     init {
         couchbaseContainer = CouchbaseContainer("<%= DOCKER_COUCHBASE %>")
@@ -53,10 +56,10 @@ class DatabaseConfigurationIT(
     }
 
     @Bean(destroyMethod = "", name = [BeanNames.COUCHBASE_ENV])
-    override fun couchbaseEnvironment(): CouchbaseEnvironment = couchbaseContainer.couchbaseEnvironment
+    override fun couchbaseEnvironment(): CouchbaseEnvironment = couchbaseEnvironment
 
     @Throws(Exception::class)
-    override fun couchbaseCluster(): Cluster = couchbaseContainer.couchbaseCluster
+    override fun couchbaseCluster(): CouchbaseCluster = couchbaseCluster
 
     override fun getBootstrapHosts(): List<String> = Lists.newArrayList(couchbaseContainer.containerIpAddress)
 
@@ -65,4 +68,32 @@ class DatabaseConfigurationIT(
     override fun getBucketPassword(): String = couchbaseProperties.bucket.password
 
     override fun couchbaseConfigurer(): CouchbaseConfigurer = this
+
+    private fun getCouchbaseContainer(): CouchbaseContainer {
+        if (couchbaseContainer == null) {
+            couchbaseContainer = CouchbaseContainer("<%= DOCKER_COUCHBASE %>")
+                .withBucket(BucketDefinition(getBucketName()).withQuota(100))
+                .withCredentials(getUsername(), getBucketPassword())
+            couchbaseContainer.start()
+        }
+        return couchbaseContainer
+    }
+
+    private fun getCouchbaseEnvironment(): CouchbaseEnvironment {
+        if (couchbaseEnvironment == null) {
+            couchbaseEnvironment = DefaultCouchbaseEnvironment
+                .builder()
+                .bootstrapCarrierDirectPort(getCouchbaseContainer().getBootstrapCarrierDirectPort())
+                .bootstrapHttpDirectPort(getCouchbaseContainer().getBootstrapHttpDirectPort())
+                .build()
+        }
+        return couchbaseEnvironment
+    }
+
+    private fun getCouchbaseCluster():  CouchbaseCluster {
+        if (couchbaseCluster == null) {
+            couchbaseCluster = CouchbaseCluster.create(couchbaseEnvironment(), getCouchbaseContainer().getContainerIpAddress())
+        }
+        return couchbaseCluster
+    }
 }

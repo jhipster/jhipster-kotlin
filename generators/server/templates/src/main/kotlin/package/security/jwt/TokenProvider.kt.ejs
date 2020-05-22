@@ -36,6 +36,9 @@ import io.jsonwebtoken.JwtException
 import io.jsonwebtoken.Jwts
 import io.jsonwebtoken.SignatureAlgorithm
 import io.jsonwebtoken.io.Decoders
+<%_ if (reactive) { _%>
+import io.jsonwebtoken.jackson.io.JacksonSerializer
+<%_ } _%>
 import io.jsonwebtoken.security.Keys
 
 private const val AUTHORITIES_KEY = "auth"
@@ -85,6 +88,9 @@ class TokenProvider(private val jHipsterProperties: JHipsterProperties) {
             .claim(AUTHORITIES_KEY, authorities)
             .signWith(key, SignatureAlgorithm.HS512)
             .setExpiration(validity)
+            <%_ if (reactive) { _%>
+            .serializeToJsonWith(JacksonSerializer())
+            <%_ } _%>
             .compact()
     }
 

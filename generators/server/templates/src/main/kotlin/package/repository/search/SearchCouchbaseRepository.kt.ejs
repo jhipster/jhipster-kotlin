@@ -4,7 +4,7 @@
  This file is part of the JHipster project, see https://www.jhipster.tech/
  for more information.
 
- Licensed under the Apache License, Version 2.0 (the "License");
+ Licensed under the Apache License, Version 2.0 (the "License")
  you may not use this file except in compliance with the License.
  You may obtain a copy of the License at
 
@@ -16,17 +16,22 @@
  See the License for the specific language governing permissions and
  limitations under the License.
 -%>
-package <%= packageName %>.cucumber
+package <%= packageName %>.repository.search
 
-import org.junit.runner.RunWith
-
-<%_ if (databaseType === 'cassandra') { _%>
-import <%= packageName %>.AbstractCassandraTest
+<%_ if (!reactive) { _%>
+import org.springframework.data.domain.Page
 <%_ } _%>
-import io.cucumber.junit.CucumberOptions
-import io.cucumber.junit.Cucumber
+import org.springframework.data.domain.Pageable
+<%_ if (reactive) { _%>
+import reactor.core.publisher.Flux
+<%_ } _%>
 
-@RunWith(Cucumber::class)
-@CucumberOptions(plugin = ["pretty"], features = ["src/test/features"])
-<% if (databaseType === 'neo4j') { %>@ExtendWith(AbstractNeo4jIT) <% } %>
-class CucumberIT <% if (databaseType === 'cassandra') { %>: AbstractCassandraTest()<% } %><% if (databaseType === 'neo4j') { %> :AbstractNeo4jIT() <% } %>
+/**
+ * Full Text Search Couchbase repository.
+ */
+interface SearchCouchbaseRepository<T, ID> {
+
+    fun <T> search(indexName: String, request: String, pageable: Pageable): <% if (reactive) { %>Flux<% } else { %>Page<% } %>
+
+    <T> search(indexName: String, request: String): <% if (reactive) { %>Flux<% } else { %>MutableList<% } %>
+}
