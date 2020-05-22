@@ -430,6 +430,17 @@ const serverFiles = {
                 },
             ],
         },
+        {
+            condition: generator => !!generator.enableSwaggerCodegen,
+            path: SERVER_MAIN_KOTLIN_SRC_DIR,
+            templates: [
+                {
+                    file: 'package/config/OpenApiConfiguration.kt',
+                    renameTo: generator => `${generator.javaDir}config/OpenApiConfiguration.kt`,
+                    useBluePrint: true,
+                },
+            ],
+        },
     ],
     serverJavaGateway: [
         {
@@ -761,6 +772,19 @@ const serverFiles = {
         },
         {
             condition: generator =>
+                (!generator.reactive && generator.applicationType === 'gateway' && !generator.serviceDiscoveryType) ||
+                generator.authenticationType === 'uaa',
+            path: SERVER_MAIN_KOTLIN_SRC_DIR,
+            templates: [
+                {
+                    file: 'package/config/RestTemplateConfiguration.kt',
+                    renameTo: generator => `${generator.javaDir}config/RestTemplateConfiguration.kt`,
+                    useBluePrint: true,
+                },
+            ],
+        },
+        {
+            condition: generator =>
                 !(
                     generator.applicationType !== 'microservice' &&
                     !(
@@ -858,7 +882,19 @@ const serverFiles = {
             ],
         },
         {
-            condition: generator => !generator.skipUserManagement || ['sql', 'mongodb', 'couchbase'].includes(generator.databaseType),
+            condition: generator => !generator.reactive,
+            path: SERVER_MAIN_KOTLIN_SRC_DIR,
+            templates: [
+                {
+                    file: 'package/config/StaticResourcesWebConfiguration.kt',
+                    renameTo: generator => `${generator.javaDir}config/StaticResourcesWebConfiguration.kt`,
+                    useBluePrint: true,
+                },
+            ],
+        },
+        {
+            condition: generator => 
+                !generator.skipUserManagement || ['sql', 'mongodb', 'couchbase', 'neo4j'].includes(generator.databaseType),
             path: SERVER_MAIN_KOTLIN_SRC_DIR,
             templates: [
                 {
@@ -869,18 +905,12 @@ const serverFiles = {
             ],
         },
         {
-            // TODO: remove when supported by spring-data
             condition: generator => generator.reactive,
             path: SERVER_MAIN_KOTLIN_SRC_DIR,
             templates: [
                 {
-                    file: 'package/config/ReactivePageableHandlerMethodArgumentResolver.kt',
-                    renameTo: generator => `${generator.javaDir}config/ReactivePageableHandlerMethodArgumentResolver.kt`,
-                    useBluePrint: true,
-                },
-                {
-                    file: 'package/config/ReactiveSortHandlerMethodArgumentResolver.kt',
-                    renameTo: generator => `${generator.javaDir}config/ReactiveSortHandlerMethodArgumentResolver.kt`,
+                    file: 'package/config/ReactorConfiguration.kt',
+                    renameTo: generator => `${generator.javaDir}config/ReactorConfiguration.kt`,
                     useBluePrint: true,
                 },
             ],
@@ -968,6 +998,28 @@ const serverFiles = {
                 {
                     file: 'package/repository/CustomN1qlCouchbaseRepository.kt',
                     renameTo: generator => `${generator.javaDir}repository/CustomN1qlCouchbaseRepository.kt`,
+                    useBluePrint: true,
+                },
+            ],
+        },
+        {
+            condition: generator => generator.searchEngine === 'couchbase',
+            path: SERVER_MAIN_KOTLIN_SRC_DIR,
+            templates: [
+                {
+                    file: 'package/repository/search/SearchCouchbaseRepository.kt',
+                    renameTo: generator => `${generator.javaDir}repository/search/SearchCouchbaseRepository.kt`,
+                    useBluePrint: true,
+                },
+            ],
+        },
+        {
+            condition: generator => generator.searchEngine === 'couchbase',
+            path: SERVER_TEST_SRC_KOTLIN_DIR,
+            templates: [
+                {
+                    file: 'package/repository/CustomN1qlCouchbaseRepositoryTest.kt',
+                    renameTo: generator => `${generator.testDir}repository/CustomN1qlCouchbaseRepositoryTest.kt`,
                     useBluePrint: true,
                 },
             ],
@@ -1287,7 +1339,7 @@ const serverFiles = {
             ],
         },
         {
-            condition: generator => generator.databaseType === 'sql',
+            condition: generator => generator.databaseType === 'sql' && !generator.reactive,
             path: SERVER_TEST_SRC_KOTLIN_DIR,
             templates: [
                 {
@@ -1312,10 +1364,25 @@ const serverFiles = {
             templates: ['config/application.yml', 'logback.xml'],
         },
         {
+            condition: generator => generator.databaseType === 'sql' && !generator.reactive,
+            path: SERVER_TEST_RES_DIR,
+            templates: ['config/application-testcontainers.yml'],
+        },
+        {
+            condition: generator => generator.prodDatabaseType === 'mariadb' && !generator.reactive,
+            path: SERVER_TEST_RES_DIR,
+            templates: [{ file: 'testcontainers/mariadb/my.cnf', method: 'copy', noEjs: true }],
+        },
+        {
             // TODO : add these tests to reactive
             condition: generator => !generator.reactive,
             path: SERVER_TEST_SRC_KOTLIN_DIR,
             templates: [
+                {
+                    file: 'package/config/StaticResourcesWebConfigurerTest.kt',
+                    renameTo: generator => `${generator.testDir}config/StaticResourcesWebConfigurerTest.kt`,
+                    useBluePrint: true,
+                },
                 {
                     file: 'package/config/WebConfigurerTest.kt',
                     renameTo: generator => `${generator.testDir}config/WebConfigurerTest.kt`,
@@ -1633,7 +1700,7 @@ const serverFiles = {
         },
         {
             condition: generator =>
-                generator.authenticationType === 'oauth2' && ['sql', 'mongodb', 'couchbase'].includes(generator.databaseType),
+            generator.authenticationType === 'oauth2' && ['sql', 'mongodb', 'couchbase', 'neo4j'].includes(generator.databaseType),
             path: SERVER_MAIN_KOTLIN_SRC_DIR,
             templates: [
                 {
@@ -1662,7 +1729,7 @@ const serverFiles = {
             condition: generator =>
                 !generator.reactive &&
                 generator.authenticationType === 'oauth2' &&
-                ['sql', 'mongodb', 'couchbase'].includes(generator.databaseType),
+                ['sql', 'mongodb', 'couchbase', 'neo4j'].includes(generator.databaseType),
             path: SERVER_MAIN_KOTLIN_SRC_DIR,
             templates: [
                 {
@@ -1676,7 +1743,7 @@ const serverFiles = {
             condition: generator =>
                 !generator.reactive &&
                 generator.authenticationType === 'oauth2' &&
-                ['sql', 'mongodb', 'couchbase'].includes(generator.databaseType),
+                ['sql', 'mongodb', 'couchbase', 'neo4j'].includes(generator.databaseType),
             path: SERVER_TEST_SRC_KOTLIN_DIR,
             templates: [
                 {
@@ -1688,7 +1755,7 @@ const serverFiles = {
         },
         {
             condition: generator =>
-                generator.authenticationType === 'oauth2' && ['sql', 'mongodb', 'couchbase'].includes(generator.databaseType),
+            generator.authenticationType === 'oauth2' && ['sql', 'mongodb', 'couchbase', 'neo4j'].includes(generator.databaseType),
             path: SERVER_TEST_SRC_KOTLIN_DIR,
             templates: [
                 {
@@ -1741,7 +1808,7 @@ const serverFiles = {
         },
         {
             condition: generator =>
-                !generator.reactive && !generator.skipUserManagement && ['sql', 'mongodb', 'couchbase'].includes(generator.databaseType),
+                !generator.reactive && !generator.skipUserManagement && ['sql', 'mongodb', 'couchbase', 'neo4j'].includes(generator.databaseType),
             path: SERVER_MAIN_KOTLIN_SRC_DIR,
             templates: [
                 {
@@ -1868,7 +1935,7 @@ const serverFiles = {
         },
         {
             // TODO : add tests for reactive
-            condition: generator => !generator.skipUserManagement && ['sql', 'mongodb', 'couchbase'].includes(generator.databaseType),
+            condition: generator => !generator.skipUserManagement && ['sql', 'mongodb', 'couchbase', 'neo4j'].includes(generator.databaseType),
             path: SERVER_TEST_SRC_KOTLIN_DIR,
             templates: [
                 {
@@ -1885,7 +1952,7 @@ const serverFiles = {
         },
         {
             condition: generator =>
-                !generator.reactive && !generator.skipUserManagement && ['sql', 'mongodb', 'couchbase'].includes(generator.databaseType),
+                !generator.reactive && !generator.skipUserManagement && ['sql', 'mongodb', 'couchbase', 'neo4j'].includes(generator.databaseType),
             path: SERVER_TEST_SRC_KOTLIN_DIR,
             templates: [
                 {
