@@ -48,9 +48,9 @@ const serverFiles = {
                 {
                     file: 'package/domain/Entity.kt',
                     renameTo: generator => `${generator.packageFolder}/domain/${generator.asEntity(generator.entityClass)}.kt`,
-                    useBluePrint: true
-                }
-            ]
+                    useBluePrint: true,
+                },
+            ],
         },
         {
             condition: generator => !generator.embedded,
@@ -59,14 +59,14 @@ const serverFiles = {
                 {
                     file: 'package/repository/EntityRepository.kt',
                     renameTo: generator => `${generator.packageFolder}/repository/${generator.entityClass}Repository.kt`,
-                    useBluePrint: true
+                    useBluePrint: true,
                 },
                 {
                     file: 'package/web/rest/EntityResource.kt',
                     renameTo: generator => `${generator.packageFolder}/web/rest/${generator.entityClass}Resource.kt`,
-                    useBluePrint: true
-                }
-            ]
+                    useBluePrint: true,
+                },
+            ],
         },
         {
             condition: generator => generator.jpaMetamodelFiltering,
@@ -75,14 +75,14 @@ const serverFiles = {
                 {
                     file: 'package/service/dto/EntityCriteria.kt',
                     renameTo: generator => `${generator.packageFolder}/service/dto/${generator.entityClass}Criteria.kt`,
-                    useBluePrint: true
+                    useBluePrint: true,
                 },
                 {
                     file: 'package/service/EntityQueryService.kt',
                     renameTo: generator => `${generator.packageFolder}/service/${generator.entityClass}QueryService.kt`,
-                    useBluePrint: true
-                }
-            ]
+                    useBluePrint: true,
+                },
+            ],
         },
         {
             condition: generator => generator.searchEngine === 'elasticsearch',
@@ -91,9 +91,9 @@ const serverFiles = {
                 {
                     file: 'package/repository/search/EntitySearchRepository.kt',
                     renameTo: generator => `${generator.packageFolder}/repository/search/${generator.entityClass}SearchRepository.kt`,
-                    useBluePrint: true
-                }
-            ]
+                    useBluePrint: true,
+                },
+            ],
         },
         {
             condition: generator =>
@@ -109,15 +109,17 @@ const serverFiles = {
         },
         {
             condition: generator =>
-                generator.reactive && ['mongodb', 'cassandra', 'couchbase', 'neo4j'].includes(generator.databaseType) && !generator.embedded,
+                generator.reactive &&
+                ['mongodb', 'cassandra', 'couchbase', 'neo4j'].includes(generator.databaseType) &&
+                !generator.embedded,
             path: SERVER_MAIN_SRC_KOTLIN_DIR,
             templates: [
                 {
                     file: 'package/repository/reactive/EntityReactiveRepository.kt',
                     renameTo: generator => `${generator.packageFolder}/repository/reactive/${generator.entityClass}ReactiveRepository.kt`,
-                    useBluePrint: true
-                }
-            ]
+                    useBluePrint: true,
+                },
+            ],
         },
         {
             condition: generator => generator.service === 'serviceImpl' && !generator.embedded,
@@ -126,14 +128,14 @@ const serverFiles = {
                 {
                     file: 'package/service/EntityService.kt',
                     renameTo: generator => `${generator.packageFolder}/service/${generator.entityClass}Service.kt`,
-                    useBluePrint: true
+                    useBluePrint: true,
                 },
                 {
                     file: 'package/service/impl/EntityServiceImpl.kt',
                     renameTo: generator => `${generator.packageFolder}/service/impl/${generator.entityClass}ServiceImpl.kt`,
-                    useBluePrint: true
-                }
-            ]
+                    useBluePrint: true,
+                },
+            ],
         },
         {
             condition: generator => generator.service === 'serviceClass' && !generator.embedded,
@@ -142,9 +144,9 @@ const serverFiles = {
                 {
                     file: 'package/service/impl/EntityServiceImpl.kt',
                     renameTo: generator => `${generator.packageFolder}/service/${generator.entityClass}Service.kt`,
-                    useBluePrint: true
-                }
-            ]
+                    useBluePrint: true,
+                },
+            ],
         },
         {
             condition: generator => generator.dto === 'mapstruct',
@@ -153,20 +155,20 @@ const serverFiles = {
                 {
                     file: 'package/service/dto/EntityDTO.kt',
                     renameTo: generator => `${generator.packageFolder}/service/dto/${generator.asDto(generator.entityClass)}.kt`,
-                    useBluePrint: true
+                    useBluePrint: true,
                 },
                 {
                     file: 'package/service/mapper/BaseEntityMapper.kt',
                     renameTo: generator => `${generator.packageFolder}/service/mapper/EntityMapper.kt`,
-                    useBluePrint: true
+                    useBluePrint: true,
                 },
                 {
                     file: 'package/service/mapper/EntityMapper.kt',
                     renameTo: generator => `${generator.packageFolder}/service/mapper/${generator.entityClass}Mapper.kt`,
-                    useBluePrint: true
-                }
-            ]
-        }
+                    useBluePrint: true,
+                },
+            ],
+        },
     ],
     test: [
         {
@@ -181,13 +183,13 @@ const serverFiles = {
                             _,
                             chalkRed: chalk.red,
                             fs,
-                            SERVER_TEST_SRC_KOTLIN_DIR
-                        }
+                            SERVER_TEST_SRC_KOTLIN_DIR,
+                        },
                     },
                     renameTo: generator => `${generator.packageFolder}/web/rest/${generator.entityClass}ResourceIT.kt`,
-                    useBluePrint: true
-                }
-            ]
+                    useBluePrint: true,
+                },
+            ],
         },
         {
             condition: generator => generator.searchEngine === 'elasticsearch',
@@ -197,9 +199,9 @@ const serverFiles = {
                     file: 'package/repository/search/EntitySearchRepositoryMockConfiguration.kt',
                     renameTo: generator =>
                         `${generator.packageFolder}/repository/search/${generator.entityClass}SearchRepositoryMockConfiguration.kt`,
-                    useBluePrint: true
-                }
-            ]
+                    useBluePrint: true,
+                },
+            ],
         },
         {
             condition: generator => generator.gatlingTests,
@@ -208,9 +210,9 @@ const serverFiles = {
                 {
                     file: 'gatling/user-files/simulations/EntityGatlingTest.scala',
                     options: { interpolate: INTERPOLATE_REGEX },
-                    renameTo: generator => `gatling/user-files/simulations/${generator.entityClass}GatlingTest.scala`
-                }
-            ]
+                    renameTo: generator => `gatling/user-files/simulations/${generator.entityClass}GatlingTest.scala`,
+                },
+            ],
         },
         {
             path: SERVER_TEST_SRC_KOTLIN_DIR,
@@ -218,9 +220,9 @@ const serverFiles = {
                 {
                     file: 'package/domain/EntityTest.kt',
                     renameTo: generator => `${generator.packageFolder}/domain/${generator.entityClass}Test.kt`,
-                    useBluePrint: true
-                }
-            ]
+                    useBluePrint: true,
+                },
+            ],
         },
         {
             condition: generator => generator.dto === 'mapstruct',
@@ -229,29 +231,28 @@ const serverFiles = {
                 {
                     file: 'package/service/dto/EntityDTOTest.kt',
                     renameTo: generator => `${generator.packageFolder}/service/dto/${generator.asDto(generator.entityClass)}Test.kt`,
-                    useBluePrint: true
-                }
-            ]
+                    useBluePrint: true,
+                },
+            ],
         },
         {
             condition: generator =>
-                generator.dto === 'mapstruct' &&
-                ['sql', 'mongodb', 'couchbase', 'neo4j'].includes(generator.databaseType),
+                generator.dto === 'mapstruct' && ['sql', 'mongodb', 'couchbase', 'neo4j'].includes(generator.databaseType),
             path: SERVER_TEST_SRC_KOTLIN_DIR,
             templates: [
                 {
                     file: 'package/service/mapper/EntityMapperTest.kt',
                     renameTo: generator => `${generator.packageFolder}/service/mapper/${generator.entityClass}MapperTest.kt`,
-                    useBluePrint: true
-                }
-            ]
-        }
-    ]
+                    useBluePrint: true,
+                },
+            ],
+        },
+    ],
 };
 
 module.exports = {
     writeFiles,
-    serverFiles
+    serverFiles,
 };
 
 function writeFiles() {
@@ -306,7 +307,7 @@ function writeFiles() {
                 if (!field.fieldIsEnum) {
                     return;
                 }
-                
+
                 const fieldType = field.fieldType;
                 const enumInfo = {
                     ...utils.getEnumInfo(field, this.clientRootFolder),
@@ -327,6 +328,6 @@ function writeFiles() {
                     );
                 }
             });
-        }
+        },
     };
 }

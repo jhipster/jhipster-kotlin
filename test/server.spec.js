@@ -15,14 +15,14 @@ describe('JHipster server generator', () => {
                     skipInstall: true,
                     blueprint: 'kotlin',
                     skipChecks: true,
-                    'skip-ktlint-format': true
+                    'skip-ktlint-format': true,
                 })
                 .withGenerators([
                     [
                         require('../generators/server'), // eslint-disable-line global-require
                         'jhipster-kotlin:server',
-                        path.join(__dirname, '../generators/server/index.js')
-                    ]
+                        path.join(__dirname, '../generators/server/index.js'),
+                    ],
                 ])
                 .withPrompts({
                     baseName: 'jhipster',
@@ -40,7 +40,7 @@ describe('JHipster server generator', () => {
                     languages: ['fr'],
                     buildTool: 'maven',
                     rememberMeKey: '5c37379956bd1242f5636c8cb322c2966ad81277',
-                    serverSideOptions: []
+                    serverSideOptions: [],
                 })
                 .on('end', done);
         });
@@ -60,7 +60,7 @@ describe('JHipster server generator', () => {
                         enableTranslation: true,
                         serviceDiscoveryType: false,
                         authenticationType: 'jwt',
-                        testFrameworks: []
+                        testFrameworks: [],
                     },
                     null,
                     ['package.json']
@@ -78,14 +78,14 @@ describe('JHipster server generator', () => {
                     skipInstall: true,
                     blueprint: 'kotlin',
                     skipChecks: true,
-                    'skip-ktlint-format': true
+                    'skip-ktlint-format': true,
                 })
                 .withGenerators([
                     [
                         require('../generators/server/index.js'), // eslint-disable-line global-require
                         'jhipster-kotlin:server',
-                        path.join(__dirname, '../generators/server/index.js')
-                    ]
+                        path.join(__dirname, '../generators/server/index.js'),
+                    ],
                 ])
                 .withPrompts({
                     baseName: 'jhipster',
@@ -103,7 +103,7 @@ describe('JHipster server generator', () => {
                     languages: ['fr'],
                     buildTool: 'maven',
                     rememberMeKey: '5c37379956bd1242f5636c8cb322c2966ad81277',
-                    serverSideOptions: []
+                    serverSideOptions: [],
                 })
                 .on('end', done);
         });
@@ -123,7 +123,7 @@ describe('JHipster server generator', () => {
                         enableTranslation: true,
                         serviceDiscoveryType: false,
                         authenticationType: 'jwt',
-                        testFrameworks: []
+                        testFrameworks: [],
                     },
                     null,
                     ['package.json']

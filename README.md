@@ -24,23 +24,20 @@ This project adds Kotlin to the JHipster application 😎. It is based on JHipst
 ## 🚀 How to get started
 
 Install the package with `npm install -g generator-jhipster-kotlin`
+
 1. Make sure you have `yo` installed with `npm install -g yo`
 2. Install the package with `npm install -g generator-jhipster-kotlin`
 3. Generate the application with `khipster`
 
 ## 🚦 What we have now
 
-✅ General App generation
-    - `khipster`
+✅ General App generation - `khipster`
 
-✅ Spring Controller
-    - `khipster spring-controller <controller-name>`
+✅ Spring Controller - `khipster spring-controller <controller-name>`
 
-✅ Spring Service
-    - `khipster spring-service <service-name>`
+✅ Spring Service - `khipster spring-service <service-name>`
 
-✅ Entity generation
-    - `khipster entity <entity-name>`
+✅ Entity generation - `khipster entity <entity-name>`
 
 ## ❤️ for community
 

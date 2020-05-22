@@ -41,7 +41,7 @@ module.exports = class extends ServerGenerator {
         this.option('skip-ktlint-format', {
             desc: 'Indicates to skip formatting using ktlint',
             type: Boolean,
-            defaults: false
+            defaults: false,
         });
 
         // This sets up options for this sub generator and is being reused from JHipster
@@ -54,7 +54,7 @@ module.exports = class extends ServerGenerator {
             setupConstants() {
                 this.MOCKITO_KOTLIN_VERSION = kotlinConstants.MOCKITO_KOTLIN_VERSION;
                 this.DETEKT_CONFIG_FILE = kotlinConstants.DETEKT_CONFIG_FILE;
-            }
+            },
         };
         return Object.assign(phaseFromJHipster, myCustomPhaseSteps);
     }
@@ -106,7 +106,7 @@ module.exports = class extends ServerGenerator {
                         this.warning('Something went wrong while running ktlint formatter...');
                     }
                 }
-            }
+            },
         };
         return Object.assign(phaseFromJHipster, myCustomPhaseSteps);
     }

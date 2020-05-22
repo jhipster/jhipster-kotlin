@@ -34,7 +34,7 @@ Fix / Code / Document and create a pull request 💯
 
 ### Regular Contributor Guidelines
 
- These are some of the guidelines that we would like you to follow if you are a regular contributor to the project
+These are some of the guidelines that we would like you to follow if you are a regular contributor to the project
 or joined the [JHipster team](https://www.jhipster.tech/team/).
 
 -   We recommend not committing directly to master, but always submit changes through PRs.

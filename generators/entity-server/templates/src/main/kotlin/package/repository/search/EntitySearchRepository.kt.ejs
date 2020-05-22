@@ -34,15 +34,16 @@ import reactor.core.publisher.Flux
 <%_ if (primaryKeyType === 'UUID') { _%>
 
 import java.util.UUID
+<%_ } _%>
 <%_ if (reactive) { _%>
 
-import static org.elasticsearch.index.query.QueryBuilders.queryStringQuery
+import org.elasticsearch.index.query.QueryBuilders.queryStringQuery
 <%_ } _%>
 
 /**
  * Spring Data Elasticsearch repository for the [<%= asEntity(entityClass) %>] entity.
  */
-interface <%=entityClass%>SearchRepository :  <% if (reactive) {%>Reactive<% } %>ElasticsearchRepository<<%= asEntity(entityClass) %>, <% if (databaseType === 'sql') { %><%=primaryKeyType%>><% if (reactive) {%>, <%= entityClass %>SearchRepositoryInternal<% } %>{}
+interface <%=entityClass%>SearchRepository :  <% if (reactive) {%>Reactive<% } %>ElasticsearchRepository<<%= asEntity(entityClass) %>, <%=primaryKeyType%>><% if (reactive) {%>, <%= entityClass %>SearchRepositoryInternal<% } %>{}
 <%_ if (reactive) { _%>
 interface <%= entityClass %>SearchRepositoryInternal {
      fun search(query: String<% if (pagination !== 'no') { %>, pageable: Pageable<% } %>): Flux<<%= entityClass %>> 

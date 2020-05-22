@@ -1,72 +1,81 @@
 <a name="1.6.0"></a>
 
 # [1.6.0](https://github.com/jhipster/jhipster-kotlin/compare/1.5.0...1.6.0) (2020-03-15)
-- Upgraded JHipster support to 6.8.0
-- Upgraded Kotlin support to 1.3.70
-- Updated Domain model to use `Data` class
+
+-   Upgraded JHipster support to 6.8.0
+-   Upgraded Kotlin support to 1.3.70
+-   Updated Domain model to use `Data` class
 
 <a name="1.5.0"></a>
+
 # [1.5.0](https://github.com/jhipster/jhipster-kotlin/compare/1.4.0...1.5.0) (2020-03-01)
-- Upgraded JHipster support to 6.7.1
-    - Changelog for 6.7.1 [here](https://www.jhipster.tech/2020/02/12/jhipster-release-6.7.1.html) 
-    - Changelog for 6.7.0 [here](https://www.jhipster.tech/2020/02/06/jhipster-release-6.7.0.html)
-- Reactive Support ✨
-- Show KHipster banner when running KHipster command
+
+-   Upgraded JHipster support to 6.7.1
+    -   Changelog for 6.7.1 [here](https://www.jhipster.tech/2020/02/12/jhipster-release-6.7.1.html)
+    -   Changelog for 6.7.0 [here](https://www.jhipster.tech/2020/02/06/jhipster-release-6.7.0.html)
+-   Reactive Support ✨
+-   Show KHipster banner when running KHipster command
 
 <a name="1.4.0"></a>
+
 # [1.4.0](https://github.com/jhipster/jhipster-kotlin/compare/1.3.0...1.4.0) (2019-12-31)
-- Upgraded JHipster support to 6.6.0 
-    - Changelog for 6.6.0 [here](https://www.jhipster.tech/2019/12/22/jhipster-release-6.6.0.html) 
-    - Changelog for 6.5.1 [here](https://www.jhipster.tech/2019/11/19/jhipster-release-6.5.1.html)
-    - Changelog for 6.5.0 [here](https://www.jhipster.tech/2019/11/10/jhipster-release-6.5.0.html)
-- Changed CI to use only Azure and GitHub CI
-- Fixed CacheConfiguration errors
+
+-   Upgraded JHipster support to 6.6.0
+    -   Changelog for 6.6.0 [here](https://www.jhipster.tech/2019/12/22/jhipster-release-6.6.0.html)
+    -   Changelog for 6.5.1 [here](https://www.jhipster.tech/2019/11/19/jhipster-release-6.5.1.html)
+    -   Changelog for 6.5.0 [here](https://www.jhipster.tech/2019/11/10/jhipster-release-6.5.0.html)
+-   Changed CI to use only Azure and GitHub CI
+-   Fixed CacheConfiguration errors
 
 <a name="1.3.0"></a>
+
 # [1.3.0](https://github.com/jhipster/jhipster-kotlin/compare/1.2.0...1.3.0) (2019-10-22)
-- Upgraded JHipster support to 6.4.1
+
+-   Upgraded JHipster support to 6.4.1
 
 <a name="1.2.0"></a>
 
 # [1.2.0](https://github.com/jhipster/jhipster-kotlin/compare/1.1.0...1.2.0) (2019-10-06)
-- ⚠️️️️️️️ Fixed [security issue](https://nvd.nist.gov/vuln/detail/CVE-2019-16303)  ⚠️️️️️️️
-- Upgraded JHipster support to 6.3.1
-- Upgraded Kotlin support to 1.3.50
-- Upgraded Mockito support to 2.2.0
-- Upgraded Detekt support to 1.1.0
-- Upgraded ktlint-maven-plugin to 1.2.2
-- Upgraded ktlint-gradle to 9.0.0
-- Updated Readme and Contributing instructions
+
+-   ⚠️️️️️️️ Fixed [security issue](https://nvd.nist.gov/vuln/detail/CVE-2019-16303) ⚠️️️️️️️
+-   Upgraded JHipster support to 6.3.1
+-   Upgraded Kotlin support to 1.3.50
+-   Upgraded Mockito support to 2.2.0
+-   Upgraded Detekt support to 1.1.0
+-   Upgraded ktlint-maven-plugin to 1.2.2
+-   Upgraded ktlint-gradle to 9.0.0
+-   Updated Readme and Contributing instructions
 
 <a name="1.1.0"></a>
 
 # [1.1.0](https://github.com/jhipster/jhipster-kotlin/compare/1.0.0...1.1.0) (2019-08-15)
-- Upgraded JHipster support to 6.2.0
-- Upgraded Kotlin support to 1.3.41
-- Upgraded Detekt support to 1.0.0-RC16
-- Upgraded ktlint-maven-plugin to 1.2.0
-- Upgraded ktlint-gradle to 8.2.0
+
+-   Upgraded JHipster support to 6.2.0
+-   Upgraded Kotlin support to 1.3.41
+-   Upgraded Detekt support to 1.0.0-RC16
+-   Upgraded ktlint-maven-plugin to 1.2.0
+-   Upgraded ktlint-gradle to 8.2.0
 
 <a name="1.0.0"></a>
 
 # [1.0.0](https://github.com/jhipster/jhipster-kotlin/compare/0.8.1...1.0.0) (2019-06-27)
-- 🎉🎉 Well we did it!!! Thanks to everyone contributed and anyone using. 🎉🎉
-- ✨✨ A brand new logo for KHipster ✨✨
-- Upgraded JHipster support to 6.1.2
-- Upgraded Ktlint support to 0.33.0
-- Updated Detekt support to 1.0.0-RC15
-- Updated Kotlin support to 1.3.40
-- Use the real Kotlin advantages
-    - moving functions top-level
-    - Use `==` instead of `Object.equals`
-    - Replace `@SuppressWarnings` with `@Suppress`
 
+-   🎉🎉 Well we did it!!! Thanks to everyone contributed and anyone using. 🎉🎉
+-   ✨✨ A brand new logo for KHipster ✨✨
+-   Upgraded JHipster support to 6.1.2
+-   Upgraded Ktlint support to 0.33.0
+-   Updated Detekt support to 1.0.0-RC15
+-   Updated Kotlin support to 1.3.40
+-   Use the real Kotlin advantages
+    -   moving functions top-level
+    -   Use `==` instead of `Object.equals`
+    -   Replace `@SuppressWarnings` with `@Suppress`
 
 <a name="0.8.1"></a>
 
 # [0.8.1](https://github.com/jhipster/jhipster-kotlin/compare/0.8.0...0.8.1) (2019-05-19)
 
--  Fixed duplicate invocation of `khipster`
+-   Fixed duplicate invocation of `khipster`
 
 <a name="0.8.0"></a>
 

@@ -1162,7 +1162,6 @@ class AccountResourceIT <% if (databaseType === 'cassandra') { %>: AbstractCassa
         <%_ } _%>
 
         val updatedUser = userRepository.findOne<% if (databaseType === 'sql') { %>WithAuthorities<% } %>ByLogin(user.getLogin())<%_ if (!reactive) { _%>.orElse(null)<% } else { %>.block()<% } %>
-        assertNotNull(updatedUser)<% } %>
         assertThat(updatedUser.firstName).isEqualTo(userDTO.firstName)
         assertThat(updatedUser.lastName).isEqualTo(userDTO.lastName)
         assertThat(updatedUser.email).isEqualTo(userDTO.email)
@@ -1293,8 +1292,7 @@ class AccountResourceIT <% if (databaseType === 'cassandra') { %>: AbstractCassa
             .expectStatus().isBadRequest
         <%_ } _%>
 
-        val updatedUser = userRepository.findOneByLogin("save-existing-email")<%_ if (!reactive) { _%>.orElse(null)<% } else { %>.block()
-        assertNotNull(updatedUser)<% } %>
+        val updatedUser = userRepository.findOneByLogin("save-existing-email")<%_ if (!reactive) { _%>.orElse(null)<% } else { %>.block()<% } %>
         assertThat(updatedUser.email).isEqualTo("save-existing-email@example.com")
     }
 
@@ -1718,7 +1716,7 @@ class AccountResourceIT <% if (databaseType === 'cassandra') { %>: AbstractCassa
         <%_ if (!reactive) { _%>
         restAccountMockMvc.perform(
             post("/api/account/reset-password/init")
-                .content("password-reset-upper-case@EXAMPLE.COM")
+                .content("password-reset@EXAMPLE.COM")
                 <%_ if (testsNeedCsrf) { _%>
                 .with(csrf())<%_ } _%>
         )

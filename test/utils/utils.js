@@ -19,7 +19,7 @@ module.exports = {
     revertTempDir,
     copyBlueprint,
     copyFakeBlueprint,
-    lnYeoman
+    lnYeoman,
 };
 
 function getFilesForOptions(files, options, prefix, excludeFiles) {
@@ -74,7 +74,7 @@ function testInTempDir(cb, keepInTestDir) {
     return cwd;
 }
 
- function revertTempDir(cwd) {
+function revertTempDir(cwd) {
     process.chdir(cwd);
     /* eslint-disable-next-line no-console */
     console.log(`current cwd: ${process.cwd()}`);

@@ -28,14 +28,14 @@ describe('JHipster generator', () => {
                         skipChecks: true,
                         jhiPrefix: 'test',
                         blueprint: 'kotlin',
-                        'skip-ktlint-format': true
+                        'skip-ktlint-format': true,
                     })
                     .withGenerators([
                         [
                             require('../generators/server'), // eslint-disable-line global-require
                             'jhipster-kotlin:server',
-                            path.join(__dirname, '../generators/server/index.js')
-                        ]
+                            path.join(__dirname, '../generators/server/index.js'),
+                        ],
                     ])
                     .withPrompts({
                         baseName: 'jhipster',
@@ -56,7 +56,7 @@ describe('JHipster generator', () => {
                         rememberMeKey: '5c37379956bd1242f5636c8cb322c2966ad81277',
                         skipClient: false,
                         skipUserManagement: false,
-                        serverSideOptions: []
+                        serverSideOptions: [],
                     })
                     .on('end', done);
             });
@@ -75,7 +75,7 @@ describe('JHipster generator', () => {
                         enableTranslation: true,
                         serviceDiscoveryType: false,
                         authenticationType: 'jwt',
-                        testFrameworks: []
+                        testFrameworks: [],
                     })
                 );
             });
@@ -112,14 +112,14 @@ describe('JHipster generator', () => {
                         jhiPrefix: 'test',
                         experimental: true,
                         blueprint: 'kotlin',
-                        'skip-ktlint-format': true
+                        'skip-ktlint-format': true,
                     })
                     .withGenerators([
                         [
                             require('../generators/server'), // eslint-disable-line global-require
                             'jhipster-kotlin:server',
-                            path.join(__dirname, '../generators/server/index.js')
-                        ]
+                            path.join(__dirname, '../generators/server/index.js'),
+                        ],
                     ])
                     .withPrompts({
                         baseName: 'jhipster',
@@ -140,7 +140,7 @@ describe('JHipster generator', () => {
                         rememberMeKey: '5c37379956bd1242f5636c8cb322c2966ad81277',
                         skipClient: false,
                         skipUserManagement: false,
-                        serverSideOptions: []
+                        serverSideOptions: [],
                     })
                     .on('end', done);
             });
@@ -159,7 +159,7 @@ describe('JHipster generator', () => {
                         enableTranslation: true,
                         serviceDiscoveryType: false,
                         authenticationType: 'jwt',
-                        testFrameworks: []
+                        testFrameworks: [],
                     })
                 );
             });
@@ -183,14 +183,14 @@ describe('JHipster generator', () => {
                         skipChecks: true,
                         npm: true,
                         blueprint: 'kotlin',
-                        'skip-ktlint-format': true
+                        'skip-ktlint-format': true,
                     })
                     .withGenerators([
                         [
                             require('../generators/server'), // eslint-disable-line global-require
                             'jhipster-kotlin:server',
-                            path.join(__dirname, '../generators/server/index.js')
-                        ]
+                            path.join(__dirname, '../generators/server/index.js'),
+                        ],
                     ])
                     .withPrompts({
                         baseName: 'jhipster',
@@ -211,7 +211,7 @@ describe('JHipster generator', () => {
                         rememberMeKey: '5c37379956bd1242f5636c8cb322c2966ad81277',
                         skipClient: false,
                         skipUserManagement: false,
-                        serverSideOptions: []
+                        serverSideOptions: [],
                     })
                     .on('end', done);
             });
@@ -230,7 +230,7 @@ describe('JHipster generator', () => {
                         enableTranslation: true,
                         serviceDiscoveryType: false,
                         authenticationType: 'jwt',
-                        testFrameworks: []
+                        testFrameworks: [],
                     })
                 );
             });
@@ -251,14 +251,14 @@ describe('JHipster generator', () => {
                         skipInstall: true,
                         skipChecks: true,
                         blueprint: 'kotlin',
-                        'skip-ktlint-format': true
+                        'skip-ktlint-format': true,
                     })
                     .withGenerators([
                         [
                             require('../generators/server'), // eslint-disable-line global-require
                             'jhipster-kotlin:server',
-                            path.join(__dirname, '../generators/server/index.js')
-                        ]
+                            path.join(__dirname, '../generators/server/index.js'),
+                        ],
                     ])
                     .withPrompts({
                         baseName: 'jhipster',
@@ -277,7 +277,7 @@ describe('JHipster generator', () => {
                         languages: ['fr'],
                         buildTool: 'gradle',
                         rememberMeKey: '5c37379956bd1242f5636c8cb322c2966ad81277',
-                        serverSideOptions: []
+                        serverSideOptions: [],
                     })
                     .on('end', done);
             });
@@ -296,7 +296,7 @@ describe('JHipster generator', () => {
                         enableTranslation: true,
                         serviceDiscoveryType: false,
                         authenticationType: 'jwt',
-                        testFrameworks: []
+                        testFrameworks: [],
                     })
                 );
             });
@@ -311,14 +311,14 @@ describe('JHipster generator', () => {
                         skipInstall: true,
                         skipChecks: true,
                         jhiPrefix: 'test',
-                        blueprint: 'kotlin'
+                        blueprint: 'kotlin',
                     })
                     .withGenerators([
                         [
                             require('../generators/server'), // eslint-disable-line global-require
                             'jhipster-kotlin:server',
-                            path.join(__dirname, '../generators/server/index.js')
-                        ]
+                            path.join(__dirname, '../generators/server/index.js'),
+                        ],
                     ])
                     .withPrompts({
                         baseName: 'jhipster',
@@ -340,7 +340,7 @@ describe('JHipster generator', () => {
                         rememberMeKey: '5c37379956bd1242f5636c8cb322c2966ad81277',
                         skipClient: false,
                         skipUserManagement: false,
-                        serverSideOptions: []
+                        serverSideOptions: [],
                     })
                     .on('end', done);
             });
@@ -360,7 +360,7 @@ describe('JHipster generator', () => {
                         enableTranslation: true,
                         serviceDiscoveryType: false,
                         authenticationType: 'jwt',
-                        testFrameworks: []
+                        testFrameworks: [],
                     })
                 );
             });
@@ -388,14 +388,14 @@ describe('JHipster generator', () => {
                         'from-cli': true,
                         skipInstall: true,
                         skipChecks: true,
-                        blueprint: 'kotlin'
+                        blueprint: 'kotlin',
                     })
                     .withGenerators([
                         [
                             require('../generators/server'), // eslint-disable-line global-require
                             'jhipster-kotlin:server',
-                            path.join(__dirname, '../generators/server/index.js')
-                        ]
+                            path.join(__dirname, '../generators/server/index.js'),
+                        ],
                     ])
                     .withPrompts({
                         baseName: 'jhipster',
@@ -414,7 +414,7 @@ describe('JHipster generator', () => {
                         languages: ['fr'],
                         buildTool: 'gradle',
                         rememberMeKey: '5c37379956bd1242f5636c8cb322c2966ad81277',
-                        serverSideOptions: []
+                        serverSideOptions: [],
                     })
                     .on('end', done);
             });
@@ -433,7 +433,7 @@ describe('JHipster generator', () => {
                         enableTranslation: true,
                         serviceDiscoveryType: false,
                         authenticationType: 'jwt',
-                        testFrameworks: []
+                        testFrameworks: [],
                     })
                 );
             });
@@ -450,14 +450,14 @@ describe('JHipster generator', () => {
                         skipInstall: true,
                         skipChecks: true,
                         blueprint: 'kotlin',
-                        'skip-ktlint-format': true
+                        'skip-ktlint-format': true,
                     })
                     .withGenerators([
                         [
                             require('../generators/server'), // eslint-disable-line global-require
                             'jhipster-kotlin:server',
-                            path.join(__dirname, '../generators/server/index.js')
-                        ]
+                            path.join(__dirname, '../generators/server/index.js'),
+                        ],
                     ])
                     .withPrompts({
                         baseName: 'jhipster',
@@ -478,7 +478,7 @@ describe('JHipster generator', () => {
                         rememberMeKey: '5c37379956bd1242f5636c8cb322c2966ad81277',
                         skipClient: false,
                         skipUserManagement: false,
-                        serverSideOptions: []
+                        serverSideOptions: [],
                     })
                     .on('end', done);
             });
@@ -497,7 +497,7 @@ describe('JHipster generator', () => {
                         enableTranslation: true,
                         serviceDiscoveryType: false,
                         authenticationType: 'jwt',
-                        testFrameworks: []
+                        testFrameworks: [],
                     })
                 );
             });
@@ -513,14 +513,14 @@ describe('JHipster generator', () => {
                         skipInstall: true,
                         skipChecks: true,
                         blueprint: 'kotlin',
-                        'skip-ktlint-format': true
+                        'skip-ktlint-format': true,
                     })
                     .withGenerators([
                         [
                             require('../generators/server'), // eslint-disable-line global-require
                             'jhipster-kotlin:server',
-                            path.join(__dirname, '../generators/server/index.js')
-                        ]
+                            path.join(__dirname, '../generators/server/index.js'),
+                        ],
                     ])
                     .withPrompts({
                         baseName: 'jhipster',
@@ -541,7 +541,7 @@ describe('JHipster generator', () => {
                         rememberMeKey: '5c37379956bd1242f5636c8cb322c2966ad81277',
                         skipClient: false,
                         skipUserManagement: false,
-                        serverSideOptions: []
+                        serverSideOptions: [],
                     })
                     .on('end', done);
             });
@@ -565,14 +565,14 @@ describe('JHipster generator', () => {
                         skipInstall: true,
                         skipChecks: true,
                         blueprint: 'kotlin',
-                        'skip-ktlint-format': true
+                        'skip-ktlint-format': true,
                     })
                     .withGenerators([
                         [
                             require('../generators/server'), // eslint-disable-line global-require
                             'jhipster-kotlin:server',
-                            path.join(__dirname, '../generators/server/index.js')
-                        ]
+                            path.join(__dirname, '../generators/server/index.js'),
+                        ],
                     ])
                     .withPrompts({
                         baseName: 'jhipster',
@@ -593,7 +593,7 @@ describe('JHipster generator', () => {
                         rememberMeKey: '5c37379956bd1242f5636c8cb322c2966ad81277',
                         skipClient: false,
                         skipUserManagement: false,
-                        serverSideOptions: []
+                        serverSideOptions: [],
                     })
                     .on('end', done);
             });
@@ -617,14 +617,14 @@ describe('JHipster generator', () => {
                         skipInstall: true,
                         skipChecks: true,
                         blueprint: 'kotlin',
-                        'skip-ktlint-format': true
+                        'skip-ktlint-format': true,
                     })
                     .withGenerators([
                         [
                             require('../generators/server'), // eslint-disable-line global-require
                             'jhipster-kotlin:server',
-                            path.join(__dirname, '../generators/server/index.js')
-                        ]
+                            path.join(__dirname, '../generators/server/index.js'),
+                        ],
                     ])
                     .withPrompts({
                         baseName: 'jhipster',
@@ -645,7 +645,7 @@ describe('JHipster generator', () => {
                         rememberMeKey: '5c37379956bd1242f5636c8cb322c2966ad81277',
                         skipClient: false,
                         skipUserManagement: false,
-                        serverSideOptions: []
+                        serverSideOptions: [],
                     })
                     .on('end', done);
             });
@@ -669,14 +669,14 @@ describe('JHipster generator', () => {
                         skipInstall: true,
                         skipChecks: true,
                         blueprint: 'kotlin',
-                        'skip-ktlint-format': true
+                        'skip-ktlint-format': true,
                     })
                     .withGenerators([
                         [
                             require('../generators/server'), // eslint-disable-line global-require
                             'jhipster-kotlin:server',
-                            path.join(__dirname, '../generators/server/index.js')
-                        ]
+                            path.join(__dirname, '../generators/server/index.js'),
+                        ],
                     ])
                     .withPrompts({
                         baseName: 'jhipster',
@@ -697,7 +697,7 @@ describe('JHipster generator', () => {
                         rememberMeKey: '5c37379956bd1242f5636c8cb322c2966ad81277',
                         skipClient: false,
                         skipUserManagement: false,
-                        serverSideOptions: []
+                        serverSideOptions: [],
                     })
                     .on('end', done);
             });
@@ -723,14 +723,14 @@ describe('JHipster generator', () => {
                         skipInstall: true,
                         skipChecks: true,
                         blueprint: 'kotlin',
-                        'skip-ktlint-format': true
+                        'skip-ktlint-format': true,
                     })
                     .withGenerators([
                         [
                             require('../generators/server'), // eslint-disable-line global-require
                             'jhipster-kotlin:server',
-                            path.join(__dirname, '../generators/server/index.js')
-                        ]
+                            path.join(__dirname, '../generators/server/index.js'),
+                        ],
                     ])
                     .withPrompts({
                         baseName: 'jhipster',
@@ -751,7 +751,7 @@ describe('JHipster generator', () => {
                         rememberMeKey: '5c37379956bd1242f5636c8cb322c2966ad81277',
                         skipClient: false,
                         skipUserManagement: false,
-                        serverSideOptions: []
+                        serverSideOptions: [],
                     })
                     .on('end', done);
             });
@@ -775,14 +775,14 @@ describe('JHipster generator', () => {
                         skipInstall: true,
                         skipChecks: true,
                         blueprint: 'kotlin',
-                        'skip-ktlint-format': true
+                        'skip-ktlint-format': true,
                     })
                     .withGenerators([
                         [
                             require('../generators/server'), // eslint-disable-line global-require
                             'jhipster-kotlin:server',
-                            path.join(__dirname, '../generators/server/index.js')
-                        ]
+                            path.join(__dirname, '../generators/server/index.js'),
+                        ],
                     ])
                     .withPrompts({
                         baseName: 'jhipster',
@@ -801,7 +801,7 @@ describe('JHipster generator', () => {
                         rememberMeKey: '5c37379956bd1242f5636c8cb322c2966ad81277',
                         skipClient: false,
                         skipUserManagement: false,
-                        serverSideOptions: []
+                        serverSideOptions: [],
                     })
                     .on('end', done);
             });
@@ -822,14 +822,14 @@ describe('JHipster generator', () => {
                         skipInstall: true,
                         skipChecks: true,
                         blueprint: 'kotlin',
-                        'skip-ktlint-format': true
+                        'skip-ktlint-format': true,
                     })
                     .withGenerators([
                         [
                             require('../generators/server'), // eslint-disable-line global-require
                             'jhipster-kotlin:server',
-                            path.join(__dirname, '../generators/server/index.js')
-                        ]
+                            path.join(__dirname, '../generators/server/index.js'),
+                        ],
                     ])
                     .withPrompts({
                         baseName: 'jhipster',
@@ -850,7 +850,7 @@ describe('JHipster generator', () => {
                         rememberMeKey: '5c37379956bd1242f5636c8cb322c2966ad81277',
                         skipClient: false,
                         skipUserManagement: false,
-                        serverSideOptions: ['searchEngine:elasticsearch']
+                        serverSideOptions: ['searchEngine:elasticsearch'],
                     })
                     .on('end', done);
             });
@@ -872,14 +872,14 @@ describe('JHipster generator', () => {
                         skipInstall: true,
                         skipChecks: true,
                         blueprint: 'kotlin',
-                        'skip-ktlint-format': true
+                        'skip-ktlint-format': true,
                     })
                     .withGenerators([
                         [
                             require('../generators/server'), // eslint-disable-line global-require
                             'jhipster-kotlin:server',
-                            path.join(__dirname, '../generators/server/index.js')
-                        ]
+                            path.join(__dirname, '../generators/server/index.js'),
+                        ],
                     ])
                     .withPrompts({
                         baseName: 'jhipster',
@@ -905,7 +905,7 @@ describe('JHipster generator', () => {
                     .on('end', done);
             });
 
-             it('creates expected files with "Couchbbase FTS"', () => {
+            it('creates expected files with "Couchbbase FTS"', () => {
                 assert.file(expectedFiles.couchbase);
                 assert.file(expectedFiles.couchbaseSearch);
             });
@@ -921,14 +921,14 @@ describe('JHipster generator', () => {
                         skipInstall: true,
                         skipChecks: true,
                         blueprint: 'kotlin',
-                        'skip-ktlint-format': true
+                        'skip-ktlint-format': true,
                     })
                     .withGenerators([
                         [
                             require('../generators/server'), // eslint-disable-line global-require
                             'jhipster-kotlin:server',
-                            path.join(__dirname, '../generators/server/index.js')
-                        ]
+                            path.join(__dirname, '../generators/server/index.js'),
+                        ],
                     ])
                     .withPrompts({
                         applicationType: 'microservice',
@@ -947,7 +947,7 @@ describe('JHipster generator', () => {
                         languages: ['fr'],
                         buildTool: 'maven',
                         rememberMeKey: '5c37379956bd1242f5636c8cb322c2966ad81277',
-                        serverSideOptions: []
+                        serverSideOptions: [],
                     })
                     .on('end', done);
             });
@@ -976,14 +976,14 @@ describe('JHipster generator', () => {
                         skipInstall: true,
                         skipChecks: true,
                         blueprint: 'kotlin',
-                        'skip-ktlint-format': true
+                        'skip-ktlint-format': true,
                     })
                     .withGenerators([
                         [
                             require('../generators/server'), // eslint-disable-line global-require
                             'jhipster-kotlin:server',
-                            path.join(__dirname, '../generators/server/index.js')
-                        ]
+                            path.join(__dirname, '../generators/server/index.js'),
+                        ],
                     ])
                     .withPrompts({
                         baseName: 'jhipster',
@@ -1002,7 +1002,7 @@ describe('JHipster generator', () => {
                         languages: ['fr'],
                         buildTool: 'maven',
                         rememberMeKey: '5c37379956bd1242f5636c8cb322c2966ad81277',
-                        serverSideOptions: []
+                        serverSideOptions: [],
                     })
                     .on('end', done);
             });
@@ -1027,14 +1027,14 @@ describe('JHipster generator', () => {
                         skipInstall: true,
                         skipChecks: true,
                         blueprint: 'kotlin',
-                        'skip-ktlint-format': true
+                        'skip-ktlint-format': true,
                     })
                     .withGenerators([
                         [
                             require('../generators/server'), // eslint-disable-line global-require
                             'jhipster-kotlin:server',
-                            path.join(__dirname, '../generators/server/index.js')
-                        ]
+                            path.join(__dirname, '../generators/server/index.js'),
+                        ],
                     ])
                     .withPrompts({
                         baseName: 'jhipster',
@@ -1053,7 +1053,7 @@ describe('JHipster generator', () => {
                         languages: ['fr'],
                         buildTool: 'maven',
                         rememberMeKey: '5c37379956bd1242f5636c8cb322c2966ad81277',
-                        serverSideOptions: ['searchEngine:elasticsearch']
+                        serverSideOptions: ['searchEngine:elasticsearch'],
                     })
                     .on('end', done);
             });
@@ -1076,14 +1076,14 @@ describe('JHipster generator', () => {
                         skipInstall: true,
                         skipChecks: true,
                         blueprint: 'kotlin',
-                        'skip-ktlint-format': true
+                        'skip-ktlint-format': true,
                     })
                     .withGenerators([
                         [
                             require('../generators/server'), // eslint-disable-line global-require
                             'jhipster-kotlin:server',
-                            path.join(__dirname, '../generators/server/index.js')
-                        ]
+                            path.join(__dirname, '../generators/server/index.js'),
+                        ],
                     ])
                     .withPrompts({
                         baseName: 'jhipster',
@@ -1102,7 +1102,7 @@ describe('JHipster generator', () => {
                         languages: ['fr'],
                         buildTool: 'maven',
                         rememberMeKey: '5c37379956bd1242f5636c8cb322c2966ad81277',
-                        serverSideOptions: []
+                        serverSideOptions: [],
                     })
                     .on('end', done);
             });
@@ -1123,14 +1123,14 @@ describe('JHipster generator', () => {
                         skipInstall: true,
                         skipChecks: true,
                         blueprint: 'kotlin',
-                        'skip-ktlint-format': true
+                        'skip-ktlint-format': true,
                     })
                     .withGenerators([
                         [
                             require('../generators/server'), // eslint-disable-line global-require
                             'jhipster-kotlin:server',
-                            path.join(__dirname, '../generators/server/index.js')
-                        ]
+                            path.join(__dirname, '../generators/server/index.js'),
+                        ],
                     ])
                     .withPrompts({
                         baseName: 'jhipster',
@@ -1149,7 +1149,7 @@ describe('JHipster generator', () => {
                         languages: ['fr'],
                         buildTool: 'maven',
                         rememberMeKey: '5c37379956bd1242f5636c8cb322c2966ad81277',
-                        serverSideOptions: []
+                        serverSideOptions: [],
                     })
                     .on('end', done);
             });
@@ -1172,14 +1172,14 @@ describe('JHipster generator', () => {
                         skipInstall: true,
                         skipChecks: true,
                         blueprint: 'kotlin',
-                        'skip-ktlint-format': true
+                        'skip-ktlint-format': true,
                     })
                     .withGenerators([
                         [
                             require('../generators/server'), // eslint-disable-line global-require
                             'jhipster-kotlin:server',
-                            path.join(__dirname, '../generators/server/index.js')
-                        ]
+                            path.join(__dirname, '../generators/server/index.js'),
+                        ],
                     ])
                     .withPrompts({
                         baseName: 'jhipster',
@@ -1198,7 +1198,7 @@ describe('JHipster generator', () => {
                         languages: ['fr'],
                         buildTool: 'maven',
                         rememberMeKey: '5c37379956bd1242f5636c8cb322c2966ad81277',
-                        serverSideOptions: []
+                        serverSideOptions: [],
                     })
                     .on('end', done);
             });
@@ -1222,14 +1222,14 @@ describe('JHipster generator', () => {
                         skipInstall: true,
                         skipChecks: true,
                         blueprint: 'kotlin',
-                        'skip-ktlint-format': true
+                        'skip-ktlint-format': true,
                     })
                     .withGenerators([
                         [
                             require('../generators/server'), // eslint-disable-line global-require
                             'jhipster-kotlin:server',
-                            path.join(__dirname, '../generators/server/index.js')
-                        ]
+                            path.join(__dirname, '../generators/server/index.js'),
+                        ],
                     ])
                     .withPrompts({
                         baseName: 'jhipster',
@@ -1248,7 +1248,7 @@ describe('JHipster generator', () => {
                         languages: ['fr'],
                         buildTool: 'maven',
                         rememberMeKey: '5c37379956bd1242f5636c8cb322c2966ad81277',
-                        serverSideOptions: []
+                        serverSideOptions: [],
                     })
                     .on('end', done);
             });
@@ -1273,14 +1273,14 @@ describe('JHipster generator', () => {
                         skipInstall: true,
                         skipChecks: true,
                         blueprint: 'kotlin',
-                        'skip-ktlint-format': true
+                        'skip-ktlint-format': true,
                     })
                     .withGenerators([
                         [
                             require('../generators/server'), // eslint-disable-line global-require
                             'jhipster-kotlin:server',
-                            path.join(__dirname, '../generators/server/index.js')
-                        ]
+                            path.join(__dirname, '../generators/server/index.js'),
+                        ],
                     ])
                     .withPrompts({
                         baseName: 'jhipster',
@@ -1299,7 +1299,7 @@ describe('JHipster generator', () => {
                         languages: ['fr'],
                         buildTool: 'maven',
                         rememberMeKey: '5c37379956bd1242f5636c8cb322c2966ad81277',
-                        serverSideOptions: []
+                        serverSideOptions: [],
                     })
                     .on('end', done);
             });
@@ -1323,14 +1323,14 @@ describe('JHipster generator', () => {
                         skipInstall: true,
                         skipChecks: true,
                         blueprint: 'kotlin',
-                        'skip-ktlint-format': true
+                        'skip-ktlint-format': true,
                     })
                     .withGenerators([
                         [
                             require('../generators/server'), // eslint-disable-line global-require
                             'jhipster-kotlin:server',
-                            path.join(__dirname, '../generators/server/index.js')
-                        ]
+                            path.join(__dirname, '../generators/server/index.js'),
+                        ],
                     ])
                     .withPrompts({
                         baseName: 'jhipster',
@@ -1349,7 +1349,7 @@ describe('JHipster generator', () => {
                         languages: ['fr'],
                         buildTool: 'maven',
                         rememberMeKey: '5c37379956bd1242f5636c8cb322c2966ad81277',
-                        serverSideOptions: []
+                        serverSideOptions: [],
                     })
                     .on('end', done);
             });
@@ -1373,14 +1373,14 @@ describe('JHipster generator', () => {
                         skipInstall: true,
                         skipChecks: true,
                         blueprint: 'kotlin',
-                        'skip-ktlint-format': true
+                        'skip-ktlint-format': true,
                     })
                     .withGenerators([
                         [
                             require('../generators/server'), // eslint-disable-line global-require
                             'jhipster-kotlin:server',
-                            path.join(__dirname, '../generators/server/index.js')
-                        ]
+                            path.join(__dirname, '../generators/server/index.js'),
+                        ],
                     ])
                     .withPrompts({
                         baseName: 'jhipster',
@@ -1405,7 +1405,7 @@ describe('JHipster generator', () => {
                         enableTranslation: true,
                         nativeLanguage: 'en',
                         languages: ['en'],
-                        serverSideOptions: ['messageBroker:kafka']
+                        serverSideOptions: ['messageBroker:kafka'],
                     })
                     .on('end', done);
             });
@@ -1431,14 +1431,14 @@ describe('JHipster generator', () => {
                         skipInstall: true,
                         skipChecks: true,
                         blueprint: 'kotlin',
-                        'skip-ktlint-format': true
+                        'skip-ktlint-format': true,
                     })
                     .withGenerators([
                         [
                             require('../generators/server'), // eslint-disable-line global-require
                             'jhipster-kotlin:server',
-                            path.join(__dirname, '../generators/server/index.js')
-                        ]
+                            path.join(__dirname, '../generators/server/index.js'),
+                        ],
                     ])
                     .withPrompts({
                         baseName: 'jhipster',
@@ -1463,7 +1463,7 @@ describe('JHipster generator', () => {
                         enableTranslation: true,
                         nativeLanguage: 'en',
                         languages: ['en'],
-                        serverSideOptions: ['enableSwaggerCodegen:true']
+                        serverSideOptions: ['enableSwaggerCodegen:true'],
                     })
                     .on('end', done);
             });
@@ -1492,14 +1492,14 @@ describe('JHipster generator', () => {
                         skipInstall: true,
                         skipChecks: true,
                         blueprint: 'kotlin',
-                        'skip-ktlint-format': true
+                        'skip-ktlint-format': true,
                     })
                     .withGenerators([
                         [
                             require('../generators/server'), // eslint-disable-line global-require
                             'jhipster-kotlin:server',
-                            path.join(__dirname, '../generators/server/index.js')
-                        ]
+                            path.join(__dirname, '../generators/server/index.js'),
+                        ],
                     ])
                     .withPrompts({
                         baseName: 'jhipster',
@@ -1524,7 +1524,7 @@ describe('JHipster generator', () => {
                         enableTranslation: true,
                         nativeLanguage: 'en',
                         languages: ['en'],
-                        serverSideOptions: ['enableSwaggerCodegen:true']
+                        serverSideOptions: ['enableSwaggerCodegen:true'],
                     })
                     .on('end', done);
             });
@@ -1554,14 +1554,14 @@ describe('JHipster generator', () => {
                         skipInstall: true,
                         skipChecks: true,
                         blueprint: 'kotlin',
-                        'skip-ktlint-format': true
+                        'skip-ktlint-format': true,
                     })
                     .withGenerators([
                         [
                             require('../generators/server'), // eslint-disable-line global-require
                             'jhipster-kotlin:server',
-                            path.join(__dirname, '../generators/server/index.js')
-                        ]
+                            path.join(__dirname, '../generators/server/index.js'),
+                        ],
                     ])
                     .withPrompts({
                         baseName: 'jhipster',
@@ -1580,7 +1580,7 @@ describe('JHipster generator', () => {
                         languages: ['fr'],
                         buildTool: 'maven',
                         rememberMeKey: '5c37379956bd1242f5636c8cb322c2966ad81277',
-                        serverSideOptions: []
+                        serverSideOptions: [],
                     })
                     .on('end', done);
             });
@@ -1601,14 +1601,14 @@ describe('JHipster generator', () => {
                         skipInstall: true,
                         skipChecks: true,
                         blueprint: 'kotlin',
-                        'skip-ktlint-format': true
+                        'skip-ktlint-format': true,
                     })
                     .withGenerators([
                         [
                             require('../generators/server'), // eslint-disable-line global-require
                             'jhipster-kotlin:server',
-                            path.join(__dirname, '../generators/server/index.js')
-                        ]
+                            path.join(__dirname, '../generators/server/index.js'),
+                        ],
                     ])
                     .withPrompts({
                         baseName: '21Points',
@@ -1627,7 +1627,7 @@ describe('JHipster generator', () => {
                         languages: ['fr'],
                         buildTool: 'maven',
                         rememberMeKey: '5c37379956bd1242f5636c8cb322c2966ad81277',
-                        serverSideOptions: []
+                        serverSideOptions: [],
                     })
                     .on('end', done);
             });
@@ -1635,7 +1635,7 @@ describe('JHipster generator', () => {
             it('creates expected files with default application name', () => {
                 assert.file([
                     `${SERVER_MAIN_SRC_DIR}com/otherpackage/Application.kt`,
-                    `${SERVER_MAIN_SRC_DIR}com/otherpackage/ApplicationWebXml.kt`
+                    `${SERVER_MAIN_SRC_DIR}com/otherpackage/ApplicationWebXml.kt`,
                 ]);
                 assert.fileContent(`${SERVER_MAIN_SRC_DIR}com/otherpackage/Application.kt`, /class Application/);
             });
@@ -1650,14 +1650,14 @@ describe('JHipster generator', () => {
                         skipInstall: true,
                         skipChecks: true,
                         blueprint: 'kotlin',
-                        'skip-ktlint-format': true
+                        'skip-ktlint-format': true,
                     })
                     .withGenerators([
                         [
                             require('../generators/server'), // eslint-disable-line global-require
                             'jhipster-kotlin:server',
-                            path.join(__dirname, '../generators/server/index.js')
-                        ]
+                            path.join(__dirname, '../generators/server/index.js'),
+                        ],
                     ])
                     .withPrompts({
                         baseName: 'myapplication',
@@ -1676,7 +1676,7 @@ describe('JHipster generator', () => {
                         languages: ['fr'],
                         buildTool: 'maven',
                         rememberMeKey: '5c37379956bd1242f5636c8cb322c2966ad81277',
-                        serverSideOptions: []
+                        serverSideOptions: [],
                     })
                     .on('end', done);
             });
@@ -1698,14 +1698,14 @@ describe('JHipster generator', () => {
                         skipInstall: true,
                         skipChecks: true,
                         blueprint: 'kotlin',
-                        'skip-ktlint-format': true
+                        'skip-ktlint-format': true,
                     })
                     .withGenerators([
                         [
                             require('../generators/server'), // eslint-disable-line global-require
                             'jhipster-kotlin:server',
-                            path.join(__dirname, '../generators/server/index.js')
-                        ]
+                            path.join(__dirname, '../generators/server/index.js'),
+                        ],
                     ])
                     .withPrompts({
                         baseName: 'jhipster',
@@ -1722,7 +1722,7 @@ describe('JHipster generator', () => {
                         enableTranslation: false,
                         buildTool: 'maven',
                         rememberMeKey: '5c37379956bd1242f5636c8cb322c2966ad81277',
-                        serverSideOptions: []
+                        serverSideOptions: [],
                     })
                     .on('end', done);
             });
@@ -1742,14 +1742,14 @@ describe('JHipster generator', () => {
                         skipInstall: true,
                         skipChecks: true,
                         blueprint: 'kotlin',
-                        'skip-ktlint-format': true
+                        'skip-ktlint-format': true,
                     })
                     .withGenerators([
                         [
                             require('../generators/server'), // eslint-disable-line global-require
                             'jhipster-kotlin:server',
-                            path.join(__dirname, '../generators/server/index.js')
-                        ]
+                            path.join(__dirname, '../generators/server/index.js'),
+                        ],
                     ])
                     .withPrompts({
                         baseName: 'jhipster',
@@ -1770,7 +1770,7 @@ describe('JHipster generator', () => {
                         rememberMeKey: '5c37379956bd1242f5636c8cb322c2966ad81277',
                         skipClient: false,
                         skipUserManagement: false,
-                        serverSideOptions: []
+                        serverSideOptions: [],
                     })
                     .on('end', done);
             });
@@ -1782,7 +1782,7 @@ describe('JHipster generator', () => {
                         enableTranslation: true,
                         serviceDiscoveryType: false,
                         authenticationType: 'jwt',
-                        testFrameworks: []
+                        testFrameworks: [],
                     })
                 );
             });
@@ -1802,14 +1802,14 @@ describe('JHipster generator', () => {
                         skipInstall: true,
                         skipChecks: true,
                         blueprint: 'kotlin',
-                        'skip-ktlint-format': true
+                        'skip-ktlint-format': true,
                     })
                     .withGenerators([
                         [
                             require('../generators/server'), // eslint-disable-line global-require
                             'jhipster-kotlin:server',
-                            path.join(__dirname, '../generators/server/index.js')
-                        ]
+                            path.join(__dirname, '../generators/server/index.js'),
+                        ],
                     ])
                     .withPrompts({
                         baseName: 'jhipster',
@@ -1828,7 +1828,7 @@ describe('JHipster generator', () => {
                         languages: ['fr'],
                         buildTool: 'maven',
                         rememberMeKey: '5c37379956bd1242f5636c8cb322c2966ad81277',
-                        serverSideOptions: []
+                        serverSideOptions: [],
                     })
                     .on('end', done);
             });
@@ -1840,7 +1840,7 @@ describe('JHipster generator', () => {
                         enableTranslation: true,
                         serviceDiscoveryType: false,
                         authenticationType: 'jwt',
-                        testFrameworks: []
+                        testFrameworks: [],
                     })
                 );
             });
@@ -1855,14 +1855,14 @@ describe('JHipster generator', () => {
                         skipInstall: true,
                         skipChecks: true,
                         blueprint: 'kotlin',
-                        'skip-ktlint-format': true
+                        'skip-ktlint-format': true,
                     })
                     .withGenerators([
                         [
                             require('../generators/server'), // eslint-disable-line global-require
                             'jhipster-kotlin:server',
-                            path.join(__dirname, '../generators/server/index.js')
-                        ]
+                            path.join(__dirname, '../generators/server/index.js'),
+                        ],
                     ])
                     .withPrompts({
                         baseName: 'jhipster',
@@ -1881,7 +1881,7 @@ describe('JHipster generator', () => {
                         languages: ['fr'],
                         buildTool: 'maven',
                         rememberMeKey: '5c37379956bd1242f5636c8cb322c2966ad81277',
-                        serverSideOptions: []
+                        serverSideOptions: [],
                     })
                     .on('end', done);
             });
@@ -1893,7 +1893,7 @@ describe('JHipster generator', () => {
                         enableTranslation: true,
                         serviceDiscoveryType: false,
                         authenticationType: 'session',
-                        testFrameworks: []
+                        testFrameworks: [],
                     })
                 );
             });
@@ -1910,14 +1910,14 @@ describe('JHipster generator', () => {
                         skipInstall: true,
                         skipChecks: true,
                         blueprint: 'kotlin',
-                        'skip-ktlint-format': true
+                        'skip-ktlint-format': true,
                     })
                     .withGenerators([
                         [
                             require('../generators/server'), // eslint-disable-line global-require
                             'jhipster-kotlin:server',
-                            path.join(__dirname, '../generators/server/index.js')
-                        ]
+                            path.join(__dirname, '../generators/server/index.js'),
+                        ],
                     ])
                     .withPrompts({
                         baseName: 'jhipster',
@@ -1941,7 +1941,7 @@ describe('JHipster generator', () => {
                         jhiPrefix: 'jhi',
                         enableTranslation: true,
                         nativeLanguage: 'en',
-                        languages: ['en']
+                        languages: ['en'],
                     })
                     .on('end', done);
             });
@@ -1957,7 +1957,7 @@ describe('JHipster generator', () => {
                         enableTranslation: true,
                         serviceDiscoveryType: false,
                         authenticationType: 'jwt',
-                        testFrameworks: ['protractor']
+                        testFrameworks: ['protractor'],
                     })
                 );
                 assert.noFile([`${TEST_DIR}gatling/conf/gatling.conf`, `${TEST_DIR}gatling/conf/logback.xml`]);
@@ -1973,14 +1973,14 @@ describe('JHipster generator', () => {
                         skipInstall: true,
                         skipChecks: true,
                         blueprint: 'kotlin',
-                        'skip-ktlint-format': true
+                        'skip-ktlint-format': true,
                     })
                     .withGenerators([
                         [
                             require('../generators/server'), // eslint-disable-line global-require
                             'jhipster-kotlin:server',
-                            path.join(__dirname, '../generators/server/index.js')
-                        ]
+                            path.join(__dirname, '../generators/server/index.js'),
+                        ],
                     ])
                     .withPrompts({
                         baseName: 'jhipster',
@@ -2004,7 +2004,7 @@ describe('JHipster generator', () => {
                         jhiPrefix: 'jhi',
                         enableTranslation: true,
                         nativeLanguage: 'en',
-                        languages: ['en']
+                        languages: ['en'],
                     })
                     .on('end', done);
             });
@@ -2032,14 +2032,14 @@ describe('JHipster generator', () => {
                         skipChecks: true,
                         skipClient: true,
                         blueprint: 'kotlin',
-                        'skip-ktlint-format': true
+                        'skip-ktlint-format': true,
                     })
                     .withGenerators([
                         [
                             require('../generators/server'), // eslint-disable-line global-require
                             'jhipster-kotlin:server',
-                            path.join(__dirname, '../generators/server/index.js')
-                        ]
+                            path.join(__dirname, '../generators/server/index.js'),
+                        ],
                     ])
                     .withPrompts({
                         baseName: 'jhipster',
@@ -2057,7 +2057,7 @@ describe('JHipster generator', () => {
                         nativeLanguage: 'en',
                         languages: ['fr'],
                         rememberMeKey: '5c37379956bd1242f5636c8cb322c2966ad81277',
-                        serverSideOptions: []
+                        serverSideOptions: [],
                     })
                     .on('end', done);
             });
@@ -2076,7 +2076,7 @@ describe('JHipster generator', () => {
                             enableTranslation: true,
                             serviceDiscoveryType: false,
                             authenticationType: 'session',
-                            testFrameworks: []
+                            testFrameworks: [],
                         },
                         '',
                         ['package.json']
@@ -2103,14 +2103,14 @@ describe('JHipster generator', () => {
                         skipChecks: true,
                         skipClient: true,
                         blueprint: 'kotlin',
-                        'skip-ktlint-format': true
+                        'skip-ktlint-format': true,
                     })
                     .withGenerators([
                         [
                             require('../generators/server'), // eslint-disable-line global-require
                             'jhipster-kotlin:server',
-                            path.join(__dirname, '../generators/server/index.js')
-                        ]
+                            path.join(__dirname, '../generators/server/index.js'),
+                        ],
                     ])
                     .withPrompts({
                         baseName: 'jhipster',
@@ -2128,7 +2128,7 @@ describe('JHipster generator', () => {
                         nativeLanguage: 'en',
                         languages: ['fr'],
                         rememberMeKey: '5c37379956bd1242f5636c8cb322c2966ad81277',
-                        serverSideOptions: []
+                        serverSideOptions: [],
                     })
                     .on('end', done);
             });
@@ -2147,7 +2147,7 @@ describe('JHipster generator', () => {
                             enableTranslation: true,
                             serviceDiscoveryType: false,
                             authenticationType: 'jwt',
-                            testFrameworks: []
+                            testFrameworks: [],
                         },
                         '',
                         ['package.json']
@@ -2172,14 +2172,14 @@ describe('JHipster generator', () => {
                         skipUserManagement: true,
                         skipChecks: true,
                         blueprint: 'kotlin',
-                        'skip-ktlint-format': true
+                        'skip-ktlint-format': true,
                     })
                     .withGenerators([
                         [
                             require('../generators/server'), // eslint-disable-line global-require
                             'jhipster-kotlin:server',
-                            path.join(__dirname, '../generators/server/index.js')
-                        ]
+                            path.join(__dirname, '../generators/server/index.js'),
+                        ],
                     ])
                     .withPrompts({
                         baseName: 'jhipster',
@@ -2198,7 +2198,7 @@ describe('JHipster generator', () => {
                         nativeLanguage: 'en',
                         languages: ['fr'],
                         rememberMeKey: '5c37379956bd1242f5636c8cb322c2966ad81277',
-                        serverSideOptions: []
+                        serverSideOptions: [],
                     })
                     .on('end', done);
             });
@@ -2223,14 +2223,14 @@ describe('JHipster generator', () => {
                         skipInstall: true,
                         skipChecks: true,
                         blueprint: 'kotlin',
-                        'skip-ktlint-format': true
+                        'skip-ktlint-format': true,
                     })
                     .withGenerators([
                         [
                             require('../generators/server'), // eslint-disable-line global-require
                             'jhipster-kotlin:server',
-                            path.join(__dirname, '../generators/server/index.js')
-                        ]
+                            path.join(__dirname, '../generators/server/index.js'),
+                        ],
                     ])
                     .withPrompts({
                         applicationType: 'gateway',
@@ -2250,7 +2250,7 @@ describe('JHipster generator', () => {
                         languages: ['fr'],
                         buildTool: 'maven',
                         rememberMeKey: '5c37379956bd1242f5636c8cb322c2966ad81277',
-                        serverSideOptions: []
+                        serverSideOptions: [],
                     })
                     .on('end', done);
             });
@@ -2274,14 +2274,14 @@ describe('JHipster generator', () => {
                         skipInstall: true,
                         skipChecks: true,
                         blueprint: 'kotlin',
-                        'skip-ktlint-format': true
+                        'skip-ktlint-format': true,
                     })
                     .withGenerators([
                         [
                             require('../generators/server'), // eslint-disable-line global-require
                             'jhipster-kotlin:server',
-                            path.join(__dirname, '../generators/server/index.js')
-                        ]
+                            path.join(__dirname, '../generators/server/index.js'),
+                        ],
                     ])
                     .withPrompts({
                         applicationType: 'gateway',
@@ -2301,7 +2301,7 @@ describe('JHipster generator', () => {
                         languages: ['fr'],
                         buildTool: 'maven',
                         rememberMeKey: '5c37379956bd1242f5636c8cb322c2966ad81277',
-                        serverSideOptions: []
+                        serverSideOptions: [],
                     })
                     .on('end', done);
             });
@@ -2325,14 +2325,14 @@ describe('JHipster generator', () => {
                         skipInstall: true,
                         skipChecks: true,
                         blueprint: 'kotlin',
-                        'skip-ktlint-format': true
+                        'skip-ktlint-format': true,
                     })
                     .withGenerators([
                         [
                             require('../generators/server'), // eslint-disable-line global-require
                             'jhipster-kotlin:server',
-                            path.join(__dirname, '../generators/server/index.js')
-                        ]
+                            path.join(__dirname, '../generators/server/index.js'),
+                        ],
                     ])
                     .withPrompts({
                         applicationType: 'microservice',
@@ -2351,7 +2351,7 @@ describe('JHipster generator', () => {
                         languages: ['fr'],
                         buildTool: 'maven',
                         rememberMeKey: '5c37379956bd1242f5636c8cb322c2966ad81277',
-                        serverSideOptions: []
+                        serverSideOptions: [],
                     })
                     .on('end', done);
             });
@@ -2375,14 +2375,14 @@ describe('JHipster generator', () => {
                         skipInstall: true,
                         skipChecks: true,
                         blueprint: 'kotlin',
-                        'skip-ktlint-format': true
+                        'skip-ktlint-format': true,
                     })
                     .withGenerators([
                         [
                             require('../generators/server'), // eslint-disable-line global-require
                             'jhipster-kotlin:server',
-                            path.join(__dirname, '../generators/server/index.js')
-                        ]
+                            path.join(__dirname, '../generators/server/index.js'),
+                        ],
                     ])
                     .withPrompts({
                         applicationType: 'monolith',
@@ -2401,7 +2401,7 @@ describe('JHipster generator', () => {
                         languages: ['fr'],
                         buildTool: 'maven',
                         rememberMeKey: '5c37379956bd1242f5636c8cb322c2966ad81277',
-                        serverSideOptions: ['serviceDiscoveryType:eureka']
+                        serverSideOptions: ['serviceDiscoveryType:eureka'],
                     })
                     .on('end', done);
             });
@@ -2427,14 +2427,14 @@ describe('JHipster generator', () => {
                         skipInstall: true,
                         skipChecks: true,
                         blueprint: 'kotlin',
-                        'skip-ktlint-format': true
+                        'skip-ktlint-format': true,
                     })
                     .withGenerators([
                         [
                             require('../generators/server'), // eslint-disable-line global-require
                             'jhipster-kotlin:server',
-                            path.join(__dirname, '../generators/server/index.js')
-                        ]
+                            path.join(__dirname, '../generators/server/index.js'),
+                        ],
                     ])
                     .withPrompts({
                         applicationType: 'microservice',
@@ -2455,7 +2455,7 @@ describe('JHipster generator', () => {
                         rememberMeKey: '5c37379956bd1242f5636c8cb322c2966ad81277',
                         serverSideOptions: [],
                         skipClient: true,
-                        skipUserManagement: true
+                        skipUserManagement: true,
                     })
                     .on('end', done);
             });
@@ -2480,14 +2480,14 @@ describe('JHipster generator', () => {
                         skipInstall: true,
                         skipChecks: true,
                         blueprint: 'kotlin',
-                        'skip-ktlint-format': true
+                        'skip-ktlint-format': true,
                     })
                     .withGenerators([
                         [
                             require('../generators/server'), // eslint-disable-line global-require
                             'jhipster-kotlin:server',
-                            path.join(__dirname, '../generators/server/index.js')
-                        ]
+                            path.join(__dirname, '../generators/server/index.js'),
+                        ],
                     ])
                     .withPrompts({
                         applicationType: 'uaa',
@@ -2507,7 +2507,7 @@ describe('JHipster generator', () => {
                         buildTool: 'maven',
                         rememberMeKey: '5c37379956bd1242f5636c8cb322c2966ad81277',
                         serverSideOptions: [],
-                        serviceDiscoveryType: 'eureka'
+                        serviceDiscoveryType: 'eureka',
                     })
                     .on('end', done);
             });
@@ -2528,14 +2528,14 @@ describe('JHipster generator', () => {
                         skipInstall: true,
                         skipChecks: true,
                         blueprint: 'kotlin',
-                        'skip-ktlint-format': true
+                        'skip-ktlint-format': true,
                     })
                     .withGenerators([
                         [
                             require('../generators/server'), // eslint-disable-line global-require
                             'jhipster-kotlin:server',
-                            path.join(__dirname, '../generators/server/index.js')
-                        ]
+                            path.join(__dirname, '../generators/server/index.js'),
+                        ],
                     ])
                     .inTmpDir(dir => {
                         fse.copySync(path.join(__dirname, '../test/templates/uaaserver/'), dir);
@@ -2559,7 +2559,7 @@ describe('JHipster generator', () => {
                         buildTool: 'maven',
                         rememberMeKey: '5c37379956bd1242f5636c8cb322c2966ad81277',
                         serverSideOptions: [],
-                        serviceDiscoveryType: 'eureka'
+                        serviceDiscoveryType: 'eureka',
                     })
                     .on('end', done);
             });
@@ -2585,14 +2585,14 @@ describe('JHipster generator', () => {
                         skipInstall: true,
                         skipChecks: true,
                         blueprint: 'kotlin',
-                        'skip-ktlint-format': true
+                        'skip-ktlint-format': true,
                     })
                     .withGenerators([
                         [
                             require('../generators/server'), // eslint-disable-line global-require
                             'jhipster-kotlin:server',
-                            path.join(__dirname, '../generators/server/index.js')
-                        ]
+                            path.join(__dirname, '../generators/server/index.js'),
+                        ],
                     ])
                     .withPrompts({
                         applicationType: 'gateway',
@@ -2612,7 +2612,7 @@ describe('JHipster generator', () => {
                         languages: ['fr'],
                         buildTool: 'maven',
                         rememberMeKey: '5c37379956bd1242f5636c8cb322c2966ad81277',
-                        serverSideOptions: []
+                        serverSideOptions: [],
                     })
                     .on('end', done);
             });
@@ -2635,14 +2635,14 @@ describe('JHipster generator', () => {
                         skipInstall: true,
                         skipChecks: true,
                         blueprint: 'kotlin',
-                        'skip-ktlint-format': true
+                        'skip-ktlint-format': true,
                     })
                     .withGenerators([
                         [
                             require('../generators/server'), // eslint-disable-line global-require
                             'jhipster-kotlin:server',
-                            path.join(__dirname, '../generators/server/index.js')
-                        ]
+                            path.join(__dirname, '../generators/server/index.js'),
+                        ],
                     ])
                     .withPrompts({
                         applicationType: 'gateway',
@@ -2662,7 +2662,7 @@ describe('JHipster generator', () => {
                         languages: ['fr'],
                         buildTool: 'maven',
                         rememberMeKey: '5c37379956bd1242f5636c8cb322c2966ad81277',
-                        serverSideOptions: []
+                        serverSideOptions: [],
                     })
                     .on('end', done);
             });
@@ -2685,14 +2685,14 @@ describe('JHipster generator', () => {
                         skipInstall: true,
                         skipChecks: true,
                         blueprint: 'kotlin',
-                        'skip-ktlint-format': true
+                        'skip-ktlint-format': true,
                     })
                     .withGenerators([
                         [
                             require('../generators/server'), // eslint-disable-line global-require
                             'jhipster-kotlin:server',
-                            path.join(__dirname, '../generators/server/index.js')
-                        ]
+                            path.join(__dirname, '../generators/server/index.js'),
+                        ],
                     ])
                     .withPrompts({
                         applicationType: 'microservice',
@@ -2711,7 +2711,7 @@ describe('JHipster generator', () => {
                         languages: ['fr'],
                         buildTool: 'maven',
                         rememberMeKey: '5c37379956bd1242f5636c8cb322c2966ad81277',
-                        serverSideOptions: []
+                        serverSideOptions: [],
                     })
                     .on('end', done);
             });
@@ -2736,14 +2736,14 @@ describe('JHipster generator', () => {
                         skipInstall: true,
                         skipChecks: true,
                         blueprint: 'kotlin',
-                        'skip-ktlint-format': true
+                        'skip-ktlint-format': true,
                     })
                     .withGenerators([
                         [
                             require('../generators/server'), // eslint-disable-line global-require
                             'jhipster-kotlin:server',
-                            path.join(__dirname, '../generators/server/index.js')
-                        ]
+                            path.join(__dirname, '../generators/server/index.js'),
+                        ],
                     ])
                     .withPrompts({
                         applicationType: 'gateway',
@@ -2763,7 +2763,7 @@ describe('JHipster generator', () => {
                         languages: ['fr'],
                         buildTool: 'maven',
                         rememberMeKey: '5c37379956bd1242f5636c8cb322c2966ad81277',
-                        serverSideOptions: []
+                        serverSideOptions: [],
                     })
                     .on('end', done);
             });
@@ -2786,14 +2786,14 @@ describe('JHipster generator', () => {
                         skipInstall: true,
                         skipChecks: true,
                         blueprint: 'kotlin',
-                        'uaa-base-name': 'jhipsterApp'
+                        'uaa-base-name': 'jhipsterApp',
                     })
                     .withGenerators([
                         [
                             require('../generators/server'), // eslint-disable-line global-require
                             'jhipster-kotlin:server',
-                            path.join(__dirname, '../generators/server/index.js')
-                        ]
+                            path.join(__dirname, '../generators/server/index.js'),
+                        ],
                     ])
                     .withPrompts({
                         applicationType: 'gateway',
@@ -2814,7 +2814,7 @@ describe('JHipster generator', () => {
                         languages: ['fr'],
                         buildTool: 'maven',
                         rememberMeKey: '5c37379956bd1242f5636c8cb322c2966ad81277',
-                        serverSideOptions: []
+                        serverSideOptions: [],
                     })
                     .on('end', done);
             });
@@ -2837,14 +2837,14 @@ describe('JHipster generator', () => {
                         skipInstall: true,
                         skipChecks: true,
                         blueprint: 'kotlin',
-                        'skip-ktlint-format': true
+                        'skip-ktlint-format': true,
                     })
                     .withGenerators([
                         [
                             require('../generators/server'), // eslint-disable-line global-require
                             'jhipster-kotlin:server',
-                            path.join(__dirname, '../generators/server/index.js')
-                        ]
+                            path.join(__dirname, '../generators/server/index.js'),
+                        ],
                     ])
                     .withPrompts({
                         applicationType: 'microservice',
@@ -2863,7 +2863,7 @@ describe('JHipster generator', () => {
                         languages: ['fr'],
                         buildTool: 'maven',
                         rememberMeKey: '5c37379956bd1242f5636c8cb322c2966ad81277',
-                        serverSideOptions: []
+                        serverSideOptions: [],
                     })
                     .on('end', done);
             });
@@ -2889,14 +2889,14 @@ describe('JHipster generator', () => {
                             skipInstall: true,
                             skipChecks: true,
                             blueprint: 'kotlin',
-                            'skip-ktlint-format': true
+                            'skip-ktlint-format': true,
                         })
                         .withGenerators([
                             [
                                 require('../generators/server'), // eslint-disable-line global-require
                                 'jhipster-kotlin:server',
-                                path.join(__dirname, '../generators/server/index.js')
-                            ]
+                                path.join(__dirname, '../generators/server/index.js'),
+                            ],
                         ])
                         .inTmpDir(dir => {
                             fse.copySync(path.join(__dirname, '../test/templates/default-ng2'), dir);
@@ -2907,13 +2907,14 @@ describe('JHipster generator', () => {
                         .withOptions({ creationTimestamp: '2016-01-20', withEntities: true })
                         .on('end', done);
                 });
-    
-                 it('creates expected default files', () => {
+
+                it('creates expected default files', () => {
                     assert.file(expectedFiles.server);
                     assert.file(expectedFiles.serverLiquibase);
                     assert.file(expectedFiles.clientNg2);
                     assert.file(expectedFiles.gatling);
                 });
             });
+        });
     });
 });

@@ -37,12 +37,12 @@ module.exports = class extends BaseGenerator {
         this.option('from-cli', {
             desc: 'Indicates the command is run from JHipster CLI',
             type: Boolean,
-            defaults: false
+            defaults: false,
         });
         this.option('default', {
             type: Boolean,
             default: false,
-            description: 'default option'
+            description: 'default option',
         });
         this.defaultOption = this.options.default;
     }
@@ -70,7 +70,7 @@ module.exports = class extends BaseGenerator {
                 this.reactive = configuration.get('reactive');
                 this.reactiveController = this.reactive;
                 this.controllerActions = [];
-            }
+            },
         };
     }
 
@@ -81,7 +81,7 @@ module.exports = class extends BaseGenerator {
     // Public API method used by the getter and also by Blueprints
     _prompting() {
         return {
-            askForControllerActions: prompts.askForControllerActions
+            askForControllerActions: prompts.askForControllerActions,
         };
     }
 
@@ -94,7 +94,7 @@ module.exports = class extends BaseGenerator {
         return {
             insight() {
                 statistics.sendSubGenEvent('generator', 'spring-controller-kotlin');
-            }
+            },
         };
     }
 
@@ -114,7 +114,7 @@ module.exports = class extends BaseGenerator {
                     this.log(chalk.green('No controller actions found, adding a default action'));
                     this.controllerActions.push({
                         actionName: 'defaultAction',
-                        actionMethod: 'Get'
+                        actionMethod: 'Get',
                     });
                 }
 
@@ -152,7 +152,7 @@ module.exports = class extends BaseGenerator {
                     `${SERVER_MAIN_SRC_DIR}package/web/rest/Resource.kt.ejs`,
                     `${SERVER_MAIN_SRC_DIR}${this.packageFolder}/web/rest/${this.controllerClass}.kt`
                 );
-            }
+            },
         };
     }
 
