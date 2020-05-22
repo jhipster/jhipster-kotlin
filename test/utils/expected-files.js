@@ -691,26 +691,26 @@ const expectedFiles = {
     mysql: [
         `${SERVER_MAIN_SRC_DIR}com/mycompany/myapp/config/LiquibaseConfiguration.kt`,
         `${DOCKER_DIR}mysql.yml`,
-        `${SERVER_TEST_RES_DIR}/config/application-testcontainers.yml`,
+        `${SERVER_TEST_RES_DIR}config/application-testcontainers.yml`,
     ],
 
     mariadb: [
         `${SERVER_MAIN_SRC_DIR}com/mycompany/myapp/config/LiquibaseConfiguration.kt`,
         `${DOCKER_DIR}mariadb.yml`,
-        `${SERVER_TEST_RES_DIR}/config/application-testcontainers.yml`,
-        `${SERVER_TEST_RES_DIR}/testcontainers/mariadb/my.cnf`,
+        `${SERVER_TEST_RES_DIR}config/application-testcontainers.yml`,
+        `${SERVER_TEST_RES_DIR}testcontainers/mariadb/my.cnf`,
     ],
 
     mssql: [
         `${SERVER_MAIN_SRC_DIR}com/mycompany/myapp/config/LiquibaseConfiguration.kt`,
         `${DOCKER_DIR}mssql.yml`,
-        `${SERVER_TEST_RES_DIR}/config/application-testcontainers.yml`,
+        `${SERVER_TEST_RES_DIR}config/application-testcontainers.yml`,
     ],
 
     postgresql: [
         `${SERVER_MAIN_SRC_DIR}com/mycompany/myapp/config/LiquibaseConfiguration.kt`,
         `${DOCKER_DIR}postgresql.yml`,
-        `${SERVER_TEST_RES_DIR}/config/application-testcontainers.yml`,
+        `${SERVER_TEST_RES_DIR}config/application-testcontainers.yml`,
     ],
 
     liquibase: [
@@ -756,8 +756,8 @@ const expectedFiles = {
     ],
 
     couchbaseSearch: [
-        `${SERVER_MAIN_SRC_DIR}com/mycompany/myapp/repository/search/SearchCouchbaseRepository.java`,
-        `${SERVER_TEST_SRC_DIR}com/mycompany/myapp/repository/CustomN1qlCouchbaseRepositoryTest.java`,
+        `${SERVER_MAIN_SRC_DIR}com/mycompany/myapp/repository/search/SearchCouchbaseRepository.kt`,
+        `${SERVER_TEST_SRC_DIR}com/mycompany/myapp/repository/CustomN1qlCouchbaseRepositoryTest.kt`,
     ],
 
     cassandra: [

@@ -30,27 +30,27 @@ import org.springframework.web.servlet.config.annotation.WebMvcConfigurer
 import java.util.concurrent.TimeUnit
 
 @Configuration
-@Profile({JHipsterConstants.SPRING_PROFILE_PRODUCTION})
+@Profile(JHipsterConstants.SPRING_PROFILE_PRODUCTION)
 class StaticResourcesWebConfiguration(private val jHipsterProperties: JHipsterProperties): WebMvcConfigurer {
 
     companion object {
-        const val RESOURCE_LOCATIONS = listOf("classpath:/static/app/", "classpath:/static/content/", "classpath:/static/i18n/")
-        const val RESOURCE_PATHS = listOf("/app/*", "/content/*", "/i18n/*")
+        val RESOURCE_LOCATIONS = listOf("classpath:/static/app/", "classpath:/static/content/", "classpath:/static/i18n/")
+        val RESOURCE_PATHS = listOf("/app/*", "/content/*", "/i18n/*")
     }
 
     override fun addResourceHandlers(registry: ResourceHandlerRegistry) {
-        ResourceHandlerRegistration resourceHandlerRegistration = appendResourceHandler(registry)
+        val resourceHandlerRegistration = appendResourceHandler(registry)
         initializeResourceHandler(resourceHandlerRegistration)
     }
 
-    protected fun appendResourceHandler(registry: ResourceHandlerRegistry) = registry.addResourceHandler(RESOURCE_PATHS)
+    protected fun appendResourceHandler(registry: ResourceHandlerRegistry) = registry.addResourceHandler(*RESOURCE_PATHS.toTypedArray())
 
     protected fun initializeResourceHandler(resourceHandlerRegistration: ResourceHandlerRegistration) {
-        resourceHandlerRegistration.addResourceLocations(RESOURCE_LOCATIONS).setCacheControl(getCacheControl())
+        resourceHandlerRegistration.addResourceLocations(*RESOURCE_LOCATIONS.toTypedArray()).setCacheControl(getCacheControl())
     }
 
-    protected fun getCacheControl() = CacheControl.maxAge(getJHipsterHttpCacheProperty(), TimeUnit.DAYS).cachePublic()
+    protected fun getCacheControl() = CacheControl.maxAge(getJHipsterHttpCacheProperty() as Long, TimeUnit.DAYS).cachePublic()
 
-    private fun getJHipsterHttpCacheProperty() = jhipsterProperties.http.cache.timeToLiveInDays
+    private fun getJHipsterHttpCacheProperty() = jHipsterProperties.http.cache.timeToLiveInDays
 
 }

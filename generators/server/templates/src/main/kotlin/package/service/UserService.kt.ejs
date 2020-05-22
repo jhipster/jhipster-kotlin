@@ -174,10 +174,11 @@ class UserService<% if (databaseType !== 'no') { %>(
                 userRepository.save(it)
                 <%_ } _%>
                 <%_ if (cacheManagerIsAvailable === true) { _%>
-                this.clearUserCaches(it)
+                clearUserCaches(it)
                 <%_ } _%>
                 it
             }
+            <%_ } else { _%>
             .publishOn(Schedulers.boundElastic())
             .map {
                 it.password = passwordEncoder.encode(newPassword)
@@ -203,7 +204,7 @@ class UserService<% if (databaseType !== 'no') { %>(
                 userRepository.save(it)
                 <%_ } _%>
                 <%_ if (cacheManagerIsAvailable === true) { _%>
-                this.clearUserCaches(it)
+                clearUserCaches(it)
                 <%_ } _%>
                 it
             }
@@ -492,7 +493,7 @@ class UserService<% if (databaseType !== 'no') { %>(
                 userSearchRepository.save(user)
                 <%_ } _%>
                 <%_ if (cacheManagerIsAvailable === true) { _%>
-                this.clearUserCaches(user)
+                clearUserCaches(user)
                 <%_ } _%>
                 log.debug("Changed Information for User: {}", user)
                 user
@@ -564,35 +565,44 @@ class UserService<% if (databaseType !== 'no') { %>(
     <%_ if (databaseType === 'sql' && reactive) { _%>
     @Transactional
     <%_ } _%>
-    fun updateUser(firstName: String, lastName: String, email: String, langKey: String<% if (['sql', 'mongodb', 'couchbase', 'neo4j'].includes(databaseType)) { %>, imageUrl: String<% } %>): <% if (reactive) { %>Mono<Void><% } else { %>void<% } %> {
-        <% if (reactive) { %>return <% } %>SecurityUtils.getCurrentUserLogin()
+    fun updateUser(firstName: String?, lastName: String?, email: String?, langKey: String?<% if (['sql', 'mongodb', 'couchbase', 'neo4j'].includes(databaseType)) { %>, imageUrl: String?<% } %>): <% if (reactive) { %>Mono<Void><% } %> {
+        <% if (reactive) { %>return <% } %>getCurrentUserLogin()
             .flatMap(userRepository::findOneByLogin)
-            .<% if (reactive) { %>flatMap<% } else { %>ifPresent<% } %>(user -> {
-                user.setFirstName(firstName)
-                user.setLastName(lastName)
-                if (email != null) {
-                    user.setEmail(email.toLowerCase())
-                }
-                user.setLangKey(langKey)
+            .<% if (reactive) { %>flatMap<% } else { %>ifPresent<% } %>{
+
+                it.firstName = firstName
+                it.lastName = lastName
+                it.email = email?.toLowerCase()
+                it.langKey = langKey
                 <%_ if (['sql', 'mongodb', 'couchbase', 'neo4j'].includes(databaseType)) { _%>
-                user.setImageUrl(imageUrl)
+                it.imageUrl = imageUrl
                 <%_ } _%>
+                clearUserCaches(it)
+                log.debug("Changed Information for User: {it}")
             <%_ if (!reactive) { _%>
                 <%_ if (['mongodb', 'neo4j', 'couchbase', 'cassandra'].includes(databaseType)) { _%>
-                userRepository.save(user)
+                userRepository.save(it)
                 <%_ } _%>
                 <%_ if (searchEngine === 'elasticsearch') { _%>
-                userSearchRepository.save(user)
+                userSearchRepository.save(it)
                 <%_ } _%>
                 <%_ if (cacheManagerIsAvailable === true) { _%>
-                this.clearUserCaches(user)
+                clearUserCaches(it)
                 <%_ } _%>
-                log.debug("Changed Information for User: {}", user)
-            })
+                log.debug("Changed Information for User: {it}")
+            }
             <%_ } else { _%>
-                return saveUser(user);
-            })
-        <%_ } _%>
+                saveUser(it)
+            }
+                <%_ if (searchEngine === 'elasticsearch') { _%>
+                .flatMap { userSearchRepository.save(it).thenReturn(it) }
+                <%_ } _%>
+                <%_ if (cacheManagerIsAvailable === true) { _%>
+                .doOnNext(this::clearUserCaches)
+                <%_ } _%>
+                .doOnNext(user -> log.debug("Changed Information for User: {}", user))
+                .then()
+            <%_ } _%>
     }
 
     private fun createUser(user: <%= asEntity('User') %>): Mono<<%= asEntity('User') %>> {
