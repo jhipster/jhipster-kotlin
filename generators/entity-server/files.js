@@ -104,6 +104,7 @@ const serverFiles = {
                 {
                     file: 'package/repository/EntityRepository.kt',
                     renameTo: generator => `${generator.packageFolder}/repository/${generator.entityClass}Repository.kt`,
+                    useBluePrint: true,
                 },
             ],
         },
