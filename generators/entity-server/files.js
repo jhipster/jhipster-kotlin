@@ -321,7 +321,7 @@ function writeFiles() {
                 // eslint-disable-next-line no-console
                 if (!this.skipServer) {
                     const pathToTemplateFile = `${fetchFromInstalledKHipster(
-                        'entity-server/templates'
+                        'templates'
                     )}/${SERVER_MAIN_SRC_KOTLIN_DIR}package/domain/enumeration/Enum.kt.ejs`;
                     this.template(
                         pathToTemplateFile,
