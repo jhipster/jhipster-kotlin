@@ -304,6 +304,8 @@ function writeFiles() {
         },
 
         writeEnumFiles() {
+            // TODO replace this with proper function.
+            const fetchFromInstalledKHipster = subpath => `${this.fetchFromInstalledJHipster('')}../generator-jhipster-kotlin/${subpath}`;
             this.fields.forEach(field => {
                 if (!field.fieldIsEnum) {
                     return;
@@ -317,7 +319,7 @@ function writeFiles() {
                 };
                 // eslint-disable-next-line no-console
                 if (!this.skipServer) {
-                    const pathToTemplateFile = `${this.fetchFromInstalledJHipster(
+                    const pathToTemplateFile = `${fetchFromInstalledKHipster(
                         'entity-server/templates'
                     )}/${SERVER_MAIN_SRC_KOTLIN_DIR}package/domain/enumeration/Enum.kt.ejs`;
                     this.template(
