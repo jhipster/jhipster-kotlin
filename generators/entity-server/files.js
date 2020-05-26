@@ -16,6 +16,7 @@
  * See the License for the specific language governing permissions and
  * limitations under the License.
  */
+const path = require('path');
 const _ = require('lodash');
 const chalk = require('chalk');
 const faker = require('faker');
@@ -305,7 +306,7 @@ function writeFiles() {
 
         writeEnumFiles() {
             // TODO replace this with proper function.
-            const fetchFromInstalledKHipster = subpath => `${this.fetchFromInstalledJHipster('')}../generator-jhipster-kotlin/${subpath}`;
+            const fetchFromInstalledKHipster = subpath => path.join(__dirname, subpath);
             this.fields.forEach(field => {
                 if (!field.fieldIsEnum) {
                     return;
