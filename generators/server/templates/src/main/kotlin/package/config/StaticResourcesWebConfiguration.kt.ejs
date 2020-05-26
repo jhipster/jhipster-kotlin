@@ -34,8 +34,8 @@ import java.util.concurrent.TimeUnit
 class StaticResourcesWebConfiguration(private val jHipsterProperties: JHipsterProperties): WebMvcConfigurer {
 
     companion object {
-        val RESOURCE_LOCATIONS = listOf("classpath:/static/app/", "classpath:/static/content/", "classpath:/static/i18n/")
-        val RESOURCE_PATHS = listOf("/app/*", "/content/*", "/i18n/*")
+        val RESOURCE_LOCATIONS = arrayOf("classpath:/static/app/", "classpath:/static/content/", "classpath:/static/i18n/")
+        val RESOURCE_PATHS = arrayOf("/app/*", "/content/*", "/i18n/*")
     }
 
     override fun addResourceHandlers(registry: ResourceHandlerRegistry) {
@@ -43,13 +43,13 @@ class StaticResourcesWebConfiguration(private val jHipsterProperties: JHipsterPr
         initializeResourceHandler(resourceHandlerRegistration)
     }
 
-    protected fun appendResourceHandler(registry: ResourceHandlerRegistry) = registry.addResourceHandler(*RESOURCE_PATHS.toTypedArray())
+    fun appendResourceHandler(registry: ResourceHandlerRegistry) = registry.addResourceHandler(*RESOURCE_PATHS)
 
-    protected fun initializeResourceHandler(resourceHandlerRegistration: ResourceHandlerRegistration) {
-        resourceHandlerRegistration.addResourceLocations(*RESOURCE_LOCATIONS.toTypedArray()).setCacheControl(getCacheControl())
+    fun initializeResourceHandler(resourceHandlerRegistration: ResourceHandlerRegistration) {
+        resourceHandlerRegistration.addResourceLocations(*RESOURCE_LOCATIONS).setCacheControl(getCacheControl())
     }
 
-    protected fun getCacheControl() = CacheControl.maxAge(getJHipsterHttpCacheProperty() as Long, TimeUnit.DAYS).cachePublic()
+    fun getCacheControl() = CacheControl.maxAge(getJHipsterHttpCacheProperty() as Long, TimeUnit.DAYS).cachePublic()
 
     private fun getJHipsterHttpCacheProperty() = jHipsterProperties.http.cache.timeToLiveInDays
 

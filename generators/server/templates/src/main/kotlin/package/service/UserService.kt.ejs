@@ -196,6 +196,7 @@ class UserService<% if (databaseType !== 'no') { %>(
     <%_ } _%>
     fun requestPasswordReset(mail: String): <% if (reactive) { %>Mono<% } else { %>Optional<% } %><<%= asEntity('User') %>> {
         return userRepository.findOneByEmailIgnoreCase(mail)
+            <%_ if (!reactive) { _%>
             .filter(<%= asEntity('User') %>::activated)
             .map {
                 it.resetKey = RandomUtil.generateResetKey()
@@ -565,7 +566,7 @@ class UserService<% if (databaseType !== 'no') { %>(
     <%_ if (databaseType === 'sql' && reactive) { _%>
     @Transactional
     <%_ } _%>
-    fun updateUser(firstName: String?, lastName: String?, email: String?, langKey: String?<% if (['sql', 'mongodb', 'couchbase', 'neo4j'].includes(databaseType)) { %>, imageUrl: String?<% } %>): <% if (reactive) { %>Mono<Void><% } %> {
+    fun updateUser(firstName: String?, lastName: String?, email: String?, langKey: String?<% if (['sql', 'mongodb', 'couchbase', 'neo4j'].includes(databaseType)) { %>, imageUrl: String?<% } %>) <% if (reactive) { %>: Mono<Void><% } %> {
         <% if (reactive) { %>return <% } %>getCurrentUserLogin()
             .flatMap(userRepository::findOneByLogin)
             .<% if (reactive) { %>flatMap<% } else { %>ifPresent<% } %>{
@@ -603,20 +604,6 @@ class UserService<% if (databaseType !== 'no') { %>(
                 .doOnNext(user -> log.debug("Changed Information for User: {}", user))
                 .then()
             <%_ } _%>
-    }
-
-    private fun createUser(user: <%= asEntity('User') %>): Mono<<%= asEntity('User') %>> {
-        <%_ if (databaseType === 'cassandra') { _%>
-        return userRepository.save(user)
-        <%_ } else { _%>
-            <%_ if (searchEngine === 'elasticsearch') { _%>
-            .flatMap { userSearchRepository.save(it).thenReturn(it) }
-                <%_ } _%>
-                <%_ if (cacheManagerIsAvailable === true) { _%>
-            .doOnNext(this::clearUserCaches)
-                <%_ } _%>
-            .doOnNext(user -> log.debug("Changed Information for User: {}", user))
-            .then()
     }
 
     <%_ if (reactive) { _%>
@@ -670,10 +657,10 @@ class UserService<% if (databaseType !== 'no') { %>(
             .flatMap(userRepository::findOneByLogin)
             <%_ if (reactive) { _%>
                 .publishOn(Schedulers.boundedElastic())
-                .map { user -> {
-                <%_ } else { _%>
-                .ifPresent { user -> {
-                <%_ } _%>
+                .map { user -> 
+            <%_ } else { _%>
+                .ifPresent { user -> 
+            <%_ } _%>
                     val currentEncryptedPassword = user.password
                     if (!passwordEncoder.matches(currentClearTextPassword, currentEncryptedPassword)) {
                         throw InvalidPasswordException()
@@ -690,9 +677,7 @@ class UserService<% if (databaseType !== 'no') { %>(
                 log.debug("Changed password for User: {}", user)
             }
             <%_ } else { _%>
-                user
-            }
-            .flatMap(this::saveUser)
+            }.flatMap(this::saveUser)
             <%_ if (cacheManagerIsAvailable === true) { _%>
             .doOnNext(this::clearUserCaches)
             <%_ } _%>

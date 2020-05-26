@@ -127,7 +127,7 @@ import org.springframework.data.couchbase.core.mapping.id.GenerationStrategy.USE
 <%_ if (searchEngine === 'elasticsearch') { _%>
 @org.springframework.data.elasticsearch.annotations.Document(indexName = "user")
 <%_ } _%>
-class <%= asEntity('User') %> @JvmOverloads constructor(
+class <%= asEntity('User') %> (
 <%_ if (databaseType === 'sql') { _%>
 
     @Id
@@ -377,18 +377,6 @@ class <%= asEntity('User') %> @JvmOverloads constructor(
     @IdPrefix
     private val prefix: String = PREFIX
 <%_ } _%>
-
-    @NotNull
-    @field:Pattern(regexp = LOGIN_REGEX)
-    @field:Size(min = 1, max = 50)<% if (databaseType === 'sql') { %>
-    @Column(length = 50, unique = true, nullable = false)<% } %><% if (databaseType === 'mongodb') { %>
-    @Indexed<% } %><% if (databaseType === 'couchbase') { %>
-    @IdAttribute<% } %>
-    var login: String? = login
-        set(value) {
-            // Lowercase the login before saving it in database
-            field = value?.toLowerCase(Locale.ENGLISH)
-        }
 
     override fun equals(other: Any?): Boolean {
         if (this === other) return true

@@ -1161,15 +1161,15 @@ class AccountResourceIT <% if (databaseType === 'cassandra') { %>: AbstractCassa
             .expectStatus().isOk
         <%_ } _%>
 
-        val updatedUser = userRepository.findOne<% if (databaseType === 'sql') { %>WithAuthorities<% } %>ByLogin(user.getLogin())<%_ if (!reactive) { _%>.orElse(null)<% } else { %>.block()<% } %>
-        assertThat(updatedUser.firstName).isEqualTo(userDTO.firstName)
-        assertThat(updatedUser.lastName).isEqualTo(userDTO.lastName)
-        assertThat(updatedUser.email).isEqualTo(userDTO.email)
-        assertThat(updatedUser.langKey).isEqualTo(userDTO.langKey)
-        assertThat(updatedUser.password).isEqualTo(user.password)<% if (['sql',  'mongodb',  'couchbase',  'neo4j'].includes(databaseType)) { %>
-        assertThat(updatedUser.imageUrl).isEqualTo(userDTO.imageUrl)<% } %>
-        assertThat(updatedUser.activated).isEqualTo(true)
-        assertThat(updatedUser.authorities).isEmpty()
+        val updatedUser = userRepository.findOne<% if (databaseType === 'sql') { %>WithAuthorities<% } %>ByLogin(user?.login!!)<%_ if (!reactive) { _%>.orElse(null)<% } else { %>.block()<% } %>
+        assertThat(updatedUser?.firstName).isEqualTo(userDTO.firstName)
+        assertThat(updatedUser?.lastName).isEqualTo(userDTO.lastName)
+        assertThat(updatedUser?.email).isEqualTo(userDTO.email)
+        assertThat(updatedUser?.langKey).isEqualTo(userDTO.langKey)
+        assertThat(updatedUser?.password).isEqualTo(user.password)<% if (['sql',  'mongodb',  'couchbase',  'neo4j'].includes(databaseType)) { %>
+        assertThat(updatedUser?.imageUrl).isEqualTo(userDTO.imageUrl)<% } %>
+        assertThat(updatedUser?.activated).isEqualTo(true)
+        assertThat(updatedUser?.authorities).isEmpty()
     }
 
     @Test<% if (databaseType === 'sql' && !reactive) { %>

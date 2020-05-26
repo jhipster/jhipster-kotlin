@@ -18,6 +18,8 @@
 -%>
 package <%= packageName %>.config
 
+import <%= packageName %>.config.StaticResourcesWebConfiguration.Companion.RESOURCE_LOCATIONS
+import <%= packageName %>.config.StaticResourcesWebConfiguration.Companion.RESOURCE_PATHS
 import io.github.jhipster.config.JHipsterDefaults
 import io.github.jhipster.config.JHipsterProperties
 import org.junit.jupiter.api.BeforeEach
@@ -30,13 +32,11 @@ import org.springframework.web.servlet.config.annotation.ResourceHandlerRegistry
 
 import java.util.concurrent.TimeUnit
 
-import <%= packageName %>.config.StaticResourcesWebConfiguration.*
 import org.assertj.core.api.Assertions.assertThat
 import org.mockito.Mockito.*
 
 class StaticResourcesWebConfigurerTest {
-    const val MAX_AGE_TEST = 5
-    public lateinit var staticResourcesWebConfiguration: StaticResourcesWebConfiguration
+    private lateinit var staticResourcesWebConfiguration: StaticResourcesWebConfiguration
     private lateinit var resourceHandlerRegistry: ResourceHandlerRegistry
     private lateinit var servletContext: MockServletContext
     private lateinit var applicationContext: WebApplicationContext
@@ -45,23 +45,23 @@ class StaticResourcesWebConfigurerTest {
     @BeforeEach
     fun setUp() {
         servletContext = spy(MockServletContext())
-        applicationContext = mock(WebApplicationContext::class)
+        applicationContext = mock(WebApplicationContext::class.java)
         resourceHandlerRegistry = spy(ResourceHandlerRegistry(applicationContext, servletContext))
         props = JHipsterProperties()
         staticResourcesWebConfiguration = spy(StaticResourcesWebConfiguration(props))
     }
 
     @Test
-    val shouldAppendResourceHandlerAndInitiliazeIt() {
+    fun shouldAppendResourceHandlerAndInitiliazeIt() {
 
         staticResourcesWebConfiguration.addResourceHandlers(resourceHandlerRegistry)
 
         verify(resourceHandlerRegistry, times(1))
-            .addResourceHandler(RESOURCE_PATHS)
+            .addResourceHandler(*RESOURCE_PATHS)
         verify(staticResourcesWebConfiguration, times(1))
-            .initializeResourceHandler(any(ResourceHandlerRegistration::class))
-        for (String testingPath : RESOURCE_PATHS) {
-            assertThat(resourceHandlerRegistry.hasMappingForPattern(testingPath)).isTrue()
+            .initializeResourceHandler(any(ResourceHandlerRegistration::class.java))
+        RESOURCE_PATHS.forEach {
+            assertThat(resourceHandlerRegistry.hasMappingForPattern(it)).isTrue()
         }
     }
 
@@ -69,30 +69,34 @@ class StaticResourcesWebConfigurerTest {
     fun shouldInitializeResourceHandlerWithCacheControlAndLocations() {
         val ccExpected = CacheControl.maxAge(5, TimeUnit.DAYS).cachePublic()
         `when`(staticResourcesWebConfiguration.getCacheControl()).thenReturn(ccExpected)
-        val resourceHandlerRegistration = spy(ResourceHandlerRegistration(RESOURCE_PATHS))
+        val resourceHandlerRegistration = spy(ResourceHandlerRegistration(*RESOURCE_PATHS))
 
         staticResourcesWebConfiguration.initializeResourceHandler(resourceHandlerRegistration)
 
         verify(staticResourcesWebConfiguration, times(1)).getCacheControl()
         verify(resourceHandlerRegistration, times(1)).setCacheControl(ccExpected)
-        verify(resourceHandlerRegistration, times(1)).addResourceLocations(RESOURCE_LOCATIONS)
+        verify(resourceHandlerRegistration, times(1)).addResourceLocations(*RESOURCE_LOCATIONS)
     }
 
 
     @Test
     fun shoudCreateCacheControlBasedOnJhipsterDefaultProperties() {
-        val cacheExpected = CacheControl.maxAge(JHipsterDefaults.Http.Cache.timeToLiveInDays, TimeUnit.DAYS).cachePublic()
+        val cacheExpected = CacheControl.maxAge(JHipsterDefaults.Http.Cache.timeToLiveInDays.toLong(), TimeUnit.DAYS).cachePublic()
         assertThat(staticResourcesWebConfiguration.getCacheControl())
             .extracting(CacheControl::getHeaderValue)
-            .isEqualTo(cacheExpected.getHeaderValue())
+            .isEqualTo(cacheExpected.headerValue)
     }
 
     @Test
     fun shoudCreateCacheControlWithSpecificConfigurationInProperties() {
-        props.getHttp().getCache().setTimeToLiveInDays(MAX_AGE_TEST)
-        val cacheExpected = CacheControl.maxAge(MAX_AGE_TEST, TimeUnit.DAYS).cachePublic()
+        props.http.cache.timeToLiveInDays = MAX_AGE_TEST
+        val cacheExpected = CacheControl.maxAge(MAX_AGE_TEST.toLong(), TimeUnit.DAYS).cachePublic()
         assertThat(staticResourcesWebConfiguration.getCacheControl())
             .extracting(CacheControl::getHeaderValue)
-            .isEqualTo(cacheExpected.getHeaderValue())
+            .isEqualTo(cacheExpected.headerValue)
+    }
+
+    companion object {
+        const val MAX_AGE_TEST = 5
     }
 }

@@ -169,13 +169,7 @@ import io.github.jhipster.config.JHipsterProperties
 
 @Configuration
 @EnableCaching
-class CacheConfiguration<%_ if (cacheProvider === 'ehcache' || cacheProvider === 'caffeine') { _%>(jHipsterProperties: JHipsterProperties)<%_ } %><%_ if (cacheProvider === 'hazelcast') { %>(private val env: Environment<%_ if (serviceDiscoveryType === 'eureka' || serviceDiscoveryType === 'consul') { %>,
-    private val serverProperties: ServerProperties,
-    private val discoveryClient: DiscoveryClient<%_ } %>)<% } %> {
-    <%_ if (cacheProvider !== 'no') { _%>
-    private lateinit var gitProperties: GitProperties
-    private lateinit var buildProperties: BuildProperties
-    <%_ } _%>
+class CacheConfiguration(<% if (cacheProvider !== 'no') { %>@Autowired val gitProperties: GitProperties?, @Autowired val buildProperties: BuildProperties?<% } %><% if (cacheProvider === 'ehcache' || cacheProvider === 'caffeine') { %>, jHipsterProperties: JHipsterProperties<% } else if (cacheProvider === 'hazelcast') { %>private val env: Environment<% if (serviceDiscoveryType === 'eureka' || serviceDiscoveryType === 'consul') { %>, private val serverProperties: ServerProperties, private val discoveryClient: DiscoveryClient<% } %><% } %>) {
     <%_ if (cacheProvider === 'ehcache' || cacheProvider === 'caffeine') { _%>
 
     private val jcacheConfiguration: javax.cache.configuration.Configuration<Any, Any>
@@ -742,19 +736,7 @@ class CacheConfiguration<%_ if (cacheProvider === 'ehcache' || cacheProvider ===
     <%_ } _%>
 
     <%_ if (cacheProvider !== 'no') { _%>
-        @Autowired(required = false)
-        fun setGitProperties(gitProperties: GitProperties) {
-            this.gitProperties = gitProperties
-        }
-    
-        @Autowired(required = false)
-        fun setBuildProperties(buildProperties: BuildProperties) {
-            this.buildProperties = buildProperties
-        }
-    
         @Bean
-        fun keyGenerator(): KeyGenerator {
-            return PrefixedKeyGenerator(gitProperties, buildProperties)
-        }
+        fun keyGenerator() = PrefixedKeyGenerator(gitProperties, buildProperties)
     <%_ } _%>
 }
