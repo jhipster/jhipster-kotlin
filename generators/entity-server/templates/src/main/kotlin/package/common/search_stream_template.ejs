@@ -22,15 +22,16 @@ const entityToDtoReference = `${mapper}::toDto`; %>
 <%_ if (!viaService) { _%>
     <%_ if (!reactive) { _%>
         <%_ if (searchEngine === 'elasticsearch') { _%>
-            return <%= entityInstance %>SearchRepository.search(queryStringQuery(query)).spliterator(), false)
+            return StreamSupport
+                .stream(<%= entityInstance %>SearchRepository.search(queryStringQuery(query)).spliterator(), false)
         <%_ } else { _%>
             return <%= entityInstance %>Repository.search(<%= entityClass %>.PREFIX, query)
         <%_ } _%>
         <%_ if (dto === 'mapstruct') { _%>
-            .map(<%= entityToDtoReference %>)
+                .map(<%= entityToDtoReference %>)
         <%_ } _%>
         <%_ if (dto === 'mapstruct' || searchEngine !== 'couchbase') { _%>
-            .toMutableList()
+                .toMutableList()
         <%_ } _%>
     <%_ } else { _%>
         return <%= entityInstance %><% if (searchEngine === 'elasticsearch') { %>Search<% } %>Repository.search(<% if (searchEngine === 'couchbase') { %><%= entityClass %>.PREFIX, <% } %>query)<%_ if (dto === 'mapstruct') { %>

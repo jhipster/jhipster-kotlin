@@ -2876,45 +2876,6 @@ describe('JHipster generator', () => {
                 assert.noFile(expectedFiles.consul);
             });
         });
-
-        // TODO: Add enum test
-
-        describe('regeneration from app generator', () => {
-            describe('with creation timestamp', () => {
-                before(done => {
-                    helpers
-                        .run('generator-jhipster/generators/app')
-                        .withOptions({
-                            'from-cli': true,
-                            skipInstall: true,
-                            skipChecks: true,
-                            blueprint: 'kotlin',
-                            'skip-ktlint-format': true,
-                        })
-                        .withGenerators([
-                            [
-                                require('../generators/server'), // eslint-disable-line global-require
-                                'jhipster-kotlin:server',
-                                path.join(__dirname, '../generators/server/index.js'),
-                            ],
-                        ])
-                        .inTmpDir(dir => {
-                            fse.copySync(path.join(__dirname, '../test/templates/default-ng2'), dir);
-                            const jhipsterFolder = path.join(dir, '.jhipster');
-                            fse.ensureDirSync(jhipsterFolder);
-                            fse.writeJsonSync(path.join(jhipsterFolder, 'Foo.json'), {});
-                        })
-                        .withOptions({ creationTimestamp: '2016-01-20', withEntities: true })
-                        .on('end', done);
-                });
-
-                it('creates expected default files', () => {
-                    assert.file(expectedFiles.server);
-                    assert.file(expectedFiles.serverLiquibase);
-                    assert.file(expectedFiles.clientNg2);
-                    assert.file(expectedFiles.gatling);
-                });
-            });
-        });
     });
+    // TODO: Add enum test
 });
