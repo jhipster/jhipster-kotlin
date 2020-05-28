@@ -155,7 +155,7 @@ import java.util.UUID
 <%_ } _%>
 <%_ if (databaseType === 'neo4j') { _%>
     <%_ if (searchEngine === 'elasticsearch') { _%>
-@Enable<% if (reactive) { %>Reactive<% } %>Neo4jRepositories(basePackages = "<%= packageName %>.repository", includeFilters = @Filter(type = FilterType.ASSIGNABLE_TYPE, value = <% if (reactive) { %>Reactive<% } %>Neo4jRepository::class))
+@Enable<% if (reactive) { %>Reactive<% } %>Neo4jRepositories(basePackages = ["<%= packageName %>.repository"], includeFilters = [ComponentScan.Filter(type = FilterType.ASSIGNABLE_TYPE, value = <% if (reactive) { %>Reactive<% } %>Neo4jRepository::class])])
     <%_ } else { _%>
 @Enable<% if (reactive) { %>Reactive<% } %>Neo4jRepositories("<%= packageName %>.repository")
     <%_ } _%>
@@ -165,7 +165,7 @@ import java.util.UUID
 <%_ } _%>
 <%_ if (databaseType === 'mongodb') { _%>
     <%_ if (searchEngine === 'elasticsearch') { _%>
-        @Enable<% if (reactive) { %>Reactive<% } %>MongoRepositories(basePackages = "<%= packageName %>.repository", includeFilters = @Filter(type = FilterType.ASSIGNABLE_TYPE, value = <% if (reactive) { %>Reactive<% } %>MongoRepository::class))
+@Enable<% if (reactive) { %>Reactive<% } %>MongoRepositories(basePackages = ["<%= packageName %>.repository"], includeFilters = [ComponentScan.Filter(type = FilterType.ASSIGNABLE_TYPE, value = [<% if (reactive) { %>Reactive<% } %>MongoRepository::class])])
     <%_ } else { _%>
 @Enable<% if (reactive) { %>Reactive<% } %>MongoRepositories("<%= packageName %>.repository")
     <%_ } _%>
@@ -182,8 +182,8 @@ import java.util.UUID
     <%_ } _%>
 <%_ } _%>
 <%_ if (databaseType === 'couchbase') { _%>
-@Enable<% if (reactive) { %>Reactive<% } %>CouchbaseRepositories(repositoryBaseClass = Custom<% if (reactive) { %>Reactive<% } %>N1qlCouchbaseRepository::class, basePackages = "<%= packageName %>.repository"<%_ if (searchEngine === 'elasticsearch') { %>,
-    includeFilters = @Filter(type = FilterType.ASSIGNABLE_TYPE, value = <% if (reactive) { %>Reactive<% } %>N1qlCouchbaseRepository::class)<%_ } _%>)
+@Enable<% if (reactive) { %>Reactive<% } %>CouchbaseRepositories(repositoryBaseClass = Custom<% if (reactive) { %>Reactive<% } %>N1qlCouchbaseRepository::class, basePackages = ["<%= packageName %>.repository"]<%_ if (searchEngine === 'elasticsearch') { %>,
+    includeFilters = [ComponentScan.Filter(type = FilterType.ASSIGNABLE_TYPE, value = [<% if (reactive) { %>Reactive<% } %>N1qlCouchbaseRepository::class])]<%_ } _%>)
         <%_ if (!reactive) { _%>
 @EnableCouchbaseAuditing(auditorAwareRef = "springSecurityAuditorAware")
   <%_ } _%>
@@ -282,7 +282,7 @@ class DatabaseConfiguration<%_ if (databaseType === 'sql' && (devDatabaseType ==
         )
 
     @Bean
-    fun couchmove(couchbaseBucket: Bucket): Couchmove {
+    fun couchmove(couchbaseBucket: Bucket, properties: CouchbaseProperties): Couchmove {
         log.debug("Configuring Couchmove")
         return Couchmove(couchbaseBucket, properties.bucket.name, properties.bucket.password, "config/couchmove/changelog").apply { migrate() }
     }
