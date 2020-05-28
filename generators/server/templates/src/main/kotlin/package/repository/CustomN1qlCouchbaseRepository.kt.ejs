@@ -47,16 +47,14 @@ import java.util.stream.Collectors
 
 /**
  * A custom implementation of `CouchbaseRepository`.
- */
-class CustomN1qlCouchbaseRepository<T, ID : Serializable><%if (searchEngine === 'couchbase') { %> : SearchCouchbaseRepository<T, ID><% } %> {
-/**
+ *
  * Create a new Repository.
  *
  * @param metadata            the Metadata for the entity.
  * @param couchbaseOperations the reference to the template used.
  */
-    (metadata: CouchbaseEntityInformation<T, String>, couchbaseOperations: CouchbaseOperations) :
-    N1qlCouchbaseRepository<T, ID>(metadata, couchbaseOperations) {
+class CustomN1qlCouchbaseRepository<T, ID : Serializable>(metadata: CouchbaseEntityInformation<T, String>, couchbaseOperations: CouchbaseOperations) :
+    N1qlCouchbaseRepository<T, ID>(metadata, couchbaseOperations)<%if (searchEngine === 'couchbase') { %>, SearchCouchbaseRepository<T, ID><% } %> {
 
     private val persistentEntity: CouchbasePersistentEntity<*>? =
         getCouchbaseOperations().converter.mappingContext.getPersistentEntity(entityInformation.javaType)

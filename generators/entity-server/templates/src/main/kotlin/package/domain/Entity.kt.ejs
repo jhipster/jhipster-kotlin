@@ -318,7 +318,7 @@ for (idx in fields) {
     @Relationship("<%= relationshipFieldName %>")
     <%_ } _%>
     <%_ if (otherEntityRelationshipNamePlural !==undefined && otherEntityRelationshipNamePlural !== '') { _%>
-    @JsonIgnoreProperties(value = "<%= otherEntityRelationshipNamePlural %>", allowSetters = true)
+    @JsonIgnoreProperties(value = ["<%= otherEntityRelationshipNamePlural %>"], allowSetters = true)
     <%_ } _%>
     var <%= relationshipFieldName %>: <%= asEntity(otherEntityNameCapitalized) %>? = null<%= comma %>
 
@@ -341,7 +341,7 @@ for (idx in fields) {
             <%_ } _%>
     @Field("<%= relationshipFieldNamePlural %>")
         <%_ if (databaseType === 'couchbase') { _%>
-    var <%= relationshipFieldName %>Ids = hashSetOf<String>(),
+    var <%= relationshipFieldName %>Ids: HashSet<String> = hashSetOf(),
 
     @N1qlJoin(on = "lks.<%= relationshipFieldNamePlural %>=meta(rks).id", fetchType = FetchType.IMMEDIATE)
         <%_ }
@@ -414,7 +414,7 @@ for (idx in fields) {
     fun add<%= relationshipNameCapitalized %>(<%= otherEntityName %>: <%= asEntity(otherEntityNameCapitalized) %>): <%= asEntity(entityClass) %> {
         this.<%= relationshipFieldNamePlural %>.add(<%= otherEntityName %>)
         <%_ if (databaseType === 'couchbase' && !otherEntityIsEmbedded) { _%>
-        this.<%= relationshipFieldName %>Ids.add(<%= otherEntityName %>.id);
+        <%= otherEntityName %>.id?.let { this.<%= relationshipFieldName %>Ids.add(it) }
         <%_ } _%>
             <%_ if (relationshipType === 'one-to-many') { _%>
         <%= otherEntityName %>.<%= otherEntityRelationshipName %> = this
@@ -429,7 +429,7 @@ for (idx in fields) {
     fun remove<%= relationshipNameCapitalized %>(<%= otherEntityName %>: <%= asEntity(otherEntityNameCapitalized) %>): <%= asEntity(entityClass) %> {
         this.<%= relationshipFieldNamePlural %>.remove(<%= otherEntityName %>)
         <%_ if (databaseType === 'couchbase' && !otherEntityIsEmbedded) { _%>
-        this.<%= relationshipFieldName %>Ids.remove(<%= otherEntityName %>.id);
+        <%= otherEntityName %>.id?.let { this.<%= relationshipFieldName %>Ids.remove(it) }
         <%_ } _%>
             <%_ if (relationshipType === 'one-to-many') { _%>
         <%= otherEntityName %>.<%= otherEntityRelationshipName %> = null

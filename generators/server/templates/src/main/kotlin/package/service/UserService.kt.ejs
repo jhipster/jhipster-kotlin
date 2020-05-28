@@ -699,9 +699,9 @@ class UserService<% if (databaseType !== 'no') { %>(
     fun countManagedUsers() = userRepository.countAllByLoginNot(ANONYMOUS_USER)
         <%_ } _%>
     <%_ } else { // Cassandra _%>
-    fun getAllManagedUsers(): <% if (reactive) { %>Flux<% } else { %>List<% } %><<%= asDto('User') %>> =
-        userRepository.findAll()<% if (!reactive) { %>.asSequence()<% } %>
-            .filter { user -> ANONYMOUS_USER!=user.login }
+    fun getAllManagedUsers() =
+        userRepository.findAll()
+            .filter { ANONYMOUS_USER != it.login }
             .map { <%= asDto('User') %>(it) }
     <%_ } _%>
 
