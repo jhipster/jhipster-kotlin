@@ -385,12 +385,11 @@ class UserService<% if (databaseType !== 'no') { %>(
             activated = true,
             <%_ } _%>
             <%_ if (['sql', 'mongodb', 'neo4j'].includes(databaseType)) { _%>
-            authorities = userDTO.authorities?.apply {
-                this.asSequence()
-                    .map(authorityRepository::findById)
-                    .filter(Optional<Authority>::isPresent)
-                    .mapTo(mutableSetOf()) { it.get() }
-            }   
+            authorities = userDTO.authorities?.let { authorities ->
+                authorities.map { authorityRepository.findById(it) }
+                        .filter { it.isPresent }
+                        .mapTo(mutableSetOf()) { it.get() }
+            } ?: mutableSetOf()
             <%_ } else { _%>
             authorities = userDTO.authorities?.toMutableSet() ?: mutableSetOf()
             <%_ } _%>
@@ -578,10 +577,6 @@ class UserService<% if (databaseType !== 'no') { %>(
                 <%_ if (['sql', 'mongodb', 'couchbase', 'neo4j'].includes(databaseType)) { _%>
                 it.imageUrl = imageUrl
                 <%_ } _%>
-                <%_ if (cacheManagerIsAvailable === true) { _%>
-                clearUserCaches(user)
-                <%_ } _%>
-                log.debug("Changed Information for User: {it}")
             <%_ if (!reactive) { _%>
                 <%_ if (['mongodb', 'neo4j', 'couchbase', 'cassandra'].includes(databaseType)) { _%>
                 userRepository.save(it)
