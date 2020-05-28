@@ -192,14 +192,14 @@ _%><%- include('../../common/inject_template', {viaService: viaService, construc
         <%_ } _%>
         <%_ if (!reactive) { _%>
 <%- include('../../common/save_template', {asEntity, asDto, viaService: viaService, returnDirectly: false, isUsingMapsId: isUsingMapsId, mapsIdAssoc: mapsIdAssoc, isController: true}); -%>
-        return ResponseEntity.created(URI("/api/<%= entityApiUrl %>/" + result.id))
-            .headers(HeaderUtil.createEntityCreationAlert(applicationName, <%= enableTranslation %>, ENTITY_NAME, result.id<% if (primaryKeyType !== 'String') { %>.toString()<% } %>)))
+        return ResponseEntity.created(URI("/api/<%= entityApiUrl %>/${result.id}"))
+            .headers(HeaderUtil.createEntityCreationAlert(applicationName, <%= enableTranslation %>, ENTITY_NAME, result.id<% if (primaryKeyType !== 'String') { %>.toString()<% } %>))
             .body(result)
         <%_ } else { _%>
 <%- include('../../common/save_reactive_template', {asEntity, asDto, viaService: viaService, returnDirectly: false}); -%>
             .map { result -> {
                 try {
-                    return ResponseEntity.created(URI("/api/<%= entityApiUrl %>/" + result.id))
+                    return ResponseEntity.created(URI("/api/<%= entityApiUrl %>/${result.id}"))
                         .headers(HeaderUtil.createEntityCreationAlert(applicationName, <%= enableTranslation %>, ENTITY_NAME, result.id<% if (primaryKeyType !== 'String') { %>.toString()<% } %>))
                         .body(result)
                 } catch (URISyntaxException e) {
@@ -305,7 +305,7 @@ _%><%- include('../../common/inject_template', {viaService: viaService, construc
     <%_ if (databaseType === 'sql' && isUsingMapsId === true && !viaService) { _%>
     @Transactional(readOnly = true)
     <%_ } _%>
-    fun get<%= entityClass %>(@PathVariable id: <%= primaryKeyType %>): <% if (reactive) { %>Mono<<% } %>ResponseEntity<<%= instanceType %>><% if (reactive) { %>><% } %> > {
+    fun get<%= entityClass %>(@PathVariable id: <%= primaryKeyType %>): <% if (reactive) { %>Mono<<% } %>ResponseEntity<<%= instanceType %>><% if (reactive) { %>><% } %> {
         log.debug("REST request to get <%= entityClass %> : {}", id)<%- include('../../common/get_template', {asEntity, asDto, viaService, returnDirectly:false}); -%>
         return ResponseUtil.wrapOrNotFound(<%= instanceName %>)
     }

@@ -26,6 +26,7 @@ import <%= packageName %>.domain.<%= asEntity('User') %>
 <%_ if (databaseType === 'cassandra') { _%>
 import com.datastax.driver.core.BatchStatement
 import com.datastax.driver.core.BoundStatement
+import com.datastax.driver.core.PreparedStatement
 import com.datastax.driver.core.Session
     <%_ if (!reactive) { _%>
 import com.datastax.driver.mapping.MappingManager
@@ -520,10 +521,10 @@ class UserRepository(
         session.execute(batch)
         return user
         <%_ } else { // reactive _%>
-        return this.findById(user.id)
+        return this.findById(user.id!!)
             .flatMapMany  {oldUser ->
                 val deleteOps: Flux<ReactiveResultSet> = Flux.empty()
-                if (!StringUtils.isEmpty(oldUser.getActivationKey()) oldUser.activationKey!=user.activationKey) {
+                if (!StringUtils.isEmpty(oldUser.activationKey) && oldUser.activationKey != user.activationKey) {
                     deleteOps.mergeWith(session.execute(deleteByActivationKeyStmt.bind().setString("activation_key", oldUser.activationKey)))
                 }
                 if (!StringUtils.isEmpty(oldUser.resetKey) && oldUser.resetKey!=user.resetKey) {
@@ -532,8 +533,8 @@ class UserRepository(
                 if (!StringUtils.isEmpty(oldUser.login) && oldUser.login!=user.login) {
                     deleteOps.mergeWith(session.execute(deleteByLoginStmt.bind().setString("login", oldUser.login)))
                 }
-                if (!StringUtils.isEmpty(oldUser.email) && !oldUser.email!!.equalsIgnoreCase(user.email!!)) {
-                    deleteOps.mergeWith(session.execute(deleteByEmailStmt.bind().setString("email", oldUser.email!!.toLowerCase)))
+                if (!StringUtils.isEmpty(oldUser.email) && oldUser.email != user.email) {
+                    deleteOps.mergeWith(session.execute(deleteByEmailStmt.bind().setString("email", oldUser.email?.toLowerCase())))
                 }
                 deleteOps
             }
@@ -554,7 +555,7 @@ class UserRepository(
                     .setString("login", user.login)
                     .setString("id", user.id))
                 batch.add(insertByEmailStmt.bind()
-                    .setString("email", user.email!!.toLowerCase)
+                    .setString("email", user.email?.toLowerCase())
                     .setString("id", user.id))
                 session.execute(batch)
             })

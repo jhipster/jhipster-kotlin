@@ -117,8 +117,8 @@ const serverFiles = {
             path: SERVER_MAIN_SRC_KOTLIN_DIR,
             templates: [
                 {
-                    file: 'package/repository/reactive/EntityReactiveRepository.kt',
-                    renameTo: generator => `${generator.packageFolder}/repository/reactive/${generator.entityClass}ReactiveRepository.kt`,
+                    file: 'package/repository/EntityReactiveRepository.kt',
+                    renameTo: generator => `${generator.packageFolder}/repository/${generator.entityClass}ReactiveRepository.kt`,
                     useBluePrint: true,
                 },
             ],
