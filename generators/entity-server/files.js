@@ -58,11 +58,6 @@ const serverFiles = {
             path: SERVER_MAIN_SRC_KOTLIN_DIR,
             templates: [
                 {
-                    file: 'package/repository/EntityRepository.kt',
-                    renameTo: generator => `${generator.packageFolder}/repository/${generator.entityClass}Repository.kt`,
-                    useBluePrint: true,
-                },
-                {
                     file: 'package/web/rest/EntityResource.kt',
                     renameTo: generator => `${generator.packageFolder}/web/rest/${generator.entityClass}Resource.kt`,
                     useBluePrint: true,
