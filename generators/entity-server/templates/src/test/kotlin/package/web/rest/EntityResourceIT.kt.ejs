@@ -666,7 +666,7 @@ class <%= entityClass %>ResourceIT <% if (databaseType === 'cassandra') { %>: Ab
             .andExpect(status().isOk)
             .andExpect(content().contentType(MediaType.APPLICATION_JSON_VALUE))
         <%_ } else { _%>
-        webTestClient.get().uri("/api/<%= entityApiUrl %>/{id}", <%= asEntity(entityInstance) %>.getId())
+        webTestClient.get().uri("/api/<%= entityApiUrl %>/{id}", id)
             .accept(MediaType.APPLICATION_JSON)
             .exchange()
             .expectStatus().isOk
@@ -1075,11 +1075,11 @@ class <%= entityClass %>ResourceIT <% if (databaseType === 'cassandra') { %>: Ab
         <%_ if (!reactive) { _%>
         // Delete the <%= entityInstance %>
         rest<%= entityClass %>MockMvc.perform(
-            delete("/api/<%= entityApiUrl %>/{id}", <%= asEntity(entityInstance) %>)
+            delete("/api/<%= entityApiUrl %>/{id}", <%= asEntity(entityInstance) %>.id)
                 .accept(MediaType.APPLICATION_JSON)
         ).andExpect(status().isNoContent)
         <%_ } else { _%>
-        webTestClient.delete().uri("/api/<%= entityApiUrl %>/{id}", <%= asEntity(entityInstance) %>.getId())
+        webTestClient.delete().uri("/api/<%= entityApiUrl %>/{id}", <%= asEntity(entityInstance) %>.id)
             .accept(MediaType.APPLICATION_JSON)
             .exchange()
             .expectStatus().isNoContent
@@ -1144,7 +1144,7 @@ class <%= entityClass %>ResourceIT <% if (databaseType === 'cassandra') { %>: Ab
             .andExpect(status().isOk)
             .andExpect(content().contentType(MediaType.APPLICATION_JSON_VALUE))
     <%_ } else { _%>
-        webTestClient.get().uri("/api/_search/<%= entityApiUrl %>?query=id:" + <%= asEntity(entityInstance) %>.getId())
+        webTestClient.get().uri("/api/_search/<%= entityApiUrl %>?query=id:" + <%= asEntity(entityInstance) %>.id)
             .exchange()
             .expectStatus().isOk()
             .expectHeader().contentType(MediaType.APPLICATION_JSON)
