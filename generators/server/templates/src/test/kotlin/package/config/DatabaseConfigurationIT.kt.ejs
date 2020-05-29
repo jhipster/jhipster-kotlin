@@ -38,49 +38,55 @@ class DatabaseConfigurationIT(
     private val couchbaseProperties: CouchbaseProperties
 ) : AbstractCouchbaseConfiguration() {
 
-    private lateinit var couchbaseContainer: CouchbaseContainer
-    private lateinit var couchbaseEnvironment: CouchbaseEnvironment
-    private lateinit var couchbaseCluster: CouchbaseCluster
+    private var _couchbaseContainer: CouchbaseContainer? = null
+    val couchbaseContainer: CouchbaseContainer?
+        get() {
+            if (_couchbaseContainer == null) {
+                _couchbaseContainer = CouchbaseContainer("<%= DOCKER_COUCHBASE %>")
+                    .withBucket(BucketDefinition(bucketName).withQuota(100))
+                    .withCredentials(username, bucketPassword)
+                couchbaseContainer?.start()
+            }
+            return _couchbaseContainer
+        }
+
+    private var _couchbaseEnvironment: CouchbaseEnvironment? = null
+    val couchbaseEnvironment: CouchbaseEnvironment?
+        get() {
+            if (_couchbaseEnvironment == null) {
+                couchbaseContainer?.bootstrapCarrierDirectPort?.let { carrierPort ->
+                    couchbaseContainer?.bootstrapHttpDirectPort?.let { httpPort ->
+                        _couchbaseEnvironment = DefaultCouchbaseEnvironment
+                            .builder()
+                            .bootstrapCarrierDirectPort(carrierPort)
+                            .bootstrapHttpDirectPort(httpPort)
+                            .build()
+                    }
+                }
+            }
+            return _couchbaseEnvironment
+        }
+
+    private var _couchbaseCluster: CouchbaseCluster? = null
+    val couchbaseCluster: CouchbaseCluster?
+        get() {
+            if (_couchbaseCluster == null) {
+                _couchbaseCluster = CouchbaseCluster.create(couchbaseEnvironment(), couchbaseContainer?.containerIpAddress)
+            }
+            return _couchbaseCluster
+        }
 
     @Bean(destroyMethod = "", name = [BeanNames.COUCHBASE_ENV])
-    override fun couchbaseEnvironment(): CouchbaseEnvironment = couchbaseEnvironment
+    override fun couchbaseEnvironment(): CouchbaseEnvironment = couchbaseEnvironment!!
 
     @Throws(Exception::class)
-    override fun couchbaseCluster(): CouchbaseCluster = couchbaseCluster
+    override fun couchbaseCluster(): CouchbaseCluster = couchbaseCluster!!
 
-    override fun getBootstrapHosts(): List<String> = Lists.newArrayList(couchbaseContainer.containerIpAddress)
+    override fun getBootstrapHosts(): List<String> = listOf(couchbaseContainer?.containerIpAddress!!)
 
     override fun getBucketName(): String = couchbaseProperties.bucket.name
 
     override fun getBucketPassword(): String = couchbaseProperties.bucket.password
 
     override fun couchbaseConfigurer(): CouchbaseConfigurer = this
-
-    private fun getCouchbaseContainer(): CouchbaseContainer {
-        if (couchbaseContainer == null) {
-            couchbaseContainer = CouchbaseContainer("<%= DOCKER_COUCHBASE %>")
-                .withBucket(BucketDefinition(getBucketName()).withQuota(100))
-                .withCredentials(getUsername(), getBucketPassword())
-            couchbaseContainer.start()
-        }
-        return couchbaseContainer
-    }
-
-    private fun getCouchbaseEnvironment(): CouchbaseEnvironment {
-        if (couchbaseEnvironment == null) {
-            couchbaseEnvironment = DefaultCouchbaseEnvironment
-                .builder()
-                .bootstrapCarrierDirectPort(getCouchbaseContainer().getBootstrapCarrierDirectPort())
-                .bootstrapHttpDirectPort(getCouchbaseContainer().getBootstrapHttpDirectPort())
-                .build()
-        }
-        return couchbaseEnvironment
-    }
-
-    private fun getCouchbaseCluster():  CouchbaseCluster {
-        if (couchbaseCluster == null) {
-            couchbaseCluster = CouchbaseCluster.create(couchbaseEnvironment(), getCouchbaseContainer().getContainerIpAddress())
-        }
-        return couchbaseCluster
-    }
 }
