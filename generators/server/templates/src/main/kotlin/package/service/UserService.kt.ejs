@@ -377,13 +377,12 @@ class UserService<% if (databaseType !== 'no') { %>(
             <%_ if (['sql', 'couchbase', 'mongodb', 'neo4j'].includes(databaseType)) { _%>
             imageUrl = userDTO.imageUrl,
             <%_ } _%>
-            langKey = userDTO.langKey ?: DEFAULT_LANGUAGE, // default language
-            <%_ if (!reactive) { _%>
+            // default language
+            langKey = userDTO.langKey ?: DEFAULT_LANGUAGE<% if (!reactive) { %>, 
             password = passwordEncoder.encode(RandomUtil.generatePassword()),
             resetKey = RandomUtil.generateResetKey(),
             resetDate = Instant.now(),
             activated = true,
-            <%_ } _%>
             <%_ if (['sql', 'mongodb', 'neo4j'].includes(databaseType)) { _%>
             authorities = userDTO.authorities?.let { authorities ->
                 authorities.map { authorityRepository.findById(it) }
@@ -394,7 +393,6 @@ class UserService<% if (databaseType !== 'no') { %>(
             authorities = userDTO.authorities?.toMutableSet() ?: mutableSetOf()
             <%_ } _%>
         )
-    <%_ if (!reactive) { _%>
         userRepository.save(user)
         <%_ if (searchEngine === 'elasticsearch') { _%>
         userSearchRepository.save(user)
@@ -405,6 +403,7 @@ class UserService<% if (databaseType !== 'no') { %>(
         log.debug("Created Information for User: {}", user)
         return user
     <%_ } else { _%>
+        )
         <%_ if (['sql', 'mongodb', 'neo4j'].includes(databaseType)) { _%>
         return Flux.fromIterable(userDTO.authorities ?: mutableSetOf())
             .flatMap<Authority>(authorityRepository::findById)
@@ -617,7 +616,7 @@ class UserService<% if (databaseType !== 'no') { %>(
             return userRepository.save(user)
             <%_ } else { _%>
             return getCurrentUserLogin()
-                .switchIfEmpty(Mono.just(Constants.SYSTEM_ACCOUNT))
+                .switchIfEmpty(Mono.just(SYSTEM_ACCOUNT))
                 .flatMap{ login ->
                     if (user.createdBy == null) {
                         user.createdBy = login
@@ -769,7 +768,7 @@ class UserService<% if (databaseType !== 'no') { %>(
     <%_ } _%>
     fun removeNotActivatedUsersReactively(): Flux<User> {
         return userRepository
-            .findAllActivatedIsFalseAndActivationKeyIsNotNullAndCreatedDateBefore(<%_ if (databaseType === 'sql') { _%>LocalDateTime.ofInstant(Instant.now().minus(3, ChronoUnit.DAYS), ZoneOffset.UTC)<%_ } else { _%>Instant.now().minus(3, ChronoUnit.DAYS)<%_ } _%>)            
+            .findAllByActivatedIsFalseAndActivationKeyIsNotNullAndCreatedDateBefore(<%_ if (databaseType === 'sql') { _%>LocalDateTime.ofInstant(Instant.now().minus(3, ChronoUnit.DAYS), ZoneOffset.UTC)<%_ } else { _%>Instant.now().minus(3, ChronoUnit.DAYS)<%_ } _%>)            
             .flatMap { user -> userRepository.delete(user).thenReturn(user) }
             <%_ if (searchEngine === 'elasticsearch') { _%>
             .flatMap { user -> userSearchRepository.delete(user).thenReturn(user) }

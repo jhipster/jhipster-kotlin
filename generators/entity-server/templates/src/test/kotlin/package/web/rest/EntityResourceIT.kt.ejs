@@ -173,7 +173,7 @@ import org.elasticsearch.index.query.QueryBuilders.queryStringQuery
 <%_ } _%>
 import org.hamcrest.Matchers.hasItem
 <%_ if (reactive) { _%>
-import org.hamcrest.Matchers.is
+import org.hamcrest.Matchers.`is`
 <%_ } _%>
 <%_ if (testsNeedCsrf) { _%>
     <%_ if (reactive) { _%>
@@ -214,13 +214,18 @@ import org.springframework.test.web.servlet.result.MockMvcResultMatchers.status
 <%_ } else { _%>
 @SpringBootTest(classes = [<%= mainClass %>::class])
 <%_ } _%>
-<%_ if (cacheProvider === 'redis') { _%>
-@ExtendWith(classes = [RedisTestContainerExtension::class, MockitoExtension::class])
-<%_ } else if (searchEngine === 'elasticsearch' || fieldsContainOwnerManyToMany === true) { _%>
-@ExtendWith(MockitoExtension::class)
-<%_ } _%>
-<%_ if (databaseType === 'neo4j') { _%>
-@ExtendWith(AbstractNeo4jIT::class)
+<%_ if (cacheProvider === 'redis' || (searchEngine === 'elasticsearch' || fieldsContainOwnerManyToMany === true) || databaseType === 'neo4j') { _%>
+@Extensions(
+    <%_ if (cacheProvider === 'redis') { _%>
+    ExtendWith(RedisTestContainerExtension::class)
+    ExtendWith(MockitoExtension::class)
+    <%_ } else if (searchEngine === 'elasticsearch' || fieldsContainOwnerManyToMany === true) { _%>
+    ExtendWith(MockitoExtension::class)
+    <%_ } _%>
+    <%_ if (databaseType === 'neo4j') { _%>
+    ExtendWith(AbstractNeo4jIT::class)
+    <%_ } _%>
+)
 <%_ } _%>
 class <%= entityClass %>ResourceIT <% if (databaseType === 'cassandra') { %>: AbstractCassandraTest() <% } %> {
 
@@ -286,25 +291,25 @@ class <%= entityClass %>ResourceIT <% if (databaseType === 'cassandra') { %>: Ab
     @Autowired
     private lateinit var validator: Validator
 
+    <%_ if (!reactive) { _%>
+
     private lateinit var rest<%= entityClass %>MockMvc: MockMvc
+    <%_ } else { _%>
+
+    @Autowired
+    private lateinit var webTestClient: WebTestClient 
+    <%_ } _%>
 
     private lateinit var <%= asEntity(entityInstance) %>: <%= asEntity(entityClass) %>
 
+    <%_ if (reactive && testsNeedCsrf) { _%>
     @BeforeEach
-    fun setup() {
-        MockitoAnnotations.initMocks(this)
-        <%_ if (service !== 'no') { _%>
-        val <%= entityInstance %>Resource = <%= entityClass %>Resource(<%= entityInstance %>Service<% if (jpaMetamodelFiltering) { %>, <%= entityInstance %>QueryService<% } %><% if (saveUserSnapshot) { %>, userRepository<% } %>)
-        <%_ } else { _%>
-        val <%= entityInstance %>Resource = <%= entityClass %>Resource(<%= entityInstance %>Repository<% if (dto === 'mapstruct') { %>, <%= entityInstance %>Mapper<% } %><% if (searchEngine === 'elasticsearch') { %>, mock<%= entityClass %>SearchRepository<% } %><% if (reactiveRepositories) { %>, <%= entityInstance %>ReactiveRepository<% } %><% if (saveUserSnapshot) { %>, userRepository<% } %><% if (isUsingMapsId === true && dto !== 'mapstruct') { %>, <%= mapsIdRepoInstance _%> <% } %>)
-        <%_ } _%>
-        this.rest<%= entityClass %>MockMvc = MockMvcBuilders.standaloneSetup(<%= entityInstance %>Resource)
-            .setCustomArgumentResolvers(pageableArgumentResolver)
-            .setControllerAdvice(exceptionTranslator)
-            .setConversionService(createFormattingConversionService())
-            .setMessageConverters(jacksonMessageConverter)
-            .setValidator(validator).build()
+    fun setupCsrf() {
+        webTestClient = webTestClient.mutateWith(csrf());
     }
+
+    <%_ } _%>
+
 
     @BeforeEach
     fun initTest() {
@@ -341,7 +346,7 @@ class <%= entityClass %>ResourceIT <% if (databaseType === 'cassandra') { %>: Ab
         <%_ } else { _%>
         webTestClient.post().uri("/api/<%= entityApiUrl %>")
             .contentType(MediaType.APPLICATION_JSON)
-            .bodyValue(TestUtil.convertObjectToJsonBytes(<%= (dto === 'mapstruct' ? asDto(entityInstance) : asEntity(entityInstance))%>))
+            .bodyValue(convertObjectToJsonBytes(<%= (dto === 'mapstruct' ? asDto(entityInstance) : asEntity(entityInstance))%>))
             .exchange()
             .expectStatus().isCreated
         <%_ } _%>
@@ -399,7 +404,7 @@ class <%= entityClass %>ResourceIT <% if (databaseType === 'cassandra') { %>: Ab
         <%_ } else { _%>
         webTestClient.post().uri("/api/<%= entityApiUrl %>")
             .contentType(MediaType.APPLICATION_JSON)
-            .bodyValue(TestUtil.convertObjectToJsonBytes(<%= (dto === 'mapstruct' ? asDto(entityInstance) : asEntity(entityInstance))%>))
+            .bodyValue(convertObjectToJsonBytes(<%= (dto === 'mapstruct' ? asDto(entityInstance) : asEntity(entityInstance))%>))
             .exchange()
             .expectStatus().isBadRequest
         <%_ } _%>
@@ -499,7 +504,7 @@ class <%= entityClass %>ResourceIT <% if (databaseType === 'cassandra') { %>: Ab
         <%_ } else { _%>
         webTestClient.post().uri("/api/<%= entityApiUrl %>")
             .contentType(MediaType.APPLICATION_JSON)
-            .bodyValue(TestUtil.convertObjectToJsonBytes(<%= (dto === 'mapstruct' ? asDto(entityInstance) : asEntity(entityInstance))%>))
+            .bodyValue(convertObjectToJsonBytes(<%= (dto === 'mapstruct' ? asDto(entityInstance) : asEntity(entityInstance))%>))
             .exchange()
             .expectStatus().isBadRequest
         <%_ } _%>
@@ -526,8 +531,8 @@ class <%= entityClass %>ResourceIT <% if (databaseType === 'cassandra') { %>: Ab
             .exchange()
             .expectStatus().isOk
             .expectHeader().contentTypeCompatibleWith(MediaType.APPLICATION_STREAM_JSON)
-            .returnResult(<%= dto !== 'no' ? asDto(entityClass) : asEntity(entityClass) %>::class)
-            .getResponseBody()
+            .returnResult(<%= dto !== 'no' ? asDto(entityClass) : asEntity(entityClass) %>::class.java)
+            .responseBody
             <%_ if (dto !== 'no') { _%>
             .map(<%= entityInstance %>Mapper::toEntity)
             <%_ } _%>
@@ -535,18 +540,18 @@ class <%= entityClass %>ResourceIT <% if (databaseType === 'cassandra') { %>: Ab
             .collectList()
             .block(Duration.ofSeconds(5))
 
-        assertThat(<%= entityInstance %>List).isNotNull()
+        assertThat(<%= entityInstance %>List).isNotNull
         assertThat(<%= entityInstance %>List).hasSize(1)
-        val test<%= entityClass %> = <%= entityInstance %>List.get(0)
+        val test<%= entityClass %> = <%= entityInstance %>List[0]
         <%_ for (idx in fields) { if (fields[idx].fieldType === 'ZonedDateTime') { _%>
-        assertThat(test<%= entityClass %>.get<%= fields[idx].fieldInJavaBeanMethod %>()).isEqualTo(<%= 'DEFAULT_' + fields[idx].fieldNameUnderscored.toUpperCase() %>)
+        assertThat(test<%= entityClass %>.<%= fields[idx].fieldName %>).isEqualTo(<%= 'DEFAULT_' + fields[idx].fieldNameUnderscored.toUpperCase() %>)
         <%_ } else if ((fields[idx].fieldType === 'byte[]' || fields[idx].fieldType === 'ByteBuffer') && fields[idx].fieldTypeBlobContent !== 'text') { _%>
-        assertThat(test<%= entityClass %>.get<%= fields[idx].fieldInJavaBeanMethod %>()).isEqualTo(<%= 'DEFAULT_' + fields[idx].fieldNameUnderscored.toUpperCase() %>)
-        assertThat(test<%= entityClass %>.get<%= fields[idx].fieldInJavaBeanMethod %>ContentType()).isEqualTo(<%= 'DEFAULT_' + fields[idx].fieldNameUnderscored.toUpperCase() %>_CONTENT_TYPE)
+        assertThat(test<%= entityClass %>.<%= fields[idx].fieldName %>).isEqualTo(<%= 'DEFAULT_' + fields[idx].fieldNameUnderscored.toUpperCase() %>)
+        assertThat(test<%= entityClass %>.<%= fields[idx].fieldName %>ContentType).isEqualTo(<%= 'DEFAULT_' + fields[idx].fieldNameUnderscored.toUpperCase() %>_CONTENT_TYPE)
         <%_ } else if (fields[idx].fieldType.toLowerCase() === 'boolean') { _%>
-        assertThat(test<%= entityClass %>.is<%= fields[idx].fieldInJavaBeanMethod %>()).isEqualTo(<%= 'DEFAULT_' + fields[idx].fieldNameUnderscored.toUpperCase() %>)
+        assertThat(test<%= entityClass %>.<%= fields[idx].fieldName %>).isEqualTo(<%= 'DEFAULT_' + fields[idx].fieldNameUnderscored.toUpperCase() %>)
         <%_ } else { _%>
-        assertThat(test<%= entityClass %>.get<%= fields[idx].fieldInJavaBeanMethod %>()).isEqualTo(<%= 'DEFAULT_' + fields[idx].fieldNameUnderscored.toUpperCase() %>)
+        assertThat(test<%= entityClass %>.<%= fields[idx].fieldName %>).isEqualTo(<%= 'DEFAULT_' + fields[idx].fieldNameUnderscored.toUpperCase() %>)
         <%_ }} _%>
     }
 <%_  } _%>
@@ -674,11 +679,11 @@ class <%= entityClass %>ResourceIT <% if (databaseType === 'cassandra') { %>: Ab
             .expectBody()
         <%_ } _%>
         <%_ if (['sql', 'mongodb', 'couchbase', 'cassandra'].includes(databaseType)) { _%>
-            <%= !reactive ? '.andExpect(' : '.' %>jsonPath("$.id").value(<%= reactive ? 'is(' : '' %><%= idValue %>))<%_ } _%><% for (idx in fields) { %>
+            <%= !reactive ? '.andExpect(' : '.' %>jsonPath("$.id").value(<%= reactive ? '`is`(' : '' %><%= idValue %>))<%_ } _%><% for (idx in fields) { %>
             <%_ if ((fields[idx].fieldType === 'byte[]' || fields[idx].fieldType === 'ByteBuffer') && fields[idx].fieldTypeBlobContent !== 'text') { _%>
-            <%= !reactive ? '.andExpect(' : '.' %>jsonPath("$.<%= fields[idx].fieldName %>ContentType").value(<%= reactive ? 'is(' : '' %><%= 'DEFAULT_' + fields[idx].fieldNameUnderscored.toUpperCase() %>_CONTENT_TYPE))
+            <%= !reactive ? '.andExpect(' : '.' %>jsonPath("$.<%= fields[idx].fieldName %>ContentType").value(<%= reactive ? '`is`(' : '' %><%= 'DEFAULT_' + fields[idx].fieldNameUnderscored.toUpperCase() %>_CONTENT_TYPE))
             <%_ } _%>
-            <%= !reactive ? '.andExpect(' : '.' %>jsonPath("$.<%= fields[idx].fieldName %>").value(<%= reactive ? 'is(' : '' %><% if ((fields[idx].fieldType === 'byte[]' || fields[idx].fieldType === 'ByteBuffer') && fields[idx].fieldTypeBlobContent !== 'text') { %>Base64Utils.encodeToString(<% } else if (fields[idx].fieldType === 'ZonedDateTime') { %>sameInstant(<% } %><%= 'DEFAULT_' + fields[idx].fieldNameUnderscored.toUpperCase() %><% if ((fields[idx].fieldType === 'byte[]' || fields[idx].fieldType === 'ByteBuffer') && fields[idx].fieldTypeBlobContent !== 'text') { %><% if (databaseType === 'cassandra') { %>.array()<% } %>)<% } else if (fields[idx].fieldType === 'Integer') { %><% } else if (fields[idx].fieldType === 'Long') { %>?.toInt()<% } else if (fields[idx].fieldType === 'Float' || fields[idx].fieldType === 'Double') { %>.toDouble()<% } else if (fields[idx].fieldType === 'BigDecimal') { %>?.toInt()<% } else if (fields[idx].fieldType === 'Boolean') { %><% } else if (fields[idx].fieldType === 'ZonedDateTime') { %>)<% } else if (fields[idx].fieldType !== 'String') { %>.toString()<% } %>))<%_ } _%>
+            <%= !reactive ? '.andExpect(' : '.' %>jsonPath("$.<%= fields[idx].fieldName %>").value(<%= reactive ? '`is`(' : '' %><% if ((fields[idx].fieldType === 'byte[]' || fields[idx].fieldType === 'ByteBuffer') && fields[idx].fieldTypeBlobContent !== 'text') { %>Base64Utils.encodeToString(<% } else if (fields[idx].fieldType === 'ZonedDateTime') { %>sameInstant(<% } %><%= 'DEFAULT_' + fields[idx].fieldNameUnderscored.toUpperCase() %><% if ((fields[idx].fieldType === 'byte[]' || fields[idx].fieldType === 'ByteBuffer') && fields[idx].fieldTypeBlobContent !== 'text') { %><% if (databaseType === 'cassandra') { %>.array()<% } %>)<% } else if (fields[idx].fieldType === 'Integer') { %><% } else if (fields[idx].fieldType === 'Long') { %>?.toInt()<% } else if (fields[idx].fieldType === 'Float' || fields[idx].fieldType === 'Double') { %>.toDouble()<% } else if (fields[idx].fieldType === 'BigDecimal') { %>?.toInt()<% } else if (fields[idx].fieldType === 'Boolean') { %><% } else if (fields[idx].fieldType === 'ZonedDateTime') { %>)<% } else if (fields[idx].fieldType !== 'String') { %>.toString()<% } %>))<%_ } _%>
     }
 <%_ if (jpaMetamodelFiltering) {  %>
     @Test<%= transactionalAnnotation %>
@@ -989,7 +994,7 @@ class <%= entityClass %>ResourceIT <% if (databaseType === 'cassandra') { %>: Ab
         <%_ } else { _%>
         webTestClient.put().uri("/api/<%= entityApiUrl %>")
             .contentType(MediaType.APPLICATION_JSON)
-            .bodyValue(TestUtil.convertObjectToJsonBytes(<%= (dto === 'mapstruct' ? asDto(entityInstance) : 'updated' + asEntity(entityClass)) %>))
+            .bodyValue(convertObjectToJsonBytes(<%= (dto === 'mapstruct' ? asDto(entityInstance) : 'updated' + asEntity(entityClass)) %>))
             .exchange()
             .expectStatus().isOk
         <%_ } _%>
@@ -1034,7 +1039,7 @@ class <%= entityClass %>ResourceIT <% if (databaseType === 'cassandra') { %>: Ab
         <%_ } else { _%>
         webTestClient.put().uri("/api/<%= entityApiUrl %>")
             .contentType(MediaType.APPLICATION_JSON)
-            .bodyValue(TestUtil.convertObjectToJsonBytes(<%= (dto === 'mapstruct' ? asDto(entityInstance) : asEntity(entityInstance)) %>))
+            .bodyValue(convertObjectToJsonBytes(<%= (dto === 'mapstruct' ? asDto(entityInstance) : asEntity(entityInstance)) %>))
             .exchange()
             .expectStatus().isBadRequest
         <%_ } _%>
@@ -1136,7 +1141,7 @@ class <%= entityClass %>ResourceIT <% if (databaseType === 'cassandra') { %>: Ab
     <%_ } else if (searchEngine === 'couchbase') { _%>
 
         // Wait for the <%= entityInstance %> to be indexed
-        TestUtil.retryUntilNotEmpty(() -> <%= entityInstance %>Repository.search(<%= entityClass %>.PREFIX, "id:" + <%= entityInstance %>.id)<% if (reactive) { %>.collectList().block()<% } %>)
+        retryUntilNotEmpty(() -> <%= entityInstance %>Repository.search(<%= entityClass %>.PREFIX, "id:" + <%= entityInstance %>.id)<% if (reactive) { %>.collectList().block()<% } %>)
     <%_ } _%>
         // Search the <%= entityInstance %>
     <%_ if (!reactive) { _%>

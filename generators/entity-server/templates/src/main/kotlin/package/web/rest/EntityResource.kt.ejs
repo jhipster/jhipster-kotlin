@@ -97,15 +97,7 @@ import org.springframework.http.ResponseEntity
 <%_ if (!viaService && !saveUserSnapshot) { %>
 import org.springframework.transaction.annotation.Transactional
 <%_ } _%>
-import org.springframework.web.bind.annotation.DeleteMapping
-import org.springframework.web.bind.annotation.GetMapping
-import org.springframework.web.bind.annotation.PathVariable
-import org.springframework.web.bind.annotation.PostMapping
-import org.springframework.web.bind.annotation.PutMapping
-import org.springframework.web.bind.annotation.RequestBody
-import org.springframework.web.bind.annotation.RequestMapping
-import org.springframework.web.bind.annotation.RequestParam
-import org.springframework.web.bind.annotation.RestController
+import org.springframework.web.bind.annotation.*
 <%_ if (reactiveRepositories) { _%>
 import org.springframework.web.server.ResponseStatusException
 import reactor.core.publisher.Flux
@@ -122,6 +114,9 @@ import java.util.Objects<% } %>
 import java.util.UUID
 <%_ } _%>
 <%_ if (searchEngine === 'elasticsearch' && !reactive) { _%>
+import java.util.stream.Collectors
+import java.util.stream.StreamSupport
+
 import org.elasticsearch.index.query.QueryBuilders.queryStringQuery
 <%_ } _%>
 <%_ if (!readOnly) { _%>
@@ -197,15 +192,15 @@ _%><%- include('../../common/inject_template', {viaService: viaService, construc
             .body(result)
         <%_ } else { _%>
 <%- include('../../common/save_reactive_template', {asEntity, asDto, viaService: viaService, returnDirectly: false}); -%>
-            .map { result -> {
+            .map { result -> 
                 try {
-                    return ResponseEntity.created(URI("/api/<%= entityApiUrl %>/${result.id}"))
+                    ResponseEntity.created(URI("/api/<%= entityApiUrl %>/${result.id}"))
                         .headers(HeaderUtil.createEntityCreationAlert(applicationName, <%= enableTranslation %>, ENTITY_NAME, result.id<% if (primaryKeyType !== 'String') { %>.toString()<% } %>))
                         .body(result)
-                } catch (URISyntaxException e) {
+                } catch (e: URISyntaxException) {
                     throw RuntimeException(e)
                 }
-            }}
+            }
         <%_ } _%>
     }
 
@@ -329,12 +324,12 @@ _%><%- include('../../common/inject_template', {viaService: viaService, construc
         <%_ } else { _%>
             <%_ if (databaseType === 'couchbase') { _%>
                 .then(Mono.just(ResponseEntity.noContent()
-                    .headers(HeaderUtil.createEntityDeletionAlert(applicationName, <%= enableTranslation %>, ENTITY_NAME, id<% if (primaryKeyType !== 'String') { %>.toString()<% } %>)).build())
+                    .headers(HeaderUtil.createEntityDeletionAlert(applicationName, <%= enableTranslation %>, ENTITY_NAME, id<% if (primaryKeyType !== 'String') { %>.toString()<% } %>)).build<Void>())
                 )
             <%_ } else { _%>
                 .map {
                     ResponseEntity.noContent()
-                        .headers(HeaderUtil.createEntityDeletionAlert(applicationName, <%= enableTranslation %>, ENTITY_NAME, id<% if (primaryKeyType !== 'String') { %>.toString()<% } %>)).build()
+                        .headers(HeaderUtil.createEntityDeletionAlert(applicationName, <%= enableTranslation %>, ENTITY_NAME, id<% if (primaryKeyType !== 'String') { %>.toString()<% } %>)).build<Void>()
                 }
             <%_ } _%>
         <%_ } _%>
