@@ -215,10 +215,10 @@ import org.springframework.test.web.servlet.result.MockMvcResultMatchers.status
 <%_ if (cacheProvider === 'redis' || (searchEngine === 'elasticsearch' || fieldsContainOwnerManyToMany === true) || databaseType === 'neo4j') { _%>
 @Extensions(
     <%_ if (cacheProvider === 'redis') { _%>
-    ExtendWith(RedisTestContainerExtension::class)
-    ExtendWith(MockitoExtension::class)
+    ExtendWith(RedisTestContainerExtension::class),
+    ExtendWith(MockitoExtension::class)<% if (databaseType === 'neo4j') { %>,<% } %>
     <%_ } else if (searchEngine === 'elasticsearch' || fieldsContainOwnerManyToMany === true) { _%>
-    ExtendWith(MockitoExtension::class)
+    ExtendWith(MockitoExtension::class)<% if (databaseType === 'neo4j') { %>,<% } %>
     <%_ } _%>
     <%_ if (databaseType === 'neo4j') { _%>
     ExtendWith(AbstractNeo4jIT::class)
@@ -1115,7 +1115,7 @@ class <%= entityClass %>ResourceIT <% if (databaseType === 'cassandra') { %>: Ab
         <%_ if (searchEngine === 'elasticsearch') { _%>
 
         // Validate the <%= entityClass %> in Elasticsearch
-        verify(mock<%= entityClass %>SearchRepository, times(1)).deleteById(id)
+        verify(mock<%= entityClass %>SearchRepository, times(1)).deleteById(<%= asEntity(entityInstance) %>.id)
         <%_ } _%>
     }
 <%_ } _%>
