@@ -63,7 +63,7 @@ interface <%= entityClass %>Repository: Reactive<% if (databaseType === 'mongodb
 
     <%_ if (pagination !== 'no') { _%>
 
-    fun findAllBy(pageable: Pageable) Flux<<%= asEntity(entityClass) %>> 
+    fun findAllBy(pageable: Pageable): Flux<<%= asEntity(entityClass) %>> 
     <%_ } _%>
     <%_ if (fieldsContainOwnerManyToMany === true) { _%>
         <%_ if (databaseType === 'mongodb' || databaseType === 'couchbase')  { _%>
@@ -75,7 +75,7 @@ interface <%= entityClass %>Repository: Reactive<% if (databaseType === 'mongodb
     fun findAllWithEagerRelationships(): Flux<<%= asEntity(entityClass) %>> 
 
     @Query("<%- (databaseType === 'mongodb') ? "{'id': ?0}" : "#{#n1ql.selectEntity} USE KEYS $1 WHERE #{#n1ql.filter}" %>")
-    fun findOneWithEagerRelationships(<%= primaryKeyType %> id): Mono<<%= asEntity(entityClass) %>> 
+    fun findOneWithEagerRelationships(id: <%= primaryKeyType %>): Mono<<%= asEntity(entityClass) %>> 
         <%_ } _%>
         <%_ if (databaseType === 'neo4j') { _%>
     @Query("MATCH (n:<%= asEntity(entityClass) %>)<-[]-(m) RETURN n,m")
