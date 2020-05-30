@@ -77,10 +77,10 @@ import java.util.Optional
 <%_ if (databaseType === 'cassandra') { _%>
 import java.util.UUID
 <%_ } _%>
-<%_ if (fieldsContainNoOwnerOneToOne === true || (pagination === 'no' && ((searchEngine === 'elasticsearch' && !viaService) || dto === 'mapstruct'))) { _%>
+<%_ if (fieldsContainNoOwnerOneToOne === true || (pagination === 'no' && ((searchEngine !== false) || dto === 'mapstruct'))) { _%>
 import java.util.stream.Collectors
 <%_ } _%>
-<%_ if (fieldsContainNoOwnerOneToOne === true || (pagination === 'no' && searchEngine === 'elasticsearch' && !viaService)) { _%>
+<%_ if (fieldsContainNoOwnerOneToOne === true || (pagination === 'no' && searchEngine === 'elasticsearch')) { _%>
 import java.util.stream.StreamSupport
 <%_ } _%>
 <%_ if (searchEngine === 'elasticsearch') { _%>
@@ -127,7 +127,7 @@ class <%= serviceClassName %>(
         log.debug("Request to get all <%= entityClassPlural %>")
         <%_ if (pagination === 'no') { _%>
         return <%= entityInstance %>Repository.<% if (fieldsContainOwnerManyToMany === true) { %>findAllWithEagerRelationships<% } else { %>findAll<% } %>()<% if (dto === 'mapstruct') { %>
-            .mapTo(mutableListOf(), <%= entityToDtoReference %>)<% } %>
+            .map(<%= entityToDtoReference %> )<% } %>
         <%_ } else { _%>
         return <%= entityInstance %>Repository.findAll<% if (reactive) { %>By<% } %>(pageable)<% if (dto === 'mapstruct') { %>
             .map(<%= entityToDtoReference %>)<% } %>
@@ -151,7 +151,7 @@ class <%= serviceClassName %>(
     * Returns the number of <%= entityInstancePlural %> available.
     *
     */
-    fun countAll() = <%= entityInstance %>Repository.count()
+    <% if (service === 'serviceImpl') { %>override <% } %>fun countAll() = <%= entityInstance %>Repository.count()
 
     <%_ if (searchEngine === 'elasticsearch') { _%>
 
@@ -159,7 +159,7 @@ class <%= serviceClassName %>(
     * Returns the number of <%= entityInstancePlural %> available in search repository.
     *
     */
-    fun searchCount() = <%= entityInstance %>SearchRepository.count()
+    <% if (service === 'serviceImpl') { %>override <% } %>fun searchCount() = <%= entityInstance %>SearchRepository.count()
     <%_  } _%>
 
 <%_  } _%>
@@ -181,7 +181,7 @@ class <%= serviceClassName %>(
      *
      * @param id the id of the entity.
      */
-    <% if (service === 'serviceImpl') { %>override <% } %>fun delete(id: <%= primaryKeyType %>): <%- reactive ? 'Mono<Unit>' : 'Unit' %> {
+    <% if (service === 'serviceImpl') { %>override <% } %>fun delete(id: <%= primaryKeyType %>): <%- reactive ? 'Mono<Void>' : 'Unit' %> {
         log.debug("Request to delete <%= entityClass %> : {}", id)
 <%- include('../../common/delete_template', {viaService: false, fromResource: false}); -%>
     }
