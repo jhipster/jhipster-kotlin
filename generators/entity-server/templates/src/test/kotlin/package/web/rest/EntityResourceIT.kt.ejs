@@ -110,13 +110,11 @@ import kotlin.test.assertNotNull
 
 import org.junit.jupiter.api.BeforeEach
 import org.junit.jupiter.api.Test
-<%_ if (searchEngine === 'elasticsearch' || fieldsContainOwnerManyToMany || cacheProvider === 'redis') { _%>
+<%_ if (searchEngine === 'elasticsearch' || fieldsContainOwnerManyToMany || cacheProvider === 'redis' || databaseType === 'neo4j') { _%>
 import org.mockito.Mock
+import org.junit.jupiter.api.extension.Extensions
 import org.junit.jupiter.api.extension.ExtendWith
 import org.mockito.junit.jupiter.MockitoExtension
-<%_ } _%>
-<%_ if (databaseType === 'neo4j') { _%>
-import org.junit.jupiter.api.extension.ExtendWith
 <%_ } _%>
 import org.mockito.MockitoAnnotations
 import org.springframework.beans.factory.annotation.Autowired
@@ -309,6 +307,24 @@ class <%= entityClass %>ResourceIT <% if (databaseType === 'cassandra') { %>: Ab
     }
 
     <%_ } _%>
+    
+    @BeforeEach
+    fun setup() {
+        MockitoAnnotations.initMocks(this)
+        <%_ if (service !== 'no') { _%>		
+         val <%= entityInstance %>Resource = <%= entityClass %>Resource(<%= entityInstance %>Service<% if (jpaMetamodelFiltering) { %>, <%= entityInstance %>QueryService<% } %><% if (saveUserSnapshot) { %>, userRepository<% } %>)		
+         <%_ } else { _%>		
+         val <%= entityInstance %>Resource = <%= entityClass %>Resource(<%= entityInstance %>Repository<% if (dto === 'mapstruct') { %>, <%= entityInstance %>Mapper<% } %><% if (searchEngine === 'elasticsearch') { %>, mock<%= entityClass %>SearchRepository<% } %><% if (reactiveRepositories) { %>, <%= entityInstance %>ReactiveRepository<% } %><% if (saveUserSnapshot) { %>, userRepository<% } %><% if (isUsingMapsId === true && dto !== 'mapstruct') { %>, <%= mapsIdRepoInstance _%> <% } %>)		
+         <%_ } _%>		
+         <%_ if (!reactive) { _%>
+         this.rest<%= entityClass %>MockMvc = MockMvcBuilders.standaloneSetup(<%= entityInstance %>Resource)		
+             .setCustomArgumentResolvers(pageableArgumentResolver)		
+             .setControllerAdvice(exceptionTranslator)		
+             .setConversionService(createFormattingConversionService())		
+             .setMessageConverters(jacksonMessageConverter)		
+             .setValidator(validator).build()
+        <%_ } _%>
+    }
 
 
     @BeforeEach
