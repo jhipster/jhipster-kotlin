@@ -120,7 +120,7 @@ import <%= packageName %>.config.ID_DELIMITER
 _%>
 <%_ if ((databaseType === 'sql' && !reactive) || databaseType === 'mongodb' || databaseType === 'neo4j' || databaseType === 'couchbase') { _%>
 @Repository
-interface UserRepository : <% if (databaseType === 'sql') { %>JpaRepository<<%= asEntity('User') %>, <% if (authenticationType === 'oauth2') { %>String<% } else { %>Long<% } %>><% } %><% if (databaseType === 'mongodb') { %><% if (reactive) { %>Reactive<% } %>MongoRepository<<%= asEntity('User') %>, String><% } %><% if (databaseType === 'neo4j') { %>Neo4jRepository<<%= asEntity('User') %>, String><% } %><% if (databaseType === 'couchbase') { %>N1qlCouchbaseRepository<<%= asEntity('User') %>, String><%if (searchEngine === 'couchbase') { %>, SearchCouchbaseRepository<<%= asEntity('User') %>, String><% } } %> {
+interface UserRepository : <% if (databaseType === 'sql') { %>JpaRepository<<%= asEntity('User') %>, <% if (authenticationType === 'oauth2') { %>String<% } else { %>Long<% } %>><% } %><% if (reactive) { %>Reactive<% } %><% if (databaseType === 'mongodb') { %>MongoRepository<<%= asEntity('User') %>, String><% } %><% if (databaseType === 'neo4j') { %>Neo4jRepository<<%= asEntity('User') %>, String><% } %><% if (databaseType === 'couchbase') { %>N1qlCouchbaseRepository<<%= asEntity('User') %>, String><%if (searchEngine === 'couchbase') { %>, SearchCouchbaseRepository<<%= asEntity('User') %>, String><% } } %> {
     <%_ if (authenticationType !== 'oauth2') { _%>
 
     fun findOneByActivationKey(activationKey: String): <%= optionalOrMono %><<%= asEntity('User') %>>
@@ -261,37 +261,34 @@ class UserRepositoryInternalImpl(val db: DatabaseClient, val dataAccessStrategy:
     }
 
     <%_ } _%>
-    private findOneWithAuthoritiesBy(fieldName: String, fieldValue: Object): Mono<User> {
-        return db.execute("SELECT * FROM <%= jhiTablePrefix %>_user u LEFT JOIN <%= jhiTablePrefix %>_user_authority ua ON u.id=ua.user_id WHERE u." + fieldName + " = :" + fieldName)
+    private fun findOneWithAuthoritiesBy(fieldName: String, fieldValue: Any): Mono<User> {
+        return db.execute("SELECT * FROM <%= jhiTablePrefix %>_user u LEFT JOIN <%= jhiTablePrefix %>_user_authority ua ON u.id=ua.user_id WHERE u.$fieldName = :$fieldName")
             .bind(fieldName, fieldValue)
-            .map{(row, metadata) ->
-                Tuples.of(
-                    dataAccessStrategy.getRowMapper(User::class).apply(row, metadata),
-                    Optional.ofNullable(row.get("authority_name", String::class))
+            .map { row, metadata ->
+                return@map Tuples.of(
+                    dataAccessStrategy.getRowMapper(User::class.java).apply(row, metadata),
+                    Optional.ofNullable(row.get("authority_name", String::class.java))
                 )
-            }
-            .toList()
-            .filter{ !it.isEmpty }
-            .map{ 
-                val user = it.get(0).getT1()
-                user.setAuthorities(
-                    it.filter { it.getT2().isPresent }
-                        .map {
-                            val authority = Authority()
-                            authority.name = t.getT2.get()
-                            authority
-                        }
-                        .toSet()
-                )
+            }.all()
+            .collectList()
+            .filter { it.isNotEmpty() }
+            .map {l ->
+                val user = l[0]?.t1
+                user?.authorities = l.filter { it.t2.isPresent }
+                    .map {
+                        val authority = Authority()
+                        authority.name = it.t2.get()
+                        authority
+                    }.toMutableSet()
                 user
-            })
+            }
     }
 
     override fun findAllByLoginNot(pageable: Pageable, login: String): Flux<User> {
-        return db.select().from(User::class)
+        return db.select().from(User::class.java)
             .matching(Criteria.where("login").not(login))
             .page(pageable)
-            .as(User::class)
+            .`as`(User::class.java)
             .all()
     }
 
@@ -301,8 +298,8 @@ class UserRepositoryInternalImpl(val db: DatabaseClient, val dataAccessStrategy:
             .bind("userId", user.id)
             .then()
             .then(db.delete()
-                .from(User::class)
-                .matching(Criteria.where("id").is(user.id))
+                .from(User::class.java)
+                .matching(Criteria.where("id").`is`(user.id))
                 .then()
             );
     }
@@ -310,7 +307,7 @@ class UserRepositoryInternalImpl(val db: DatabaseClient, val dataAccessStrategy:
     <%_ } _%>
     <%_ if (authenticationType === 'oauth2') { _%>
     override fun create(user: User): Mono<User> {
-        return db.insert().into(User::class).using(user)
+        return db.insert().into(User::class.java).using(user)
             .map(dataAccessStrategy.getConverter().populateIdIfNecessary(user))
             .first()
             .defaultIfEmpty(user)

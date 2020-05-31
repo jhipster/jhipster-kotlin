@@ -59,14 +59,15 @@ class OpenApiConfiguration {
 <%_ } else { _%>
             .apis(Predicates.not(RequestHandlerSelectors.basePackage("<%= packageName %>.web.api")))
 <%_ } _%>
+    }
 
     @Bean
     fun apiFirstDocket(jHipsterProperties: JHipsterProperties): Docket {
         val properties = jHipsterProperties.swagger
         val contact = Contact(
             properties.contactName,
-            properties.contactUrl(),
-            properties.contactEmail()
+            properties.contactUrl,
+            properties.contactEmail
         )
 
         val apiInfo = ApiInfo(
@@ -83,13 +84,13 @@ class OpenApiConfiguration {
         return Docket(DocumentationType.SWAGGER_2)
             .groupName("openapi")
             .host(properties.host)
-            .protocols(hashSetOf(properties.protocols))
+            .protocols(properties.protocols.toSet())
             .apiInfo(apiInfo)
-            .useDefaultResponseMessages(properties.isUseDefaultResponseMessages())
+            .useDefaultResponseMessages(properties.isUseDefaultResponseMessages)
             .forCodeGeneration(true)
-            .directModelSubstitute(ByteBuffer::class, String::class)
-            .genericModelSubstitutes(ResponseEntity::class)
-            .ignoredParameterTypes(Pageable::class)
+            .directModelSubstitute(ByteBuffer::class.java, String::class.java)
+            .genericModelSubstitutes(ResponseEntity::class.java)
+            .ignoredParameterTypes(Pageable::class.java)
             .select()
             .apis(RequestHandlerSelectors.basePackage("<%= packageName %>.web.api"))
             .paths(regex(properties.defaultIncludePattern))

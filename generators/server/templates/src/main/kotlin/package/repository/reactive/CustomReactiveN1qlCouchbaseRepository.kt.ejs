@@ -52,27 +52,23 @@ import java.util.LinkedList
 
 /**
  * A custom implementation of `CouchbaseRepository`.
- */
-class CustomReactiveN1qlCouchbaseRepository<T, ID extends Serializable>
-/**
+ * 
  * Create a new Repository.
  *
  * @param metadata            the Metadata for the entity.
- * @param couchbaseOperations the reference to the template used.
+ * @param operations the reference to the template used.
  */
-constructor(
+class CustomReactiveN1qlCouchbaseRepository<T, ID: Serializable>(
     private val metadata: CouchbaseEntityInformation<T, String>,
-    private val couchbaseOperations: RxJavaCouchbaseOperations
-) : ReactiveN1qlCouchbaseRepository<T, ID>(metadata, couchbaseOperations)<%if (searchEngine === 'couchbase') { %>, SearchCouchbaseRepository<T, ID><% } %> {
-
-    private val persistentEntity: CouchbasePersistentEntity<?>
+    private val operations: RxJavaCouchbaseOperations
+) : ReactiveN1qlCouchbaseRepository<T, ID>(metadata, operations)<%if (searchEngine === 'couchbase') { %>, SearchCouchbaseRepository<T, ID><% } %> {
+    
+    private val persistentEntity = couchbaseOperations.converter.mappingContext.getPersistentEntity(entityInformation.javaType)
 
     @Autowired
-    private lateinit var template: CouchbaseTemplate
+    private var template: CouchbaseTemplate = CouchbaseTemplate(couchbaseOperations.couchbaseClusterInfo, couchbaseOperations.couchbaseBucket)
 
     init {
-        persistentEntity = getCouchbaseOperations().getConverter().getMappingContext().getPersistentEntity(getEntityInformation().getJavaType())
-        template = CouchbaseTemplate(getCouchbaseOperations().getCouchbaseClusterInfo(), getCouchbaseOperations().getCouchbaseBucket())
         allowPageable()
     }
 
@@ -80,16 +76,17 @@ constructor(
     @Suppress("unchecked")
     private fun allowPageable() {
         try {
-            val allowed_pageable_types = QueryExecutionConverters::class.getDeclaredField("ALLOWED_PAGEABLE_TYPES")
-            allowed_pageable_types.setAccessible(true)
-            val ALLOWED_PAGEABLE_TYPES: Set<Class<?>> = (Set<Class<?>>) allowed_pageable_types.get(QueryExecutionConverters::class)
-            ALLOWED_PAGEABLE_TYPES.add(Flux::class)
-        } catch (e: NoSuchFieldException | IllegalAccessException) {
+            val allowed_pageable_types = QueryExecutionConverters::class.java.getDeclaredField("ALLOWED_PAGEABLE_TYPES")
+            allowed_pageable_types.isAccessible = true
+            val ALLOWED_PAGEABLE_TYPES: Set<Class<*>> = mutableSetOf(allowed_pageable_types.get(QueryExecutionConverters::class) as Class<*>, Flux::class as Class<*>)
+        } catch (e: NoSuchFieldException) {
+            e.printStackTrace()
+        } catch (e: IllegalAccessException) {
             e.printStackTrace()
         }
     }
 
-    override fun <S extends T> save(entity: S): Mono<S>  = super.save(populateIdIfNecessary(entity))
+    override fun <S : T> save(entity: S): Mono<S> = super.save(populateIdIfNecessary(entity))
 
 <%_ if (searchEngine === 'couchbase') { _%>
 
@@ -137,20 +134,20 @@ constructor(
 <%_ } _%>
 
     /**
-     * Add generated ID to entity if not already set.
-     *
-     * @param entity the entity to update.
-     * @return entity with ID set.
-     */
-    private fun <S extends T> populateIdIfNecessary(entity: S): S {
-        if (getEntityInformation().getId(entity) != null) {
+    * Add generated ID to entity if not already set.
+    *
+    * @param entity the entity to update.
+    * @return entity with ID set.
+    */
+    private fun <S : T> populateIdIfNecessary(entity: S): S {
+        if (entityInformation.getId(entity) != null) {
             return entity
         }
         setId(entity, template.getGeneratedId(entity))
         return entity
     }
 
-    private fun <S extends T> setId(entity: S, generatedId: String) {
-        persistentEntity.getPropertyAccessor(entity).setProperty(persistentEntity.getIdProperty(), generatedId)
+    private fun <S : T> setId(entity: S, generatedId: String) {
+        persistentEntity.getPropertyAccessor(entity).setProperty(persistentEntity.idProperty, generatedId)
     }
 }

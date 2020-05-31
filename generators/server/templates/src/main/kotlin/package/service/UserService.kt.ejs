@@ -288,7 +288,7 @@ class UserService<% if (databaseType !== 'no') { %>(
                     throw UsernameAlreadyUsedException()
                 }
             }
-            .then(userRepository.findOneByEmailIgnoreCase(email))
+            .then(userRepository.findOneByEmailIgnoreCase(email!!))
             .flatMap { existingUser ->
                 if (!existingUser.activated) {
                     <%_ if (cacheManagerIsAvailable === true) { _%>
@@ -631,11 +631,12 @@ class UserService<% if (databaseType !== 'no') { %>(
                     <%_ } else { _%>
                     userRepository.save(user)
                     <%_ } _%>
-                        .flatMap(savedUser ->
-                            Flux.fromIterable(user.getAuthorities())
-                                .flatMap(authority -> userRepository.saveUserAuthority(savedUser.id, authority.name))
-                                .then(Mono.just(savedUser))
-                        )
+                    userRepository.save(user)
+                        .flatMap { user ->
+                            Flux.fromIterable(user.authorities)
+                                .flatMap { user.id?.let { it1 -> it.name?.let { it2 -> userRepository.saveUserAuthority(it1, it2) } } }
+                                .then(Mono.just(user))
+                        }
                 <%_ } else { _%>
                     userRepository.save(user)
                 <%_ } _%>

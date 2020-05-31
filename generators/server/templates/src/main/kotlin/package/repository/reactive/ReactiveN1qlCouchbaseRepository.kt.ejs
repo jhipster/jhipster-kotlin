@@ -33,14 +33,14 @@ import java.io.Serializable
 interface ReactiveN1qlCouchbaseRepository<T, ID : Serializable> : ReactiveCouchbaseSortingRepository<T, ID> {
 
     @Query("#{#n1ql.selectEntity} WHERE #{#n1ql.filter}")
-    fun findAll(): Flux<T>
+    override fun findAll(): Flux<T>
 
     @Query("SELECT count(*) FROM #{#n1ql.bucket} WHERE #{#n1ql.filter}")
-    fun count(): Mono<Long>
+    override fun count(): Mono<Long>
 
     @Query("DELETE FROM #{#n1ql.bucket} WHERE #{#n1ql.filter} returning #{#n1ql.fields}")
     fun removeAll(): Flux<T>
 
     @JvmDefault
-    fun deleteAll(): Mono<Void>  = removeAll().then()
+    override fun deleteAll(): Mono<Void>  = removeAll().then()
 }

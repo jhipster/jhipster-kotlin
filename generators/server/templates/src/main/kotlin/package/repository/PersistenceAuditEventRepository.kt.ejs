@@ -96,7 +96,7 @@ interface PersistenceAuditEventRepository : <% if (reactive) { %>Reactive<% } %>
 class PersistenceAuditEventRepositoryInternalImpl(val databaseClient: DatabaseClient): PersistenceAuditEventRepositoryInternal {
 
     override fun findByPrincipal(principal: String) = 
-        findAllByCriteria(Criteria.where("principal").is(principal))
+        findAllByCriteria(Criteria.where("principal").`is`(principal))
 
     override fun findAllByAuditEventDateBetween(fromDate: Instant, toDate: Instant, pageable: Pageable):  Flux<PersistentAuditEvent> {
         // LocalDateTime seems to be the only type that is supported across all drivers atm
@@ -128,7 +128,7 @@ class PersistenceAuditEventRepositoryInternalImpl(val databaseClient: DatabaseCl
             "WHERE event_date > :fromDate AND event_date < :toDate")
             .bind("fromDate", fromDateLocal)
             .bind("toDate", toDateLocal)
-            .as(Long::class)
+            .`as`(Long::class.java)
             .fetch()
             .one()
     }
@@ -136,27 +136,26 @@ class PersistenceAuditEventRepositoryInternalImpl(val databaseClient: DatabaseCl
     private fun findAllByCriteria(criteria: Criteria) =
         findAllFromSpec(select().matching(criteria))
 
-    private fun select() = databaseClient.select().from(PersistentAuditEvent::class)
+    private fun select() = databaseClient.select().from(PersistentAuditEvent::class.java)
 
-    private fun findAllFromSpec(spec: DatabaseClient.TypedSelectSpec<PersistentAuditEvent>) = 
-        spec.as(PersistentAuditEvent::class).all()
-            .flatMap(event -> findAllEventData(event.id)
-                .map{
-                    event.setData(it)
-                    event
-                }
-            )
-    }
+    private fun findAllFromSpec(spec: DatabaseClient.TypedSelectSpec<PersistentAuditEvent>): Flux<PersistentAuditEvent> =
+        spec.`as`(PersistentAuditEvent::class.java).all()
+        .flatMap {event ->
+                findAllEventData(event.id!!)
+                    .map {
+                        event.data = it
+                        event
+                    }
+        }
 
-    private fun findAllEventData(id: Long) = databaseClient.select().from("<%= jhiTablePrefix %>_persistent_audit_evt_data")
-            .project("name", "value")
-            .matching(Criteria.where("event_id").is(id))
-            .map {
-                val name = it.get("name", String::class)
-                val value = it.get("value", String::class)
-                Pair (if(name == null) "" else name, if(value == null) "" else value)
-            }
-            .toMap()
-    }
+
+    private fun findAllEventData(id: Long): Mono<MutableMap<String, String?>> = databaseClient.select().from("<%= jhiTablePrefix %>_persistent_audit_evt_data")
+        .project("name", "value")
+        .matching(Criteria.where("event_id").`is`(id))
+        .map { row ->
+            Pair.of(row.get("name", String::class.java) ?: "", row.get("value", String::class.java) ?: "")
+        }
+        .all()
+        .collectMap(Pair<String, String?>::getFirst, Pair<String, String?>::getSecond)
 }
 <%_ } _%>

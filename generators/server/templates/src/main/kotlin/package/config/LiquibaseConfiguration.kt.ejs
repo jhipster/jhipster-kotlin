@@ -65,10 +65,14 @@ class LiquibaseConfiguration(private val env: Environment) {
         <%_ } _%>
         dataSourceProperties:  <% if (!reactive) { %>DataSourceProperties<% } else { %>R2dbcProperties<% } %>
     ) =
-       
-        // If you don't want Liquibase to start asynchronously, substitute by this:
-        // SpringLiquibaseUtil.createSpringLiquibase(liquibaseDataSource.ifAvailable, liquibaseProperties, dataSource.ifUnique, dataSourceProperties);
-        <% if (!reactive) { %>SpringLiquibaseUtil.<% } %>createAsyncSpringLiquibase(env, executor, liquibaseDataSource.ifAvailable, liquibaseProperties, dataSource.ifUnique, dataSourceProperties).apply {
+        <%_ if (!reactive) { _%>
+            // If you don't want Liquibase to start asynchronously, substitute by this:
+            // SpringLiquibase liquibase = SpringLiquibaseUtil.createSpringLiquibase(liquibaseDataSource.getIfAvailable(), liquibaseProperties, dataSource.getIfUnique(), dataSourceProperties);
+            SpringLiquibaseUtil.createAsyncSpringLiquibase(this.env, executor, liquibaseDataSource.getIfAvailable(), liquibaseProperties, dataSource.getIfUnique(), dataSourceProperties)
+            <%_ } else { _%>
+            createAsyncSpringLiquibase(this.env, executor, liquibaseProperties, dataSourceProperties)
+            <%_ } _%>
+            .apply {
             changeLog = "classpath:config/liquibase/master.xml"
             contexts = liquibaseProperties.contexts
             defaultSchema = liquibaseProperties.defaultSchema
@@ -92,22 +96,22 @@ class LiquibaseConfiguration(private val env: Environment) {
 
         <%_ if (reactive) { _%>
         fun createAsyncSpringLiquibase(env: Environment, executor: Executor,
-                liquibaseProperties: LiquibaseProperties, dataSourceProperties: R2dbcProperties): SpringLiquibase {
+            liquibaseProperties: LiquibaseProperties, dataSourceProperties: R2dbcProperties): SpringLiquibase {
             val liquibase = AsyncSpringLiquibase(executor, env)
             liquibase.setDataSource(createNewDataSource(liquibaseProperties, dataSourceProperties))
             return liquibase
         }
-    
+
         fun createNewDataSource(liquibaseProperties: LiquibaseProperties, dataSourceProperties: R2dbcProperties): DataSource {
-            val user = getProperty(liquibaseProperties::getUser, dataSourceProperties::determineUsername)
-            val password = getProperty(liquibaseProperties::getPassword, dataSourceProperties::determinePassword)
+            val user = getProperty(liquibaseProperties.user, dataSourceProperties.determineUsername())
+            val password = getProperty(liquibaseProperties.password, dataSourceProperties.determinePassword())
             return DataSourceBuilder.create()
-                .url(liquibaseProperties.getUrl())
+                .url(liquibaseProperties.url)
                 .username(user)
                 .password(password)
                 .build()
         }
-    
-        fun getProperty(property: Supplier<String>, defaultValue: Supplier<String>) = property.get() != null ? property.get() : defaultValue.get()
+
+        fun getProperty(property: String?, defaultValue: String) =  property?:defaultValue
         <%_ } _%>
 }

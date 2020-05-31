@@ -22,6 +22,7 @@ import io.github.jhipster.config.JHipsterProperties
 import <%= packageName %>.config.audit.AuditEventConverter
 <%_ if (reactive) { _%>
 import <%= packageName %>.domain.PersistentAuditEvent
+import reactor.core.publisher.toFlux
 <%_ } _%>
 import <%= packageName %>.repository.PersistenceAuditEventRepository
 import org.slf4j.Logger
@@ -172,15 +173,19 @@ class AuditEventService(
         eventData["message"] = e.message
         persistentAuditEvent.data = truncate(eventData)
         return persistenceAuditEventRepository.save(persistentAuditEvent)<% if (databaseType === 'sql') { %>
-            .flatMapMany(event -> Flux.fromStream(
-                event.getData().entries
-                    .map { Tuples.of(event, it.key, it.value) }
-            ))
-            .flatMap { persistenceAuditEventRepository
-                .savePersistenceAuditEventData(it.getT1().getId(), it.getT2(), it.getT3())
-                .thenReturn(it.getT1())
+            .flatMapMany { event ->
+                event.data.entries
+                        .map{ Tuples.of(event!!, it.key, it.value!!) }
+                    .toFlux()
             }
-            .last()<% } %>
+            .flatMap{ t ->
+                t.t1.id?.let {
+                    persistenceAuditEventRepository
+                        .savePersistenceAuditEventData(it, t.t2, t.t3)
+                        .thenReturn(t.t1)
+                }
+            }.last()
+        <% } %>
     }
 
     /**

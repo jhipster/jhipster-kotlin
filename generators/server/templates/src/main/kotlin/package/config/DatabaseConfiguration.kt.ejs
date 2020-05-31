@@ -57,20 +57,7 @@ import org.springframework.boot.autoconfigure.mongo.MongoReactiveAutoConfigurati
 import org.springframework.boot.autoconfigure.couchbase.CouchbaseAutoConfiguration
 import org.springframework.boot.autoconfigure.couchbase.CouchbaseProperties
 <%_ } _%>
-<%_ if (databaseType === 'mongodb' || databaseType === 'couchbase' || (databaseType==='sql' && (devDatabaseType === 'h2Disk' || devDatabaseType === 'h2Memory'))) { _%>
-import org.springframework.context.annotation.Bean
-<%_ } _%>
-import org.springframework.context.annotation.Configuration
-<%_ if (databaseType === 'mongodb' || databaseType === 'couchbase') { _%>
-import org.springframework.context.annotation.Import
-<%_ } _%>
-<%_ if (searchEngine === 'elasticsearch' && ['mongodb', 'couchbase', 'neo4j'].includes(databaseType)) { _%>
-import org.springframework.context.annotation.ComponentScan.Filter
-import org.springframework.context.annotation.FilterType
-<%_ } _%>
-<%_ if (databaseType === 'mongodb' || databaseType === 'couchbase' || devDatabaseType === 'h2Disk' || devDatabaseType === 'h2Memory') { _%>
-import org.springframework.context.annotation.Profile
-<%_ } _%>
+import org.springframework.context.annotation.*
 <%_ if (databaseType === 'mongodb' || databaseType === 'couchbase' || (databaseType === 'sql' && reactive)) { _%>
 import org.springframework.core.convert.converter.Converter
 <%_ } _%>
@@ -368,23 +355,21 @@ class DatabaseConfiguration<%_ if (databaseType === 'sql' && (devDatabaseType ==
     // See https://github.com/r2dbc/r2dbc-h2/pull/139 https://github.com/mirromutth/r2dbc-mysql/issues/105
     @Bean
     fun r2dbcCustomConversions(connectionFactory: ConnectionFactory): R2dbcCustomConversions {
-        val dialect = DialectResolver.getDialect(connectionFactory);
-        val converters = mutableListOf(dialect.getConverters());
+        val dialect = DialectResolver.getDialect(connectionFactory)
+        val converters: MutableList<Any> = mutableListOf(dialect.converters)
         converters.add(InstantWriteConverter())
         converters.add(InstantReadConverter())
         converters.addAll(R2dbcCustomConversions.STORE_CONVERTERS)
-        return R2dbcCustomConversions(
-            CustomConversions.StoreConversions.of(dialect.getSimpleTypeHolder(), converters),
-            emptyListOf());
+        return R2dbcCustomConversions(CustomConversions.StoreConversions.of(dialect.simpleTypeHolder, converters), mutableListOf<Any>())
     }
 
     @WritingConverter
-    object InstantWriteConverter: Converter<Instant, LocalDateTime> {
-        fun convert(source: Instant) = LocalDateTime.ofInstant(source, ZoneOffset.UTC)
+    class InstantWriteConverter: Converter<Instant, LocalDateTime> {
+        override fun convert(source: Instant) = LocalDateTime.ofInstant(source, ZoneOffset.UTC)
     }
 
     @ReadingConverter
-    object InstantReadConverter: Converter<LocalDateTime, Instant> {
+    class InstantReadConverter: Converter<LocalDateTime, Instant> {
         override fun convert(localDateTime: LocalDateTime) = localDateTime.toInstant(ZoneOffset.UTC)
     }
 <%_ } _%>
