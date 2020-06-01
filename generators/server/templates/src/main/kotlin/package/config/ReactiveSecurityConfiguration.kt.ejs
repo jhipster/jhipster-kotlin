@@ -347,10 +347,10 @@ class SecurityConfiguration(
     private fun onAuthenticationError(exchange: WebFilterExchange, e: AuthenticationException): Mono<Void>  {
         exchange.exchange.response.statusCode = HttpStatus.UNAUTHORIZED
         <%_ if (withAudit) { _%>
-        return exchange.exchange()
+        return exchange.exchange
                 .formData
                 .map { it.getFirst("username") }
-                .filter { !Constants.ANONYMOUS_USER.equals(it) }
+                .filter { ANONYMOUS_USER != it }
                 .flatMap { auditEventService.saveAuthenticationError(it, e) }
                 .then()
         <%_ } else { _%>
@@ -362,9 +362,9 @@ class SecurityConfiguration(
         exchange.exchange.response.statusCode = HttpStatus.OK
         <%_ if (withAudit) { _%>
         return Mono.just(authentication.principal)
-                .filter { it instanceof User }
+                .filter { it is User }
                 .map { (it as User).username }
-                .filter { !Constants.ANONYMOUS_USER.equals(it) }
+                .filter { ANONYMOUS_USER != it }
                 .flatMap { auditEventService.saveAuthenticationSuccess(it) }
                 .then()
         <%_ } else { _%>
