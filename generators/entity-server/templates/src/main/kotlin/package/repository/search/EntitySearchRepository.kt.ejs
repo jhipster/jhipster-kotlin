@@ -38,6 +38,9 @@ import java.util.UUID
 <%_ if (reactive) { _%>
 
 import org.elasticsearch.index.query.QueryBuilders.queryStringQuery
+     <%_ if (pagination !== 'no') { _%>
+import org.springframework.data.elasticsearch.core.query.Query
+     <%_ } _%>
 <%_ } _%>
 
 /**
@@ -49,15 +52,15 @@ interface <%= entityClass %>SearchRepositoryInternal {
      fun search(query: String<% if (pagination !== 'no') { %>, pageable: Pageable<% } %>): Flux<<%= entityClass %>> 
 }
 
-class <%= entityClass %>SearchRepositoryInternalImpl(val reactiveElasticsearchTemplate: ReactiveElasticsearchTemplate): <%= entityClass %>SearchRepositoryInternal {
+class <%= entityClass %>SearchRepositoryInternalImpl(private val reactiveElasticsearchTemplate: ReactiveElasticsearchTemplate): <%= entityClass %>SearchRepositoryInternal {
 
 
      override fun search(query: String<% if (pagination !== 'no') { %>, pageable: Pageable<% } %>): Flux<<%= entityClass %>> {
-        val nativeSearchQuery = NativeSearchQuery(queryStringQuery(query));
+        val nativeSearchQuery = NativeSearchQuery(queryStringQuery(query))
         <%_ if (pagination !== 'no') { _%>
-        nativeSearchQuery.setPageable(pageable);
+        nativeSearchQuery.setPageable<Query>(pageable)
         <%_ } _%>
-        return reactiveElasticsearchTemplate.find(nativeSearchQuery, <%= entityClass %>::class)
+        return reactiveElasticsearchTemplate.find(nativeSearchQuery, <%= entityClass %>::class.java)
     }
 }
 <%_ } _%>
