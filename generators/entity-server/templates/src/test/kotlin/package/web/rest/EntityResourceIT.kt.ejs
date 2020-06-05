@@ -118,9 +118,14 @@ import org.mockito.junit.jupiter.MockitoExtension
 <%_ } _%>
 import org.mockito.MockitoAnnotations
 import org.springframework.beans.factory.annotation.Autowired
+<%_ if (!reactive) { _%>
+import org.springframework.boot.test.autoconfigure.web.servlet.AutoConfigureMockMvc
+<%_ } else { _%>
+import org.springframework.boot.test.autoconfigure.web.reactive.AutoConfigureWebTestClient
+<%_ } _%>
 import org.springframework.boot.test.context.SpringBootTest
 <%_ if (searchEngine === 'elasticsearch' && pagination !== 'no' || fieldsContainOwnerManyToMany) { _%>
-import org.springframework.data.domain.PageImpl
+import org.springframework.data.domain.PageIttmpl
 <%_ } _%>
 <%_ if (searchEngine === 'elasticsearch' && pagination !== 'no') { _%>
 import org.springframework.data.domain.PageRequest
@@ -212,6 +217,12 @@ import org.springframework.test.web.servlet.result.MockMvcResultMatchers.status
 <%_ } else { _%>
 @SpringBootTest(classes = [<%= mainClass %>::class])
 <%_ } _%>
+<%_ if (!reactive) { _%>
+@AutoConfigureMockMvc
+<%_ } else { _%>
+@AutoConfigureWebTestClient
+<%_ } _%>
+@WithMockUser
 <%_ if (cacheProvider === 'redis' || (searchEngine === 'elasticsearch' || fieldsContainOwnerManyToMany === true) || databaseType === 'neo4j') { _%>
 @Extensions(
     <%_ if (cacheProvider === 'redis') { _%>
@@ -272,6 +283,7 @@ class <%= entityClass %>ResourceIT <% if (databaseType === 'cassandra') { %>: Ab
     private lateinit var <%= entityInstance %>QueryService: <%= entityClass %>QueryService
     <%_ } _%>
 
+    <%_ if (!reactive) { _%>
     @Autowired
     private lateinit var jacksonMessageConverter: MappingJackson2HttpMessageConverter
 
@@ -280,14 +292,16 @@ class <%= entityClass %>ResourceIT <% if (databaseType === 'cassandra') { %>: Ab
 
     @Autowired
     private lateinit var exceptionTranslator: ExceptionTranslator
+
+    @Autowired
+    private lateinit var validator: Validator
+    <%_ } _%>
+
 <%_ if (databaseType === 'sql') { _%>
 
     @Autowired
     private lateinit var em: EntityManager
 <%_ } _%>
-
-    @Autowired
-    private lateinit var validator: Validator
 
     <%_ if (!reactive) { _%>
 
