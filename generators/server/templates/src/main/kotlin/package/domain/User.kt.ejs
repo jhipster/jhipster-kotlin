@@ -37,6 +37,7 @@ import org.hibernate.annotations.Cache
 import org.hibernate.annotations.CacheConcurrencyStrategy
 <%_ } _%>
 <%_ if (databaseType === 'sql' && reactive) { _%>
+import org.springframework.data.annotation.PersistenceConstructor
 import org.springframework.data.annotation.Id
 import org.springframework.data.annotation.Transient
 import org.springframework.data.relational.core.mapping.Column
@@ -376,6 +377,64 @@ class <%= asEntity('User') %> (
 
     @IdPrefix
     private val prefix: String = PREFIX
+<%_ } _%>
+
+<%_ if (databaseType === 'sql' && reactive) { _%>
+    @PersistenceConstructor
+    constructor(
+    <%_ if (databaseType === 'sql') { _%>
+        id: <% if (authenticationType === 'oauth2') { %>String?<% } else { %>Long?<% } %>,
+    <%_ } else { _%>
+        id: String?,
+    <%_ } _%>
+        login: String?,
+    <%_ if (authenticationType !== 'oauth2') { _%>
+        password: String?,
+    <%_ } _%>
+        firstName: String?,
+        lastName: String?,
+        email: String?,
+        activated: Boolean,
+        langKey: String?,
+    <%_ if (databaseType === 'mongodb' || databaseType === 'neo4j' || databaseType === 'couchbase' || databaseType === 'sql') { _%>
+        imageUrl: String?<% if (authenticationType !== 'oauth2' || (databaseType === 'sql' || databaseType === 'mongodb' || databaseType === 'couchbase')) { %>,<% } %>
+    <%_ } _%>
+    <%_ if (authenticationType !== 'oauth2') { _%>
+        activationKey: String?,
+        resetKey: String?,
+        resetDate: Instant?<% if (databaseType === 'sql' || databaseType === 'mongodb' || databaseType === 'couchbase') { %>,<% } %>
+    <%_ } _%>
+    <%_ if (databaseType === 'sql' || databaseType === 'mongodb' || databaseType === 'couchbase') { _%>
+        createdBy: String?,
+        createdDate: Instant?,
+        lastModifiedBy: String?,
+        lastModifiedDate: Instant?
+    <%_ } _%>
+    ): this (
+        id,
+        login,
+    <%_ if (authenticationType !== 'oauth2') { _%>
+        password,
+    <%_ } _%>
+        firstName,
+        lastName,
+        email,
+        activated,
+        langKey,
+    <%_ if (databaseType === 'mongodb' || databaseType === 'neo4j' || databaseType === 'couchbase' || databaseType === 'sql') { _%>
+        imageUrl<% if (authenticationType !== 'oauth2') { %>,<% } %>
+    <%_ } _%>
+    <%_ if (authenticationType !== 'oauth2') { _%>
+        activationKey,
+        resetKey,
+        resetDate,
+    <%_ } _%>
+        mutableSetOf()<% if (databaseType === 'sql' || databaseType === 'mongodb' || databaseType === 'couchbase') { %>,
+        createdBy,
+        createdDate,
+        lastModifiedBy,
+        lastModifiedDate<% } %>
+    )
 <%_ } _%>
 
     override fun equals(other: Any?): Boolean {
