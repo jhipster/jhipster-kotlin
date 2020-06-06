@@ -38,6 +38,7 @@ import org.springframework.data.couchbase.core.mapping.id.GeneratedValue
 import org.springframework.data.couchbase.core.mapping.id.IdPrefix
 <%_ } else if (databaseType === 'sql') { _%>
     <%_ if (reactive) { _%>
+import org.springframework.data.annotation.PersistenceConstructor
 import org.springframework.data.annotation.Id
 import org.springframework.data.annotation.Transient
 import org.springframework.data.relational.core.mapping.Column
@@ -112,6 +113,7 @@ data class PersistentAuditEvent(
         <%_ } _%>
     var id: String? = null,
     <%_ } _%>
+
     @field:NotNull
     <%_ if (databaseType === 'sql' && !reactive) { _%>
     @Column(nullable = false)
@@ -154,6 +156,17 @@ data class PersistentAuditEvent(
     var data: MutableMap<String, String?> = mutableMapOf()
 
 ) : Serializable {
+
+<%_ if (databaseType === 'sql' && reactive) { _%>
+    @PersistenceConstructor
+    constructor(
+        id: Long?, 
+        principal: String?, 
+        auditEventDate: Instant?, 
+        auditEventType: String?
+    ): this(id, principal, auditEventDate, auditEventType, mutableMapOf<String, String?>())
+<%_ } _%>
+
 <%_ if (databaseType === 'couchbase') { _%>
 
     @IdPrefix
