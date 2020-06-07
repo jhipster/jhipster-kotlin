@@ -378,7 +378,7 @@ class UserService<% if (databaseType !== 'no') { %>(
             imageUrl = userDTO.imageUrl,
             <%_ } _%>
             // default language
-            langKey = userDTO.langKey ?: DEFAULT_LANGUAGE,<% if (!reactive) { %>
+            langKey = userDTO.langKey ?: DEFAULT_LANGUAGE<% if (!reactive) { %>,
             password = passwordEncoder.encode(RandomUtil.generatePassword()),
             resetKey = RandomUtil.generateResetKey(),
             resetDate = Instant.now(),
@@ -403,7 +403,6 @@ class UserService<% if (databaseType !== 'no') { %>(
         log.debug("Created Information for User: {}", user)
         return user
     <%_ } else { _%>
-            authorities = userDTO.authorities?.toMutableSet() ?: mutableSetOf()
         )
         <%_ if (['sql', 'mongodb', 'neo4j'].includes(databaseType)) { _%>
         return Flux.fromIterable(userDTO.authorities ?: mutableSetOf())
@@ -411,6 +410,7 @@ class UserService<% if (databaseType !== 'no') { %>(
             .doOnNext { authority -> user.authorities.add(authority) }
             .then(Mono.just(user))
         <%_ } else { _%>
+        user.authorities = userDTO.authorities?.toMutableSet() ?: mutableSetOf()
         return Mono.just(user)
         <%_ } _%>
             .publishOn(Schedulers.boundedElastic())
