@@ -360,8 +360,8 @@ class <%= entityClass %>ResourceIT <% if (databaseType === 'cassandra') { %>: Ab
         val databaseSizeBeforeCreate = <%= entityInstance %>Repository.findAll()<%= callListBlock %>.size
         <%_ if (reactive && searchEngine === 'elasticsearch') { _%>
         // Configure the mock search repository
-        `when`(mock<%= entityClass %>SearchRepository.save(any()))
-            .thenAnswer { invocation -> Mono.just<<%= entityClass %>>(invocation.getArgument(0)) };
+        `when`(mock<%= entityClass %>SearchRepository.save(any(<%= entityClass %>::class.java)))
+            .thenAnswer { Mono.just(it.arguments[0] as <%= entityClass %>) }
         <%_ } _%>
 
         // Create the <%= entityClass %>
@@ -983,8 +983,8 @@ class <%= entityClass %>ResourceIT <% if (databaseType === 'cassandra') { %>: Ab
     fun update<%= entityClass %>() {
         <%_ if (reactive && searchEngine === 'elasticsearch') { _%>
         // Configure the mock search repository
-        `when`(mock<%= entityClass %>SearchRepository.save(any()))
-            .thenAnswer { invocation -> Mono.just<<%= entityClass %>>(invocation.getArgument(0)) }
+        `when`(mock<%= entityClass %>SearchRepository.save(any(<%= entityClass %>::class.java)))
+            .thenAnswer { Mono.just(it.arguments[0] as <%= entityClass %>) }
         <%_ } _%>
         // Initialize the database
         <%_ if (databaseType === 'cassandra') { _%>
@@ -1091,8 +1091,8 @@ class <%= entityClass %>ResourceIT <% if (databaseType === 'cassandra') { %>: Ab
 <%_ if (reactive && searchEngine === 'elasticsearch') { _%>
         // Configure the mock search repository
     <%_ if (service !== 'no') { _%>
-        `when`(mock<%= entityClass %>SearchRepository.save(any()))
-            .thenAnswer { invocation -> Mono.just<<%= entityClass %>>(invocation.getArgument(0)) }
+        `when`(mock<%= entityClass %>SearchRepository.save(any(<%= entityClass %>::class.java)))
+            .thenAnswer { Mono.just(it.arguments[0] as <%= entityClass %>) }
     <%_ } _%>
         `when`(mock<%= entityClass %>SearchRepository.deleteById(any<%= primaryKeyType %>())).thenReturn(Mono.empty())
 <%_ } _%>
@@ -1141,8 +1141,8 @@ class <%= entityClass %>ResourceIT <% if (databaseType === 'cassandra') { %>: Ab
     fun search<%= entityClass %>() {
         // Configure the mock search repository
     <%_ if (reactive) { _%>
-        `when`(mock<%= entityClass %>SearchRepository.save(any()))
-            .thenAnswer { invocation -> Mono.just<<%= entityClass %>>(invocation.getArgument(0)) }
+        `when`(mock<%= entityClass %>SearchRepository.save(any(<%= entityClass %>::class.java)))
+            .thenAnswer { Mono.just(it.arguments[0] as <%= entityClass %>) }
         <%_ if (pagination !== 'no') { _%>
         `when`(mock<%= entityClass %>SearchRepository.count()).thenReturn(Mono.just(1L))
         <%_ } _%>

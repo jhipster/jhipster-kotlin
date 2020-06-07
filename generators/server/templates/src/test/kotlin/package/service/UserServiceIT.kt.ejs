@@ -372,9 +372,9 @@ class UserServiceIT <% if (databaseType === 'cassandra') { %>: AbstractCassandra
         <%_ } _%>
         <%_ if (searchEngine === 'elasticsearch' && reactive) { _%>
         // Configure the mock search repository
-        `when`(mockUserSearchRepository.save(any()))
-            .thenAnswer { invocation -> Mono.just<User>(invocation.getArgument(0)) }
-        `when`(mockUserSearchRepository.delete(any())).thenReturn(Mono.empty())
+        `when`(mockUserSearchRepository.save(any(User::class.java)))
+            .thenAnswer { Mono.just(it.arguments[0] as User) }
+        `when`(mockUserSearchRepository.delete(any(User::class.java))).thenReturn(Mono.empty())
         <%_ } _%>
         user.activated = false
         user.activationKey = RandomStringUtils.random(20)

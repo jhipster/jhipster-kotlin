@@ -231,8 +231,8 @@ class UserResourceIT<% if (databaseType === 'cassandra') { %>: AbstractCassandra
             .collectList().block()!!<% } %>.size
         <%_ if (searchEngine === 'elasticsearch' && reactive) { _%>
         // Configure the mock search repository
-        `when`(mockUserSearchRepository.save(any()))
-            .thenAnswer { invocation -> Mono.just<User>(invocation.getArgument(0)) }
+        `when`(mockUserSearchRepository.save(any(User::class.java)))
+            .thenAnswer { Mono.just(it.arguments[0] as User) }
         <%_ } _%>
 
         // Create the User
@@ -563,8 +563,8 @@ class UserResourceIT<% if (databaseType === 'cassandra') { %>: AbstractCassandra
         userRepository.save<% if (databaseType === 'sql' && !reactive) { %>AndFlush<% } %>(user)<% if (reactive) { %>.block()<% } %>
         <%_ if (searchEngine === 'elasticsearch' && reactive) { _%>
         // Configure the mock search repository
-        `when`(mockUserSearchRepository.save(any()))
-            .thenAnswer { invocation -> Mono.just<User>(invocation.getArgument(0)) }
+        `when`(mockUserSearchRepository.save(any(User::class.java)))
+            .thenAnswer { Mono.just(it.arguments[0] as User) }
         <%_ } _%>
         val databaseSizeBeforeUpdate = userRepository.findAll()<% if (reactive) { %>
             .collectList().block()!!<% } %>.size
@@ -633,8 +633,8 @@ class UserResourceIT<% if (databaseType === 'cassandra') { %>: AbstractCassandra
         userRepository.save<% if (databaseType === 'sql' && !reactive) { %>AndFlush<% } %>(user)<% if (reactive) { %>.block()<% } %>
         <%_ if (searchEngine === 'elasticsearch' && reactive) { _%>
         // Configure the mock search repository
-        `when`(mockUserSearchRepository.save(any()))
-            .thenAnswer { invocation -> Mono.just<User>(invocation.getArgument(0)) }
+        `when`(mockUserSearchRepository.save(any(User::class.java)))
+            .thenAnswer { Mono.just(it.arguments[0] as User) }
         <%_ } _%>
         val databaseSizeBeforeUpdate = userRepository.findAll()<% if (reactive) { %>
             .collectList().block()!!<% } %>.size
@@ -860,7 +860,7 @@ class UserResourceIT<% if (databaseType === 'cassandra') { %>: AbstractCassandra
         userRepository.save<% if (databaseType === 'sql' && !reactive) { %>AndFlush<% } %>(user)<% if (reactive) { %>.block()<% } %>
         <%_ if (searchEngine === 'elasticsearch' && reactive) { _%>
         // Configure the mock search repository
-        `when`(mockUserSearchRepository.delete(any())).thenReturn(Mono.empty())
+        `when`(mockUserSearchRepository.delete(any(User::class.java))).thenReturn(Mono.empty())
         <%_ } _%>
         <%_ if (searchEngine === 'elasticsearch') { _%>
         mockUserSearchRepository.save(user)
