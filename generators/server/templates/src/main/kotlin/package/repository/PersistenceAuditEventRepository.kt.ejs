@@ -29,6 +29,7 @@ import org.springframework.data.jpa.repository.JpaRepository
 <%_ } _%>
 <%_ if (databaseType === 'sql' && reactive) { _%>
 import org.springframework.data.r2dbc.core.DatabaseClient
+import org.springframework.data.r2dbc.core.asType
 import org.springframework.data.r2dbc.query.Criteria
 import org.springframework.data.r2dbc.repository.Query
 import org.springframework.data.r2dbc.repository.R2dbcRepository
@@ -128,7 +129,7 @@ class PersistenceAuditEventRepositoryInternalImpl(val databaseClient: DatabaseCl
             "WHERE event_date > :fromDate AND event_date < :toDate")
             .bind("fromDate", fromDateLocal)
             .bind("toDate", toDateLocal)
-            .`as`(Long::class.java)
+            .asType<Long>()
             .fetch()
             .one()
     }
