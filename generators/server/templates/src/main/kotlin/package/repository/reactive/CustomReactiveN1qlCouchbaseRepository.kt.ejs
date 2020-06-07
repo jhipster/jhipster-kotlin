@@ -78,7 +78,8 @@ class CustomReactiveN1qlCouchbaseRepository<T, ID: Serializable>(
         try {
             val allowed_pageable_types = QueryExecutionConverters::class.java.getDeclaredField("ALLOWED_PAGEABLE_TYPES")
             allowed_pageable_types.isAccessible = true
-            val ALLOWED_PAGEABLE_TYPES: Set<Class<*>> = mutableSetOf(allowed_pageable_types.get(QueryExecutionConverters::class) as Class<*>, Flux::class as Class<*>)
+            val ALLOWED_PAGEABLE_TYPES = allowed_pageable_types[QueryExecutionConverters::class.java] as MutableSet<Class<*>>
+            ALLOWED_PAGEABLE_TYPES.add(Flux::class.java)
         } catch (e: NoSuchFieldException) {
             e.printStackTrace()
         } catch (e: IllegalAccessException) {
