@@ -502,9 +502,12 @@ class <%= entityClass %>ResourceIT <% if (databaseType === 'cassandra') { %>: Ab
         // Please look at https://github.com/jhipster/generator-jhipster/issues/9100. You can modify this test as necessary.
         // assertThat(test<%= entityClass %>.id).isEqualTo(test<%= entityClass %>.<%= mapsIdEntityInstance %>?.id)
         <%_ if (searchEngine === 'elasticsearch') { _%>
-
         // Validate the <%= entityClass %> in Elasticsearch
-        verify(mock<%= entityClass %>SearchRepository, times(0)).save(<%= asEntity(entityInstance) %>)
+            <%_ if (service !== 'no' && dto !== 'mapstruct') { _%>
+        verify(mock<%= entityClass %>SearchRepository, times(2)).save(<%= asEntity(entityInstance) %>)
+            <%_ } else { _%>
+        verify(mock<%= entityClass %>SearchRepository, times(1)).save(<%= asEntity(entityInstance) %>)
+            <%_ } _%>
         <%_ } _%>
     }
 <%_ } _%>
