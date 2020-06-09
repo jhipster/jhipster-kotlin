@@ -20,6 +20,10 @@
 
 package <%= packageName %>.web.rest
 
+<%_ if (searchEngine === 'couchbase') { _%>
+import com.couchbase.client.core.time.Delay
+import com.couchbase.client.java.util.retry.Retry
+<%_ } _%>
 import com.fasterxml.jackson.annotation.JsonInclude
 import com.fasterxml.jackson.databind.ObjectMapper
 import com.fasterxml.jackson.databind.SerializationFeature
@@ -38,6 +42,10 @@ import org.springframework.format.support.FormattingConversionService
 import org.springframework.security.authentication.TestingAuthenticationToken
 import org.springframework.security.test.context.TestSecurityContextHolder
 <%_ } _%>
+<%_ if (searchEngine === 'couchbase') { _%>
+import rx.Observable
+import rx.internal.util.UtilityFunctions
+<%_ } _%>
 <%_ if (authenticationType === 'oauth2') { _%>
 import org.springframework.security.core.GrantedAuthority
 import org.springframework.security.oauth2.client.authentication.OAuth2AuthenticationToken
@@ -48,6 +56,12 @@ import org.springframework.security.oauth2.core.oidc.user.OidcUser
 
 <%_ if (databaseType === 'sql') { _%>
 import javax.persistence.EntityManager
+<%_ } _%>
+
+<%_ if (searchEngine === 'couchbase') { _%>
+import java.util.NoSuchElementException
+import java.util.concurrent.Callable
+import java.util.concurrent.TimeUnit
 <%_ } _%>
 
 import java.io.IOException
@@ -188,6 +202,24 @@ fun authenticationToken(idToken: OidcIdToken): OAuth2AuthenticationToken {
     val authorities = extractAuthorityFromClaims(idToken.claims)
     val user = DefaultOidcUser(authorities, idToken)
     return OAuth2AuthenticationToken(user, authorities, "oidc")
+}
+<%_ } _%>
+
+<%_ if (searchEngine === 'couchbase') { _%>
+const val MAX_ATTEMPTS = 3
+const val DEFAULT_DELAY = Delay.exponential(TimeUnit.SECONDS)
+
+fun <T> retryUntilNotEmpty(iterableCallable: Callable<Iterable<T>>) {
+    Retry.wrapOrRetry(
+        Observable.fromCallable(iterableCallable)
+            .flatMapIterable(UtilityFunctions.identity())
+            .switchIfEmpty(
+                Observable.error(NoSuchElementException())),
+                MAX_ATTEMPTS,
+                DEFAULT_DELAY
+            )
+            .toBlocking()
+            .subscribe()
 }
 <%_ } _%>
 

@@ -34,9 +34,12 @@ import org.junit.jupiter.api.Test
 <%_ if (cacheProvider === 'redis') { _%>
 import org.junit.jupiter.api.extension.ExtendWith
 <%_ } _%>
+<%_ if (databaseType === 'neo4j') { _%>
+import org.junit.jupiter.api.extension.ExtendWith
+<%_ } _%>
 import org.springframework.beans.factory.annotation.Autowired
 import org.springframework.boot.test.context.SpringBootTest
-<%_ if (databaseType === 'sql') { _%>
+<%_ if (databaseType === 'sql' && !reactive) { _%>
 import org.springframework.transaction.annotation.Transactional
 <%_ } _%>
 <%_ if (databaseType === 'couchbase') { _%>
@@ -58,13 +61,16 @@ import org.assertj.core.api.Assertions.assertThat
 <%_ } else { _%>
 @SpringBootTest(classes = [<%= mainClass %>::class])
 <%_ } _%>
-<%_ if (databaseType === 'sql') { _%>
-@Transactional
-<%_ } _%>
 <%_ if (cacheProvider === 'redis') { _%>
 @ExtendWith(RedisTestContainerExtension::class)
 <%_ } _%>
-class AuditEventServiceIT <% if (databaseType === 'cassandra') { %>: AbstractCassandraTest() <% } %><% if (databaseType === 'neo4j') { %>: AbstractNeo4jIT() <% } %> {
+<%_ if (databaseType === 'neo4j') { _%>
+@ExtendWith(AbstractNeo4jIT::class)
+<%_ } _%>
+<%_ if (databaseType === 'sql' && !reactive) { _%>
+@Transactional
+<%_ } _%>
+class AuditEventServiceIT {
     @Autowired
     private lateinit var auditEventService: AuditEventService
 
@@ -102,7 +108,7 @@ class AuditEventServiceIT <% if (databaseType === 'cassandra') { %>: AbstractCas
     }
 
     @Test
-    <%_ if (databaseType === 'sql') { _%>
+    <%_ if (databaseType === 'sql' && !reactive) { _%>
     @Transactional
     <%_ } _%>
     fun verifyOldAuditEventsAreDeleted() {
@@ -110,11 +116,11 @@ class AuditEventServiceIT <% if (databaseType === 'cassandra') { %>: AbstractCas
         persistenceAuditEventRepository.save(auditEventOld)<% if (reactive) { %>.block()<% } %>
         persistenceAuditEventRepository.save(auditEventWithinRetention)<% if (reactive) { %>.block()<% } %>
         persistenceAuditEventRepository.save(auditEventNew)<% if (reactive) { %>.block()<% } %>
-        <%_ if (databaseType === 'sql') { _%>
+        <%_ if (databaseType === 'sql' && !reactive) { _%>
         persistenceAuditEventRepository.flush()
         <%_ } _%>
         auditEventService.removeOldAuditEvents()
-        <%_ if (databaseType === 'sql') { _%>
+        <%_ if (databaseType === 'sql' && !reactive) { _%>
         persistenceAuditEventRepository.flush()
         <%_ } _%>
 

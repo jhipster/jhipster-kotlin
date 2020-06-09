@@ -22,6 +22,7 @@ import io.github.jhipster.config.JHipsterProperties
 import <%= packageName %>.config.audit.AuditEventConverter
 <%_ if (reactive) { _%>
 import <%= packageName %>.domain.PersistentAuditEvent
+import reactor.core.publisher.toFlux
 <%_ } _%>
 import <%= packageName %>.repository.PersistenceAuditEventRepository
 import org.slf4j.Logger
@@ -39,6 +40,9 @@ import org.springframework.transaction.annotation.Transactional
 <%_ if (reactive) { _%>
 import reactor.core.publisher.Flux
 import reactor.core.publisher.Mono
+    <%_ if (databaseType === 'sql') { _%>
+import reactor.util.function.Tuples
+    <%_ } _%>
 <%_ } _%>
 import java.time.Instant
 import java.time.temporal.ChronoUnit
@@ -58,8 +62,10 @@ import org.springframework.boot.actuate.security.AuthenticationAuditListener.AUT
  *
  * This is the default implementation to support SpringBoot Actuator `AuditEventRepository`.
  */
-@Service<% if (databaseType === 'sql') { %>
-@Transactional<% } %>
+@Service
+<%_ if (databaseType === 'sql' && !reactive) { _%>
+@Transactional
+<%_ } _%>
 class AuditEventService(
     private val persistenceAuditEventRepository: PersistenceAuditEventRepository,
     private val auditEventConverter: AuditEventConverter,
@@ -82,43 +88,70 @@ class AuditEventService(
     */
     @Scheduled(cron = "0 0 12 * * ?")
     fun removeOldAuditEvents() {
+        <%_ if (!reactive) { _%>
         persistenceAuditEventRepository
             .findByAuditEventDateBefore(Instant.now().minus(jHipsterProperties.auditEvents.retentionPeriod.toLong(), ChronoUnit.DAYS))
-            <%_ if (!reactive) { _%>
             .forEach{
                 log.debug("Deleting audit data {}", it)
                 persistenceAuditEventRepository.delete(it)
             }
-            <%_ } else { _%>
+        <%_ } else { _%>
+        removeOldAuditEventsReactively().block()
+    }
+
+    <%_ if (databaseType === 'sql') { _%>
+    @Transactional
+    <%_ } _%>
+    fun removeOldAuditEventsReactively(): Mono<Void> {
+        return persistenceAuditEventRepository
+            .findByAuditEventDateBefore(Instant.now().minus(jHipsterProperties.auditEvents.retentionPeriod.toLong(), ChronoUnit.DAYS))
             .flatMap {
-                log.debug("Deleting audit data {}", it);
-                persistenceAuditEventRepository.delete(it);
-            }.blockLast()
+                log.debug("Deleting audit data {}", it)
+                persistenceAuditEventRepository.delete(it)
+            }.then()
             <%_ } _%>
     }
 
+    <%_ if (databaseType === 'sql') { _%>
+    @Transactional(readOnly = true)
+    <%_ } _%>
     fun findAll(pageable: Pageable): <% if (reactive) { %>Flux<% } else { %>Page<% } %><AuditEvent> =
         persistenceAuditEventRepository.findAll<% if (reactive) { %>By<% } %>(pageable)
             .map { auditEventConverter.convertToAuditEvent(it) }
 
+    <%_ if (databaseType === 'sql') { _%>
+    @Transactional(readOnly = true)
+    <%_ } _%>
     fun findByDates(fromDate: Instant, toDate: Instant, pageable: Pageable): <% if (reactive) { %>Flux<% } else { %>Page<% } %><AuditEvent> =
         persistenceAuditEventRepository.findAllByAuditEventDateBetween(fromDate, toDate, pageable)
             .map { auditEventConverter.convertToAuditEvent(it) }
 
+    <%_ if (databaseType === 'sql') { _%>
+    @Transactional(readOnly = true)
+    <%_ } _%>
     fun find(id: <% if (databaseType === 'sql') { %>Long<% } %><% if (databaseType === 'mongodb' || databaseType === 'neo4j' || databaseType === 'couchbase') { %>String<% } %>): <% if (reactive) { %>Mono<% } else { %>Optional<% } %><AuditEvent> =
         persistenceAuditEventRepository.findById(id)
             .map { auditEventConverter.convertToAuditEvent(it) }
 
     <%_ if (reactive) { _%>
 
+    <%_ if (databaseType === 'sql') { _%>
+    @Transactional(readOnly = true)
+    <%_ } _%>
     fun count(): Mono<Long> {
         return persistenceAuditEventRepository.count()
     }
 
+    <%_ if (databaseType === 'sql') { _%>
+    @Transactional(readOnly = true)
+    <%_ } _%>
     fun countByDates(fromDate: Instant, toDate: Instant): Mono<Long> {
         return persistenceAuditEventRepository.countByAuditEventDateBetween(fromDate, toDate)
     }
-
+    
+    <%_ if (databaseType === 'sql') { _%>
+    @Transactional(readOnly = true)
+    <%_ } _%>
     fun saveAuthenticationSuccess(login: String): Mono<PersistentAuditEvent>  {
         val persistentAuditEvent = PersistentAuditEvent()
         persistentAuditEvent.principal = login
@@ -126,7 +159,10 @@ class AuditEventService(
         persistentAuditEvent.auditEventDate = Instant.now()
         return persistenceAuditEventRepository.save(persistentAuditEvent)
     }
-
+    
+    <%_ if (databaseType === 'sql') { _%>
+    @Transactional(readOnly = true)
+    <%_ } _%>
     fun saveAuthenticationError(login: String, e: Throwable): Mono<PersistentAuditEvent> {
         val persistentAuditEvent = PersistentAuditEvent()
         persistentAuditEvent.principal = login
@@ -136,7 +172,20 @@ class AuditEventService(
         eventData["type"] = e::class.java.name
         eventData["message"] = e.message
         persistentAuditEvent.data = truncate(eventData)
-        return persistenceAuditEventRepository.save(persistentAuditEvent)
+        return persistenceAuditEventRepository.save(persistentAuditEvent)<% if (databaseType === 'sql') { %>
+            .flatMapMany { event ->
+                event.data.entries
+                        .map{ Tuples.of(event!!, it.key, it.value!!) }
+                    .toFlux()
+            }
+            .flatMap{ t ->
+                t.t1.id?.let {
+                    persistenceAuditEventRepository
+                        .savePersistenceAuditEventData(it, t.t2, t.t3)
+                        .thenReturn(t.t1)
+                }
+            }.last()
+        <% } %>
     }
 
     /**

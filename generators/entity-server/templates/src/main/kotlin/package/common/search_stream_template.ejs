@@ -17,11 +17,26 @@
  limitations under the License.
 -%>
 <%_
-const mapper = entityInstance  + 'Mapper';
-const entityToDtoReference = mapper + '::' + 'toDto'; %>
-        <%_ if (!viaService) { _%>
-        return <%= entityInstance %>SearchRepository.search(queryStringQuery(query))
-            <% if (dto === 'mapstruct') { %>.mapTo(mutableListOf(), <%= entityToDtoReference %>)<% } else { %>.toMutableList()<% } %>
+const mapper = `${entityInstance}Mapper`;
+const entityToDtoReference = `${mapper}::toDto`; %>
+<%_ if (!viaService) { _%>
+    <%_ if (!reactive) { _%>
+        <%_ if (searchEngine === 'elasticsearch') { _%>
+            return StreamSupport
+                .stream(<%= entityInstance %>SearchRepository.search(queryStringQuery(query)).spliterator(), false)
         <%_ } else { _%>
-        return <%= entityInstance %>Service.search(query).toMutableList()
+            return <%= entityInstance %>Repository.search(<%= entityClass %>.PREFIX, query)
         <%_ } _%>
+        <%_ if (dto === 'mapstruct') { _%>
+                .map(<%= entityToDtoReference %>)
+        <%_ } _%>
+        <%_ if (dto === 'mapstruct' || searchEngine !== 'couchbase') { _%>
+                .collect(Collectors.toList())
+        <%_ } _%>
+    <%_ } else { _%>
+        return <%= entityInstance %><% if (searchEngine === 'elasticsearch') { %>Search<% } %>Repository.search(<% if (searchEngine === 'couchbase') { %><%= entityClass %>.PREFIX, <% } %>query)<%_ if (dto === 'mapstruct') { %>
+            .map(<%= entityToDtoReference %>)<%_ } %><%_ if (fromResource) { _%>.collectList()<%_ } _%>
+    <%_ } _%>
+<%_ } else { _%>
+        return <%= entityInstance %>Service.search(query)<% if (reactive && fromResource) { %>.collectList()<% } %>
+<%_ } _%>

@@ -17,9 +17,7 @@
  limitations under the License.
 -%>
 package <%= packageName %>.repository
-<%
-const primaryKeyType = getPkTypeBasedOnDBAndAssociation(authenticationType, databaseType, relationships);
-%>
+
 import <%= packageName %>.domain.<%= asEntity(entityClass) %>
 <%_ if (fieldsContainOwnerManyToMany) { _%>
 import org.springframework.data.domain.Page
@@ -41,8 +39,12 @@ import org.springframework.data.mongodb.repository.MongoRepository
 <%_ } _%>
 <%_ if (databaseType === 'neo4j') { _%>
 import org.neo4j.springframework.data.repository.Neo4jRepository
+import org.neo4j.springframework.data.repository.query.Query
 <%_ } _%>
-<%_ if (databaseType === 'couchbase') { _%>
+<%_ if (searchEngine === 'couchbase') { _%>
+import <%= packageName %>.repository.search.SearchCouchbaseRepository
+<%_ } _%>
+<%_ if (databaseType === 'couchbase' && fieldsContainOwnerManyToMany === true) { _%>
 import org.springframework.data.couchbase.core.query.Query
 <%_ } _%>
 <%_ if (databaseType === 'cassandra') { _%>
@@ -74,7 +76,7 @@ import java.util.UUID
 @Suppress("unused")
 <%_ } _%>
 @Repository
-interface <%=entityClass%>Repository : <% if (databaseType === 'sql') { %>JpaRepository<% } %><% if (databaseType === 'mongodb') { %>MongoRepository<% } %><% if (databaseType === 'neo4j') { %>Neo4jRepository<% } %><% if (databaseType === 'cassandra') { %>CassandraRepository<% } %><% if (databaseType === 'couchbase') { %>N1qlCouchbaseRepository<% } %><<%=asEntity(entityClass)%>, <%= primaryKeyType %>><% if (jpaMetamodelFiltering) { %>, JpaSpecificationExecutor<<%= asEntity(entityClass) %>><% } %> {
+interface <%=entityClass%>Repository : <% if (databaseType === 'sql') { %>JpaRepository<% } %><% if (databaseType === 'mongodb') { %>MongoRepository<% } %><% if (databaseType === 'neo4j') { %>Neo4jRepository<% } %><% if (databaseType === 'cassandra') { %>CassandraRepository<% } %><% if (databaseType === 'couchbase') { %>N1qlCouchbaseRepository<% } %><<%=asEntity(entityClass)%>, <%= primaryKeyType %>><% if (jpaMetamodelFiltering) { %>, JpaSpecificationExecutor<<%= asEntity(entityClass) %>><% } %><% if (searchEngine === 'couchbase') { %>, SearchCouchbaseRepository<<%= asEntity(entityClass) %>, <%= primaryKeyType %>><% } %> {
     <%_ for (idx in relationships) {
         if (relationships[idx].relationshipType === 'many-to-one' && relationships[idx].otherEntityName === 'user' && databaseType === 'sql') { _%>
 
@@ -106,6 +108,13 @@ interface <%=entityClass%>Repository : <% if (databaseType === 'sql') { %>JpaRep
     fun findAllWithEagerRelationships(): MutableList<<%= asEntity(entityClass) %>>
 
     @Query("<%- (databaseType === 'mongodb')?"{'id': ?0}":"#{#n1ql.selectEntity} USE KEYS $1 WHERE #{#n1ql.filter}"%>")
+    fun findOneWithEagerRelationships(id: <%= primaryKeyType %>): Optional<<%= asEntity(entityClass) %>>
+    <%_ } else if (databaseType === 'neo4j') { _%>
+
+    @Query("MATCH (n:<%= asEntity(entityClass) %>)<-[]-(m) RETURN n,m")
+    fun findAllWithEagerRelationships(pageable: Pageable): Page<<%= asEntity(entityClass) %>> 
+
+    @Query("MATCH (e:<%= asEntity(entityClass) %> {id: $id}) RETURN e")
     fun findOneWithEagerRelationships(id: <%= primaryKeyType %>): Optional<<%= asEntity(entityClass) %>>
     <%_ }
     } _%>

@@ -19,9 +19,9 @@
 package <%= packageName %>.config
 
 import com.couchbase.client.java.Cluster
-import com.couchbase.client.java.bucket.BucketType
-import com.couchbase.client.java.cluster.DefaultBucketSettings
+import com.couchbase.client.java.CouchbaseCluster
 import com.couchbase.client.java.env.CouchbaseEnvironment
+import com.couchbase.client.java.env.DefaultCouchbaseEnvironment
 import org.assertj.core.util.Lists
 import org.springframework.boot.autoconfigure.couchbase.CouchbaseProperties
 import org.springframework.context.annotation.Bean
@@ -29,6 +29,7 @@ import org.springframework.context.annotation.Configuration
 import org.springframework.data.couchbase.config.AbstractCouchbaseConfiguration
 import org.springframework.data.couchbase.config.BeanNames
 import org.springframework.data.couchbase.config.CouchbaseConfigurer
+import org.testcontainers.couchbase.BucketDefinition
 import org.testcontainers.couchbase.CouchbaseContainer
 import javax.annotation.PostConstruct
 
@@ -37,28 +38,51 @@ class DatabaseConfigurationIT(
     private val couchbaseProperties: CouchbaseProperties
 ) : AbstractCouchbaseConfiguration() {
 
-    private lateinit var couchbaseContainer: CouchbaseContainer
+    private var _couchbaseContainer: CouchbaseContainer? = null
+    val couchbaseContainer: CouchbaseContainer?
+        get() {
+            if (_couchbaseContainer == null) {
+                _couchbaseContainer = CouchbaseContainer("<%= DOCKER_COUCHBASE %>")
+                    .withBucket(BucketDefinition(bucketName).withQuota(100))
+                    .withCredentials(username, bucketPassword)
+                couchbaseContainer?.start()
+            }
+            return _couchbaseContainer
+        }
 
-    init {
-        couchbaseContainer = CouchbaseContainer("<%= DOCKER_COUCHBASE %>")
-            .withNewBucket(
-                DefaultBucketSettings.builder()
-                    .name(bucketName)
-                    .password(bucketPassword)
-                    .type(BucketType.COUCHBASE)
-                    .quota(100)
-                    .build()
-            )
-        couchbaseContainer.start()
-    }
+    private var _couchbaseEnvironment: CouchbaseEnvironment? = null
+    val couchbaseEnvironment: CouchbaseEnvironment?
+        get() {
+            if (_couchbaseEnvironment == null) {
+                couchbaseContainer?.bootstrapCarrierDirectPort?.let { carrierPort ->
+                    couchbaseContainer?.bootstrapHttpDirectPort?.let { httpPort ->
+                        _couchbaseEnvironment = DefaultCouchbaseEnvironment
+                            .builder()
+                            .bootstrapCarrierDirectPort(carrierPort)
+                            .bootstrapHttpDirectPort(httpPort)
+                            .build()
+                    }
+                }
+            }
+            return _couchbaseEnvironment
+        }
+
+    private var _couchbaseCluster: CouchbaseCluster? = null
+    val couchbaseCluster: CouchbaseCluster?
+        get() {
+            if (_couchbaseCluster == null) {
+                _couchbaseCluster = CouchbaseCluster.create(couchbaseEnvironment(), couchbaseContainer?.containerIpAddress)
+            }
+            return _couchbaseCluster
+        }
 
     @Bean(destroyMethod = "", name = [BeanNames.COUCHBASE_ENV])
-    override fun couchbaseEnvironment(): CouchbaseEnvironment = couchbaseContainer.couchbaseEnvironment
+    override fun couchbaseEnvironment(): CouchbaseEnvironment = couchbaseEnvironment!!
 
     @Throws(Exception::class)
-    override fun couchbaseCluster(): Cluster = couchbaseContainer.couchbaseCluster
+    override fun couchbaseCluster(): CouchbaseCluster = couchbaseCluster!!
 
-    override fun getBootstrapHosts(): List<String> = Lists.newArrayList(couchbaseContainer.containerIpAddress)
+    override fun getBootstrapHosts(): List<String> = listOf(couchbaseContainer?.containerIpAddress!!)
 
     override fun getBucketName(): String = couchbaseProperties.bucket.name
 

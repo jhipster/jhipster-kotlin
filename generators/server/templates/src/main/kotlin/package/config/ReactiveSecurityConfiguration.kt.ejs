@@ -16,9 +16,15 @@
  See the License for the specific language governing permissions and
  limitations under the License.
 -%>
+<%_
+let withAudit = ((authenticationType === 'session' && !skipUserManagement) || authenticationType === 'oauth2') && ['sql', 'mongodb', 'couchbase', 'neo4j'].includes(databaseType);
+_%>
 package <%= packageName %>.config
 
 import <%= packageName %>.security.ADMIN
+<%_ if (authenticationType === 'oauth2') { _%>
+import <%= packageName %>.security.extractAuthorityFromClaims
+<%_ } _%>
 <%_ if (authenticationType === 'jwt') { _%>
 import <%= packageName %>.security.jwt.JWTFilter
 import <%= packageName %>.security.jwt.TokenProvider
@@ -27,10 +33,13 @@ import <%= packageName %>.security.jwt.TokenProvider
     <%_ if (authenticationType === 'oauth2') { _%>
 import <%= packageName %>.security.oauth2.AudienceValidator
 import <%= packageName %>.security.oauth2.JwtGrantedAuthorityConverter
+    <%_ if (withAudit) { _%>
 import <%= packageName %>.service.AuditEventService
-import org.springframework.security.authentication.AbstractAuthenticationToken
     <%_ } _%>
-    <%_ if (!skipUserManagement) { _%>
+import org.springframework.security.authentication.AbstractAuthenticationToken
+import org.springframework.security.oauth2.server.resource.authentication.JwtAuthenticationConverter
+    <%_ } _%>
+    <%_ if (!skipUserManagement && withAudit) { _%>
 import <%= packageName %>.service.AuditEventService
     <%_ } _%>
 import io.github.jhipster.web.filter.reactive.CookieCsrfFilter
@@ -63,7 +72,9 @@ import org.springframework.security.config.annotation.web.reactive.EnableWebFlux
 import org.springframework.security.config.web.server.SecurityWebFiltersOrder
 import org.springframework.security.config.web.server.ServerHttpSecurity
 <%_ if (authenticationType === 'session') { _%>
+    <%_ if (withAudit) { _%>
 import org.springframework.security.core.Authentication
+    <%_ } _%>
 import org.springframework.security.core.AuthenticationException
 <%_ } _%>
 <%_ if (authenticationType !== 'oauth2' && !skipUserManagement) { _%>
@@ -81,12 +92,13 @@ import org.springframework.security.oauth2.core.oidc.user.DefaultOidcUser
 import org.springframework.security.oauth2.core.oidc.user.OidcUser
 import org.springframework.security.oauth2.core.oidc.user.OidcUserAuthority
 import org.springframework.security.oauth2.jwt.*
-import org.springframework.security.oauth2.server.resource.authentication.JwtAuthenticationConverter
 import org.springframework.security.oauth2.server.resource.authentication.ReactiveJwtAuthenticationConverterAdapter
 import org.springframework.security.web.server.csrf.CookieServerCsrfTokenRepository
+    <%_ if (withAudit) { _%>
 import org.springframework.security.web.server.WebFilterExchange
 import org.springframework.security.web.server.authentication.RedirectServerAuthenticationSuccessHandler
 import org.springframework.security.web.server.authentication.ServerAuthenticationSuccessHandler
+    <%_ } _%>
 <%_ } _%>
 <%_ if (authenticationType !== 'oauth2') { _%>
     <%_ if (!skipUserManagement) { _%>
@@ -111,6 +123,9 @@ import org.springframework.security.web.server.authentication.logout.HttpStatusR
 import org.springframework.security.web.server.csrf.CookieServerCsrfTokenRepository
 <%_ } _%>
 import org.springframework.security.web.server.header.ReferrerPolicyServerHttpHeadersWriter
+<%_ if (applicationType === 'microservice') { _%>
+import org.springframework.security.web.server.savedrequest.NoOpServerRequestCache
+<%_ } _%>
 import org.springframework.security.web.server.util.matcher.NegatedServerWebExchangeMatcher
 import org.springframework.security.web.server.util.matcher.OrServerWebExchangeMatcher
 <%_ if (skipUserManagement && authenticationType !== 'oauth2') { _%>
@@ -127,13 +142,13 @@ import org.springframework.security.web.server.util.matcher.ServerWebExchangeMat
 @EnableReactiveMethodSecurity
 @Import(SecurityProblemSupport::class)
 class SecurityConfiguration(
-<%_ if (!skipUserManagement) { _%>
+<%_ if (!skipUserManagement && authenticationType !== 'oauth2') { _%>
     private val userDetailsService: ReactiveUserDetailsService,
 <%_ } _%>
 <%_ if (authenticationType === 'jwt') { _%>
     private val tokenProvider: TokenProvider,
 <%_ } _%>
-<%_ if (authenticationType === 'session' && !skipUserManagement || authenticationType === 'oauth2') { _%>
+<%_ if (withAudit) { _%>
     private val auditEventService: AuditEventService,
 <%_ } _%>
 <%_ if (authenticationType === 'oauth2') { _%>
@@ -226,6 +241,11 @@ class SecurityConfiguration(
             .featurePolicy("geolocation 'none'; midi 'none'; sync-xhr 'none'; microphone 'none'; camera 'none'; magnetometer 'none'; gyroscope 'none'; speaker 'none'; fullscreen 'self'; payment 'none'")
         .and()
             .frameOptions().disable()
+        <%_ if (applicationType === 'microservice') { _%>
+        .and()
+            .requestCache()
+            .requestCache(NoOpServerRequestCache.getInstance())
+        <%_ } _%>
         .and()
             .authorizeExchange()
             <%_ if (!skipClient) { _%>
@@ -251,14 +271,15 @@ class SecurityConfiguration(
         <%_ if (authenticationType === 'oauth2') { _%>
 
         http<%_ if (['monolith', 'gateway'].includes(applicationType)) { _%>.oauth2Login()
+            <%_ if (withAudit) { _%>
             .authenticationSuccessHandler{ exchange, authentication -> onAuthenticationSuccess(exchange, authentication) }
+            <%_ } _%>
         .and()
             <%_ } _%>.oauth2ResourceServer()
             .jwt()
             .jwtAuthenticationConverter(jwtAuthenticationConverter())
-        .and()
-            .and()
-            .oauth2Client()
+
+        http.oauth2Client()
             <%_ } _%>
         // @formatter:on
         return http.build()
@@ -307,6 +328,7 @@ class SecurityConfiguration(
         return jwtDecoder
     }
 
+        <%_ if (withAudit) { _%>
     private val redirectServerAuthenticationSuccessHandler = RedirectServerAuthenticationSuccessHandler()
 
     fun onAuthenticationSuccess(exchange: WebFilterExchange, authentication: Authentication): Mono<Void>  {
@@ -318,16 +340,17 @@ class SecurityConfiguration(
             .flatMap { auditEventService.saveAuthenticationSuccess(it) }
             .then()
     }
+        <%_ } _%>
     <%_ } _%>
     <%_ if (authenticationType === 'session') { _%>
 
     private fun onAuthenticationError(exchange: WebFilterExchange, e: AuthenticationException): Mono<Void>  {
         exchange.exchange.response.statusCode = HttpStatus.UNAUTHORIZED
-        <%_ if (!skipUserManagement) { _%>
-        return exchange.exchange()
+        <%_ if (withAudit) { _%>
+        return exchange.exchange
                 .formData
                 .map { it.getFirst("username") }
-                .filter { !Constants.ANONYMOUS_USER.equals(it) }
+                .filter { ANONYMOUS_USER != it }
                 .flatMap { auditEventService.saveAuthenticationError(it, e) }
                 .then()
         <%_ } else { _%>
@@ -337,11 +360,11 @@ class SecurityConfiguration(
 
     private fun onAuthenticationSuccess(exchange: WebFilterExchange, authentication: Authentication): Mono<Void> {
         exchange.exchange.response.statusCode = HttpStatus.OK
-        <%_ if (!skipUserManagement) { _%>
+        <%_ if (withAudit) { _%>
         return Mono.just(authentication.principal)
-                .filter { it instanceof User }
+                .filter { it is User }
                 .map { (it as User).username }
-                .filter { !Constants.ANONYMOUS_USER.equals(it) }
+                .filter { ANONYMOUS_USER != it }
                 .flatMap { auditEventService.saveAuthenticationSuccess(it) }
                 .then()
         <%_ } else { _%>
@@ -349,15 +372,18 @@ class SecurityConfiguration(
         <%_ } _%>
     }
     <%_ } _%>
-
     <%_ if(databaseType === 'couchbase') { _%>
+
     /**
     * Disables Spring security integration with SpEL expressions since it is not yet compatible with Reactor
     */
     @Bean
-    fun securityEvaluationContextExtension() =
-        SecurityEvaluationContextExtension() {
-            override fun getRootObject() = null
+    fun securityEvaluationContextExtension(): SecurityEvaluationContextExtension? {
+        return object : SecurityEvaluationContextExtension() {
+            override fun getRootObject(): Any? {
+                return null
+            }
         }
+    }
     <%_ } _%>
 }

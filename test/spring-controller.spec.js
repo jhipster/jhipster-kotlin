@@ -16,14 +16,14 @@ describe('JHipster generator spring-controller', () => {
                     'from-cli': true,
                     skipInstall: true,
                     blueprint: 'kotlin',
-                    skipChecks: true
+                    skipChecks: true,
                 })
                 .inTmpDir(dir => {
                     fse.copySync(path.join(__dirname, '../test/templates/default'), dir);
                 })
                 .withArguments(['foo'])
                 .withPrompts({
-                    actionAdd: false
+                    actionAdd: false,
                 })
                 .on('end', done);
         });
@@ -44,7 +44,7 @@ describe('JHipster generator spring-controller', () => {
                     skipInstall: true,
                     blueprint: 'kotlin',
                     skipChecks: true,
-                    default: true
+                    default: true,
                 })
                 .inTmpDir(dir => {
                     fse.copySync(path.join(__dirname, '../test/templates/default'), dir);

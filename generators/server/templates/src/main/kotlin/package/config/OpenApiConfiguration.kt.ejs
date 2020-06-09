@@ -1,0 +1,100 @@
+<%#
+Copyright 2013-2020 the original author or authors from the JHipster project.
+
+This file is part of the JHipster project, see https://www.jhipster.tech/
+for more information.
+
+Licensed under the Apache License, Version 2.0 (the "License");
+you may not use this file except in compliance with the License.
+You may obtain a copy of the License at
+
+http://www.apache.org/licenses/LICENSE-2.0
+
+Unless required by applicable law or agreed to in writing, software
+distributed under the License is distributed on an "AS IS" BASIS,
+WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
+See the License for the specific language governing permissions and
+limitations under the License.
+-%>
+package <%= packageName %>.config
+
+<%_
+  let springFox3 = false
+  if (reactive && (applicationType === 'gateway' || applicationType === 'monolith')) {
+    springFox3 = true
+  }
+_%>
+<%_ if (!springFox3) { _%>
+import com.google.common.base.Predicates
+<%_ } _%>
+import io.github.jhipster.config.JHipsterConstants
+import io.github.jhipster.config.JHipsterProperties
+import io.github.jhipster.config.apidoc.customizer.SwaggerCustomizer
+import org.springframework.context.annotation.Bean
+import org.springframework.context.annotation.Configuration
+import org.springframework.context.annotation.Profile
+import org.springframework.data.domain.Pageable
+import org.springframework.http.ResponseEntity
+import springfox.documentation.builders.RequestHandlerSelectors
+import springfox.documentation.service.ApiInfo
+import springfox.documentation.service.Contact
+import springfox.documentation.spi.DocumentationType
+import springfox.documentation.spring.web.plugins.Docket
+
+import java.nio.ByteBuffer
+import java.util.ArrayList
+import java.util.Arrays
+import java.util.HashSet
+
+import springfox.documentation.builders.PathSelectors.regex
+
+@Configuration
+@Profile(JHipsterConstants.SPRING_PROFILE_SWAGGER)
+class OpenApiConfiguration {
+
+    @Bean
+    fun noApiFirstCustomizer() = SwaggerCustomizer { docket -> docket.select()
+<%_ if (springFox3) { _%>
+            .apis(RequestHandlerSelectors.basePackage("<%= packageName %>.web.api").negate())
+<%_ } else { _%>
+            .apis(Predicates.not(RequestHandlerSelectors.basePackage("<%= packageName %>.web.api")))
+<%_ } _%>
+    }
+
+    @Bean
+    fun apiFirstDocket(jHipsterProperties: JHipsterProperties): Docket {
+        val properties = jHipsterProperties.swagger
+        val contact = Contact(
+            properties.contactName,
+            properties.contactUrl,
+            properties.contactEmail
+        )
+
+        val apiInfo = ApiInfo(
+            "API First " + properties.title,
+            properties.description,
+            properties.version,
+            properties.termsOfServiceUrl,
+            contact,
+            properties.license,
+            properties.licenseUrl,
+            mutableListOf()
+        )
+
+        return Docket(DocumentationType.SWAGGER_2)
+            .groupName("openapi")
+            .host(properties.host)
+            .protocols(properties.protocols.toSet())
+            .apiInfo(apiInfo)
+            .useDefaultResponseMessages(properties.isUseDefaultResponseMessages)
+            .forCodeGeneration(true)
+            .directModelSubstitute(ByteBuffer::class.java, String::class.java)
+            .genericModelSubstitutes(ResponseEntity::class.java)
+            .ignoredParameterTypes(Pageable::class.java)
+            .select()
+            .apis(RequestHandlerSelectors.basePackage("<%= packageName %>.web.api"))
+            .paths(regex(properties.defaultIncludePattern))
+            .build()
+    }
+
+}

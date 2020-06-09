@@ -42,7 +42,7 @@ import org.springframework.web.bind.annotation.RestController
  */
 @RestController
 @RequestMapping("/api/gateway")
-class GatewayResource(private val routeLocator: RouteLocator, private val discoveryClient: DiscoveryClient<% if (reactive) { %>, @Value("\${spring.application.name}") appName: String<% } %>) {
+class GatewayResource(private val routeLocator: RouteLocator, private val discoveryClient: DiscoveryClient<% if (reactive) { %>, @Value("\${spring.application.name}") val appName: String<% } %>) {
 
     /**
      * `GET  /routes` : get the active routes.
@@ -62,22 +62,22 @@ class GatewayResource(private val routeLocator: RouteLocator, private val discov
                 )
             }
         <%_ } else { _%>
-            val routes = routeLocator.getRoutes()
-            val routeVMs = listOf<RouteVM>()
-            routes.subscribe(route -> {
+            val routes = routeLocator.routes
+            val routeVMs = mutableListOf<RouteVM>()
+            routes.subscribe { route -> 
                 val routeVM = RouteVM()
                 // Manipulate strings to make Gateway routes look like Zuul's
-                val predicate = route.getPredicate().toString()
+                val predicate = route.predicate.toString()
                 val path = predicate.substring(predicate.indexOf("[") + 1, predicate.indexOf("]"))
-                routeVM.setPath(path)
-                val serviceId = route.getId().substring(route.getId().indexOf("_") + 1).toLowerCase()
-                routeVM.setServiceId(serviceId);
+                routeVM.path = path
+                val serviceId = route.id.substring(route.id.indexOf("_") + 1).toLowerCase()
+                routeVM.serviceId = serviceId
                 // Exclude gateway app from routes
-                if (!serviceId.equalsIgnoreCase(appName)) {
-                    routeVM.setServiceInstances(discoveryClient.getInstances(serviceId))
+                if (serviceId.toLowerCase() != appName.toLowerCase()) {
+                    routeVM.serviceInstances = discoveryClient.getInstances(serviceId)
                     routeVMs.add(routeVM)
                 }
-            })
+            }
         <%_ } _%>
         return ResponseEntity.ok(routeVMs)
     }

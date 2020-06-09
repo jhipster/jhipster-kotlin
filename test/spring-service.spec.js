@@ -15,14 +15,14 @@ describe('JHipster generator service', () => {
                     'from-cli': true,
                     skipInstall: true,
                     blueprint: 'kotlin',
-                    skipChecks: true
+                    skipChecks: true,
                 })
                 .inTmpDir(dir => {
                     fse.copySync(path.join(__dirname, '../test/templates/default'), dir);
                 })
                 .withArguments(['foo'])
                 .withPrompts({
-                    useInterface: false
+                    useInterface: false,
                 })
                 .on('end', done);
         });
@@ -44,14 +44,14 @@ describe('JHipster generator service', () => {
                     'from-cli': true,
                     skipInstall: true,
                     blueprint: 'kotlin',
-                    skipChecks: true
+                    skipChecks: true,
                 })
                 .inTmpDir(dir => {
                     fse.copySync(path.join(__dirname, '../test/templates/default'), dir);
                 })
                 .withArguments(['foo'])
                 .withPrompts({
-                    useInterface: true
+                    useInterface: true,
                 })
                 .on('end', done);
         });
@@ -59,7 +59,7 @@ describe('JHipster generator service', () => {
         it('creates service file', () => {
             assert.file([
                 `${SERVER_MAIN_SRC_DIR}com/mycompany/myapp/service/FooService.kt`,
-                `${SERVER_MAIN_SRC_DIR}com/mycompany/myapp/service/impl/FooServiceImpl.kt`
+                `${SERVER_MAIN_SRC_DIR}com/mycompany/myapp/service/impl/FooServiceImpl.kt`,
             ]);
         });
     });
@@ -72,7 +72,7 @@ describe('JHipster generator service', () => {
                     'from-cli': true,
                     skipInstall: true,
                     blueprint: 'kotlin',
-                    skipChecks: true
+                    skipChecks: true,
                 })
                 .inTmpDir(dir => {
                     fse.copySync(path.join(__dirname, '../test/templates/default'), dir);
@@ -85,7 +85,7 @@ describe('JHipster generator service', () => {
         it('creates service file', () => {
             assert.file([
                 `${SERVER_MAIN_SRC_DIR}com/mycompany/myapp/service/FooService.kt`,
-                `${SERVER_MAIN_SRC_DIR}com/mycompany/myapp/service/impl/FooServiceImpl.kt`
+                `${SERVER_MAIN_SRC_DIR}com/mycompany/myapp/service/impl/FooServiceImpl.kt`,
             ]);
         });
     });

@@ -22,15 +22,12 @@ package <%= packageName %>.web.rest
     const viaService = service !== 'no';
     let isUsingMapsId = false;
     let mapsIdAssoc;
-    let primaryKeyType = pkType;
     for (idx in relationships) {
-        isUsingMapsId = relationships[idx].useJPADerivedIdentifier;
-        if ( isUsingMapsId === true) {
+        isUsingMapsId = relationships[idx].useJPADerivedIdentifier === true;
+        if (isUsingMapsId) {
             mapsIdAssoc = relationships[idx];
-            primaryKeyType = (relationships[idx].otherEntityName === 'user'  && authenticationType === 'oauth2') ? 'String' : pkType;
             break;
         }
-        isUsingMapsId = false;
     }
     let manyToManyWithUser = false;
     for (idx in relationships) {
@@ -49,9 +46,6 @@ import <%= packageName %>.service.<%= entityClass %>Service
 import <%= packageName %>.repository.<%= entityClass %>Repository
     <%_ if (isUsingMapsId === true) { _%>
 import <%= packageName %>.repository.<%= mapsIdAssoc.otherEntityNameCapitalized %>Repository
-    <%_ } _%>
-    <%_ if (reactiveRepositories) { _%>
-import <%= packageName %>.repository.reactive.<%= entityClass %>ReactiveRepository
     <%_ } _%>
     <%_ if (searchEngine === 'elasticsearch') { _%>
 import <%= packageName %>.repository.search.<%= entityClass %>SearchRepository
@@ -75,12 +69,15 @@ import io.github.jhipster.web.util.HeaderUtil
 <%_ if (pagination !== 'no') { _%>
 import io.github.jhipster.web.util.PaginationUtil
 <%_ } _%>
-import io.github.jhipster.web.util.ResponseUtil
+import io.github.jhipster.web.util.<% if (reactive) { %>reactive.<% } %>ResponseUtil
 import org.slf4j.LoggerFactory
 import org.springframework.beans.factory.annotation.Value
 <%_ if (pagination !== 'no') { _%>
 import org.springframework.data.domain.Page
 import org.springframework.data.domain.Pageable
+<%_ if (reactive) { _%>
+import org.springframework.data.domain.PageImpl
+<%_ } _%>
 import org.springframework.http.HttpStatus
     <%_ if (reactive) { _%>
 import org.springframework.http.server.reactive.ServerHttpRequest
@@ -90,6 +87,8 @@ import org.springframework.web.servlet.support.ServletUriComponentsBuilder
     <%_ } else { _%>
 import org.springframework.web.util.UriComponentsBuilder
     <%_ } _%>
+<%_ } else if (reactiveRepositories) { _%>
+import org.springframework.http.HttpStatus  
 <%_ } _%>
 <%_ if (reactiveRepositories) { _%>
 import org.springframework.http.MediaType
@@ -98,17 +97,11 @@ import org.springframework.http.ResponseEntity
 <%_ if (!viaService && !saveUserSnapshot) { %>
 import org.springframework.transaction.annotation.Transactional
 <%_ } _%>
-import org.springframework.web.bind.annotation.DeleteMapping
-import org.springframework.web.bind.annotation.GetMapping
-import org.springframework.web.bind.annotation.PathVariable
-import org.springframework.web.bind.annotation.PostMapping
-import org.springframework.web.bind.annotation.PutMapping
-import org.springframework.web.bind.annotation.RequestBody
-import org.springframework.web.bind.annotation.RequestMapping
-import org.springframework.web.bind.annotation.RequestParam
-import org.springframework.web.bind.annotation.RestController
+import org.springframework.web.bind.annotation.*
 <%_ if (reactiveRepositories) { _%>
+import org.springframework.web.server.ResponseStatusException
 import reactor.core.publisher.Flux
+import reactor.core.publisher.Mono
 <%_ } _%>
 
 <%_ if (validation) { _%>
@@ -120,7 +113,10 @@ import java.util.Objects<% } %>
 <%_ if (databaseType === 'cassandra') { _%>
 import java.util.UUID
 <%_ } _%>
-<%_ if (searchEngine === 'elasticsearch') { _%>
+<%_ if (searchEngine === 'elasticsearch' && !reactive) { _%>
+import java.util.stream.Collectors
+import java.util.stream.StreamSupport
+
 import org.elasticsearch.index.query.QueryBuilders.queryStringQuery
 <%_ } _%>
 <%_ if (!readOnly) { _%>
@@ -145,6 +141,8 @@ class <%= entityClass %>Resource(
 <%_
     const instanceType = (dto === 'mapstruct') ? asDto(entityClass) : asEntity(entityClass);
     const instanceName = (dto === 'mapstruct') ? asDto(entityInstance) : asEntity(entityInstance);
+    const mapper = entityInstance  + 'Mapper';
+    const entityToDtoReference = mapper + '::' + 'toDto';
 _%><%- include('../../common/inject_template', {viaService: viaService, constructorName: entityClass + 'Resource', queryService: jpaMetamodelFiltering, isUsingMapsId: isUsingMapsId, mapsIdAssoc: mapsIdAssoc, isController: true}); -%>
 ) {
 
@@ -163,7 +161,7 @@ _%><%- include('../../common/inject_template', {viaService: viaService, construc
      * @throws URISyntaxException if the Location URI syntax is incorrect.
      */
     @PostMapping("/<%= entityApiUrl %>")
-    fun create<%= entityClass %>(<% if (validation) { %>@Valid <% } %>@RequestBody <%= instanceName %>: <%= instanceType %>): ResponseEntity<<%= instanceType %>> {
+    fun create<%= entityClass %>(<% if (validation) { %>@Valid <% } %>@RequestBody <%= instanceName %>: <%= instanceType %>): <% if (reactive) { %>Mono<<% } %>ResponseEntity<<%= instanceType %>><% if (reactive) { %>><% } %> {
         log.debug("REST request to save <%= entityClass %> : {}", <%= instanceName %>)
         if (<%= instanceName %>.id != null) {
             throw BadRequestAlertException(
@@ -187,10 +185,23 @@ _%><%- include('../../common/inject_template', {viaService: viaService, construc
         <%_ if (databaseType === 'cassandra') { _%>
         <%= instanceName %>.id = UUID.randomUUID()
         <%_ } _%>
+        <%_ if (!reactive) { _%>
 <%- include('../../common/save_template', {asEntity, asDto, viaService: viaService, returnDirectly: false, isUsingMapsId: isUsingMapsId, mapsIdAssoc: mapsIdAssoc, isController: true}); -%>
-        return ResponseEntity.created(URI("/api/<%= entityApiUrl %>/" + result.id))
-            .headers(HeaderUtil.createEntityCreationAlert(applicationName, <%= enableTranslation %>, ENTITY_NAME, result.id.toString()))
+        return ResponseEntity.created(URI("/api/<%= entityApiUrl %>/${result.id}"))
+            .headers(HeaderUtil.createEntityCreationAlert(applicationName, <%= enableTranslation %>, ENTITY_NAME, result.id<% if (primaryKeyType !== 'String') { %>.toString()<% } %>))
             .body(result)
+        <%_ } else { _%>
+<%- include('../../common/save_reactive_template', {asEntity, asDto, viaService: viaService, returnDirectly: false}); -%>
+            .map { result -> 
+                try {
+                    ResponseEntity.created(URI("/api/<%= entityApiUrl %>/${result.id}"))
+                        .headers(HeaderUtil.createEntityCreationAlert(applicationName, <%= enableTranslation %>, ENTITY_NAME, result.id<% if (primaryKeyType !== 'String') { %>.toString()<% } %>))
+                        .body(result)
+                } catch (e: URISyntaxException) {
+                    throw RuntimeException(e)
+                }
+            }
+        <%_ } _%>
     }
 
     /**
@@ -203,7 +214,7 @@ _%><%- include('../../common/inject_template', {viaService: viaService, construc
      * @throws URISyntaxException if the Location URI syntax is incorrect.
      */
     @PutMapping("/<%= entityApiUrl %>")
-    fun update<%= entityClass %>(<% if (validation) { %>@Valid <% } %>@RequestBody <%= instanceName %>: <%= instanceType %>): ResponseEntity<<%= instanceType %>> {
+    fun update<%= entityClass %>(<% if (validation) { %>@Valid <% } %>@RequestBody <%= instanceName %>: <%= instanceType %>): <% if (reactive) { %>Mono<<% } %>ResponseEntity<<%= instanceType %>><% if (reactive) { %>><% } %> {
         log.debug("REST request to update <%= entityClass %> : {}", <%= instanceName %>)
         if (<%= instanceName %>.id == null) {
             throw BadRequestAlertException("Invalid id", ENTITY_NAME, "idnull")
@@ -221,15 +232,24 @@ _%><%- include('../../common/inject_template', {viaService: viaService, construc
                 }
                 <%_ } _%>
         <%_ } _%>
+        <%_ if (!reactive) { _%>
 <%- include('../../common/save_template', {asEntity, asDto, viaService: viaService, returnDirectly: false, isUsingMapsId: false, mapsIdAssoc: mapsIdAssoc}); -%>
         return ResponseEntity.ok()
             .headers(
                 HeaderUtil.createEntityUpdateAlert(
                     applicationName, <%= enableTranslation %>, ENTITY_NAME,
-                     <%= instanceName %>.id.toString()
+                     <%= instanceName %>.id<% if (primaryKeyType !== 'String') { %>.toString()<% } %>
                 )
             )
             .body(result)
+        <%_ } else { _%>
+<%- include('../../common/save_reactive_template', {asEntity, asDto, viaService: viaService, returnDirectly: false}); -%>
+                        .switchIfEmpty(Mono.error(ResponseStatusException(HttpStatus.NOT_FOUND)))
+                        .map { result -> ResponseEntity.ok()
+                            .headers(HeaderUtil.createEntityUpdateAlert(applicationName, <%= enableTranslation %>, ENTITY_NAME, result.id<% if (primaryKeyType !== 'String') { %>.toString()<% } %>))
+                            .body(result)
+                        }
+                <%_ } _%>
     }
 <%_ } _%>
     /**
@@ -251,7 +271,7 @@ _%><%- include('../../common/inject_template', {viaService: viaService, construc
     @Transactional(readOnly = true)<%_ } _%>
     <%- include('../../common/get_all_template', {asEntity, asDto, viaService}); -%>
 
-    <%_ if (reactiveRepositories) { _%>
+    <%_ if (reactiveRepositories && pagination === 'no') { _%>
     /**
      * `GET  /<%= entityApiUrl %>` : get all the <%= entityInstancePlural %> as a stream.
      * @return the [Flux] of <%= entityInstancePlural %>.
@@ -263,9 +283,9 @@ _%><%- include('../../common/inject_template', {viaService: viaService, construc
     fun getAll<%= entityClassPlural %>AsStream(): Flux<<%= instanceType %>> {
         log.debug("REST request to get all <%= entityClassPlural %> as a stream")
         <%_ if (viaService) { _%>
-        return <%= entityInstance %>Service.findAllAsFlux()
+        return <%= entityInstance %>Service.findAll()
         <%_ } else { _%>
-        return <%= entityInstance %>ReactiveRepository.findAll()
+        return <%= entityInstance %>Repository.findAll()<%_ if (dto === 'mapstruct') { _%>.map(<%= entityToDtoReference %>)<%_ } _%>
         <%_ } _%>
     }
 
@@ -280,7 +300,7 @@ _%><%- include('../../common/inject_template', {viaService: viaService, construc
     <%_ if (databaseType === 'sql' && isUsingMapsId === true && !viaService) { _%>
     @Transactional(readOnly = true)
     <%_ } _%>
-    fun get<%= entityClass %>(@PathVariable id: <%= primaryKeyType %>): ResponseEntity<<%= instanceType %>> {
+    fun get<%= entityClass %>(@PathVariable id: <%= primaryKeyType %>): <% if (reactive) { %>Mono<<% } %>ResponseEntity<<%= instanceType %>><% if (reactive) { %>><% } %> {
         log.debug("REST request to get <%= entityClass %> : {}", id)<%- include('../../common/get_template', {asEntity, asDto, viaService, returnDirectly:false}); -%>
         return ResponseUtil.wrapOrNotFound(<%= instanceName %>)
     }
@@ -292,14 +312,30 @@ _%><%- include('../../common/inject_template', {viaService: viaService, construc
      * @return the [ResponseEntity] with status `204 (NO_CONTENT)`.
      */
     @DeleteMapping("/<%= entityApiUrl %>/{id}")
-    fun delete<%= entityClass %>(@PathVariable id: <%= primaryKeyType %>): ResponseEntity<Void> {
+    <%_ if (reactive) { _%>
+    @ResponseStatus(code = HttpStatus.NO_CONTENT)
+    <%_ } _%>
+    fun delete<%= entityClass %>(@PathVariable id: <%= primaryKeyType %>): <% if (reactive) { %>Mono<<% } %>ResponseEntity<Void><% if (reactive) { %>><% } %> {
         log.debug("REST request to delete <%= entityClass %> : {}", id)
-<%- include('../../common/delete_template', {viaService: viaService}); -%>
-        return ResponseEntity.noContent()
-            .headers(HeaderUtil.createEntityDeletionAlert(applicationName, <%= enableTranslation %>, ENTITY_NAME, id<% if (pkType !== 'String') { %>.toString()<% } %>)).build()
+<%- include('../../common/delete_template', {viaService: viaService, fromResource: true}); -%>
+        <%_ if (!reactive) { _%>
+            return ResponseEntity.noContent()
+                .headers(HeaderUtil.createEntityDeletionAlert(applicationName, <%= enableTranslation %>, ENTITY_NAME, id<% if (primaryKeyType !== 'String') { %>.toString()<% } %>)).build()
+        <%_ } else { _%>
+            <%_ if (databaseType === 'couchbase') { _%>
+                .then(Mono.just(ResponseEntity.noContent()
+                    .headers(HeaderUtil.createEntityDeletionAlert(applicationName, <%= enableTranslation %>, ENTITY_NAME, id<% if (primaryKeyType !== 'String') { %>.toString()<% } %>)).build<Void>())
+                )
+            <%_ } else { _%>
+                .map {
+                    ResponseEntity.noContent()
+                        .headers(HeaderUtil.createEntityDeletionAlert(applicationName, <%= enableTranslation %>, ENTITY_NAME, id<% if (primaryKeyType !== 'String') { %>.toString()<% } %>)).build<Void>()
+                }
+            <%_ } _%>
+        <%_ } _%>
     }
 <%_ } _%>
-<%_ if (searchEngine === 'elasticsearch') { _%>
+<%_ if (searchEngine !== false) { _%>
 
     /**
      * `SEARCH  /_search/<%= entityApiUrl %>?query=:query` : search for the <%= entityInstance %> corresponding

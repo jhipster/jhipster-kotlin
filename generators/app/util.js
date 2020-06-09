@@ -53,5 +53,5 @@ function displayLogo() {
 }
 
 module.exports = {
-    displayLogo
+    displayLogo,
 };

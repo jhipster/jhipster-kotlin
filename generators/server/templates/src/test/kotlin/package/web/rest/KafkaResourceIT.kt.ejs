@@ -75,7 +75,9 @@ class <%= upperFirstCamelCase(baseName) %>KafkaResourceIT {
     }
 
     private fun startTestcontainer() {
-        kafkaContainer = KafkaContainer("<%= KAFKA_VERSION %>")
+        // TODO: withNetwork will need to be removed soon
+        // See discussion at https://github.com/jhipster/generator-jhipster/issues/11544#issuecomment-609065206
+        kafkaContainer = KafkaContainer("<%= KAFKA_VERSION %>").withNetwork(null)
         kafkaContainer.start()
     }
 
@@ -93,9 +95,9 @@ class <%= upperFirstCamelCase(baseName) %>KafkaResourceIT {
         val kafkaResource = <%= upperFirstCamelCase(baseName) %>KafkaResource(kafkaProperties)
 
         <%_ if (!reactive) { _%>
-        restMockMvc = MockMvcBuilders.standaloneSetup(kafkaResource).build();
+        restMockMvc = MockMvcBuilders.standaloneSetup(kafkaResource).build()
         <%_ } else { _%>
-        client = WebTestClient.bindToController(kafkaResource).build();
+        client = WebTestClient.bindToController(kafkaResource).build()
         <%_ } _%>
     }
 
@@ -148,14 +150,14 @@ class <%= upperFirstCamelCase(baseName) %>KafkaResourceIT {
                 return
             }
         }
-        fail<String>("Expected content data:value-consume not received");
+        fail<String>("Expected content data:value-consume not received")
         <%_ } else { _%>
         val value = client.get().uri("/api/jhipster-kafka/consume?topic=topic-consume")
             .accept(MediaType.TEXT_EVENT_STREAM)
             .exchange()
             .expectStatus().isOk()
             .expectHeader().contentTypeCompatibleWith(MediaType.TEXT_EVENT_STREAM)
-            .returnResult(String.class)
+            .returnResult(String::class)
             .getResponseBody().blockFirst(Duration.ofSeconds(10))
 
         assertThat(value).isEqualTo("value-consume")

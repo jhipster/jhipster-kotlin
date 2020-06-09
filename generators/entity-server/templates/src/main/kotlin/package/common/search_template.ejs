@@ -18,19 +18,33 @@
 -%>
 <%_
     const instanceType = (dto === 'mapstruct') ? asDto(entityClass) : asEntity(entityClass);
-    //const instanceName = (dto === 'mapstruct') ? asDto(entityInstance) : asEntity(entityInstance);
-    const mapper = entityInstance + 'Mapper';
-    //const entityToDtoReference = mapper + '::' + 'toDto';
-    const entityListToDtoListReference = mapper + '.' + 'toDto';
-    if (pagination === 'no') { %>
-    fun search<%= entityClassPlural %>(@RequestParam query: String): MutableList<<%= instanceType %>> {
-        log.debug("REST request to search <%= entityClassPlural %> for query {}", query)<%- include('search_stream_template', {viaService: viaService}); -%>
-    <% } if (pagination !== 'no') { %>
-    fun search<%= entityClassPlural %>(@RequestParam query: String, pageable: Pageable<% if (reactive) { %>, request: ServerHttpRequest<% } %>): ResponseEntity<MutableList<<%= instanceType %>>> {
-        log.debug("REST request to search for a page of <%= entityClassPlural %> for query {}", query)<% if (viaService) { %>
-        val page = <%= entityInstance %>Service.search(query, pageable)<% } else { %>
-        val page = <%= entityInstance %>SearchRepository.search(queryStringQuery(query), pageable)<% } %>
+    const mapper = `${entityInstance}Mapper`;
+    const listOrFlux = (reactive === true) ? 'Flux' : 'MutableList';
+    const entityToDtoReference = `${mapper}::toDto`;
+    const entityListToDtoListReference = `${mapper}.toDto`;
+if (pagination === 'no') { %>
+    fun search<%= entityClassPlural %>(@RequestParam query: String): <% if (reactive) { %>Mono<<% } %>MutableList<<%= instanceType %>><% if (reactive) { %>><% } %> {
+        log.debug("REST request to search <%= entityClassPlural %> for query {}", query)<%- include('search_stream_template', {viaService: viaService, fromResource: true}); -%>
+<% } if (pagination !== 'no') { %>
+    fun search<%= entityClassPlural %>(@RequestParam query: String, pageable: Pageable<% if (reactive) { %>, request: ServerHttpRequest<% } %>): <% if (reactive) { %>Mono<<% } %>ResponseEntity<<%= listOrFlux %><<%= instanceType %>>><% if (reactive) { %>><% } %> {
+        log.debug("REST request to search for a page of <%= entityClassPlural %> for query ${query}")
+        
+    <%_ if (!reactive) { _%>
+        <%_ if (viaService) { _%>
+
+        val page = <%= entityInstance %>Service.search(query, pageable)
+        <%_ } else { _%>
+        val page = <%= entityInstance %><% if (searchEngine == 'elasticsearch') { %>Search<% } %>Repository.search(<% if (searchEngine === 'elasticsearch') { %>queryStringQuery(query)<% } else { %><%= entityClass %>.PREFIX, query<% } %>, pageable)
+        <%_ } _%>
         val headers = PaginationUtil.generatePaginationHttpHeaders(<% if (!reactive) { %>ServletUriComponentsBuilder.fromCurrentRequest()<% } else { %>UriComponentsBuilder.fromHttpRequest(request)<% } %>, page)
         return ResponseEntity.ok().headers(headers).body(<% if (!viaService && dto === 'mapstruct') { %><%= entityListToDtoListReference %>(<% } %>page.content<% if (!viaService && dto === 'mapstruct') { %>)<% } %>)
+    <%_ } else { _%>
+        return <%= entityInstance %><%= viaService ?
+                'Service.' + (searchEngine === 'elasticsearch' ? 'searchCount' : 'countAll') :
+                (searchEngine === 'elasticsearch' ? 'Search' : '') + 'Repository.count' %>()
+                .map { PageImpl<<%= instanceType %>>(listOf(), pageable, it) }
+                .map { PaginationUtil.generatePaginationHttpHeaders(UriComponentsBuilder.fromHttpRequest(request), it) }
+                .map { ResponseEntity.ok().headers(it).body(<%= entityInstance %><%= viaService ? 'Service' : (searchEngine === 'elasticsearch' ? 'Search' : '') + 'Repository' %>.search(<% if (!viaService && searchEngine === 'couchbase') { %><%= entityClass %>.PREFIX, <% } %>query, pageable)<% if (!viaService && dto === 'mapstruct') { %>.map(<%= entityToDtoReference %>)<% } %>) }
+    <%_ } _%>
     <% } -%>
 }

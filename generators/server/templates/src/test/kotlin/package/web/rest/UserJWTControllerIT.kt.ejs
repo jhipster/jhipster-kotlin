@@ -27,17 +27,23 @@ import <%= packageName %>.AbstractNeo4jIT
 <%_ if (cacheProvider === 'redis') { _%>
 import <%= packageName %>.RedisTestContainerExtension
 <%_ } _%>
+<%_ if (databaseType === 'sql' && reactive) { _%>
+import <%= packageName %>.config.SYSTEM_ACCOUNT
+<%_ } _%>
 import <%= packageName %>.<%= mainClass %>
 <%_ if (!skipUserManagement) { _%>
+    <%_ if (databaseType === 'sql' && reactive) { _%>
+import <%= packageName %>.config.Constants
+    <%_ } _%>
 import <%= packageName %>.domain.<%= asEntity('User') %>
 import <%= packageName %>.repository.UserRepository
-<%_ } _%>
-<%_ if (reactive) { _%>
-import <%= packageName %>.service.AuditEventService
 <%_ } _%>
 import <%= packageName %>.web.rest.vm.LoginVM
 import org.junit.jupiter.api.Test
 <%_ if (cacheProvider === 'redis') { _%>
+import org.junit.jupiter.api.extension.ExtendWith
+<%_ } _%>
+<%_ if (databaseType === 'neo4j') { _%>
 import org.junit.jupiter.api.extension.ExtendWith
 <%_ } _%>
 import org.springframework.beans.factory.annotation.Autowired
@@ -86,7 +92,10 @@ import org.hamcrest.Matchers.*
 <%_ if (cacheProvider === 'redis') { _%>
 @ExtendWith(RedisTestContainerExtension::class)
 <%_ } _%>
-class UserJWTControllerIT <% if (databaseType === 'neo4j') { %>: AbstractNeo4jIT() <% } %><% if (databaseType === 'cassandra') { %>: AbstractCassandraTest() <% } %>{
+<%_ if (databaseType === 'neo4j') { _%>
+@ExtendWith(AbstractNeo4jIT::class)
+<%_ } _%>
+class UserJWTControllerIT <% if (databaseType === 'cassandra') { %>: AbstractCassandraTest() <% } %>{
 
 <%_ if (!skipUserManagement) { _%>
     @Autowired
@@ -105,7 +114,7 @@ class UserJWTControllerIT <% if (databaseType === 'neo4j') { %>: AbstractNeo4jIT
 
     @Test
 <%_ if (!skipUserManagement) { _%>
-    <%_ if (databaseType === 'sql') { _%>
+    <%_ if (databaseType === 'sql' && !reactive) { _%>
     @Transactional
     <%_ } _%>
     @Throws(Exception::class)
@@ -117,14 +126,13 @@ class UserJWTControllerIT <% if (databaseType === 'neo4j') { %>: AbstractNeo4jIT
             login = "user-jwt-controller",
             email = "user-jwt-controller@example.com",
             activated = true,
+            <%_ if (databaseType === 'sql' && reactive) { _%>
+            createdBy = SYSTEM_ACCOUNT,
+            <%_ } _%>
             password = passwordEncoder.encode("test")
         )
 
-        <%_ if (databaseType === 'sql') { _%>
-        userRepository.saveAndFlush(user)
-        <%_ } else if (databaseType === 'mongodb' || databaseType === 'couchbase' || databaseType === 'cassandra') { _%>
-        userRepository.save(user)<% if (reactive) { %>.block()<% } %>
-        <%_ } _%>
+        userRepository.save<% if (databaseType === 'sql' && !reactive) { %>AndFlush<% } %>(user)<% if (reactive) { %>.block()<% } %>
 
         val login = LoginVM(username = "user-jwt-controller", password = "test")
 <%_ } else { _%>
@@ -157,7 +165,7 @@ class UserJWTControllerIT <% if (databaseType === 'neo4j') { %>: AbstractNeo4jIT
 
     @Test
     <%_ if (!skipUserManagement) { _%>
-    <%_ if (databaseType === 'sql') { _%>
+    <%_ if (databaseType === 'sql' && !reactive) { _%>  
     @Transactional
     <%_ } _%>
     @Throws(Exception::class)
@@ -169,14 +177,13 @@ class UserJWTControllerIT <% if (databaseType === 'neo4j') { %>: AbstractNeo4jIT
             login = "user-jwt-controller-remember-me",
             email = "user-jwt-controller-remember-me@example.com",
             activated = true,
+            <%_ if (databaseType === 'sql' && reactive) { _%>
+            createdBy = SYSTEM_ACCOUNT,
+            <%_ } _%>   
             password = passwordEncoder.encode("test")
         )
 
-        <%_ if (databaseType === 'sql') { _%>
-        userRepository.saveAndFlush(user)
-        <%_ } else if (databaseType === 'mongodb' || databaseType === 'couchbase' || databaseType === 'cassandra') { _%>
-        userRepository.save(user)<% if (reactive) { %>.block()<% } %>
-        <%_ } _%>
+        userRepository.save<% if (databaseType === 'sql' && !reactive) { %>AndFlush<% } %>(user)<% if (reactive) { %>.block()<% } %>
 
         val login = LoginVM(
             username = "user-jwt-controller-remember-me",

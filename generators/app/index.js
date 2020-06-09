@@ -29,7 +29,7 @@ module.exports = class extends BaseGenerator {
         // Override logo when we run khipster command
         const initializer = {
             ...super._initializing(),
-            displayLogo
+            displayLogo,
         };
 
         return initializer;

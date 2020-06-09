@@ -21,20 +21,15 @@ package <%= packageName %>.config
 <%_ if (reactive) { _%>
 import com.fasterxml.jackson.databind.ObjectMapper
 <%_ } _%>
-<%_ if (!skipClient || devDatabaseType === 'h2Disk' || devDatabaseType === 'h2Memory') { _%>
+<%_ if (!skipClient || ['h2Disk', 'h2Memory'].includes(devDatabaseType) && !reactive) { _%>
 import io.github.jhipster.config.JHipsterConstants
 <%_ } _%>
 import io.github.jhipster.config.JHipsterProperties
-<%_ if (devDatabaseType === 'h2Disk' || devDatabaseType === 'h2Memory') { _%>
+<%_ if (['h2Disk', 'h2Memory'].includes(devDatabaseType) && !reactive) { _%>
 import io.github.jhipster.config.h2.H2ConfigurationHelper
 <%_ } _%>
-<%_ if (!reactive) { _%>
-    <%_ if (!skipClient) { _%>
-import io.github.jhipster.web.filter.CachingHttpHeadersFilter
-    <%_ } _%>
-<%_ } _%>
-<%_ if (reactive && !skipClient) { _%>
-import io.github.jhipster.web.filter.reactive.CachingHttpHeadersFilter
+<%_ if (!skipClient && reactive) { _%>
+import io.github.jhipster.web.filter.<% if (reactive) { %>reactive.<% } %>CachingHttpHeadersFilter
 <%_ } _%>
 import org.slf4j.LoggerFactory
 <%_ if (!reactive) { _%>
@@ -55,6 +50,10 @@ import org.springframework.context.annotation.Profile
     <%_ } _%>
 import org.springframework.core.annotation.Order
 <%_ } _%>
+<%_ if (reactive) { _%>
+import org.springframework.data.web.ReactivePageableHandlerMethodArgumentResolver
+import org.springframework.data.web.ReactiveSortHandlerMethodArgumentResolver
+<%_ } _%>
 <%_ if (!reactive) { _%>
 import org.springframework.core.env.Environment
 import org.springframework.core.env.Profiles
@@ -73,14 +72,14 @@ import org.springframework.web.filter.CorsFilter
 <%_ if (reactive) { _%>
 import org.springframework.web.cors.reactive.CorsWebFilter
 import org.springframework.web.cors.reactive.UrlBasedCorsConfigurationSource
-<%_ if (applicationType === 'monolith' || applicationType === 'gateway') { _%>
+    <%_ if (!skipClient && ['monolith','gateway'].includes(applicationType)) { _%>
 import org.springframework.web.reactive.config.ResourceHandlerRegistry
-<%_ } _%>
+    <%_ } _%>
 import org.springframework.web.reactive.config.WebFluxConfigurer
     <%_ if (!skipClient) { _%>
 import org.springframework.web.reactive.function.server.HandlerFunction
     <%_ } _%>
-import org.springframework.web.reactive.result.method.annotation.ArgumentResolverConfigurer
+import org.springframework.web.reactive.result.method.HandlerMethodArgumentResolver
     <%_ if (!skipClient) { _%>
 import org.springframework.web.server.ServerWebExchange
     <%_ } _%>
@@ -134,12 +133,7 @@ class WebConfigurer(
         if (env.activeProfiles.isNotEmpty()) {
             log.info("Web application configuration, using profiles: {}", *env.activeProfiles as Array<*>)
         }
-        <%_ if (!skipClient) { _%>
-        val disps = EnumSet.of(DispatcherType.REQUEST, DispatcherType.FORWARD, DispatcherType.ASYNC)
-        if (env.acceptsProfiles(Profiles.of(JHipsterConstants.SPRING_PROFILE_PRODUCTION))) {
-            initCachingHttpHeadersFilter(servletContext, disps)
-        }
-        <%_ } _%>
+
         <%_ if (devDatabaseType === 'h2Disk' || devDatabaseType === 'h2Memory') { _%>
         if (env.acceptsProfiles(Profiles.of(JHipsterConstants.SPRING_PROFILE_DEVELOPMENT))) {
             initH2Console(servletContext)
@@ -199,20 +193,6 @@ class WebConfigurer(
         return extractedPath.substring(0, extractionEndIndex)
     }
 
-    /**
-     * Initializes the caching HTTP Headers Filter.
-     */
-    private fun initCachingHttpHeadersFilter(servletContext: ServletContext, disps: EnumSet<DispatcherType>) {
-        log.debug("Registering Caching HTTP Headers Filter")
-        servletContext.addFilter(
-            "cachingHttpHeadersFilter", CachingHttpHeadersFilter(jHipsterProperties)
-        ).apply {
-            addMappingForUrlPatterns(disps, true, "/i18n/*")
-            addMappingForUrlPatterns(disps, true, "/content/*")
-            addMappingForUrlPatterns(disps, true, "/app/*")
-            setAsyncSupported(true)
-        }
-    }
         <%_ } _%>
     <%_ } _%>
 
@@ -244,18 +224,20 @@ class WebConfigurer(
     <%_ if (reactive) { _%>
 
     // TODO: remove when this is supported in spring-data / spring-boot
-    override fun configureArgumentResolvers(configurer: ArgumentResolverConfigurer) {
-        configurer.addCustomResolver(ReactiveSortHandlerMethodArgumentResolver(),
-            ReactivePageableHandlerMethodArgumentResolver())
-    }
+    @Bean
+    fun reactivePageableHandlerMethodArgumentResolver() = ReactivePageableHandlerMethodArgumentResolver()
+
+    // TODO: remove when this is supported in spring-boot
+    @Bean
+    fun reactiveSortHandlerMethodArgumentResolver() = ReactiveSortHandlerMethodArgumentResolver()
 
     @Bean
     @Order(-2) // The handler must have precedence over WebFluxResponseStatusExceptionHandler and Spring Boot's ErrorWebExceptionHandler
     fun problemExceptionHandler(mapper: ObjectMapper, problemHandling: ProblemHandling): WebExceptionHandler {
         return ProblemExceptionHandler(mapper, problemHandling)
     }
-
         <%_ if (!skipClient) { _%>
+
     @Bean
     fun registrationCustomizer(): ResourceHandlerRegistrationCustomizer {
         // Disable built-in cache control to use our custom filter instead
@@ -280,7 +262,7 @@ class WebConfigurer(
                <%_ } _%>
         <%_ } _%>
     <%_ } _%>
-    <%_ if (devDatabaseType === 'h2Disk' || devDatabaseType === 'h2Memory') { _%>
+    <%_ if (['h2Disk', 'h2Memory'].includes(devDatabaseType) && !reactive) { _%>
 
     /**
      * Initializes H2 console.

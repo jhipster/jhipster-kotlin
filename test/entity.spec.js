@@ -22,14 +22,14 @@ describe('JHipster generator for entity', () => {
                             skipInstall: true,
                             blueprint: 'kotlin',
                             skipChecks: true,
-                            'skip-ktlint-format': true
+                            'skip-ktlint-format': true,
                         })
                         .withGenerators([
                             [
                                 require('../generators/entity-server'), // eslint-disable-line global-require
                                 'jhipster-kotlin:entity-server',
-                                path.join(__dirname, '../generators/entity-server/index.js')
-                            ]
+                                path.join(__dirname, '../generators/entity-server/index.js'),
+                            ],
                         ])
                         .inTmpDir(dir => {
                             fse.copySync(path.join(__dirname, '../test/templates/default-elasticsearch'), dir);
@@ -40,13 +40,55 @@ describe('JHipster generator for entity', () => {
                             relationshipAdd: false,
                             dto: 'no',
                             service: 'no',
-                            pagination: 'no'
+                            pagination: 'no',
                         })
                         .on('end', done);
                 });
 
                 it('does creates search files', () => {
                     assert.file(`${SERVER_MAIN_SRC_DIR}com/mycompany/myapp/repository/search/FooSearchRepository.kt`);
+                    assert.file(expectedFiles.server);
+                    assert.file(expectedFiles.gatling);
+                });
+            });
+        });
+
+        context('monolith with couchbase FTS', () => {
+            describe('Couchbase search, no dto, no service, no pagination', () => {
+                before(done => {
+                    helpers
+                        .run('generator-jhipster/generators/entity')
+                        .withOptions({
+                            'from-cli': true,
+                            skipInstall: true,
+                            blueprint: 'kotlin',
+                            skipChecks: true,
+                            'skip-ktlint-format': true,
+                        })
+                        .withGenerators([
+                            [
+                                require('../generators/entity-server'), // eslint-disable-line global-require
+                                'jhipster-kotlin:entity-server',
+                                path.join(__dirname, '../generators/entity-server/index.js'),
+                            ],
+                        ])
+                        .inTmpDir(dir => {
+                            fse.copySync(path.join(__dirname, '../test/templates/default-couchbase-search'), dir);
+                        })
+                        .withOptions({ creationTimestamp: '2016-01-20', withEntities: true })
+                        .withArguments(['foo'])
+                        .withPrompts({
+                            fieldAdd: false,
+                            relationshipAdd: false,
+                            dto: 'no',
+                            service: 'no',
+                            pagination: 'no',
+                        })
+                        .on('end', done);
+                });
+
+                it('does creates search files', () => {
+                    assert.file(`${SERVER_MAIN_RES_DIR}config/couchmove/changelog/V20160120000100__foo.fts`);
                     assert.file(expectedFiles.server);
                     assert.file(expectedFiles.gatling);
                 });
@@ -63,14 +105,14 @@ describe('JHipster generator for entity', () => {
                             skipInstall: true,
                             blueprint: 'kotlin',
                             skipChecks: true,
-                            'skip-ktlint-format': true
+                            'skip-ktlint-format': true,
                         })
                         .withGenerators([
                             [
                                 require('../generators/entity-server'), // eslint-disable-line global-require
                                 'jhipster-kotlin:entity-server',
-                                path.join(__dirname, '../generators/entity-server/index.js')
-                            ]
+                                path.join(__dirname, '../generators/entity-server/index.js'),
+                            ],
                         ])
                         .inTmpDir(dir => {
                             fse.copySync(path.join(__dirname, '../test/templates/entity-dto-suffixes'), dir);
@@ -80,7 +122,7 @@ describe('JHipster generator for entity', () => {
                             fieldAdd: false,
                             relationshipAdd: false,
                             dto: 'mapstruct',
-                            service: 'serviceImpl'
+                            service: 'serviceImpl',
                         })
                         .on('end', done);
                 });
@@ -93,7 +135,7 @@ describe('JHipster generator for entity', () => {
                         `${SERVER_MAIN_SRC_DIR}com/mycompany/myapp/web/rest/FooResource.kt`,
                         `${SERVER_MAIN_SRC_DIR}com/mycompany/myapp/service/dto/FooYYY.kt`,
                         `${SERVER_MAIN_SRC_DIR}com/mycompany/myapp/service/mapper/FooMapper.kt`,
-                        `${SERVER_MAIN_SRC_DIR}com/mycompany/myapp/service/FooService.kt`
+                        `${SERVER_MAIN_SRC_DIR}com/mycompany/myapp/service/FooService.kt`,
                     ]);
 
                     assert.fileContent(
@@ -116,14 +158,14 @@ describe('JHipster generator for entity', () => {
                             skipInstall: true,
                             blueprint: 'kotlin',
                             skipChecks: true,
-                            'skip-ktlint-format': true
+                            'skip-ktlint-format': true,
                         })
                         .withGenerators([
                             [
                                 require('../generators/entity-server'), // eslint-disable-line global-require
                                 'jhipster-kotlin:entity-server',
-                                path.join(__dirname, '../generators/entity-server/index.js')
-                            ]
+                                path.join(__dirname, '../generators/entity-server/index.js'),
+                            ],
                         ])
                         .inTmpDir(dir => {
                             fse.copySync(path.join(__dirname, '../test/templates/entity-dto-suffixes'), dir);
@@ -133,7 +175,7 @@ describe('JHipster generator for entity', () => {
                             fieldAdd: false,
                             relationshipAdd: false,
                             dto: 'no',
-                            service: 'serviceImpl'
+                            service: 'serviceImpl',
                         })
                         .on('end', done);
                 });
@@ -144,12 +186,12 @@ describe('JHipster generator for entity', () => {
                         `${SERVER_MAIN_SRC_DIR}com/mycompany/myapp/domain/FooXXX.kt`,
                         `${SERVER_MAIN_SRC_DIR}com/mycompany/myapp/repository/FooRepository.kt`,
                         `${SERVER_MAIN_SRC_DIR}com/mycompany/myapp/web/rest/FooResource.kt`,
-                        `${SERVER_MAIN_SRC_DIR}com/mycompany/myapp/service/FooService.kt`
+                        `${SERVER_MAIN_SRC_DIR}com/mycompany/myapp/service/FooService.kt`,
                     ]);
 
                     assert.noFile([
                         `${SERVER_MAIN_SRC_DIR}com/mycompany/myapp/service/dto/FooYYY.kt`,
-                        `${SERVER_MAIN_SRC_DIR}com/mycompany/myapp/service/mapper/FooMapper.kt`
+                        `${SERVER_MAIN_SRC_DIR}com/mycompany/myapp/service/mapper/FooMapper.kt`,
                     ]);
 
                     assert.fileContent(
@@ -172,14 +214,14 @@ describe('JHipster generator for entity', () => {
                             skipInstall: true,
                             blueprint: 'kotlin',
                             skipChecks: true,
-                            'skip-ktlint-format': true
+                            'skip-ktlint-format': true,
                         })
                         .withGenerators([
                             [
                                 require('../generators/entity-server'), // eslint-disable-line global-require
                                 'jhipster-kotlin:entity-server',
-                                path.join(__dirname, '../generators/entity-server/index.js')
-                            ]
+                                path.join(__dirname, '../generators/entity-server/index.js'),
+                            ],
                         ])
                         .inTmpDir(dir => {
                             fse.copySync(path.join(__dirname, '../test/templates/default-ng2'), dir);
@@ -190,7 +232,7 @@ describe('JHipster generator for entity', () => {
                             relationshipAdd: false,
                             dto: 'no',
                             service: 'no',
-                            pagination: 'no'
+                            pagination: 'no',
                         })
                         .on('end', done);
                 });
@@ -211,14 +253,14 @@ describe('JHipster generator for entity', () => {
                             skipInstall: true,
                             blueprint: 'kotlin',
                             skipChecks: true,
-                            'skip-ktlint-format': true
+                            'skip-ktlint-format': true,
                         })
                         .withGenerators([
                             [
                                 require('../generators/entity-server'), // eslint-disable-line global-require
                                 'jhipster-kotlin:entity-server',
-                                path.join(__dirname, '../generators/entity-server/index.js')
-                            ]
+                                path.join(__dirname, '../generators/entity-server/index.js'),
+                            ],
                         ])
                         .inTmpDir(dir => {
                             fse.copySync(path.join(__dirname, '../test/templates/default-ng2'), dir);
@@ -229,7 +271,7 @@ describe('JHipster generator for entity', () => {
                             relationshipAdd: false,
                             dto: 'no',
                             service: 'no',
-                            pagination: 'pagination'
+                            pagination: 'pagination',
                         })
                         .on('end', done);
                 });
@@ -250,14 +292,14 @@ describe('JHipster generator for entity', () => {
                             skipInstall: true,
                             blueprint: 'kotlin',
                             skipChecks: true,
-                            'skip-ktlint-format': true
+                            'skip-ktlint-format': true,
                         })
                         .withGenerators([
                             [
                                 require('../generators/entity-server'), // eslint-disable-line global-require
                                 'jhipster-kotlin:entity-server',
-                                path.join(__dirname, '../generators/entity-server/index.js')
-                            ]
+                                path.join(__dirname, '../generators/entity-server/index.js'),
+                            ],
                         ])
                         .inTmpDir(dir => {
                             fse.copySync(path.join(__dirname, '../test/templates/default-ng2'), dir);
@@ -268,7 +310,7 @@ describe('JHipster generator for entity', () => {
                             relationshipAdd: false,
                             dto: 'no',
                             service: 'no',
-                            pagination: 'infinite-scroll'
+                            pagination: 'infinite-scroll',
                         })
                         .on('end', done);
                 });
@@ -289,14 +331,14 @@ describe('JHipster generator for entity', () => {
                             skipInstall: true,
                             blueprint: 'kotlin',
                             skipChecks: true,
-                            'skip-ktlint-format': true
+                            'skip-ktlint-format': true,
                         })
                         .withGenerators([
                             [
                                 require('../generators/entity-server'), // eslint-disable-line global-require
                                 'jhipster-kotlin:entity-server',
-                                path.join(__dirname, '../generators/entity-server/index.js')
-                            ]
+                                path.join(__dirname, '../generators/entity-server/index.js'),
+                            ],
                         ])
                         .inTmpDir(dir => {
                             fse.copySync(path.join(__dirname, '../test/templates/default-ng2'), dir);
@@ -307,7 +349,7 @@ describe('JHipster generator for entity', () => {
                             relationshipAdd: false,
                             dto: 'no',
                             service: 'serviceImpl',
-                            pagination: 'no'
+                            pagination: 'no',
                         })
                         .on('end', done);
                 });
@@ -318,7 +360,7 @@ describe('JHipster generator for entity', () => {
                     assert.file(expectedFiles.gatling);
                     assert.file([
                         `${SERVER_MAIN_SRC_DIR}com/mycompany/myapp/service/FooService.kt`,
-                        `${SERVER_MAIN_SRC_DIR}com/mycompany/myapp/service/impl/FooServiceImpl.kt`
+                        `${SERVER_MAIN_SRC_DIR}com/mycompany/myapp/service/impl/FooServiceImpl.kt`,
                     ]);
                 });
             });
@@ -332,14 +374,14 @@ describe('JHipster generator for entity', () => {
                             skipInstall: true,
                             blueprint: 'kotlin',
                             skipChecks: true,
-                            'skip-ktlint-format': true
+                            'skip-ktlint-format': true,
                         })
                         .withGenerators([
                             [
                                 require('../generators/entity-server'), // eslint-disable-line global-require
                                 'jhipster-kotlin:entity-server',
-                                path.join(__dirname, '../generators/entity-server/index.js')
-                            ]
+                                path.join(__dirname, '../generators/entity-server/index.js'),
+                            ],
                         ])
                         .inTmpDir(dir => {
                             fse.copySync(path.join(__dirname, '../test/templates/default-ng2'), dir);
@@ -350,7 +392,7 @@ describe('JHipster generator for entity', () => {
                             relationshipAdd: false,
                             dto: 'mapstruct',
                             service: 'serviceClass',
-                            pagination: 'no'
+                            pagination: 'no',
                         })
                         .on('end', done);
                 });
@@ -362,7 +404,7 @@ describe('JHipster generator for entity', () => {
                     assert.file([
                         `${SERVER_MAIN_SRC_DIR}com/mycompany/myapp/service/dto/FooDTO.kt`,
                         `${SERVER_MAIN_SRC_DIR}com/mycompany/myapp/service/mapper/FooMapper.kt`,
-                        `${SERVER_MAIN_SRC_DIR}com/mycompany/myapp/service/FooService.kt`
+                        `${SERVER_MAIN_SRC_DIR}com/mycompany/myapp/service/FooService.kt`,
                     ]);
                 });
             });
@@ -376,14 +418,14 @@ describe('JHipster generator for entity', () => {
                             skipInstall: true,
                             blueprint: 'kotlin',
                             skipChecks: true,
-                            'skip-ktlint-format': true
+                            'skip-ktlint-format': true,
                         })
                         .withGenerators([
                             [
                                 require('../generators/entity-server'), // eslint-disable-line global-require
                                 'jhipster-kotlin:entity-server',
-                                path.join(__dirname, '../generators/entity-server/index.js')
-                            ]
+                                path.join(__dirname, '../generators/entity-server/index.js'),
+                            ],
                         ])
                         .inTmpDir(dir => {
                             fse.copySync(path.join(__dirname, '../test/templates/default-ng2'), dir);
@@ -395,7 +437,7 @@ describe('JHipster generator for entity', () => {
                             relationshipAdd: false,
                             dto: 'yes',
                             service: 'serviceImpl',
-                            pagination: 'infinite-scroll'
+                            pagination: 'infinite-scroll',
                         })
                         .on('end', done);
                 });
@@ -417,14 +459,14 @@ describe('JHipster generator for entity', () => {
                             skipInstall: true,
                             blueprint: 'kotlin',
                             skipChecks: true,
-                            'skip-ktlint-format': true
+                            'skip-ktlint-format': true,
                         })
                         .withGenerators([
                             [
                                 require('../generators/entity-server'), // eslint-disable-line global-require
                                 'jhipster-kotlin:entity-server',
-                                path.join(__dirname, '../generators/entity-server/index.js')
-                            ]
+                                path.join(__dirname, '../generators/entity-server/index.js'),
+                            ],
                         ])
                         .inTmpDir(dir => {
                             fse.copySync(path.join(__dirname, '../test/templates/default-ng2'), dir);
@@ -436,7 +478,7 @@ describe('JHipster generator for entity', () => {
                             relationshipAdd: false,
                             dto: 'yes',
                             service: 'serviceImpl',
-                            pagination: 'infinite-scroll'
+                            pagination: 'infinite-scroll',
                         })
                         .on('end', done);
                 });
@@ -458,14 +500,14 @@ describe('JHipster generator for entity', () => {
                             skipInstall: true,
                             blueprint: 'kotlin',
                             skipChecks: true,
-                            'skip-ktlint-format': true
+                            'skip-ktlint-format': true,
                         })
                         .withGenerators([
                             [
                                 require('../generators/entity-server'), // eslint-disable-line global-require
                                 'jhipster-kotlin:entity-server',
-                                path.join(__dirname, '../generators/entity-server/index.js')
-                            ]
+                                path.join(__dirname, '../generators/entity-server/index.js'),
+                            ],
                         ])
                         .inTmpDir(dir => {
                             fse.copySync(path.join(__dirname, '../test/templates/default-ng2'), dir);
@@ -478,7 +520,7 @@ describe('JHipster generator for entity', () => {
                             relationshipAdd: false,
                             dto: 'yes',
                             service: 'serviceImpl',
-                            pagination: 'infinite-scroll'
+                            pagination: 'infinite-scroll',
                         })
                         .on('end', done);
                 });
@@ -502,14 +544,14 @@ describe('JHipster generator for entity', () => {
                             skipInstall: true,
                             blueprint: 'kotlin',
                             skipChecks: true,
-                            'skip-ktlint-format': true
+                            'skip-ktlint-format': true,
                         })
                         .withGenerators([
                             [
                                 require('../generators/entity-server'), // eslint-disable-line global-require
                                 'jhipster-kotlin:entity-server',
-                                path.join(__dirname, '../generators/entity-server/index.js')
-                            ]
+                                path.join(__dirname, '../generators/entity-server/index.js'),
+                            ],
                         ])
                         .inTmpDir(dir => {
                             fse.copySync(path.join(__dirname, '../test/templates/noi18n'), dir);
@@ -520,7 +562,7 @@ describe('JHipster generator for entity', () => {
                             relationshipAdd: false,
                             dto: 'yes',
                             service: 'serviceImpl',
-                            pagination: 'infinite-scroll'
+                            pagination: 'infinite-scroll',
                         })
                         .on('end', done);
                 });
@@ -544,14 +586,14 @@ describe('JHipster generator for entity', () => {
                             skipInstall: true,
                             blueprint: 'kotlin',
                             skipChecks: true,
-                            'skip-ktlint-format': true
+                            'skip-ktlint-format': true,
                         })
                         .withGenerators([
                             [
                                 require('../generators/entity-server'), // eslint-disable-line global-require
                                 'jhipster-kotlin:entity-server',
-                                path.join(__dirname, '../generators/entity-server/index.js')
-                            ]
+                                path.join(__dirname, '../generators/entity-server/index.js'),
+                            ],
                         ])
                         .inTmpDir(dir => {
                             fse.copySync(path.join(__dirname, '../test/templates/all-languages'), dir);
@@ -562,7 +604,7 @@ describe('JHipster generator for entity', () => {
                             relationshipAdd: false,
                             dto: 'no',
                             service: 'no',
-                            pagination: 'no'
+                            pagination: 'no',
                         })
                         .on('end', done);
                 });
@@ -583,14 +625,14 @@ describe('JHipster generator for entity', () => {
                             skipInstall: true,
                             blueprint: 'kotlin',
                             skipChecks: true,
-                            'skip-ktlint-format': true
+                            'skip-ktlint-format': true,
                         })
                         .withGenerators([
                             [
                                 require('../generators/entity-server'), // eslint-disable-line global-require
                                 'jhipster-kotlin:entity-server',
-                                path.join(__dirname, '../generators/entity-server/index.js')
-                            ]
+                                path.join(__dirname, '../generators/entity-server/index.js'),
+                            ],
                         ])
                         .inTmpDir(dir => {
                             fse.copySync(path.join(__dirname, '../test/templates/all-languages'), dir);
@@ -602,7 +644,7 @@ describe('JHipster generator for entity', () => {
                             relationshipAdd: false,
                             dto: 'no',
                             service: 'no',
-                            pagination: 'no'
+                            pagination: 'no',
                         })
                         .on('end', done);
                 });
@@ -626,14 +668,14 @@ describe('JHipster generator for entity', () => {
                             skipInstall: true,
                             blueprint: 'kotlin',
                             skipChecks: true,
-                            'skip-ktlint-format': true
+                            'skip-ktlint-format': true,
                         })
                         .withGenerators([
                             [
                                 require('../generators/entity-server'), // eslint-disable-line global-require
                                 'jhipster-kotlin:entity-server',
-                                path.join(__dirname, '../generators/entity-server/index.js')
-                            ]
+                                path.join(__dirname, '../generators/entity-server/index.js'),
+                            ],
                         ])
                         .inTmpDir(dir => {
                             fse.copySync(path.join(__dirname, '../test/templates/default-microservice'), dir);
@@ -645,7 +687,7 @@ describe('JHipster generator for entity', () => {
                             relationshipAdd: false,
                             dto: 'yes',
                             service: 'serviceImpl',
-                            pagination: 'infinite-scroll'
+                            pagination: 'infinite-scroll',
                         })
                         .on('end', done);
                 });
@@ -666,14 +708,14 @@ describe('JHipster generator for entity', () => {
                             skipInstall: true,
                             blueprint: 'kotlin',
                             skipChecks: true,
-                            'skip-ktlint-format': true
+                            'skip-ktlint-format': true,
                         })
                         .withGenerators([
                             [
                                 require('../generators/entity-server'), // eslint-disable-line global-require
                                 'jhipster-kotlin:entity-server',
-                                path.join(__dirname, '../generators/entity-server/index.js')
-                            ]
+                                path.join(__dirname, '../generators/entity-server/index.js'),
+                            ],
                         ])
                         .inTmpDir(dir => {
                             fse.copySync(path.join(__dirname, '../test/templates/default-microservice'), dir);
@@ -684,7 +726,7 @@ describe('JHipster generator for entity', () => {
                             relationshipAdd: false,
                             dto: 'yes',
                             service: 'serviceImpl',
-                            pagination: 'pagination'
+                            pagination: 'pagination',
                         })
                         .on('end', done);
                 });
@@ -708,14 +750,14 @@ describe('JHipster generator for entity', () => {
                             skipInstall: true,
                             blueprint: 'kotlin',
                             skipChecks: true,
-                            'skip-ktlint-format': true
+                            'skip-ktlint-format': true,
                         })
                         .withGenerators([
                             [
                                 require('../generators/entity-server'), // eslint-disable-line global-require
                                 'jhipster-kotlin:entity-server',
-                                path.join(__dirname, '../generators/entity-server/index.js')
-                            ]
+                                path.join(__dirname, '../generators/entity-server/index.js'),
+                            ],
                         ])
                         .inTmpDir(dir => {
                             fse.copySync(path.join(__dirname, '../test/templates/mongodb-with-relations'), dir);
@@ -726,7 +768,7 @@ describe('JHipster generator for entity', () => {
                             relationshipAdd: false,
                             dto: 'yes',
                             service: 'serviceImpl',
-                            pagination: 'pagination'
+                            pagination: 'pagination',
                         })
                         .on('end', done);
                 });
@@ -747,21 +789,21 @@ describe('JHipster generator for entity', () => {
                             skipInstall: true,
                             blueprint: 'kotlin',
                             skipChecks: true,
-                            'skip-ktlint-format': true
+                            'skip-ktlint-format': true,
                         })
                         .withGenerators([
                             [
                                 require('../generators/entity-server'), // eslint-disable-line global-require
                                 'jhipster-kotlin:entity-server',
-                                path.join(__dirname, '../generators/entity-server/index.js')
-                            ]
+                                path.join(__dirname, '../generators/entity-server/index.js'),
+                            ],
                         ])
                         .inTmpDir(dir => {
                             fse.copySync(path.join(__dirname, '../test/templates/default-gateway'), dir);
                         })
                         .withPrompts({
                             useMicroserviceJson: true,
-                            microservicePath: '../'
+                            microservicePath: '../',
                         })
                         .withArguments(['bar'])
                         .on('end', done);
@@ -792,14 +834,14 @@ describe('JHipster generator for entity', () => {
                             skipInstall: true,
                             blueprint: 'kotlin',
                             skipChecks: true,
-                            'skip-ktlint-format': true
+                            'skip-ktlint-format': true,
                         })
                         .withGenerators([
                             [
                                 require('../generators/entity-server'), // eslint-disable-line global-require
                                 'jhipster-kotlin:entity-server',
-                                path.join(__dirname, '../generators/entity-server/index.js')
-                            ]
+                                path.join(__dirname, '../generators/entity-server/index.js'),
+                            ],
                         ])
                         .inTmpDir(dir => {
                             fse.copySync(path.join(__dirname, '../test/templates/default-gateway'), dir);
@@ -807,7 +849,7 @@ describe('JHipster generator for entity', () => {
                         .withArguments(['foo'])
                         .withPrompts({
                             useMicroserviceJson: true,
-                            microservicePath: '../'
+                            microservicePath: '../',
                         })
                         .on('end', done);
                 });
@@ -832,14 +874,14 @@ describe('JHipster generator for entity', () => {
                             skipInstall: true,
                             blueprint: 'kotlin',
                             skipChecks: true,
-                            'skip-ktlint-format': true
+                            'skip-ktlint-format': true,
                         })
                         .withGenerators([
                             [
                                 require('../generators/entity-server'), // eslint-disable-line global-require
                                 'jhipster-kotlin:entity-server',
-                                path.join(__dirname, '../generators/entity-server/index.js')
-                            ]
+                                path.join(__dirname, '../generators/entity-server/index.js'),
+                            ],
                         ])
                         .inTmpDir(dir => {
                             fse.copySync(path.join(__dirname, '../test/templates/default-gateway'), dir);
@@ -847,7 +889,7 @@ describe('JHipster generator for entity', () => {
                         .withArguments(['baz'])
                         .withPrompts({
                             useMicroserviceJson: true,
-                            microservicePath: '../'
+                            microservicePath: '../',
                         })
                         .on('end', done);
                 });
@@ -875,14 +917,14 @@ describe('JHipster generator for entity', () => {
                         skipChecks: true,
                         'skip-ktlint-format': true,
                         creationTimestamp: '2016-01-20',
-                        withEntities: true
+                        withEntities: true,
                     })
                     .withGenerators([
                         [
                             require('../generators/entity-server'), // eslint-disable-line global-require
                             'jhipster-kotlin:entity-server',
-                            path.join(__dirname, '../generators/entity-server/index.js')
-                        ]
+                            path.join(__dirname, '../generators/entity-server/index.js'),
+                        ],
                     ])
                     .inTmpDir(dir => {
                         fse.copySync(path.join(__dirname, '../test/templates/default-ng2'), dir);
@@ -893,7 +935,7 @@ describe('JHipster generator for entity', () => {
                         relationshipAdd: false,
                         dto: 'no',
                         service: 'no',
-                        pagination: 'pagination'
+                        pagination: 'pagination',
                     })
                     .on('end', done);
             });
@@ -917,14 +959,14 @@ describe('JHipster generator for entity', () => {
                         skipChecks: true,
                         'skip-ktlint-format': true,
                         creationTimestamp: '2016-01-20T00:00:00.000Z',
-                        withEntities: true
+                        withEntities: true,
                     })
                     .withGenerators([
                         [
                             require('../generators/entity-server'), // eslint-disable-line global-require
                             'jhipster-kotlin:entity-server',
-                            path.join(__dirname, '../generators/entity-server/index.js')
-                        ]
+                            path.join(__dirname, '../generators/entity-server/index.js'),
+                        ],
                     ])
                     .inTmpDir(dir => {
                         fse.copySync(path.join(__dirname, '../test/templates/default-ng2'), dir);
@@ -935,7 +977,7 @@ describe('JHipster generator for entity', () => {
                         relationshipAdd: false,
                         dto: 'no',
                         service: 'no',
-                        pagination: 'pagination'
+                        pagination: 'pagination',
                     })
                     .on('end', done);
             });
@@ -958,14 +1000,14 @@ describe('JHipster generator for entity', () => {
                         blueprint: 'kotlin',
                         skipChecks: true,
                         'skip-ktlint-format': true,
-                        baseChangelogDate: '20-01-2016'
+                        baseChangelogDate: '20-01-2016',
                     })
                     .withGenerators([
                         [
                             require('../generators/entity-server'), // eslint-disable-line global-require
                             'jhipster-kotlin:entity-server',
-                            path.join(__dirname, '../generators/entity-server/index.js')
-                        ]
+                            path.join(__dirname, '../generators/entity-server/index.js'),
+                        ],
                     ])
                     .inTmpDir(dir => {
                         fse.copySync(path.join(__dirname, '../test/templates/default-ng2'), dir);
@@ -976,7 +1018,7 @@ describe('JHipster generator for entity', () => {
                         relationshipAdd: false,
                         dto: 'no',
                         service: 'no',
-                        pagination: 'pagination'
+                        pagination: 'pagination',
                     })
                     .on('end', done);
             });
@@ -1001,14 +1043,14 @@ describe('JHipster generator for entity', () => {
                             skipInstall: true,
                             blueprint: 'kotlin',
                             skipChecks: true,
-                            'skip-ktlint-format': true
+                            'skip-ktlint-format': true,
                         })
                         .withGenerators([
                             [
                                 require('../generators/entity-server'), // eslint-disable-line global-require
                                 'jhipster-kotlin:entity-server',
-                                path.join(__dirname, '../generators/entity-server/index.js')
-                            ]
+                                path.join(__dirname, '../generators/entity-server/index.js'),
+                            ],
                         ])
                         .inTmpDir(dir => {
                             fse.copySync(path.join(__dirname, '../test/templates/default-ng2'), dir);
@@ -1043,14 +1085,14 @@ describe('JHipster generator for entity', () => {
                             skipInstall: true,
                             blueprint: 'kotlin',
                             skipChecks: true,
-                            'skip-ktlint-format': true
+                            'skip-ktlint-format': true,
                         })
                         .withGenerators([
                             [
                                 require('../generators/entity-server'), // eslint-disable-line global-require
                                 'jhipster-kotlin:entity-server',
-                                path.join(__dirname, '../generators/entity-server/index.js')
-                            ]
+                                path.join(__dirname, '../generators/entity-server/index.js'),
+                            ],
                         ])
                         .inTmpDir(dir => {
                             fse.copySync(path.join(__dirname, '../test/templates/default-ng2'), dir);
@@ -1072,7 +1114,7 @@ describe('JHipster generator for entity', () => {
                 it("doesn't creates database changelogs", () => {
                     assert.noFile([
                         `${constants.SERVER_MAIN_RES_DIR}config/liquibase/changelog/20160926101210_added_entity_Foo.xml`,
-                        `${constants.SERVER_MAIN_RES_DIR}config/liquibase/changelog/20160926101210_added_entity_constraints_Foo.xml`
+                        `${constants.SERVER_MAIN_RES_DIR}config/liquibase/changelog/20160926101210_added_entity_constraints_Foo.xml`,
                     ]);
                 });
             });
@@ -1086,14 +1128,14 @@ describe('JHipster generator for entity', () => {
                             skipInstall: true,
                             blueprint: 'kotlin',
                             skipChecks: true,
-                            'skip-ktlint-format': true
+                            'skip-ktlint-format': true,
                         })
                         .withGenerators([
                             [
                                 require('../generators/entity-server'), // eslint-disable-line global-require
                                 'jhipster-kotlin:entity-server',
-                                path.join(__dirname, '../generators/entity-server/index.js')
-                            ]
+                                path.join(__dirname, '../generators/entity-server/index.js'),
+                            ],
                         ])
                         .inTmpDir(dir => {
                             fse.copySync(
@@ -1130,14 +1172,14 @@ describe('JHipster generator for entity', () => {
                             skipInstall: true,
                             blueprint: 'kotlin',
                             skipChecks: true,
-                            'skip-ktlint-format': true
+                            'skip-ktlint-format': true,
                         })
                         .withGenerators([
                             [
                                 require('../generators/entity-server'), // eslint-disable-line global-require
                                 'jhipster-kotlin:entity-server',
-                                path.join(__dirname, '../generators/entity-server/index.js')
-                            ]
+                                path.join(__dirname, '../generators/entity-server/index.js'),
+                            ],
                         ])
                         .inTmpDir(dir => {
                             fse.copySync(path.join(__dirname, '../test/templates/default-microservice'), dir);
@@ -1157,7 +1199,7 @@ describe('JHipster generator for entity', () => {
                     assert.file([
                         `${SERVER_MAIN_SRC_DIR}com/mycompany/myapp/service/dto/FooDTO.kt`,
                         `${SERVER_MAIN_SRC_DIR}com/mycompany/myapp/service/mapper/FooMapper.kt`,
-                        `${SERVER_MAIN_SRC_DIR}com/mycompany/myapp/service/FooService.kt`
+                        `${SERVER_MAIN_SRC_DIR}com/mycompany/myapp/service/FooService.kt`,
                     ]);
                 });
                 it('generates swagger annotations on DTO', () => {
@@ -1177,14 +1219,14 @@ describe('JHipster generator for entity', () => {
                             skipInstall: true,
                             blueprint: 'kotlin',
                             skipChecks: true,
-                            'skip-ktlint-format': true
+                            'skip-ktlint-format': true,
                         })
                         .withGenerators([
                             [
                                 require('../generators/entity-server'), // eslint-disable-line global-require
                                 'jhipster-kotlin:entity-server',
-                                path.join(__dirname, '../generators/entity-server/index.js')
-                            ]
+                                path.join(__dirname, '../generators/entity-server/index.js'),
+                            ],
                         ])
                         .inTmpDir(dir => {
                             fse.copySync(path.join(__dirname, '../test/templates/reproducible'), dir);

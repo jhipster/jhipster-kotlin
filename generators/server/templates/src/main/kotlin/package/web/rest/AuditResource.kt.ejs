@@ -110,7 +110,7 @@ class AuditResource(private val auditEventService: AuditEventService) {
         <%_ if (!reactive) { _%>
         val page = auditEventService.findByDates(from, to, pageable)
         val headers = PaginationUtil.generatePaginationHttpHeaders(ServletUriComponentsBuilder.fromCurrentRequest(), page)
-        return ResponseEntity(page.content, headers, HttpStatus.OK);
+        return ResponseEntity(page.content, headers, HttpStatus.OK)
         <%_ } else { _%>
         val events = auditEventService.findByDates(from, to, pageable)
         return auditEventService.countByDates(from, to)
@@ -128,10 +128,10 @@ class AuditResource(private val auditEventService: AuditEventService) {
      */
     @GetMapping("/{id:.+}")
     <%_ if (!reactive) { _%>
-    fun get(@PathVariable id: <% if (databaseType === 'sql') { %>Long<% } %><% if (databaseType === 'mongodb' || databaseType === 'neo4j' || databaseType === 'couchbase') { %>String<% } %>?): ResponseEntity<AuditEvent> =
+    fun get(@PathVariable id: <%= pkType %>?): ResponseEntity<AuditEvent> =
         ResponseUtil.wrapOrNotFound(auditEventService.find(id!!))
     <%_ } else { _%>
-    fun get(@PathVariable id: String?) = auditEventService.find(id!!)
+    fun get(@PathVariable id: <%= pkType %>?) = auditEventService.find(id!!)
         .switchIfEmpty { Mono.error(ResponseStatusException(HttpStatus.NOT_FOUND)) }
     <%_ } _%>
 }

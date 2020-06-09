@@ -33,7 +33,7 @@ const constants = {
     KTLINT_GRADLE_VERSION,
     DETEKT_VERSION,
     MAVEN_ANTRUN_VERSION,
-    DETEKT_CONFIG_FILE
+    DETEKT_CONFIG_FILE,
 };
 
 module.exports = constants;
