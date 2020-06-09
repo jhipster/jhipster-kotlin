@@ -69,23 +69,6 @@ const serverFiles = {
             ],
         },
         {
-            condition: generator => generator.clientFramework === REACT,
-            path: SERVER_MAIN_RES_DIR,
-            templates: [
-                {
-                    file: 'banner-react.txt',
-                    method: 'copy',
-                    noEjs: true,
-                    renameTo: () => 'banner.txt',
-                },
-            ],
-        },
-        {
-            condition: generator => generator.clientFramework !== REACT,
-            path: SERVER_MAIN_RES_DIR,
-            templates: [{ file: 'banner.txt', method: 'copy', noEjs: true }],
-        },
-        {
             condition: generator => generator.devDatabaseType === 'h2Disk' || generator.devDatabaseType === 'h2Memory',
             path: SERVER_MAIN_RES_DIR,
             templates: [{ file: 'h2.server.properties', renameTo: () => '.h2.server.properties' }],
