@@ -33,7 +33,6 @@ const SERVER_MAIN_RES_DIR = constants.SERVER_MAIN_RES_DIR;
 const SERVER_TEST_SRC_DIR = constants.SERVER_TEST_SRC_DIR;
 const SERVER_TEST_RES_DIR = constants.SERVER_TEST_RES_DIR;
 const TEST_DIR = constants.TEST_DIR;
-const REACT = constants.SUPPORTED_CLIENT_FRAMEWORKS.REACT;
 
 // TODO: Do a PR in the parent JHipster project to export and re-use here as well in order to have a single source of truth!!!
 const shouldSkipUserManagement = generator =>
@@ -67,23 +66,6 @@ const serverFiles = {
                     useBluePrint: true,
                 },
             ],
-        },
-        {
-            condition: generator => generator.clientFramework === REACT,
-            path: SERVER_MAIN_RES_DIR,
-            templates: [
-                {
-                    file: 'banner-react.txt',
-                    method: 'copy',
-                    noEjs: true,
-                    renameTo: () => 'banner.txt',
-                },
-            ],
-        },
-        {
-            condition: generator => generator.clientFramework !== REACT,
-            path: SERVER_MAIN_RES_DIR,
-            templates: [{ file: 'banner.txt', method: 'copy', noEjs: true }],
         },
         {
             condition: generator => generator.devDatabaseType === 'h2Disk' || generator.devDatabaseType === 'h2Memory',
