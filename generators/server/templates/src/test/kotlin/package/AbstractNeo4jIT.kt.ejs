@@ -20,8 +20,6 @@ package <%= packageName %>
 
 import org.junit.jupiter.api.extension.BeforeAllCallback
 import org.junit.jupiter.api.extension.ExtensionContext
-import org.springframework.test.context.DynamicPropertyRegistry
-import org.springframework.test.context.DynamicPropertySource
 import org.testcontainers.containers.Neo4jContainer
 
 import java.util.concurrent.atomic.AtomicBoolean
@@ -32,10 +30,9 @@ class AbstractNeo4jIT: BeforeAllCallback {
     @Throws(Exception::class)
     override fun beforeAll(extensionContext: ExtensionContext) {
         if(!started.get()) {
-            val redis = KGenericContainer("<%= DOCKER_NEO4J %>")
-                    .withExposedPorts(6379)
-            redis.start()
-            System.setProperty("org.neo4j.driver.uri", () -> neo4jContainer.getBoltUrl())
+            val neo4jContainer = KGenericContainer("<%= DOCKER_NEO4J %>")
+                    .withExposedPorts(7687)
+            neo4jContainer.start()
             started.set(true)
         }
     }
