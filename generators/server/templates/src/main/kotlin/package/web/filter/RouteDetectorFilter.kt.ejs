@@ -42,11 +42,10 @@ import java.util.regex.Pattern
  */
 @Component
 @Order(1)
-class RouteDetectorFilter(@Qualifier("restTemplate") private val restTemplate: RestTemplate, private val zuulProperties: ZuulProperties, zuulHandlerMapping: ZuulHandlerMapping): Filter {
+class RouteDetectorFilter(@Qualifier("restTemplate") private val restTemplate: RestTemplate, private val zuulProperties: ZuulProperties, private val zuulHandlerMapping: ZuulHandlerMapping): Filter {
     private val log = LoggerFactory.getLogger(RouteDetectorFilter::class.java)
 
     @Throws(IOException::class)
-    @Throws(ServletException::class)
     override fun doFilter(request: ServletRequest, response: ServletResponse, chain: FilterChain) {
 
         val requestURL = (request as HttpServletRequest).getRequestURI()
@@ -72,7 +71,7 @@ class RouteDetectorFilter(@Qualifier("restTemplate") private val restTemplate: R
                     )
 
                     // try to reach the health endpoint
-                    val responseEntity = restTemplate.getForEntity(uri, String::class)
+                    val responseEntity = restTemplate.getForEntity(uri, String::class.java)
                     if (!responseEntity.getStatusCode().isError()) {
                         val route = ZuulProperties.ZuulRoute(
                             serviceName,
@@ -81,7 +80,7 @@ class RouteDetectorFilter(@Qualifier("restTemplate") private val restTemplate: R
                             "http://" + serviceName + "/",
                             true,
                             false,
-                            hashSetOf<>()
+                            hashSetOf<String>()
                         )
 
                         // update routes
@@ -91,7 +90,7 @@ class RouteDetectorFilter(@Qualifier("restTemplate") private val restTemplate: R
                     } else {
                         log.warn("could not reach health endpoint of service {}", serviceName)
                     }
-                } catch (URISyntaxException e) {
+                } catch (e: URISyntaxException) {
                     log.error("could not parse URI", e)
                 }
             }
