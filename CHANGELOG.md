@@ -1,6 +1,12 @@
+<a name="1.8.1"></a>
+
+# [1.8.1](https://github.com/jhipster/jhipster-kotlin/compare/1.8.0...1.8.1) (2020-06-21)
+
+-   Fix: proper type information to RouteDetectorFilter.kt (#238) @sendilkumarn
+
 <a name="1.8.0"></a>
 
-# [1.7.0](https://github.com/jhipster/jhipster-kotlin/compare/1.7.0...1.8.0) (2020-06-16)
+# [1.8.0](https://github.com/jhipster/jhipster-kotlin/compare/1.7.0...1.8.0) (2020-06-16)
 
 -   Feat: upgrade the KHipster to support JHipster 6.9.1 (#237) @sendilkumarn
 
