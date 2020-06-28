@@ -1375,7 +1375,7 @@ const serverFiles = {
         {
             // TODO : add these tests to reactive
             condition: generator => !generator.skipClient && !generator.reactive,
-            path: SERVER_TEST_SRC_DIR,
+            path: SERVER_TEST_SRC_KOTLIN_DIR,
             templates: [
                 {
                     file: 'package/config/StaticResourcesWebConfigurerTest.kt',
