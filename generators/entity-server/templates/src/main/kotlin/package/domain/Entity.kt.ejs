@@ -263,12 +263,18 @@ for (idx in fields) {
         const relationshipValidate = relationships[idx].relationshipValidate;
         const relationshipRequired = relationships[idx].relationshipRequired;
         const otherEntityNameCapitalized = relationships[idx].otherEntityNameCapitalized;
-        const ownerSide = relationships[idx].ownerSide;
+        const ownerSide = relationships[idx].ownerSide || false;
         const isUsingMapsId = relationships[idx].useJPADerivedIdentifier;
         const comma = (parseInt(idx,10) === (relationships.length - 1)) ?  '' : ',';
         if (otherEntityRelationshipName) {
             mappedBy = otherEntityRelationshipName.charAt(0).toLowerCase() + otherEntityRelationshipName.slice(1)
         }
+
+        // An embedded entity should not reference entities that embeds it, unless the other entity is also embedded
+        if (embedded && !otherEntityIsEmbedded && ownerSide === false) {
+          continue;
+        }
+        
         if (typeof relationships[idx].javadoc != 'undefined') { _%>
 <%- formatAsFieldJavadoc(relationships[idx].javadoc) %>
             <%_ if (!hasDto) { _%>
@@ -395,7 +401,7 @@ for (idx in fields) {
 <%_
     for (idx in relationships) {
         const relationshipFieldName = relationships[idx].relationshipFieldName;
-        const ownerSide = relationships[idx].ownerSide;
+        const ownerSide = relationships[idx].ownerSide || false;
         const relationshipFieldNamePlural = relationships[idx].relationshipFieldNamePlural;
         const relationshipType = relationships[idx].relationshipType;
         const otherEntityNameCapitalized = relationships[idx].otherEntityNameCapitalized;
@@ -407,15 +413,21 @@ for (idx in fields) {
         const otherEntityRelationshipNameCapitalized = relationships[idx].otherEntityRelationshipNameCapitalized;
         const otherEntityRelationshipNameCapitalizedPlural = relationships[idx].otherEntityRelationshipNameCapitalizedPlural;
         const otherEntityIsEmbedded = relationships[idx].otherEntityIsEmbedded;
+
+        // An embedded entity should not reference entities that embeds it, unless the other entity is also embedded
+        if (embedded && !otherEntityIsEmbedded && ownerSide === false) {
+            continue;
+        }
     _%>
     <%_ if (relationshipType === 'one-to-many' || relationshipType === 'many-to-many') { _%>
         <%_ if (fluentMethods) { _%>
 
     fun add<%= relationshipNameCapitalized %>(<%= otherEntityName %>: <%= asEntity(otherEntityNameCapitalized) %>): <%= asEntity(entityClass) %> {
         this.<%= relationshipFieldNamePlural %>.add(<%= otherEntityName %>)
-        <%_ if (databaseType === 'couchbase' && !otherEntityIsEmbedded) { _%>
+        <%_ if (!otherEntityIsEmbedded || embedded && ownerSide === true) { _%>
+            <%_ if (databaseType === 'couchbase' && !otherEntityIsEmbedded) { _%>
         <%= otherEntityName %>.id?.let { this.<%= relationshipFieldName %>Ids.add(it) }
-        <%_ } _%>
+            <%_ } _%>
             <%_ if (relationshipType === 'one-to-many') { _%>
         <%= otherEntityName %>.<%= otherEntityRelationshipName %> = this
             <%_ } else if (otherEntityRelationshipNamePlural !== '' &&  ownerSide === false &&
@@ -423,14 +435,16 @@ for (idx in fields) {
                 // JHipster version < 3.6.0 didn't ask for this relationship name _%>
         <%= otherEntityName %>.<%= otherEntityRelationshipNamePlural %>.add(this)
             <%_ } _%>
+        <%_ } _%>
         return this
     }
 
     fun remove<%= relationshipNameCapitalized %>(<%= otherEntityName %>: <%= asEntity(otherEntityNameCapitalized) %>): <%= asEntity(entityClass) %> {
         this.<%= relationshipFieldNamePlural %>.remove(<%= otherEntityName %>)
-        <%_ if (databaseType === 'couchbase' && !otherEntityIsEmbedded) { _%>
+        <%_ if (!otherEntityIsEmbedded || embedded && ownerSide === true) { _%>
+            <%_ if (databaseType === 'couchbase' && !otherEntityIsEmbedded) { _%>
         <%= otherEntityName %>.id?.let { this.<%= relationshipFieldName %>Ids.remove(it) }
-        <%_ } _%>
+            <%_ } _%>
             <%_ if (relationshipType === 'one-to-many') { _%>
         <%= otherEntityName %>.<%= otherEntityRelationshipName %> = null
             <%_ } else if (otherEntityRelationshipNamePlural !== '' && ownerSide === false &&
@@ -438,6 +452,7 @@ for (idx in fields) {
                 // JHipster version < 3.6.0 didn't ask for this relationship name _%>
         <%= otherEntityName %>.<%= otherEntityRelationshipNamePlural %>.remove(this)
             <%_ } _%>
+        <%_ } _%>
         return this
     }
         <%_ } _%>

@@ -99,12 +99,14 @@ class <%= serviceClassName %>(
 
     private val log = LoggerFactory.getLogger(javaClass)
 
+    <%_ if (service !== 'serviceImpl') { _%>
     /**
      * Save a <%= entityInstance %>.
      *
      * @param <%= instanceName %> the entity to save.
      * @return the persisted entity.
      */
+     <%_ } _%>
     <% if (service === 'serviceImpl') { _%>override <% } %>fun save(<%= instanceName %>: <%= instanceType %>): <% if (reactive) { %>Mono<<% } %><%= instanceType %><% if (reactive) { %>><% } %> {
         log.debug("Request to save <%= entityClass %> : {}", <%= instanceName %>)
         <%_ if (!reactive) { _%>
@@ -114,12 +116,14 @@ class <%= serviceClassName %>(
         <%_ } _%>
     }
 
+    <%_ if (service !== 'serviceImpl') { _%>
     /**
      * Get all the <%= entityInstancePlural %>.
      *<% if (pagination !== 'no') { %>
      * @param pageable the pagination information.<% } %>
      * @return the list of entities.
      */
+     <%_ } _%>
     <%_ if (databaseType === 'sql') { _%>
     @Transactional(readOnly = true)
     <%_ } _%>
@@ -136,39 +140,46 @@ class <%= serviceClassName %>(
 
     <%_ if (fieldsContainOwnerManyToMany === true) { _%>
 
+        <%_ if (service !== 'serviceImpl') { _%>
     /**
      * Get all the <%= entityInstancePlural %> with eager load of many-to-many relationships.
      *
      * @return the list of entities.
      */
+        <%_ } _%>
     <% if (service === 'serviceImpl') { %>override <% } %>fun findAllWithEagerRelationships(pageable: Pageable) =
         <%= entityInstance %>Repository.findAllWithEagerRelationships(pageable)<% if (dto !== 'mapstruct') { %><% } else { %>.map(<%= entityToDtoReference %>)<% } %>
 
     <%_ } _%>
 <%- include('../../common/get_filtered_template', {asEntity, asDto}); -%>
 <%_ if (reactive) { _%>
+    <%_ if (service !== 'serviceImpl') { _%>
     /**
     * Returns the number of <%= entityInstancePlural %> available.
     *
     */
+    <%_ } _%>
     <% if (service === 'serviceImpl') { %>override <% } %>fun countAll() = <%= entityInstance %>Repository.count()
 
     <%_ if (searchEngine === 'elasticsearch') { _%>
-
+        <%_ if (service !== 'serviceImpl') { _%>
     /**
     * Returns the number of <%= entityInstancePlural %> available in search repository.
     *
     */
+        <%_ } _%>
     <% if (service === 'serviceImpl') { %>override <% } %>fun searchCount() = <%= entityInstance %>SearchRepository.count()
     <%_  } _%>
 
 <%_  } _%>
+    <%_ if (service !== 'serviceImpl') { _%>
     /**
      * Get one <%= entityInstance %> by id.
      *
      * @param id the id of the entity.
      * @return the entity.
      */
+     <%_ } _%>
     <%_ if (databaseType === 'sql') { _%>
     @Transactional(readOnly = true)
     <%_ } _%>
@@ -176,17 +187,20 @@ class <%= serviceClassName %>(
         log.debug("Request to get <%= entityClass %> : {}", id)<%- include('../../common/get_template', {asEntity, asDto, viaService: false, returnDirectly:true}); -%>
     }
 
+    <%_ if (service !== 'serviceImpl') { _%>
     /**
      * Delete the <%= entityInstance %> by id.
      *
      * @param id the id of the entity.
      */
+     <%_ } _%>
     <% if (service === 'serviceImpl') { %>override <% } %>fun delete(id: <%= primaryKeyType %>): <%- reactive ? 'Mono<Void>' : 'Unit' %> {
         log.debug("Request to delete <%= entityClass %> : {}", id)
 <%- include('../../common/delete_template', {viaService: false, fromResource: false}); -%>
     }
     <%_ if (searchEngine !== false ) { _%>
 
+    <%_ if (service !== 'serviceImpl') { _%>
     /**
      * Search for the <%= entityInstance %> corresponding to the query.
      *
@@ -194,6 +208,7 @@ class <%= serviceClassName %>(
      * @param pageable the pagination information.<% } %>
      * @return the list of entities.
      */
+     <%_ } _%>
     <%_ if (databaseType === 'sql') { _%>
     @Transactional(readOnly = true)
     <%_ } _%>
