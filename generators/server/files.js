@@ -864,7 +864,7 @@ const serverFiles = {
             ],
         },
         {
-            condition: generator => !generator.reactive,
+            condition: generator => !generator.skipClient && !generator.reactive,
             path: SERVER_MAIN_KOTLIN_SRC_DIR,
             templates: [
                 {
@@ -1361,11 +1361,6 @@ const serverFiles = {
             path: SERVER_TEST_SRC_KOTLIN_DIR,
             templates: [
                 {
-                    file: 'package/config/StaticResourcesWebConfigurerTest.kt',
-                    renameTo: generator => `${generator.testDir}config/StaticResourcesWebConfigurerTest.kt`,
-                    useBluePrint: true,
-                },
-                {
                     file: 'package/config/WebConfigurerTest.kt',
                     renameTo: generator => `${generator.testDir}config/WebConfigurerTest.kt`,
                     useBluePrint: true,
@@ -1373,6 +1368,18 @@ const serverFiles = {
                 {
                     file: 'package/config/WebConfigurerTestController.kt',
                     renameTo: generator => `${generator.testDir}config/WebConfigurerTestController.kt`,
+                    useBluePrint: true,
+                },
+            ],
+        },
+        {
+            // TODO : add these tests to reactive
+            condition: generator => !generator.skipClient && !generator.reactive,
+            path: SERVER_TEST_SRC_DIR,
+            templates: [
+                {
+                    file: 'package/config/StaticResourcesWebConfigurerTest.kt',
+                    renameTo: generator => `${generator.testDir}config/StaticResourcesWebConfigurerTest.kt`,
                     useBluePrint: true,
                 },
             ],

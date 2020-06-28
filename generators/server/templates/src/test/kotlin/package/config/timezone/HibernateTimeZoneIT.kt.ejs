@@ -36,6 +36,7 @@ import org.junit.jupiter.api.Test
 import org.junit.jupiter.api.extension.ExtendWith
 <%_ } _%>
 import org.springframework.beans.factory.annotation.Autowired
+import org.springframework.beans.factory.annotation.Value
 import org.springframework.boot.test.context.SpringBootTest
 import org.springframework.jdbc.core.JdbcTemplate
 import org.springframework.jdbc.support.rowset.SqlRowSet
@@ -56,7 +57,7 @@ import java.lang.String.format
 import org.assertj.core.api.Assertions.assertThat
 
 /**
- * Integration tests for the UTC Hibernate configuration.
+ * Integration tests for the ZoneId Hibernate configuration.
  */
 <%_ if (authenticationType === 'uaa' && applicationType !== 'uaa') { _%>
 @SpringBootTest(classes = [SecurityBeanOverrideConfiguration::class, <%= mainClass %>::class])
@@ -74,6 +75,9 @@ class HibernateTimeZoneIT {
     private lateinit var dateTimeWrapperRepository: DateTimeWrapperRepository
     @Autowired
     private lateinit var jdbcTemplate: JdbcTemplate
+
+    @Value(\"${spring.jpa.properties.hibernate.jdbc.time_zone:UTC}")
+    private lateinit var zoneId: String
 
     private lateinit var dateTimeWrapper: DateTimeWrapper
     private lateinit var dateTimeFormatter: DateTimeFormatter
@@ -94,11 +98,11 @@ class HibernateTimeZoneIT {
 
         dateTimeFormatter = DateTimeFormatter
             .ofPattern("yyyy-MM-dd HH:mm:ss.S")
-            .withZone(ZoneId.of("UTC"))
+            .withZone(ZoneId.of(zoneId))
 
         timeFormatter = DateTimeFormatter
             .ofPattern("HH:mm:ss")
-            .withZone(ZoneId.of("UTC"))
+            .withZone(ZoneId.of(zoneId))
 
         dateFormatter = DateTimeFormatter
             .ofPattern("yyyy-MM-dd")
@@ -106,7 +110,7 @@ class HibernateTimeZoneIT {
 
     @Test
     @Transactional
-    fun storeInstantWithUtcConfigShouldBeStoredOnGMTTimeZone() {
+    fun storeInstantWithZoneIdConfigShouldBeStoredOnGMTTimeZone() {
         dateTimeWrapperRepository.saveAndFlush(dateTimeWrapper)
 
         val request = generateSqlRequest("instant", dateTimeWrapper.id!!)
@@ -118,7 +122,7 @@ class HibernateTimeZoneIT {
 
     @Test
     @Transactional
-    fun storeLocalDateTimeWithUtcConfigShouldBeStoredOnGMTTimeZone() {
+    fun storeLocalDateTimeWithZoneIdConfigShouldBeStoredOnGMTTimeZone() {
         dateTimeWrapperRepository.saveAndFlush(dateTimeWrapper)
 
         val request = generateSqlRequest("local_date_time", dateTimeWrapper.id!!)
@@ -133,7 +137,7 @@ class HibernateTimeZoneIT {
 
     @Test
     @Transactional
-    fun storeOffsetDateTimeWithUtcConfigShouldBeStoredOnGMTTimeZone() {
+    fun storeOffsetDateTimeWithZoneIdConfigShouldBeStoredOnGMTTimeZone() {
         dateTimeWrapperRepository.saveAndFlush(dateTimeWrapper)
 
         val request = generateSqlRequest("offset_date_time", dateTimeWrapper.id!!)
@@ -147,7 +151,7 @@ class HibernateTimeZoneIT {
 
     @Test
     @Transactional
-    fun storeZoneDateTimeWithUtcConfigShouldBeStoredOnGMTTimeZone() {
+    fun storeZoneDateTimeWithZoneIdConfigShouldBeStoredOnGMTTimeZone() {
         dateTimeWrapperRepository.saveAndFlush(dateTimeWrapper)
 
         val request = generateSqlRequest("zoned_date_time", dateTimeWrapper.id!!)
@@ -161,7 +165,7 @@ class HibernateTimeZoneIT {
 
     @Test
     @Transactional
-    fun storeLocalTimeWithUtcConfigShouldBeStoredOnGMTTimeZoneAccordingToHis1stJan1970Value() {
+    fun storeLocalTimeWithZoneIdConfigShouldBeStoredOnGMTTimeZoneAccordingToHis1stJan1970Value() {
         dateTimeWrapperRepository.saveAndFlush(dateTimeWrapper)
 
         val request = generateSqlRequest("local_time", dateTimeWrapper.id!!)
@@ -177,7 +181,7 @@ class HibernateTimeZoneIT {
 
     @Test
     @Transactional
-    fun storeOffsetTimeWithUtcConfigShouldBeStoredOnGMTTimeZoneAccordingToHis1stJan1970Value() {
+    fun storeOffsetTimeWithZoneIdConfigShouldBeStoredOnGMTTimeZoneAccordingToHis1stJan1970Value() {
         dateTimeWrapperRepository.saveAndFlush(dateTimeWrapper)
 
         val request = generateSqlRequest("offset_time", dateTimeWrapper.id!!)
@@ -194,7 +198,7 @@ class HibernateTimeZoneIT {
 
     @Test
     @Transactional
-    fun storeLocalDateWithUtcConfigShouldBeStoredWithoutTransformation() {
+    fun storeLocalDateWithZoneIdConfigShouldBeStoredWithoutTransformation() {
         dateTimeWrapperRepository.saveAndFlush(dateTimeWrapper)
 
         val request = generateSqlRequest("local_date", dateTimeWrapper.id!!)
