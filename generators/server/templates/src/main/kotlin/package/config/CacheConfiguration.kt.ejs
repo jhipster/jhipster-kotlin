@@ -674,7 +674,7 @@ class CacheConfiguration(<%_ if (cacheProvider !== 'no') { _%>
             address = jHipsterProperties.cache.memcached.servers
         }
 
-        val autoInfoMap = mutableMapOf<InetSocketAddress, AuthInfo>()
+        var authInfoMap = mutableMapOf<InetSocketAddress, AuthInfo>()
         
         if (jHipsterProperties.cache.memcached.authentication.isEnabled) {
             val memcachedServers = AddrUtil.getOneAddress(jHipsterProperties.cache.memcached.servers)
@@ -707,15 +707,15 @@ class CacheConfiguration(<%_ if (cacheProvider !== 'no') { _%>
                 .setMasterConnectionPoolSize(jHipsterProperties.cache.redis.connectionPoolSize)
                 .setMasterConnectionMinimumIdleSize(jHipsterProperties.cache.redis.connectionMinimumIdleSize)
                 .setSubscriptionConnectionPoolSize(jHipsterProperties.cache.redis.subscriptionConnectionPoolSize)
-                .addNodeAddress(jHipsterProperties.cache.redis.server)
+                .addNodeAddress(*jHipsterProperties.cache.redis.server)
             if (redisUri.userInfo != null) {
                 clusterServersConfig.setPassword(redisUri.userInfo.substring(redisUri.userInfo.indexOf(':') + 1))
             }
         } else {
             var singleServerConfig = config
                 .useSingleServer()
-                .setMasterConnectionPoolSize(jHipsterProperties.cache.redis.connectionPoolSize)
-                .setMasterConnectionMinimumIdleSize(jHipsterProperties.cache.redis.connectionMinimumIdleSize)
+                .setConnectionPoolSize(jHipsterProperties.cache.redis.connectionPoolSize)
+                .setConnectionMinimumIdleSize(jHipsterProperties.cache.redis.connectionMinimumIdleSize)
                 .setSubscriptionConnectionPoolSize(jHipsterProperties.cache.redis.subscriptionConnectionPoolSize)
                 .setAddress(jHipsterProperties.cache.redis.server[0])
 
