@@ -69,7 +69,11 @@ relationships.forEach((relationship) => {
     if ( (relationship.relationshipType === 'many-to-many' && relationship.ownerSide === true) ||
         (relationship.relationshipType === 'many-to-one' || (relationship.relationshipType === 'one-to-one' && relationship.ownerSide === true)) ||
         (relationship.otherEntityFieldCapitalized !== 'Id' && relationship.otherEntityFieldCapitalized !== '')) {
-        mappedRels.push( relationship );
+        // TODO temporary calculation update this later.
+        const oside = r.ownerSide || false;
+        if (!(embedded && !r.otherEntityIsEmbedded && oside === false)) {
+            mappedRels.push( relationship );
+        }
     }
 });
 _%>
@@ -101,7 +105,7 @@ data class <%= asDto(entityClass) %>(
             const fieldType = fields[idx].fieldType;
             const fieldTypeBlobContent = fields[idx].fieldTypeBlobContent;
             const fieldName = fields[idx].fieldName;
-            const comma = ((parseInt(idx, 10) === (fields.length - 1)) && mappedRels.length<1 ) ?  '' : ',';_%>
+            const comma = ((parseInt(idx, 10) === (fields.length - 1)) && mappedRels.length < 1 ) ?  '' : ',';_%>
 
     <%_ if (fieldValidate === true) {
             if (fieldValidateRules.includes('required')) {

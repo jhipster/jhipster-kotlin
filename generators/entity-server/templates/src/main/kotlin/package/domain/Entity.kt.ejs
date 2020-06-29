@@ -174,6 +174,12 @@ data class <%= asEntity(entityClass) %>(
     var id: <%= primaryKeyType %>? = null,
     <%_ } _%>
 <%_
+// TODO temporary calculation update this later.
+const relationshipLength = relationships.filter(r => {
+    const oside = r.ownerSide || false;
+    return !(embedded && !r.otherEntityIsEmbedded && oside === false);
+}).length - 1;
+
 for (idx in fields) {
     if (typeof fields[idx].javadoc !== 'undefined') { _%>
 <%- formatAsFieldJavadoc(fields[idx].javadoc) %>
@@ -188,7 +194,7 @@ for (idx in fields) {
     const fieldName = fields[idx].fieldName;
     const fieldNameUnderscored = fields[idx].fieldNameUnderscored;
     const fieldNameAsDatabaseColumn = fields[idx].fieldNameAsDatabaseColumn;
-    const comma = (parseInt(idx, 10) === (fields.length - 1) && relationships.length<1 ) ?  '' : ',';
+    const comma = (parseInt(idx, 10) === (fields.length - 1) && relationshipLength < 0 ) ?  '' : ',';
     if (fieldValidate === true) {
         if (fieldValidateRules.includes('required')) {
             required = true;
@@ -265,7 +271,7 @@ for (idx in fields) {
         const otherEntityNameCapitalized = relationships[idx].otherEntityNameCapitalized;
         const ownerSide = relationships[idx].ownerSide || false;
         const isUsingMapsId = relationships[idx].useJPADerivedIdentifier;
-        const comma = (parseInt(idx,10) === (relationships.length - 1)) ?  '' : ',';
+        const comma = parseInt(idx,10) === relationshipLength ?  '' : ',';
         if (otherEntityRelationshipName) {
             mappedBy = otherEntityRelationshipName.charAt(0).toLowerCase() + otherEntityRelationshipName.slice(1)
         }
