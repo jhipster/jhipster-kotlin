@@ -91,7 +91,7 @@ describe('JHipster generator', () => {
             it('uses correct prettier formatting', () => {
                 // tabWidth = 2 (see generators/common/templates/.prettierrc.ejs)
                 assert.fileContent('webpack/webpack.dev.js', / {2}devtool:/);
-                assert.fileContent('tsconfig.json', / {2}"compilerOptions":/);
+                assert.fileContent('tsconfig.base.json', / {2}"compilerOptions":/);
             });
             // it Should be a KTLINT check
             // it('uses correct prettier formatting for Kotlin file', () => {
@@ -376,7 +376,7 @@ describe('JHipster generator', () => {
             it('uses correct prettier formatting', () => {
                 // tabWidth = 2 (see generators/common/templates/.prettierrc.ejs)
                 assert.fileContent('webpack/webpack.dev.js', / {2}devtool:/);
-                assert.fileContent('tsconfig.json', / {2}"compilerOptions":/);
+                assert.fileContent('tsconfig.base.json', / {2}"compilerOptions":/);
             });
         });
 
