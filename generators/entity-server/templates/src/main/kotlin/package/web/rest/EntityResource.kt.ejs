@@ -162,7 +162,7 @@ _%><%- include('../../common/inject_template', {viaService: viaService, construc
      */
     @PostMapping("/<%= entityApiUrl %>")
     fun create<%= entityClass %>(<% if (validation) { %>@Valid <% } %>@RequestBody <%= instanceName %>: <%= instanceType %>): <% if (reactive) { %>Mono<<% } %>ResponseEntity<<%= instanceType %>><% if (reactive) { %>><% } %> {
-        log.debug("REST request to save <%= entityClass %> : {}", <%= instanceName %>)
+        log.debug("REST request to save <%= entityClass %> : $<%= instanceName %>")
         if (<%= instanceName %>.id != null) {
             throw BadRequestAlertException(
                 "A new <%= entityInstance %> cannot already have an ID",
@@ -215,7 +215,7 @@ _%><%- include('../../common/inject_template', {viaService: viaService, construc
      */
     @PutMapping("/<%= entityApiUrl %>")
     fun update<%= entityClass %>(<% if (validation) { %>@Valid <% } %>@RequestBody <%= instanceName %>: <%= instanceType %>): <% if (reactive) { %>Mono<<% } %>ResponseEntity<<%= instanceType %>><% if (reactive) { %>><% } %> {
-        log.debug("REST request to update <%= entityClass %> : {}", <%= instanceName %>)
+        log.debug("REST request to update <%= entityClass %> : $<%= instanceName %>")
         if (<%= instanceName %>.id == null) {
             throw BadRequestAlertException("Invalid id", ENTITY_NAME, "idnull")
         }
@@ -301,7 +301,7 @@ _%><%- include('../../common/inject_template', {viaService: viaService, construc
     @Transactional(readOnly = true)
     <%_ } _%>
     fun get<%= entityClass %>(@PathVariable id: <%= primaryKeyType %>): <% if (reactive) { %>Mono<<% } %>ResponseEntity<<%= instanceType %>><% if (reactive) { %>><% } %> {
-        log.debug("REST request to get <%= entityClass %> : {}", id)<%- include('../../common/get_template', {asEntity, asDto, viaService, returnDirectly:false}); -%>
+        log.debug("REST request to get <%= entityClass %> : $id")<%- include('../../common/get_template', {asEntity, asDto, viaService, returnDirectly:false}); -%>
         return ResponseUtil.wrapOrNotFound(<%= instanceName %>)
     }
 <%_ if (!readOnly) { _%>
@@ -316,7 +316,7 @@ _%><%- include('../../common/inject_template', {viaService: viaService, construc
     @ResponseStatus(code = HttpStatus.NO_CONTENT)
     <%_ } _%>
     fun delete<%= entityClass %>(@PathVariable id: <%= primaryKeyType %>): <% if (reactive) { %>Mono<<% } %>ResponseEntity<Void><% if (reactive) { %>><% } %> {
-        log.debug("REST request to delete <%= entityClass %> : {}", id)
+        log.debug("REST request to delete <%= entityClass %> : $id")
 <%- include('../../common/delete_template', {viaService: viaService, fromResource: true}); -%>
         <%_ if (!reactive) { _%>
             return ResponseEntity.noContent()

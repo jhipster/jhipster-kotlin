@@ -116,7 +116,7 @@ class PersistentTokenRememberMeServices(
             val upgradedToken = upgradedTokenCache.get(cookieTokens[0])
             if (upgradedToken != null) {
                 login = upgradedToken.getUserLoginIfValid(cookieTokens)
-                log.debug("Detected previously upgraded login token for user '{}'", login)
+                log.debug("Detected previously upgraded login token for user '$login'")
             }
 
             if (login == null) {
@@ -125,7 +125,7 @@ class PersistentTokenRememberMeServices(
                 login = token.login<%}%>
 
                 // Token also matches, so login is valid. Update the token value, keeping the *same* series number.
-                log.debug("Refreshing persistent login token for user '{}', series '{}'", login, token.series)
+                log.debug("Refreshing persistent login token for user '$login', series '${token.series}'")
                 token.apply {
                     <%_ if (databaseType === 'sql' || databaseType === 'mongodb' || databaseType === 'neo4j' || databaseType === 'couchbase') { _%>
                     tokenDate = LocalDate.now()
@@ -144,7 +144,7 @@ class PersistentTokenRememberMeServices(
                     <%_ } else { _%>
                 } catch (e: DriverException) {
                     <%_ } _%>
-                    log.error("Failed to update token: ", e)
+                    log.error("Failed to update token: $e")
                     throw RememberMeAuthenticationException("Autologin failed due to data access problem", e)
                 }
 
@@ -163,7 +163,7 @@ class PersistentTokenRememberMeServices(
 
         val login = successfulAuthentication.name
 
-        log.debug("Creating new persistent login for user {}", login)
+        log.debug("Creating new persistent login for user $login")
         val token = userRepository.findOneByLogin(login).map { u ->
             PersistentToken(
                 series = RandomUtil.generateRandomAlphanumericString(),
@@ -186,7 +186,7 @@ class PersistentTokenRememberMeServices(
             addCookie(token, request, response)<% if (databaseType === 'sql' || databaseType === 'mongodb' || databaseType === 'neo4j' || databaseType === 'couchbase') { %>
         } catch (e: DataAccessException) {<% } else { %>
         } catch (e: DriverException) {<% } %>
-            log.error("Failed to save persistent token ", e)
+            log.error("Failed to save persistent token $e")
         }
     }
 
@@ -217,9 +217,9 @@ class PersistentTokenRememberMeServices(
                     <%_ } _%>
                 <%_ } _%>
             } catch (ice: InvalidCookieException) {
-                log.info("Invalid cookie, no persistent token could be deleted", ice)
+                log.info("Invalid cookie, no persistent token could be deleted $ice")
             } catch (rmae: RememberMeAuthenticationException) {
-                log.debug("No persistent token found, so no token could be deleted", rmae)
+                log.debug("No persistent token found, so no token could be deleted $rmae")
             }
         }
         super.logout(request, response, authentication)
@@ -247,7 +247,7 @@ class PersistentTokenRememberMeServices(
         }
         val token = optionalToken.get()
         // We have a match for this user/series combination
-        log.info("presentedToken={} / tokenValue={}", presentedToken, token.tokenValue)
+        log.info("presentedToken=$presentedToken / tokenValue=${token.tokenValue}")
         if (presentedToken != token.tokenValue) {
             // Token doesn't match series value. Delete this session and throw an exception.
             <%_ if (databaseType === 'sql') { _%>

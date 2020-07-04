@@ -126,7 +126,7 @@ class UserService<% if (databaseType !== 'no') { %>(
     @Transactional
     <%_ } _%>
     fun activateRegistration(key: String): <% if (reactive) { %>Mono<% } else { %>Optional<% } %><<%= asEntity('User') %>> {
-        log.debug("Activating user for activation key {}", key)
+        log.debug("Activating user for activation key $key")
         return userRepository.findOneByActivationKey(key)
             .<% if (reactive) { %>flatMap<% } else { %>map<% } %> { user ->
                 // activate given user for the registration key.
@@ -142,7 +142,7 @@ class UserService<% if (databaseType !== 'no') { %>(
                 <%_ if (cacheManagerIsAvailable === true) { _%>
                 clearUserCaches(user)
                 <%_ } _%>
-                log.debug("Activated user: {}", user)
+                log.debug("Activated user: $user")
                 user
             }
             <%_ } else { _%>
@@ -154,7 +154,7 @@ class UserService<% if (databaseType !== 'no') { %>(
                 <%_ if (cacheManagerIsAvailable === true) { _%>
             .doOnNext(this::clearUserCaches)
                 <%_ } _%>
-            .doOnNext { user -> log.debug("Activated user: {}", user) }
+            .doOnNext { user -> log.debug("Activated user: $user") }
             <%_ } _%>
     }
 
@@ -162,7 +162,7 @@ class UserService<% if (databaseType !== 'no') { %>(
     @Transactional
     <%_ } _%>
     fun completePasswordReset(newPassword: String, key: String): <% if (reactive) { %>Mono<% } else { %>Optional<% } %><<%= asEntity('User') %>> {
-        log.debug("Reset user password for reset key {}", key)
+        log.debug("Reset user password for reset key $key")
         return userRepository.findOneByResetKey(key)
             .filter { user -> user.resetDate?.isAfter(Instant.now().minusSeconds(86400)) ?: false }
             <%_ if (!reactive) { _%>
@@ -274,7 +274,7 @@ class UserService<% if (databaseType !== 'no') { %>(
         <%_ if (cacheManagerIsAvailable === true) { _%>
         clearUserCaches(newUser)
         <%_ } _%>
-        log.debug("Created Information for User: {}", newUser)
+        log.debug("Created Information for User: $newUser")
         return newUser
     <%_ } else {// reactive _%>
         return userRepository.findOneByLogin(login.toLowerCase())
@@ -341,7 +341,7 @@ class UserService<% if (databaseType !== 'no') { %>(
                 <%_ if (cacheManagerIsAvailable === true) { _%>
                     .doOnNext(this::clearUserCaches)
                 <%_ } _%>
-                    .doOnNext { user -> log.debug("Created Information for User: {}", user) }
+                    .doOnNext { user -> log.debug("Created Information for User: $user") }
             }
     <%_ } _%>
     }
@@ -400,7 +400,7 @@ class UserService<% if (databaseType !== 'no') { %>(
         <%_ if (cacheManagerIsAvailable === true) { _%>
         clearUserCaches(user)
         <%_ } _%>
-        log.debug("Created Information for User: {}", user)
+        log.debug("Created Information for User: $user")
         return user
     <%_ } else { _%>
         )
@@ -429,7 +429,7 @@ class UserService<% if (databaseType !== 'no') { %>(
             <%_ if (cacheManagerIsAvailable === true) { _%>
             .doOnNext(this::clearUserCaches)
             <%_ } _%>
-            .doOnNext { user -> log.debug("Changed Information for User: {}", user) }
+            .doOnNext { user -> log.debug("Changed Information for User: $user") }
             <%_ } _%>
     }
 
@@ -495,7 +495,7 @@ class UserService<% if (databaseType !== 'no') { %>(
                 <%_ if (cacheManagerIsAvailable === true) { _%>
                 clearUserCaches(user)
                 <%_ } _%>
-                log.debug("Changed Information for User: {}", user)
+                log.debug("Changed Information for User: $user")
                 user
             }
         <%_ } else { // reactive _%>
@@ -515,7 +515,7 @@ class UserService<% if (databaseType !== 'no') { %>(
             <%_ if (cacheManagerIsAvailable === true) { _%>
             .doOnNext(this::clearUserCaches)
             <%_ } _%>
-            .doOnNext { log.debug("Changed Information for User: {}", it) }
+            .doOnNext { log.debug("Changed Information for User: $it") }
         <%_ } _%>
             .map { <%= asDto('User') %>(it) }
     }
@@ -530,7 +530,7 @@ class UserService<% if (databaseType !== 'no') { %>(
             <%_ if (cacheManagerIsAvailable === true) { _%>
             clearUserCaches(user)
             <%_ } _%>
-            log.debug("Deleted User: {}", user)
+            log.debug("Deleted User: $user")
         }
     }
     <%_ } else { _%>
@@ -546,7 +546,7 @@ class UserService<% if (databaseType !== 'no') { %>(
             <%_ if (cacheManagerIsAvailable === true) { _%>
             .doOnNext(this::clearUserCaches)
             <%_ } _%>
-            .doOnNext { log.debug("Changed Information for User: {}", it) }
+            .doOnNext { log.debug("Changed Information for User: $it") }
             .then()
     }
     <%_ } _%>
@@ -587,7 +587,7 @@ class UserService<% if (databaseType !== 'no') { %>(
                 <%_ if (cacheManagerIsAvailable === true) { _%>
                 clearUserCaches(it)
                 <%_ } _%>
-                log.debug("Changed Information for User: {it}")
+                log.debug("Changed Information for User: $it")
             }
             <%_ } else { _%>
                 saveUser(it)
@@ -598,7 +598,7 @@ class UserService<% if (databaseType !== 'no') { %>(
                 <%_ if (cacheManagerIsAvailable === true) { _%>
                 .doOnNext(this::clearUserCaches)
                 <%_ } _%>
-                .doOnNext { log.debug("Changed Information for User: {}", it) }
+                .doOnNext { log.debug("Changed Information for User: $it") }
                 .then()
             <%_ } _%>
     }
@@ -672,7 +672,7 @@ class UserService<% if (databaseType !== 'no') { %>(
                 <%_ if (cacheManagerIsAvailable === true) { _%>
                 clearUserCaches(user)
                 <%_ } _%>
-                log.debug("Changed password for User: {}", user)
+                log.debug("Changed password for User: $user")
                 user
             }
             <%_ } else { _%>
@@ -681,7 +681,7 @@ class UserService<% if (databaseType !== 'no') { %>(
             <%_ if (cacheManagerIsAvailable === true) { _%>
             .doOnNext(this::clearUserCaches)
             <%_ } _%>
-            .doOnNext { user -> log.debug("Changed password for User: {}", user) }
+            .doOnNext { user -> log.debug("Changed password for User: $user") }
             .then()
             <%_ } _%>
     }
@@ -731,7 +731,7 @@ class UserService<% if (databaseType !== 'no') { %>(
     fun removeOldPersistentTokens() {
         val now = LocalDate.now()
         persistentTokenRepository.findByTokenDateBefore(now.minusMonths(1)).forEach { token ->
-            log.debug("Deleting token {}", token.series)<% if (databaseType === 'sql') { %>
+            log.debug("Deleting token ${token.series}")<% if (databaseType === 'sql') { %>
             val user = token.user
             user?.persistentTokens?.remove(token)<% } %>
             persistentTokenRepository.delete(token)
@@ -753,7 +753,7 @@ class UserService<% if (databaseType !== 'no') { %>(
                 Instant.now().minus(3, ChronoUnit.DAYS)
             )
             .forEach { user ->
-                log.debug("Deleting not activated user {}", user.login)
+                log.debug("Deleting not activated user ${user.login}")
                 userRepository.delete(user)
                 <%_ if (searchEngine === 'elasticsearch') { _%>
                 userSearchRepository.delete(user)
@@ -778,7 +778,7 @@ class UserService<% if (databaseType !== 'no') { %>(
             <%_ if (cacheManagerIsAvailable === true) { _%>
             .doOnNext(this::clearUserCaches)
             <%_ } _%>
-            .doOnNext { user -> log.debug("Deleted User: {}", user) }
+            .doOnNext { user -> log.debug("Deleted User: $user") }
             <%_ } _%>
     }
     <%_ } _%>
@@ -806,7 +806,7 @@ class UserService<% if (databaseType !== 'no') { %>(
         <%_ } _%>
         for (authority in userAuthorities) {
             if (!dbAuthorities.contains(authority)) {
-                log.debug("Saving authority '{}' in local database", authority)
+                log.debug("Saving authority '$authority' in local database")
                 val authorityToSave = Authority(name = authority)
                 authorityRepository.save(authorityToSave)
             }
@@ -819,16 +819,16 @@ class UserService<% if (databaseType !== 'no') { %>(
                 val dbModifiedDate = existingUser.get().lastModifiedDate
                 val idpModifiedDate = details["updated_at"] as Instant
                 if (idpModifiedDate.isAfter(dbModifiedDate)) {
-                    log.debug("Updating user '{}' in local database", user.login)
+                    log.debug("Updating user '${user.login}' in local database")
                     updateUser(user.firstName, user.lastName, user.email, user.langKey, user.imageUrl)
                 }
                 // no last updated info, blindly update
             } else {
-                log.debug("Updating user '{}' in local database", user.login)
+                log.debug("Updating user '${user.login}' in local database")
                 updateUser(user.firstName, user.lastName, user.email, user.langKey, user.imageUrl)
             }
         } else {
-            log.debug("Saving user '{}' in local database", user.login)
+            log.debug("Saving user '${user.login}' in local database")
             userRepository.save(user)
             <%_ if (cacheManagerIsAvailable === true) { _%>
             clearUserCaches(user)
@@ -849,7 +849,7 @@ class UserService<% if (databaseType !== 'no') { %>(
                     }
                 Flux.fromIterable(authoritiesToSave)
             }
-            .doOnNext { authority: Authority? -> log.debug("Saving authority '{}' in local database", authority) }
+            .doOnNext { authority: Authority? -> log.debug("Saving authority '$authority' in local database") }
             .flatMap<Authority> { authorityRepository.save(it) }
             .then(userRepository.findOneByLogin(user.login!!))
             .switchIfEmpty(<% if (authenticationType === 'oauth2' && databaseType === 'sql') { %>saveUser(user, true)<% } else { %>userRepository.save(user)<% } %>)
@@ -859,12 +859,12 @@ class UserService<% if (databaseType !== 'no') { %>(
                     val dbModifiedDate = existingUser.lastModifiedDate
                     val idpModifiedDate = details["updated_at"] as Instant
                     if (idpModifiedDate.isAfter(dbModifiedDate)) {
-                        log.debug("Updating user '{}' in local database", user.login)
+                        log.debug("Updating user '${user.login}' in local database")
                         return@flatMap updateUser(user.firstName, user.lastName, user.email, user.langKey, user.imageUrl)
                     }
                     // no last updated info, blindly update
                 } else {
-                    log.debug("Updating user '{}' in local database", user.login)
+                    log.debug("Updating user '${user.login}' in local database")
                     return@flatMap updateUser(user.firstName, user.lastName, user.email, user.langKey, user.imageUrl)
                 }
                 return@flatMap Mono.empty<User>()

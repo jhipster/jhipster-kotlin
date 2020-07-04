@@ -289,17 +289,17 @@ class CacheConfiguration(<%_ if (cacheProvider !== 'no') { _%>
             // The serviceId is by default the application's name,
             // see the "spring.application.name" standard Spring property
             val serviceId = registration!!.serviceId
-            log.debug("Configuring Hazelcast clustering for instanceId: {}", serviceId)
+            log.debug("Configuring Hazelcast clustering for instanceId: $serviceId")
             // In development, everything goes through 127.0.0.1, with a different port
             if (env.acceptsProfiles(Profiles.of(JHipsterConstants.SPRING_PROFILE_DEVELOPMENT))) {
-                log.debug("Application is running with the \"dev\" profile, Hazelcast " + "cluster will only work with localhost instances")
+                log.debug("Application is running with the \"dev\" profile, Hazelcast cluster will only work with localhost instances")
 
                 System.setProperty("hazelcast.local.localAddress", "127.0.0.1")
                 config.networkConfig.port = serverProperties.port!! + 5701
                 config.networkConfig.join.tcpIpConfig.isEnabled = true
                 for (instance in discoveryClient.getInstances(serviceId)) {
                     val clusterMember = "127.0.0.1:" + (instance.port + 5701)
-                    log.debug("Adding Hazelcast (dev) cluster member {}", clusterMember)
+                    log.debug("Adding Hazelcast (dev) cluster member $clusterMember")
                     config.networkConfig.join.tcpIpConfig.addMember(clusterMember)
                 }
             } else { // Production configuration, one host per instance all using port 5701
@@ -307,7 +307,7 @@ class CacheConfiguration(<%_ if (cacheProvider !== 'no') { _%>
                 config.networkConfig.join.tcpIpConfig.isEnabled = true
                 for (instance in discoveryClient.getInstances(serviceId)) {
                     val clusterMember = instance.host + ":5701"
-                    log.debug("Adding Hazelcast (prod) cluster member {}", clusterMember)
+                    log.debug("Adding Hazelcast (prod) cluster member $clusterMember")
                     config.networkConfig.join.tcpIpConfig.addMember(clusterMember)
                 }
             }

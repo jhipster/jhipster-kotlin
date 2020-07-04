@@ -57,14 +57,12 @@ class MailService(
     @Async
     fun sendEmail(to: String, subject: String, content: String, isMultipart: Boolean, isHtml: Boolean) {
         log.debug(
-            "Send email[multipart '{}' and html '{}'] to '{}' with subject '{}' and content={}",
-            isMultipart, isHtml, to, subject, content
+            "Send email[multipart '$isMultipart' and html '$isHtml'] to '$to' with subject '$subject' and content=$content"
         )
 
         // Prepare message using a Spring helper
         log.debug(
-            "Send email[multipart '{}' and html '{}'] to '{}' with subject '{}' and content={}",
-            isMultipart, isHtml, to, subject, content
+            "Send email[multipart '$isMultipart' and html '$isHtml'] to '$to' with subject '$subject' and content=$content"
         )
 
         // Prepare message using a Spring helper
@@ -77,18 +75,18 @@ class MailService(
                 setText(content, isHtml)
             }
             javaMailSender.send(mimeMessage)
-            log.debug("Sent email to User '{}'", to)
+            log.debug("Sent email to User '$to'")
         } catch (e: MailException) {
-            log.warn("Email could not be sent to user '{}'", to, e)
+            log.warn("Email could not be sent to user '$to'", e)
         } catch (e: MessagingException) {
-            log.warn("Email could not be sent to user '{}'", to, e)
+            log.warn("Email could not be sent to user '$to'", e)
         }
     }
 
     @Async
     fun sendEmailFromTemplate(user: <%= asEntity('User') %>, templateName: String, titleKey: String) {
         if (user.email == null) {
-            log.debug("Email doesn't exist for user '{}'", user.login)
+            log.debug("Email doesn't exist for user '${user.login}'")
             return
         }
         val locale = Locale.forLanguageTag(user.langKey)
@@ -104,19 +102,19 @@ class MailService(
 
     @Async
     fun sendActivationEmail(user: <%= asEntity('User') %>) {
-        log.debug("Sending activation email to '{}'", user.email)
+        log.debug("Sending activation email to '${user.email}'")
         sendEmailFromTemplate(user, "mail/activationEmail", "email.activation.title")
     }
 
     @Async
     fun sendCreationEmail(user: <%= asEntity('User') %>) {
-        log.debug("Sending creation email to '{}'", user.email)
+        log.debug("Sending creation email to '${user.email}'")
         sendEmailFromTemplate(user, "mail/creationEmail", "email.activation.title")
     }
 
     @Async
     fun sendPasswordResetMail(user: <%= asEntity('User') %>) {
-        log.debug("Sending password reset email to '{}'", user.email)
+        log.debug("Sending password reset email to '${user.email}'")
         sendEmailFromTemplate(user, "mail/passwordResetEmail", "email.reset.title")
     }
     <%_ } _%>
