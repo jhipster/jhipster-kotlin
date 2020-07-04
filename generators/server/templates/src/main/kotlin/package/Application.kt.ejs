@@ -78,8 +78,7 @@ class <%= mainClass %>(private val env: Environment) {
             activeProfiles.contains(JHipsterConstants.SPRING_PROFILE_PRODUCTION)
         ) {
             log.error(
-                """You have misconfigured your application! It should not run 
-                with both the 'dev' and 'prod' profiles at the same time."""
+                "You have misconfigured your application! It should not run with both the 'dev' and 'prod' profiles at the same time."
             )
         }
         if (
@@ -87,8 +86,7 @@ class <%= mainClass %>(private val env: Environment) {
             activeProfiles.contains(JHipsterConstants.SPRING_PROFILE_CLOUD)
         ) {
             log.error(
-                """You have misconfigured your application! It should not
-                run with both the 'dev' and 'cloud' profiles at the same time."""
+                "You have misconfigured your application! It should not run with both the 'dev' and 'cloud' profiles at the same time."
             )
         }
     }
@@ -109,15 +107,11 @@ class <%= mainClass %>(private val env: Environment) {
         private fun logApplicationStartup(env: Environment) {
             val log = LoggerFactory.getLogger(<%= mainClass %>::class.java)
 
-            var protocol = "http"
-            if (env.getProperty("server.ssl.key-store") != null) {
-                protocol = "https"
-            }
+            val protocol = if (env.getProperty("server.ssl.key-store") != null) {
+                "https"
+            } else "http"
             val serverPort = env.getProperty("server.port")
-            var contextPath = env.getProperty("server.servlet.context-path")
-            if (contextPath.isNullOrBlank()) {
-                contextPath = "/"
-            }
+            val contextPath = env.getProperty("server.servlet.context-path") ?: "/"
             var hostAddress = "localhost"
             try {
                 hostAddress = InetAddress.getLocalHost().hostAddress
@@ -125,21 +119,26 @@ class <%= mainClass %>(private val env: Environment) {
                 log.warn("The host name could not be determined, using `localhost` as fallback")
             }
             log.info(
-                """\n----------------------------------------------------------\n\t
-                    Application '${env.getProperty("spring.application.name")}' is running! Access URLs:\n\t
-                    Local: \t\t$protocol://localhost:$serverPort$contextPath\n\t
-                    External: \t$protocol://$hostAddress:$serverPort$contextPath\n\t
-                    Profile(s): \t${env.activeProfiles}\n----------------------------------------------------------"""
+                """
+
+                ----------------------------------------------------------
+                Application '${env.getProperty("spring.application.name")}' is running! Access URLs:
+                Local:      $protocol://localhost:$serverPort$contextPath
+                External:   $protocol://$hostAddress:$serverPort$contextPath
+                Profile(s): ${env.activeProfiles.joinToString(",")}
+                ----------------------------------------------------------
+                """.trimIndent()
             )
             <%_ if (serviceDiscoveryType && (applicationType === 'microservice' || applicationType === 'gateway' || applicationType === 'uaa')) { _%>
 
-            var configServerStatus = env.getProperty("configserver.status")
-            if (configServerStatus == null) {
-                configServerStatus = "Not found or not setup for this application"
-            }
-            log.info(
-                """\n----------------------------------------------------------\n\t
-                Config Server: \t$configServerStatus\n----------------------------------------------------------"""
+            val configServerStatus = 
+                env.getProperty("configserver.status") 
+                ?: "Not found or not setup for this application"
+    
+            log.info("""
+            ----------------------------------------------------------
+                Config Server:  $configServerStatus
+            ----------------------------------------------------------""".trimIndent()
             )
             <%_ } _%>
         }
