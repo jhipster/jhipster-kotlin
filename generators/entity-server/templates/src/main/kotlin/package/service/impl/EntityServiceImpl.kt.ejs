@@ -108,7 +108,7 @@ class <%= serviceClassName %>(
      */
      <%_ } _%>
     <% if (service === 'serviceImpl') { _%>override <% } %>fun save(<%= instanceName %>: <%= instanceType %>): <% if (reactive) { %>Mono<<% } %><%= instanceType %><% if (reactive) { %>><% } %> {
-        log.debug("Request to save <%= entityClass %> : {}", <%= instanceName %>)
+        log.debug("Request to save <%= entityClass %> : $<%= instanceName %>")
         <%_ if (!reactive) { _%>
 <%- include('../../common/save_template', {asEntity, asDto, viaService: false, returnDirectly: true, isUsingMapsId: isUsingMapsId, mapsIdAssoc: mapsIdAssoc, isController: false}); -%>
         <%_ } else { _%>
@@ -184,7 +184,7 @@ class <%= serviceClassName %>(
     @Transactional(readOnly = true)
     <%_ } _%>
     <% if (service === 'serviceImpl') { %>override <% } %>fun findOne(id: <%= primaryKeyType %>): <%= optionalOrMono %><<%= instanceType %>> {
-        log.debug("Request to get <%= entityClass %> : {}", id)<%- include('../../common/get_template', {asEntity, asDto, viaService: false, returnDirectly:true}); -%>
+        log.debug("Request to get <%= entityClass %> : $id")<%- include('../../common/get_template', {asEntity, asDto, viaService: false, returnDirectly:true}); -%>
     }
 
     <%_ if (service !== 'serviceImpl') { _%>
@@ -195,7 +195,7 @@ class <%= serviceClassName %>(
      */
      <%_ } _%>
     <% if (service === 'serviceImpl') { %>override <% } %>fun delete(id: <%= primaryKeyType %>): <%- reactive ? 'Mono<Void>' : 'Unit' %> {
-        log.debug("Request to delete <%= entityClass %> : {}", id)
+        log.debug("Request to delete <%= entityClass %> : $id")
 <%- include('../../common/delete_template', {viaService: false, fromResource: false}); -%>
     }
     <%_ if (searchEngine !== false ) { _%>
@@ -214,9 +214,9 @@ class <%= serviceClassName %>(
     <%_ } _%>
     <% if (service === 'serviceImpl') { %>override <% } %>fun search(query: String<% if (pagination !== 'no') { %>, pageable: Pageable<% } %>): <% if (pagination !== 'no') { %><%= pageOrFlux %><<%= instanceType %><% } else { %><%= listOrFlux %><<%= instanceType %><% } %>> {
         <%_ if (pagination === 'no') { _%>
-        log.debug("Request to search <%= entityClassPlural %> for query {}", query)<%- include('../../common/search_stream_template', {viaService: false, fromResource: false}); -%>
+        log.debug("Request to search <%= entityClassPlural %> for query $query")<%- include('../../common/search_stream_template', {viaService: false, fromResource: false}); -%>
         <%_ } else { _%>
-        log.debug("Request to search for a page of <%= entityClassPlural %> for query {}", query)
+        log.debug("Request to search for a page of <%= entityClassPlural %> for query $query")
         return <%= entityInstance %><% if (searchEngine === 'elasticsearch') { %>Search<% } %>Repository.search(<% if (searchEngine === 'elasticsearch') { %><%= reactive ? 'query' : 'queryStringQuery(query)' %><% } else { %><%= entityClass %>.PREFIX, query<% } %>, pageable)<%_ if (dto !== 'mapstruct') { _%><% } else { %>.map(<%= entityToDtoReference %>)<% } %>
         <%_ } _%>
     }

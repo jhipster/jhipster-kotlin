@@ -154,7 +154,7 @@ class UserResource(
     @Throws(URISyntaxException::class)
     <%_ } _%>
     fun createUser(@Valid @RequestBody userDTO: <%= asDto('User') %>): <% if (reactive) { %>Mono<ResponseEntity<<%= asEntity('User') %>>><% } else { %>ResponseEntity<<%= asEntity('User') %>><% } %> {
-        log.debug("REST request to save User : {}", userDTO)
+        log.debug("REST request to save User : $userDTO")
 
         if (userDTO.id != null) {
             throw BadRequestAlertException("A new user cannot already have an ID", "userManagement", "idexists")
@@ -213,7 +213,7 @@ class UserResource(
     @PreAuthorize("hasAuthority(\"$ADMIN\")")
     <%_ if (!reactive) { _%>
     fun updateUser(@Valid @RequestBody userDTO: <%= asDto('User') %>): ResponseEntity<<%= asDto('User') %>> {
-        log.debug("REST request to update User : {}", userDTO)
+        log.debug("REST request to update User : $userDTO")
         var existingUser = userRepository.findOneByEmailIgnoreCase(userDTO.email)
         if (existingUser.isPresent && existingUser.get().id != userDTO.id) {
             throw EmailAlreadyUsedException()
@@ -230,7 +230,7 @@ class UserResource(
         )
     <%_ } else { _%>
     fun updateUser(@Valid @RequestBody userDTO: <%= asDto('User') %>) : Mono<ResponseEntity<<%= asDto('User') %>>> {
-        log.debug("REST request to update User : {}", userDTO)
+        log.debug("REST request to update User : $userDTO")
         return userRepository.findOneByEmailIgnoreCase(userDTO.email!!)
             .filter { user -> user.id != userDTO.id }
             .hasElement()
@@ -306,13 +306,13 @@ class UserResource(
     @GetMapping("/users/{login:$LOGIN_REGEX}")
     <%_ if (!reactive) { _%>
     fun getUser(@PathVariable login: String): ResponseEntity<<%= asDto('User') %>> {
-        log.debug("REST request to get User : {}", login)
+        log.debug("REST request to get User : $login")
         return ResponseUtil.wrapOrNotFound(
             userService.getUserWithAuthoritiesByLogin(login)
                 .map { <%= asDto('User') %>(it) })
     <%_ } else { _%>
     fun getUser(@PathVariable login: String): Mono<<%= asDto('User') %>> {
-        log.debug("REST request to get User : {}", login)
+        log.debug("REST request to get User : $login")
         return userService.getUserWithAuthoritiesByLogin(login)
             .map { <%= asDto('User') %>(it) }
             .switchIfEmpty(Mono.error(ResponseStatusException(HttpStatus.NOT_FOUND)))
@@ -330,14 +330,14 @@ class UserResource(
     @PreAuthorize("hasAuthority(\"$ADMIN\")")
     <%_ if (!reactive) { _%>
     fun deleteUser(@PathVariable login: String): ResponseEntity<Void> {
-        log.debug("REST request to delete User: {}", login)
+        log.debug("REST request to delete User: $login")
         userService.deleteUser(login)
         return ResponseEntity.noContent()
             .headers(HeaderUtil.createAlert(applicationName, <% if (enableTranslation) {%>"userManagement.deleted"<% } else { %> "A user is deleted with identifier $login"<% } %>, login)).build()
     <%_ } else { _%>
     @ResponseStatus(code = HttpStatus.NO_CONTENT)
     fun deleteUser(@PathVariable login: String): Mono<ResponseEntity<Void>> {
-        log.debug("REST request to delete User: {}", login)
+        log.debug("REST request to delete User: $login")
         return userService.deleteUser(login)
             .map { ResponseEntity.noContent().headers(HeaderUtil.createAlert(applicationName, "userManagement.deleted", login)).build<Void>() }
     <%_ } _%>

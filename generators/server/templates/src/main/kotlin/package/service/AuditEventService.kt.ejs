@@ -92,7 +92,7 @@ class AuditEventService(
         persistenceAuditEventRepository
             .findByAuditEventDateBefore(Instant.now().minus(jHipsterProperties.auditEvents.retentionPeriod.toLong(), ChronoUnit.DAYS))
             .forEach{
-                log.debug("Deleting audit data {}", it)
+                log.debug("Deleting audit data $it")
                 persistenceAuditEventRepository.delete(it)
             }
         <%_ } else { _%>
@@ -106,7 +106,7 @@ class AuditEventService(
         return persistenceAuditEventRepository
             .findByAuditEventDateBefore(Instant.now().minus(jHipsterProperties.auditEvents.retentionPeriod.toLong(), ChronoUnit.DAYS))
             .flatMap {
-                log.debug("Deleting audit data {}", it)
+                log.debug("Deleting audit data $it")
                 persistenceAuditEventRepository.delete(it)
             }.then()
             <%_ } _%>
@@ -199,8 +199,7 @@ class AuditEventService(
                 val length = value.length
                 if (length > EVENT_DATA_COLUMN_MAX_LENGTH) {
                     value = value.substring(0, EVENT_DATA_COLUMN_MAX_LENGTH)
-                    log.warn("Event data for {} too long ({}) has been truncated to {}. Consider increasing column width.",
-                        it.key, length, EVENT_DATA_COLUMN_MAX_LENGTH)
+                    log.warn("Event data for ${it.key} too long ($length) has been truncated to $EVENT_DATA_COLUMN_MAX_LENGTH. Consider increasing column width.")
                 }
             }
             results[it.key] = value

@@ -69,15 +69,15 @@ class OAuth2CookieHelper(private val oAuth2Properties: OAuth2Properties) {
         result: OAuth2Cookies
     ) {
         val domain = getCookieDomain(request)
-        log.debug("creating cookies for domain {}", domain)
+        log.debug("creating cookies for domain $domain")
         val accessTokenCookie = Cookie(ACCESS_TOKEN_COOKIE, accessToken.value)
         setCookieProperties(accessTokenCookie, request.isSecure, domain)
-        log.debug("created access token cookie '{}'", accessTokenCookie.name)
+        log.debug("created access token cookie '${accessTokenCookie.name}'")
 
         val refreshToken = accessToken.refreshToken
         val refreshTokenCookie = createRefreshTokenCookie(refreshToken, rememberMe)
         setCookieProperties(refreshTokenCookie, request.isSecure, domain)
-        log.debug("created refresh token cookie '{}', age: {}", refreshTokenCookie.name, refreshTokenCookie.maxAge)
+        log.debug("created refresh token cookie '${refreshTokenCookie.name}', age: ${refreshTokenCookie.maxAge}")
 
         result.setCookies(accessTokenCookie, refreshTokenCookie)
     }
@@ -100,7 +100,7 @@ class OAuth2CookieHelper(private val oAuth2Properties: OAuth2Properties) {
             if (exp != null) {
                 val now = (System.currentTimeMillis() / 1000L).toInt()
                 maxAge = exp.toInt() - now
-                log.debug("refresh token valid for another {} secs", maxAge)
+                log.debug("refresh token valid for another $maxAge secs")
                 // let cookie expire a bit earlier than the token to avoid race conditions
                 maxAge -= REFRESH_TOKEN_EXPIRATION_WINDOW_SECS.toInt()
             }
@@ -132,7 +132,7 @@ class OAuth2CookieHelper(private val oAuth2Properties: OAuth2Properties) {
         val iat = getClaim(refreshCookie.value, "iat", Integer::class.java) ?: return false
         val now = (System.currentTimeMillis() / 1000L).toInt()
         val sessionDuration = now - iat.toInt()
-        log.debug("session duration {} secs, will timeout at {}", sessionDuration, validity)
+        log.debug("session duration $sessionDuration secs, will timeout at $validity")
         return sessionDuration > validity // session has expired
     }
 
@@ -195,7 +195,7 @@ class OAuth2CookieHelper(private val oAuth2Properties: OAuth2Properties) {
         setCookieProperties(cookie, httpServletRequest.isSecure, domain)
         cookie.maxAge = 0
         httpServletResponse.addCookie(cookie)
-        log.debug("clearing cookie {}", cookie.name)
+        log.debug("clearing cookie ${cookie.name}")
     }
 
     /**
