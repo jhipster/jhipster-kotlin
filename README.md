@@ -1,8 +1,27 @@
 <div align="center">
-	<a href="https://github.com/jhipster/jhipster-kotlin">
+	<a href="https://khipster.dev">
 		<img width="320" height="160" src="https://raw.githubusercontent.com/jhipster/jhipster-kotlin/master/logo-khipster.png">
 	</a>
 </div>
+
+---
+
+# About
+
+<div align="center">
+	<a href="https://khipster.dev">
+		<img width="500" height="98" src="https://raw.githubusercontent.com/sendilkumarn/jhipster-kotlin-artwork/master/about-project.png">
+	</a>
+</div>
+
+> JHipster is a development platform to quickly generate, develop, and deploy modern web applications and microservice architectures. We support many frontend technologies, including Angular, React, and Vue. We even have mobile app support for Ionic and React Native! On the backend, we support Spring Boot (with Java or Kotlin), Micronaut, Quarkus, Node.js, and .NET. For deployment, we embrace cloud native principles with Docker and Kubernetes. Deployment support exists for AWS, Azure, Cloud Foundry, Google Cloud Platform, Heroku, and OpenShift.
+
+
+Documentation and information about KHipster is available [here](https://www.khipster.dev/)
+
+Full documentation and information about JHipster is available [here](https://www.jhipster.tech/)
+
+---
 
 # Build status
 
