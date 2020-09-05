@@ -144,25 +144,25 @@ fun isAuthenticated(): <% if (!reactive) { %>Boolean<% } else { %>Mono<Boolean><
  */
 fun isCurrentUserInRole(authority: String): <% if (!reactive) { %>Boolean<% } else { %>Mono<Boolean><% } %> {
   <%_ if (!reactive) { _%>
-  val authentication = SecurityContextHolder.getContext().authentication
+    val authentication = SecurityContextHolder.getContext().authentication
 
-  if (authentication != null) {
-    val isUserPresent = getAuthorities(authentication)?.any { it == authority }
-    if(isUserPresent != null) {
-        return isUserPresent
+    if (authentication != null) {
+        val isUserPresent = getAuthorities(authentication)?.any { it == authority }
+        if(isUserPresent != null) {
+            return isUserPresent
     }
-  }
+    }
 
-  return false
+    return false
   <%_ } else { _%>
-  return ReactiveSecurityContextHolder.getContext()
-      .map(SecurityContext::getAuthentication)
-      .map(Authentication::getAuthorities)
-      .map {
-          it
-          .map(GrantedAuthority::getAuthority)
-          .any { it == authority }
-      }
+    return ReactiveSecurityContextHolder.getContext()
+        .map(SecurityContext::getAuthentication)
+        .map(Authentication::getAuthorities)
+        .map {
+            it
+            .map(GrantedAuthority::getAuthority)
+            .any { it == authority }
+        }
   <%_ } _%>
 }
 
