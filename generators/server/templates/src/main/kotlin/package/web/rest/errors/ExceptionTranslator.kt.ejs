@@ -220,12 +220,7 @@ _%>
             .withTitle(status.reasonPhrase)
             .withStatus(status)
             .withDetail(detail)
-            .withCause(
-                throwable.cause?.let {
-                    it.filter { isCausalChainsEnabled() }
-                    .map { toProblem(it) }
-                } ?: null
-            )
+            .withCause(throwable.cause.takeIf { isCausalChainsEnabled }?.let { toProblem(it) })
     }
 
     private fun containsPackageName(message: String?) = listOf("org.", "java.", "net.", "javax.", "com.", "io.", "de.", "<%= packageName %>").any { it == message }
