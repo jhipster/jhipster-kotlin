@@ -1,6 +1,6 @@
 <div align="center">
     <a href="https://khipster.dev">
-        <img width="320" height="160" src="https://raw.githubusercontent.com/jhipster/jhipster-kotlin/master/logo-khipster.png">
+        <img width="320" height="160" src="https://raw.githubusercontent.com/jhipster/jhipster-kotlin/main/logo-khipster.png">
     </a>
 </div>
 
@@ -62,7 +62,7 @@ Install the package with `npm install -g generator-jhipster-kotlin`
 
 Found an issue, let us know [here](https://github.com/jhipster/jhipster-kotlin/issues).
 
-Interested in contributing, check out our [contributing guide](https://github.com/jhipster/jhipster-kotlin/blob/master/CONTRIBUTING.md) to get started.
+Interested in contributing, check out our [contributing guide](https://github.com/jhipster/jhipster-kotlin/blob/main/CONTRIBUTING.md) to get started.
 
 Any questions [sendilkumarn](https://twitter.com/sendilkumarn)
 
