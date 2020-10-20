@@ -48,6 +48,41 @@ Install the package with `npm install -g generator-jhipster-kotlin`
 2. Install the package with `npm install -g generator-jhipster-kotlin`
 3. Generate the application with `khipster`
 
+## Using Docker
+
+Download the Dockerfile:
+
+```bash
+mkdir docker
+cd docker
+wget https://github.com/jhipster/jhipster-kotlin/raw/main/docker/Dockerfile
+```
+
+Build the Docker images:
+
+```bash
+docker build -t jhipster-generator-kotlin:latest .
+```
+
+Make a folder where you want to generate the Service:
+
+```bash
+mkdir service
+cd service
+```
+
+Run the generator from image to generate service:
+
+```bash
+docker run -it --rm -v $PWD:/home/khipster/app jhipster-generator-kotlin
+```
+
+Run and attach interactive shell to the generator docker container to work from inside the running container:
+
+```bash
+docker run -it --rm -v $PWD:/home/khipster/app jhipster-generator-kotlin /bin/bash
+```
+
 ## 🚦 What we have now
 
 ✅ General App generation - `khipster`
