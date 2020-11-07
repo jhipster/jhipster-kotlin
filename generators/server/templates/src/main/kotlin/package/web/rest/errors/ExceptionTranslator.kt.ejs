@@ -26,7 +26,9 @@ import org.springframework.beans.factory.annotation.Value
 <%_ if (databaseType !== 'no' && databaseType !== 'cassandra') { _%>
 import org.springframework.dao.ConcurrencyFailureException
 <%_ } _%>
+<%_ if (databaseType !== 'no') { _%>
 import org.springframework.dao.DataAccessException
+<%_ } _%>
 import org.springframework.http.ResponseEntity
 import org.springframework.http.converter.HttpMessageConversionException
 <%_ if (reactive && databaseType === 'sql') { _%>
@@ -205,7 +207,9 @@ _%>
         if (activeProfiles.contains(JHipsterConstants.SPRING_PROFILE_PRODUCTION)) {
             detail = when (throwable) {
                 is HttpMessageConversionException -> "Unable to convert http message"
+                <%_ if (databaseType !== 'no') { _%>
                 is DataAccessException -> "Failure during data access"
+                <%_ } _%>
                 else -> {
                     if (containsPackageName(throwable.message)) {
                         "Unexpected runtime exception"
