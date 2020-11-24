@@ -31,6 +31,8 @@ Full documentation and information about JHipster is available [here](https://ww
 
 ![Webflux](https://github.com/jhipster/jhipster-kotlin/workflows/Webflux/badge.svg)
 
+![Microservices](https://dev.azure.com/jhipster/jhipster-kotlin/_apis/build/status/jhipster.jhipster-kotlin?branchName=main)
+
 ![KHipster Generated Applications CI](https://github.com/jhipster/jhipster-kotlin/workflows/KHipster%20Generated%20Applications%20CI/badge.svg)
 
 # Greetings, Kotlin Hipster!
