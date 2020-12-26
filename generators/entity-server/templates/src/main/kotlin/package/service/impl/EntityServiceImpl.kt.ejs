@@ -30,15 +30,6 @@ package <%= packageName %>.service<% if (service === 'serviceImpl') { %>.impl<% 
     const entityToDtoReference = mapper + '::'+ 'toDto';
     const repository = entityInstance  + 'Repository';
     const searchRepository = entityInstance  + 'SearchRepository';
-    let isUsingMapsId = false;
-    let mapsIdAssoc;
-    for (idx in relationships) {
-        isUsingMapsId = relationships[idx].useJPADerivedIdentifier === true;
-        if (isUsingMapsId) {
-            mapsIdAssoc = relationships[idx];
-            break;
-        }
-    }
 _%>
 <%_ if (service === 'serviceImpl') { %>
 import <%= packageName %>.service.<%= entityClass %>Service
@@ -57,7 +48,7 @@ import <%= packageName %>.service.mapper.<%= entityClass %>Mapper
 <%_ } _%>
 import org.slf4j.LoggerFactory
 
-<%_ if (pagination !== 'no' || fieldsContainOwnerManyToMany === true) { _%>
+<%_ if (pagination !== 'no' || relationshipsContainEagerLoad) { _%>
     <%_ if (!reactive) { _%>
 import org.springframework.data.domain.Page
     <%_ } _%>
@@ -117,6 +108,22 @@ class <%= serviceClassName %>(
     }
 
     <%_ if (service !== 'serviceImpl') { _%>
+        /**
+         * Partially udpates a <%= entityInstance %>.
+         *
+         * @param <%= instanceName %> the entity to update partially.
+         * @return the persisted entity.
+         */
+        <%_ } _%>
+        <%_ if (service === 'serviceImpl') { _%>
+        @Override
+        <%_ } _%>
+        fun partialUpdate(<%= instanceName %>: <%= instanceType %>): <% if (reactive) { %>Mono<<% } %><%= instanceType %><% if (reactive) { %>><% } %> {
+            log.debug("Request to partially update <%= entityClass %> : {}", <%= instanceName %>)
+    <%- include('../../common/patch_template', {asEntity, asDto, isService: true, viaService: false}); -%>
+        }
+
+    <%_ if (service !== 'serviceImpl') { _%>
     /**
      * Get all the <%= entityInstancePlural %>.
      *<% if (pagination !== 'no') { %>
@@ -130,7 +137,7 @@ class <%= serviceClassName %>(
     <% if (service === 'serviceImpl') { %>override <% } %>fun findAll(<% if (pagination !== 'no') { %>pageable: Pageable<% } %>): <% if (pagination !== 'no') { %><%= pageOrFlux %><<%= instanceType %><% } else { %><%= listOrFlux %><<%= instanceType %><% } %>> {
         log.debug("Request to get all <%= entityClassPlural %>")
         <%_ if (pagination === 'no') { _%>
-        return <%= entityInstance %>Repository.<% if (fieldsContainOwnerManyToMany === true) { %>findAllWithEagerRelationships<% } else { %>findAll<% } %>()<% if (dto === 'mapstruct') { %><% if (reactive !== true) { %>
+        return <%= entityInstance %>Repository.<% if (relationshipsContainEagerLoad) { %>findAllWithEagerRelationships<% } else { %>findAll<% } %>()<% if (dto === 'mapstruct') { %><% if (reactive !== true) { %>
             .mapTo(mutableListOf(), <%= entityToDtoReference %>)<% } else { %>.map(<%= entityToDtoReference %> )<% } %><% } %>            
         <%_ } else { _%>
         return <%= entityInstance %>Repository.findAll<% if (reactive) { %>By<% } %>(pageable)<% if (dto === 'mapstruct') { %>
@@ -138,7 +145,7 @@ class <%= serviceClassName %>(
         <%_ } _%>
     }
 
-    <%_ if (fieldsContainOwnerManyToMany === true) { _%>
+    <%_ if (relationshipsContainEagerLoad) { _%>
 
         <%_ if (service !== 'serviceImpl') { _%>
     /**
@@ -156,7 +163,7 @@ class <%= serviceClassName %>(
     <%_ if (service !== 'serviceImpl') { _%>
     /**
     * Returns the number of <%= entityInstancePlural %> available.
-    *
+    * @return the number of entities in the database.
     */
     <%_ } _%>
     <% if (service === 'serviceImpl') { %>override <% } %>fun countAll() = <%= entityInstance %>Repository.count()
@@ -192,6 +199,9 @@ class <%= serviceClassName %>(
      * Delete the <%= entityInstance %> by id.
      *
      * @param id the id of the entity.
+        <%_ if (reactive) { _%>
+     * @return a Mono to signal the deletion
+        <%_ } _%>
      */
      <%_ } _%>
     <% if (service === 'serviceImpl') { %>override <% } %>fun delete(id: <%= primaryKeyType %>): <%- reactive ? 'Mono<Void>' : 'Unit' %> {

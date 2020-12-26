@@ -30,7 +30,7 @@ import <%= packageName %>.service.dto.<%= asDto(entityClass) %>
 <%_ } else { _%>
 import <%= packageName %>.domain.<%= asEntity(entityClass) %>
 <%_ } _%>
-<%_ if (pagination !== 'no' || fieldsContainOwnerManyToMany === true) { _%>
+<%_ if (pagination !== 'no' || relationshipsContainEagerLoad) { _%>
     <%_ if (!reactive) { _%>
 import org.springframework.data.domain.Page
     <%_ } _%>
@@ -62,6 +62,14 @@ interface <%= entityClass %>Service {
     fun save(<%= instanceName %>: <%= instanceType %>): <% if (reactive) { %>Mono<<% } %><%= instanceType %><% if (reactive) { %>><% } %>
 
     /**
+     * Partially updates a <%= entityInstance %>.
+     *
+     * @param <%= instanceName %> the entity to update partially.
+     * @return the persisted entity.
+     */
+    fun partialUpdate(<%= instanceName %>: <%= instanceType %>): <% if (reactive) { %>Mono<<% } %><%= instanceType %><% if (reactive) { %>><% } %>
+
+    /**
      * Get all the <%= entityInstancePlural %>.
      *<% if (pagination !== 'no') { %>
      * @param pageable the pagination information.<% } %>
@@ -77,10 +85,11 @@ interface <%= entityClass %>Service {
     fun findAllWhere<%= relationships[idx].relationshipNameCapitalized %>IsNull(): <%= listOrFlux %><<%= instanceType %>>
 <%_ } } _%>
 
-    <%_ if (fieldsContainOwnerManyToMany === true) { _%>
+    <%_ if (relationshipsContainEagerLoad) { _%>
     /**
      * Get all the <%= entityInstancePlural %> with eager load of many-to-many relationships.
-     *
+     * @param pageable the pagination information.
+     * 
      * @return the list of entities.
      */
     fun findAllWithEagerRelationships(pageable: Pageable): <%= pageOrFlux %><<%= instanceType %>>
@@ -88,7 +97,7 @@ interface <%= entityClass %>Service {
     <%_ if (reactive) { _%>
         /**
          * Returns the number of <%= entityInstancePlural %> available.
-         *
+         * @return the number of entities in the database.
          */
         fun countAll(): Mono<Long>
         <%_ if (searchEngine === 'elasticsearch') { _%>
@@ -112,6 +121,9 @@ interface <%= entityClass %>Service {
      * Delete the "id" <%= entityInstance %>.
      *
      * @param id the id of the entity.
+<%_ if (reactive) { _%>
+     * @return a Mono to signal the deletion
+<%_ } _%>     
      */
     fun delete(id: <%= primaryKeyType %>)<% if (reactive) { %>: Mono<Void> <% } %>
     

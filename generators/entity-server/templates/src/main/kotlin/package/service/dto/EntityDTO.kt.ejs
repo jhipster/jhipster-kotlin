@@ -18,9 +18,7 @@
 -%>
 package <%= packageName %>.service.dto
 
-<%_
-let { importApiModelProperty, importJsonIgnore, importJsonIgnoreProperties, importSet, uniqueEnums } = _processJavaEntityImports(fields, relationships);
-_%>
+import java.util.Objects
 <%_ if (typeof javadoc != 'undefined') { _%>
 import io.swagger.annotations.ApiModel
 <%_ } if (importApiModelProperty === true) { _%>
@@ -168,11 +166,19 @@ data class <%= asDto(entityClass) %>(
         if (this === other) return true
         if (other !is <%= asDto(entityClass) %>) return false
         <%_ if (!embedded) { _%>
-        return id!= null && id == other.id
+        <%= asDto(entityClass) %> <%= asDto(entityInstance) %> = (<%= asDto(entityClass) %>) o;
+        if (<%- idNames.map(n => `this.${n} == null`).join(' && ') %>){
+            return false;
+        }
+        return <%- idNames.map(n => `Objects.equals(this.${n}, ${asDto(entityInstance)}.${n})`).join(' &&\n            ') %>;
         <%_ } else { _%>
         return false
         <%_ } _%>
     }
 
-    override fun hashCode() = 31
+    override fun hashCode() =  <%_ if (!embedded) { _%>
+        Objects.hash(<%- idNames.map(n => `this.${n}`).join(', ') %>)
+    <%_ } else { _%>
+        31
+    <%_ } _%>
 }

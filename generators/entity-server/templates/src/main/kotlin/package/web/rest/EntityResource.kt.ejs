@@ -20,15 +20,6 @@ package <%= packageName %>.web.rest
 
 <%_
     const viaService = service !== 'no';
-    let isUsingMapsId = false;
-    let mapsIdAssoc;
-    for (idx in relationships) {
-        isUsingMapsId = relationships[idx].useJPADerivedIdentifier === true;
-        if (isUsingMapsId) {
-            mapsIdAssoc = relationships[idx];
-            break;
-        }
-    }
     let manyToManyWithUser = false;
     for (idx in relationships) {
         if (relationships[idx].otherEntityName === 'user' && relationships[idx].relationshipType === 'many-to-many') {
@@ -65,11 +56,11 @@ import <%= packageName %>.service.dto.<%= entityClass %>Criteria
 import <%= packageName %>.service.<%= entityClass %>QueryService
 <%_ } _%>
 
-import io.github.jhipster.web.util.HeaderUtil
+import tech.jhipster.web.util.HeaderUtil
 <%_ if (pagination !== 'no') { _%>
-import io.github.jhipster.web.util.PaginationUtil
+import tech.jhipster.web.util.PaginationUtil
 <%_ } _%>
-import io.github.jhipster.web.util.<% if (reactive) { %>reactive.<% } %>ResponseUtil
+import tech.jhipster.web.util.<% if (reactive) { %>reactive.<% } %>ResponseUtil
 import org.slf4j.LoggerFactory
 import org.springframework.beans.factory.annotation.Value
 <%_ if (pagination !== 'no') { _%>
@@ -94,7 +85,7 @@ import org.springframework.http.HttpStatus
 import org.springframework.http.MediaType
 <%_ } _%>
 import org.springframework.http.ResponseEntity
-<%_ if (!viaService && !saveUserSnapshot) { %>
+<%_ if (databaseType === 'sql' && !viaService && (!saveUserSnapshot || isUsingMapsId === true)) { _%>
 import org.springframework.transaction.annotation.Transactional
 <%_ } _%>
 import org.springframework.web.bind.annotation.*
@@ -107,16 +98,23 @@ import reactor.core.publisher.Mono
 <%_ if (validation) { _%>
 import javax.validation.Valid
 <%_ } _%>
+
+<%_ if (validation && !readOnly) { _%>
+import javax.validation.constraints.NotNull
+<%_ } _%>
 import java.net.URI
 import java.net.URISyntaxException<% if (isUsingMapsId === true) { %>
 import java.util.Objects<% } %>
 <%_ if (databaseType === 'cassandra') { _%>
 import java.util.UUID
 <%_ } _%>
-<%_ if (searchEngine === 'elasticsearch' && !reactive) { _%>
+<%_ if ((searchEngine !== false || fieldsContainNoOwnerOneToOne === true) && !reactive) { _%>
+    <%_ if (!viaService) { _%>
 import java.util.stream.Collectors
+    <%_ } _%>
 import java.util.stream.StreamSupport
-
+<%_ } _%>
+<%_ if (searchEngine === 'elasticsearch' && !reactive) { _%>
 import org.elasticsearch.index.query.QueryBuilders.queryStringQuery
 <%_ } _%>
 <%_ if (!readOnly) { _%>
@@ -252,6 +250,54 @@ _%><%- include('../../common/inject_template', {viaService: viaService, construc
                 <%_ } _%>
     }
 <%_ } _%>
+
+/**
+* {@code PATCH  /<%= entityApiUrl %>} : Updates given fields of an existing <%= entityInstance %>.
+*
+* @param <%= instanceName %> the <%= instanceName %> to update.
+* @return the {@link ResponseEntity} with status {@code 200 (OK)} and with body the updated <%= instanceName %>,
+* or with status {@code 400 (Bad Request)} if the <%= instanceName %> is not valid,
+* or with status {@code 404 (Not Found)} if the <%= instanceName %> is not found,
+* or with status {@code 500 (Internal Server Error)} if the <%= instanceName %> couldn't be updated.
+* @throws URISyntaxException if the Location URI syntax is incorrect.
+*/
+@PatchMapping(value = "/<%= entityApiUrl %>", consumes = "application/merge-patch+json")
+@Exception(URISyntaxException::class)
+fun partialUpdate<%= entityClass %>: <% if (reactive) { %>Mono<<% } %>ResponseEntity<<%= instanceType %>><% if (reactive) { %>><% } %> (<% if (validation) { %>@NotNull <% } %>@RequestBody <%= instanceName %>:<%= instanceType %>) {
+   log.debug("REST request to update <%= entityClass %> partially : {}", <%= instanceName %>)
+   if (<%= instanceName %>.id == null) {
+       throw BadRequestAlertException("Invalid id", ENTITY_NAME, "idnull")
+   }
+   <%_ if (saveUserSnapshot) { _%>
+       <%_ if (manyToManyWithUser) { _%>
+   if (<%= instanceName %>.users != null) {
+       // Save users in case they are new and only exists in gateway
+       userRepository.saveAll(<%= instanceName %>.users)
+   }
+       <%_ } else { _%>
+   if (<%= instanceName %>.user != null) {
+       // Save user in case it's new and only exists in gateway
+       userRepository.save(<%= instanceName %>.user)
+   }
+       <%_ } _%>
+   <%_ } _%>
+
+   <%- include('../../common/patch_template', {asEntity, asDto, isService: false, viaService: viaService}); -%>
+       <%_ if (!reactive) { _%>
+   return ResponseUtil.wrapOrNotFound(
+       result,
+       HeaderUtil.createEntityUpdateAlert(applicationName, <%= enableTranslation %>, ENTITY_NAME, <%= instanceName %>.getId()<% if (primaryKeyType !== 'String') { %>.toString()<% } %>)
+   )
+       <%_ } else { _%>
+   return result
+       .switchIfEmpty(Mono.error(new ResponseStatusException(HttpStatus.NOT_FOUND)))
+       .map(res -> ResponseEntity.ok()
+       .headers(HeaderUtil.createEntityUpdateAlert(applicationName, <%= enableTranslation %>, ENTITY_NAME, res.getId()<% if (primaryKeyType !== 'String') { %>.toString()<% } %>))
+       .body(res)
+   )
+       <%_ } _%>
+}
+<%_ } _%>
     /**
      * `GET  /<%= entityApiUrl %>` : get all the <%= entityInstancePlural %>.
      *
@@ -261,7 +307,7 @@ _%><%- include('../../common/inject_template', {viaService: viaService, construc
      * @param request a [ServerHttpRequest] request.
         <%_ } _%>
     <%_ } _%>
-    <%_ if (!jpaMetamodelFiltering && fieldsContainOwnerManyToMany) { _%>
+    <%_ if (!jpaMetamodelFiltering && relationshipsContainEagerLoad) { _%>
      * @param eagerload flag to eager load entities from relationships (This is applicable for many-to-many).<% } if (jpaMetamodelFiltering) { %>
      * @param criteria the criteria which the requested entities should match.<% } else if (fieldsContainNoOwnerOneToOne) { %>
      * @param filter the filter of the request.<% } %>

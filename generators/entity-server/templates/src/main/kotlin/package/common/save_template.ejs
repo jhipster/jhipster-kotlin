@@ -33,7 +33,7 @@ if (isUsingMapsId === true) {
     mapsIdRepoInstance = `${mapsIdEntityInstance}Repository`;
     otherEntityName = mapsIdAssoc.otherEntityName;
     if (isController === true) { _%>
-        if (Objects.isNull(<%= instanceName%>.<%= mapsIdAssoc.relationshipName %> <%_ if (dto === 'mapstruct') { _%> Id <%_ } _%>)) {
+        if (Objects.isNull(<%= instanceName%>.<%= mapsIdAssoc.relationshipName %>)) {
             throw BadRequestAlertException("Invalid association value provided", ENTITY_NAME, "null")
         }
     <%_ } _%>
@@ -43,7 +43,7 @@ if (!viaService) {
         resultEntity = asEntity(entityInstance) %>
         var <%= asEntity(entityInstance) %> = <%= dtoToEntity %>(<%= instanceName %>)
         <%_ if (isUsingMapsId === true) { _%>
-        val <%= otherEntityName %>Id = <%= instanceName %>.<%= mapsIdAssoc.relationshipName %>Id
+        val <%= otherEntityName %>Id = <%= instanceName %>.<%= mapsIdAssoc.relationshipName %>.id
         if (<%= otherEntityName %>Id != null) {
             <%= mapsIdRepoInstance %>.findById(<%= otherEntityName %>Id)
                 .ifPresent { <%= asEntity(entityInstance) %>.<%= otherEntityName %> = it }
@@ -60,11 +60,14 @@ if (!viaService) {
         }
         <%_ } _%>
         <%= returnPrefix %> <%= entityInstance %>Repository.save(<%= asEntity(entityInstance) %>)
-        <%_ } if (searchEngine === 'elasticsearch') { _%>
+        <%_ }
+        if (searchEngine === 'elasticsearch') { _%>
         <%= entityInstance %>SearchRepository.save(<%= resultEntity %>)
             <%_ if (returnDirectly) { _%>
         return result
-    <%_ }}} else { _%>
+        <%_ }
+        }
+    } else { _%>
         <%_ if (isUsingMapsId === true && isController === false) { _%>
         val <%= otherEntityName %>Id = <%= entityInstance %>.<%= mapsIdAssoc.relationshipName %>?.id
         if (<%= otherEntityName %>Id != null) {
