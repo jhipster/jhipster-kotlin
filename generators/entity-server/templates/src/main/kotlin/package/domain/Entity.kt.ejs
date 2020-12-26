@@ -37,18 +37,24 @@ import org.springframework.data.annotation.Id
 import org.springframework.data.cassandra.core.mapping.Column
     <%_ } _%>
 import org.springframework.data.cassandra.core.mapping.Table
-<%_ } if (relationshipsContainOtherSideIgnore === true) { _%>
+<%_ } _%>
+<%_ if (relationshipsContainOtherSideIgnore === true) { _%>
 import com.fasterxml.jackson.annotation.JsonIgnoreProperties
-<%_ } if (!hasDto && typeof javadoc != 'undefined') { _%>
+<%_ } _%>
+<%_ if (!hasDto && typeof javadoc != 'undefined') { _%>
 import io.swagger.annotations.ApiModel
-<%_ } if (!hasDto && importApiModelProperty === true) { _%>
+<%_ } _%>
+<%_ if (!hasDto && importApiModelProperty === true) { _%>
 import io.swagger.annotations.ApiModelProperty
-<%_ } if (enableHibernateCache) { _%>
+<%_ } _%>
+<%_ if (enableHibernateCache) { _%>
 import org.hibernate.annotations.Cache
 import org.hibernate.annotations.CacheConcurrencyStrategy
-<%_ } if (!reactive && (hasTextBlob === true || (fieldsContainUUID === true && ['mysql', 'mariadb'].includes(prodDatabaseType)))) { _%>
+<%_ } _%>
+<%_ if (!reactive && (hasTextBlob === true || (fieldsContainUUID === true && ['mysql', 'mariadb'].includes(prodDatabaseType)))) { _%>
 import org.hibernate.annotations.Type
-<%_ } if (databaseType === 'mongodb') {
+<%_ } _%>
+<%_ if (databaseType === 'mongodb') {
     if (!embedded) { _%>
 import org.springframework.data.annotation.Id
 import org.springframework.data.mongodb.core.mapping.Document
@@ -108,7 +114,7 @@ import java.time.ZonedDateTime
 <%_ } if (fieldsContainDuration === true) { _%>
 import java.time.Duration
 <%_ } _%>
-<%_ if (databaseType === 'cassandra' || fieldsContainUUID === true) { _%>
+<%_ if ((!embedded && primaryKey.type === 'UUID') || fieldsContainUUID === true) { _%>
 import java.util.UUID
 <%_ }
 Object.keys(uniqueEnums).forEach(function(element) { _%>
@@ -141,37 +147,39 @@ import org.springframework.data.couchbase.core.mapping.id.GenerationStrategy.UNI
 @Cache(usage = CacheConcurrencyStrategy.READ_WRITE)
         <%_ } _%>
     <%_ } _%>
-<%_ } if (!embedded) {
-    if (databaseType === 'mongodb') { _%>
+<%_ } _%>
+<%_ if (!embedded) { _%>
+    <%_ if (databaseType === 'mongodb') { _%>
 @Document(collection = "<%= entityTableName %>")
-    <%_ } if (databaseType === 'neo4j') { _%>
+    <%_ } else if (databaseType === 'neo4j') { _%>
     @Node
-    <%_ } if (databaseType === 'couchbase') { _%>
+    <%_ } else if (databaseType === 'couchbase') { _%>
 @Document
-    <%_ }
-    } if (databaseType === 'cassandra') { _%>
+    <%_ } else if (databaseType === 'cassandra') { _%>
 @Table("<%= entityInstance %>")
-    <%_ } if (searchEngine === 'elasticsearch') { _%>
+    <%_ } _%>
+<%_ } _%>
+<%_ if (searchEngine === 'elasticsearch') { _%>
 @org.springframework.data.elasticsearch.annotations.Document(indexName = "<%= entityInstance.toLowerCase() %>")
     <%_ } _%>
 data class <%= asEntity(entityClass) %>(
     <%_ if (!embedded) { _%>
     @Id
-        <%_ if (databaseType === 'sql' && isUsingMapsId === false && !reactive) { _%>
-            <%_ if (prodDatabaseType === 'mysql' || prodDatabaseType === 'mariadb') { _%>
+        <%_ if (databaseType === 'sql' && isUsingMapsId === false && !reactive && !primaryKey.composite) { _%>
+            <%_ if (primaryKey.fields[0].jpaGeneratedValue === 'identity') { _%>
     @GeneratedValue(strategy = GenerationType.IDENTITY)
-            <%_ }  else { _%>
+            <%_ } else if (primaryKey.fields[0].jpaGeneratedValue === 'sequence') { _%>
     @GeneratedValue(strategy = GenerationType.SEQUENCE, generator = "sequenceGenerator")
     @SequenceGenerator(name = "sequenceGenerator")
+            <%_ } else if (primaryKey.fields[0].jpaGeneratedValue) { _%>
+    @GeneratedValue
             <%_ } _%>
-        <%_ } _%>
-        <%_ if (databaseType === 'couchbase' && !embedded) { _%>
+        <%_ } else if (databaseType === 'couchbase' && !embedded) { _%>
     @GeneratedValue(strategy = UNIQUE, delimiter = ID_DELIMITER)
-        <%_ } _%>
-        <%_ if (databaseType === 'neo4j') { _%>
+        <%_ } else if (databaseType === 'neo4j') { _%>
     @GeneratedValue(UUIDStringGenerator::class)
         <%_ } _%>
-    var id: <%= primaryKeyType %>? = null,
+    var <%= primaryKey.name %>: <%= primaryKey.type %>? = null,
     <%_ } _%>
 <%_
 // TODO temporary calculation update this later.
@@ -181,6 +189,7 @@ const relationshipLength = relationships.filter(r => {
 }).length - 1;
 
 for (idx in fields) {
+    if (fields[idx].id) continue;
     if (typeof fields[idx].javadoc !== 'undefined') { _%>
 <%- formatAsFieldJavadoc(fields[idx].javadoc) %>
     <%_ }
@@ -273,7 +282,6 @@ for (idx in fields) {
         const relationshipName = relationships[idx].relationshipName;
         const relationshipFieldName = relationships[idx].relationshipFieldName;
         const relationshipFieldNamePlural = relationships[idx].relationshipFieldNamePlural;
-        const joinTableName = getJoinTableName(entityTableName, relationshipName, prodDatabaseType);
         const relationshipType = relationships[idx].relationshipType;
         const relationshipValidate = relationships[idx].relationshipValidate;
         const relationshipRequired = relationships[idx].relationshipRequired;
@@ -373,9 +381,15 @@ for (idx in fields) {
             if (relationshipValidate) { _%>
     <%- include('relationship_validators', { relationships, idx }); -%>
         <%_ } _%>
-    @JoinTable(name = "<%= joinTableName %>",
-        joinColumns = [JoinColumn(name = "<%= getColumnName(name) %>_id", referencedColumnName = "id")],
-        inverseJoinColumns = [JoinColumn(name = "<%= getColumnName(relationships[idx].relationshipName) %>_id", referencedColumnName = "id")])
+    @JoinTable(name = "<%= relationship.joinTable.name %>",
+        joinColumns = [<%_ entity.primaryKey.fields.forEach((field, idx) => { _%> 
+            JoinColumn(name = "<%= `${entityTableName}_${field.columnName}` %>") <%= idx === 0 ? '' : ',' %>
+            <%_ } _%> 
+        ],
+        inverseJoinColumns = [<%_ relationship.otherEntity.primaryKey.fields.forEach((field, idx) => { _%>
+            JoinColumn(name =  "<%= `${relationship.columnName}_${field.columnName}` %>")<%= idx === 0 ? '' : ',' %>
+            <%_ } _%> 
+        ])
         <%_ }
         } else if ((databaseType === 'mongodb' || databaseType === 'couchbase') && !otherEntityIsEmbedded) {
             if (databaseType === 'mongodb') { _%>
@@ -415,7 +429,7 @@ for (idx in fields) {
             <%_ }_%>
             <%_ if (isUsingMapsId === true) { %>
     @MapsId
-    @JoinColumn(name = "id")
+    @JoinColumn(name = "<%= relationship.otherEntity.primaryKey.fields[0].columnName %>")
             <%_ } else { _%>
     @JoinColumn(unique = true)
             <%_ } _%>
@@ -452,6 +466,7 @@ for (idx in fields) {
 <%_ } _%>
 <%_
     for (idx in relationships) {
+        const relationship = relationships[idx];
         const relationshipFieldName = relationships[idx].relationshipFieldName;
         const ownerSide = relationships[idx].ownerSide || false;
         const relationshipFieldNamePlural = relationships[idx].relationshipFieldNamePlural;
@@ -482,15 +497,17 @@ for (idx in fields) {
         this.<%= relationshipFieldNamePlural %>.add(<%= otherEntityName %>)
         <%_ if (!otherEntityIsEmbedded || embedded && ownerSide === true) { _%>
             <%_ if (databaseType === 'couchbase' && !otherEntityIsEmbedded) { _%>
-        <%= otherEntityName %>.id?.let { this.<%= relationshipFieldName %>Ids.add(it) }
+        <%= otherEntityName %>.<%= primaryKey.name %>?.let { this.<%= relationshipFieldName %>Ids.add(it) }
             <%_ } _%>
-            <%_ if (relationshipType === 'one-to-many') {
-                if (databaseType !== 'neo4j') { _%>
+            <%_ if (relationship.otherRelationship) {
+                    if (relationshipType === 'one-to-many') {
+                        if (databaseType !== 'neo4j') { _%>
         <%= otherEntityName %>.<%= otherEntityRelationshipName %> = this
                 <%_ } _%>
             <%_ } else if (otherEntityRelationshipNameCapitalizedPlural && asEntity(otherEntityNameCapitalized)!=='User' && relationshipType === 'many-to-many') {
                 // JHipster version < 3.6.0 didn't ask for this relationship name _%>
         <%= otherEntityName %>.<%= otherEntityRelationshipNamePlural %>.add(this)
+                <%_ } _%>
             <%_ } _%>
         <%_ } _%>
         return this
@@ -498,18 +515,20 @@ for (idx in fields) {
 
     fun remove<%= relationshipNameCapitalized %>(<%= otherEntityName %>: <%= asEntity(otherEntityNameCapitalized) %>): <%= asEntity(entityClass) %> {
         this.<%= relationshipFieldNamePlural %>.remove(<%= otherEntityName %>)
-        <%_ if (!otherEntityIsEmbedded || embedded && ownerSide === true) { _%>
+        <%_ if (!otherEntityIsEmbedded || (embedded && ownerSide === true)) { _%>
             <%_ if (databaseType === 'couchbase' && !otherEntityIsEmbedded) { _%>
-        <%= otherEntityName %>.id?.let { this.<%= relationshipFieldName %>Ids.remove(it) }
+        <%= otherEntityName %>.<%= primaryKey.name %>?.let { this.<%= relationshipFieldName %>Ids.remove(it) }
             <%_ } _%>
-            <%_ if (relationshipType === 'one-to-many') { 
-                if (databaseType !== 'neo4j') { _%>
+            <%_ if (relationship.otherRelationship) {
+                    if (relationshipType === 'one-to-many') {
+                        if (databaseType !== 'neo4j') { _%>
         <%= otherEntityName %>.<%= otherEntityRelationshipName %> = null
                 <%_ } _%>
             <%_ } else if (otherEntityRelationshipNamePlural !== '' && ownerSide === false &&
                  otherEntityNameCapitalized !== 'User' && relationshipType === 'many-to-many') {
                 // JHipster version < 3.6.0 didn't ask for this relationship name _%>
         <%= otherEntityName %>.<%= otherEntityRelationshipNamePlural %>.remove(this)
+                <%_ } _%>
             <%_ } _%>
         <%_ } _%>
         return this
@@ -524,7 +543,7 @@ for (idx in fields) {
         if (other !is <%= asEntity(entityClass) %>) return false
 
         <%_ if (!embedded) { _%>
-        return id != null && other.id != null && id == other.id
+        return <%= primaryKey.name %> != null && other.<%= primaryKey.name %> != null && <%= primaryKey.name %> == other.<%= primaryKey.name %>
         <%_ } else { _%>
         return false;
         <%_ } _%>
@@ -534,9 +553,10 @@ for (idx in fields) {
 
     override fun toString() = "<%= asEntity(entityClass) %>{" +
         <%_ if (!embedded) { _%>
-        "id=$id" +
+        "<%= primaryKey.name %>=$<%= primaryKey.name %>" +
         <%_ } _%>
         <%_ for (idx in fields) {
+            if (fields[idx].id) continue;
             const fieldType = fields[idx].fieldType;
             const fieldTypeBlobContent = fields[idx].fieldTypeBlobContent;
             const fieldName = fields[idx].fieldName;

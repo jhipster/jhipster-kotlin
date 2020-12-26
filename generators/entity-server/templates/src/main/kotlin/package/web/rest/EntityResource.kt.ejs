@@ -78,10 +78,10 @@ import org.springframework.web.servlet.support.ServletUriComponentsBuilder
     <%_ } else { _%>
 import org.springframework.web.util.UriComponentsBuilder
     <%_ } _%>
-<%_ } else if (reactiveRepositories) { _%>
+<%_ } else if (reactive) { _%>
 import org.springframework.http.HttpStatus  
 <%_ } _%>
-<%_ if (reactiveRepositories) { _%>
+<%_ if (reactive) { _%>
 import org.springframework.http.MediaType
 <%_ } _%>
 import org.springframework.http.ResponseEntity
@@ -89,7 +89,7 @@ import org.springframework.http.ResponseEntity
 import org.springframework.transaction.annotation.Transactional
 <%_ } _%>
 import org.springframework.web.bind.annotation.*
-<%_ if (reactiveRepositories) { _%>
+<%_ if (reactive) { _%>
 import org.springframework.web.server.ResponseStatusException
 import reactor.core.publisher.Flux
 import reactor.core.publisher.Mono
@@ -105,7 +105,7 @@ import javax.validation.constraints.NotNull
 import java.net.URI
 import java.net.URISyntaxException<% if (isUsingMapsId === true) { %>
 import java.util.Objects<% } %>
-<%_ if (databaseType === 'cassandra') { _%>
+<%_ if (primaryKey.type === 'UUID') { _%>
 import java.util.UUID
 <%_ } _%>
 <%_ if ((searchEngine !== false || fieldsContainNoOwnerOneToOne === true) && !reactive) { _%>
@@ -161,7 +161,7 @@ _%><%- include('../../common/inject_template', {viaService: viaService, construc
     @PostMapping("/<%= entityApiUrl %>")
     fun create<%= entityClass %>(<% if (validation) { %>@Valid <% } %>@RequestBody <%= instanceName %>: <%= instanceType %>): <% if (reactive) { %>Mono<<% } %>ResponseEntity<<%= instanceType %>><% if (reactive) { %>><% } %> {
         log.debug("REST request to save <%= entityClass %> : $<%= instanceName %>")
-        if (<%= instanceName %>.id != null) {
+        if (<%= instanceName %>.<%= primaryKey.name %> != null) {
             throw BadRequestAlertException(
                 "A new <%= entityInstance %> cannot already have an ID",
                 ENTITY_NAME, "idexists"
@@ -180,20 +180,20 @@ _%><%- include('../../common/inject_template', {viaService: viaService, construc
             }
             <%_ } _%>
         <%_ } _%>
-        <%_ if (databaseType === 'cassandra') { _%>
-        <%= instanceName %>.id = UUID.randomUUID()
+        <%_ if (primaryKey.type === 'UUID' && databaseType !== 'sql') { _%>
+        <%= instanceName %>.<%= primaryKey.name %> = UUID.randomUUID()
         <%_ } _%>
         <%_ if (!reactive) { _%>
 <%- include('../../common/save_template', {asEntity, asDto, viaService: viaService, returnDirectly: false, isUsingMapsId: isUsingMapsId, mapsIdAssoc: mapsIdAssoc, isController: true}); -%>
-        return ResponseEntity.created(URI("/api/<%= entityApiUrl %>/${result.id}"))
-            .headers(HeaderUtil.createEntityCreationAlert(applicationName, <%= enableTranslation %>, ENTITY_NAME, result.id<% if (primaryKeyType !== 'String') { %>.toString()<% } %>))
+        return ResponseEntity.created(URI("/api/<%= entityApiUrl %>/${result.<%= primaryKey.name %>}"))
+            .headers(HeaderUtil.createEntityCreationAlert(applicationName, <%= enableTranslation %>, ENTITY_NAME, result.<%= primaryKey.name %><% if (primaryKey.type !== 'String') { %>.toString()<% } %>))
             .body(result)
         <%_ } else { _%>
-<%- include('../../common/save_reactive_template', {asEntity, asDto, viaService: viaService, returnDirectly: false}); -%>
+<%- include('../../common/save_template_reactive', {asEntity, asDto, viaService: viaService, returnDirectly: false}); -%>
             .map { result -> 
                 try {
-                    ResponseEntity.created(URI("/api/<%= entityApiUrl %>/${result.id}"))
-                        .headers(HeaderUtil.createEntityCreationAlert(applicationName, <%= enableTranslation %>, ENTITY_NAME, result.id<% if (primaryKeyType !== 'String') { %>.toString()<% } %>))
+                    ResponseEntity.created(URI("/api/<%= entityApiUrl %>/${result.<%= primaryKey.name %>}"))
+                        .headers(HeaderUtil.createEntityCreationAlert(applicationName, <%= enableTranslation %>, ENTITY_NAME, result.<%= primaryKey.name %><% if (primaryKey.type !== 'String') { %>.toString()<% } %>))
                         .body(result)
                 } catch (e: URISyntaxException) {
                     throw RuntimeException(e)
@@ -214,7 +214,7 @@ _%><%- include('../../common/inject_template', {viaService: viaService, construc
     @PutMapping("/<%= entityApiUrl %>")
     fun update<%= entityClass %>(<% if (validation) { %>@Valid <% } %>@RequestBody <%= instanceName %>: <%= instanceType %>): <% if (reactive) { %>Mono<<% } %>ResponseEntity<<%= instanceType %>><% if (reactive) { %>><% } %> {
         log.debug("REST request to update <%= entityClass %> : $<%= instanceName %>")
-        if (<%= instanceName %>.id == null) {
+        if (<%= instanceName %>.<%= primaryKey.name %> == null) {
             throw BadRequestAlertException("Invalid id", ENTITY_NAME, "idnull")
         }
         <%_ if (saveUserSnapshot) { %>
@@ -236,15 +236,15 @@ _%><%- include('../../common/inject_template', {viaService: viaService, construc
             .headers(
                 HeaderUtil.createEntityUpdateAlert(
                     applicationName, <%= enableTranslation %>, ENTITY_NAME,
-                     <%= instanceName %>.id<% if (primaryKeyType !== 'String') { %>.toString()<% } %>
+                     <%= instanceName %>.<%= primaryKey.name %><% if (primaryKey.type !== 'String') { %>.toString()<% } %>
                 )
             )
             .body(result)
         <%_ } else { _%>
-<%- include('../../common/save_reactive_template', {asEntity, asDto, viaService: viaService, returnDirectly: false}); -%>
+<%- include('../../common/save_template_reactive', {asEntity, asDto, viaService: viaService, returnDirectly: false}); -%>
                         .switchIfEmpty(Mono.error(ResponseStatusException(HttpStatus.NOT_FOUND)))
                         .map { result -> ResponseEntity.ok()
-                            .headers(HeaderUtil.createEntityUpdateAlert(applicationName, <%= enableTranslation %>, ENTITY_NAME, result.id<% if (primaryKeyType !== 'String') { %>.toString()<% } %>))
+                            .headers(HeaderUtil.createEntityUpdateAlert(applicationName, <%= enableTranslation %>, ENTITY_NAME, result.<%= primaryKey.name %><% if (primaryKey.type !== 'String') { %>.toString()<% } %>))
                             .body(result)
                         }
                 <%_ } _%>
@@ -265,7 +265,7 @@ _%><%- include('../../common/inject_template', {viaService: viaService, construc
 @Exception(URISyntaxException::class)
 fun partialUpdate<%= entityClass %>: <% if (reactive) { %>Mono<<% } %>ResponseEntity<<%= instanceType %>><% if (reactive) { %>><% } %> (<% if (validation) { %>@NotNull <% } %>@RequestBody <%= instanceName %>:<%= instanceType %>) {
    log.debug("REST request to update <%= entityClass %> partially : {}", <%= instanceName %>)
-   if (<%= instanceName %>.id == null) {
+   if (<%= instanceName %>.<%= primaryKey.name %> == null) {
        throw BadRequestAlertException("Invalid id", ENTITY_NAME, "idnull")
    }
    <%_ if (saveUserSnapshot) { _%>
@@ -286,13 +286,13 @@ fun partialUpdate<%= entityClass %>: <% if (reactive) { %>Mono<<% } %>ResponseEn
        <%_ if (!reactive) { _%>
    return ResponseUtil.wrapOrNotFound(
        result,
-       HeaderUtil.createEntityUpdateAlert(applicationName, <%= enableTranslation %>, ENTITY_NAME, <%= instanceName %>.getId()<% if (primaryKeyType !== 'String') { %>.toString()<% } %>)
+       HeaderUtil.createEntityUpdateAlert(applicationName, <%= enableTranslation %>, ENTITY_NAME, <%= instanceName %>.getId()<% if (primaryKey.type !== 'String') { %>.toString()<% } %>)
    )
        <%_ } else { _%>
    return result
        .switchIfEmpty(Mono.error(new ResponseStatusException(HttpStatus.NOT_FOUND)))
        .map(res -> ResponseEntity.ok()
-       .headers(HeaderUtil.createEntityUpdateAlert(applicationName, <%= enableTranslation %>, ENTITY_NAME, res.getId()<% if (primaryKeyType !== 'String') { %>.toString()<% } %>))
+       .headers(HeaderUtil.createEntityUpdateAlert(applicationName, <%= enableTranslation %>, ENTITY_NAME, res.getId()<% if (primaryKey.type !== 'String') { %>.toString()<% } %>))
        .body(res)
    )
        <%_ } _%>
@@ -317,7 +317,7 @@ fun partialUpdate<%= entityClass %>: <% if (reactive) { %>Mono<<% } %>ResponseEn
     @Transactional(readOnly = true)<%_ } _%>
     <%- include('../../common/get_all_template', {asEntity, asDto, viaService}); -%>
 
-    <%_ if (reactiveRepositories && pagination === 'no') { _%>
+    <%_ if (reactive && pagination === 'no') { _%>
     /**
      * `GET  /<%= entityApiUrl %>` : get all the <%= entityInstancePlural %> as a stream.
      * @return the [Flux] of <%= entityInstancePlural %>.
@@ -346,7 +346,7 @@ fun partialUpdate<%= entityClass %>: <% if (reactive) { %>Mono<<% } %>ResponseEn
     <%_ if (databaseType === 'sql' && isUsingMapsId === true && !viaService) { _%>
     @Transactional(readOnly = true)
     <%_ } _%>
-    fun get<%= entityClass %>(@PathVariable id: <%= primaryKeyType %>): <% if (reactive) { %>Mono<<% } %>ResponseEntity<<%= instanceType %>><% if (reactive) { %>><% } %> {
+    fun get<%= entityClass %>(@PathVariable id: <%= primaryKey.type %>): <% if (reactive) { %>Mono<<% } %>ResponseEntity<<%= instanceType %>><% if (reactive) { %>><% } %> {
         log.debug("REST request to get <%= entityClass %> : $id")<%- include('../../common/get_template', {asEntity, asDto, viaService, returnDirectly:false}); -%>
         return ResponseUtil.wrapOrNotFound(<%= instanceName %>)
     }
@@ -361,21 +361,21 @@ fun partialUpdate<%= entityClass %>: <% if (reactive) { %>Mono<<% } %>ResponseEn
     <%_ if (reactive) { _%>
     @ResponseStatus(code = HttpStatus.NO_CONTENT)
     <%_ } _%>
-    fun delete<%= entityClass %>(@PathVariable id: <%= primaryKeyType %>): <% if (reactive) { %>Mono<<% } %>ResponseEntity<Void><% if (reactive) { %>><% } %> {
+    fun delete<%= entityClass %>(@PathVariable id: <%= primaryKey.type %>): <% if (reactive) { %>Mono<<% } %>ResponseEntity<Void><% if (reactive) { %>><% } %> {
         log.debug("REST request to delete <%= entityClass %> : $id")
 <%- include('../../common/delete_template', {viaService: viaService, fromResource: true}); -%>
         <%_ if (!reactive) { _%>
             return ResponseEntity.noContent()
-                .headers(HeaderUtil.createEntityDeletionAlert(applicationName, <%= enableTranslation %>, ENTITY_NAME, id<% if (primaryKeyType !== 'String') { %>.toString()<% } %>)).build()
+                .headers(HeaderUtil.createEntityDeletionAlert(applicationName, <%= enableTranslation %>, ENTITY_NAME, id<% if (primaryKey.type !== 'String') { %>.toString()<% } %>)).build()
         <%_ } else { _%>
             <%_ if (databaseType === 'couchbase') { _%>
                 .then(Mono.just(ResponseEntity.noContent()
-                    .headers(HeaderUtil.createEntityDeletionAlert(applicationName, <%= enableTranslation %>, ENTITY_NAME, id<% if (primaryKeyType !== 'String') { %>.toString()<% } %>)).build<Void>())
+                    .headers(HeaderUtil.createEntityDeletionAlert(applicationName, <%= enableTranslation %>, ENTITY_NAME, id<% if (primaryKey.type !== 'String') { %>.toString()<% } %>)).build<Void>())
                 )
             <%_ } else { _%>
                 .map {
                     ResponseEntity.noContent()
-                        .headers(HeaderUtil.createEntityDeletionAlert(applicationName, <%= enableTranslation %>, ENTITY_NAME, id<% if (primaryKeyType !== 'String') { %>.toString()<% } %>)).build<Void>()
+                        .headers(HeaderUtil.createEntityDeletionAlert(applicationName, <%= enableTranslation %>, ENTITY_NAME, id<% if (primaryKey.type !== 'String') { %>.toString()<% } %>)).build<Void>()
                 }
             <%_ } _%>
         <%_ } _%>

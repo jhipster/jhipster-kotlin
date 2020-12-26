@@ -36,7 +36,7 @@ import org.springframework.data.domain.Page
     <%_ } _%>
 import org.springframework.data.domain.Pageable
 <%_ } _%>
-<%_ if (reactiveRepositories) { _%>
+<%_ if (reactive) { _%>
 import reactor.core.publisher.Flux
 import reactor.core.publisher.Mono
 <%_ } _%>
@@ -44,7 +44,7 @@ import reactor.core.publisher.Mono
 <%_ if (!reactive) { _%>
 import java.util.Optional
 <%_ } _%>
-<%_ if (databaseType === 'cassandra') { _%>
+<%_ if (primaryKey.type === 'UUID') { _%>
 import java.util.UUID
 <%_ } _%>
 
@@ -67,7 +67,7 @@ interface <%= entityClass %>Service {
      * @param <%= instanceName %> the entity to update partially.
      * @return the persisted entity.
      */
-    fun partialUpdate(<%= instanceName %>: <%= instanceType %>): <% if (reactive) { %>Mono<<% } %><%= instanceType %><% if (reactive) { %>><% } %>
+    fun partialUpdate(<%= instanceName %>: <%= instanceType %>): <% if (!reactive) { %>Optional<<% } %><% if (reactive) { %>Mono<<% } %><%= instanceType %>>
 
     /**
      * Get all the <%= entityInstancePlural %>.
@@ -115,7 +115,7 @@ interface <%= entityClass %>Service {
      * @param id the id of the entity.
      * @return the entity.
      */
-    fun findOne(id: <%= primaryKeyType %>): <%= optionalOrMono %><<%= instanceType %>>
+    fun findOne(id: <%= primaryKey.type %>): <%= optionalOrMono %><<%= instanceType %>>
 
     /**
      * Delete the "id" <%= entityInstance %>.
@@ -125,7 +125,7 @@ interface <%= entityClass %>Service {
      * @return a Mono to signal the deletion
 <%_ } _%>     
      */
-    fun delete(id: <%= primaryKeyType %>)<% if (reactive) { %>: Mono<Void> <% } %>
+    fun delete(id: <%= primaryKey.type %>)<% if (reactive) { %>: Mono<Void> <% } %>
     
     
     <% if (searchEngine === 'elasticsearch') { %>

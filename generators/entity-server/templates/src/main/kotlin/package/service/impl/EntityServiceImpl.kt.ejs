@@ -58,14 +58,14 @@ import org.springframework.stereotype.Service
 <%_ if (databaseType === 'sql') { _%>
 import org.springframework.transaction.annotation.Transactional
 <%_ } _%>
-<%_ if (reactiveRepositories) { _%>
+<%_ if (reactive) { _%>
 import reactor.core.publisher.Flux
 import reactor.core.publisher.Mono
 <%_ } _%>
 <%_ if (!reactive) { _%>
 import java.util.Optional
 <%_ } _%>
-<%_ if (databaseType === 'cassandra') { _%>
+<%_ if (primaryKey.type === 'UUID') { _%>
 import java.util.UUID
 <%_ } _%>
 <%_ if (fieldsContainNoOwnerOneToOne === true || (pagination === 'no' && ((searchEngine !== false) || dto === 'mapstruct'))) { _%>
@@ -103,7 +103,7 @@ class <%= serviceClassName %>(
         <%_ if (!reactive) { _%>
 <%- include('../../common/save_template', {asEntity, asDto, viaService: false, returnDirectly: true, isUsingMapsId: isUsingMapsId, mapsIdAssoc: mapsIdAssoc, isController: false}); -%>
         <%_ } else { _%>
-<%- include('../../common/save_reactive_template', {asEntity, asDto, viaService: false, returnDirectly: true}); -%>
+<%- include('../../common/save_template_reactive', {asEntity, asDto, viaService: false, returnDirectly: true}); -%>
         <%_ } _%>
     }
 
@@ -118,7 +118,7 @@ class <%= serviceClassName %>(
         <%_ if (service === 'serviceImpl') { _%>
         @Override
         <%_ } _%>
-        fun partialUpdate(<%= instanceName %>: <%= instanceType %>): <% if (reactive) { %>Mono<<% } %><%= instanceType %><% if (reactive) { %>><% } %> {
+        fun partialUpdate(<%= instanceName %>: <%= instanceType %>): <% if (!reactive) { %>Optional<<% } %><% if (reactive) { %>Mono<<% } %><%= instanceType %>> {
             log.debug("Request to partially update <%= entityClass %> : {}", <%= instanceName %>)
     <%- include('../../common/patch_template', {asEntity, asDto, isService: true, viaService: false}); -%>
         }
@@ -190,7 +190,7 @@ class <%= serviceClassName %>(
     <%_ if (databaseType === 'sql') { _%>
     @Transactional(readOnly = true)
     <%_ } _%>
-    <% if (service === 'serviceImpl') { %>override <% } %>fun findOne(id: <%= primaryKeyType %>): <%= optionalOrMono %><<%= instanceType %>> {
+    <% if (service === 'serviceImpl') { %>override <% } %>fun findOne(id: <%= primaryKey.type %>): <%= optionalOrMono %><<%= instanceType %>> {
         log.debug("Request to get <%= entityClass %> : $id")<%- include('../../common/get_template', {asEntity, asDto, viaService: false, returnDirectly:true}); -%>
     }
 
@@ -204,7 +204,7 @@ class <%= serviceClassName %>(
         <%_ } _%>
      */
      <%_ } _%>
-    <% if (service === 'serviceImpl') { %>override <% } %>fun delete(id: <%= primaryKeyType %>): <%- reactive ? 'Mono<Void>' : 'Unit' %> {
+    <% if (service === 'serviceImpl') { %>override <% } %>fun delete(id: <%= primaryKey.type %>): <%- reactive ? 'Mono<Void>' : 'Unit' %> {
         log.debug("Request to delete <%= entityClass %> : $id")
 <%- include('../../common/delete_template', {viaService: false, fromResource: false}); -%>
     }

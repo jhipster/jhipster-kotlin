@@ -17,8 +17,8 @@
  limitations under the License.
 -%>
 // Initialize the database
-<%_ if (databaseType === 'cassandra') { _%>
-    <%= asEntity(entityInstance) %>.id =UUID.randomUUID()
+<%_ if (primaryKey.type === 'UUID' && databaseType !== 'sql') { _%>
+    <%= asEntity(entityInstance) %>.<%= primaryKey.name %> =UUID.randomUUID()
 <%_ } _%>
 <%= entityInstance %>Repository.<%= saveMethod %>(<%= asEntity(entityInstance) %>)<%= callBlock %>
 
@@ -26,7 +26,7 @@ val databaseSizeBeforeUpdate = <%= entityInstance %>Repository.findAll()<%= call
 
 // Update the <%= entityInstance %> using partial update
 var partialUpdated<%= asEntity(entityClass) %> = <%= asEntity(entityClass) %>()
-partialUpdated<%= asEntity(entityClass) %>.id = <%= asEntity(entityInstance) %>.id
+partialUpdated<%= asEntity(entityClass) %>.<%= primaryKey.name %> = <%= asEntity(entityInstance) %>.id
 <%_ fieldsToUpdate = fields.filter(field => field.includeField) %>
 <%_ if (fluentMethods && fieldsToUpdate.length > 0) { _%>
     partialUpdated<%= asEntity(entityClass) %><% for (field of fieldsToUpdate) { %>

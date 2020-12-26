@@ -134,11 +134,12 @@ class <%= serviceClassName %>(
     protected fun createSpecification(criteria: <%= criteria %>?): Specification<<%= asEntity(entityClass) %>?> {
         var specification: Specification<<%= asEntity(entityClass) %>?> = Specification.where(null)
         if (criteria != null) {
-            if (criteria.id != null) {
-                specification = specification.and(<%= getSpecificationBuilder(primaryKeyType) %>(criteria.id, <%= asEntity(entityClass) %>_.id))
+            if (criteria.<%= primaryKey.name %> != null) {
+                specification = specification.and(<%= getSpecificationBuilder(primaryKeyType) %>(criteria.id, <%= asEntity(entityClass) %>_.<%= primaryKey.name %>))
             }
             <%_
             fields.forEach((field) => {
+                if (field.id) return;
                 if (isFilterableType(field.fieldType)) { _%>
             if (criteria.<%= field.fieldName %> != null) {
                 specification = specification.and(<%= getSpecificationBuilder(field.fieldType) %>(criteria.<%= field.fieldName %>, <%= asEntity(entityClass) %>_.<%= field.fieldName %>))

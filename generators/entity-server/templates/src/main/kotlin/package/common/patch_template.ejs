@@ -26,14 +26,15 @@ const mapper = entityInstance  + 'Mapper';
 _%>
 <%_ if(viaService) { %>
    <%_ if(!reactive) { %>
-   val result = Optional.ofNullable(<%= entityInstance %>Service.partialUpdate(<%= instanceName %>))
+   val result = <%= entityInstance %>Service.partialUpdate(<%= instanceName %>)
    <%_ } else { %>
    val result = <%= entityInstance %>Service.partialUpdate(<%= instanceName %>)
    <%_ } %>
 <%_ } else { %>
 <%- returnPrefix %> <%= entityInstance %>Repository.findById(<%= instanceName %>.id)
    .map { 
-    <%_ for (field of fields) { _%>
+    <%_ for (field of fields) { 
+       if (field.id) continue; _%>
    if (<%= instanceName %>.<%= field.fieldName %>!= null) {
       it.<%= fieldName %> = <%= instanceName %>.<%= field.fieldName %>);
    }
@@ -55,6 +56,5 @@ _%>
         Mono.just(it)
         <%_ } %>
    }<% } %><% if (dto !== 'no') { %>
-   .map(<%= mapper %>::toDto)<% } %><% if (isService && !reactive) { %>
-   .get()<% } %>
+   .map(<%= mapper %>::toDto)<% } %>
 <%_ } %>

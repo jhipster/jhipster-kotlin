@@ -103,7 +103,7 @@ const serverFiles = {
             path: SERVER_MAIN_SRC_KOTLIN_DIR,
             templates: [
                 {
-                    file: 'package/repository/EntityReactiveRepository.kt',
+                    file: 'package/repository/EntityRepository_reactive.kt',
                     renameTo: generator => `${generator.packageFolder}/repository/${generator.entityClass}ReactiveRepository.kt`,
                     useBluePrint: true,
                 },
@@ -114,7 +114,7 @@ const serverFiles = {
             path: SERVER_MAIN_SRC_KOTLIN_DIR,
             templates: [
                 {
-                    file: 'package/repository/EntityReactiveRepositoryInternalImpl.kt',
+                    file: 'package/repository/EntityRepositoryInternalImpl_reactive.kt',
                     renameTo: generator => `${generator.packageFolder}/repository/${generator.entityClass}RepositoryInternalImpl.kt`,
                     useBluePrint: true,
                 },

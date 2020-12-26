@@ -22,12 +22,15 @@ import org.junit.jupiter.api.Test
 import org.assertj.core.api.Assertions.assertThat
 import <%= packageName %>.web.rest.equalsVerifier
 <%_
-let id1 = getPrimaryKeyValue(primaryKeyType, databaseType, '1');
-let id2 = getPrimaryKeyValue(primaryKeyType, databaseType, '2');
-_%>
-<%_ if (id1.includes('UUID')) { _%>
-import java.util.UUID;
-<%_ } _%>
+let id1;
+let id2;
+if (!embedded) { 
+    id1 = getPrimaryKeyValue(primaryKey.type, databaseType, '1');
+    id2 = getPrimaryKeyValue(primaryKey.type, databaseType, '2');
+    if (id1.includes('UUID')) { _%>
+import java.util.UUID
+    <%_ }
+} _%>
 
 class <%= asDto(entityClass) %>Test {
 
@@ -36,14 +39,14 @@ class <%= asDto(entityClass) %>Test {
         equalsVerifier(<%= asDto(entityClass) %>::class)
         <%_if (!embedded) { _%>
         val <%= asDto(entityInstance) %>1 = <%= asDto(entityClass) %>()
-        <%= asDto(entityInstance) %>1.id = <%- id1 %>
+        <%= asDto(entityInstance) %>1.<%= primaryKey.name %> = <%- id1 %>
         val <%= asDto(entityInstance) %>2 = <%= asDto(entityClass) %>()
         assertThat(<%= asDto(entityInstance) %>1).isNotEqualTo(<%= asDto(entityInstance) %>2)
-        <%= asDto(entityInstance) %>2.id = <%= asDto(entityInstance) %>1.id
+        <%= asDto(entityInstance) %>2.<%= primaryKey.name %> = <%= asDto(entityInstance) %>1.id
         assertThat(<%= asDto(entityInstance) %>1).isEqualTo(<%= asDto(entityInstance) %>2)
-        <%= asDto(entityInstance) %>2.id = <%- id2 %>
+        <%= asDto(entityInstance) %>2.<%= primaryKey.name %> = <%- id2 %>
         assertThat(<%= asDto(entityInstance) %>1).isNotEqualTo(<%= asDto(entityInstance) %>2)
-        <%= asDto(entityInstance) %>1.id = null
+        <%= asDto(entityInstance) %>1.<%= primaryKey.name %> = null
         assertThat(<%= asDto(entityInstance) %>1).isNotEqualTo(<%= asDto(entityInstance) %>2)
         <%_ } _%>
     }

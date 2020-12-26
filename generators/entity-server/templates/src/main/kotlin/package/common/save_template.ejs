@@ -43,7 +43,7 @@ if (!viaService) {
         resultEntity = asEntity(entityInstance) %>
         var <%= asEntity(entityInstance) %> = <%= dtoToEntity %>(<%= instanceName %>)
         <%_ if (isUsingMapsId === true) { _%>
-        val <%= otherEntityName %>Id = <%= instanceName %>.<%= mapsIdAssoc.relationshipName %>.id
+        val <%= otherEntityName %>Id = <%= instanceName %>.<%= mapsIdAssoc.relationshipName %>.<%= primaryKey.name %>
         if (<%= otherEntityName %>Id != null) {
             <%= mapsIdRepoInstance %>.findById(<%= otherEntityName %>Id)
                 .ifPresent { <%= asEntity(entityInstance) %>.<%= otherEntityName %> = it }
@@ -53,7 +53,7 @@ if (!viaService) {
         <%= returnPrefix %> <%= entityToDto %>(<%= asEntity(entityInstance) %>)
     <%_ } else { resultEntity = 'result'; _%>
         <%_ if (isUsingMapsId === true) { _%>
-        val <%= otherEntityName %>Id = <%= instanceName %>.<%= mapsIdAssoc.relationshipName %>?.id
+        val <%= otherEntityName %>Id = <%= instanceName %>.<%= mapsIdAssoc.relationshipName %>?.<%= primaryKey.name %>
         if (<%= otherEntityName %>Id != null) {
             <%= mapsIdRepoInstance %>.findById(<%= otherEntityName %>Id)
                 .ifPresent { <%= asEntity(entityInstance) %>.<%= otherEntityName %> = it }
@@ -69,7 +69,7 @@ if (!viaService) {
         }
     } else { _%>
         <%_ if (isUsingMapsId === true && isController === false) { _%>
-        val <%= otherEntityName %>Id = <%= entityInstance %>.<%= mapsIdAssoc.relationshipName %>?.id
+        val <%= otherEntityName %>Id = <%= entityInstance %>.<%= mapsIdAssoc.relationshipName %>?.<%= primaryKey.name %>
         if (<%= otherEntityName %>Id != null) {
             <%= mapsIdRepoInstance %>.findById(<%= otherEntityName %>Id)
                 .ifPresent { <%= asEntity(entityInstance) %>.<%= otherEntityName %> = it }
