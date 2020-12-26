@@ -250,7 +250,9 @@ class CacheConfiguration(<%_ if (cacheProvider !== 'no') { _%>
 
     private fun createCache(cm: javax.cache.CacheManager, cacheName: String) {
         val cache: javax.cache.Cache<Any, Any>? = cm.getCache(cacheName)
-        if (cache == null) {
+        if (cache != null) {
+            cache.clear()
+        } else {
             cm.createCache(cacheName, jcacheConfiguration)
         }
     }
@@ -294,7 +296,6 @@ class CacheConfiguration(<%_ if (cacheProvider !== 'no') { _%>
             if (env.acceptsProfiles(Profiles.of(JHipsterConstants.SPRING_PROFILE_DEVELOPMENT))) {
                 log.debug("Application is running with the \"dev\" profile, Hazelcast cluster will only work with localhost instances")
 
-                System.setProperty("hazelcast.local.localAddress", "127.0.0.1")
                 config.networkConfig.port = serverProperties.port!! + 5701
                 config.networkConfig.join.tcpIpConfig.isEnabled = true
                 for (instance in discoveryClient.getInstances(serviceId)) {
@@ -328,19 +329,11 @@ class CacheConfiguration(<%_ if (cacheProvider !== 'no') { _%>
         config.mapConfigs["default"] = initializeDefaultMapConfig(jHipsterProperties)
 
         // Full reference is available at: https://docs.hazelcast.org/docs/management-center/3.9/manual/html/Deploying_and_Starting.html
-        config.managementCenterConfig = initializeDefaultManagementCenterConfig(jHipsterProperties)
+        config.managementCenterConfig = ManagementCenterConfig()
         <%_ if (enableHibernateCache) { _%>
         config.mapConfigs["<%= packageName %>.domain.*"] = initializeDomainMapConfig(jHipsterProperties)
         <%_ } _%>
         return Hazelcast.newHazelcastInstance(config)
-    }
-
-    private fun initializeDefaultManagementCenterConfig(jHipsterProperties: JHipsterProperties): ManagementCenterConfig {
-        return ManagementCenterConfig().apply {
-            isEnabled = jHipsterProperties.cache.hazelcast.managementCenter.isEnabled
-            url = jHipsterProperties.cache.hazelcast.managementCenter.url
-            updateInterval = jHipsterProperties.cache.hazelcast.managementCenter.updateInterval
-        }
     }
 
     private fun initializeDefaultMapConfig(jHipsterProperties: JHipsterProperties): MapConfig {
@@ -360,7 +353,7 @@ class CacheConfiguration(<%_ if (cacheProvider !== 'no') { _%>
         LFU (Least Frequently Used).
         NONE is the default.
         */
-        mapConfig.evictionPolicy = EvictionPolicy.LRU
+        mapConfig.evictionConfig.evictionPolicy = EvictionPolicy.LRU
 
         /*
         Maximum size of the map. When max size is reached,
@@ -368,7 +361,7 @@ class CacheConfiguration(<%_ if (cacheProvider !== 'no') { _%>
         Any integer between 0 and Integer.MAX_VALUE. 0 means
         Integer.MAX_VALUE. Default is 0.
         */
-        mapConfig.maxSizeConfig = MaxSizeConfig(0, MaxSizeConfig.MaxSizePolicy.USED_HEAP_SIZE)
+        mapConfig.evictionConfig.maxSizePolicy = MaxSizePolicy.USED_HEAP_SIZE
 
         return mapConfig
     }
@@ -739,8 +732,8 @@ class CacheConfiguration(<%_ if (cacheProvider !== 'no') { _%>
     fun cacheManagerCustomizer(jcacheConfiguration: javax.cache.configuration.Configuration<Any, Any> ): JCacheManagerCustomizer {
         return JCacheManagerCustomizer {
             <%_ if (!skipUserManagement || (authenticationType === 'oauth2' && databaseType !== 'no')) { _%>
-            createCache(it, <%= packageName %>.repository<% if (reactive) { %>.reactive<% } %>.UserRepository.USERS_BY_LOGIN_CACHE, jcacheConfiguration)
-            createCache(it, <%= packageName %>.repository<% if (reactive) { %>.reactive<% } %>.UserRepository.USERS_BY_EMAIL_CACHE, jcacheConfiguration)
+            createCache(it, <%= packageName %>.repository.UserRepository.USERS_BY_LOGIN_CACHE, jcacheConfiguration)
+            createCache(it, <%= packageName %>.repository.UserRepository.USERS_BY_EMAIL_CACHE, jcacheConfiguration)
                 <%_ if (enableHibernateCache) { _%>
             createCache(it, <%= packageName %>.domain.<%= asEntity('User') %>::class.java.name, jcacheConfiguration)
             createCache(it, <%= packageName %>.domain.Authority::class.java.name, jcacheConfiguration)
@@ -757,7 +750,9 @@ class CacheConfiguration(<%_ if (cacheProvider !== 'no') { _%>
 
     private fun createCache(cm: javax.cache.CacheManager, cacheName: String, jcacheConfiguration: javax.cache.configuration.Configuration<Any, Any>): Unit {
         val cache = cm.getCache<Any, Any>(cacheName)
-        if (cache == null) {
+        if (cache != null) {
+            cache.clear()
+        } else {
             cm.createCache(cacheName, jcacheConfiguration)
         }
     }

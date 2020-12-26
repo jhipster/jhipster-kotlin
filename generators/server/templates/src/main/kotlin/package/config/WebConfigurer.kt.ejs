@@ -65,6 +65,7 @@ import org.springframework.http.MediaType
 import org.springframework.security.web.server.util.matcher.ServerWebExchangeMatcher
 import org.springframework.security.web.server.util.matcher.ServerWebExchangeMatchers
 <%_ } _%>
+import org.springframework.util.CollectionUtils
 <%_ if (!reactive) { _%>
 import org.springframework.web.cors.UrlBasedCorsConfigurationSource
 import org.springframework.web.filter.CorsFilter
@@ -72,9 +73,6 @@ import org.springframework.web.filter.CorsFilter
 <%_ if (reactive) { _%>
 import org.springframework.web.cors.reactive.CorsWebFilter
 import org.springframework.web.cors.reactive.UrlBasedCorsConfigurationSource
-    <%_ if (!skipClient && ['monolith','gateway'].includes(applicationType)) { _%>
-import org.springframework.web.reactive.config.ResourceHandlerRegistry
-    <%_ } _%>
 import org.springframework.web.reactive.config.WebFluxConfigurer
     <%_ if (!skipClient) { _%>
 import org.springframework.web.reactive.function.server.HandlerFunction
@@ -147,20 +145,8 @@ class WebConfigurer(
      * Customize the Servlet engine: Mime types, the document root, the cache.
      */
     override fun customize(server: WebServerFactory) {
-        setMimeMappings(server)
         // When running in an IDE or with <% if (buildTool === 'gradle') { %>./gradlew bootRun<% } else { %>./mvnw spring-boot:run<% } %>, set location of the static web assets.
         setLocationForStaticAssets(server)
-    }
-
-    private fun setMimeMappings(server: WebServerFactory) {
-        if (server is ConfigurableServletWebServerFactory) {
-            val mappings = MimeMappings(MimeMappings.DEFAULT)
-            // IE issue, see https://github.com/jhipster/generator-jhipster/pull/711
-            mappings.add("html", "${MediaType.TEXT_HTML_VALUE};charset=${StandardCharsets.UTF_8.name().toLowerCase()}")
-            // CloudFoundry issue, see https://github.com/cloudfoundry/gorouter/issues/64
-            mappings.add("json", "${MediaType.TEXT_HTML_VALUE};charset=${StandardCharsets.UTF_8.name().toLowerCase()}")
-            server.setMimeMappings(mappings)
-        }
     }
 
     private fun setLocationForStaticAssets(server: WebServerFactory) {
@@ -200,12 +186,14 @@ class WebConfigurer(
     fun corsFilter(): Cors<% if (reactive) { %>Web<% } %>Filter {
         val source = UrlBasedCorsConfigurationSource()
         val config = jHipsterProperties.cors
-        if (config.allowedOrigins != null && config.allowedOrigins!!.isNotEmpty()) {
+        if (!CollectionUtils.isEmpty(config.allowedOrigins)) {
             log.debug("Registering CORS filter")
             source.apply {
                 registerCorsConfiguration("/api/**", config)
                 registerCorsConfiguration("/management/**", config)
                 registerCorsConfiguration("/v2/api-docs", config)
+                registerCorsConfiguration("/v3/api-docs", config)
+                registerCorsConfiguration("/swagger-resources", config)
                 <%_ if (applicationType === 'gateway' && authenticationType === 'uaa') { _%>
                 registerCorsConfiguration("/auth/**", config)
                 <%_ } _%>
@@ -250,16 +238,6 @@ class WebConfigurer(
         // Use a cache filter that only match selected paths
         return CachingHttpHeadersFilter(TimeUnit.DAYS.toMillis(jHipsterProperties.http.cache.timeToLiveInDays.toLong()))
     }
-        <%_ if (applicationType === 'monolith' || applicationType === 'gateway') { _%>
-
-    override fun addResourceHandlers(registry: ResourceHandlerRegistry) {
-        registry.addResourceHandler("/swagger-ui.html**")
-            .addResourceLocations("classpath:/META-INF/resources/")
-
-        registry.addResourceHandler("/webjars/**")
-            .addResourceLocations("classpath:/META-INF/resources/webjars/")
-    }
-               <%_ } _%>
         <%_ } _%>
     <%_ } _%>
     <%_ if (['h2Disk', 'h2Memory'].includes(devDatabaseType) && !reactive) { _%>

@@ -33,18 +33,18 @@ import springfox.documentation.swagger.web.SwaggerResourcesProvider
  */
 @Component
 @Primary
-@Profile(JHipsterConstants.SPRING_PROFILE_SWAGGER)
+@Profile(JHipsterConstants.SPRING_PROFILE_API_DOCS)
 class GatewaySwaggerResourcesProvider(private val routeLocator: RouteLocator) : SwaggerResourcesProvider {
 
     override fun get(): MutableList<SwaggerResource> {
         val resources = mutableListOf(
             // Add the default swagger resource that correspond to the gateway's own swagger doc
-            swaggerResource("default", "/v2/api-docs")
+            swaggerResource("default", "/v3/api-docs")
         )
 
-        // Add the registered microservices swagger docs as additional swagger resources
+        // Add the registered microservices OpenAPI docs as additional swagger resources
         routeLocator.routes.forEach {
-            resources.add(swaggerResource(it.id, it.fullPath.replace("**", "v2/api-docs")))
+            resources.add(swaggerResource(it.id, it.fullPath.replace("**", "v3/api-docs")))
         }
 
         return resources
@@ -54,6 +54,6 @@ class GatewaySwaggerResourcesProvider(private val routeLocator: RouteLocator) : 
         SwaggerResource().apply {
             this.name = name
             this.location = location
-            swaggerVersion = "2.0"
+            swaggerVersion = "3.0"
         }
 }

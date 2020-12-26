@@ -18,18 +18,9 @@ limitations under the License.
 -%>
 package <%= packageName %>.config
 
-<%_
-  let springFox3 = false
-  if (reactive && (applicationType === 'gateway' || applicationType === 'monolith')) {
-    springFox3 = true
-  }
-_%>
-<%_ if (!springFox3) { _%>
-import com.google.common.base.Predicates
-<%_ } _%>
 import tech.jhipster.config.JHipsterConstants
 import tech.jhipster.config.JHipsterProperties
-import tech.jhipster.config.apidoc.customizer.SwaggerCustomizer
+import tech.jhipster.config.apidoc.customizer.SpringfoxCustomizer
 import org.springframework.context.annotation.Bean
 import org.springframework.context.annotation.Configuration
 import org.springframework.context.annotation.Profile
@@ -49,21 +40,17 @@ import java.util.HashSet
 import springfox.documentation.builders.PathSelectors.regex
 
 @Configuration
-@Profile(JHipsterConstants.SPRING_PROFILE_SWAGGER)
+@Profile(JHipsterConstants.SPRING_PROFILE_API_DOCS)
 class OpenApiConfiguration {
 
     @Bean
-    fun noApiFirstCustomizer() = SwaggerCustomizer { docket -> docket.select()
-<%_ if (springFox3) { _%>
+    fun noApiFirstCustomizer() = SpringfoxCustomizer { docket -> docket.select()
             .apis(RequestHandlerSelectors.basePackage("<%= packageName %>.web.api").negate())
-<%_ } else { _%>
-            .apis(Predicates.not(RequestHandlerSelectors.basePackage("<%= packageName %>.web.api")))
-<%_ } _%>
     }
 
     @Bean
     fun apiFirstDocket(jHipsterProperties: JHipsterProperties): Docket {
-        val properties = jHipsterProperties.swagger
+        val properties = jHipsterProperties.apiDocs
         val contact = Contact(
             properties.contactName,
             properties.contactUrl,
@@ -81,7 +68,7 @@ class OpenApiConfiguration {
             mutableListOf()
         )
 
-        return Docket(DocumentationType.SWAGGER_2)
+        return Docket(DocumentationType.OAS_30)
             .groupName("openapi")
             .host(properties.host)
             .protocols(properties.protocols.toSet())
