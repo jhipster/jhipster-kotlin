@@ -18,29 +18,15 @@
 -%>
 package <%= packageName %>.config
 
-import com.fasterxml.jackson.core.type.TypeReference
-import com.fasterxml.jackson.databind.DeserializationFeature
-import com.fasterxml.jackson.databind.ObjectMapper
-import com.fasterxml.jackson.databind.SerializationFeature
-<%_ if (!reactive) { _%>
-import com.github.vanroy.springdata.jest.JestElasticsearchTemplate
-import com.github.vanroy.springdata.jest.mapper.DefaultJestResultsMapper
-import io.searchbox.client.JestClient
-<%_ } _%>
-import org.springframework.boot.autoconfigure.data.elasticsearch.ElasticsearchProperties
-import org.springframework.boot.context.properties.EnableConfigurationProperties
 import org.springframework.context.annotation.Bean
 import org.springframework.context.annotation.Configuration
-<%_ if (!reactive) { _%>
-import org.springframework.context.annotation.Primary
-import org.springframework.data.elasticsearch.core.ElasticsearchOperations
-import org.springframework.data.elasticsearch.core.convert.ElasticsearchConverter
-<%_ } _%>
-import org.springframework.data.elasticsearch.core.EntityMapper
-<%_ if (databaseType === 'mongodb' || !reactive) { _%>
-import org.springframework.data.elasticsearch.core.mapping.SimpleElasticsearchMappingContext
-<%_ } _%>
+import org.springframework.core.convert.converter.Converter
+import org.springframework.data.convert.ReadingConverter
+import org.springframework.data.convert.WritingConverter
+import org.springframework.data.elasticsearch.config.ElasticsearchConfigurationSupport
+import org.springframework.data.elasticsearch.core.convert.ElasticsearchCustomConversions
 <%_ if (databaseType === 'mongodb') { _%>
+import org.springframework.data.elasticsearch.core.mapping.SimpleElasticsearchMappingContext
 import org.springframework.data.elasticsearch.core.mapping.ElasticsearchPersistentProperty
 import org.springframework.data.elasticsearch.core.mapping.SimpleElasticsearchPersistentProperty
 import org.springframework.data.mapping.PersistentEntity
@@ -48,69 +34,97 @@ import org.springframework.data.mapping.model.Property
 import org.springframework.data.mapping.model.SimpleTypeHolder
 import org.springframework.data.elasticsearch.core.mapping.SimpleElasticsearchPersistentEntity
 <%_ } _%>
-import org.springframework.data.mapping.MappingException
 
-import java.io.IOException
+import java.time.Instant
+import java.time.LocalDate
+import java.time.ZoneId
+import java.time.ZonedDateTime
 
 @Configuration
-@EnableConfigurationProperties(ElasticsearchProperties::class)
-class ElasticsearchConfiguration(private val mapper: ObjectMapper) {
+class ElasticsearchConfiguration: ElasticsearchConfigurationSupport() {
 
     @Bean
-    fun getEntityMapper() = CustomEntityMapper(mapper)
+    override fun elasticsearchCustomConversions() = ElasticsearchCustomConversions(
+        listOf (
+                ZonedDateTimeWritingConverter(),
+                ZonedDateTimeReadingConverter(),
+                InstantWritingConverter(),
+                InstantReadingConverter(),
+                LocalDateWritingConverter(),
+                LocalDateReadingConverter()
+            )
+    )
 
+
+    @WritingConverter
+    class ZonedDateTimeWritingConverter: Converter<ZonedDateTime, String> {
+        override fun convert(source: ZonedDateTime?): String? {
+            if (source == null) {
+                return null;
+            }
+            return source.toInstant().toString()
+        }
+    }
+
+    @ReadingConverter
+    class ZonedDateTimeReadingConverter: Converter<String, ZonedDateTime> {
+        override fun convert(source: String?): ZonedDateTime? {
+            if (source == null) {
+                return null
+            }
+            return Instant.parse(source).atZone(ZoneId.systemDefault())
+        }
+    }
+
+    @WritingConverter
+    class InstantWritingConverter: Converter<Instant, String> {
+        override fun convert(source: Instant?): String? {
+            if (source == null) {
+                return null
+            }
+            return source.toString()
+        }
+    }
+
+    @ReadingConverter
+    class InstantReadingConverter: Converter<String, Instant> {
+        override fun convert(source: String?): Instant? {
+            if (source == null) {
+                return null
+            }
+            return Instant.parse(source)
+        }
+    }
+
+    @WritingConverter
+    class LocalDateWritingConverter: Converter<LocalDate, String> {
+        override fun convert(source: LocalDate?): String? {
+            if (source == null) {
+                return null
+            }
+            return source.toString()
+        }
+    }
+
+    @ReadingConverter
+    static class LocalDateReadingConverter: Converter<String, LocalDate> {
+        override fun convert(source: String?): LocalDate? {
+            if (source == null) {
+                return null
+            }
+            return LocalDate.parse(source)
+        }
+    }
 <%_ if (databaseType === 'mongodb') { _%>
 
     @Bean
-    fun mappingContext() = CustomElasticsearchMappingContext()
-<%_ } _%>
-<%_ if (!reactive) { _%>
-    @Bean
-    @Primary
-    fun elasticsearchTemplate(
-        jestClient: JestClient,
-        elasticsearchConverter: ElasticsearchConverter,
-        mappingContext: SimpleElasticsearchMappingContext,
-        mapper: EntityMapper
-    ) = JestElasticsearchTemplate(
-        jestClient, 
-        elasticsearchConverter, 
-        DefaultJestResultsMapper(mappingContext, mapper)
-    )
-<%_ } _%>
-
-    inner class CustomEntityMapper(private val objectMapper: ObjectMapper) : EntityMapper {
-
-        init {
-            objectMapper.configure(DeserializationFeature.FAIL_ON_UNKNOWN_PROPERTIES, false)
-            objectMapper.configure(DeserializationFeature.ACCEPT_SINGLE_VALUE_AS_ARRAY, true)
-            objectMapper.configure(SerializationFeature.WRITE_DATE_TIMESTAMPS_AS_NANOSECONDS, true)
-            objectMapper.configure(SerializationFeature.INDENT_OUTPUT, false)
-            objectMapper.configure(DeserializationFeature.READ_DATE_TIMESTAMPS_AS_NANOSECONDS, true)
-        }
-
-        @Throws(IOException::class)
-        override fun mapToString(`object`: Any) = objectMapper.writeValueAsString(`object`)
-
-        @Throws(IOException::class)
-        override fun <T> mapToObject(source: String, clazz: Class<T>) = objectMapper.readValue(source, clazz)
-
-        override fun mapObject(source: Any): Map<String, Any> {
-            try {
-                return objectMapper.readValue(mapToString(source), object: TypeReference<HashMap<String, Any>>() {})
-            } catch (e: IOException) {
-                throw MappingException(e.message, e)
-            }
-        }
-
-        override fun <T> readObject(source: Map<String, Any>, targetType: Class<T>): T {
-            try {
-                return mapToObject(mapToString(source), targetType)
-            } catch (e: IOException) {
-                throw MappingException(e.message, e)
-            }
-        }
+    override fun elasticsearchMappingContext(): SimpleElasticsearchMappingContext {
+        val mappingContext = CustomElasticsearchMappingContext()
+        mappingContext.initialEntitySet = this.initialEntitySet
+        mappingContext.simpleTypeHolder = this.elasticsearchCustomConversions().simpleTypeHolder
+        return mappingContext
     }
+<%_ } _%>
 }
 <%_ if (databaseType === 'mongodb') { _%>
 

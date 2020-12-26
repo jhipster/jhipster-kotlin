@@ -24,7 +24,6 @@ import org.apache.commons.io.IOUtils
 import org.slf4j.LoggerFactory
 import org.springframework.cloud.netflix.zuul.filters.ZuulProperties
 import org.springframework.cloud.netflix.zuul.filters.post.SendResponseFilter
-import springfox.documentation.swagger2.web.Swagger2Controller
 
 import java.io.ByteArrayInputStream
 import java.io.ByteArrayOutputStream
@@ -36,7 +35,7 @@ import java.util.zip.GZIPInputStream
 import java.util.zip.GZIPOutputStream
 
 /**
- * Zuul filter to rewrite micro-services Swagger URL Base Path.
+ * Zuul filter to rewrite micro-services OpenAPI URL Base Path.
  */
 class SwaggerBasePathRewritingFilter : SendResponseFilter(ZuulProperties()) {
 
@@ -49,10 +48,10 @@ class SwaggerBasePathRewritingFilter : SendResponseFilter(ZuulProperties()) {
     override fun filterOrder() = 100
 
     /**
-     * Filter requests to micro-services Swagger docs.
+     * Filter requests to micro-services OpenAPI docs.
      */
-    override fun shouldFilter(): Boolean =
-        RequestContext.getCurrentContext().request.requestURI.endsWith(Swagger2Controller.DEFAULT_URL)
+    override fun shouldFilter() =
+        RequestContext.getCurrentContext().request.requestURI.endsWith("/v3/api-docs")
 
     override fun run(): Any? {
         val context = RequestContext.getCurrentContext()
@@ -64,7 +63,7 @@ class SwaggerBasePathRewritingFilter : SendResponseFilter(ZuulProperties()) {
             try {
                 context.responseDataStream = ByteArrayInputStream(gzipData(rewrittenResponse))
             } catch (e: IOException) {
-                log.error("Swagger-docs filter error $e")
+                log.error("OpenAPI-docs filter error $e")
             }
         } else {
             context.responseBody = rewrittenResponse
@@ -84,13 +83,13 @@ class SwaggerBasePathRewritingFilter : SendResponseFilter(ZuulProperties()) {
                 @Suppress("UNCHECKED_CAST")
                 val map = this.mapper.readValue(response, LinkedHashMap::class.java) as LinkedHashMap<String, Any>
 
-                val basePath = requestUri.replace(Swagger2Controller.DEFAULT_URL, "")
+                val basePath = requestUri.replace("/v3/api-docs", "")
                 map["basePath"] = basePath
-                log.debug("Swagger-docs: rewritten Base URL with correct micro-service route: $basePath")
+                log.debug("OpenAPI-docs: rewritten Base URL with correct micro-service route: $basePath")
                 return mapper.writeValueAsString(map)
             }
         } catch (e: IOException) {
-            log.error("Swagger-docs filter error $e")
+            log.error("OpenAPI-docs filter error $e")
         }
 
         return null
