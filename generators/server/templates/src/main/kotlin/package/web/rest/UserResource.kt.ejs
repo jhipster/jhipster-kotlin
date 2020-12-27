@@ -19,14 +19,11 @@
 package <%= packageName %>.web.rest
 
 import <%= packageName %>.config.LOGIN_REGEX
-<%_ if (authenticationType !== 'oauth2' || searchEngine === 'elasticsearch') { _%>
+<%_ if (authenticationType !== 'oauth2') { _%>
 import <%= packageName %>.domain.<%= asEntity('User') %>
 <%_ } _%>
 <%_ if (authenticationType !== 'oauth2') { _%>
 import <%= packageName %>.repository.UserRepository
-<%_ } _%>
-<%_ if (searchEngine === 'elasticsearch') { _%>
-import <%= packageName %>.repository.search.UserSearchRepository
 <%_ } _%>
 import <%= packageName %>.security.ADMIN
 <%_ if (authenticationType !== 'oauth2') { _%>
@@ -34,7 +31,7 @@ import <%= packageName %>.service.MailService
 import org.springframework.data.domain.Sort
 <%_ } _%>
 import <%= packageName %>.service.UserService
-import <%= packageName %>.service.dto.<%= asDto('User') %>
+import <%= packageName %>.service.dto.<%= asDto('AdminUser') %>
 <%_ if (authenticationType !== 'oauth2') { _%>
 import <%= packageName %>.web.rest.errors.BadRequestAlertException
 import <%= packageName %>.web.rest.errors.EmailAlreadyUsedException
@@ -85,6 +82,7 @@ import reactor.core.publisher.Flux
 import reactor.core.publisher.Mono
 <%_ } _%>
 
+import javax.validation.constraints.Pattern
 <%_ if (authenticationType !== 'oauth2') { _%>
 import javax.validation.Valid
 import java.net.URI
@@ -121,12 +119,11 @@ import org.elasticsearch.index.query.QueryBuilders.queryStringQuery
  * Another option would be to have a specific JPA entity graph to handle this case.
  */
 @RestController
-@RequestMapping("/api")
+@RequestMapping("/api/admin")
 class UserResource(
     private val userService: UserService<%_ if (authenticationType !== 'oauth2') { _%>,
     private val userRepository: UserRepository,
-    private val mailService: MailService<% } if (searchEngine === 'elasticsearch') { _%>,
-    private val userSearchRepository: UserSearchRepository<% } %>
+    private val mailService: MailService<% } %>
 ) {
 
     <%_ if (authenticationType !== 'oauth2') { _%>
@@ -143,7 +140,7 @@ class UserResource(
 
 <%_ if (authenticationType !== 'oauth2') { _%>
     /**
-     * `POST  /users`  : Creates a new user.
+     * `POST  /admin/users`  : Creates a new user.
      *
      * Creates a new user if the login and email are not already used, and sends an
      * mail with an activation link.
@@ -161,7 +158,7 @@ class UserResource(
     <%_ if (!reactive) { _%>
     @Throws(URISyntaxException::class)
     <%_ } _%>
-    fun createUser(@Valid @RequestBody userDTO: <%= asDto('User') %>): <% if (reactive) { %>Mono<ResponseEntity<<%= asEntity('User') %>>><% } else { %>ResponseEntity<<%= asEntity('User') %>><% } %> {
+    fun createUser(@Valid @RequestBody userDTO: <%= asDto('User') %>): <% if (reactive) { %>Mono<ResponseEntity<<%= asEntity('User') %>>><% } else { %>ResponseEntity<<%= asEntity('AdminUser') %>><% } %> {
         log.debug("REST request to save User : $userDTO")
 
         if (userDTO.id != null) {
@@ -175,7 +172,7 @@ class UserResource(
         } else {
             val newUser = userService.createUser(userDTO)
             mailService.sendCreationEmail(newUser)
-            return ResponseEntity.created(URI("/api/users/" + newUser.login))
+            return ResponseEntity.created(URI("/api/admin/users/" + newUser.login))
                 .headers(HeaderUtil.createAlert(applicationName, <% if (enableTranslation) {%>"userManagement.created"<% } else { %> "A user is created with identifier $newUser.login"<% } %>, newUser.login))
                 .body(newUser)
         }
@@ -199,7 +196,7 @@ class UserResource(
             .doOnSuccess(mailService::sendCreationEmail)
             .map { user ->
                 try {
-                    ResponseEntity.created(URI("/api/users/" + user.login))
+                    ResponseEntity.created(URI("/api/admin/users/" + user.login))
                         .headers(HeaderUtil.createAlert(applicationName, "userManagement.created", user.login))
                         .body(user)
                 } catch (e: URISyntaxException) {
@@ -210,7 +207,7 @@ class UserResource(
     }
 
     /**
-     * `PUT /users` : Updates an existing User.
+     * `PUT /admin/users` : Updates an existing User.
      *
      * @param userDTO the user to update.
      * @return the `ResponseEntity` with status `200 (OK)` and with body the updated user.
@@ -220,7 +217,7 @@ class UserResource(
     @PutMapping("/users")
     @PreAuthorize("hasAuthority(\"$ADMIN\")")
     <%_ if (!reactive) { _%>
-    fun updateUser(@Valid @RequestBody userDTO: <%= asDto('User') %>): ResponseEntity<<%= asDto('User') %>> {
+    fun updateUser(@Valid @RequestBody userDTO: <%= asDto('AdminUser') %>): ResponseEntity<<%= asDto('AdminUser') %>> {
         log.debug("REST request to update User : $userDTO")
         var existingUser = userRepository.findOneByEmailIgnoreCase(userDTO.email)
         if (existingUser.isPresent && existingUser.get().id != userDTO.id) {
@@ -237,7 +234,7 @@ class UserResource(
             HeaderUtil.createAlert(applicationName, <% if (enableTranslation) { %>"userManagement.updated"<% } else { %>"A user is updated with identifier $userDTO.login"<% } %>, userDTO.login)
         )
     <%_ } else { _%>
-    fun updateUser(@Valid @RequestBody userDTO: <%= asDto('User') %>) : Mono<ResponseEntity<<%= asDto('User') %>>> {
+    fun updateUser(@Valid @RequestBody userDTO: <%= asDto('AdminUser') %>) : Mono<ResponseEntity<<%= asDto('AdminUser') %>>> {
         log.debug("REST request to update User : $userDTO")
         return userRepository.findOneByEmailIgnoreCase(userDTO.email!!)
             .filter { user -> user.id != userDTO.id }
@@ -267,7 +264,7 @@ class UserResource(
 
 <%_ } _%>
     /**
-     * `GET /users` : get all users.
+     * `GET /admin/users` : get all users with all the details - calling this are only allowed for the administrators.
      *<% if (databaseType === 'sql' || databaseType === 'mongodb' || databaseType === 'neo4j' || databaseType === 'couchbase') { %>
      <%_ if (reactive) { _%>
      * @param request a [ServerHttpRequest] request.
@@ -276,9 +273,11 @@ class UserResource(
      * @return the `ResponseEntity` with status `200 (OK)` and with body all users.
      */
     @GetMapping("/users")
+    @PreAuthorize("hasAuthority(\"" + AuthoritiesConstants.ADMIN + "\")")
     <%_ if (databaseType === 'sql' || databaseType === 'mongodb' || databaseType === 'neo4j' || databaseType === 'couchbase') { _%>
         <%_ if (!reactive) { _%>
-    fun getAllUsers(pageable: Pageable): ResponseEntity<List<<%= asDto('User') %>>> {
+    fun getAllUsers(pageable: Pageable): ResponseEntity<List<<%= asDto('AdminUser') %>>> {
+        log.debug("REST request to get all User for an admin");
         <%_ if (authenticationType !== 'oauth2') { _%>
             if (!onlyContainsAllowedProperties(pageable)) {
                 return ResponseEntity.badRequest().build()
@@ -292,7 +291,8 @@ class UserResource(
     fun getAllUsers(
         request: ServerHttpRequest,
         pageable: Pageable
-    ): Mono<ResponseEntity<Flux<<%= asDto('User') %>>>> {
+    ): Mono<ResponseEntity<Flux<<%= asDto('AdminUser') %>>>> {
+            log.debug("REST request to get all User for an admin");
             <%_ if (authenticationType !== 'oauth2') { _%>
             if (!onlyContainsAllowedProperties(pageable)) {
                 return Mono.just(ResponseEntity.badRequest().build())
@@ -310,83 +310,55 @@ class UserResource(
         pageable.sort.map(Sort.Order::getProperty).all { ALLOWED_ORDERED_PROPERTIES.contains(it) }
     <%_ } _%>
 
-    /**
-     * Gets a list of all roles.
-     * @return a string list of all roles.
-     */
-    @GetMapping("/users/authorities")
-    @PreAuthorize("hasAuthority(\"$ADMIN\")")
-    fun getAuthorities() = userService.getAuthorities()<% if (reactive) { %>.collectList()<% } %>
     <%_ } else { // Cassandra _%>
     fun getAllUsers() = userService.getAllManagedUsers()
     <%_ } _%>
 
     /**
-     * `GET /users/:login` : get the "login" user.
+     * `GET /admin/users/:login` : get the "login" user.
      *
      * @param login the login of the user to find.
      * @return the `ResponseEntity` with status `200 (OK)` and with body the "login" user, or with status `404 (Not Found)`.
      */
-    @GetMapping("/users/{login:$LOGIN_REGEX}")
+    @GetMapping("/users/{login}")
+    @PreAuthorize("hasAuthority(\"" + AuthoritiesConstants.ADMIN + "\")")
     <%_ if (!reactive) { _%>
-    fun getUser(@PathVariable login: String): ResponseEntity<<%= asDto('User') %>> {
+    fun getUser(@PathVariable @Pattern(regexp = Constants.LOGIN_REGEX) login: String): ResponseEntity<<%= asDto('AdminUser') %>> {
         log.debug("REST request to get User : $login")
         return ResponseUtil.wrapOrNotFound(
             userService.getUserWithAuthoritiesByLogin(login)
-                .map { <%= asDto('User') %>(it) })
+                .map { <%= asDto('AdminUser') %>(it) })
     <%_ } else { _%>
-    fun getUser(@PathVariable login: String): Mono<<%= asDto('User') %>> {
+    fun getUser(@PathVariable login: String): Mono<<%= asDto('AdminUser') %>> {
         log.debug("REST request to get User : $login")
         return userService.getUserWithAuthoritiesByLogin(login)
-            .map { <%= asDto('User') %>(it) }
+            .map { <%= asDto('AdminUser') %>(it) }
             .switchIfEmpty(Mono.error(ResponseStatusException(HttpStatus.NOT_FOUND)))
     <%_ } _%>
     }
 <%_ if (authenticationType !== 'oauth2') { _%>
 
     /**
-     * `DELETE /users/:login` : delete the "login" User.
+     * `DELETE /admin/users/:login` : delete the "login" User.
      *
      * @param login the login of the user to delete.
      * @return the `ResponseEntity` with status `204 (NO_CONTENT)`.
      */
-    @DeleteMapping("/users/{login:$LOGIN_REGEX}")
+    @DeleteMapping("/users/{login}")
     @PreAuthorize("hasAuthority(\"$ADMIN\")")
     <%_ if (!reactive) { _%>
-    fun deleteUser(@PathVariable login: String): ResponseEntity<Void> {
+    fun deleteUser(@PathVariable @Pattern(regexp = Constants.LOGIN_REGEX) login: String): ResponseEntity<Void> {
         log.debug("REST request to delete User: $login")
         userService.deleteUser(login)
         return ResponseEntity.noContent()
             .headers(HeaderUtil.createAlert(applicationName, <% if (enableTranslation) {%>"userManagement.deleted"<% } else { %> "A user is deleted with identifier $login"<% } %>, login)).build()
     <%_ } else { _%>
     @ResponseStatus(code = HttpStatus.NO_CONTENT)
-    fun deleteUser(@PathVariable login: String): Mono<ResponseEntity<Void>> {
+    fun deleteUser(@PathVariable @Pattern(regexp = Constants.LOGIN_REGEX) login: String): Mono<ResponseEntity<Void>> {
         log.debug("REST request to delete User: $login")
         return userService.deleteUser(login)
             .map { ResponseEntity.noContent().headers(HeaderUtil.createAlert(applicationName, "userManagement.deleted", login)).build<Void>() }
     <%_ } _%>
     }
-<%_ } _%>
-<%_ if (searchEngine !== false) { _%>
-
-    /**
-     * `SEARCH /_search/users/:query` : search for the User corresponding to the query.
-     *
-     * @param query the query to search.
-     * @return the result of the search.
-     */
-    @GetMapping("/_search/users/{query}")
-    fun search(@PathVariable query: String) =
-    <%_ if (searchEngine === 'elasticsearch') { _%>
-        <%_ if (!reactive) { _%>
-        StreamSupport
-            .stream(userSearchRepository.search(queryStringQuery(query)).spliterator(), false)
-            .collect(Collectors.toList())
-        <%_ } else { _%>
-        userSearchRepository.search(query).collectList()
-            <%_ } _%>
-        <%_ } else { _%>
-        userRepository.search(User.PREFIX, query)<% if (reactive) { %>.collectList()<% } %>
-        <%_ } _%>
 <%_ } _%>
 }

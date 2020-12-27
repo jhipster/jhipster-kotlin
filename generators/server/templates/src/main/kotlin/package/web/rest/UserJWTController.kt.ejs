@@ -16,19 +16,10 @@
  See the License for the specific language governing permissions and
  limitations under the License.
 -%>
-<%_
-let withAudit = reactive && ['sql', 'mongodb', 'couchbase', 'neo4j'].includes(databaseType);
-_%>
 package <%= packageName %>.web.rest
 
-<%_ if (withAudit) { _%>
-import <%= packageName %>.config.ANONYMOUS_USER
-<%_ } _%>
 import <%= packageName %>.security.jwt.JWTFilter
 import <%= packageName %>.security.jwt.TokenProvider
-<%_ if (withAudit) { _%>
-import <%= packageName %>.service.AuditEventService
-<%_ } _%>
 import <%= packageName %>.web.rest.vm.LoginVM
 
 import com.fasterxml.jackson.annotation.JsonProperty
@@ -40,9 +31,6 @@ import org.springframework.http.ResponseEntity
 import org.springframework.security.authentication.ReactiveAuthenticationManager
 <%_ } _%>
 import org.springframework.security.authentication.UsernamePasswordAuthenticationToken
-<%_ if (withAudit) { _%>
-import org.springframework.security.core.Authentication
-<%_ } _%>
 <%_ if (!reactive) { _%>
 import org.springframework.security.config.annotation.authentication.builders.AuthenticationManagerBuilder
 import org.springframework.security.core.context.SecurityContextHolder
@@ -78,8 +66,7 @@ class UserJWTController(
 
         val authentication = authenticationManagerBuilder.getObject().authenticate(authenticationToken)
         SecurityContextHolder.getContext().authentication = authentication
-        val rememberMe = loginVM.isRememberMe ?: false
-        val jwt = tokenProvider.createToken(authentication, rememberMe)
+        val jwt = tokenProvider.createToken(authentication, loginVM.isRememberMe)
         val httpHeaders = HttpHeaders()
         httpHeaders.add(JWTFilter.AUTHORIZATION_HEADER, "Bearer $jwt")
         return ResponseEntity(JWTToken(jwt), httpHeaders, HttpStatus.OK)
@@ -89,10 +76,6 @@ class UserJWTController(
     fun authorize(@Valid @RequestBody loginVM: Mono<LoginVM>): Mono<ResponseEntity<JWTToken>> =
         loginVM.flatMap { login ->
             authenticationManager.authenticate(UsernamePasswordAuthenticationToken(login.username, login.password))
-                <%_ if (withAudit) { _%>
-                .onErrorResume { onAuthenticationError(login, it) }
-                .flatMap { onAuthenticationSuccess(login, it) }
-                <%_ } _%>
                 .map { tokenProvider.createToken(it, true == login.isRememberMe) }
         }.map{
             jwt ->
@@ -100,25 +83,6 @@ class UserJWTController(
             httpHeaders.add(JWTFilter.AUTHORIZATION_HEADER, "Bearer $jwt")
             ResponseEntity(JWTToken(jwt), httpHeaders, HttpStatus.OK)
         }
-
-        <%_ if (withAudit) { _%>
-    private fun onAuthenticationSuccess(login: LoginVM, auth: Authentication): Mono<Authentication> {
-        return Mono.just(login)
-            .map {it.username}
-            .filter { ANONYMOUS_USER != it }
-            .flatMap { auditEventService.saveAuthenticationSuccess(it!!) }
-            .thenReturn(auth)
-    }
-
-    private fun onAuthenticationError(login: LoginVM, throwable: Throwable): Mono<Authentication> {
-        return Mono.just(login)
-                .map {it.username}
-                .filter { ANONYMOUS_USER != it }
-                .flatMap { auditEventService.saveAuthenticationError(it!!, throwable) }
-                .then(Mono.error(throwable))
-    }
-
-    <%_ } _%>
 <%_ } _%>
 
     /**

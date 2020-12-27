@@ -23,6 +23,7 @@ package <%= packageName %>.web.rest
 import <%= packageName %>.security.getCurrentUserLogin
     <%_ } _%>
 import <%= packageName %>.service.UserService
+import <%= packageName %>.service.dto.<%= asDto('AdminUser') %>
 import <%= packageName %>.service.dto.<%= asDto('User') %>
 
 import org.slf4j.LoggerFactory
@@ -57,7 +58,7 @@ class AccountResource(private val userService: UserService) {
      * @throws AccountResourceException `500 (Internal Server Error)` if the user couldn't be returned.
      */
     @GetMapping("/account")
-    fun getAccount(principal: Principal?): <% if (reactive) { %>Mono<<%= asDto('User') %>><% } else { %><%= asDto('User') %><% } %> =
+    fun getAccount(principal: Principal?): <% if (reactive) { %>Mono<<%= asDto('AdminUser') %>><% } else { %><%= asDto('AdminUser') %><% } %> =
         if (principal is AbstractAuthenticationToken) {
             userService.getUserFromAuthentication(principal)
         } else {
@@ -145,6 +146,7 @@ import <%= packageName %>.security.getCurrentUserLogin
 import <%= packageName %>.service.MailService
 import <%= packageName %>.service.UserService
 import <%= packageName %>.service.dto.PasswordChangeDTO
+import <%= packageName %>.service.dto.<%= asDto('AdminUser') %>
 import <%= packageName %>.service.dto.<%= asDto('User') %>
 import <%= packageName %>.web.rest.errors.EmailAlreadyUsedException
 import <%= packageName %>.web.rest.errors.InvalidPasswordException
@@ -214,7 +216,7 @@ class AccountResource(
     @PostMapping("/register")
     @ResponseStatus(HttpStatus.CREATED)
     fun registerAccount(@Valid @RequestBody managedUserVM: ManagedUserVM) <% if (reactive) { %>: Mono<Void> <% } %>{
-        if (!checkPasswordLength(managedUserVM.password)) {
+        if (isPasswordLengthInvalid(managedUserVM.password)) {
             throw InvalidPasswordException()
         }
         <%_ if (!reactive) { _%>
@@ -272,9 +274,9 @@ class AccountResource(
      * @throws RuntimeException `500 (Internal Server Error)` if the user couldn't be returned.
      */
     @GetMapping("/account")
-    fun getAccount(): <% if (reactive) { %>Mono<<%= asDto('User') %>><% } else { %><%= asDto('User') %><% } %> =
+    fun getAccount(): <% if (reactive) { %>Mono<<%= asDto('AdminUser') %>><% } else { %><%= asDto('AdminUser') %><% } %> =
         userService.getUserWithAuthorities()
-            .map { <%= asDto('User') %>(it) }
+            .map { <%= asDto('AdminUser') %>(it) }
             <%_ if (!reactive) { _%>
             .orElseThrow { AccountResourceException("User could not be found") }
             <%_ } else { _%>
@@ -290,7 +292,7 @@ class AccountResource(
      */
     @PostMapping("/account")
     <%_ if (!reactive) { _%>
-    fun saveAccount(@Valid @RequestBody userDTO: <%= asDto('User') %>) {
+    fun saveAccount(@Valid @RequestBody userDTO: <%= asDto('AdminUser') %>) {
         val userLogin = getCurrentUserLogin()
             .orElseThrow { AccountResourceException("") }
         val existingUser = userRepository.findOneByEmailIgnoreCase(userDTO.email)
@@ -307,7 +309,7 @@ class AccountResource(
         )
     }
     <%_ } else { _%>
-    fun saveAccount(@Valid @RequestBody userDTO: <%= asDto('User') %>): Mono<Void> =
+    fun saveAccount(@Valid @RequestBody userDTO: <%= asDto('AdminUser') %>): Mono<Void> =
         getCurrentUserLogin()
             .switchIfEmpty(Mono.error(AccountResourceException("Current user login not found")))
             .flatMap { userLogin ->
@@ -337,7 +339,7 @@ class AccountResource(
      */
     @PostMapping(path = ["/account/change-password"])
     fun changePassword(@RequestBody passwordChangeDto: PasswordChangeDTO) <% if (reactive) { %>: Mono<Void> <% } %>{
-        if (!checkPasswordLength(passwordChangeDto.newPassword)) {
+        if (isPasswordLengthInvalid(passwordChangeDto.newPassword)) {
             throw InvalidPasswordException()
         }
         <% if (reactive) { %>return <% } %>userService.changePassword(passwordChangeDto.currentPassword!!, passwordChangeDto.newPassword!!)
@@ -432,7 +434,7 @@ class AccountResource(
      */
     @PostMapping(path = ["/account/reset-password/finish"])
     fun finishPasswordReset(@RequestBody keyAndPassword: KeyAndPasswordVM) <% if (reactive) { %>: Mono<Void> <% } %>{
-        if (!checkPasswordLength(keyAndPassword.newPassword)) {
+        if (isPasswordLengthInvalid(keyAndPassword.newPassword)) {
             throw InvalidPasswordException()
         }
         <%_ if (!reactive) { _%>
@@ -449,8 +451,8 @@ class AccountResource(
     }
 }
 
-private fun checkPasswordLength(password: String?) =
-    !password.isNullOrEmpty() &&
-        password.length >= ManagedUserVM.PASSWORD_MIN_LENGTH &&
-        password.length <= ManagedUserVM.PASSWORD_MAX_LENGTH
+private fun isPasswordLengthInvalid(password: String?) =
+    StringUtils.isEmpty(password) ||
+    password.length() < ManagedUserVM.PASSWORD_MIN_LENGTH ||
+    password.length() > ManagedUserVM.PASSWORD_MAX_LENGTH;
 <%_ } _%>
