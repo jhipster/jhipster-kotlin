@@ -1,0 +1,153 @@
+<%#
+ Copyright 2013-2020 the original author or authors from the JHipster project.
+
+This file is part of the JHipster project, see https://jhipster.github.io/
+ for more information.
+
+ Licensed under the Apache License, Version 2.0 (the "License")
+ you may not use this file except in compliance with the License.
+ You may obtain a copy of the License at
+
+      http://www.apache.org/licenses/LICENSE-2.0
+
+ Unless required by applicable law or agreed to in writing, software
+ distributed under the License is distributed on an "AS IS" BASIS,
+ WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
+ See the License for the specific language governing permissions and
+ limitations under the License.
+-%>
+package <%= packageName %>.repository
+
+<%_ if (searchEngine === 'couchbase') { _%>
+import com.couchbase.client.java.search.SearchQuery
+import com.couchbase.client.java.search.queries.AbstractFtsQuery
+import com.couchbase.client.java.search.queries.DocIdQuery
+import com.couchbase.client.java.search.queries.QueryStringQuery
+import com.couchbase.client.java.search.result.AsyncSearchQueryResult
+import com.couchbase.client.java.search.result.SearchQueryRow
+import <%= packageName %>.repository.search.SearchCouchbaseRepository
+<%_ } _%>
+import org.springframework.beans.factory.annotation.Autowired
+import org.springframework.data.couchbase.core.CouchbaseTemplate
+import org.springframework.data.couchbase.core.RxJavaCouchbaseOperations
+import org.springframework.data.couchbase.core.mapping.CouchbasePersistentEntity
+import org.springframework.data.couchbase.repository.query.CouchbaseEntityInformation
+import org.springframework.data.couchbase.repository.support.ReactiveN1qlCouchbaseRepository
+<%_ if (searchEngine === 'couchbase') { _%>
+import org.springframework.data.domain.Pageable
+<%_ } _%>
+import org.springframework.data.repository.util.QueryExecutionConverters
+import reactor.core.publisher.Flux
+import reactor.core.publisher.Mono
+<%_ if (searchEngine === 'couchbase') { _%>
+import rx.Observable
+import rx.RxReactiveStreams
+<%_ } _%>
+
+import java.io.Serializable
+import java.lang.reflect.Field
+<%_ if (searchEngine === 'couchbase') { _%>
+import java.util.LinkedList
+<%_ } _%>
+
+/**
+ * A custom implementation of {@code CouchbaseRepository}.
+ */
+public class CustomReactiveN1qlCouchbaseRepository<T, ID : Serializable>(metadata: CouchbaseEntityInformation<T, String>, couchbaseOperations: RxJavaCouchbaseOperations) :
+    ReactiveN1qlCouchbaseRepository<T, ID>(metadata, couchbaseOperations)<%if (searchEngine === 'couchbase') { %>, SearchCouchbaseRepository<T, ID><% } %> {
+
+
+    private val persistentEntity: CouchbasePersistentEntity<*>? =
+        getCouchbaseOperations().converter.mappingContext.getPersistentEntity(entityInformation.javaType)
+    
+    @Autowired
+    private val template: CouchbaseTemplate
+
+    private final CouchbasePersistentEntity<?> persistentEntity
+
+    init {
+        template = new CouchbaseTemplate(getCouchbaseOperations().couchbaseClusterInfo, getCouchbaseOperations().couchbaseBucket)
+        allowPageable()
+    }
+
+    // Temporary Hack to fix pageable
+    @SuppressWarnings("unchecked")
+    private fun allowPageable() {
+        try {
+            val allowed_pageable_types = QueryExecutionConverters::class.java.getDeclaredField("ALLOWED_PAGEABLE_TYPES")
+            allowed_pageable_types.accessible = true
+            val ALLOWED_PAGEABLE_TYPES = allowed_pageable_types.get(QueryExecutionConverters::class) as Set<Class<*>>
+            ALLOWED_PAGEABLE_TYPES.add(Flux::class)
+        } catch (e: NoSuchFieldException) {
+            e.printStackTrace()
+        } catch(e: IllegalAccessException) {
+            e.printStackTrace()
+        }
+    }
+
+    override fun <S:T> save(entity: S): Mono<S> = super.save(populateIdIfNecessary(entity))
+<%_ if (searchEngine === 'couchbase') { _%>
+
+    fun search(indexName: String, request: String, pageable: Pageable): Flux<T> {
+        val searchQuery = SearchQuery(indexName, queryString(request))
+            .limit(pageable.getPageSize())
+            .skip((int) pageable.getOffset())
+        return search(searchQuery)
+    }
+
+    override fun search(indexName: String, request: String,): Flux<T> {
+        val searchQuery = SearchQuery(indexName, queryString(request))
+        return search(searchQuery)
+    }
+
+    <%# TODO verify this #%>
+    fun queryString(request: String): AbstractFtsQuery {
+        val ids = LinkedList<String>()
+        
+        request.split(" ").forEach {
+            if (r.indexOf("id:") == 0) {
+                ids.add(r.substring(3))
+                request = request.replace(r, "").replaceAll("[ ]+", " ").trim()
+            }
+        }
+
+        val queryString = SearchQuery.queryString(request)
+        if (ids.size() != 0) {
+            val docIdQuery = SearchQuery.docId(ids.toArray(String[0]))
+            if (!request.isEmpty()) {
+                return SearchQuery.conjuncts(queryString, docIdQuery)
+            }
+            return docIdQuery
+        }
+        return queryString
+    }
+
+    @SuppressWarnings("unchecked")
+    private fun search(searchQuery: SearchQuery): Flux<T> {
+        val resultIdObservable = getCouchbaseOperations().getCouchbaseBucket().async().query(searchQuery)
+            .flatMap(AsyncSearchQueryResult::hits)
+            .map(SearchQueryRow::id)
+        return Flux.from(RxReactiveStreams.toPublisher(resultIdObservable))
+            .map{ it as ID }
+            .flatMap(this::findById)
+    }
+<%_ } _%>
+
+    /**
+     * Add generated ID to entity if not already set.
+     *
+     * @param entity the entity to update.
+     * @return entity with ID set.
+     */
+    private fun <S:T> populateIdIfNecessary(entity: S): S {
+        if (getEntityInformation().getId(entity) != null) {
+            return entity
+        }
+        setId(entity, template.getGeneratedId(entity))
+        return entity
+    }
+
+    private fun <S:T> setId(entity: S, generatedId: String) {
+        persistentEntity.getPropertyAccessor(entity).setProperty(persistentEntity.getIdProperty(), generatedId)
+    }
+}

@@ -19,10 +19,20 @@
 package <%= packageName %>.repository
 
 <%_ if (databaseType === 'cassandra') { _%>
-import com.datastax.driver.core.BatchStatement
-import com.datastax.driver.core.Session
-import com.datastax.driver.mapping.MappingManager
-
+import com.datastax.oss.driver.api.core.CqlIdentifier
+import com.datastax.oss.driver.api.core.CqlSession
+import com.datastax.oss.driver.api.core.cql.BatchStatement
+import com.datastax.oss.driver.api.core.cql.BatchStatementBuilder
+import com.datastax.oss.driver.api.core.cql.BoundStatementBuilder
+import com.datastax.oss.driver.api.core.cql.DefaultBatchType
+import com.datastax.oss.driver.api.core.cql.PreparedStatement
+import com.datastax.oss.driver.api.core.cql.ResultSet
+import com.datastax.oss.driver.api.mapper.annotations.Dao
+import com.datastax.oss.driver.api.mapper.annotations.DaoFactory
+import com.datastax.oss.driver.api.mapper.annotations.DaoKeyspace
+import com.datastax.oss.driver.api.mapper.annotations.Delete
+import com.datastax.oss.driver.api.mapper.annotations.Mapper
+import com.datastax.oss.driver.api.mapper.annotations.Select
 <%_ } _%>
 import <%= packageName %>.domain.PersistentToken
 import <%= packageName %>.domain.<%= asEntity('User') %>
@@ -37,6 +47,7 @@ import org.springframework.data.mongodb.repository.MongoRepository
 <%_ } _%><%_ if (databaseType === 'neo4j') { _%>
 import org.neo4j.springframework.data.repository.Neo4jRepository
 <%_ } if (databaseType === 'cassandra') { _%>
+import org.springframework.boot.autoconfigure.cassandra.CassandraProperties
 import org.springframework.stereotype.Repository
 
 import javax.validation.ConstraintViolationException
@@ -51,17 +62,20 @@ import java.util.Optional
 import <%= packageName %>.config.ID_DELIMITER
 <%_ } _%>
 
-<% if (databaseType === 'sql') { %>/**
+/**
+<%_ if (databaseType === 'sql') { _%>
  * Spring Data JPA repository for the [PersistentToken] entity.
- */<% } %><% if (databaseType === 'mongodb') { %>/**
+<%_ } else if (databaseType === 'mongodb') { _%>
  * Spring Data MongoDB repository for the [PersistentToken] entity.
- */<% } %><% if (databaseType === 'couchbase') { %>/**
+<%_ } else if (databaseType === 'couchbase') { _%>
  * Spring Data Couchbase repository for the [PersistentToken] entity.
- */<% } %><% if (databaseType === 'cassandra') { %>/**
+<%_ } else if (databaseType === 'cassandra') { _%>
  * Cassandra repository for the [PersistentToken] entity.
- */<% } %><% if (databaseType === 'sql' || databaseType === 'mongodb' || databaseType === 'neo4j' || databaseType === 'couchbase') { %>
+<%_ } _%>
+ */
+ <%_ if (['sql', 'mongodb', 'neo4j', 'couchbase'].includes(databaseType)) { _%>
 interface PersistentTokenRepository : <% if (databaseType === 'sql') { %>JpaRepository<% } %><% if (databaseType === 'mongodb') { %>MongoRepository<% } %><% if (databaseType === 'neo4j') { %>Neo4jRepository<% } %><% if (databaseType === 'couchbase') { %>N1qlCouchbaseRepository<% } %><PersistentToken, String> {
-<% if (databaseType === 'couchbase') { %>
+    <%_ if (databaseType === 'couchbase') { _%>
     fun findBySeries(series: String): Optional<PersistentToken> {
         return findById(PersistentToken.PREFIX + ID_DELIMITER + series)
     }
@@ -72,15 +86,20 @@ interface PersistentTokenRepository : <% if (databaseType === 'sql') { %>JpaRepo
 
     fun findByUser(user: User): List<PersistentToken> = findByLogin(user.login)
 
-    fun findByLogin(login: String): List<PersistentToken><% } else { %>
-    fun findByUser(user: User): List<PersistentToken><% } %>
+    fun findByLogin(login: String): List<PersistentToken>
+    <%_ } else { _%>
+    fun findByUser(user: User): List<PersistentToken>
+    <%_ } _%>
 
     fun findByTokenDateBefore(localDate: LocalDate): List<PersistentToken>
-}<% } else if (databaseType === 'cassandra') { %>
+}
+<%_ } else if (databaseType === 'cassandra') { _%>
 @Repository
-class PersistentTokenRepository (private val session: Session, private val validator: Validator) {
+class PersistentTokenRepository (private val session: CqlSession, private val validator: Validator, private val cassandraProperties: CassandraProperties) {
 
-    private val mapper = MappingManager(session).mapper(PersistentToken::class.java)
+    private val persistentTokenMapper = PersistentTokenMapperBuilder(session).build()
+    private val persistentTokenDao = persistentTokenMapper.persistentTokenDao(CqlIdentifier.fromCql(cassandraProperties.getKeyspaceName()))
+
 
     private val findPersistentTokenSeriesByUserIdStmt = session.prepare(
         "SELECT persistent_token_series " +
@@ -105,18 +124,20 @@ class PersistentTokenRepository (private val session: Session, private val valid
     )
 
     fun findById(presentedSeries: String): Optional<PersistentToken> =
-        Optional.ofNullable(mapper.get(presentedSeries))
+        Optional.ofNullable(persistentTokenDao.get(presentedSeries))
 
     fun findByUser( user: <%= asEntity('User') %>): MutableList<PersistentToken> {
-        val stmt = findPersistentTokenSeriesByUserIdStmt.bind()
-        stmt.setString("user_id", user.id)
-        val rs = session.execute(stmt)
+        val statementBuilder = findPersistentTokenSeriesByUserIdStmt.boundStatementBuilder()
+        statementBuilder.setString("user_id", user.id)
+        val rs = session.execute(statementBuilder.build())
+        val persistentTokens = mutableListOf<PersistentToken>()
         return rs.all().asSequence()
             .map { row ->
                 val token = row.getString("persistent_token_series")
-                mapper.get(token)
+                persistentTokenDao.get(token)
             }
             .toMutableList()
+            
     }
 
     fun save(token: PersistentToken) {
@@ -124,23 +145,23 @@ class PersistentTokenRepository (private val session: Session, private val valid
         if (violations != null && !violations.isEmpty()) {
             throw ConstraintViolationException(violations)
         }
-        val batch = BatchStatement()
-        batch.add(
+        val batch = BatchStatement.builder(DefaultBatchType.LOGGED)
+        batch.addStatement(
             insertPersistentTokenStmt.bind()
                 .setString("series", token.series)
-                .setTimestamp("token_date", token.tokenDate)
+                .setInstant("token_date", token.tokenDate)
                 .setString("user_agent", token.userAgent)
                 .setString("token_value", token.tokenValue)
                 .setString("login", token.login)
                 .setString("user_id", token.userId)
                 .setString("ip_address", token.ipAddress)
         )
-        batch.add(
+        batch.addStatement(
             insertPersistentTokenSeriesByUserIdStmt.bind()
                 .setString("user_id", token.userId)
                 .setString("persistent_token_series", token.series)
         )
-        session.execute(batch)
+        session.execute(batch.build())
     }
 
     fun delete(token: PersistentToken) {
@@ -151,4 +172,21 @@ class PersistentTokenRepository (private val session: Session, private val valid
                 .setString("persistent_token_series", token.series)
         )
     }
-}<% } %>
+}
+
+@Mapper
+interface PersistentTokenMapper {
+    @DaoFactory
+    fun persistentTokenDao(@DaoKeyspace keyspace: CqlIdentifier): PersistentTokenDao
+}
+
+@Dao
+interface PersistentTokenDao {
+
+    @Select
+    fun get(presentedSeries: String): PersistentToken 
+
+    @Delete
+    fun delete(token: PersistentToken)
+}
+<%_ } _%>
