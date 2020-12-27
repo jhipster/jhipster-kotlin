@@ -22,9 +22,14 @@ package <%= packageName %>.service.mapper
 import <%= packageName %>.domain.Authority
 <%_ } _%>
 import <%= packageName %>.domain.<%= asEntity('User') %>
+import <%= packageName %>.service.dto.<%= asDto('AdminUser') %>
 import <%= packageName %>.service.dto.<%= asDto('User') %>
 
 import org.springframework.stereotype.Service
+
+import org.mapstruct.BeanMapping
+import org.mapstruct.Mapping
+import org.mapstruct.Named
 
 /**
  * Mapper for the entity [<%= asEntity('User') %>] and its DTO called [<%= asDto('User') %>].
@@ -42,11 +47,18 @@ class UserMapper {
 
     fun userToUserDTO(user: <%= asEntity('User') %>): <%= asDto('User') %> = <%= asDto('User') %>(user)
 
-    fun userDTOsToUsers(userDTOs: List<<%= asDto('User') %>?>) =
+    fun usersToAdminUserDTOs(users: List<<%= asEntity('User') %>>): MutatbleList<<%= asDto('AdminUser') %>> = 
+        users.asSequence()
+            .filterNotNull()
+            .mapTo(mutableListOf()) { userToAdminUserDTO(it) }
+
+    fun userToAdminUserDTO(user: <%= asEntity('User') %>) = <%= asDto('AdminUser') %>(user)
+
+    fun userDTOsToUsers(userDTOs: List<<%= asDto('AdminUser') %>?>) =
         userDTOs.asSequence()
             .mapNotNullTo(mutableListOf()) { userDTOToUser(it) }
 
-    fun userDTOToUser(userDTO: <%= asDto('User') %>?) =
+    fun userDTOToUser(userDTO: <%= asDto('AdminUser') %>?) =
         when (userDTO) {
             null -> null
             else -> {
@@ -82,4 +94,66 @@ class UserMapper {
     <%_ } _%>
 
     fun userFromId(id: <% if (databaseType === 'mongodb' || databaseType === 'neo4j' || databaseType === 'couchbase' || databaseType === 'cassandra' || authenticationType === 'oauth2') { %>String<% } else { %>Long<% } %>?) = id?.let { <%= asEntity('User') %>(id = it) }
+
+    @Named("id")
+    @BeanMapping(ignoreByDefault = true)
+    @Mapping(target = "id", source = "id")
+    fun toDtoId(user: <%= asEntity('User') %>?): <%= asDto('User') %>? {
+        if (user == null) {
+            return null
+        }
+        val userDto = <%= asDto('User') %>()
+        userDto.id = user.id
+        return userDto
+    }
+
+    @Named("idSet")
+    @BeanMapping(ignoreByDefault = true)
+    @Mapping(target = "id", source = "id")
+    fun toDtoIdSet(users: Set<<%= asEntity('User') %>>?): Set<<%= asDto('User') %>>? {
+        if ( users == null ) {
+            return null
+        }
+
+        val userSet = hashSetOf<<%= asDto('User') %>>()
+        users.forEach {
+            userSet.add( this.toDtoId( it ) )
+        }
+        return userSet
+    }
+
+    @Named("login")
+    @BeanMapping(ignoreByDefault = true)
+    @Mappings(
+        Mapping(target = "id", source = "id"),
+        Mapping(target = "login", source = "login")
+    )
+    fun toDtoLogin(user: <%= asEntity('User') %>?): <%= asDto('User') %>? {
+        if (user == null) {
+            return null
+        }
+        val userDto = <%= asDto('User') %>()
+        userDto.id = user.id
+        userDto.login = user.login
+        return userDto
+    }
+
+    @Named("loginSet")
+    @BeanMapping(ignoreByDefault = true)
+    @Mappings(
+        Mapping(target = "id", source = "id"),
+        Mapping(target = "login", source = "login")
+    )
+    fun toDtoLoginSet(users: Set<<%= asEntity('User') %>>?): Set<<%= asDto('User') %>>? {
+        if ( users == null ) {
+            return null
+        }
+
+        val userSet = hashSetOf<<%= asDto('User') %>>()    
+        users.forEach {
+            userSet.add( this.toDtoLogin( it ) )
+        }
+
+        return userSet
+    }
 }

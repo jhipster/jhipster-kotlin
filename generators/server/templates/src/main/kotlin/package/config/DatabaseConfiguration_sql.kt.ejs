@@ -1,0 +1,213 @@
+<%#
+ Copyright 2013-2020 the original author or authors from the JHipster project.
+
+This file is part of the JHipster project, see https://jhipster.github.io/
+ for more information.
+
+ Licensed under the Apache License, Version 2.0 (the "License")
+ you may not use this file except in compliance with the License.
+ You may obtain a copy of the License at
+
+      http://www.apache.org/licenses/LICENSE-2.0
+
+ Unless required by applicable law or agreed to in writing, software
+ distributed under the License is distributed on an "AS IS" BASIS,
+ WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
+ See the License for the specific language governing permissions and
+ limitations under the License.
+-%>
+
+<%_
+    let uuidConversionNeeded = (reactive && !(prodDatabaseType === 'postgresql'))
+_%>
+package <%= packageName %>.config
+
+import io.github.jhipster.config.JHipsterConstants
+<%_ if (devDatabaseType === 'h2Disk' || devDatabaseType === 'h2Memory') { _%>
+import io.github.jhipster.config.h2.H2ConfigurationHelper
+<%_ } _%>
+<%_ if (databaseType === 'sql' && reactive) { _%>
+import io.r2dbc.spi.ConnectionFactory
+<%_ } _%>
+import org.slf4j.Logger
+import org.slf4j.LoggerFactory
+import org.springframework.context.annotation.Bean
+import org.springframework.context.annotation.Configuration
+<%_ if (devDatabaseType === 'h2Disk' || devDatabaseType === 'h2Memory') { _%>
+import org.springframework.context.annotation.Profile
+<%_ } _%>
+<%_ if (reactive) { _%>
+import org.springframework.core.convert.converter.Converter
+<%_ } _%>
+<%_ if (searchEngine === 'elasticsearch') { _%>
+import org.springframework.data.elasticsearch.repository.config.Enable<% if (reactive) { %>Reactive<% } %>ElasticsearchRepositories
+<%_ } _%>
+<%_ if (devDatabaseType === 'h2Disk' || devDatabaseType === 'h2Memory') { _%>
+import org.springframework.core.env.Environment
+<%_ } _%>
+<%_ if (reactive) { _%>
+import org.springframework.data.convert.CustomConversions
+import org.springframework.data.convert.ReadingConverter
+import org.springframework.data.convert.WritingConverter
+import org.springframework.data.r2dbc.convert.R2dbcCustomConversions
+import org.springframework.data.r2dbc.core.ReactiveDataAccessStrategy
+import org.springframework.data.r2dbc.dialect.DialectResolver
+import org.springframework.data.r2dbc.dialect.R2dbcDialect
+import org.springframework.data.r2dbc.query.UpdateMapper
+import org.springframework.data.r2dbc.repository.config.EnableR2dbcRepositories
+import org.springframework.data.relational.core.dialect.RenderContextFactory
+import org.springframework.data.relational.core.sql.render.SqlRenderer
+<%_ } else { _%>
+import org.springframework.data.jpa.repository.config.EnableJpaAuditing
+import org.springframework.data.jpa.repository.config.EnableJpaRepositories
+<%_ } _%>
+import org.springframework.transaction.annotation.EnableTransactionManagement
+
+<%_ if (devDatabaseType === 'h2Disk' || devDatabaseType === 'h2Memory') { _%>
+import java.sql.SQLException
+<%_ } _%>
+<%_ if (reactive) { _%>
+import java.time.Duration
+import java.time.Instant
+import java.time.LocalDateTime
+import java.time.ZoneId
+import java.time.ZoneOffset
+import java.time.ZonedDateTime
+import java.util.ArrayList
+import java.util.BitSet
+import java.util.Collections
+import java.util.List
+    <%_ if (uuidConversionNeeded) { _%>
+import java.util.UUID
+    <%_ } _%>
+<%_ } _%>
+
+@Configuration
+<%_ if (reactive) { _%>
+@EnableR2dbcRepositories("<%= packageName %>.repository")
+<%_ } else { _%>
+@EnableJpaRepositories("<%= packageName %>.repository")
+@EnableJpaAuditing(auditorAwareRef = "springSecurityAuditorAware")
+<%_ } _%>
+@EnableTransactionManagement
+<%_ if (searchEngine === 'elasticsearch') { _%>
+@Enable<% if (reactive) { %>Reactive<% } %>ElasticsearchRepositories("<%= packageName %>.repository.search")
+<%_ } _%>
+public class DatabaseConfiguration<% if (devDatabaseType === 'h2Disk' || devDatabaseType === 'h2Memory') { %>(val env: Environment)<% } %> {
+
+    private val log = LoggerFactory.getLogger(javaClass)
+<%_ if (devDatabaseType === 'h2Disk' || devDatabaseType === 'h2Memory') { _%>
+
+    /**
+     * Open the TCP port for the H2 database, so it is available remotely.
+     *
+     * @return the H2 database TCP server.
+     * @throws SQLException if the server failed to start.
+     */
+     @Throws(SQLException::class)
+     @Bean(initMethod = "start", destroyMethod = "stop")
+     @Profile(JHipsterConstants.SPRING_PROFILE_DEVELOPMENT)
+     fun h2TCPServer(): Any {
+         val port = getValidPortForH2()
+         log.debug("H2 database is available on port $port")
+         return H2ConfigurationHelper.createServer(port)
+     }
+
+     private fun getValidPortForH2(): String {
+        var port = Integer.parseInt(env.getProperty("server.port"))
+        if (port < 10000) {
+            port += 10000
+        } else {
+            if (port < 63536) {
+                port += 2000
+            } else {
+                port -= 2000
+            }
+        }
+        return port.toString()
+    }
+<%_ } _%>
+<% if (uuidConversionNeeded) { %>
+    
+    /**
+     * Simple singleton to convert [UUID]s to their [String] representation.
+     */
+    @WritingConverter
+    object UUIDToStringConverter : Converter<UUID, String> {
+        override fun convert(source: UUID) = source.toString()
+    }
+
+    /**
+     * Simple singleton to convert from [String] [UUID] representation.
+     */
+    @ReadingConverter
+    object StringToUUIDConverter : Converter<String, UUID> {
+        override fun convert(source: String) =
+            if (StringUtils.hasText(source)) UUID.fromString(source) else null
+    }
+
+<%_ } _%>
+<%_ if (reactive) { _%>
+    // LocalDateTime seems to be the only type that is supported across all drivers atm
+    // See https://github.com/r2dbc/r2dbc-h2/pull/139 https://github.com/mirromutth/r2dbc-mysql/issues/105
+    @Bean
+    fun r2dbcCustomConversions(connectionFactory: ConnectionFactory): R2dbcCustomConversions {
+        val dialect = DialectResolver.getDialect(connectionFactory)
+        val converters = dialect.converters.toMutableList()
+        converters.add(InstantWriteConverter())
+        converters.add(InstantReadConverter())
+        converters.addAll(R2dbcCustomConversions.STORE_CONVERTERS)
+        return R2dbcCustomConversions(CustomConversions.StoreConversions.of(dialect.simpleTypeHolder, converters), mutableListOf<Any>())
+    }
+
+   
+
+    @Bean
+    fun dialect(connectionFactory: ConnectionFactory) = DialectResolver.getDialect(connectionFactory)
+
+    @Bean
+    fun updateMapper(dialect: R2dbcDialect, dataAccessStrategy: ReactiveDataAccessStrategy) = UpdateMapper(dialect, dataAccessStrategy.getConverter())
+
+    @Bean
+    fun sqlRenderer(dialect: R2dbcDialect): SqlRenderer {
+        val factory = RenderContextFactory(dialect)
+        return SqlRenderer.create(factory.createRenderContext())
+    }
+    
+    @WritingConverter
+    class InstantWriteConverter: Converter<Instant, LocalDateTime> {
+        override fun convert(source: Instant) = LocalDateTime.ofInstant(source, ZoneOffset.UTC)
+    }
+
+    @ReadingConverter
+    class InstantReadConverter: Converter<LocalDateTime, Instant> {
+        override fun convert(localDateTime: LocalDateTime) = localDateTime.toInstant(ZoneOffset.UTC)
+    }
+
+    @ReadingConverter
+    object BitSetReadConverter : Converter<BitSet, Boolean> {
+       override fun convert(bitSet: BitSet): Boolean = bitSet.get(0)
+    }
+
+    @ReadingConverter
+    object ZonedDateTimeReadConverter : Converter<LocalDateTime, ZonedDateTime> {
+       override fun convert(localDateTime: LocalDateTime) = ZonedDateTime.of(localDateTime, ZoneOffset.UTC)
+    }
+
+    @WritingConverter
+    object ZonedDateTimeWriteConverter : Converter<ZonedDateTime, LocalDateTime> {
+       override fun convert(zonedDateTime: ZonedDateTime) = zonedDateTime.toLocalDateTime()
+    }
+
+    @WritingConverter
+    object DurationWriteConverter : Converter<Duration, Long> {
+       override fun convert(source: Duration?) = if (source != null) source.toMillis() else null
+    }
+
+    @ReadingConverter
+    object DurationReadConverter : Converter<Long, Duration> {
+       override fun convert(source: Long?) = if(source != null) Duration.ofMillis(source) else null
+    }
+
+<%_ } _%>
+}

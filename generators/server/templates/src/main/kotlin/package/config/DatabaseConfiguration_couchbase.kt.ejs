@@ -1,0 +1,187 @@
+<%#
+ Copyright 2013-2020 the original author or authors from the JHipster project.
+
+This file is part of the JHipster project, see https://jhipster.github.io/
+ for more information.
+
+ Licensed under the Apache License, Version 2.0 (the "License")
+ you may not use this file except in compliance with the License.
+ You may obtain a copy of the License at
+
+      http://www.apache.org/licenses/LICENSE-2.0
+
+ Unless required by applicable law or agreed to in writing, software
+ distributed under the License is distributed on an "AS IS" BASIS,
+ WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
+ See the License for the specific language governing permissions and
+ limitations under the License.
+-%>
+
+package <%= packageName %>.config
+
+import io.github.jhipster.config.JHipsterConstants
+
+import com.couchbase.client.java.Bucket
+import com.github.couchmove.Couchmove
+import <%= packageName %>.repository.Custom<% if (reactive) { %>Reactive<% } %>N1qlCouchbaseRepository
+<%_ if (searchEngine === 'elasticsearch') { _%>
+import <%= packageName %>.repository.<% if (reactive) { %>Reactive<% } %>N1qlCouchbaseRepository
+<%_ } _%>
+import org.apache.commons.codec.binary.Base64
+import org.slf4j.Logger
+import org.slf4j.LoggerFactory
+import org.springframework.boot.autoconfigure.couchbase.CouchbaseAutoConfiguration
+import org.springframework.boot.autoconfigure.couchbase.CouchbaseProperties
+import org.springframework.context.annotation.Bean
+import org.springframework.context.annotation.Configuration
+import org.springframework.context.annotation.Import
+<%_ if (searchEngine === 'elasticsearch') { _%>
+import org.springframework.context.annotation.ComponentScan.Filter
+import org.springframework.context.annotation.FilterType
+<%_ } _%>
+import org.springframework.context.annotation.Profile
+import org.springframework.core.convert.converter.Converter
+<%_ if (searchEngine === 'elasticsearch') { _%>
+import org.springframework.data.elasticsearch.repository.config.Enable<% if (reactive) { %>Reactive<% } %>ElasticsearchRepositories
+<%_ } _%>
+import org.springframework.data.convert.ReadingConverter
+import org.springframework.data.convert.WritingConverter
+import org.springframework.data.couchbase.config.BeanNames
+import org.springframework.data.couchbase.core.convert.CouchbaseCustomConversions
+import org.springframework.data.couchbase.core.mapping.event.ValidatingCouchbaseEventListener
+<%_ if (!reactive) { _%>
+import org.springframework.data.couchbase.repository.auditing.EnableCouchbaseAuditing
+<%_ } _%>
+import org.springframework.data.couchbase.repository.config.Enable<%_ if (reactive) { _%>Reactive<% } %>CouchbaseRepositories
+import org.springframework.util.StringUtils
+import org.springframework.validation.beanvalidation.LocalValidatorFactoryBean
+
+import java.math.BigDecimal
+import java.math.BigInteger
+import java.time.ZoneId
+import java.time.ZonedDateTime
+import java.util.ArrayList
+import java.util.Date
+import java.util.List
+import java.util.UUID
+
+@Configuration
+<%_ if (searchEngine === 'elasticsearch') { _%>
+@Enable<% if (reactive) { %>Reactive<% } %>ElasticsearchRepositories("<%= packageName %>.repository.search")
+<%_ } _%>
+@Profile("!" + JHipsterConstants.SPRING_PROFILE_CLOUD)
+@Enable<% if (reactive) { %>Reactive<% } %>CouchbaseRepositories(repositoryBaseClass = Custom<% if (reactive) { %>Reactive<% } %>N1qlCouchbaseRepository.class, basePackages = "<%= packageName %>.repository"<%_ if (searchEngine === 'elasticsearch') { %>,
+    includeFilters = @Filter(type = FilterType.ASSIGNABLE_TYPE, value = <% if (reactive) { %>Reactive<% } %>N1qlCouchbaseRepository.class)<%_ } _%>)
+<%_ if (!reactive) { _%>
+@EnableCouchbaseAuditing(auditorAwareRef = "springSecurityAuditorAware")
+<%_ } _%>
+@Import(value = CouchbaseAutoConfiguration.class)
+public class DatabaseConfiguration {
+
+    private val log = LoggerFactory.getLogger(javaClass)
+
+    @Bean
+    fun validatingCouchbaseEventListener() = ValidatingCouchbaseEventListener(validator())
+
+    @Bean
+    fun validator() = LocalValidatorFactoryBean()
+
+    @Bean(name = [BeanNames.COUCHBASE_CUSTOM_CONVERSIONS])
+    fun customConversions() =
+        CouchbaseCustomConversions(
+            mutableListOf<Converter<*, *>>(
+                ZonedDateTimeToLongConverter,
+                NumberToLocalDateTimeConverter,
+                BigIntegerToStringConverter,
+                StringToBigIntegerConverter,
+                BigDecimalToStringConverter,
+                StringToBigDecimalConverter,
+                StringToByteConverter,
+                UUIDToStringConverter,
+                StringToUUIDConverter
+            )
+        )
+    
+    @Bean
+    fun couchmove(couchbaseBucket: Bucket, properties: CouchbaseProperties): Couchmove {
+        log.debug("Configuring Couchmove")
+        return Couchmove(couchbaseBucket, properties.bucket.name, properties.bucket.password, "config/couchmove/changelog").apply { migrate() }
+    }
+
+    /**
+     * Simple singleton to convert [ZonedDateTime]s to their [Long] representation.
+     */
+    @WritingConverter
+    object ZonedDateTimeToLongConverter : Converter<ZonedDateTime, Long> {
+        override fun convert(source: ZonedDateTime) = Date.from(source.toInstant()).time
+    }
+
+    /**
+     * Simple singleton to convert from [Number] [BigDecimal] representation.
+     */
+    @ReadingConverter
+    object NumberToLocalDateTimeConverter : Converter<Number, ZonedDateTime> {
+        override fun convert(source: Number): ZonedDateTime =
+            ZonedDateTime.ofInstant(Date(source.toLong()).toInstant(), ZoneId.systemDefault())
+    }
+
+    /**
+     * Simple singleton to convert [BigDecimal]s to their [String] representation.
+     */
+    @WritingConverter
+    object BigDecimalToStringConverter : Converter<BigDecimal, String> {
+        override fun convert(source: BigDecimal) = source.toString()
+    }
+
+    /**
+     * Simple singleton to convert from [String] [BigDecimal] representation.
+     */
+    @ReadingConverter
+    object StringToBigDecimalConverter : Converter<String, BigDecimal> {
+        override fun convert(source: String) =
+            if (StringUtils.hasText(source)) BigDecimal(source) else null
+    }
+
+    /**
+     * Simple singleton to convert [BigInteger]s to their [String] representation.
+     */
+    @WritingConverter
+    object BigIntegerToStringConverter : Converter<BigInteger, String> {
+        override fun convert(source: BigInteger) = source.toString()
+    }
+
+    /**
+     * Simple singleton to convert from [String] [BigInteger] representation.
+     */
+    @ReadingConverter
+    object StringToBigIntegerConverter : Converter<String, BigInteger> {
+        override fun convert(source: String) =
+            if (StringUtils.hasText(source)) BigInteger(source) else null
+    }
+
+    /**
+     * Simple singleton to convert from [String] `byte[]` representation.
+     */
+    @ReadingConverter
+    object StringToByteConverter : Converter<String, ByteArray> {
+        override fun convert(source: String): ByteArray = Base64.decodeBase64(source)
+    }
+
+    /**
+     * Simple singleton to convert [UUID]s to their [String] representation.
+     */
+    @WritingConverter
+    object UUIDToStringConverter : Converter<UUID, String> {
+        override fun convert(source: UUID) = source.toString()
+    }
+
+    /**
+     * Simple singleton to convert from [String] [UUID] representation.
+     */
+    @ReadingConverter
+    object StringToUUIDConverter : Converter<String, UUID> {
+        override fun convert(source: String) =
+            if (StringUtils.hasText(source)) UUID.fromString(source) else null
+    }
+
+}

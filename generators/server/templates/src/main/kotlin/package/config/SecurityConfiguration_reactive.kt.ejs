@@ -1,10 +1,10 @@
 <%#
  Copyright 2013-2020 the original author or authors from the JHipster project.
 
- This file is part of the JHipster project, see https://www.jhipster.tech/
+This file is part of the JHipster project, see https://jhipster.github.io/
  for more information.
 
- Licensed under the Apache License, Version 2.0 (the "License");
+ Licensed under the Apache License, Version 2.0 (the "License")
  you may not use this file except in compliance with the License.
  You may obtain a copy of the License at
 
@@ -16,37 +16,26 @@
  See the License for the specific language governing permissions and
  limitations under the License.
 -%>
-<%_
-let withAudit = ((authenticationType === 'session' && !skipUserManagement) || authenticationType === 'oauth2') && ['sql', 'mongodb', 'couchbase', 'neo4j'].includes(databaseType);
-_%>
 package <%= packageName %>.config
 
-import <%= packageName %>.security.ADMIN
-<%_ if (authenticationType === 'oauth2') { _%>
-import <%= packageName %>.security.extractAuthorityFromClaims
-<%_ } _%>
+import <%= packageName %>.security.AuthoritiesConstants
 <%_ if (authenticationType === 'jwt') { _%>
 import <%= packageName %>.security.jwt.JWTFilter
 import <%= packageName %>.security.jwt.TokenProvider
 <%_ } _%>
 <%_ if (authenticationType === 'session' || authenticationType === 'oauth2') { _%>
     <%_ if (authenticationType === 'oauth2') { _%>
+import <%= packageName %>.security.SecurityUtils
 import <%= packageName %>.security.oauth2.AudienceValidator
 import <%= packageName %>.security.oauth2.JwtGrantedAuthorityConverter
-    <%_ if (withAudit) { _%>
-import <%= packageName %>.service.AuditEventService
-    <%_ } _%>
 import org.springframework.security.authentication.AbstractAuthenticationToken
 import org.springframework.security.oauth2.server.resource.authentication.JwtAuthenticationConverter
     <%_ } _%>
-    <%_ if (!skipUserManagement && withAudit) { _%>
-import <%= packageName %>.service.AuditEventService
-    <%_ } _%>
-import tech.jhipster.web.filter.reactive.CookieCsrfFilter
+import io.github.jhipster.web.filter.reactive.CookieCsrfFilter
 <%_ } _%>
 <%_ if (authenticationType === 'oauth2') { _%>
 import org.springframework.beans.factory.annotation.Value
-import tech.jhipster.config.JHipsterProperties
+import io.github.jhipster.config.JHipsterProperties
 <%_ } _%>
 <%_ if (skipUserManagement && authenticationType !== 'oauth2') { _%>
 import org.springframework.boot.autoconfigure.security.SecurityProperties
@@ -72,16 +61,10 @@ import org.springframework.security.config.annotation.web.reactive.EnableWebFlux
 import org.springframework.security.config.web.server.SecurityWebFiltersOrder
 import org.springframework.security.config.web.server.ServerHttpSecurity
 <%_ if (authenticationType === 'session') { _%>
-    <%_ if (withAudit) { _%>
 import org.springframework.security.core.Authentication
-    <%_ } _%>
 import org.springframework.security.core.AuthenticationException
 <%_ } _%>
-<%_ if (authenticationType !== 'oauth2' && !skipUserManagement) { _%>
-import org.springframework.security.crypto.bcrypt.BCryptPasswordEncoder
-<%_ } _%>
 <%_ if (authenticationType === 'oauth2') { _%>
-import org.springframework.security.core.Authentication
 import org.springframework.security.core.GrantedAuthority
 import org.springframework.security.oauth2.client.oidc.userinfo.OidcReactiveOAuth2UserService
 import org.springframework.security.oauth2.client.oidc.userinfo.OidcUserRequest
@@ -94,14 +77,10 @@ import org.springframework.security.oauth2.core.oidc.user.OidcUserAuthority
 import org.springframework.security.oauth2.jwt.*
 import org.springframework.security.oauth2.server.resource.authentication.ReactiveJwtAuthenticationConverterAdapter
 import org.springframework.security.web.server.csrf.CookieServerCsrfTokenRepository
-    <%_ if (withAudit) { _%>
-import org.springframework.security.web.server.WebFilterExchange
-import org.springframework.security.web.server.authentication.RedirectServerAuthenticationSuccessHandler
-import org.springframework.security.web.server.authentication.ServerAuthenticationSuccessHandler
-    <%_ } _%>
+import org.springframework.security.web.server.header.ReferrerPolicyServerHttpHeadersWriter
 <%_ } _%>
 <%_ if (authenticationType !== 'oauth2') { _%>
-    <%_ if (!skipUserManagement) { _%>
+    <%_ if (skipUserManagement) { _%>
 import org.springframework.security.core.userdetails.MapReactiveUserDetailsService
     <%_ } _%>
 import org.springframework.security.core.userdetails.ReactiveUserDetailsService
@@ -111,6 +90,10 @@ import org.springframework.security.core.userdetails.User
     <%_ if (skipUserManagement) { _%>
 import org.springframework.security.core.userdetails.UserDetails
     <%_ } _%>
+<%_ } _%>
+<%_ if (!skipUserManagement) { _%>
+import org.springframework.security.crypto.bcrypt.BCryptPasswordEncoder
+import org.springframework.security.crypto.password.PasswordEncoder
 <%_ } _%>
 <%_ if (databaseType === 'couchbase') { _%>
 import org.springframework.security.data.repository.query.SecurityEvaluationContextExtension
@@ -135,6 +118,11 @@ import org.zalando.problem.spring.webflux.advice.security.SecurityProblemSupport
 <%_ if (authenticationType === 'session' || authenticationType === 'oauth2') { _%>
 import reactor.core.publisher.Mono
 <%_ } _%>
+<%_ if (authenticationType === 'oauth2') { _%>
+
+import java.util.HashSet
+import java.util.Set
+<%_ } _%>
 
 import org.springframework.security.web.server.util.matcher.ServerWebExchangeMatchers.pathMatchers
 
@@ -148,11 +136,7 @@ class SecurityConfiguration(
 <%_ if (authenticationType === 'jwt') { _%>
     private val tokenProvider: TokenProvider,
 <%_ } _%>
-<%_ if (withAudit) { _%>
-    private val auditEventService: AuditEventService,
-<%_ } _%>
 <%_ if (authenticationType === 'oauth2') { _%>
-    @Value("\${spring.security.oauth2.client.provider.oidc.issuer-uri}") private val issuerUri: String,
     private val jHipsterProperties: JHipsterProperties,
 <%_ } _%>
     private val problemSupport: SecurityProblemSupport
@@ -169,7 +153,6 @@ class SecurityConfiguration(
         }
 
     <%_ } else if (authenticationType !== 'oauth2') { _%>
-
     @Bean
     fun userDetailsService(properties: SecurityProperties): MapReactiveUserDetailsService {
         val user = properties.user
@@ -328,19 +311,6 @@ class SecurityConfiguration(
         return jwtDecoder
     }
 
-        <%_ if (withAudit) { _%>
-    private val redirectServerAuthenticationSuccessHandler = RedirectServerAuthenticationSuccessHandler()
-
-    fun onAuthenticationSuccess(exchange: WebFilterExchange, authentication: Authentication): Mono<Void>  {
-        return redirectServerAuthenticationSuccessHandler.onAuthenticationSuccess(exchange, authentication)
-            .thenReturn(authentication.principal)
-            .filter { it is OidcUser }
-            .map { (it as OidcUser).preferredUsername }
-            .filter { ANONYMOUS_USER != it }
-            .flatMap { auditEventService.saveAuthenticationSuccess(it) }
-            .then()
-    }
-        <%_ } _%>
     <%_ } _%>
     <%_ if (authenticationType === 'session') { _%>
 
