@@ -18,90 +18,18 @@
 -%>
 package <%= packageName %>.service.dto
 
-import <%= packageName %>.config.LOGIN_REGEX
 <%_ if (databaseType !== 'no') { _%>
 import <%= packageName %>.domain.<%= asEntity('User') %>
 <%_ } _%>
 
-import javax.validation.constraints.Email
-import javax.validation.constraints.NotBlank
-import javax.validation.constraints.Pattern
-import javax.validation.constraints.Size
-<%_ if (databaseType === 'mongodb' || databaseType === 'neo4j' || databaseType === 'couchbase' || databaseType === 'sql') { _%>
-
-import java.time.Instant
-<%_ } _%>
-
 /**
- * A DTO representing a user, with his authorities.
+ * A DTO representing a user, with only the public attributes.
  */
 open class <%= asDto('User') %>(
-    var id: <% if (databaseType === 'mongodb' || databaseType === 'couchbase' || databaseType === 'neo4j' || databaseType === 'cassandra' || authenticationType === 'oauth2') { %>String<% } else { %>Long<% } %>? = null,
-
-    @field:NotBlank
-    @field:Pattern(regexp = LOGIN_REGEX)
-    @field:Size(min = 1, max = 50)
-    var login: String? = null,
-
-    @field:Size(max = 50)
-    var firstName: String? = null,
-
-    @field:Size(max = 50)
-    var lastName: String? = null,
-
-    @field:Email
-    @field:Size(min = 5, max = 254)
-    var email: String? = null,
-    <%_ if (databaseType !== 'cassandra') { _%>
-
-    @field:Size(max = 256)
-    var imageUrl: String? = null,
-    <%_ } _%>
-
-    var activated: Boolean = false,
-
-    @field:Size(min = 2, max = 10)
-    var langKey: String? = null,
-    <%_ if (databaseType === 'mongodb' || databaseType === 'neo4j' || databaseType === 'couchbase' || databaseType === 'sql') { _%>
-
-    var createdBy: String? = null,
-
-    var createdDate: Instant? = null,
-
-    var lastModifiedBy: String? = null,
-
-    var lastModifiedDate: Instant? = null,
-    <%_ } _%>
-
-    var authorities: Set<String>? = null
-
-) {
-    <%_ if (databaseType !== 'no') { _%>
-    constructor(user: <%= asEntity('User') %>) :
-        this(
-            user.id, user.login, user.firstName, user.lastName, user.email,
-            <% if (databaseType !== 'cassandra') { %>user.imageUrl, <% } %>user.activated, user.langKey,
-            <%_ if (databaseType === 'mongodb' || databaseType === 'neo4j' || databaseType === 'couchbase' || databaseType === 'sql') { _%>
-            user.createdBy, user.createdDate, user.lastModifiedBy, user.lastModifiedDate,
-            <%_ } _%>
-            <% if (databaseType === 'mongodb' || databaseType === 'neo4j' || databaseType === 'sql') { %>user.authorities.map { it.name }.filterNotNullTo(mutableSetOf())<% } else { %>user.authorities<% } %>
-        )
-    <%_ } _%>
-
-    fun isActivated(): Boolean = activated
-
+    var id: <%= user.primaryKey.type %>? = null,
+    var login: String? = null
+){
     override fun toString() = "<%= asDto('User') %>{" +
         "login='" + login + '\'' +
-        ", firstName='" + firstName + '\'' +
-        ", lastName='" + lastName + '\'' +
-        ", email='" + email + '\'' +<% if (databaseType !== 'cassandra') { %>
-        ", imageUrl='" + imageUrl + '\'' +<% } %>
-        ", activated=" + activated +
-        ", langKey='" + langKey + '\'' +<% if (databaseType === 'mongodb' || databaseType === 'couchbase' || databaseType === 'sql') { %>
-        ", createdBy=" + createdBy +
-        ", createdDate=" + createdDate +
-        ", lastModifiedBy='" + lastModifiedBy + '\'' +
-        ", lastModifiedDate=" + lastModifiedDate +<% } %>
-        ", authorities=" + authorities +
         "}"
 }

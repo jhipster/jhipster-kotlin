@@ -1,0 +1,214 @@
+<%#
+ Copyright 2013-2020 the original author or authors from the JHipster project.
+
+This file is part of the JHipster project, see https://jhipster.github.io/
+ for more information.
+
+ Licensed under the Apache License, Version 2.0 (the "License")
+ you may not use this file except in compliance with the License.
+ You may obtain a copy of the License at
+
+      http://www.apache.org/licenses/LICENSE-2.0
+
+ Unless required by applicable law or agreed to in writing, software
+ distributed under the License is distributed on an "AS IS" BASIS,
+ WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
+ See the License for the specific language governing permissions and
+ limitations under the License.
+-%>
+package <%= packageName %>.service
+
+import java.util.Stream
+import org.springframework.data.domain.Pageable
+import org.springframework.data.domain.Sort
+import org.springframework.data.r2dbc.core.DatabaseClient
+import org.springframework.data.r2dbc.core.DatabaseClient.GenericInsertSpec
+import org.springframework.data.r2dbc.core.ReactiveDataAccessStrategy
+import org.springframework.data.r2dbc.mapping.OutboundRow
+import org.springframework.data.r2dbc.mapping.SettableValue
+import org.springframework.data.r2dbc.query.UpdateMapper
+import org.springframework.data.relational.core.query.Criteria
+import org.springframework.data.relational.core.mapping.RelationalPersistentEntity
+import org.springframework.data.relational.core.sql.OrderByField
+import org.springframework.data.relational.core.sql.Select
+import org.springframework.data.relational.core.sql.SelectBuilder.SelectFromAndJoin
+import org.springframework.data.relational.core.sql.SelectBuilder.SelectFromAndJoinCondition
+import org.springframework.data.relational.core.sql.SelectBuilder.SelectOrdered
+import org.springframework.data.relational.core.sql.SqlIdentifier
+import org.springframework.data.relational.core.sql.Table
+import org.springframework.data.relational.core.sql.render.SqlRenderer
+import org.springframework.stereotype.Service
+import org.springframework.util.Assert
+
+import reactor.core.publisher.Flux
+import reactor.core.publisher.Mono
+
+/**
+ * Helper class to create SQL selects based on the entity, paging parameters and criteria.
+ *
+ */
+@Service
+class EntityManager(
+    private val dataAccessStrategy: ReactiveDataAccessStrategy, 
+    private val sqlRenderer: SqlRenderer, 
+    private val updateMapper: UpdateMapper, 
+    private val db: DatabaseClient
+) {
+
+    companion object {
+        const val ENTITY_ALIAS: String = "e"
+        const val ALIAS_PREFIX: String = "e_"
+
+        private fun createOrderByFields(table: Table, sortToUse: Sort): Collection<? extends OrderByField>  {
+
+            val fields = listOf<OrderByField>()
+
+            sortToUse.forEach {
+                val propertyName = it.property
+                val orderByField = OrderByField.from(table.column(propertyName).as(ALIAS_PREFIX + propertyName))
+                if (it.direction() != null) {
+                    fields.add(it.isAscending() ? orderByField.asc() : orderByField.desc())
+                } else {
+                    fields.add(orderByField)
+                }
+            }
+    
+            return fields
+        }
+    }
+
+    class LinkTable(private val tableName: String, private val idColumn: String, private val referenceColumn: String)
+
+    /**
+     * Creates an SQL select statement from the given fragment and pagination parameters.
+     * @param selectFrom a representation of a select statement.
+     * @param entityType the entity type which holds the table name.
+     * @param pageable page parameter, or null, if everything needs to be returned
+     * @return sql select statement
+     */
+    fun createSelect(selectFrom: SelectFromAndJoin, entityType: Class<*>, pageable: Pageable): String {
+        if (pageable != null) {
+            return createSelectImpl(selectFrom.limitOffset(pageable.pageSize, pageable.offset), entityType, pageable.sort)
+        } else {
+            return createSelectImpl(selectFrom, entityType, null)
+        }
+    }
+
+    /**
+     * Creates an SQL select statement from the given fragment and pagination parameters.
+     * @param selectFrom a representation of a select statement.
+     * @param entityType the entity type which holds the table name.
+     * @param pageable page parameter, or null, if everything needs to be returned
+     * @return sql select statement
+     */
+    fun createSelect(selectFrom: SelectFromAndJoinCondition, entityType: Class<*>, pageable: Pageable): String {
+        if (pageable != null) {
+            return createSelectImpl(selectFrom.limitOffset(pageable.pageSize, pageable.offset), entityType, pageable.sort)
+        } else {
+            return createSelectImpl(selectFrom, entityType, null)
+        }
+    }
+
+    private fun createSelectImpl(selectFrom: SelectOrdered, entityType: Class<*>, sortParameter: Sort): String {
+        var select: Select? = null;
+        if (sortParameter != null && sortParameter.isSorted()) {
+            val entity: RelationalPersistentEntity<*> = getPersistentEntity(entityType)
+            val sort = updateMapper.getMappedObject(sortParameter, entity)
+            select = selectFrom.orderBy(createOrderByFields(Table.create(entity.tableName).as(EntityManager.ENTITY_ALIAS), sort)).build()
+        } else {
+            select = selectFrom.build()
+        }
+        return createSelect(select)
+    }
+
+    private fun  getPersistentEntity(entityType: Class<*>): RelationalPersistentEntity<*> {
+        return dataAccessStrategy.converter.mappingContext
+                .getPersistentEntity(entityType) as RelationalPersistentEntity<*> 
+    }
+
+    /**
+     * Delete all the entity with the given type, and return the number of deletions.
+     * @param entityType the entity type which holds the table name.
+     * @return the number of deleted entity
+     */
+    fun deleteAll(entityType: Class<*>): Mono<Integer> {
+        return db.delete().from(entityType).fetch().rowsUpdated()
+    }
+
+    /**
+     * Delete all the rows from the given table, and return the number of deletions.
+     * @param tableName the name of the table to delete.
+     * @return the number of deleted rows.
+     */
+    fun deleteAll(tableName: String): Mono<Integer> {
+        return db.delete().from(tableName).fetch().rowsUpdated()
+    }
+
+    /**
+     * Generate an actual SQL from the given {@link Select}.
+     * @param select a representation of a select statement.
+     * @return the generated SQL select.
+     */
+    fun createSelect(select: Select): String {
+        return sqlRenderer.render(select)
+    }
+
+    /**
+     * Inserts the given entity into the database - and sets the id, if it's an autoincrement field.
+     * @param <S> the type of the persisted entity.
+     * @param entity the entity to be inserted into the database.
+     * @return the persisted entity.
+     */
+    fun <S> insert(entity: S): Mono<S> {
+        val row = dataAccessStrategy.getOutboundRow(entity)
+        val persistentEntity: RelationalPersistentEntity<*> = getPersistentEntity(entity.getClass())
+
+        var insertSpec: GenericInsertSpec<Map<String, Any>> = db.insert().into(persistentEntity.getTableName())
+        val idColumn = persistentEntity.getIdColumn()
+
+        row.forEach {
+            k, v -> {
+                if (k.hasValue() || k != idColumn) {
+                    insertSpec = insertSpec.value(k, v)
+                }
+            }
+        }
+
+        return insertSpec.map(dataAccessStrategy.getConverter().populateIdIfNecessary(entity))
+            .first()
+            .defaultIfEmpty(entity)
+    }
+
+    /**
+     * Updates the table, which links the entity with the referred entities.
+     * @param table describes the link table, it contains a table name, the column name for the id, and for the referred entity id.
+     * @param entityId the id of the entity, for which the links are created.
+     * @param referencedIds the id of the referred entities.
+     * @return the number of inserted rows.
+     */
+    fun updateLinkTable(table: LinkTable, entityId: Long, referencedIds:  Stream<Long>): Mono<Integer> {
+        return deleteFromLinkTable(table, entityId)
+                .then(
+                    Flux.fromStream(referencedIds)
+                        .flatMap((Long referenceId) ->
+                            db.insert()
+                                .into(table.tableName)
+                                .value(table.idColumn, entityId)
+                                .value(table.referenceColumn, referenceId)
+                                .fetch()
+                                .rowsUpdated()
+                                )
+                        .toList()
+                        .map {
+                            (it as List<Integer>).fold(0)
+                        }
+    }
+
+    fun deleteFromLinkTable(table: LinkTable, entityId: Long): Mono<Void>  {
+        Assert.notNull(entityId, "entityId is null")
+        return db.delete()
+                .from(table.tableName)
+                .matching(Criteria.from(Criteria.where(table.idColumn).is(entityId)))
+                .then()
+    }
+}

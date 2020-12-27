@@ -1,0 +1,85 @@
+<%#
+ Copyright 2013-2020 the original author or authors from the JHipster project.
+
+This file is part of the JHipster project, see https://jhipster.github.io/
+ for more information.
+
+ Licensed under the Apache License, Version 2.0 (the "License");
+ you may not use this file except in compliance with the License.
+ You may obtain a copy of the License at
+
+      http://www.apache.org/licenses/LICENSE-2.0
+
+ Unless required by applicable law or agreed to in writing, software
+ distributed under the License is distributed on an "AS IS" BASIS,
+ WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
+ See the License for the specific language governing permissions and
+ limitations under the License.
+-%>
+package <%= packageName %>.service
+
+import org.springframework.core.convert.ConversionService
+import org.springframework.data.r2dbc.convert.R2dbcCustomConversions
+import org.springframework.data.r2dbc.core.ReactiveDataAccessStrategy
+import org.springframework.lang.Nullable
+import org.springframework.stereotype.Service
+import org.springframework.util.ClassUtils
+
+import io.r2dbc.spi.Row
+
+/**
+ * This service provides helper function dealing with the low level {@link Row} and Spring's {@link R2dbcCustomConversions}, so type conversions can be applied.
+ */
+@Service
+class ColumnConverter(
+    private val conversionService: ConversionService,
+    private val conversions: R2dbcCustomConversions
+) {
+
+    init {
+        this.conversionService = dataAccess.converter.conversionService
+    }
+
+    /**
+     * Converts the value to the target class with the help of the {@link ConversionService}.
+     * @param value to convert.
+     * @param target class.
+     * @param <T> the parameter for the intended type.
+     * @return the value which can be constructed from the input.
+     */
+    fun <T> convert(@Nullable value: Any, @Nullable target: Class<T>): T {
+
+        if (value == null || target == null || ClassUtils.isAssignableValue(target, value)) {
+            return value as T
+        }
+
+        if (conversions.hasCustomReadTarget(value.getClass(), target)) {
+            return conversionService.convert(value, target)
+        }
+
+        if (Enum.class.isAssignableFrom(target)) {
+            return Enum.valueOf((target as (Class<Enum>)), value.toString()) as T
+        }
+
+        return conversionService.convert(value, target)
+    }
+
+    /**
+     * Convert a value from the {@link Row} to a type - throws an exception, it it's impossible.
+     * @param row which contains the column values.
+     * @param target class.
+     * @param columnName the name of the column which to convert.
+     * @param <T> the parameter for the intended type.
+     * @return the value which can be constructed from the input.
+     */
+    fun <T> fromRow(row: Row, columnName: String, target: Class<T>): T {
+        try {
+            // try, directly the driver
+            return row.get(columnName, target)
+        } catch (e: Exception) {
+            val obj = row.get(columnName)
+            return convert(obj, target)
+        }
+    }
+
+}
