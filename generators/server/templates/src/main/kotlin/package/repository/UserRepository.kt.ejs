@@ -1,5 +1,5 @@
 <%#
- Copyright 2013-2020 the original author or authors from the JHipster project.
+ Copyright 2018-2021 the original author or authors from the JHipster project.
 
  This file is part of the JHipster project, see https://www.jhipster.tech/
  for more information.
@@ -203,36 +203,36 @@ interface UserRepository: R2dbcRepository<User, <% if (authenticationType === 'o
 
     <%_ if (authenticationType !== 'oauth2') { _%>
     @Query("SELECT * FROM <%= jhiTablePrefix %>_user WHERE activation_key = :activationKey")
-    fun findOneByActivationKey(activationKey: String): Mono<User> 
+    fun findOneByActivationKey(activationKey: String): Mono<User>
 
     @Query("SELECT * FROM <%= jhiTablePrefix %>_user WHERE activated = false AND activation_key IS NOT NULL AND created_date < :dateTime")
-    fun findAllByActivatedIsFalseAndActivationKeyIsNotNullAndCreatedDateBefore(dateTime: LocalDateTime): Flux<User> 
+    fun findAllByActivatedIsFalseAndActivationKeyIsNotNullAndCreatedDateBefore(dateTime: LocalDateTime): Flux<User>
 
     @Query("SELECT * FROM <%= jhiTablePrefix %>_user WHERE reset_key = :resetKey")
-    fun findOneByResetKey(resetKey: String): Mono<User> 
+    fun findOneByResetKey(resetKey: String): Mono<User>
 
     @Query("SELECT * FROM <%= jhiTablePrefix %>_user WHERE LOWER(email) = LOWER(:email)")
     fun findOneByEmailIgnoreCase(email: String): Mono<User>
 
     <%_ } _%>
     @Query("SELECT * FROM <%= jhiTablePrefix %>_user WHERE login = :login")
-    fun findOneByLogin(login: String): Mono<User> 
+    fun findOneByLogin(login: String): Mono<User>
 
     @Query("SELECT COUNT(DISTINCT id) FROM <%= jhiTablePrefix %>_user WHERE login != :anonymousUser")
-    fun countAllByLoginNot(anonymousUser: String): Mono<Long> 
+    fun countAllByLoginNot(anonymousUser: String): Mono<Long>
 
     @Query("INSERT INTO <%= jhiTablePrefix %>_user_authority VALUES(:userId, :authority)")
-    fun saveUserAuthority(userId: <% if (authenticationType === 'oauth2') { %>String<% } else { %>Long<% } %>, authority: String): Mono<Void> 
+    fun saveUserAuthority(userId: <% if (authenticationType === 'oauth2') { %>String<% } else { %>Long<% } %>, authority: String): Mono<Void>
 
     @Query("DELETE FROM <%= jhiTablePrefix %>_user_authority")
     fun deleteAllUserAuthorities(): Mono<Void>
 }
-    
+
     <%_ if (authenticationType !== 'oauth2') { _%>
 interface DeleteExtended<T> {
-    fun delete(user: T): Mono<Void> 
+    fun delete(user: T): Mono<Void>
 }
-    
+
     <%_ } _%>
 interface UserRepositoryInternal<% if (authenticationType !== 'oauth2') { %> : DeleteExtended<User><% } %> {
 
@@ -248,9 +248,9 @@ interface UserRepositoryInternal<% if (authenticationType !== 'oauth2') { %> : D
     fun create(user: User): Mono<User>
     <%_ } _%>
 }
-    
+
 class UserRepositoryInternalImpl(val db: DatabaseClient, val dataAccessStrategy: ReactiveDataAccessStrategy): UserRepositoryInternal {
-    
+
     override fun findOneWithAuthoritiesByLogin(login: String): Mono<User> {
         return findOneWithAuthoritiesBy("login", login);
     }
@@ -312,7 +312,7 @@ class UserRepositoryInternalImpl(val db: DatabaseClient, val dataAccessStrategy:
             .first()
             .defaultIfEmpty(user)
     }
-    
+
         <%_ } _%>
 }
 <%_ } else if (databaseType === 'cassandra') { _%>

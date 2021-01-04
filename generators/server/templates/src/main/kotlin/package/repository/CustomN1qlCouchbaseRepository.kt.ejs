@@ -1,5 +1,5 @@
 <%#
- Copyright 2013-2020 the original author or authors from the JHipster project.
+ Copyright 2018-2021 the original author or authors from the JHipster project.
 
  This file is part of the JHipster project, see https://jhipster.github.io/
  for more information.
@@ -71,18 +71,18 @@ class CustomN1qlCouchbaseRepository<T, ID : Serializable>(metadata: CouchbaseEnt
         val pageContent: List<T> = extractResults(result)
         return PageImpl<>(pageContent, pageable, result.metrics().totalHits())
     }
-        
+
     override fun search(indexName: String, request: String): List<T> {
         val searchQuery = SearchQuery(indexName, queryString(request))
         return extractResults(getCouchbaseOperations().getCouchbaseBucket().query(searchQuery))
     }
-        
+
     fun queryString(request: String): AbstractFtsQuery {
         val ids = mutableListOf<String>()
         var req = request
         req.split(" ")
         .filter { it.indexOf("id:") == 0 }
-        .map { 
+        .map {
             ids.add(it.substring(3))
             req = req.replace(r, "").replaceAll("[ ]+", " ").trim()
         }
@@ -96,7 +96,7 @@ class CustomN1qlCouchbaseRepository<T, ID : Serializable>(metadata: CouchbaseEnt
         }
         return queryString
     }
-        
+
     @SuppressWarnings("unchecked")
     fun extractResults(result: SearchQueryResult): List<T> {
         return result.hits().stream()

@@ -1,5 +1,5 @@
 <%#
- Copyright 2013-2020 the original author or authors from the JHipster project.
+ Copyright 2018-2021 the original author or authors from the JHipster project.
 
  This file is part of the JHipster project, see https://www.jhipster.tech/
  for more information.
@@ -18,7 +18,7 @@
 -%>
 package <%= packageName %>.web.rest
 
-<%_ 
+<%_
 let isUsingMapsId = false;
 let mapsIdAssoc;
 let mapsIdEntity;
@@ -310,7 +310,7 @@ class <%= entityClass %>ResourceIT <% if (databaseType === 'cassandra') { %>: Ab
     <%_ } else { _%>
 
     @Autowired
-    private lateinit var webTestClient: WebTestClient 
+    private lateinit var webTestClient: WebTestClient
     <%_ } _%>
 
     private lateinit var <%= asEntity(entityInstance) %>: <%= asEntity(entityClass) %>
@@ -322,7 +322,7 @@ class <%= entityClass %>ResourceIT <% if (databaseType === 'cassandra') { %>: Ab
     }
 
     <%_ } _%>
-    
+
     <%_ if (!reactive) { _%>
     @BeforeEach
     fun setup() {
@@ -594,7 +594,7 @@ class <%= entityClass %>ResourceIT <% if (databaseType === 'cassandra') { %>: Ab
         <%= asEntity(entityInstance) %>.id = UUID.randomUUID()
         <%_ } _%>
         <%= entityInstance %>Repository.<%= saveMethod %>(<%= asEntity(entityInstance) %>)<%= callBlock %>
-        
+
         <%_ if (!reactive) { _%>
         // Get all the <%= entityInstance %>List
         rest<%= entityClass %>MockMvc.perform(get("/api/<%= entityApiUrl %><% if (databaseType !== 'cassandra') { %>?sort=id,desc<% } %>"))
@@ -608,7 +608,7 @@ class <%= entityClass %>ResourceIT <% if (databaseType === 'cassandra') { %>: Ab
             .expectHeader().contentType(MediaType.APPLICATION_JSON)
             .expectBody()
         <%_ } _%>
-        <%_ if (['sql', 'mongodb', 'couchbase', 'cassandra'].includes(databaseType)) { 
+        <%_ if (['sql', 'mongodb', 'couchbase', 'cassandra'].includes(databaseType)) {
         _%>
             <%= !reactive ? '.andExpect(' : '.' %>jsonPath("$.[*].id").value(hasItem(<%= idValue %>))<%= !reactive ? ')' : '' %><%_ } _%><% for (idx in fields) { %>
             <%_ if ((fields[idx].fieldType === 'byte[]' || fields[idx].fieldType === 'ByteBuffer') && fields[idx].fieldTypeBlobContent !== 'text') { _%>
@@ -674,7 +674,7 @@ class <%= entityClass %>ResourceIT <% if (databaseType === 'cassandra') { %>: Ab
         webTestClient.get().uri("/api/<%= entityApiUrl %>?eagerload=true")
             .exchange()
             .expectStatus().isOk
-        <%_ } _%> 
+        <%_ } _%>
 
         <%_ if (service !== 'no') { _%>
         verify(<%= entityInstance %>ServiceMock, times(1)).findAllWithEagerRelationships(any())

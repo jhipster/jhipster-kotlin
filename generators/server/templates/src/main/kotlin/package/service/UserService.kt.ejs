@@ -1,5 +1,5 @@
 <%#
- Copyright 2013-2020 the original author or authors from the JHipster project.
+ Copyright 2018-2021 the original author or authors from the JHipster project.
 
  This file is part of the JHipster project, see https://www.jhipster.tech/
  for more information.
@@ -211,7 +211,7 @@ class UserService<% if (databaseType !== 'no') { %>(
             }
             <%_ } else { _%>
             .publishOn(Schedulers.boundedElastic())
-            .map { 
+            .map {
                 it.resetKey = RandomUtil.generateResetKey()
                 it.resetDate = Instant.now()
                 it
@@ -223,7 +223,7 @@ class UserService<% if (databaseType !== 'no') { %>(
 
     <%_ if (databaseType === 'sql' && reactive) { _%>
     @Transactional
-    <%_ } _%>   
+    <%_ } _%>
     fun registerUser(userDTO: <%= asDto('User') %>, password: String): <% if (reactive) { %>Mono<<%= asEntity('User') %>><% } else { %><%= asEntity('User') %><% } %> {
         val login = userDTO.login ?: throw IllegalArgumentException("Empty login not allowed")
         val email = userDTO.email
@@ -607,7 +607,7 @@ class UserService<% if (databaseType !== 'no') { %>(
         <%_ if (databaseType === 'sql' && authenticationType === 'oauth2') { _%>
        @Transactional
        fun saveUser(User user) = saveUser(user, false)
-    
+
         <%_ } _%>
         <%_ if (databaseType === 'sql') { _%>
         @Transactional
@@ -655,9 +655,9 @@ class UserService<% if (databaseType !== 'no') { %>(
             .flatMap(userRepository::findOneByLogin)
             <%_ if (reactive) { _%>
                 .publishOn(Schedulers.boundedElastic())
-                .map { user -> 
+                .map { user ->
             <%_ } else { _%>
-                .ifPresent { user -> 
+                .ifPresent { user ->
             <%_ } _%>
                     val currentEncryptedPassword = user.password
                     if (!passwordEncoder.matches(currentClearTextPassword, currentEncryptedPassword)) {
@@ -718,7 +718,7 @@ class UserService<% if (databaseType !== 'no') { %>(
         <%_ } _%>
     fun getUserWithAuthorities(): <% if (reactive) { %>Mono<% } else { %>Optional<% } %><<%= asEntity('User') %>> =
         getCurrentUserLogin().flatMap(userRepository::findOne<% if (databaseType === 'sql') { %>WithAuthorities<% } %>ByLogin)
-    <%_ } _%>   
+    <%_ } _%>
     <%_ if ((databaseType === 'sql' || databaseType === 'mongodb' || databaseType === 'neo4j' || databaseType === 'couchbase') && authenticationType === 'session' && !reactive) { _%>
 
     /**
@@ -770,7 +770,7 @@ class UserService<% if (databaseType !== 'no') { %>(
     <%_ } _%>
     fun removeNotActivatedUsersReactively(): Flux<User> {
         return userRepository
-            .findAllByActivatedIsFalseAndActivationKeyIsNotNullAndCreatedDateBefore(<%_ if (databaseType === 'sql') { _%>LocalDateTime.ofInstant(Instant.now().minus(3, ChronoUnit.DAYS), ZoneOffset.UTC)<%_ } else { _%>Instant.now().minus(3, ChronoUnit.DAYS)<%_ } _%>)            
+            .findAllByActivatedIsFalseAndActivationKeyIsNotNullAndCreatedDateBefore(<%_ if (databaseType === 'sql') { _%>LocalDateTime.ofInstant(Instant.now().minus(3, ChronoUnit.DAYS), ZoneOffset.UTC)<%_ } else { _%>Instant.now().minus(3, ChronoUnit.DAYS)<%_ } _%>)
             .flatMap { user -> userRepository.delete(user).thenReturn(user) }
             <%_ if (searchEngine === 'elasticsearch') { _%>
             .flatMap { user -> userSearchRepository.delete(user).thenReturn(user) }
@@ -887,7 +887,7 @@ class UserService<% if (databaseType !== 'no') { %>(
      */
         <%_ if (databaseType === 'sql') { _%>
     @Transactional
-        <%_ } _%> 
+        <%_ } _%>
     fun getUserFromAuthentication(authToken: AbstractAuthenticationToken): <% if (!reactive) { %>UserDTO<% } else { %>Mono<UserDTO><% } %> {
         val attributes: Map<String, Any> =
             when (authToken) {
