@@ -21,23 +21,11 @@ package <%= packageName %>.service
 import <%= packageName %>.config.DEFAULT_LANGUAGE
 <% if (databaseType === 'cassandra') { %>
 import <%= packageName %>.AbstractCassandraTest<% } %>
-<%_ if (cacheProvider === 'redis') { _%>
-import <%= packageName %>.RedisTestContainerExtension
-<%_ } _%>
-<%_ if (databaseType === 'neo4j') { _%>
-import <%= packageName %>.AbstractNeo4jIT
-<%_ } _%>
-import <%= packageName %>.<%= mainClass %>
+import <%= packageName %>.IntegrationTest
 import <%= packageName %>.domain.<%= asEntity('User') %>
 import tech.jhipster.config.JHipsterProperties
 import org.junit.jupiter.api.BeforeEach
 import org.junit.jupiter.api.Test
-<%_ if (cacheProvider === 'redis') { _%>
-import org.junit.jupiter.api.extension.ExtendWith
-<%_ } _%>
-<%_ if (databaseType === 'neo4j') { _%>
-import org.junit.jupiter.api.extension.ExtendWith
-<%_ } _%>
 import org.mockito.ArgumentCaptor
 import org.mockito.ArgumentMatchers.any
 import org.mockito.Captor
@@ -47,7 +35,6 @@ import org.mockito.Mockito.verify
 import org.mockito.MockitoAnnotations
 import org.mockito.Spy
 import org.springframework.beans.factory.annotation.Autowired
-import org.springframework.boot.test.context.SpringBootTest
 import org.springframework.context.MessageSource
 import org.springframework.mail.MailSendException
 import org.springframework.mail.javamail.JavaMailSenderImpl
@@ -80,13 +67,7 @@ private val PATTERN_LOCALE_2 = Pattern.compile("([a-z]{2})-([a-z]{2})")
 /**
  * Integration tests for [MailService].
  */
-@SpringBootTest(classes = [<%= mainClass %>::class])
-<%_ if (cacheProvider === 'redis') { _%>
-@ExtendWith(RedisTestContainerExtension::class)
-<%_ } _%>
-<%_ if (databaseType === 'neo4j') { _%>
-@ExtendWith(AbstractNeo4jIT::class)
-<%_ } _%>
+@IntegrationTest
 class MailServiceIT <% if (databaseType === 'cassandra') { %>: AbstractCassandraTest() <% } %>{
 
     @Autowired
@@ -119,10 +100,10 @@ class MailServiceIT <% if (databaseType === 'cassandra') { %>: AbstractCassandra
         verify(javaMailSender).send(messageCaptor.capture())
         val message = messageCaptor.value
         assertThat(message.subject).isEqualTo("testSubject")
-        assertThat(message.allRecipients[0].toString()).isEqualTo("john.doe@example.com")
-        assertThat(message.from[0].toString()).isEqualTo(jHipsterProperties.mail.from)
+        assertThat(message.allRecipients[0]).hasToString("john.doe@example.com")
+        assertThat(message.from[0]).hasToString(jHipsterProperties.mail.from)
         assertThat(message.content).isInstanceOf(String::class.java)
-        assertThat(message.content.toString()).isEqualTo("testContent")
+        assertThat(message.content).hasToString("testContent")
         assertThat(message.dataHandler.contentType).isEqualTo("text/plain; charset=UTF-8")
     }
 
@@ -132,10 +113,10 @@ class MailServiceIT <% if (databaseType === 'cassandra') { %>: AbstractCassandra
         verify(javaMailSender).send(messageCaptor.capture())
         val message = messageCaptor.value
         assertThat(message.subject).isEqualTo("testSubject")
-        assertThat(message.allRecipients[0].toString()).isEqualTo("john.doe@example.com")
-        assertThat(message.from[0].toString()).isEqualTo(jHipsterProperties.mail.from)
+        assertThat(message.allRecipients[0]).hasToString("john.doe@example.com")
+        assertThat(message.from[0]).hasToString(jHipsterProperties.mail.from)
         assertThat(message.content).isInstanceOf(String::class.java)
-        assertThat(message.content.toString()).isEqualTo("testContent")
+        assertThat(message.content).hasToString("testContent")
         assertThat(message.dataHandler.contentType).isEqualTo("text/html;charset=UTF-8")
     }
 
@@ -149,10 +130,10 @@ class MailServiceIT <% if (databaseType === 'cassandra') { %>: AbstractCassandra
         val aos = ByteArrayOutputStream()
         part.writeTo(aos)
         assertThat(message.subject).isEqualTo("testSubject")
-        assertThat(message.allRecipients[0].toString()).isEqualTo("john.doe@example.com")
-        assertThat(message.from[0].toString()).isEqualTo(jHipsterProperties.mail.from)
+        assertThat(message.allRecipients[0]).hasToString("john.doe@example.com")
+        assertThat(message.from[0]).hasToString(jHipsterProperties.mail.from)
         assertThat(message.content).isInstanceOf(Multipart::class.java)
-        assertThat(aos.toString()).isEqualTo("\r\ntestContent")
+        assertThat(aos).hasToString("\r\ntestContent")
         assertThat(part.dataHandler.contentType).isEqualTo("text/plain; charset=UTF-8")
     }
 
@@ -166,10 +147,10 @@ class MailServiceIT <% if (databaseType === 'cassandra') { %>: AbstractCassandra
         val aos = ByteArrayOutputStream()
         part.writeTo(aos)
         assertThat(message.subject).isEqualTo("testSubject")
-        assertThat(message.allRecipients[0].toString()).isEqualTo("john.doe@example.com")
-        assertThat(message.from[0].toString()).isEqualTo(jHipsterProperties.mail.from)
+        assertThat(message.allRecipients[0]).hasToString("john.doe@example.com")
+        assertThat(message.from[0]).hasToString(jHipsterProperties.mail.from)
         assertThat(message.content).isInstanceOf(Multipart::class.java)
-        assertThat(aos.toString()).isEqualTo("\r\ntestContent")
+        assertThat(aos).hasToString("\r\ntestContent")
         assertThat(part.dataHandler.contentType).isEqualTo("text/html;charset=UTF-8")
     }
 
@@ -184,8 +165,8 @@ class MailServiceIT <% if (databaseType === 'cassandra') { %>: AbstractCassandra
         verify(javaMailSender).send(messageCaptor.capture())
         val message = messageCaptor.value
         assertThat(message.subject).isEqualTo("test title")
-        assertThat(message.allRecipients[0].toString()).isEqualTo(user.email)
-        assertThat(message.from[0].toString()).isEqualTo(jHipsterProperties.mail.from)
+        assertThat(message.allRecipients[0).hasToString(user.email)
+        assertThat(message.from[0]).hasToString(jHipsterProperties.mail.from)
         assertThat(message.content.toString()).isEqualToNormalizingNewlines("<html>test title, http://127.0.0.1:8080, john</html>\n")
         assertThat(message.dataHandler.contentType).isEqualTo("text/html;charset=UTF-8")
     }
@@ -201,8 +182,8 @@ class MailServiceIT <% if (databaseType === 'cassandra') { %>: AbstractCassandra
         mailService.sendActivationEmail(user)
         verify(javaMailSender).send(messageCaptor.capture())
         val message = messageCaptor.value
-        assertThat(message.allRecipients[0].toString()).isEqualTo(user.email)
-        assertThat(message.from[0].toString()).isEqualTo(jHipsterProperties.mail.from)
+        assertThat(message.allRecipients[0).hasToString(user.email)
+        assertThat(message.from[0]).hasToString(jHipsterProperties.mail.from)
         assertThat(message.content.toString()).isNotEmpty()
         assertThat(message.dataHandler.contentType).isEqualTo("text/html;charset=UTF-8")
     }
@@ -217,8 +198,8 @@ class MailServiceIT <% if (databaseType === 'cassandra') { %>: AbstractCassandra
         mailService.sendCreationEmail(user)
         verify(javaMailSender).send(messageCaptor.capture())
         val message = messageCaptor.value
-        assertThat(message.allRecipients[0].toString()).isEqualTo(user.email)
-        assertThat(message.from[0].toString()).isEqualTo(jHipsterProperties.mail.from)
+        assertThat(message.allRecipients[0).hasToString(user.email)
+        assertThat(message.from[0]).hasToString(jHipsterProperties.mail.from)
         assertThat(message.content.toString()).isNotEmpty()
         assertThat(message.dataHandler.contentType).isEqualTo("text/html;charset=UTF-8")
     }
@@ -233,8 +214,8 @@ class MailServiceIT <% if (databaseType === 'cassandra') { %>: AbstractCassandra
         mailService.sendPasswordResetMail(user)
         verify(javaMailSender).send(messageCaptor.capture())
         val message = messageCaptor.value
-        assertThat(message.allRecipients[0].toString()).isEqualTo(user.email)
-        assertThat(message.from[0].toString()).isEqualTo(jHipsterProperties.mail.from)
+        assertThat(message.allRecipients[0).hasToString(user.email)
+        assertThat(message.from[0]).hasToString(jHipsterProperties.mail.from)
         assertThat(message.content.toString()).isNotEmpty()
         assertThat(message.dataHandler.contentType).isEqualTo("text/html;charset=UTF-8")
     }

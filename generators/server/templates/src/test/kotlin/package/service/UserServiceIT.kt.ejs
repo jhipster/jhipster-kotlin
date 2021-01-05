@@ -21,21 +21,11 @@ package <%= packageName %>.service
 <%_ if (databaseType === 'cassandra') { _%>
 import <%= packageName %>.AbstractCassandraTest
 <%_ } _%>
-<%_ if (cacheProvider === 'redis') { _%>
-import <%= packageName %>.RedisTestContainerExtension
-<%_ } _%>
-<%_ if (databaseType === 'neo4j') { _%>
-import <%= packageName %>.AbstractNeo4jIT
-<%_ } _%>
-import <%= packageName %>.<%= mainClass %>
+import <%= packageName %>.IntegrationTest
 <%_ if (databaseType === 'sql' && reactive) { _%>
 import <%= packageName %>.config.SYSTEM_ACCOUNT
 <%_ } _%>
-import <%= packageName %>.config.ANONYMOUS_USER
 import <%= packageName %>.config.DEFAULT_LANGUAGE
-<%_ if (authenticationType === 'oauth2') { _%>
-import <%= packageName %>.config.TestSecurityConfiguration
-<%_ } _%>
 <%_ if ((databaseType === 'sql' || databaseType === 'mongodb' || databaseType === 'neo4j' || databaseType === 'couchbase') && authenticationType === 'session' && !reactive) { _%>
 import <%= packageName %>.domain.PersistentToken
 <%_ } _%>
@@ -63,14 +53,7 @@ import org.apache.commons.lang3.RandomStringUtils
 <%_ } _%>
 import org.junit.jupiter.api.BeforeEach
 import org.junit.jupiter.api.Test
-<%_ if (cacheProvider === 'redis') { _%>
-import org.junit.jupiter.api.extension.ExtendWith
-<%_ } _%>
-<%_ if (databaseType === 'neo4j') { _%>
-import org.junit.jupiter.api.extension.ExtendWith
-<%_ } _%>
 import org.springframework.beans.factory.annotation.Autowired
-import org.springframework.boot.test.context.SpringBootTest
 <%_ if (databaseType === 'sql' && !reactive && authenticationType !== 'oauth2') { _%>
 import org.springframework.boot.test.mock.mockito.MockBean
 import org.springframework.data.auditing.AuditingHandler
@@ -149,17 +132,7 @@ private const val DEFAULT_LANGKEY = "dummy"
 /**
  * Integration tests for [UserService].
  */
-<%_ if (authenticationType === 'oauth2') { _%>
-@SpringBootTest(classes = [<%= mainClass %>::class, TestSecurityConfiguration::class])
-<%_ } else { _%>
-@SpringBootTest(classes = [<%= mainClass %>::class])
-<%_ } _%>
-<%_ if (cacheProvider === 'redis') { _%>
-@ExtendWith(RedisTestContainerExtension::class)
-<%_ } _%>
-<%_ if (databaseType === 'neo4j') { _%>
-@ExtendWith(AbstractNeo4jIT::class)
-<%_ } _%>
+@IntegrationTest
 <%_ if (databaseType === 'sql' && !reactive) { _%>
 @Transactional
 <%_ } _%>
@@ -453,33 +426,6 @@ class UserServiceIT <% if (databaseType === 'cassandra') { %>: AbstractCassandra
         persistentTokenRepository.save<% if (databaseType === 'sql' && !reactive) { %>AndFlush<% } %>(token)
     }
     <%_ } _%>
-    <%_ if (databaseType !== 'no') { _%>
-
-    @Test
-    <%_ if (databaseType === 'sql' && !reactive) { _%>
-    @Transactional
-    <%_ } else if (databaseType === 'couchbase') { _%>
-    @WithAnonymousUser
-    <%_ } _%>
-    fun assertThatAnonymousUserIsNotGet() {
-        <%_ if (authenticationType === 'oauth2') { _%>
-        user.id = ANONYMOUS_USER
-        <%_ } _%>
-        user.login = ANONYMOUS_USER
-        if (!userRepository.findOneByLogin(ANONYMOUS_USER)<% if (reactive) { %>.blockOptional()<% } %>.isPresent) {
-            userRepository.<% if (databaseType === 'sql' && reactive && authenticationType === 'oauth2') { %>create<% } else { %>save<% } %><% if (databaseType === 'sql' && !reactive) { %>AndFlush<% } %>(user)<% if (reactive) { %>.block()<% } %>
-        }<% if (databaseType === 'sql' || databaseType === 'neo4j' || databaseType === 'mongodb' || databaseType === 'couchbase') { %>
-        val pageable = PageRequest.of(0, userRepository.count()<% if (reactive) { %>.block()!!<% } %>.toInt())
-        val allManagedUsers = userService.getAllManagedUsers(pageable)<% if (reactive) { %>
-            .collectList().block()<% } %>
-        assertNotNull(allManagedUsers)
-        assertThat(allManagedUsers<% if (!reactive) { %>.content<% } %>.stream()<% } %><% if (databaseType === 'cassandra') { %>
-        val allManagedUsers = userService.getAllManagedUsers()<% if (reactive) { %>.collectList().block()<% } %>
-        assertThat(allManagedUsers.stream()<% } %>
-            .noneMatch { user -> ANONYMOUS_USER == user.login })
-            .isTrue()
-    }
-    <%_ } _%>
     <%_ if (authenticationType === 'oauth2') { _%>
 
     @Test
@@ -559,7 +505,7 @@ class UserServiceIT <% if (databaseType === 'cassandra') { %>: AbstractCassandra
     private fun createMockOAuth2AuthenticationToken(userDetails: Map<String, Any?>): OAuth2AuthenticationToken {
         val authorities = listOf(SimpleGrantedAuthority(ANONYMOUS))
         val usernamePasswordAuthenticationToken =
-            UsernamePasswordAuthenticationToken(ANONYMOUS_USER, ANONYMOUS_USER, authorities)
+            UsernamePasswordAuthenticationToken("anonymous", "anonymous", authorities)
         usernamePasswordAuthenticationToken.details = userDetails
         val user = DefaultOAuth2User(authorities, userDetails, "sub")
 
