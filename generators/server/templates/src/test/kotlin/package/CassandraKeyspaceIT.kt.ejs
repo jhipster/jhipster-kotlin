@@ -18,17 +18,10 @@
 -%>
 package <%= packageName %>
 
-<%_ if (cacheProvider === 'redis') { _%>
-import <%= packageName %>.RedisTestContainerExtension
-<%_ } _%>
-
-import com.datastax.driver.core.Metadata
-import com.datastax.driver.core.Session
-
+import <%= packageName %>.IntegrationTest
+import com.datastax.oss.driver.api.core.CqlSession
+import com.datastax.oss.driver.api.core.metadata.Metadata
 import org.junit.jupiter.api.Test
-<%_ if (cacheProvider === 'redis') { _%>
-import org.junit.jupiter.api.extension.ExtendWith
-<%_ } _%>
 import org.springframework.beans.factory.annotation.Autowired
 import org.springframework.boot.test.context.SpringBootTest
 <%_ if (messageBroker === 'kafka') { _%>
@@ -37,19 +30,15 @@ import org.springframework.kafka.test.context.EmbeddedKafka
 
 import org.assertj.core.api.Assertions.assertThat
 
-@SpringBootTest(classes = [<%= mainClass %>::class])
-<%_ if (cacheProvider === 'redis') { _%>
-@ExtendWith(RedisTestContainerExtension::class)
-<%_ } _%>
+@IntegrationTest
 class CassandraKeyspaceIT : AbstractCassandraTest() {
 
     @Autowired
-    private lateinit var session: Session
+    private lateinit var session: CqlSession
 
     @Test
-    @Throws(Exception::class)
     fun shouldListCassandraUnitKeyspace() {
-        val metadata: Metadata = session.cluster.metadata
+        val metadata: Metadata = session.getMetadata()
         assertThat(metadata.getKeyspace(CASSANDRA_UNIT_KEYSPACE)).isNotNull
     }
 }

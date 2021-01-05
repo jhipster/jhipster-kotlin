@@ -18,23 +18,32 @@
 -%>
 package <%= packageName %>
 
+
+import static java.nio.file.Files.newDirectoryStream
+import static java.nio.file.Paths.get
+import static java.util.Spliterator.SORTED
+import static java.util.Spliterators.spliteratorUnknownSize
+import static java.util.stream.StreamSupport.stream
+
 import tech.jhipster.config.JHipsterConstants
 
-import com.datastax.driver.core.Cluster
-import com.datastax.driver.core.Session
-import org.apache.cassandra.exceptions.ConfigurationException
-import org.apache.thrift.transport.TTransportException
+import com.datastax.oss.driver.api.core.CqlSession
 import org.cassandraunit.CQLDataLoader
 import org.cassandraunit.dataset.cql.ClassPathCQLDataSet
 import org.junit.jupiter.api.BeforeAll
+import org.springframework.context.ApplicationContextInitializer
+import org.springframework.context.ConfigurableApplicationContext
 import org.springframework.test.context.ActiveProfiles
 import org.testcontainers.containers.GenericContainer
 import org.testcontainers.containers.wait.strategy.Wait
 
 import java.io.IOException
+import java.net.InetSocketAddress
 import java.net.URISyntaxException
 import java.nio.file.Files
 import java.nio.file.Paths
+import java.util.Iterator
+import java.util.Spliterator
 import java.time.Duration
 
 
@@ -42,6 +51,7 @@ import java.time.Duration
  * Base class for starting/stopping Cassandra during tests.
  */
 @ActiveProfiles(JHipsterConstants.SPRING_PROFILE_TEST)
+@ContextConfiguration(initializers = [AbstractCassandraTest.CassandraPortInitializer::class])
 open class AbstractCassandraTest {
     companion object {
 
@@ -57,20 +67,18 @@ open class AbstractCassandraTest {
 
         @JvmStatic
         @BeforeAll
-        @Throws(
-            TTransportException::class, ConfigurationException::class, IOException::class, URISyntaxException::class
-        )
+        @Throws(IOException::class, URISyntaxException::class)
         fun startServer() {
             if (!started) {
                 CASSANDRA_CONTAINER.start()
-                val cluster = Cluster.Builder()
-                    .addContactPoint("127.0.0.1")
-                    .withPort(CASSANDRA_CONTAINER.getMappedPort(CASSANDRA_TEST_PORT))
-                    .withoutMetrics()
-                    .withoutJMXReporting()
+                val session = CqlSession.Builder()
+                    .addContactPoint(InetSocketAddress(
+                        CASSANDRA_CONTAINER.containerIpAddress,
+                        CASSANDRA_CONTAINER.getMappedPort(CASSANDRA_TEST_PORT)
+                    ))
+                    .withLocalDatacenter("datacenter1")
                     .build()
 
-                val session = cluster.connect()
                 createTestKeyspace(session)
                 val dataLoader = CQLDataLoader(session)
                 applyScripts(dataLoader, "config/cql/changelog/", "*.cql")
@@ -80,7 +88,7 @@ open class AbstractCassandraTest {
         }
 
         @JvmStatic
-        private fun createTestKeyspace(session: Session) {
+        private fun createTestKeyspace(session: CqlSession) {
             val createQuery =
                 "CREATE KEYSPACE $CASSANDRA_UNIT_KEYSPACE WITH replication={'class' : 'SimpleStrategy', 'replication_factor':1}"
             session.execute(createQuery)
@@ -95,15 +103,24 @@ open class AbstractCassandraTest {
             val dirUrl = ClassLoader.getSystemResource(cqlDir) ?: return
 
             val scripts = mutableListOf<String>()
-            Files.newDirectoryStream(Paths.get(dirUrl.toURI()), pattern).use { stream ->
-                for (entry in stream) {
-                    scripts.add(entry.fileName.toString())
-                }
-            }
-            scripts.sort()
+            val pathIterator = newDirectoryStream(get(dirUrl.toURI()), pattern).iterator()
+            val pathSpliterator = spliteratorUnknownSize(pathIterator, SORTED) 
+        
+            stream(pathSpliterator, false)
+                .map(Path::getFileName)
+                .map(Path::toString)
+                .sorted()
+                .map(file -> cqlDir + file)
+                .map(dataSetLocation -> ClassPathCQLDataSet(dataSetLocation, false, false, CASSANDRA_UNIT_KEYSPACE))
+                .forEach(dataLoader::load)
+        }
 
-            for (fileName in scripts) {
-                dataLoader.load(ClassPathCQLDataSet(cqlDir + fileName, false, false, CASSANDRA_UNIT_KEYSPACE))
+        @JvmStatic
+        class CassandraPortInitializer: ApplicationContextInitializer<ConfigurableApplicationContext> {
+            override fun initialize(applicationContext: ConfigurableApplicationContext) {
+                TestPropertySourceUtils.addInlinedPropertiesToEnvironment(applicationContext,
+                    "spring.data.cassandra.port=" + AbstractCassandraTest.CASSANDRA_CONTAINER.getMappedPort(AbstractCassandraTest.CASSANDRA_TEST_PORT)
+                )
             }
         }
     }
