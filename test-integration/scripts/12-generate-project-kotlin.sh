@@ -19,7 +19,7 @@ if [[ "$JHI_ENTITY" == "jdl" ]]; then
     cp -f "$JHI_SAMPLES"/"$JHI_APP"/*.jdl "$JHI_FOLDER_APP"/
     cd "$JHI_FOLDER_APP"
     npm link generator-jhipster-kotlin
-    jhipster import-jdl *.jdl --no-insight --blueprint kotlin
+    jhipster import-jdl *.jdl --no-insight --blueprint kotlin $@
 
 else
     #-------------------------------------------------------------------------------
@@ -29,7 +29,7 @@ else
         mkdir -p "$JHI_FOLDER_UAA"
         cp -f "$JHI_SAMPLES"/uaa/.yo-rc.json "$JHI_FOLDER_UAA"/
         cd "$JHI_FOLDER_UAA"
-        jhipster --force --no-insight --with-entities --skip-checks --from-cli
+        jhipster --force --no-insight --with-entities --skip-checks $@
         ls -al "$JHI_FOLDER_UAA"
     fi
 
@@ -37,10 +37,14 @@ else
     # Generate project with jhipster
     #-------------------------------------------------------------------------------
     mkdir -p "$JHI_FOLDER_APP"
-    cp -f "$JHI_SAMPLES"/"$JHI_APP"/.yo-rc.json "$JHI_FOLDER_APP"/
+    if [[ "$JHI_GENERATE_SKIP_CONFIG" != "1" ]]; then
+        cp -f "$JHI_SAMPLES"/"$JHI_APP"/.yo-rc.json "$JHI_FOLDER_APP"/
+    else
+        echo "skipping config file"
+    fi
     cd "$JHI_FOLDER_APP"
     npm link generator-jhipster-kotlin
-    khipster --force --no-insight --skip-checks --with-entities --from-cli
+    khipster --force --no-insight --skip-checks --with-entities $@
 
 fi
 
@@ -50,3 +54,4 @@ cd "$JHI_FOLDER_APP"
 # Check folder where the app is generated
 #-------------------------------------------------------------------------------
 ls -al "$JHI_FOLDER_APP"
+git --no-pager log -n 10 --graph --pretty='%Cred%h%Creset -%C(yellow)%d%Creset %s %Cgreen(%cr) %C(bold blue)<%an>%Creset' --abbrev-commit || true
