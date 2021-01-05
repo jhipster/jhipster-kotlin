@@ -20,18 +20,18 @@
 jobs:
     - job: Test
       pool:
-          vmImage: 'Ubuntu 16.04'
+          vmImage: 'Ubuntu 20.04'
       variables:
           JHI_PROFILE: dev
           JHI_RUN_APP: 1
-          JHI_PROTRACTOR: 0
+          JHI_E2E: 0
           JHI_JDK: 11
           # if JHI_LIB_BRANCH value is release, use the release from Maven
-          JHI_LIB_REPO: https://github.com/jhipster/jhipster.git
+          JHI_LIB_REPO: https://github.com/jhipster/jhipster-bom.git
           JHI_LIB_BRANCH: release
           # if JHI_GEN_BRANCH value is release, use the release from NPM
           JHI_GEN_REPO: https://github.com/jhipster/generator-jhipster.git
-          JHI_GEN_BRANCH: v6.10.5
+          JHI_GEN_BRANCH: v7.0.0-beta.0
           # specific config
           SPRING_OUTPUT_ANSI_ENABLED: NEVER
           SPRING_JPA_SHOW_SQL: false
@@ -40,6 +40,10 @@ jobs:
           JHI_SCRIPTS: $HOME/generator-jhipster/test-integration/scripts
           KOTLIN_JHI_SCRIPTS: $(Build.Repository.LocalPath)/test-integration/scripts
           NG_CLI_ANALYTICS: false
+          # https://github.com/actions/virtual-environments/issues/1499#issuecomment-689467080
+          MAVEN_OPTS: '-Dhttp.keepAlive=false
+              -Dmaven.wagon.http.pool=false
+              -Dmaven.wagon.httpconnectionManager.ttlSeconds=120'
 
       strategy:
           matrix:
@@ -47,12 +51,12 @@ jobs:
                   JHI_APP: ms-ngx-gateway-eureka-jwt
                   JHI_ENTITY: sqllight
                   JHI_PROFILE: prod
-                  JHI_PROTRACTOR: 1
+                  JHI_E2E: 1
               ms-ngx-gateway-eureka-oauth2:
                   JHI_APP: ms-ngx-gateway-eureka-oauth2
                   JHI_ENTITY: sqllight
                   JHI_PROFILE: prod
-                  JHI_PROTRACTOR: 1
+                  JHI_E2E: 1
               ms-ngx-gateway-eureka-uaa:
                   JHI_APP: ms-ngx-gateway-eureka-uaa
                   JHI_ENTITY: uaa
@@ -66,17 +70,17 @@ jobs:
                   JHI_APP: ms-react-gateway-consul-jwt
                   JHI_ENTITY: sqllight
                   JHI_PROFILE: prod
-                  JHI_PROTRACTOR: 1
+                  JHI_E2E: 1
               ms-react-gateway-consul-oauth2:
                   JHI_APP: ms-react-gateway-consul-oauth2
                   JHI_ENTITY: sqllight
                   JHI_PROFILE: prod
-                  JHI_PROTRACTOR: 1
+                  JHI_E2E: 1
               jdl-default:
                   JHI_APP: jdl-default
                   JHI_ENTITY: jdl
                   JHI_PROFILE: prod
-                  JHI_PROTRACTOR: 1
+                  JHI_E2E: 1
                   JHI_TESTCONTAINERS: 1
 
       steps:
@@ -107,8 +111,6 @@ jobs:
             displayName: 'TOOLS: install google-chrome-stable'
           - script: npm install -g npm
             displayName: 'TOOLS: update NPM'
-          - script: npm install -g yarn
-            displayName: 'TOOLS: install Yarn'
           - bash: $(KOTLIN_JHI_SCRIPTS)/01-display-configuration.sh
             displayName: 'TOOLS: display configuration'
           - bash: $(KOTLIN_JHI_SCRIPTS)/03-system.sh

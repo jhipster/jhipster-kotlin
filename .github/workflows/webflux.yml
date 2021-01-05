@@ -22,10 +22,10 @@ on: [push, pull_request]
 env:
     JHI_RUN_APP: 1
     JHI_JDK: 11
-    JHI_LIB_REPO: https://github.com/jhipster/jhipster.git
+    JHI_LIB_REPO: https://github.com/jhipster/jhipster-bom.git
     JHI_LIB_BRANCH: release
     JHI_GEN_REPO: https://github.com/jhipster/generator-jhipster.git
-    JHI_GEN_BRANCH: v6.10.5
+    JHI_GEN_BRANCH: v7.0.0-beta.0
     SPRING_OUTPUT_ANSI_ENABLED: ALWAYS
     SPRING_JPA_SHOW_SQL: false
     JHI_DISABLE_WEBPACK_LOGS: true
@@ -35,6 +35,12 @@ env:
     KOTLIN_JHI_SCRIPTS: ${{ github.workspace }}/test-integration/scripts
     NG_CLI_ANALYTICS: 'false'
     JHI_GITHUB_CI: true
+    FORCE_COLOR: 1
+    # https://github.com/actions/virtual-environments/issues/1499#issuecomment-689467080
+    MAVEN_OPTS: >-
+        -Dhttp.keepAlive=false
+        -Dmaven.wagon.http.pool=false
+        -Dmaven.wagon.httpconnectionManager.ttlSeconds=120
 jobs:
     applications:
         name: ${{ matrix.app-type }}
@@ -50,7 +56,7 @@ jobs:
             fail-fast: false
             matrix:
                 node_version: [14.15.0]
-                os: [ubuntu-latest]
+                os: [ubuntu-20.04]
                 app-type:
                     - webflux-mongodb
                     - webflux-mongodb-es-session
@@ -106,7 +112,7 @@ jobs:
             JHI_APP: ${{ matrix.app-type }}
             JHI_PROFILE: ${{ matrix.profile }}
             JHI_WAR: ${{ matrix.war }}
-            JHI_PROTRACTOR: ${{ matrix.protractor }}
+            JHI_E2E: ${{ matrix.protractor }}
         steps:
             #----------------------------------------------------------------------
             # Install all tools and check configuration
