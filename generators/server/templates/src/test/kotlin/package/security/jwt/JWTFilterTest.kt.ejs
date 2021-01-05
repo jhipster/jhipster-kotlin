@@ -59,14 +59,10 @@ class JWTFilterTest {
     @BeforeEach
     fun setup() {
         val jHipsterProperties = JHipsterProperties()
+        val base64Secret = "fd54a45s65fds737b9aafcb3412e07ed99b267f33413274720ddbb7f6c5e64e9f14075f2d7ed041592f0b7657baf8"
+        jHipsterProperties.security.authentication.jwt.base64Secret = base64Secret
         tokenProvider = TokenProvider(jHipsterProperties)
-        ReflectionTestUtils.setField(
-            tokenProvider, "key",
-            Keys.hmacShaKeyFor(
-                Decoders.BASE64
-                    .decode("fd54a45s65fds737b9aafcb3412e07ed99b267f33413274720ddbb7f6c5e64e9f14075f2d7ed041592f0b7657baf8")
-            )
-        )
+        ReflectionTestUtils.setField(tokenProvider, "key", Keys.hmacShaKeyFor(Decoders.BASE64.decode(base64Secret)))
 
         ReflectionTestUtils.setField(tokenProvider, "tokenValidityInMilliseconds", 60000)
         jwtFilter = JWTFilter(tokenProvider)
@@ -95,7 +91,7 @@ class JWTFilterTest {
         jwtFilter.doFilter(request, response, filterChain)
         assertThat(response.status).isEqualTo(HttpStatus.OK.value())
         assertThat(SecurityContextHolder.getContext().authentication.name).isEqualTo("test-user")
-        assertThat(SecurityContextHolder.getContext().authentication.credentials.toString()).isEqualTo(jwt)
+        assertThat(SecurityContextHolder.getContext().authentication.credentials.toString()).hasToString(jwt)
         <%_ } else { _%>
         val request = MockServerHttpRequest
             .get("/api/test")
@@ -106,7 +102,7 @@ class JWTFilterTest {
                 .flatMap { ReactiveSecurityContextHolder.getContext() }
                 .map(SecurityContext::getAuthentication)
                 .doOnSuccess { auth -> assertThat(auth.name).isEqualTo("test-user") }
-                .doOnSuccess { auth -> assertThat(auth.credentials.toString()).isEqualTo(jwt) }
+                .doOnSuccess { auth -> assertThat(auth.credentials.toString()).hasToString(jwt) }
                 .then()
         }.block()
         <%_ } _%>
