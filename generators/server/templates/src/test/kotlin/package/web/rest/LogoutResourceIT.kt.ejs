@@ -18,25 +18,13 @@
 -%>
 package <%= packageName %>.web.rest
 
-import <%= packageName %>.<%= mainClass %>
-<%_ if (cacheProvider === 'redis') { _%>
-import <%= packageName %>.RedisTestContainerExtension
-<%_ } _%>
-<%_ if (databaseType === 'neo4j') { _%>
-import <%= packageName %>.AbstractNeo4jIT
-<%_ } _%>
+import <%= packageName %>.IntegrationTest;
+import <%= packageName %>.security.AuthoritiesConstants
 import <%= packageName %>.config.TestSecurityConfiguration
 import <%= packageName %>.security.USER
 import org.junit.jupiter.api.BeforeEach
 import org.junit.jupiter.api.Test
-<%_ if (cacheProvider === 'redis') { _%>
-import org.junit.jupiter.api.extension.ExtendWith
-<%_ } _%>
-<%_ if (databaseType === 'neo4j') { _%>
-import org.junit.jupiter.api.extension.ExtendWith
-<%_ } _%>
 import org.springframework.beans.factory.annotation.Autowired
-import org.springframework.boot.test.context.SpringBootTest
 <%_ if (reactive) { _%>
 import org.springframework.context.ApplicationContext
 <%_ } _%>
@@ -67,13 +55,7 @@ import org.springframework.security.test.web.reactive.server.SecurityMockServerC
 /**
  * Integration tests for the [LogoutResource] REST controller.
  */
-@SpringBootTest(classes = [<%= mainClass %>::class, TestSecurityConfiguration::class])
-<%_ if (cacheProvider === 'redis') { _%>
-@ExtendWith(RedisTestContainerExtension::class)
-<%_ } _%>
-<%_ if (databaseType === 'neo4j') { _%>
-@ExtendWith(AbstractNeo4jIT::class)
-<%_ } _%>
+@IntegrationTest
 class LogoutResourceIT {
 
     @Autowired
@@ -94,7 +76,7 @@ class LogoutResourceIT {
     <% if (!reactive) { %>@Throws(Exception::class)<% } %>
     fun before() {
         val claims = mapOf(
-            "groups" to listOf("ROLE_USER"),
+            "groups" to listOf(USER),
             "sub" to 123
         )
         val idToken = OidcIdToken(ID_TOKEN, Instant.now(), Instant.now().plusSeconds(60), claims)
