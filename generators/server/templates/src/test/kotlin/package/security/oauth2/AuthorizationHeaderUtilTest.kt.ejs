@@ -1,0 +1,215 @@
+<%#
+ Copyright 2013-2020 the original author or authors from the JHipster project.
+
+This file is part of the JHipster project, see https://jhipster.github.io/
+ for more information.
+
+ Licensed under the Apache License, Version 2.0 (the "License")
+ you may not use this file except in compliance with the License.
+ You may obtain a copy of the License at
+
+      http://www.apache.org/licenses/LICENSE-2.0
+
+ Unless required by applicable law or agreed to in writing, software
+ distributed under the License is distributed on an "AS IS" BASIS,
+ WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
+ See the License for the specific language governing permissions and
+ limitations under the License.
+-%>
+package <%= packageName %>.security.oauth2
+
+import org.assertj.core.api.Assertions
+import org.junit.jupiter.api.BeforeEach
+import org.junit.jupiter.api.Test
+import org.mockito.InjectMocks
+import org.mockito.Mock
+import org.mockito.MockitoAnnotations
+import org.springframework.boot.web.client.RestTemplateBuilder
+import org.springframework.http.RequestEntity
+import org.springframework.http.ResponseEntity
+import org.springframework.http.converter.HttpMessageConverter
+import org.springframework.security.authentication.UsernamePasswordAuthenticationToken
+import org.springframework.security.core.authority.SimpleGrantedAuthority
+import org.springframework.security.core.context.SecurityContext
+import org.springframework.security.core.context.SecurityContextHolder
+import org.springframework.security.oauth2.client.OAuth2AuthorizedClient
+import org.springframework.security.oauth2.client.OAuth2AuthorizedClientService
+import org.springframework.security.oauth2.client.authentication.OAuth2AuthenticationToken
+import org.springframework.security.oauth2.client.registration.ClientRegistration
+import org.springframework.security.oauth2.core.*
+import org.springframework.security.oauth2.core.oidc.OidcIdToken
+import org.springframework.security.oauth2.core.oidc.user.DefaultOidcUser
+import org.springframework.security.oauth2.jwt.Jwt
+import org.springframework.security.oauth2.server.resource.authentication.JwtAuthenticationToken
+import org.springframework.web.client.ResponseErrorHandler
+import org.springframework.web.client.RestTemplate
+
+import java.time.Duration
+import java.time.Instant
+import java.util.Optional
+
+import org.mockito.ArgumentMatchers.*
+import org.mockito.Mockito.*
+
+/**
+ * Test class for the [AuthorizationHeaderUtil] utility class.
+ */
+class AuthorizationHeaderUtilTest {
+
+    companion object {
+        const val VALID_REGISTRATION_ID: String = "OIDC"
+        const val SUB_VALUE: String = "123456"
+    }
+
+    @Mock private lateinit var clientService: OAuth2AuthorizedClientService
+    @Mock private lateinit var restTemplateBuilder: RestTemplateBuilder
+    @Mock private lateinit var securityContext: SecurityContext
+    @InjectMocks private lateinit var authorizationHeaderUtil: AuthorizationHeaderUtil
+
+    @BeforeEach
+    fun setup() {
+        MockitoAnnotations.initMocks(this)
+        SecurityContextHolder.setContext(securityContext)
+
+        doReturn(restTemplateBuilder).when(restTemplateBuilder).additionalMessageConverters(any(HttpMessageConverter::class))
+        doReturn(restTemplateBuilder).when(restTemplateBuilder).errorHandler(any(ResponseErrorHandler::class))
+        doReturn(restTemplateBuilder).when(restTemplateBuilder).basicAuthentication(anyString(), anyString())
+    }
+
+    @Test
+    fun getAuthorizationHeader_Authentication() {
+        val authenticationToken = UsernamePasswordAuthenticationToken("principal", "credentials")
+        doReturn(authenticationToken).when(securityContext).getAuthentication()
+
+        val header = authorizationHeaderUtil.getAuthorizationHeader()
+
+        Assertions.assertThat(header).isNotNull().isEmpty()
+    }
+
+    @Test
+    fun getAuthorizationHeader_JwtAuthentication() {
+        val jwtToken = JwtAuthenticationToken(Jwt("tokenVal", Instant.now(),
+            Instant.now().plus(Duration.ofMinutes(3)),hashMapOf("alg" to "HS256"), hashMapOf("sub" to SUB_VALUE)))
+        doReturn(jwtToken).when(securityContext).getAuthentication()
+
+        val header = authorizationHeaderUtil.getAuthorizationHeader()
+
+        Assertions.assertThat(header).isNotNull().isNotEmpty().get().isEqualTo("Bearer tokenVal")
+    }
+
+    @Test
+    fun getAuthorizationHeader_OAuth2Authentication_InvalidClient() {
+        val oauth2Token = getTestOAuth2AuthenticationToken("INVALID")
+        val authorizedClient = getTestOAuth2AuthorizedClient()
+
+        doReturn(oauth2Token).when(securityContext).getAuthentication()
+        doReturn(authorizedClient).when(clientService).loadAuthorizedClient(eq(VALID_REGISTRATION_ID), eq(SUB_VALUE))
+
+        Assertions.assertThatThrownBy(() -> {
+            val header = authorizationHeaderUtil.getAuthorizationHeader()
+        }).isInstanceOf(OAuth2AuthorizationException::class)
+            .hasMessageContaining("[access_denied] The token is expired")
+    }
+
+    @Test
+    fun getAuthorizationHeader_OAuth2Authentication() {
+        val oauth2Token = getTestOAuth2AuthenticationToken(VALID_REGISTRATION_ID)
+        val authorizedClient = getTestOAuth2AuthorizedClient()
+
+        doReturn(oauth2Token).when(securityContext).getAuthentication()
+        doReturn(authorizedClient).when(clientService).loadAuthorizedClient(eq(VALID_REGISTRATION_ID), eq(SUB_VALUE))
+
+        val header = authorizationHeaderUtil.getAuthorizationHeader()
+        Assertions.assertThat(header).isNotNull().isNotEmpty().get().isEqualTo("Bearer tokenVal")
+    }
+
+    @Test
+    fun getAuthorizationHeader_OAuth2Authentication_RefreshToken() {
+        val oauth2Token = getTestOAuth2AuthenticationToken(VALID_REGISTRATION_ID)
+        val authorizedClient = getTestOAuth2AuthorizedClient(true)
+
+        doReturn(oauth2Token).when(securityContext).getAuthentication()
+        doReturn(authorizedClient).when(clientService).loadAuthorizedClient(eq(VALID_REGISTRATION_ID), eq(SUB_VALUE))
+
+        val restTemplate = mock(RestTemplate::class)
+        val refreshResponse = ResponseEntity.of(getTestOAuthIdpTokenResponseDTO(true))
+        doReturn(refreshResponse).when(restTemplate).exchange(any(RequestEntity::class), eq(OAuthIdpTokenResponseDTO::class))
+        doReturn(restTemplate).when(restTemplateBuilder).build()
+
+        val header = authorizationHeaderUtil.getAuthorizationHeader()
+        Assertions.assertThat(header).isNotNull().isNotEmpty().get().isEqualTo("Bearer tokenVal")
+    }
+
+    @Test
+    fun getAuthorizationHeader_OAuth2Authentication_RefreshToken_NoRefreshToken() {
+        val oauth2Token = getTestOAuth2AuthenticationToken(VALID_REGISTRATION_ID)
+        val authorizedClient = getTestOAuth2AuthorizedClient(true)
+
+        doReturn(oauth2Token).when(securityContext).getAuthentication()
+        doReturn(authorizedClient).when(clientService).loadAuthorizedClient(eq(VALID_REGISTRATION_ID), eq(SUB_VALUE))
+
+        val restTemplate = mock(RestTemplate::class)
+        val refreshResponse = ResponseEntity.of(getTestOAuthIdpTokenResponseDTO(false))
+        doReturn(refreshResponse).when(restTemplate).exchange(any(RequestEntity::class), eq(OAuthIdpTokenResponseDTO::class))
+        doReturn(restTemplate).when(restTemplateBuilder).build()
+
+        val header = authorizationHeaderUtil.getAuthorizationHeader()
+        Assertions.assertThat(header).isNotNull().isNotEmpty().get().isEqualTo("Bearer tokenVal")
+    }
+
+    @Test
+    fun getAuthorizationHeader_OAuth2Authentication_RefreshTokenFails() {
+        val oauth2Token = getTestOAuth2AuthenticationToken(VALID_REGISTRATION_ID)
+        val authorizedClient = getTestOAuth2AuthorizedClient(true)
+
+        doReturn(oauth2Token).when(securityContext).getAuthentication()
+        doReturn(authorizedClient).when(clientService).loadAuthorizedClient(eq(VALID_REGISTRATION_ID), eq(SUB_VALUE))
+
+        val restTemplate = mock(RestTemplate::class)
+        doThrow(OAuth2AuthorizationException(OAuth2Error("E"), "error")).when(restTemplate).exchange(any(RequestEntity::class), eq(OAuthIdpTokenResponseDTO::class))
+        doReturn(restTemplate).when(restTemplateBuilder).build()
+
+        Assertions.assertThatThrownBy(() -> {
+            val header = authorizationHeaderUtil.getAuthorizationHeader()
+        }).isInstanceOf(OAuth2AuthenticationException::class)
+            .hasMessageContaining("error")
+    }
+
+    private fun getTestOAuth2AuthorizedClient() = getTestOAuth2AuthorizedClient(false)
+
+    private fun getTestOAuth2AuthorizedClient(accessTokenExpired: boolean):OAuth2AuthorizedClient {
+        val end = if (accessTokenExpired) Instant.now() else  Instant.now().plus(Duration.ofMinutes(3))
+        return OAuth2AuthorizedClient(
+            ClientRegistration.withRegistrationId(VALID_REGISTRATION_ID)
+                .authorizationGrantType(AuthorizationGrantType.AUTHORIZATION_CODE)
+                .clientId("web-app")
+                .clientSecret("secret")
+                .redirectUriTemplate("/login/oauth2/code/oidc")
+                .authorizationUri("http://localhost:8080/auth/realms/master/protocol/openid-connect/auth")
+                .tokenUri("https://localhost:8080/auth/realms/master/protocol/openid-connect/token")
+                .build(),
+            "sub",
+            OAuth2AccessToken(OAuth2AccessToken.TokenType.BEARER, "tokenVal", Instant.now(), end),
+            OAuth2RefreshToken("refreshVal", Instant.now()))
+    }
+
+    private fun getTestOAuth2AuthenticationToken(registrationId" String): OAuth2AuthenticationToken{
+        return OAuth2AuthenticationToken(
+            DefaultOidcUser(listOf(SimpleGrantedAuthority("USER")),
+                OidcIdToken.withTokenValue("tokenVal").claim("sub", SUB_VALUE).build()),
+            listOf(SimpleGrantedAuthority("USER")), registrationId)
+    }
+
+    private fun getTestOAuthIdpTokenResponseDTO(hasRefreshToken: boolean): Optional<OAuthIdpTokenResponseDTO> {
+        val dto = OAuthIdpTokenResponseDTO()
+        dto.accessToken = "tokenVal"
+        dto.idToken = "tokenVal"
+        dto.notBefore = 0L
+        dto.refreshExpiresIn = "1800"
+        dto.sessionState = "ccea4a55"
+        dto.expiresIn = 300L
+        dto.refreshToken = if (hasRefreshToken) "tokenVal" else null
+        dto.scope = "openid email profile offline_access"
+        return Optional.of(dto)
+    }
+}

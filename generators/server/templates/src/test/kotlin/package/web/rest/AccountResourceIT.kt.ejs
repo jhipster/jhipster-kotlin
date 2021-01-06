@@ -18,283 +18,10 @@
 -%>
 package <%= packageName %>.web.rest
 
-<%_ if (authenticationType === 'oauth2') { _%>
 <%_ if (databaseType === 'cassandra') { _%>
 import <%= packageName %>.AbstractCassandraTest
 <%_ } _%>
-<%_ if (cacheProvider === 'redis') { _%>
-import <%= packageName %>.RedisTestContainerExtension
-<%_ } _%>
-<%_ if (databaseType === 'neo4j') { _%>
-import <%= packageName %>.AbstractNeo4jIT
-<%_ } _%>
-import <%= packageName %>.config.TestSecurityConfiguration
-import <%= packageName %>.<%= mainClass %>
-import <%= packageName %>.security.ADMIN
-import <%= packageName %>.security.USER
-import <%= packageName %>.service.UserService
-
-import org.junit.jupiter.api.BeforeEach
-import org.junit.jupiter.api.Test
-<%_ if (databaseType === 'neo4j') { _%>
-import org.junit.jupiter.api.extension.ExtendWith
-<%_ } _%>
-<%_ if (databaseType === 'neo4j' || cacheProvider === 'redis') { _%>
-import org.junit.jupiter.api.extension.ExtendWith
-<%_ } _%>
-
-import org.springframework.beans.factory.annotation.Autowired
-<%_ if (!reactive) { _%>
-import org.springframework.boot.test.autoconfigure.web.servlet.AutoConfigureMockMvc
-<%_ } else { _%>
-import org.springframework.boot.test.autoconfigure.web.reactive.AutoConfigureWebTestClient
-<%_ } _%>
-import org.springframework.boot.test.context.SpringBootTest
-import org.springframework.http.MediaType
-<%_ if (!reactive) { _%>
-import org.springframework.security.core.GrantedAuthority
-import org.springframework.security.core.authority.SimpleGrantedAuthority
-import org.springframework.security.oauth2.client.authentication.OAuth2AuthenticationToken
-import org.springframework.security.oauth2.core.user.DefaultOAuth2User
-import org.springframework.security.oauth2.core.user.OAuth2User
-import org.springframework.security.test.context.TestSecurityContextHolder
-import org.springframework.test.web.servlet.MockMvc
-import org.springframework.test.web.servlet.setup.DefaultMockMvcBuilder
-    <%_ if (databaseType === 'sql' && !reactive) { _%>
-import org.springframework.transaction.annotation.Transactional
-    <%_ } _%>
-<%_ } else { _%>
-import org.springframework.security.oauth2.core.oidc.OidcIdToken
-import org.springframework.test.web.reactive.server.WebTestClient
-import org.springframework.test.web.reactive.server.WebTestClientConfigurer
-    <%_ if (searchEngine === 'elasticsearch' && reactive) { _%>
-import reactor.core.publisher.Mono
-    <%_ } _%>
-
-import java.time.Instant
-<%_ } _%>
-
-<%_ if (reactive && searchEngine === 'elasticsearch') { _%>
-import org.mockito.Mockito.*
-<%_ } _%>
-
-import org.springframework.security.test.context.support.WithMockUser
-import <%= packageName %>.web.rest.TEST_USER_LOGIN
-import org.springframework.test.web.servlet.request.MockMvcRequestBuilders.get
-import org.springframework.test.web.servlet.result.MockMvcResultMatchers.content
-import org.springframework.test.web.servlet.result.MockMvcResultMatchers.jsonPath
-import org.springframework.test.web.servlet.result.MockMvcResultMatchers.status
-
-<%_ if (reactive) { _%>
-import <%= packageName %>.web.rest.ID_TOKEN
-import org.springframework.security.test.web.reactive.server.SecurityMockServerConfigurers.*
-<%_ } _%>
-
-/**
- * Integration tests for the [AccountResource] REST controller.
- */
-<%_ if (!reactive) { _%>
-@AutoConfigureMockMvc
-<%_ } else { _%>
-@AutoConfigureWebTestClient
-<%_ } _%>
-@WithMockUser(value = TEST_USER_LOGIN)
-@SpringBootTest(classes = [<%= mainClass %>::class, TestSecurityConfiguration::class])
-<%_ if (cacheProvider === 'redis') { _%>
-@ExtendWith(RedisTestContainerExtension::class)
-<%_ } _%>
-<%_ if (databaseType === 'neo4j') { _%>
-@ExtendWith(AbstractNeo4jIT::class)
-<%_ } _%>
-class AccountResourceIT <% if (databaseType === 'cassandra') { %>: AbstractCassandraTest() <% } %> {
-
-    <%_ if (!reactive) { _%>
-    @Autowired
-    private lateinit var restAccountMockMvc:MockMvc
-    <%_ } else { _%>
-    private lateinit var idToken: OidcIdToken
-
-    @Autowired
-    private lateinit var webTestClient: WebTestClient
-    <%_ } _%>
-
-    <%_ if (reactive) { _%>
-    @BeforeEach
-    fun setup() {
-        val claims: MutableMap<String, Any> = hashMapOf()
-        claims["groups"] = listOf(ADMIN)
-        claims["sub"] = "jane"
-        claims["email"] = "jane.doe@jhipster.com"
-        this.idToken = OidcIdToken(ID_TOKEN, Instant.now(),
-            Instant.now().plusSeconds(60), claims)
-    }
-    <%_ } _%>
-
-<%# Removed this test case in OAuth + reactive due to https://github.com/spring-projects/spring-security/issues/8142 %>
-<%_ if (!reactive) { _%>
-    @Test<% if (databaseType === 'sql' && !reactive) { %>
-    @Transactional<% } %>
-    <% if (!reactive) { %>@Throws(Exception::class)<% } %>
-    fun testGetExistingAccount() {
-    <%_ if (!reactive) { _%>
-        val userDetails = mapOf<String, Any>(
-            "sub" to TEST_USER_LOGIN,
-            "email" to "john.doe@jhipster.com"
-        )
-        val authorities = listOf(SimpleGrantedAuthority(ADMIN))
-        val user = DefaultOAuth2User(authorities, userDetails, "sub")
-        val authentication = OAuth2AuthenticationToken(user, authorities, "oidc")
-        TestSecurityContextHolder.getContext().authentication = authentication
-
-        restAccountMockMvc.perform(
-            get("/api/account")
-                .accept(MediaType.APPLICATION_JSON)
-        )
-            .andExpect(status().isOk)
-            .andExpect(content().contentType(MediaType.APPLICATION_JSON_VALUE))
-            .andExpect(jsonPath("\$.login").value(TEST_USER_LOGIN))
-            .andExpect(jsonPath("\$.email").value("john.doe@jhipster.com"))
-            .andExpect(jsonPath("\$.authorities").value(ADMIN))
-    <%_ } else { _%>
-        webTestClient
-            .mutateWith(mockAuthentication(authenticationToken(idToken)))
-            .mutateWith(csrf())
-            .get().uri("/api/account")
-            .accept(MediaType.APPLICATION_JSON)
-            .exchange()
-            .expectStatus().isOk
-            .expectHeader().contentType(MediaType.APPLICATION_JSON_VALUE)
-            .expectBody()
-            .jsonPath("$.login").isEqualTo("jane")
-            .jsonPath("$.email").isEqualTo("jane.doe@jhipster.com")
-            .jsonPath("$.authorities").isEqualTo(ADMIN)
-    <%_ } _%>
-    }
-<%_ } _%>
-}
-<%_ } else if (skipUserManagement) { _%>
-<%_ if (databaseType === 'cassandra') { _%>
-import <%= packageName %>.AbstractCassandraTest
-<%_ } _%>
-<%_ if (reactive && searchEngine === 'elasticsearch') { _%>
-import <%= packageName %>.repository.search.UserSearchRepository
-<%_ } _%>
-<%_ if (cacheProvider === 'redis') { _%>
-import <%= packageName %>.RedisTestContainerExtension
-<%_ } _%>
-import <%= packageName %>.<%= mainClass %>
-import <%= packageName %>.security.ADMIN
-import org.junit.jupiter.api.BeforeEach
-import org.junit.jupiter.api.Test
-<%_ if (cacheProvider === 'redis') { _%>
-import org.junit.jupiter.api.extension.ExtendWith
-<%_ } _%>
-<%_ if (databaseType === 'neo4j') { _%>
-import org.junit.jupiter.api.extension.ExtendWith
-<%_ } _%>
-import org.springframework.beans.factory.annotation.Autowired
-<%_ if (!reactive) { _%>
-import org.springframework.boot.test.autoconfigure.web.servlet.AutoConfigureMockMvc
-<%_ } else { _%>
-import org.springframework.boot.test.autoconfigure.web.reactive.AutoConfigureWebTestClient
-<%_ } _%>
-import org.springframework.boot.test.context.SpringBootTest
-import org.springframework.http.MediaType
-import org.springframework.security.test.context.support.WithMockUser
-<%_ if (!reactive) { _%>
-import org.springframework.test.web.servlet.MockMvc
-import org.springframework.test.web.servlet.setup.MockMvcBuilders
-
-import org.springframework.test.web.servlet.request.MockMvcRequestBuilders.get
-import org.springframework.test.web.servlet.result.MockMvcResultMatchers.*
-<%_ } else { _%>
-import org.springframework.test.web.reactive.server.WebTestClient
-<%_ } _%>
-<%_ if (reactive && searchEngine === 'elasticsearch') { _%>
-import reactor.core.publisher.Mono
-
-import org.mockito.Mockito.*
-<%_ } _%>
-import <%= packageName %>.web.rest.TEST_USER_LOGIN
-
-/**
- * Integration tests for the {@link AccountResource} REST controller.
- */
- <%_ if (!reactive) { _%>
-@AutoConfigureMockMvc
-<%_ } else { _%>
-@AutoConfigureWebTestClient
-<%_ } _%>
-@WithMockUser(value = TEST_USER_LOGIN)
-@SpringBootTest(classes = [<%= mainClass %>::class])
-<%_ if (cacheProvider === 'redis') { _%>
-@ExtendWith(RedisTestContainerExtension::class)
-<%_ } _%>
-class AccountResourceIT <% if (databaseType === 'cassandra') { %>: AbstractCassandraTest() <% } %>{
-
-    @Autowired
-    <%_ if (!reactive) { _%>
-    private lateinit var restAccountMockMvc: MockMvc
-    <%_ } else { _%>
-    private lateinit var accountWebTestClient: WebTestClient
-    <%_ } _%>
-
-    <%_ if (searchEngine === 'elasticsearch' && reactive) { _%>
-
-    @Autowired
-    private lateinit var mockUserSearchRepository: UserSearchRepository
-    <%_ } _%>
-
-    @Test
-    <% if (!reactive) { %>@Throws(Exception::class)<% } %>
-    @WithMockUser(username = TEST_USER_LOGIN, authorities = [ADMIN])
-    fun testGetExistingAccount() {
-        <%_ if (!reactive) { _%>
-            restAccountMockMvc.perform(
-            get("/api/account")
-                .accept(MediaType.APPLICATION_JSON)
-        )
-            .andExpect(status().isOk)
-            .andExpect(content().contentType(MediaType.APPLICATION_JSON_VALUE))
-            .andExpect(jsonPath("\$.login").value(TEST_USER_LOGIN))
-            .andExpect(jsonPath("\$.authorities").value(ADMIN))
-        <%_ } else { _%>
-            accountWebTestClient.get().uri("/api/account")
-                .accept(MediaType.APPLICATION_JSON)
-                .exchange()
-                .expectStatus().isOk
-                .expectHeader().contentType(MediaType.APPLICATION_JSON)
-                .expectBody()
-                .jsonPath("$.login").isEqualTo(TEST_USER_LOGIN)
-                .jsonPath("$.authorities").isEqualTo(ADMIN)
-        <%_ } _%>
-    }
-
-    @Test
-    <% if (!reactive) { %>@Throws(Exception::class)<% } %>
-    fun testGetUnknownAccount() {
-        <%_ if (!reactive) { _%>
-        restAccountMockMvc.perform(
-            get("/api/account")
-                .accept(MediaType.APPLICATION_PROBLEM_JSON)
-        )
-            .andExpect(status().isInternalServerError)
-        <%_ } else { _%>
-        accountWebTestClient.get().uri("/api/account")
-            .accept(MediaType.APPLICATION_JSON)
-            .exchange()
-            .expectStatus().is5xxServerError
-        <%_ } _%>
-    }
-}
-<%_ } else {  _%>
-<%_ if (databaseType === 'cassandra') { _%>
-import <%= packageName %>.AbstractCassandraTest
-<%_ } _%>
-<%_ if (databaseType === 'neo4j') { _%>
-import <%= packageName %>.AbstractNeo4jIT
-<%_ } _%>
-import <%= packageName %>.<%= mainClass %>
+import <%= packageName %>.IntegrationTest
 import <%= packageName %>.config.DEFAULT_LANGUAGE
 <%_ if (authenticationType === 'session' && !reactive) { _%>
 import <%= packageName %>.domain.PersistentToken
@@ -316,14 +43,13 @@ import <%= packageName %>.security.USER
 import <%= packageName %>.service.UserService
 import <%= packageName %>.service.dto.PasswordChangeDTO
 import <%= packageName %>.service.dto.<%= asDto('User') %>
+import <%= packageName %>.service.dto.<%= asDto('AdminUser') %>
 import <%= packageName %>.web.rest.vm.KeyAndPasswordVM
 import <%= packageName %>.web.rest.vm.ManagedUserVM
 import org.apache.commons.lang3.RandomStringUtils
-<%_ if (databaseType === 'neo4j') { _%>
-import org.junit.jupiter.api.extension.ExtendWith
-<%_ } _%>
-
+<%_ if (reactive && testsNeedCsrf || databaseType === 'mongodb' || databaseType === 'neo4j') { _%>
 import org.junit.jupiter.api.BeforeEach
+<%_ } _%>
 import org.junit.jupiter.api.Test
 import org.springframework.beans.factory.annotation.Autowired
 <%_ if (!reactive) { _%>
@@ -331,15 +57,11 @@ import org.springframework.boot.test.autoconfigure.web.servlet.AutoConfigureMock
 <%_ } else { _%>
 import org.springframework.boot.test.autoconfigure.web.reactive.AutoConfigureWebTestClient
 <%_ } _%>
-import org.springframework.boot.test.context.SpringBootTest
 <%_ if (reactive) { _%>
 import org.springframework.test.web.reactive.server.expectBody
 import org.springframework.http.HttpStatus
 <%_ } _%>
 import org.springframework.http.MediaType
-<%_ if (!reactive) { _%>
-import org.springframework.http.converter.HttpMessageConverter
-<%_ } _%>
 import org.springframework.security.crypto.password.PasswordEncoder
 import org.springframework.security.test.context.support.WithMockUser
 <%_ if (reactive) { _%>
@@ -372,6 +94,7 @@ import org.assertj.core.api.Assertions.assertThat
 import org.mockito.Mockito.*
 <%_ } _%>
 <%_ if (authenticationType === 'session' && !reactive) { _%>
+import org.hamcrest.Matchers.containsString
 import org.hamcrest.Matchers.hasItem
 <%_ } _%>
 import <%= packageName %>.web.rest.TEST_USER_LOGIN
@@ -408,10 +131,7 @@ import <%= packageName %>.config.SYSTEM_ACCOUNT
 @AutoConfigureWebTestClient
 <%_ } _%>
 @WithMockUser(value = TEST_USER_LOGIN)
-@SpringBootTest(classes = [<%= mainClass %>::class])
-<%_ if (databaseType === 'neo4j') { _%>
-@ExtendWith(AbstractNeo4jIT::class)
-<%_ } _%>
+@IntegrationTest
 class AccountResourceIT <% if (databaseType === 'cassandra') { %>: AbstractCassandraTest() <% } %>{
 
     @Autowired
@@ -519,7 +239,7 @@ class AccountResourceIT <% if (databaseType === 'cassandra') { %>: AbstractCassa
 
         val authorities = mutableSetOf(ADMIN)
 
-        val user = <%= asDto('User') %>(
+        val user = <%= asDto('AdminUser') %>(
             login = TEST_USER_LOGIN,
             firstName = "john",
             lastName = "doe",
@@ -605,7 +325,7 @@ class AccountResourceIT <% if (databaseType === 'cassandra') { %>: AbstractCassa
             langKey = DEFAULT_LANGUAGE
             authorities = setOf(USER)
         }
-        assertThat(userRepository.findOneByLogin("test-register-valid")<% if (reactive) { %>.blockOptional()<% } %>.isPresent).isFalse()
+        assertThat(userRepository.findOneByLogin("test-register-valid")<% if (reactive) { %>.blockOptional()<% } %>.).isEmpty
 
         <%_ if (!reactive) { _%>
         restAccountMockMvc.perform(
@@ -623,7 +343,7 @@ class AccountResourceIT <% if (databaseType === 'cassandra') { %>: AbstractCassa
             .expectStatus().isCreated
         <%_ } _%>
 
-        assertThat(userRepository.findOneByLogin("test-register-valid")<% if (reactive) { %>.blockOptional()<% } %>.isPresent).isTrue()
+        assertThat(userRepository.findOneByLogin("test-register-valid")<% if (reactive) { %>.blockOptional()<% } %>).isPresent
     }
 
     @Test<% if (databaseType === 'sql' && !reactive) { %>
@@ -661,7 +381,7 @@ class AccountResourceIT <% if (databaseType === 'cassandra') { %>: AbstractCassa
         <%_ } _%>
 
         val user = userRepository.findOneByEmailIgnoreCase("funky@example.com")<% if (reactive) { %>.blockOptional()<% } %>
-        assertThat(user.isPresent).isFalse()
+        assertThat(user).isEmpty
     }
 
     @Test<% if (databaseType === 'sql' && !reactive) { %>
@@ -699,7 +419,7 @@ class AccountResourceIT <% if (databaseType === 'cassandra') { %>: AbstractCassa
         <%_ } _%>
 
         val user = userRepository.findOneByLogin("bob")<% if (reactive) { %>.blockOptional()<% } %>
-        assertThat(user.isPresent).isFalse()
+        assertThat(user).isEmpty
     }
 
     @Test<% if (databaseType === 'sql' && !reactive) { %>
@@ -737,7 +457,7 @@ class AccountResourceIT <% if (databaseType === 'cassandra') { %>: AbstractCassa
         <%_ } _%>
 
         val user = userRepository.findOneByLogin("bob")<% if (reactive) { %>.blockOptional()<% } %>
-        assertThat(user.isPresent).isFalse()
+        assertThat(user).isEmpty
     }
 
     @Test<% if (databaseType === 'sql' && !reactive) { %>
@@ -775,7 +495,7 @@ class AccountResourceIT <% if (databaseType === 'cassandra') { %>: AbstractCassa
         <%_ } _%>
 
         val user = userRepository.findOneByLogin("bob")<% if (reactive) { %>.blockOptional()<% } %>
-        assertThat(user.isPresent).isFalse()
+        assertThat(user).isEmpty
     }
 
     @Test<% if (databaseType === 'sql' && !reactive) { %>
@@ -857,7 +577,7 @@ class AccountResourceIT <% if (databaseType === 'cassandra') { %>: AbstractCassa
         <%_ } _%>
 
         val testUser = userRepository.findOneByEmailIgnoreCase("alice2@example.com")<% if (reactive) { %>.blockOptional()<% } %>
-        assertThat(testUser.isPresent).isTrue()
+        assertThat(testUser).isPresent
         testUser.get().activated = true
         userRepository.save(testUser.get())<% if (reactive) { %>.block()<% } %>
 
@@ -921,7 +641,7 @@ class AccountResourceIT <% if (databaseType === 'cassandra') { %>: AbstractCassa
         <%_ } _%>
 
         val testUser1 = userRepository.findOneByLogin("test-register-duplicate-email")<% if (reactive) { %>.blockOptional()<% } %>
-        assertThat(testUser1.isPresent).isTrue()
+        assertThat(testUser1).isPresent
 
         // Duplicate email, different login
         val secondUser = ManagedUserVM().apply {
@@ -955,10 +675,10 @@ class AccountResourceIT <% if (databaseType === 'cassandra') { %>: AbstractCassa
         <%_ } _%>
 
         val testUser2 = userRepository.findOneByLogin("test-register-duplicate-email")<% if (reactive) { %>.blockOptional()<% } %>
-        assertThat(testUser2.isPresent).isFalse()
+        assertThat(testUser2).isEmpty
 
         val testUser3 = userRepository.findOneByLogin("test-register-duplicate-email-2")<% if (reactive) { %>.blockOptional()<% } %>
-        assertThat(testUser3.isPresent).isTrue()
+        assertThat(testUser3).isPresent
 
         // Duplicate email - with uppercase email address
         val userWithUpperCaseEmail = ManagedUserVM().apply {
@@ -993,11 +713,11 @@ class AccountResourceIT <% if (databaseType === 'cassandra') { %>: AbstractCassa
         <%_ } _%>
 
         val testUser4 = userRepository.findOneByLogin("test-register-duplicate-email-3")<% if (reactive) { %>.blockOptional()<% } %>
-        assertThat(testUser4.isPresent).isTrue()
+        assertThat(testUser4).isPresent
         assertThat(testUser4.get().email).isEqualTo("test-register-duplicate-email@example.com")
 
         testUser4.get().activated = true
-        userService.updateUser((<%= asDto('User') %>(testUser4.get())))<% if (reactive) { %>.block()<% } %>
+        userService.updateUser((<%= asDto('AdminUser') %>(testUser4.get())))<% if (reactive) { %>.block()<% } %>
 
         // Register 4th (already activated) user
         <%_ if (!reactive) { _%>
@@ -1059,7 +779,7 @@ class AccountResourceIT <% if (databaseType === 'cassandra') { %>: AbstractCassa
         <%_ } _%>
 
         val userDup = userRepository.findOne<% if (databaseType === 'sql') { %>WithAuthorities<% } %>ByLogin("badguy")<% if (reactive) { %>.blockOptional()<% } %>
-        assertThat(userDup.isPresent).isTrue()
+        assertThat(userDup).isPresent
         assertThat(userDup.get().authorities).hasSize(1)
             .containsExactly(<% if (databaseType === 'sql' || databaseType === 'mongodb' || databaseType === 'neo4j') { %>authorityRepository.findById(USER).<% if (reactive) { %>block<% } else { %>get<% } %>()<% } %><% if (databaseType === 'cassandra' || databaseType === 'couchbase') { %>USER<% } %>)
     }
@@ -1126,7 +846,7 @@ class AccountResourceIT <% if (databaseType === 'cassandra') { %>: AbstractCassa
     @WithMockUser("save-account")
     @Throws(Exception::class)
     fun testSaveAccount() {
-        val user = <%= asEntity('User') %>(
+        val user = <%= asDto('AdminUser') %>(
             <%_ if (databaseType === 'cassandra') { _%>
             id = UUID.randomUUID().toString(),
             <%_ } _%>
@@ -1183,7 +903,7 @@ class AccountResourceIT <% if (databaseType === 'cassandra') { %>: AbstractCassa
         assertThat(updatedUser?.langKey).isEqualTo(userDTO.langKey)
         assertThat(updatedUser?.password).isEqualTo(user.password)<% if (['sql',  'mongodb',  'couchbase',  'neo4j'].includes(databaseType)) { %>
         assertThat(updatedUser?.imageUrl).isEqualTo(userDTO.imageUrl)<% } %>
-        assertThat(updatedUser?.activated).isEqualTo(true)
+        assertThat(updatedUser?.activated).isTrue()
         assertThat(updatedUser?.authorities).isEmpty()
     }
 
@@ -1194,7 +914,7 @@ class AccountResourceIT <% if (databaseType === 'cassandra') { %>: AbstractCassa
     @Throws(Exception::class)
     <%_ } _%>
     fun testSaveInvalidEmail() {
-        val user = <%= asEntity('User') %>(
+        val user = <%= asDto('AdminUser') %>(
             <%_ if (databaseType === 'cassandra') { _%>
             id = UUID.randomUUID().toString(),
             <%_ } _%>
@@ -1263,7 +983,7 @@ class AccountResourceIT <% if (databaseType === 'cassandra') { %>: AbstractCassa
 
         userRepository.save<% if (databaseType === 'sql' && !reactive) { %>AndFlush<% } %>(user)<% if (reactive) { %>.block()<% } %>
 
-        val anotherUser = <%= asEntity('User') %>(
+        val anotherUser = <%= asDto('AdminUser') %>(
             <%_ if (databaseType === 'cassandra') { _%>
             id  = UUID.randomUUID().toString(),
             <%_ } _%>
@@ -1607,13 +1327,20 @@ class AccountResourceIT <% if (databaseType === 'cassandra') { %>: AbstractCassa
         userRepository.save<% if (databaseType === 'sql' && !reactive) { %>AndFlush<% } %>(user)<% if (reactive) { %>.block()<% } %>
 
         val token = PersistentToken(
-            series = "current-sessions",<% if (databaseType === 'sql' || databaseType === 'mongodb' || databaseType === 'neo4j') { %>
-            user = user,<% } else { %><% if (databaseType === 'cassandra') { %>
-            userId = user.id,<% } else { %>
-            login = user.login,<% } %><% } %>
-            tokenValue = "current-session-data",<% if (databaseType === 'sql' || databaseType === 'mongodb' || databaseType === 'couchbase'  || databaseType === 'neo4j') { %>
-            tokenDate = LocalDate.of(2017, 3, 23),<% } else { %>
-            tokenDate = Date(1490714757123L),<% } %>
+            series = "current-sessions",
+            <%_ if (databaseType === 'sql' || databaseType === 'mongodb' || databaseType === 'neo4j') { _%>
+            user = user,
+            <%_ } else if (databaseType === 'cassandra') { _%>
+            userId = user.id,
+            <%_ } else if (databaseType === 'couchbase') { _%>
+            login = login,
+            <%_ } _%>
+            tokenValue = "current-session-data",
+            <%_ if (databaseType === 'cassandra') { _%>
+            tokenDate = Instant.parse("2017-03-28T15:25:57.123Z"),
+            <%_ } else { _%>
+            tokenDate = LocalDate.of(2017, 3, 23),
+            <% } %>
             ipAddress = "127.0.0.1",
             userAgent = "Test agent"
         )
@@ -1625,7 +1352,7 @@ class AccountResourceIT <% if (databaseType === 'cassandra') { %>: AbstractCassa
             .andExpect(jsonPath("\$.[*].series").value(hasItem(token.series)))
             .andExpect(jsonPath("\$.[*].ipAddress").value(hasItem(token.ipAddress)))
             .andExpect(jsonPath("\$.[*].userAgent").value(hasItem(token.userAgent)))
-            .andExpect(jsonPath("\$.[*].tokenDate").value(hasItem(<% if (databaseType === 'cassandra') { %>"2017-03-28T15:25:57.123+0000"<% } else { %>token.tokenDate.toString()<% } %>)))
+            .andExpect(jsonPath("$.[*].tokenDate").value(hasItem(containsString(<% if (databaseType === 'cassandra') { %>"2017-03-28T15:25:57.123Z"<% } else { %>token.tokenDate.toString()<% } %>))))
     }
 
     @Test<% if (databaseType === 'sql' && !reactive) { %>
@@ -1648,13 +1375,20 @@ class AccountResourceIT <% if (databaseType === 'cassandra') { %>: AbstractCassa
         userRepository.save<% if (databaseType === 'sql' && !reactive) { %>AndFlush<% } %>(user)<% if (reactive) { %>.block()<% } %>
 
         val token = PersistentToken(
-            series = "invalidate-session",<% if (databaseType === 'sql' || databaseType === 'mongodb' || databaseType === 'neo4j') { %>
-            user = user,<% } else { %><% if (databaseType === 'cassandra') { %>
-            userId = user.id,<% } else { %>
-            login = user.login,<% } %><% } %>
-            tokenValue = "invalidate-data",<% if (databaseType === 'sql' || databaseType === 'mongodb' || databaseType === 'couchbase' || databaseType === 'neo4j') { %>
-            tokenDate = LocalDate.of(2017, 3, 23),<% } else { %>
-            tokenDate = Date(1490714757123L),<% } %>
+            series = "invalidate-session",
+            <%_ if (databaseType === 'sql' || databaseType === 'mongodb' || databaseType === 'neo4j') { _%>
+            user = user,
+            <%_ } else if (databaseType === 'cassandra') { _%>
+            userId = user.id,
+            <%_ } else { _%>
+            login = user.login,
+            <%_ } _%>
+            tokenValue = "invalidate-data",
+            <%_ if (['sql', 'mongodb', 'couchbase', 'neo4j'].includes(databaseType)) { _%>
+            tokenDate = LocalDate.of(2017, 3, 23),
+            <%_ } else if (databaseType === 'cassandra') { _%>
+            tokenDate = Instant.now(),
+            <%_ } _%>
             ipAddress = "127.0.0.1",
             userAgent = "Test agent"
         )
@@ -1872,4 +1606,3 @@ class AccountResourceIT <% if (databaseType === 'cassandra') { %>: AbstractCassa
         <%_ } _%>
     }
 }
-<%_ } _%>
