@@ -16,7 +16,7 @@ init_var() {
 
 # uri of repo
 JHI_REPO=$(init_var "$BUILD_REPOSITORY_URI" "$GITHUB_WORKSPACE" )
-
+JHI_CLONED=$(init_var "$BUILD_REPOSITORY_LOCALPATH" "$GITHUB_WORKSPACE")
 # folder where the repo is cloned
 if [[ "$JHI_HOME" == "" ]]; then
     JHI_HOME=$(init_var "$BUILD_REPOSITORY_LOCALPATH" "$GITHUB_WORKSPACE" "$JHI_DETECTED_DIR")
