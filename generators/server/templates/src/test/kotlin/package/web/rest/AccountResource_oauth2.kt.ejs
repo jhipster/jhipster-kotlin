@@ -1,0 +1,166 @@
+<%#
+ Copyright 2013-2020 the original author or authors from the JHipster project.
+
+This file is part of the JHipster project, see https://jhipster.github.io/
+ for more information.
+
+ Licensed under the Apache License, Version 2.0 (the "License")
+ you may not use this file except in compliance with the License.
+ You may obtain a copy of the License at
+
+      http://www.apache.org/licenses/LICENSE-2.0
+
+ Unless required by applicable law or agreed to in writing, software
+ distributed under the License is distributed on an "AS IS" BASIS,
+ WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
+ See the License for the specific language governing permissions and
+ limitations under the License.
+-%>
+package <%= packageName %>.web.rest
+
+<%_ if (databaseType === 'cassandra') { _%>
+import <%= packageName %>.AbstractCassandraTest
+<%_ } _%>
+import <%= packageName %>.IntegrationTest
+import <%= packageName %>.config.TestSecurityConfiguration
+import <%= packageName %>.security.AuthoritiesConstants
+import <%= packageName %>.service.UserService
+
+<%_ if (reactive) { _%>
+import org.junit.jupiter.api.BeforeEach
+<%_ } _%>
+import org.junit.jupiter.api.Test
+import org.springframework.beans.factory.annotation.Autowired
+<%_ if (!reactive) { _%>
+import org.springframework.boot.test.autoconfigure.web.servlet.AutoConfigureMockMvc
+<%_ } else { _%>
+import org.springframework.boot.test.autoconfigure.web.reactive.AutoConfigureWebTestClient
+<%_ } _%>
+import org.springframework.http.MediaType
+<%_ if (!reactive) { _%>
+import org.springframework.security.core.GrantedAuthority
+import org.springframework.security.core.authority.SimpleGrantedAuthority
+import org.springframework.security.oauth2.client.authentication.OAuth2AuthenticationToken
+import org.springframework.security.oauth2.core.user.DefaultOAuth2User
+import org.springframework.security.oauth2.core.user.OAuth2User
+import org.springframework.security.test.context.TestSecurityContextHolder
+import org.springframework.security.test.context.support.WithMockUser
+import org.springframework.test.web.servlet.MockMvc
+    <%_ if (databaseType === 'sql' && !reactive) { _%>
+import org.springframework.transaction.annotation.Transactional
+    <%_ } _%>
+
+import java.util.Collection
+<%_ } else { _%>
+import org.springframework.security.oauth2.core.oidc.OidcIdToken
+import org.springframework.test.web.reactive.server.WebTestClient
+    <%_ if (searchEngine === 'elasticsearch' && reactive) { _%>
+import reactor.core.publisher.Mono
+    <%_ } _%>
+
+import java.time.Instant
+<%_ } _%>
+import java.util.Collections
+import java.util.HashMap
+import java.util.Map
+
+<%_ if (reactive && searchEngine === 'elasticsearch') { _%>
+import org.mockito.Mockito.*
+<%_ } _%>
+import <%= packageName %>.web.rest.AccountResourceIT.TEST_USER_LOGIN
+import org.springframework.security.test.context.support.WithMockUser
+import org.springframework.test.web.servlet.request.MockMvcRequestBuilders.get
+import org.springframework.test.web.servlet.result.MockMvcResultMatchers.*
+<%_ if (reactive) { _%>
+import <%= packageName %>.web.rest.TestUtil.ID_TOKEN
+import org.springframework.security.test.web.reactive.server.SecurityMockServerConfigurers.*
+<%_ } _%>
+
+/**
+ * Integration tests for the {@link AccountResource} REST controller.
+ */
+<%_ if (!reactive) { _%>
+@AutoConfigureMockMvc
+<%_ } else { _%>
+@AutoConfigureWebTestClient
+<%_ } _%>
+@WithMockUser(value = TEST_USER_LOGIN)
+@IntegrationTest
+class AccountResourceIT <% if (databaseType === 'cassandra') { %>: AbstractCassandraTest() <% } %>{
+
+    <%_ if (!reactive) { _%>
+    @Autowired
+    private lateinit var restAccountMockMvc: MockMvc
+    <%_ } else { _%>
+    private lateinit var idToken: OidcIdToken
+
+    @Autowired
+    private lateinit var webTestClient: WebTestClient
+    <%_ } _%>
+
+    <%_ if (reactive) { _%>
+    @BeforeEach
+    fun setup() {
+        val claims: MutableMap<String, Any> = hashMapOf()
+        claims["groups"] = listOf(ADMIN)
+        claims["sub"] = "jane"
+        claims["email"] = "jane.doe@jhipster.com"
+        this.idToken = OidcIdToken(ID_TOKEN, Instant.now(),
+            Instant.now().plusSeconds(60), claims)
+    }
+
+    <%_ } _%>
+    @Test<% if (databaseType === 'sql' && !reactive) { %>
+    @Transactional<% } %>
+    <% if (!reactive) { %>@Throws(Exception::class)<% } %>
+    fun testGetExistingAccount() {
+    <%_ if (!reactive) { _%>
+        val userDetails = mapOf<String, Any>(
+            "sub" to TEST_USER_LOGIN,
+            "email" to "john.doe@jhipster.com"
+        )
+        val authorities = listOf(SimpleGrantedAuthority(ADMIN))
+        val user = DefaultOAuth2User(authorities, userDetails, "sub")
+        val authentication = OAuth2AuthenticationToken(user, authorities, "oidc")
+        TestSecurityContextHolder.getContext().authentication = authentication
+
+        restAccountMockMvc.perform(
+            get("/api/account")
+                .accept(MediaType.APPLICATION_JSON)
+        )
+            .andExpect(status().isOk)
+            .andExpect(content().contentType(MediaType.APPLICATION_JSON_VALUE))
+            .andExpect(jsonPath("\$.login").value(TEST_USER_LOGIN))
+            .andExpect(jsonPath("\$.email").value("john.doe@jhipster.com"))
+            .andExpect(jsonPath("\$.authorities").value(ADMIN))
+    <%_ } else { _%>
+        webTestClient
+            .mutateWith(mockAuthentication(authenticationToken(idToken)))
+            .mutateWith(csrf())
+            .get().uri("/api/account")
+            .accept(MediaType.APPLICATION_JSON)
+            .exchange()
+            .expectStatus().isOk
+            .expectHeader().contentType(MediaType.APPLICATION_JSON_VALUE)
+            .expectBody()
+            .jsonPath("$.login").isEqualTo("jane")
+            .jsonPath("$.email").isEqualTo("jane.doe@jhipster.com")
+            .jsonPath("$.authorities").isEqualTo(ADMIN)
+    <%_ } _%>
+    }
+
+    @Test
+    <% if (!reactive) { %>@Throws(Exception::class)<% } %>
+    fun testGetUnknownAccount() {
+    <%_ if (!reactive) { _%>
+        restAccountMockMvc.perform(get("/api/account")
+            .accept(MediaType.APPLICATION_JSON))
+            .andExpect(status().isInternalServerError())
+    <%_ } else { _%>
+        webTestClient.get().uri("/api/account")
+            .accept(MediaType.APPLICATION_JSON)
+            .exchange()
+            .expectStatus().is5xxServerError()
+    <%_ } _%>
+    }
+}
