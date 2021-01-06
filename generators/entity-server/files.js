@@ -260,11 +260,6 @@ module.exports = {
 
 function writeFiles() {
     return {
-
-        setupReproducibility() {
-            if (this.skipServer) return;
-        },
-
         writeServerFiles() {
             if (this.skipServer) return;
 

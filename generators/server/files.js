@@ -95,7 +95,7 @@ const serverFiles = {
             templates: [
                 {
                     override: generator =>
-                    !generator.jhipsterConfig.incrementalChangelog || generator.configOptions.recreateInitialChangelog,
+                        !generator.jhipsterConfig.incrementalChangelog || generator.configOptions.recreateInitialChangelog,
                     file: 'config/liquibase/changelog/initial_schema.xml',
                     renameTo: () => 'config/liquibase/changelog/00000000000000_initial_schema.xml',
                     options: { interpolate: INTERPOLATE_REGEX },
@@ -104,7 +104,7 @@ const serverFiles = {
                     override: generator =>
                         !generator.jhipsterConfig.incrementalChangelog || generator.configOptions.recreateInitialChangelog,
                     file: 'config/liquibase/master.xml',
-                }
+                },
             ],
         },
         {
@@ -1535,7 +1535,7 @@ const serverFiles = {
     serverJavaUserManagement: [
         {
             condition: generator => generator.isUsingBuiltInUser(),
-            path: SERVER_MAIN_SRC_KOTLIN_DIR,
+            path: SERVER_MAIN_KOTLIN_SRC_DIR,
             templates: [
                 {
                     file: 'package/domain/User.kt',
@@ -1546,12 +1546,12 @@ const serverFiles = {
         },
         {
             condition: generator => generator.isUsingBuiltInAuthority(),
-            path: SERVER_MAIN_SRC_KOTLIN_DIR,
+            path: SERVER_MAIN_KOTLIN_SRC_DIR,
             templates: [
-                { 
+                {
                     file: 'package/domain/Authority.kt',
                     renameTo: generator => `${generator.javaDir}domain/Authority.kt`,
-                    useBluePrint: true, 
+                    useBluePrint: true,
                 },
                 {
                     file: 'package/repository/AuthorityRepository.kt',
@@ -1616,8 +1616,8 @@ const serverFiles = {
                     renameTo: generator => `${generator.javaDir}repository/UserRepository.kt`,
                     useBluePrint: true,
                 },
-                { 
-                    file: 'package/web/rest/UserResource.kt', 
+                {
+                    file: 'package/web/rest/UserResource.kt',
                     renameTo: generator => `${generator.javaDir}web/rest/UserResource.kt`,
                     useBluePrint: true,
                 },

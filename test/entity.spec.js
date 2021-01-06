@@ -437,7 +437,7 @@ describe('JHipster generator for entity', () => {
                             fse.copySync(path.join(__dirname, '../test/templates/default-ng2'), dir);
                         })
                         .withArguments(['foo'])
-                        .withOptions({ 'angularSuffix': 'management' })
+                        .withOptions({ angularSuffix: 'management' })
                         .withPrompts({
                             fieldAdd: false,
                             relationshipAdd: false,
@@ -478,7 +478,7 @@ describe('JHipster generator for entity', () => {
                             fse.copySync(path.join(__dirname, '../test/templates/default-ng2'), dir);
                         })
                         .withArguments(['foo'])
-                        .withOptions({ 'clientRootFolder': 'test-root' })
+                        .withOptions({ clientRootFolder: 'test-root' })
                         .withPrompts({
                             fieldAdd: false,
                             relationshipAdd: false,
@@ -1062,7 +1062,10 @@ describe('JHipster generator for entity', () => {
                         ])
                         .inTmpDir(dir => {
                             fse.copySync(path.join(__dirname, '../node_modules/generator-jhipster/test/templates/default-ng2'), dir);
-                            fse.copySync(path.join(__dirname, '../node_modules/generator-jhipster/test/templates/.jhipster/Simple.json'), path.join(dir, '.jhipster/Foo.json'));
+                            fse.copySync(
+                                path.join(__dirname, '../node_modules/generator-jhipster/test/templates/.jhipster/Simple.json'),
+                                path.join(dir, '.jhipster/Foo.json')
+                            );
                         })
                         .withArguments(['Foo'])
                         .withOptions({ regenerate: true, force: true })
@@ -1101,7 +1104,10 @@ describe('JHipster generator for entity', () => {
                         ])
                         .inTmpDir(dir => {
                             fse.copySync(path.join(__dirname, '../node_modules/generator-jhipster/test/templates/default-ng2'), dir);
-                            fse.copySync(path.join(__dirname, '../node_modules/generator-jhipster/test/templates/.jhipster/Simple.json'), path.join(dir, '.jhipster/Foo.json'));
+                            fse.copySync(
+                                path.join(__dirname, '../node_modules/generator-jhipster/test/templates/.jhipster/Simple.json'),
+                                path.join(dir, '.jhipster/Foo.json')
+                            );
                         })
                         .withArguments(['Foo'])
                         .withOptions({ regenerate: true, force: true, skipDbChangelog: true })
@@ -1140,8 +1146,14 @@ describe('JHipster generator for entity', () => {
                             ],
                         ])
                         .inTmpDir(dir => {
-                            fse.copySync(path.join(__dirname, '../node_modules/generator-jhipster/test/templates/compose/05-cassandra'), dir);
-                            fse.copySync(path.join(__dirname, '../node_modules/generator-jhipster/test/templates/.jhipster/Simple.json'), path.join(dir, '.jhipster/Foo.json'));
+                            fse.copySync(
+                                path.join(__dirname, '../node_modules/generator-jhipster/test/templates/compose/05-cassandra'),
+                                dir
+                            );
+                            fse.copySync(
+                                path.join(__dirname, '../node_modules/generator-jhipster/test/templates/.jhipster/Simple.json'),
+                                path.join(dir, '.jhipster/Foo.json')
+                            );
                         })
                         .withArguments(['Foo'])
                         .withOptions({ regenerate: true, force: true, skipDbChangelog: true })
@@ -1180,7 +1192,10 @@ describe('JHipster generator for entity', () => {
                         .inTmpDir(dir => {
                             fse.copySync(path.join(__dirname, '../test/templates/default-microservice'), dir);
                             fse.copySync(
-                                path.join(__dirname, '../node_modules/generator-jhipster/test/templates/.jhipster/DtoServicePagination.json'),
+                                path.join(
+                                    __dirname,
+                                    '../node_modules/generator-jhipster/test/templates/.jhipster/DtoServicePagination.json'
+                                ),
                                 path.join(dir, '.jhipster/Foo.json')
                             );
                         })
@@ -1237,7 +1252,7 @@ describe('JHipster generator for entity', () => {
                     assert.file(expectedFiles.gatling);
                     assert.file(expectedFiles.fakeData);
                 });
-                
+
                 it('creates reproducible liquibase data', () => {
                     assert.fileContent(`${SERVER_MAIN_RES_DIR}config/liquibase/fake-data/foo.csv`, /1;Qatari salmon Monitored;65526;"6"/);
                 });
@@ -1254,7 +1269,5 @@ describe('JHipster generator for entity', () => {
                 });
             });
         });
-
-        //  TODO: Add Enum checks 
     });
 });
