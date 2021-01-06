@@ -19,7 +19,6 @@
 /* eslint-disable consistent-return */
 const os = require('os');
 
-const chalk = require('chalk');
 const shelljs = require('shelljs');
 const ServerGenerator = require('generator-jhipster/generators/server');
 const writeFiles = require('./files').writeFiles;
@@ -29,23 +28,16 @@ module.exports = class extends ServerGenerator {
     constructor(args, opts) {
         super(args, { fromBlueprint: true, ...opts }); // fromBlueprint variable is important
 
-        const jhContext = (this.jhipsterContext = this.options.jhipsterContext || opts.jhipsterContext);
-
+        const jhContext = (this.jhipsterContext = this.options.jhipsterContext);
         if (!jhContext) {
-            this.error(`This is a JHipster blueprint and should be used only like ${chalk.yellow('jhipster --blueprint kotlin')}`);
+            this.error("This is a JHipster blueprint and should be used only like 'jhipster --blueprints myblueprint')}");
         }
-
-        this.configOptions = jhContext.configOptions || {};
-
         // This adds support for a `--skip-ktlint-format` flag
         this.option('skip-ktlint-format', {
             desc: 'Indicates to skip formatting using ktlint',
             type: Boolean,
             defaults: false,
         });
-
-        // This sets up options for this sub generator and is being reused from JHipster
-        jhContext.setupServerOptions(this, jhContext);
     }
 
     get initializing() {

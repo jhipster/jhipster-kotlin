@@ -816,7 +816,7 @@ const serverFiles = {
             ],
         },
         {
-            path: SERVER_TEST_SRC_KOTLIN_DIR,
+            path: SERVER_MAIN_KOTLIN_SRC_DIR,
             templates: [
                 {
                     file: 'package/GeneratedByJHipster.kt',
@@ -1991,7 +1991,7 @@ function writeFiles() {
         },
 
         writeFiles() {
-            writeFilesToDisk(serverFiles);
+            writeFilesToDisk(serverFiles, this, false, this.fetchFromInstalledJHipster('server/templates'));
         },
 
         modifyFiles() {

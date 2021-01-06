@@ -264,7 +264,7 @@ function writeFiles() {
             if (this.skipServer) return;
 
             // write server side files
-            writeFilesToDisk(serverFiles);
+            writeFilesToDisk(serverFiles, this, false, this.fetchFromInstalledJHipster('entity-server/templates'));
 
             if (this.databaseType === 'sql') {
                 const serverCacheKt = new NeedleServerChacheKt(this);
