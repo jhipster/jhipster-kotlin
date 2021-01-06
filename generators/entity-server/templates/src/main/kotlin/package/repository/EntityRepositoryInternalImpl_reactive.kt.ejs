@@ -170,7 +170,7 @@ class <%= entityClass %>RepositoryInternalImpl(
             return insert(entity)<% if (fieldsContainOwnerManyToMany) { %>.flatMap{ updateRelations(it) }<% } %>
         } else {
             return update(entity).map {
-                if (it.intValue() <= 0) {
+                if (it.toInt() <= 0) {
                     throw IllegalStateException("Unable to update <%= entityClass %> with id = " + entity.id)
                 }
                 return entity;
@@ -178,7 +178,7 @@ class <%= entityClass %>RepositoryInternalImpl(
         }
     }
 
-    override fun update(<%= asEntity(entity: entityClass) %>): Mono<Integer> {
+    override fun update(entity: <%= asEntity(entityClass) %>): Mono<Integer> {
         <%_ if (fields.length + reactiveEagerRelations.length > 0) { _%>
         return db.update().table(<%= asEntity(entityClass) %>.class).using(entity).fetch().rowsUpdated()
         <%_ } else { _%>

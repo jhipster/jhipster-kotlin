@@ -235,8 +235,8 @@ import org.springframework.test.web.servlet.result.MockMvcResultMatchers.status
     ExtendWith(MockitoExtension::class)
 )
 <%_ } _%>
-class <%= entityClass %>ResourceIT <% if (databaseType === 'cassandra') { %>: AbstractCassandraTest() <% } %> {
 
+class <%= entityClass %>ResourceIT <% if (databaseType === 'cassandra') { %>: AbstractCassandraTest() <% } %> {
     @Autowired
     private lateinit var <%= entityInstance %>Repository: <%= entityClass %>Repository
     <%_ if (isUsingMapsId === true && ( dto !== 'mapstruct' && service === 'no')) { _%>
@@ -475,7 +475,7 @@ class <%= entityClass %>ResourceIT <% if (databaseType === 'cassandra') { %>: Ab
         em.flush()
                 <%_ } _%>
         <%_ alreadyGeneratedEntities.push(otherEntityName) _%>
-        <%_ } break; } _%>
+        <%_ } break; } }_%>
 
         // Load the <%= entityInstance %>
         val updated<%= asEntity(entityClass) %> = <%= entityInstance %>Repository.findById(<%= asEntity(entityInstance) %><%= primaryKey.name %>)<%= reactive ? '.block()' : '.get()' %>
@@ -960,6 +960,7 @@ class <%= entityClass %>ResourceIT <% if (databaseType === 'cassandra') { %>: Ab
 
         // Get all the <%= entityInstance %>List where <%= relationship.relationshipFieldName %> equals to <%= relationship.relationshipFieldName %>Id + 1
         default<%= entityClass %>ShouldNotBeFound("<%= relationship.relationshipFieldName %>Id.equals=${<%= relationship.relationshipFieldName %>Id?.plus(1)}")
+    <%_ } _%>
     }
 <%_ }); _%>
 
@@ -985,12 +986,11 @@ class <%= entityClass %>ResourceIT <% if (databaseType === 'cassandra') { %>: Ab
                         if ((fields[idx].fieldType === 'byte[]' || fields[idx].fieldType === 'ByteBuffer') && fields[idx].fieldTypeBlobContent !== 'text') { %><% if (databaseType === 'cassandra') { %>.array()<% } %>)<% } else
                             if (fields[idx].fieldType === 'Integer') { %><% } else
                                 if (fields[idx].fieldType === 'Long') { %>?.toInt()<% } else
-                                    if (fields[idx].fieldType === 'Float' || fields[idx].fieldType === 'Double') { %>.toDouble()<% } else
-                                        if (fields[idx].fieldType === 'BigDecimal') { %>?.toInt()<% } else
+                                    if (fields[idx].fieldType === 'Float' || fields[idx].fieldType === 'Double') { %>?.toDouble()<% } else
+                                        if (fields[idx].fieldType === 'BigDecimal') { %>)<% } else
                                             if (fields[idx].fieldType === 'Boolean') { %><% } else
                                                 if (fields[idx].fieldType === 'ZonedDateTime') { %>)<% } else
-                                                    if (field.fieldType === 'String' || field.fieldTypeBlobContent === 'text') { %><% } else 
-                                                        if (field.fieldType !== 'String') { %>.toString()<% } %>)))<% }); %>
+                                                        if (field.fieldType !== 'String') { %>.toString()<% } %>)))<% }; %>
 
         // Check, that the count call also returns 1
         webTestClient.get().uri("/api/<%= entityApiUrl %>/count?sort=id,desc&" + filter)
@@ -1018,12 +1018,11 @@ class <%= entityClass %>ResourceIT <% if (databaseType === 'cassandra') { %>: Ab
                     if (databaseType === 'cassandra') { %>.array()<% } %>)<% } else 
                         if (field.fieldType === 'Integer') { %><% } else 
                             if (field.fieldType === 'Long') { %>?.toInt()<% } else 
-                                if (field.fieldType === 'Float') { %>.toDouble()<% } else 
+                                if (field.fieldType === 'Float') { %>?.toDouble()<% } else 
                                     if (field.fieldType === 'Double') { %><% } else 
                                         if (field.fieldType === 'BigDecimal') { %>?.toInt()<% } else 
                                             if (field.fieldType === 'Boolean') { %><% } else 
                                                 if (field.fieldType === 'ZonedDateTime') { %>)<% } else 
-                                                    if (field.fieldType === 'String' || field.fieldTypeBlobContent === 'text') { %><% } else 
                                                         if (field.fieldType !== 'String') { %>.toString()<% } %>)))<% }); %>
 
 
@@ -1073,7 +1072,7 @@ class <%= entityClass %>ResourceIT <% if (databaseType === 'cassandra') { %>: Ab
             .andExpect(content().string("0"))
     }
 <%_  } _%>
-
+<%_  } _%>
     @Test<%= transactionalAnnotation %>
     <% if (!reactive) { %>@Throws(Exception::class)<% } %>
     fun getNonExisting<%= entityClass %>() {
@@ -1350,7 +1349,6 @@ class <%= entityClass %>ResourceIT <% if (databaseType === 'cassandra') { %>: Ab
 
     companion object {
         <%_ for (idx in fields) {
-            if (fields[idx]<%= primaryKey.name %>) continue;
         const defaultValueName = 'DEFAULT_' + fields[idx].fieldNameUnderscored.toUpperCase();
         const updatedValueName = 'UPDATED_' + fields[idx].fieldNameUnderscored.toUpperCase();
         const smallerValueName = 'SMALLER_' + fields[idx].fieldNameUnderscored.toUpperCase();
@@ -1534,7 +1532,6 @@ class <%= entityClass %>ResourceIT <% if (databaseType === 'cassandra') { %>: Ab
         fun create<% if (fieldStatus === 'UPDATED_') { _%>Updated<%_ } %>Entity(<% if (databaseType === 'sql') { %>em: EntityManager<% } %>): <%= asEntity(entityClass) %> {
             val <%= asEntity(entityInstance) %> = <%= asEntity(entityClass) %>(
             <%_ for (idx in fields) {
-                if (fields[idx]<%= primaryKey.name %>) continue;
                 const comma = (parseInt(idx, 10) === (fields.length - 1)) ?  '' : ',';
             _%>
                 <%= fields[idx].fieldName %> = <%=fieldStatus + fields[idx].fieldNameUnderscored.toUpperCase()%><% if ((fields[idx].fieldType === 'byte[]' || fields[idx].fieldType === 'ByteBuffer') && fields[idx].fieldTypeBlobContent !== 'text') { %>,
