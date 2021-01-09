@@ -46,9 +46,9 @@ if (databaseType === 'sql' && reactive) {
     createEntityPostfix = ').block()';
 }
 let idValue = `${asEntity(entityInstance)}.getId()`;
-if (primaryKeyType === 'Long') {
+if (primaryKey.type === 'Long') {
     idValue = idValue + '.toInt()';
-} else if (primaryKeyType === 'UUID') {
+} else if (primaryKey.type === 'UUID') {
     idValue = idValue + '.toString()';
 }
 let transactionalAnnotation = '';
@@ -1445,7 +1445,7 @@ class <%= entityClass %>ResourceIT <% if (databaseType === 'cassandra') { %>exte
         when(mock<%= entityClass %>SearchRepository.save(any()))
             .thenAnswer(invocation -> Mono.just(invocation.getArgument(0)));
     <%_ } _%>
-        when(mock<%= entityClass %>SearchRepository.deleteById(any<%= primaryKeyType %>())).thenReturn(Mono.empty());
+        when(mock<%= entityClass %>SearchRepository.deleteById(any<%= primaryKey.type %>())).thenReturn(Mono.empty());
 <%_ } _%>
         // Initialize the database
         <%_ if (databaseType === 'cassandra') { _%>

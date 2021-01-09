@@ -64,7 +64,7 @@ import java.util.UUID
  */
 @SuppressWarnings("unused")
 @Repository
-interface <%= entityClass %>Repository: <% if (databaseType === 'sql') { %>R2dbc<% } if (databaseType === 'mongodb') { %>ReactiveMongo<% } if (databaseType === 'couchbase') { %>ReactiveN1qlCouchbase<% } if (databaseType === 'neo4j') { %>ReactiveNeo4j<% } if (databaseType === 'cassandra') { %>ReactiveCassandra<% } %>Repository<<%= asEntity(entityClass) %>, <%= primaryKeyType %>><% if (searchEngine === 'couchbase') { %>, SearchCouchbaseRepository<<%= asEntity(entityClass) %>, <%= primaryKeyType %>><% } %><% if (databaseType === 'sql') { %>, <%= entityClass %>RepositoryInternal<% } %>  {
+interface <%= entityClass %>Repository: <% if (databaseType === 'sql') { %>R2dbc<% } if (databaseType === 'mongodb') { %>ReactiveMongo<% } if (databaseType === 'couchbase') { %>ReactiveN1qlCouchbase<% } if (databaseType === 'neo4j') { %>ReactiveNeo4j<% } if (databaseType === 'cassandra') { %>ReactiveCassandra<% } %>Repository<<%= asEntity(entityClass) %>, <%= primaryKey.type %>><% if (searchEngine === 'couchbase') { %>, SearchCouchbaseRepository<<%= asEntity(entityClass) %>, <%= primaryKey.type %>><% } %><% if (databaseType === 'sql') { %>, <%= entityClass %>RepositoryInternal<% } %>  {
 
     <%_ if (pagination !== 'no') { _%>
 
@@ -80,7 +80,7 @@ interface <%= entityClass %>Repository: <% if (databaseType === 'sql') { %>R2dbc
     fun findAllWithEagerRelationships(): Flux<<%= asEntity(entityClass) %>> 
 
     @Query("<%- (databaseType === 'mongodb') ? "{'id': ?0}" : "#{#n1ql.selectEntity} USE KEYS $1 WHERE #{#n1ql.filter}" %>")
-    fun findOneWithEagerRelationships(id: <%= primaryKeyType %>): Mono<<%= asEntity(entityClass) %>> 
+    fun findOneWithEagerRelationships(id: <%= primaryKey.type %>): Mono<<%= asEntity(entityClass) %>> 
         <%_ } _%>
         <%_ if (databaseType === 'neo4j') { _%>
     @Query("MATCH (n:<%= asEntity(entityClass) %>)<-[]-(m) RETURN n,m")
@@ -90,14 +90,14 @@ interface <%= entityClass %>Repository: <% if (databaseType === 'sql') { %>R2dbc
     fun findAllWithEagerRelationships(): Flux<<%= asEntity(entityClass) %>> 
 
     @Query("MATCH (e:<%= asEntity(entityClass) %> {id: $id}) RETURN e")
-    fun findOneWithEagerRelationships(<%= primaryKeyType %> id): Mono<<%= asEntity(entityClass) %>> 
+    fun findOneWithEagerRelationships(id: <%= primaryKey.type %>): Mono<<%= asEntity(entityClass) %>> 
         <%_ } _%>
     <%_ } _%>
 
     <%_ if (databaseType === 'sql') {
         if (fieldsContainOwnerManyToMany) { _%>
 
-    override fun findOneWithEagerRelationships(id: <%= primaryKeyType %>): Mono<<%= asEntity(entityClass) %>>
+    override fun findOneWithEagerRelationships(id: <%= primaryKey.type %>): Mono<<%= asEntity(entityClass) %>>
 
     override fun findAllWithEagerRelationships(): Flux<<%= asEntity(entityClass) %>> 
 
@@ -114,7 +114,7 @@ interface <%= entityClass %>Repository: <% if (databaseType === 'sql') { %>R2dbc
                 if (relationshipType === 'many-to-one' || (relationshipType === 'one-to-one' && ownerSide === true)) { _%>
 
     @Query("SELECT * FROM <%= entityTableName %> entity WHERE entity.<%= getColumnName(relationshipName) %>_id = :id")
-    fun findBy<%= relationships[idx].relationshipNameCapitalized %>(id: <%= primaryKeyType %>): Flux<<%= asEntity(entityClass) %>>
+    fun findBy<%= relationships[idx].relationshipNameCapitalized %>(id: <%= primaryKey.type %>): Flux<<%= asEntity(entityClass) %>>
 
     @Query("SELECT * FROM <%= entityTableName %> entity WHERE entity.<%= getColumnName(relationshipName) %>_id IS NULL")
     fun findAllWhere<%= relationships[idx].relationshipNameCapitalized %>IsNull(): Flux<<%= asEntity(entityClass) %>>
@@ -123,7 +123,7 @@ interface <%= entityClass %>Repository: <% if (databaseType === 'sql') { %>R2dbc
                 _%>
 
     @Query("SELECT entity.* FROM <%= entityTableName %> entity JOIN <%= joinTableName %> joinTable ON entity.id = joinTable.<%= getColumnName(name) %>_id WHERE joinTable.<%= getColumnName(relationshipName) %>_id = :id")
-    fun findBy<%= relationships[idx].relationshipNameCapitalized %>(id: <%= primaryKeyType %>): Flux<<%= asEntity(entityClass) %>>
+    fun findBy<%= relationships[idx].relationshipNameCapitalized %>(id: <%= primaryKey.type %>): Flux<<%= asEntity(entityClass) %>>
             <%_ } else if (relationshipType === 'one-to-one' && ownerSide === false) {
                 let otherEntityRelationshipName = relationships[idx].otherEntityRelationshipName;
                 let otherEntityTableName = relationships[idx].otherEntityTableName;
@@ -154,13 +154,13 @@ interface <%= entityClass %>RepositoryInternal {
     fun update(entity: <%= asEntity(entityClass) %>): Mono<Integer> 
 
     fun findAll(): Flux<<%= asEntity(entityClass) %>> 
-    fun findById(id: <%= primaryKeyType %> ): Mono<<%= asEntity(entityClass) %>> 
+    fun findById(id: <%= primaryKey.type %> ): Mono<<%= asEntity(entityClass) %>> 
     fun findAllBy(pageable: Pageable): Flux<<%= asEntity(entityClass) %>> 
     fun findAllBy(pageable: Pageable, criteria: Criteria): Flux<<%= asEntity(entityClass) %>> 
 
     <%_ if (fieldsContainOwnerManyToMany) { _%>
 
-    fun findOneWithEagerRelationships(id: <%= primaryKeyType %>): Mono<<%= asEntity(entityClass) %>> 
+    fun findOneWithEagerRelationships(id: <%= primaryKey.type %>): Mono<<%= asEntity(entityClass) %>> 
 
     fun findAllWithEagerRelationships(): Flux<<%= asEntity(entityClass) %>> 
 
