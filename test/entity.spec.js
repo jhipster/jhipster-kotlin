@@ -18,7 +18,7 @@ describe('JHipster generator for entity', () => {
                     helpers
                         .run('generator-jhipster/generators/entity')
                         .withOptions({
-                            'from-cli': true,
+                            fromCli: true,
                             skipInstall: true,
                             blueprint: 'kotlin',
                             skipChecks: true,
@@ -59,7 +59,7 @@ describe('JHipster generator for entity', () => {
                     helpers
                         .run('generator-jhipster/generators/entity')
                         .withOptions({
-                            'from-cli': true,
+                            fromCli: true,
                             skipInstall: true,
                             blueprint: 'kotlin',
                             skipChecks: true,
@@ -97,11 +97,11 @@ describe('JHipster generator for entity', () => {
 
         context('monolith with entity and dto suffixes', () => {
             describe('with entity and dto suffixes', () => {
-                beforeEach(() =>
+                before(done => {
                     helpers
-                        .create('generator-jhipster/generators/entity')
+                        .run('generator-jhipster/generators/entity')
                         .withOptions({
-                            'from-cli': true,
+                            fromCli: true,
                             skipInstall: true,
                             blueprint: 'kotlin',
                             skipChecks: true,
@@ -124,8 +124,8 @@ describe('JHipster generator for entity', () => {
                             dto: 'mapstruct',
                             service: 'serviceImpl',
                         })
-                        .run()
-                );
+                        .on('end', done);
+                });
 
                 it('creates expected files with suffix', () => {
                     assert.file([
@@ -160,7 +160,7 @@ describe('JHipster generator for entity', () => {
                     helpers
                         .run('generator-jhipster/generators/entity')
                         .withOptions({
-                            'from-cli': true,
+                            fromCli: true,
                             skipInstall: true,
                             blueprint: 'kotlin',
                             skipChecks: true,
@@ -216,7 +216,7 @@ describe('JHipster generator for entity', () => {
                     helpers
                         .run('generator-jhipster/generators/entity')
                         .withOptions({
-                            'from-cli': true,
+                            fromCli: true,
                             skipInstall: true,
                             blueprint: 'kotlin',
                             skipChecks: true,
@@ -255,7 +255,7 @@ describe('JHipster generator for entity', () => {
                     helpers
                         .run('generator-jhipster/generators/entity')
                         .withOptions({
-                            'from-cli': true,
+                            fromCli: true,
                             skipInstall: true,
                             blueprint: 'kotlin',
                             skipChecks: true,
@@ -294,7 +294,7 @@ describe('JHipster generator for entity', () => {
                     helpers
                         .run('generator-jhipster/generators/entity')
                         .withOptions({
-                            'from-cli': true,
+                            fromCli: true,
                             skipInstall: true,
                             blueprint: 'kotlin',
                             skipChecks: true,
@@ -333,7 +333,7 @@ describe('JHipster generator for entity', () => {
                     helpers
                         .run('generator-jhipster/generators/entity')
                         .withOptions({
-                            'from-cli': true,
+                            fromCli: true,
                             skipInstall: true,
                             blueprint: 'kotlin',
                             skipChecks: true,
@@ -376,7 +376,7 @@ describe('JHipster generator for entity', () => {
                     helpers
                         .run('generator-jhipster/generators/entity')
                         .withOptions({
-                            'from-cli': true,
+                            fromCli: true,
                             skipInstall: true,
                             blueprint: 'kotlin',
                             skipChecks: true,
@@ -420,7 +420,7 @@ describe('JHipster generator for entity', () => {
                     helpers
                         .run('generator-jhipster/generators/entity')
                         .withOptions({
-                            'from-cli': true,
+                            fromCli: true,
                             skipInstall: true,
                             blueprint: 'kotlin',
                             skipChecks: true,
@@ -461,7 +461,7 @@ describe('JHipster generator for entity', () => {
                     helpers
                         .run('generator-jhipster/generators/entity')
                         .withOptions({
-                            'from-cli': true,
+                            fromCli: true,
                             skipInstall: true,
                             blueprint: 'kotlin',
                             skipChecks: true,
@@ -502,7 +502,7 @@ describe('JHipster generator for entity', () => {
                     helpers
                         .run('generator-jhipster/generators/entity')
                         .withOptions({
-                            'from-cli': true,
+                            fromCli: true,
                             skipInstall: true,
                             blueprint: 'kotlin',
                             skipChecks: true,
@@ -545,7 +545,7 @@ describe('JHipster generator for entity', () => {
                     helpers
                         .run('generator-jhipster/generators/entity')
                         .withOptions({
-                            'from-cli': true,
+                            fromCli: true,
                             skipInstall: true,
                             blueprint: 'kotlin',
                             skipChecks: true,
@@ -587,7 +587,7 @@ describe('JHipster generator for entity', () => {
                     helpers
                         .run(require.resolve('generator-jhipster/generators/entity'))
                         .withOptions({
-                            'from-cli': true,
+                            fromCli: true,
                             skipInstall: true,
                             blueprint: 'kotlin',
                             skipChecks: true,
@@ -626,7 +626,7 @@ describe('JHipster generator for entity', () => {
                     helpers
                         .run('generator-jhipster/generators/entity')
                         .withOptions({
-                            'from-cli': true,
+                            fromCli: true,
                             skipInstall: true,
                             blueprint: 'kotlin',
                             skipChecks: true,
@@ -669,7 +669,7 @@ describe('JHipster generator for entity', () => {
                     helpers
                         .run('generator-jhipster/generators/entity')
                         .withOptions({
-                            'from-cli': true,
+                            fromCli: true,
                             skipInstall: true,
                             blueprint: 'kotlin',
                             skipChecks: true,
@@ -709,7 +709,7 @@ describe('JHipster generator for entity', () => {
                     helpers
                         .run('generator-jhipster/generators/entity')
                         .withOptions({
-                            'from-cli': true,
+                            fromCli: true,
                             skipInstall: true,
                             blueprint: 'kotlin',
                             skipChecks: true,
@@ -751,7 +751,7 @@ describe('JHipster generator for entity', () => {
                     helpers
                         .run('generator-jhipster/generators/entity')
                         .withOptions({
-                            'from-cli': true,
+                            fromCli: true,
                             skipInstall: true,
                             blueprint: 'kotlin',
                             skipChecks: true,
@@ -790,7 +790,7 @@ describe('JHipster generator for entity', () => {
                     helpers
                         .run('generator-jhipster/generators/entity')
                         .withOptions({
-                            'from-cli': true,
+                            fromCli: true,
                             skipInstall: true,
                             blueprint: 'kotlin',
                             skipChecks: true,
@@ -838,7 +838,7 @@ describe('JHipster generator for entity', () => {
                     helpers
                         .run('generator-jhipster/generators/entity')
                         .withOptions({
-                            'from-cli': true,
+                            fromCli: true,
                             skipInstall: true,
                             blueprint: 'kotlin',
                             skipChecks: true,
@@ -878,7 +878,7 @@ describe('JHipster generator for entity', () => {
                     helpers
                         .run('generator-jhipster/generators/entity')
                         .withOptions({
-                            'from-cli': true,
+                            fromCli: true,
                             skipInstall: true,
                             blueprint: 'kotlin',
                             skipChecks: true,
@@ -919,7 +919,7 @@ describe('JHipster generator for entity', () => {
                 helpers
                     .run('generator-jhipster/generators/entity')
                     .withOptions({
-                        'from-cli': true,
+                        fromCli: true,
                         skipInstall: true,
                         blueprint: 'kotlin',
                         skipChecks: true,
@@ -961,7 +961,7 @@ describe('JHipster generator for entity', () => {
                 helpers
                     .run('generator-jhipster/generators/entity')
                     .withOptions({
-                        'from-cli': true,
+                        fromCli: true,
                         skipInstall: true,
                         blueprint: 'kotlin',
                         skipChecks: true,
@@ -1003,7 +1003,7 @@ describe('JHipster generator for entity', () => {
                 helpers
                     .run('generator-jhipster/generators/entity')
                     .withOptions({
-                        'from-cli': true,
+                        fromCli: true,
                         skipInstall: true,
                         blueprint: 'kotlin',
                         skipChecks: true,
@@ -1047,7 +1047,7 @@ describe('JHipster generator for entity', () => {
                     helpers
                         .run('generator-jhipster/generators/entity')
                         .withOptions({
-                            'from-cli': true,
+                            fromCli: true,
                             skipInstall: true,
                             blueprint: 'kotlin',
                             skipChecks: true,
@@ -1089,7 +1089,7 @@ describe('JHipster generator for entity', () => {
                     helpers
                         .run('generator-jhipster/generators/entity')
                         .withOptions({
-                            'from-cli': true,
+                            fromCli: true,
                             skipInstall: true,
                             blueprint: 'kotlin',
                             skipChecks: true,
@@ -1132,7 +1132,7 @@ describe('JHipster generator for entity', () => {
                     helpers
                         .run('generator-jhipster/generators/entity')
                         .withOptions({
-                            'from-cli': true,
+                            fromCli: true,
                             skipInstall: true,
                             blueprint: 'kotlin',
                             skipChecks: true,
@@ -1176,7 +1176,7 @@ describe('JHipster generator for entity', () => {
                     helpers
                         .run('generator-jhipster/generators/entity')
                         .withOptions({
-                            'from-cli': true,
+                            fromCli: true,
                             skipInstall: true,
                             blueprint: 'kotlin',
                             skipChecks: true,
@@ -1226,7 +1226,7 @@ describe('JHipster generator for entity', () => {
                     helpers
                         .run('generator-jhipster/generators/entity')
                         .withOptions({
-                            'from-cli': true,
+                            fromCli: true,
                             skipInstall: true,
                             blueprint: 'kotlin',
                             skipChecks: true,
@@ -1259,12 +1259,12 @@ describe('JHipster generator for entity', () => {
 
                 it('creates reproducible backend test', () => {
                     assert.fileContent(
-                        `${SERVER_TEST_SRC_DIR}com/mycompany/myapp/web/rest/FooResourceIT.java`,
-                        /DEFAULT_NUMBER_PATTERN_REQUIRED = "66225"/
+                        `${SERVER_TEST_SRC_DIR}com/mycompany/myapp/web/rest/FooResourceIT.kt`,
+                        /DEFAULT_NUMBER_PATTERN_REQUIRED = "4244"/
                     );
                     assert.fileContent(
-                        `${SERVER_TEST_SRC_DIR}com/mycompany/myapp/web/rest/FooResourceIT.java`,
-                        /UPDATED_NUMBER_PATTERN_REQUIRED = "24"/
+                        `${SERVER_TEST_SRC_DIR}com/mycompany/myapp/web/rest/FooResourceIT.kt`,
+                        /UPDATED_NUMBER_PATTERN_REQUIRED = "257856"/
                     );
                 });
             });
