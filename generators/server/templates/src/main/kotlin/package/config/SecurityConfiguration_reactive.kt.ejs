@@ -254,9 +254,6 @@ class SecurityConfiguration(
         <%_ if (authenticationType === 'oauth2') { _%>
 
         http<%_ if (['monolith', 'gateway'].includes(applicationType)) { _%>.oauth2Login()
-            <%_ if (withAudit) { _%>
-            .authenticationSuccessHandler{ exchange, authentication -> onAuthenticationSuccess(exchange, authentication) }
-            <%_ } _%>
         .and()
             <%_ } _%>.oauth2ResourceServer()
             .jwt()
@@ -316,30 +313,12 @@ class SecurityConfiguration(
 
     private fun onAuthenticationError(exchange: WebFilterExchange, e: AuthenticationException): Mono<Void>  {
         exchange.exchange.response.statusCode = HttpStatus.UNAUTHORIZED
-        <%_ if (withAudit) { _%>
-        return exchange.exchange
-                .formData
-                .map { it.getFirst("username") }
-                .filter { ANONYMOUS_USER != it }
-                .flatMap { auditEventService.saveAuthenticationError(it, e) }
-                .then()
-        <%_ } else { _%>
         return Mono.empty();
-        <%_ } _%>
     }
 
     private fun onAuthenticationSuccess(exchange: WebFilterExchange, authentication: Authentication): Mono<Void> {
         exchange.exchange.response.statusCode = HttpStatus.OK
-        <%_ if (withAudit) { _%>
-        return Mono.just(authentication.principal)
-                .filter { it is User }
-                .map { (it as User).username }
-                .filter { ANONYMOUS_USER != it }
-                .flatMap { auditEventService.saveAuthenticationSuccess(it) }
-                .then()
-        <%_ } else { _%>
         return Mono.empty();
-        <%_ } _%>
     }
     <%_ } _%>
     <%_ if(databaseType === 'couchbase') { _%>
