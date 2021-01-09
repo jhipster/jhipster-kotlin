@@ -815,16 +815,16 @@ const serverFiles = {
                 },
             ],
         },
-        {
-            path: SERVER_MAIN_KOTLIN_SRC_DIR,
-            templates: [
-                {
-                    file: 'package/GeneratedByJHipster.kt',
-                    renameTo: generator => `${generator.javaDir}GeneratedByJHipster.kt`,
-                    useBluePrint: true,
-                },
-            ],
-        },
+        // {
+        //     path: SERVER_MAIN_KOTLIN_SRC_DIR,
+        //     templates: [
+        //         {
+        //             file: 'package/GeneratedByJHipster.kt',
+        //             renameTo: generator => `${generator.javaDir}GeneratedByJHipster.kt`,
+        //             useBluePrint: true,
+        //         },
+        //     ],
+        // },
     ],
     serverJavaConfig: [
         {

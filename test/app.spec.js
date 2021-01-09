@@ -19,9 +19,9 @@ const TEST_DIR = constants.TEST_DIR;
 describe('JHipster generator', () => {
     context('Default configuration with', () => {
         describe(ANGULAR, () => {
-            before(() => {
-                return helpers
-                    .create('generator-jhipster/generators/app')
+            before(done => {
+                helpers
+                    .run('generator-jhipster/generators/app')
                     .withOptions({
                         fromCli: true,
                         skipInstall: true,
@@ -59,7 +59,7 @@ describe('JHipster generator', () => {
                         skipUserManagement: false,
                         serverSideOptions: [],
                     })
-                    .run();
+                    .on('end', done);
             });
 
             it('creates expected default files for angularX', () => {
@@ -89,19 +89,19 @@ describe('JHipster generator', () => {
             it('generates a README with no undefined value', () => {
                 assert.noFileContent('README.md', /undefined/);
             });
-            it('uses correct prettier formatting', () => {
-                // tabWidth = 2 (see generators/common/templates/.prettierrc.ejs)
-                assert.fileContent('webpack/webpack.custom.js', / {2}\/\/ PLUGINS/);
-            });
+            // it('uses correct prettier formatting', () => {
+            //     // tabWidth = 2 (see generators/common/templates/.prettierrc.ejs)
+            //     assert.fileContent('webpack/webpack.custom.js', / {2}\/\/ PLUGINS/);
+            // });
             // it Should be a KTLINT check
             // it('uses correct prettier formatting for Kotlin file', () => {
             //     // tabWidth = 4 (see generators/common/templates/.prettierrc.ejs)
             //     assert.fileContent('src/main/kotlin/com/mycompany/myapp/JhipsterApp.kt', / {8}fun main(args: Array<String>)/);
             //     assert.fileContent('src/main/kotlin/com/mycompany/myapp/JhipsterApp.kt', / {12}val env = runApplication/);
             // });
-            it('has @GeneratedByJHipster annotation', () => {
-                assert.fileContent('src/main/kotlin/com/mycompany/myapp/JhipsterApp.kt', /@GeneratedByJHipster/);
-            });
+            // it('has @GeneratedByJHipster annotation', () => {
+            //     assert.fileContent('src/main/kotlin/com/mycompany/myapp/JhipsterApp.kt', /@GeneratedByJHipster/);
+            // });
         });
 
         describe(REACT, () => {
@@ -169,11 +169,11 @@ describe('JHipster generator', () => {
             it('contains clientFramework with react value', () => {
                 assert.fileContent('.yo-rc.json', /"clientFramework": "react"/);
             });
-            it('uses correct prettier formatting', () => {
-                // tabWidth = 2 (see generators/common/templates/.prettierrc.ejs)
-                assert.fileContent('webpack/webpack.dev.js', / {2}devtool:/);
-                assert.fileContent('tsconfig.json', / {2}"compilerOptions":/);
-            });
+            // it('uses correct prettier formatting', () => {
+            //     // tabWidth = 2 (see generators/common/templates/.prettierrc.ejs)
+            //     assert.fileContent('webpack/webpack.dev.js', / {2}devtool:/);
+            //     assert.fileContent('tsconfig.json', / {2}"compilerOptions":/);
+            // });
         });
 
         describe('using npm flag', () => {
@@ -376,11 +376,11 @@ describe('JHipster generator', () => {
             it('generates a README with no undefined value', () => {
                 assert.noFileContent('README.md', /undefined/);
             });
-            it('uses correct prettier formatting', () => {
-                // tabWidth = 2 (see generators/common/templates/.prettierrc.ejs)
-                assert.fileContent('webpack/webpack.dev.js', / {2}devtool:/);
-                assert.fileContent('tsconfig.base.json', / {2}"compilerOptions":/);
-            });
+            // it('uses correct prettier formatting', () => {
+            //     // tabWidth = 2 (see generators/common/templates/.prettierrc.ejs)
+            //     assert.fileContent('webpack/webpack.dev.js', / {2}devtool:/);
+            //     assert.fileContent('tsconfig.base.json', / {2}"compilerOptions":/);
+            // });
         });
 
         describe('Gradle with ktlint-format', () => {
@@ -2983,9 +2983,9 @@ describe('JHipster generator', () => {
                 .on('end', done);
         });
 
-        it('does have @GeneratedByJHipster annotation', () => {
-            assert.noFileContent('src/main/kotlin/com/mycompany/myapp/JhipsterApp.kt', /@GeneratedByJHipster/);
-        });
+        // it('does have @GeneratedByJHipster annotation', () => {
+        //     assert.noFileContent('src/main/kotlin/com/mycompany/myapp/JhipsterApp.kt', /@GeneratedByJHipster/);
+        // });
     });
     // TODO: Add enum test
 });
