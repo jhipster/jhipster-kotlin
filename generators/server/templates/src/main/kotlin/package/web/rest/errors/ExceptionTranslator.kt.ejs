@@ -114,7 +114,7 @@ _%>
         }
         <%_ if (!reactive) { _%>
             val nativeRequest = request.getNativeRequest(HttpServletRequest::class.java);
-            val requestUri = nativeRequest != null ? nativeRequest.requestURI : StringUtils.EMPTY
+            val requestUri = if (nativeRequest != null) nativeRequest.requestURI else StringUtils.EMPTY
         <%_ } _%>
 
         val builder = Problem.builder()
@@ -154,7 +154,13 @@ _%>
     : <%- returnType %>  {
     <%_ } _%>
         val result = ex.bindingResult
-        val fieldErrors = result.fieldErrors.map { FieldErrorVM(it.objectName.replaceFirst(Regex("<%= dtoSuffix %>$"), ""), it.field, StringUtils.isNotBlank(f.getDefaultMessage()) ? it.defaultMessage : f.code) }
+        val fieldErrors = result.fieldErrors.map { 
+            FieldErrorVM(
+                it.objectName.replaceFirst(Regex("<%= dtoSuffix %>$"), ""), 
+                it.field, 
+                if (StringUtils.isNotBlank(it.defaultMessage)) it.defaultMessage else it.code
+            )
+        }
 
         val problem = Problem.builder()
             .withType(CONSTRAINT_VIOLATION_TYPE)

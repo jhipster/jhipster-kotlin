@@ -28,6 +28,7 @@ import <%= packageName %>.service.dto.<%= asDto('User') %>
 import org.springframework.stereotype.Service
 
 import org.mapstruct.BeanMapping
+import org.mapstruct.Mappings
 import org.mapstruct.Mapping
 import org.mapstruct.Named
 
@@ -47,7 +48,7 @@ class UserMapper {
 
     fun userToUserDTO(user: <%= asEntity('User') %>): <%= asDto('User') %> = <%= asDto('User') %>(user)
 
-    fun usersToAdminUserDTOs(users: List<<%= asEntity('User') %>>): MutatbleList<<%= asDto('AdminUser') %>> = 
+    fun usersToAdminUserDTOs(users: List<<%= asEntity('User') %>>): MutableList<<%= asDto('AdminUser') %>> = 
         users.asSequence()
             .filterNotNull()
             .mapTo(mutableListOf()) { userToAdminUserDTO(it) }
@@ -117,7 +118,9 @@ class UserMapper {
 
         val userSet = hashSetOf<<%= asDto('User') %>>()
         users.forEach {
-            userSet.add( this.toDtoId( it ) )
+            this.toDtoId(it)?.let {
+                userSet.add(it)
+            }
         }
         return userSet
     }
@@ -151,7 +154,9 @@ class UserMapper {
 
         val userSet = hashSetOf<<%= asDto('User') %>>()    
         users.forEach {
-            userSet.add( this.toDtoLogin( it ) )
+            this.toDtoLogin(it)?.let {
+                userSet.add(it)
+            }
         }
 
         return userSet

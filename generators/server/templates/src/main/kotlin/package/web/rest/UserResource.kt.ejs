@@ -158,7 +158,7 @@ class UserResource(
     <%_ if (!reactive) { _%>
     @Throws(URISyntaxException::class)
     <%_ } _%>
-    fun createUser(@Valid @RequestBody userDTO: <%= asDto('User') %>): <% if (reactive) { %>Mono<ResponseEntity<<%= asEntity('User') %>>><% } else { %>ResponseEntity<<%= asEntity('AdminUser') %>><% } %> {
+    fun createUser(@Valid @RequestBody userDTO: <%= asDto('AdminUser') %>): <% if (reactive) { %>Mono<ResponseEntity<<%= asEntity('User') %>>><% } else { %>ResponseEntity<<%= asEntity('User') %>><% } %> {
         log.debug("REST request to save User : $userDTO")
 
         if (userDTO.id != null) {
@@ -273,7 +273,7 @@ class UserResource(
      * @return the `ResponseEntity` with status `200 (OK)` and with body all users.
      */
     @GetMapping("/users")
-    @PreAuthorize("hasAuthority(\"" + AuthoritiesConstants.ADMIN + "\")")
+    @PreAuthorize("hasAuthority(\"$ADMIN\")")
     <%_ if (databaseType === 'sql' || databaseType === 'mongodb' || databaseType === 'neo4j' || databaseType === 'couchbase') { _%>
         <%_ if (!reactive) { _%>
     fun getAllUsers(pageable: Pageable): ResponseEntity<List<<%= asDto('AdminUser') %>>> {
@@ -321,9 +321,9 @@ class UserResource(
      * @return the `ResponseEntity` with status `200 (OK)` and with body the "login" user, or with status `404 (Not Found)`.
      */
     @GetMapping("/users/{login}")
-    @PreAuthorize("hasAuthority(\"" + AuthoritiesConstants.ADMIN + "\")")
+    @PreAuthorize("hasAuthority(\"$ADMIN\")")
     <%_ if (!reactive) { _%>
-    fun getUser(@PathVariable @Pattern(regexp = Constants.LOGIN_REGEX) login: String): ResponseEntity<<%= asDto('AdminUser') %>> {
+    fun getUser(@PathVariable @Pattern(regexp = LOGIN_REGEX) login: String): ResponseEntity<<%= asDto('AdminUser') %>> {
         log.debug("REST request to get User : $login")
         return ResponseUtil.wrapOrNotFound(
             userService.getUserWithAuthoritiesByLogin(login)
@@ -347,14 +347,14 @@ class UserResource(
     @DeleteMapping("/users/{login}")
     @PreAuthorize("hasAuthority(\"$ADMIN\")")
     <%_ if (!reactive) { _%>
-    fun deleteUser(@PathVariable @Pattern(regexp = Constants.LOGIN_REGEX) login: String): ResponseEntity<Void> {
+    fun deleteUser(@PathVariable @Pattern(regexp = LOGIN_REGEX) login: String): ResponseEntity<Void> {
         log.debug("REST request to delete User: $login")
         userService.deleteUser(login)
         return ResponseEntity.noContent()
             .headers(HeaderUtil.createAlert(applicationName, <% if (enableTranslation) {%>"userManagement.deleted"<% } else { %> "A user is deleted with identifier $login"<% } %>, login)).build()
     <%_ } else { _%>
     @ResponseStatus(code = HttpStatus.NO_CONTENT)
-    fun deleteUser(@PathVariable @Pattern(regexp = Constants.LOGIN_REGEX) login: String): Mono<ResponseEntity<Void>> {
+    fun deleteUser(@PathVariable @Pattern(regexp = LOGIN_REGEX) login: String): Mono<ResponseEntity<Void>> {
         log.debug("REST request to delete User: $login")
         return userService.deleteUser(login)
             .map { ResponseEntity.noContent().headers(HeaderUtil.createAlert(applicationName, "userManagement.deleted", login)).build<Void>() }

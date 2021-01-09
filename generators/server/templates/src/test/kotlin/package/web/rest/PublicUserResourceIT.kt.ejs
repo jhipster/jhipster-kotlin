@@ -25,6 +25,8 @@ import <%= packageName %>.IntegrationTest
 <%_ if (databaseType === 'sql' && reactive) { _%>
 import <%= packageName %>.config.Constants
 <%_ } _%>
+import <%= packageName %>.security.ADMIN
+import <%= packageName %>.security.USER
 <%_ if (authenticationType === 'oauth2') { _%>
 import <%= packageName %>.config.TestSecurityConfiguration
 <%_ } _%>
@@ -107,7 +109,7 @@ import org.springframework.security.test.web.reactive.server.SecurityMockServerC
 <%_ } else { _%>
 @AutoConfigureWebTestClient
 <%_ } _%>
-@WithMockUser(authorities = AuthoritiesConstants.ADMIN)
+@WithMockUser(authorities = ADMIN)
 @IntegrationTest
 class PublicUserResourceIT <% if (databaseType === 'cassandra') { %>: AbstractCassandraTest() <% } %>{
 
@@ -217,7 +219,7 @@ class PublicUserResourceIT <% if (databaseType === 'cassandra') { %>: AbstractCa
             .andExpect(status().isOk())
             .andExpect(content().contentType(MediaType.APPLICATION_JSON_VALUE))
             .andExpect(jsonPath("$").isArray())
-            .andExpect(jsonPath("$").value(hasItems(AuthoritiesConstants.USER, AuthoritiesConstants.ADMIN)))
+            .andExpect(jsonPath("$").value(hasItems(USER, ADMIN)))
         <%_ } else { _%>
         webTestClient.get().uri("/api/authorities")
             .accept(MediaType.APPLICATION_JSON)
@@ -226,8 +228,8 @@ class PublicUserResourceIT <% if (databaseType === 'cassandra') { %>: AbstractCa
             .expectHeader().contentType(MediaType.APPLICATION_JSON_VALUE)
             .expectBody()
             .jsonPath("$").isArray()
-            .jsonPath("$[?(@=='" + AuthoritiesConstants.ADMIN + "')]").hasJsonPath()
-            .jsonPath("$[?(@=='" + AuthoritiesConstants.USER + "')]").hasJsonPath()
+            .jsonPath("$[?(@=='" + ADMIN + "')]").hasJsonPath()
+            .jsonPath("$[?(@=='" + USER + "')]").hasJsonPath()
         <%_ } _%>
     }
     <%_ } _%>

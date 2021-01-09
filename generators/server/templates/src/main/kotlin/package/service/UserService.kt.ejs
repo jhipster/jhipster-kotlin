@@ -920,9 +920,11 @@ class UserService<% if (databaseType !== 'no') { %>(
     <%_ if (cacheManagerIsAvailable === true && databaseType !== 'no') { _%>
 
     private fun clearUserCaches(user: <%= asEntity('User') %>) {
-        cacheManager.getCache(UserRepository.USERS_BY_LOGIN_CACHE)?.evict(user.login!!)
-        if(user.email != null) {
-            cacheManager.getCache(UserRepository.USERS_BY_EMAIL_CACHE)?.evict(user.email)
+        user.login?.let{
+            cacheManager.getCache(UserRepository.USERS_BY_LOGIN_CACHE)?.evict(it)
+        }
+        user.email?.let {
+            cacheManager.getCache(UserRepository.USERS_BY_EMAIL_CACHE)?.evict(it)
         }
     }
     <%_ } _%>
