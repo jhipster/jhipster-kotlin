@@ -71,6 +71,11 @@ module.exports = class extends ServerGenerator {
         return writeFiles();
     }
 
+    get postWriting() {
+        // Here we are not overriding this phase and hence its being handled by JHipster
+        return super._postWriting();
+    }
+
     get install() {
         const phaseFromJHipster = super._install();
         const myCustomPhaseSteps = {
