@@ -327,11 +327,11 @@ for (idx in fields) {
     @Transient
         <%_ } _%>
         <%_ if (relationship.ignoreOtherSideProperty) { _%>
+    
     @JsonIgnoreProperties(value = [
-        <%_ relationship.otherEntity.relationships.forEach(otherRelationship => { _%>
-        "<%= otherRelationship.relationshipReferenceField %>",
-        <%_ }); _%>
-        ], allowSetters = true)
+        <%_ const rels = relationship.otherEntity.relationships.map(otherRelationship => `"${otherRelationship.relationshipReferenceField}"`).join(',\n\t\t') _%>
+        <%- rels %>
+    ], allowSetters = true)
         <%_ } _%>
     var <%= relationshipFieldNamePlural %>: MutableSet<<%= asEntity(otherEntityNameCapitalized) %>> = mutableSetOf()<%= comma %>
 
@@ -356,10 +356,10 @@ for (idx in fields) {
     @Relationship("<%= relationshipFieldName %>")
     <%_ } _%>
     <%_ if (relationship.ignoreOtherSideProperty) { _%>
+    
     @JsonIgnoreProperties(value = [
-        <%_ relationship.otherEntity.relationships.forEach(otherRelationship => { _%>
-        "<%= otherRelationship.relationshipReferenceField %>",
-        <%_ }); _%>
+        <%_ const rels = relationship.otherEntity.relationships.map(otherRelationship => `"${otherRelationship.relationshipReferenceField}"`).join(',\n\t\t') _%>
+        <%- rels %>
     ], allowSetters = true)
     <%_ } _%>
     <%_ if (databaseType === 'sql' && reactive) { _%>
@@ -382,15 +382,18 @@ for (idx in fields) {
     <%- include('relationship_validators', { relationships, idx }); -%>
             <%_ } _%>
     @JoinTable(name = "<%= relationship.joinTable.name %>",
-        joinColumns = [<%_ entity.primaryKey.fields.forEach((field, idx) => { _%> 
+        joinColumns = [
+            <%_ entity.primaryKey.fields.forEach((field, idx) => { _%> 
             JoinColumn(name = "<%= `${entityTableName}_${field.columnName}` %>") <%= idx === 0 ? '' : ',' %>
             <%_ }) _%> 
         ],
-        inverseJoinColumns = [<%_ relationship.otherEntity.primaryKey.fields.forEach((field, idx) => { _%>
+        inverseJoinColumns = [
+            <%_ relationship.otherEntity.primaryKey.fields.forEach((field, idx) => { _%>
             JoinColumn(name =  "<%= `${relationship.columnName}_${field.columnName}` %>")<%= idx === 0 ? '' : ',' %>
-            <%_ }) _%> ]
-        <%_ }
-        } else if ((databaseType === 'mongodb' || databaseType === 'couchbase') && !otherEntityIsEmbedded) {
+            <%_ }) _%> 
+        ]
+    )   <%_  }
+             } else if ((databaseType === 'mongodb' || databaseType === 'couchbase') && !otherEntityIsEmbedded) {
             if (databaseType === 'mongodb') { _%>
     @DBRef
             <%_ } _%>
@@ -401,11 +404,11 @@ for (idx in fields) {
     @N1qlJoin(on = "lks.<%= relationshipFieldNamePlural %>=meta(rks).id", fetchType = FetchType.IMMEDIATE)
         <%_ }
         } if (relationship.ignoreOtherSideProperty) { _%>
+    
     @JsonIgnoreProperties(value = [
-        <%_ relationship.otherEntity.relationships.forEach(otherRelationship => { _%>
-        "<%= otherRelationship.relationshipReferenceField %>",
-        <%_ }); _%>
-        ], allowSetters = true)
+        <%_ const rels = relationship.otherEntity.relationships.map(otherRelationship => `"${otherRelationship.relationshipReferenceField}"`).join(',\n\t\t') _%>
+        <%- rels %>
+    ], allowSetters = true)
     <%_ } _%>
     <%_ if (databaseType === 'sql' && reactive) { _%>
     @Transient
@@ -415,11 +418,11 @@ for (idx in fields) {
     <%_ } else {
         if (databaseType === 'sql' && !reactive) {
             if (relationship.ignoreOtherSideProperty) { _%>
+    
     @JsonIgnoreProperties(value = [
-        <%_ relationship.otherEntity.relationships.forEach(otherRelationship => { _%>
-        "<%= otherRelationship.relationshipReferenceField %>",
-        <%_ }); _%>
-        ], allowSetters = true)
+        <%_ const rels = relationship.otherEntity.relationships.map(otherRelationship => `"${otherRelationship.relationshipReferenceField}"`).join(',\n\t\t') _%>
+        <%- rels %>
+    ], allowSetters = true)
         <%_ }
             if (ownerSide) { _%>
     @OneToOne<%_ if (relationshipRequired) { _%>(optional = false)<%_ } _%>
