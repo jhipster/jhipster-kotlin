@@ -35,7 +35,6 @@ import <%= packageName %>.repository.UserRepository
 <%_ if (searchEngine === 'elasticsearch') { _%>
 import <%= packageName %>.repository.search.UserSearchRepository
 <%_ } _%>
-import <%= packageName %>.security.AuthoritiesConstants
 <%_ if (databaseType === 'sql' && reactive) { _%>
 import <%= packageName %>.service.EntityManager
 <%_ } _%>
@@ -113,7 +112,7 @@ import org.springframework.security.test.web.reactive.server.SecurityMockServerC
 @IntegrationTest
 class PublicUserResourceIT <% if (databaseType === 'cassandra') { %>: AbstractCassandraTest() <% } %>{
 
-    private static final String DEFAULT_LOGIN = "johndoe"
+    private val DEFAULT_LOGIN = "johndoe"
 
     @Autowired
     private lateinit var userRepository: UserRepository
@@ -145,7 +144,7 @@ class PublicUserResourceIT <% if (databaseType === 'cassandra') { %>: AbstractCa
     private lateinit var restUserMockMvc: MockMvc
     <%_ } _%>
 
-    private val user: <%= asEntity('User') %>
+    private lateinit var user: <%= asEntity('User') %>
 
     <%_ if (cacheManagerIsAvailable === true) { _%>
     @BeforeEach
@@ -184,7 +183,7 @@ class PublicUserResourceIT <% if (databaseType === 'cassandra') { %>: AbstractCa
             .accept(MediaType.APPLICATION_JSON))
             .andExpect(status().isOk())
             .andExpect(content().contentType(MediaType.APPLICATION_JSON_VALUE))
-            .andExpect(jsonPath("$.[*].login").value(hasItem(DEFAULT_LOGIN)))
+            .andExpect(jsonPath("$.[*].login").value(hasItem<String>(DEFAULT_LOGIN)))
             .andExpect(jsonPath("$.[*].email").doesNotExist())
             <%_ if (databaseType !== 'cassandra') { _%>
             .andExpect(jsonPath("$.[*].imageUrl").doesNotExist())

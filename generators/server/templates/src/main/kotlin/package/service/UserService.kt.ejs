@@ -197,7 +197,7 @@ class UserService<% if (databaseType !== 'no') { %>(
     fun requestPasswordReset(mail: String): <% if (reactive) { %>Mono<% } else { %>Optional<% } %><<%= asEntity('User') %>> {
         return userRepository.findOneByEmailIgnoreCase(mail)
             <%_ if (!reactive) { _%>
-            .filter(<%= asEntity('User') %>::activated)
+            .filter { it.activated == true }
             .map {
                 it.resetKey = RandomUtil.generateResetKey()
                 it.resetDate = Instant.now()
@@ -348,7 +348,7 @@ class UserService<% if (databaseType !== 'no') { %>(
 
     <%_ if (!reactive) { _%>
     private fun removeNonActivatedUser(existingUser: <%= asEntity('User') %>): Boolean {
-        if (existingUser.activated) {
+        if (existingUser.activated == true) {
             return false
         }
         userRepository.delete(existingUser)
@@ -461,7 +461,7 @@ class UserService<% if (databaseType !== 'no') { %>(
                 clearUserCaches(user)
                 <%_ } _%>
                 user.apply {
-                    login = userDTO.login!!.toLowerCase()
+                    login = userDTO.login?.let{it.toLowerCase()}
                     firstName = userDTO.firstName
                     lastName = userDTO.lastName
                     email = userDTO.email?.toLowerCase()
@@ -710,11 +710,11 @@ class UserService<% if (databaseType !== 'no') { %>(
         <%_ } _%>
     <%_ } else { // Cassandra _%>
 
-    fun getAllManagedUsers() = userRepository.findAll().map(<%= asDto('AdminUser') %>::new)
+    fun getAllManagedUsers() = userRepository.findAll().map { <%= asDto('AdminUser') %>(it) }
 
     fun getAllPublicUsers() = userRepository.findAll()
-        .filter { it.activated }
-        .map(<%= asDto('User') %>::new)
+        .filter { it.activated == true }
+        .map { <%= asDto('User') %>(it) }
     <%_ } _%>
 
     <%_ if (databaseType === 'sql') { _%>

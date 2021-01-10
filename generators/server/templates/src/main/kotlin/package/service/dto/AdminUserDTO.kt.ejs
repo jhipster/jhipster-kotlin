@@ -75,6 +75,26 @@ open class <%= asDto('AdminUser') %>(
     var authorities: MutableSet<String> = mutableSetOf<String>()
 ) {
 
+    constructor(user: User?) : this(
+        user?.id, 
+        user?.login,
+        user?.firstName,
+        user?.lastName,
+        user?.email,
+        <%_ if (databaseType !== 'cassandra') { _%>
+        user?.imageUrl,
+        <%_ } _%>
+        user?.activated,
+        user?.langKey,
+        <%_ if (databaseType === 'mongodb' || databaseType === 'neo4j' || databaseType === 'couchbase' || databaseType === 'sql') { _%>
+        user?.createdBy,
+        user?.createdDate,
+        user?.lastModifiedBy,
+        user?.lastModifiedDate,
+        <%_ } _%>
+        user?.authorities ?: mutableSetOf<String>()
+    )
+
     override fun toString(): String {
         return "<%= asDto('AdminUser') %>{" +
             "login='" + login + '\'' +

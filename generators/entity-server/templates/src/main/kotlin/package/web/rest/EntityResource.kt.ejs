@@ -251,52 +251,52 @@ _%><%- include('../../common/inject_template', {viaService: viaService, construc
     }
 <%_ } _%>
 
-/**
-* {@code PATCH  /<%= entityApiUrl %>} : Updates given fields of an existing <%= entityInstance %>.
-*
-* @param <%= instanceName %> the <%= instanceName %> to update.
-* @return the {@link ResponseEntity} with status {@code 200 (OK)} and with body the updated <%= instanceName %>,
-* or with status {@code 400 (Bad Request)} if the <%= instanceName %> is not valid,
-* or with status {@code 404 (Not Found)} if the <%= instanceName %> is not found,
-* or with status {@code 500 (Internal Server Error)} if the <%= instanceName %> couldn't be updated.
-* @throws URISyntaxException if the Location URI syntax is incorrect.
-*/
-@PatchMapping(value = "/<%= entityApiUrl %>", consumes = "application/merge-patch+json")
-@Exception(URISyntaxException::class)
-fun partialUpdate<%= entityClass %>: <% if (reactive) { %>Mono<<% } %>ResponseEntity<<%= instanceType %>><% if (reactive) { %>><% } %> (<% if (validation) { %>@NotNull <% } %>@RequestBody <%= instanceName %>:<%= instanceType %>) {
-   log.debug("REST request to update <%= entityClass %> partially : {}", <%= instanceName %>)
-   if (<%= instanceName %>.<%= primaryKey.name %> == null) {
-       throw BadRequestAlertException("Invalid id", ENTITY_NAME, "idnull")
-   }
-   <%_ if (saveUserSnapshot) { _%>
-       <%_ if (manyToManyWithUser) { _%>
-   if (<%= instanceName %>.users != null) {
-       // Save users in case they are new and only exists in gateway
-       userRepository.saveAll(<%= instanceName %>.users)
-   }
-       <%_ } else { _%>
-   if (<%= instanceName %>.user != null) {
-       // Save user in case it's new and only exists in gateway
-       userRepository.save(<%= instanceName %>.user)
-   }
-       <%_ } _%>
-   <%_ } _%>
+    /**
+    * {@code PATCH  /<%= entityApiUrl %>} : Updates given fields of an existing <%= entityInstance %>.
+    *
+    * @param <%= instanceName %> the <%= instanceName %> to update.
+    * @return the {@link ResponseEntity} with status {@code 200 (OK)} and with body the updated <%= instanceName %>,
+    * or with status {@code 400 (Bad Request)} if the <%= instanceName %> is not valid,
+    * or with status {@code 404 (Not Found)} if the <%= instanceName %> is not found,
+    * or with status {@code 500 (Internal Server Error)} if the <%= instanceName %> couldn't be updated.
+    * @throws URISyntaxException if the Location URI syntax is incorrect.
+    */
+    @PatchMapping(value = ["/<%= entityApiUrl %>"], consumes = ["application/merge-patch+json"])
+    @Throws(URISyntaxException::class)
+    fun partialUpdate<%= entityClass %>(<% if (validation) { %>@NotNull <% } %>@RequestBody <%= instanceName %>:<%= instanceType %>): <% if (reactive) { %>Mono<<% } %>ResponseEntity<<%= instanceType %>><% if (reactive) { %>><% } %> {
+        log.debug("REST request to update <%= entityClass %> partially : {}", <%= instanceName %>)
+        if (<%= instanceName %>.<%= primaryKey.name %> == null) {
+            throw BadRequestAlertException("Invalid id", ENTITY_NAME, "idnull")
+        }
+        <%_ if (saveUserSnapshot) { _%>
+            <%_ if (manyToManyWithUser) { _%>
+        if (<%= instanceName %>.users != null) {
+            // Save users in case they are new and only exists in gateway
+            userRepository.saveAll(<%= instanceName %>.users)
+        }
+            <%_ } else { _%>
+        if (<%= instanceName %>.user != null) {
+            // Save user in case it's new and only exists in gateway
+            userRepository.save(<%= instanceName %>.user)
+        }
+            <%_ } _%>
+        <%_ } _%>
 
-   <%- include('../../common/patch_template', {asEntity, asDto, isService: false, viaService: viaService}); -%>
-       <%_ if (!reactive) { _%>
-   return ResponseUtil.wrapOrNotFound(
-       result,
-       HeaderUtil.createEntityUpdateAlert(applicationName, <%= enableTranslation %>, ENTITY_NAME, <%= instanceName %>.getId()<% if (primaryKey.type !== 'String') { %>.toString()<% } %>)
-   )
-       <%_ } else { _%>
-   return result
-       .switchIfEmpty(Mono.error(ResponseStatusException(HttpStatus.NOT_FOUND)))
-       .map(res -> ResponseEntity.ok()
-       .headers(HeaderUtil.createEntityUpdateAlert(applicationName, <%= enableTranslation %>, ENTITY_NAME, res.getId()<% if (primaryKey.type !== 'String') { %>.toString()<% } %>))
-       .body(res)
-   )
-       <%_ } _%>
-}
+        <%- include('../../common/patch_template', {asEntity, asDto, isService: false, viaService: viaService}); -%>
+            <%_ if (!reactive) { _%>
+        return ResponseUtil.wrapOrNotFound(
+            result,
+            HeaderUtil.createEntityUpdateAlert(applicationName, <%= enableTranslation %>, ENTITY_NAME, <%= instanceName %>.getId()<% if (primaryKey.type !== 'String') { %>.toString()<% } %>)
+        )
+            <%_ } else { _%>
+        return result
+            .switchIfEmpty(Mono.error(ResponseStatusException(HttpStatus.NOT_FOUND)))
+            .map(res -> ResponseEntity.ok()
+            .headers(HeaderUtil.createEntityUpdateAlert(applicationName, <%= enableTranslation %>, ENTITY_NAME, res.getId()<% if (primaryKey.type !== 'String') { %>.toString()<% } %>))
+            .body(res)
+        )
+            <%_ } _%>
+    }
 
     /**
      * `GET  /<%= entityApiUrl %>` : get all the <%= entityInstancePlural %>.

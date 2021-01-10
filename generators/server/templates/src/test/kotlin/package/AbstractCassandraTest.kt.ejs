@@ -31,8 +31,10 @@ import com.datastax.oss.driver.api.core.CqlSession
 import org.cassandraunit.CQLDataLoader
 import org.cassandraunit.dataset.cql.ClassPathCQLDataSet
 import org.junit.jupiter.api.BeforeAll
+import org.springframework.test.context.ContextConfiguration;
 import org.springframework.context.ApplicationContextInitializer
 import org.springframework.context.ConfigurableApplicationContext
+import org.springframework.test.context.support.TestPropertySourceUtils
 import org.springframework.test.context.ActiveProfiles
 import org.testcontainers.containers.GenericContainer
 import org.testcontainers.containers.wait.strategy.Wait
@@ -41,6 +43,7 @@ import java.io.IOException
 import java.net.InetSocketAddress
 import java.net.URISyntaxException
 import java.nio.file.Files
+import java.nio.file.Path
 import java.nio.file.Paths
 import java.util.Iterator
 import java.util.Spliterator
@@ -102,26 +105,24 @@ open class AbstractCassandraTest {
             // protect for empty directory
             val dirUrl = ClassLoader.getSystemResource(cqlDir) ?: return
 
-            val scripts = mutableListOf<String>()
             val pathIterator = newDirectoryStream(get(dirUrl.toURI()), pattern).iterator()
             val pathSpliterator = spliteratorUnknownSize(pathIterator, SORTED) 
         
             stream(pathSpliterator, false)
-                .map(Path::getFileName)
-                .map(Path::toString)
-                .sorted()
-                .map(file -> cqlDir + file)
-                .map(dataSetLocation -> ClassPathCQLDataSet(dataSetLocation, false, false, CASSANDRA_UNIT_KEYSPACE))
-                .forEach(dataLoader::load)
-        }
+            .map(Path::getFileName)
+            .map(Path::toString)
+            .sorted()
+            .map { cqlDir + it }
+            .map { ClassPathCQLDataSet(it, false, false, CASSANDRA_UNIT_KEYSPACE)}
+            .forEach(dataLoader::load)
+        }        
+    }
 
-        @JvmStatic
-        class CassandraPortInitializer: ApplicationContextInitializer<ConfigurableApplicationContext> {
-            override fun initialize(applicationContext: ConfigurableApplicationContext) {
-                TestPropertySourceUtils.addInlinedPropertiesToEnvironment(applicationContext,
-                    "spring.data.cassandra.port=" + AbstractCassandraTest.CASSANDRA_CONTAINER.getMappedPort(AbstractCassandraTest.CASSANDRA_TEST_PORT)
-                )
-            }
+    class CassandraPortInitializer: ApplicationContextInitializer<ConfigurableApplicationContext> {
+        override fun initialize(applicationContext: ConfigurableApplicationContext) {
+            TestPropertySourceUtils.addInlinedPropertiesToEnvironment(applicationContext,
+                "spring.data.cassandra.port=" + AbstractCassandraTest.CASSANDRA_CONTAINER.getMappedPort(AbstractCassandraTest.CASSANDRA_TEST_PORT)
+            )
         }
     }
 

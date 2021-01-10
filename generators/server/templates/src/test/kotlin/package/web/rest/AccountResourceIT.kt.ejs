@@ -323,7 +323,7 @@ class AccountResourceIT <% if (databaseType === 'cassandra') { %>: AbstractCassa
             imageUrl = "http://placehold.it/50x50"
             <%_ } _%>
             langKey = DEFAULT_LANGUAGE
-            authorities = setOf(USER)
+            authorities = mutableSetOf(USER)
         }
         assertThat(userRepository.findOneByLogin("test-register-valid")<% if (reactive) { %>.blockOptional()<% } %>.).isEmpty
 
@@ -361,7 +361,7 @@ class AccountResourceIT <% if (databaseType === 'cassandra') { %>: AbstractCassa
             imageUrl = "http://placehold.it/50x50"
             <%_ } _%>
             langKey = DEFAULT_LANGUAGE
-            authorities = setOf(USER)
+            authorities = mutableSetOf(USER)
         }
 
         <%_ if (!reactive) { _%>
@@ -399,7 +399,7 @@ class AccountResourceIT <% if (databaseType === 'cassandra') { %>: AbstractCassa
             imageUrl = "http://placehold.it/50x50"
             <%_ } _%>
             langKey = DEFAULT_LANGUAGE
-            authorities = setOf(USER)
+            authorities = mutableSetOf(USER)
         }
 
         <%_ if (!reactive) { _%>
@@ -437,7 +437,7 @@ class AccountResourceIT <% if (databaseType === 'cassandra') { %>: AbstractCassa
             imageUrl = "http://placehold.it/50x50"
             <%_ } _%>
             langKey = DEFAULT_LANGUAGE
-            authorities = setOf(USER)
+            authorities = mutableSetOf(USER)
         }
 
         <%_ if (!reactive) { _%>
@@ -475,7 +475,7 @@ class AccountResourceIT <% if (databaseType === 'cassandra') { %>: AbstractCassa
             imageUrl = "http://placehold.it/50x50"
             <%_ } _%>
             langKey = DEFAULT_LANGUAGE
-            authorities = setOf(USER)
+            authorities = mutableSetOf(USER)
         }
 
         <%_ if (!reactive) { _%>
@@ -519,7 +519,7 @@ class AccountResourceIT <% if (databaseType === 'cassandra') { %>: AbstractCassa
             imageUrl = "http://placehold.it/50x50"
             <%_ } _%>
             langKey = DEFAULT_LANGUAGE
-            authorities = setOf(USER)
+            authorities = mutableSetOf(USER)
         }
 
         // Duplicate login, different email
@@ -620,7 +620,7 @@ class AccountResourceIT <% if (databaseType === 'cassandra') { %>: AbstractCassa
             imageUrl = "http://placehold.it/50x50"
             <%_ } _%>
             langKey = DEFAULT_LANGUAGE
-            authorities = setOf(USER)
+            authorities = mutableSetOf(USER)
         }
 
         // Register first user
@@ -752,7 +752,7 @@ class AccountResourceIT <% if (databaseType === 'cassandra') { %>: AbstractCassa
             imageUrl = "http://placehold.it/50x50"
             <%_ } _%>
             langKey = DEFAULT_LANGUAGE
-            authorities = setOf(ADMIN)
+            authorities = mutableSetOf(ADMIN)
         }
 
         <%_ if (searchEngine === 'elasticsearch' && reactive) { _%>
@@ -846,7 +846,7 @@ class AccountResourceIT <% if (databaseType === 'cassandra') { %>: AbstractCassa
     @WithMockUser("save-account")
     @Throws(Exception::class)
     fun testSaveAccount() {
-        val user = <%= asDto('AdminUser') %>(
+        val user = <%= asEntity('User') %>(
             <%_ if (databaseType === 'cassandra') { _%>
             id = UUID.randomUUID().toString(),
             <%_ } _%>
@@ -867,7 +867,7 @@ class AccountResourceIT <% if (databaseType === 'cassandra') { %>: AbstractCassa
 
         <%_ } _%>
 
-        val userDTO = <%= asDto('User') %>(
+        val userDTO = <%= asDto('AdminUser') %>(
             login = "not-used",
             firstName = "firstname",
             lastName = "lastname",
@@ -877,7 +877,7 @@ class AccountResourceIT <% if (databaseType === 'cassandra') { %>: AbstractCassa
             imageUrl = "http://placehold.it/50x50",
             <%_ } _%>
             langKey = DEFAULT_LANGUAGE,
-            authorities = setOf(ADMIN)
+            authorities = mutableSetOf(ADMIN)
         )
 
         <%_ if (!reactive) { _%>
@@ -914,7 +914,7 @@ class AccountResourceIT <% if (databaseType === 'cassandra') { %>: AbstractCassa
     @Throws(Exception::class)
     <%_ } _%>
     fun testSaveInvalidEmail() {
-        val user = <%= asDto('AdminUser') %>(
+        val user = <%= asEntity('User') %>(
             <%_ if (databaseType === 'cassandra') { _%>
             id = UUID.randomUUID().toString(),
             <%_ } _%>
@@ -929,7 +929,7 @@ class AccountResourceIT <% if (databaseType === 'cassandra') { %>: AbstractCassa
 
         userRepository.save<% if (databaseType === 'sql' && !reactive) { %>AndFlush<% } %>(user)<% if (reactive) { %>.block()<% } %>
 
-        val userDTO = <%= asDto('User') %>(
+        val userDTO = <%= asDto('AdminUser') %>(
             login = "not-used",
             firstName = "firstname",
             lastName = "lastname",
@@ -939,7 +939,7 @@ class AccountResourceIT <% if (databaseType === 'cassandra') { %>: AbstractCassa
             imageUrl = "http://placehold.it/50x50",
             <%_ } _%>
             langKey = DEFAULT_LANGUAGE,
-            authorities = setOf(ADMIN)
+            authorities = mutableSetOf(ADMIN)
         )
 
         <%_ if (!reactive) { _%>
@@ -998,7 +998,7 @@ class AccountResourceIT <% if (databaseType === 'cassandra') { %>: AbstractCassa
 
         userRepository.save<% if (databaseType === 'sql' && !reactive) { %>AndFlush<% } %>(anotherUser)<% if (reactive) { %>.block()<% } %>
 
-        val userDTO = <%= asDto('User') %>(
+        val userDTO = <%= asDto('AdminUser') %>(
             login = "not-used",
             firstName = "firstname",
             lastName = "lastname",
@@ -1008,7 +1008,7 @@ class AccountResourceIT <% if (databaseType === 'cassandra') { %>: AbstractCassa
             imageUrl = "http://placehold.it/50x50",
             <%_ } _%>
             langKey = DEFAULT_LANGUAGE,
-            authorities = setOf(ADMIN)
+            authorities = mutableSetOf(ADMIN)
         )
 
         <%_ if (!reactive) { _%>
@@ -1057,7 +1057,7 @@ class AccountResourceIT <% if (databaseType === 'cassandra') { %>: AbstractCassa
 
         <%_ } _%>
 
-        val userDTO = <%= asDto('User') %>(
+        val userDTO = <%= asDto('AdminUser') %>(
             login = "not-used",
             firstName = "firstname",
             lastName = "lastname",
@@ -1067,7 +1067,7 @@ class AccountResourceIT <% if (databaseType === 'cassandra') { %>: AbstractCassa
             imageUrl = "http://placehold.it/50x50",
             <%_ } _%>
             langKey = DEFAULT_LANGUAGE,
-            authorities = setOf(ADMIN)
+            authorities = mutableSetOf(ADMIN)
         )
         // Mark here....
         <%_ if (!reactive) { _%>

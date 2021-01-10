@@ -57,6 +57,9 @@ if (databaseType === 'sql' && !reactive) {
     transactionalAnnotation = '\n    @Transactional';
 }
 _%>
+<%_ if (databaseType === 'cassandra') { _%>
+import <%= packageName %>.AbstractCassandraTest
+<%_ } _%>
 import <%= packageName %>.IntegrationTest
 import <%= packageName %>.domain.<%= asEntity(entityClass) %>
 <%_
@@ -235,7 +238,6 @@ import org.springframework.test.web.servlet.result.MockMvcResultMatchers.status
     ExtendWith(MockitoExtension::class)
 )
 <%_ } _%>
-
 class <%= entityClass %>ResourceIT <% if (databaseType === 'cassandra') { %>: AbstractCassandraTest() <% } %> {
     @Autowired
     private lateinit var <%= entityInstance %>Repository: <%= entityClass %>Repository
@@ -330,11 +332,11 @@ class <%= entityClass %>ResourceIT <% if (databaseType === 'cassandra') { %>: Ab
     fun setup() {
         MockitoAnnotations.initMocks(this)
             <%_ if (service !== 'no') { _%>
-        val <%= entityInstance %>Resource = <%= entityClass %>Resource(<%= entityInstance %>Service<% if (jpaMetamodelFiltering) { %>, <%= entityInstance %>QueryService<% } %><% if (saveUserSnapshot) { %>, userRepository<% } %>)
+        val <%= entityInstance %>Resource = <%= entityClass %>Resource(<%= entityInstance %>ServiceMock<% if (jpaMetamodelFiltering) { %>, <%= entityInstance %>QueryService<% } %><% if (saveUserSnapshot) { %>, userRepository<% } %>)
             <%_ } else { _%>
         val <%= entityInstance %>Resource = <%= entityClass %>Resource(<%= entityInstance %>Repository<% if (dto === 'mapstruct') { %>, <%= entityInstance %>Mapper<% } %><% if (searchEngine === 'elasticsearch') { %>, mock<%= entityClass %>SearchRepository<% } %><% if (saveUserSnapshot) { %>, userRepository<% } %><% if (isUsingMapsId === true && dto !== 'mapstruct') { %>, <%= mapsIdRepoInstance _%> <% } %>)
             <%_ } _%>
-         this.rest<%= entityClass %>MockMvc = MockMvcBuilders.standaloneSetup(<%= entityInstance %>Resource)
+        this.rest<%= entityClass %>MockMvc = MockMvcBuilders.standaloneSetup(<%= entityInstance %>Resource)
              .setCustomArgumentResolvers(pageableArgumentResolver)
              .setControllerAdvice(exceptionTranslator)
              .setConversionService(createFormattingConversionService())
@@ -422,7 +424,7 @@ class <%= entityClass %>ResourceIT <% if (databaseType === 'cassandra') { %>: Ab
         val databaseSizeBeforeCreate = <%= entityInstance %>Repository.findAll()<%= callListBlock %>.size
 
         // Create the <%= entityClass %> with an existing ID
-        <%= asEntity(entityInstance) %><%= primaryKey.name %> = <% if (databaseType === 'sql' && hasOauthUser === true) { %>UUID.randomUUID().toString()<% } else if (databaseType === 'sql') { %>1L<% } else if (databaseType === 'mongodb' || databaseType === 'couchbase') { %>"existing_id"<% } else if (databaseType === 'cassandra') { %>UUID.randomUUID()<% } %>
+        <%= asEntity(entityInstance) %>.<%= primaryKey.name %> = <% if (databaseType === 'sql' && hasOauthUser === true) { %>UUID.randomUUID().toString()<% } else if (databaseType === 'sql') { %>1L<% } else if (databaseType === 'mongodb' || databaseType === 'couchbase') { %>"existing_id"<% } else if (databaseType === 'cassandra') { %>UUID.randomUUID()<% } %>
         <%_ if (dto === 'mapstruct') { _%>
         val <%= asDto(entityInstance) %> = <%= entityInstance %>Mapper.toDto(<%= asEntity(entityInstance) %>)
         <%_ } _%>
@@ -478,7 +480,7 @@ class <%= entityClass %>ResourceIT <% if (databaseType === 'cassandra') { %>: Ab
         <%_ } break; } }_%>
 
         // Load the <%= entityInstance %>
-        val updated<%= asEntity(entityClass) %> = <%= entityInstance %>Repository.findById(<%= asEntity(entityInstance) %><%= primaryKey.name %>)<%= reactive ? '.block()' : '.get()' %>
+        val updated<%= asEntity(entityClass) %> = <%= entityInstance %>Repository.findById(<%= asEntity(entityInstance) %>.<%= primaryKey.name %>)<%= reactive ? '.block()' : '.get()' %>
         assertThat(updated<%= asEntity(entityClass) %>).isNotNull<% if (databaseType === 'sql' && !reactive) { %>
         // Disconnect from session so that the updates on updated<%= asEntity(entityClass) %> are not directly saved in db
         em.detach(updated<%= asEntity(entityClass) %>)<% } %>
@@ -564,7 +566,7 @@ class <%= entityClass %>ResourceIT <% if (databaseType === 'cassandra') { %>: Ab
     fun getAll<%= entityClassPlural %>AsStream() {
         // Initialize the database
         <%_ if (primaryKey.type === 'UUID' && databaseType !== 'sql') { _%>
-        <%= asEntity(entityInstance) %><%= primaryKey.name %> = UUID.randomUUID()
+        <%= asEntity(entityInstance) %>.<%= primaryKey.name %> = UUID.randomUUID()
         <%_ } _%>
         <%= entityInstance %>Repository.save(<%= asEntity(entityInstance) %>)<%= callBlock %>
 
@@ -602,7 +604,7 @@ class <%= entityClass %>ResourceIT <% if (databaseType === 'cassandra') { %>: Ab
     fun getAll<%= entityClassPlural %>() {
         // Initialize the database
         <%_ if (primaryKey.type === 'UUID' && databaseType !== 'sql') { _%>
-        <%= asEntity(entityInstance) %><%= primaryKey.name %> = UUID.randomUUID()
+        <%= asEntity(entityInstance) %>.<%= primaryKey.name %> = UUID.randomUUID()
         <%_ } _%>
         <%= entityInstance %>Repository.<%= saveMethod %>(<%= asEntity(entityInstance) %>)<%= callBlock %>
         
@@ -712,11 +714,11 @@ class <%= entityClass %>ResourceIT <% if (databaseType === 'cassandra') { %>: Ab
     fun get<%= entityClass %>() {
         // Initialize the database
         <%_ if (primaryKey.type === 'UUID' && databaseType !== 'sql') { _%>
-        <%= asEntity(entityInstance) %><%= primaryKey.name %> =UUID.randomUUID()
+        <%= asEntity(entityInstance) %>.<%= primaryKey.name %> =UUID.randomUUID()
         <%_ } _%>
         <%= entityInstance %>Repository.<%= saveMethod %>(<%= asEntity(entityInstance) %>)<%= callBlock %>
 
-        val id = <%= asEntity(entityInstance) %><%= primaryKey.name %>
+        val id = <%= asEntity(entityInstance) %>.<%= primaryKey.name %>
         assertNotNull(id)
 
         // Get the <%= entityInstance %>
@@ -757,7 +759,7 @@ class <%= entityClass %>ResourceIT <% if (databaseType === 'cassandra') { %>: Ab
     fun get<%= entityClassPlural %>ByIdFiltering()  {
       // Initialize the database
       <%= entityInstance %>Repository.<%= saveMethod %>(<%= asEntity(entityInstance) %>)<%= callBlock %>
-      val id = <%= asEntity(entityInstance) %><%= primaryKey.name %>
+      val id = <%= asEntity(entityInstance) %>.<%= primaryKey.name %>
 
       default<%= entityClass %>ShouldBeFound("id.equals=" + id)
       default<%= entityClass %>ShouldNotBeFound("id.notEquals=" + id)
@@ -1097,14 +1099,14 @@ class <%= entityClass %>ResourceIT <% if (databaseType === 'cassandra') { %>: Ab
         <%_ } _%>
         // Initialize the database
         <%_ if (primaryKey.type === 'UUID' && databaseType !== 'sql') { _%>
-        <%= asEntity(entityInstance) %><%= primaryKey.name %> = UUID.randomUUID()
+        <%= asEntity(entityInstance) %>.<%= primaryKey.name %> = UUID.randomUUID()
         <%_ } _%>
         <%= entityInstance %>Repository.<%= saveMethod %>(<%= asEntity(entityInstance) %>)<%= callBlock %>
 
         val databaseSizeBeforeUpdate = <%= entityInstance %>Repository.findAll()<%= callListBlock %>.size
 
         // Update the <%= entityInstance %>
-        val id = <%= asEntity(entityInstance) %><%= primaryKey.name %>
+        val id = <%= asEntity(entityInstance) %>.<%= primaryKey.name %>
         assertNotNull(id)
         val updated<%= entityClass %> = <%= entityInstance %>Repository.findById(id)<%= reactive ? '.block()' : '.get()' %>
         <%_ if (databaseType === 'sql' && !reactive) { _%>
@@ -1201,14 +1203,14 @@ class <%= entityClass %>ResourceIT <% if (databaseType === 'cassandra') { %>: Ab
     @Throws(Exception::class)
     fun partialUpdate<%= entityClass %>WithPatch() {
 <% const fieldsToIncludeInPartialPatchTest = fields.filter(field => !field.id).map(field => prepareFieldForPatchTest(field, () => faker.random.boolean())); %>
-<%- include('/partials/it_patch_update.partial.java.ejs', {fields: fieldsToIncludeInPartialPatchTest, saveMethod, asEntity, callBlock, callListBlock}); -%>
+<%- include('/partials/it_patch_update.partial.kt.ejs', {fields: fieldsToIncludeInPartialPatchTest, saveMethod, asEntity, callBlock, callListBlock}); -%>
     }
 
     @Test<%= transactionalAnnotation %>
     @Throws(Exception::class)
     fun fullUpdate<%= entityClass %>WithPatch() {
 <% const fieldsToIncludeInFullPatchTest = fields.filter(field => !field.id).map(field => prepareFieldForPatchTest(field, () => true)); %>
-<%- include('/partials/it_patch_update.partial.java.ejs', {fields: fieldsToIncludeInFullPatchTest, saveMethod, asEntity, callBlock, callListBlock}); -%>
+<%- include('/partials/it_patch_update.partial.kt.ejs', {fields: fieldsToIncludeInFullPatchTest, saveMethod, asEntity, callBlock, callListBlock}); -%>
     }
 
     @Test<%= transactionalAnnotation %>
@@ -1247,7 +1249,7 @@ class <%= entityClass %>ResourceIT <% if (databaseType === 'cassandra') { %>: Ab
 <%_ } _%>
         // Initialize the database
         <%_ if (primaryKey.type === 'UUID' && databaseType !== 'sql') { _%>
-        <%= asEntity(entityInstance) %><%= primaryKey.name %> = UUID.randomUUID()
+        <%= asEntity(entityInstance) %>.<%= primaryKey.name %> = UUID.randomUUID()
         <%_ } _%>
         <%= entityInstance %>Repository.<%= saveMethod %>(<%= asEntity(entityInstance) %>)<%= callBlock %>
 
@@ -1256,11 +1258,11 @@ class <%= entityClass %>ResourceIT <% if (databaseType === 'cassandra') { %>: Ab
         <%_ if (!reactive) { _%>
         // Delete the <%= entityInstance %>
         rest<%= entityClass %>MockMvc.perform(
-            delete("/api/<%= entityApiUrl %>/{id}", <%= asEntity(entityInstance) %><%= primaryKey.name %><% if (primaryKey.type === 'UUID' && databaseType === 'sql') { %>.toString()<% } %>)
+            delete("/api/<%= entityApiUrl %>/{id}", <%= asEntity(entityInstance) %>.<%= primaryKey.name %><% if (primaryKey.type === 'UUID' && databaseType === 'sql') { %>.toString()<% } %>)
                 .accept(MediaType.APPLICATION_JSON)
         ).andExpect(status().isNoContent)
         <%_ } else { _%>
-        webTestClient.delete().uri("/api/<%= entityApiUrl %>/{id}", <%= asEntity(entityInstance) %><%= primaryKey.name %>)
+        webTestClient.delete().uri("/api/<%= entityApiUrl %>/{id}", <%= asEntity(entityInstance) %>.<%= primaryKey.name %>)
             .accept(MediaType.APPLICATION_JSON)
             .exchange()
             .expectStatus().isNoContent
@@ -1275,7 +1277,7 @@ class <%= entityClass %>ResourceIT <% if (databaseType === 'cassandra') { %>: Ab
         <%_ if (searchEngine === 'elasticsearch') { _%>
 
         // Validate the <%= entityClass %> in Elasticsearch
-        verify(mock<%= entityClass %>SearchRepository, times(1)).deleteById(<%= asEntity(entityInstance) %><%= primaryKey.name %>)
+        verify(mock<%= entityClass %>SearchRepository, times(1)).deleteById(<%= asEntity(entityInstance) %>.<%= primaryKey.name %>)
         <%_ } _%>
     }
 <%_ } _%>
@@ -1294,19 +1296,19 @@ class <%= entityClass %>ResourceIT <% if (databaseType === 'cassandra') { %>: Ab
     <%_ } _%>
         // Initializesearch<%= entityClass %>() the database
     <%_ if (primaryKey.type === 'UUID' && databaseType !== 'sql') { _%>
-        <%= asEntity(entityInstance) %><%= primaryKey.name %> = UUID.randomUUID()
+        <%= asEntity(entityInstance) %>.<%= primaryKey.name %> = UUID.randomUUID()
     <%_ } _%>
         <%= entityInstance %>Repository.<%= saveMethod %>(<%= asEntity(entityInstance) %>)<%= callBlock %>
     <%_ if (searchEngine === 'elasticsearch') { _%>
         <%_ if (reactive) { _%>
-        `when`(mock<%= entityClass %>SearchRepository.search("id:" + <%= asEntity(entityInstance) %><%= primaryKey.name %><%_ if (pagination !== 'no') { _%>, PageRequest.of(0, 20)<% }%>))
+        `when`(mock<%= entityClass %>SearchRepository.search("id:" + <%= asEntity(entityInstance) %>.<%= primaryKey.name %><%_ if (pagination !== 'no') { _%>, PageRequest.of(0, 20)<% }%>))
             .thenReturn(Flux.just(<%= asEntity(entityInstance) %>))
         <%_ } else { _%>
             <%_ if (pagination !== 'no') { _%>
-        `when`(mock<%= entityClass %>SearchRepository.search(queryStringQuery("id:" + <%= asEntity(entityInstance) %><%= primaryKey.name %>), PageRequest.of(0, 20)))
+        `when`(mock<%= entityClass %>SearchRepository.search(queryStringQuery("id:" + <%= asEntity(entityInstance) %>.<%= primaryKey.name %>), PageRequest.of(0, 20)))
             .thenReturn(PageImpl(listOf(<%= asEntity(entityInstance) %>), PageRequest.of(0, 1), 1))
             <%_ } else { _%>
-        `when`(mock<%= entityClass %>SearchRepository.search(queryStringQuery("id:" + <%= asEntity(entityInstance) %><%= primaryKey.name %>)))
+        `when`(mock<%= entityClass %>SearchRepository.search(queryStringQuery("id:" + <%= asEntity(entityInstance) %>.<%= primaryKey.name %>)))
             .thenReturn(listOf(<%= asEntity(entityInstance) %>))
             <%_ } _%>
         <%_ } _%>
@@ -1317,11 +1319,11 @@ class <%= entityClass %>ResourceIT <% if (databaseType === 'cassandra') { %>: Ab
     <%_ } _%>
         // Search the <%= entityInstance %>
     <%_ if (!reactive) { _%>
-        rest<%= entityClass %>MockMvc.perform(get("/api/_search/<%= entityApiUrl %>?query=id:" + <%= asEntity(entityInstance) %><%= primaryKey.name %>))
+        rest<%= entityClass %>MockMvc.perform(get("/api/_search/<%= entityApiUrl %>?query=id:" + <%= asEntity(entityInstance) %>.<%= primaryKey.name %>))
             .andExpect(status().isOk)
             .andExpect(content().contentType(MediaType.APPLICATION_JSON_VALUE))
     <%_ } else { _%>
-        webTestClient.get().uri("/api/_search/<%= entityApiUrl %>?query=id:" + <%= asEntity(entityInstance) %><%= primaryKey.name %>)
+        webTestClient.get().uri("/api/_search/<%= entityApiUrl %>?query=id:" + <%= asEntity(entityInstance) %>.<%= primaryKey.name %>)
             .exchange()
             .expectStatus().isOk()
             .expectHeader().contentType(MediaType.APPLICATION_JSON)
