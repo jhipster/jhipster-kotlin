@@ -31,30 +31,28 @@ _%>
    <%- returnPrefix %> <%= entityInstance %>Service.partialUpdate(<%= instanceName %>)
    <%_ } %>
 <%_ } else { %>
-   <%- returnPrefix %> <%= entityInstance %>Repository.findById(<%= instanceName %>.id)
-   .map { 
+   val result = <%= entityInstance %>Repository.findById(<%= instanceName %>.id)
+       .map { 
     <%_ for (field of fields) { 
        if (field.id) continue; _%>
-   if (<%= instanceName %>.<%= field.fieldName %>!= null) {
-      it.<%= field.fieldName %> = <%= instanceName %>.<%= field.fieldName %>
-   }
+           if (<%= instanceName %>.<%= field.fieldName %>!= null) {
+              it.<%= field.fieldName %> = <%= instanceName %>.<%= field.fieldName %>
+           }
    <%_ if (field.fieldWithContentType) { _%>
-   if (<%= instanceName %>.<%= field.fieldName %>ContentType != null) {
-      it.<%= field.fieldName %>ContentType = <%= instanceName %>.<%= field.fieldName %>ContentType
-   }
-   <%_ } _%>
-
-<% } %>
-   it
-   }
-   .<%= mapOrFlatMap %>(<%= entityInstance %>Repository::save)<% if (searchEngine === 'elasticsearch') { %>
-   .<%= mapOrFlatMap %> { 
-        <%= entityInstance %>SearchRepository.save(it)
-        <%_ if(!reactive) { %> 
-        it
-        <%_ } else { %>
-        Mono.just(it)
-        <%_ } %>
-   }<% } %><% if (dto !== 'no') { %>
+           if (<%= instanceName %>.<%= field.fieldName %>ContentType != null) {
+              it.<%= field.fieldName %>ContentType = <%= instanceName %>.<%= field.fieldName %>ContentType
+           }
+   <%_ } } _%>
+       it
+      }
+      .<%= mapOrFlatMap %>(<%= entityInstance %>Repository::save)<% if (searchEngine === 'elasticsearch') { %>
+      .<%= mapOrFlatMap %> { 
+            <%= entityInstance %>SearchRepository.save(it)
+     <%_ if(!reactive) { %> 
+            it
+     <%_ } else { %>
+            Mono.just(it)
+     <%_ } %>
+      }<% } %><% if (dto !== 'no') { %>
    .map(<%= mapper %>::toDto)<% } %>
 <%_ } %>
