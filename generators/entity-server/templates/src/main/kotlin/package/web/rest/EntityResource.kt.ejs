@@ -286,15 +286,16 @@ _%><%- include('../../common/inject_template', {viaService: viaService, construc
             <%_ if (!reactive) { _%>
         return ResponseUtil.wrapOrNotFound(
             result,
-            HeaderUtil.createEntityUpdateAlert(applicationName, <%= enableTranslation %>, ENTITY_NAME, <%= instanceName %>.getId()<% if (primaryKey.type !== 'String') { %>.toString()<% } %>)
+            HeaderUtil.createEntityUpdateAlert(applicationName, <%= enableTranslation %>, ENTITY_NAME, <%= instanceName %>.id<% if (primaryKey.type !== 'String') { %>.toString()<% } %>)
         )
             <%_ } else { _%>
         return result
             .switchIfEmpty(Mono.error(ResponseStatusException(HttpStatus.NOT_FOUND)))
-            .map(res -> ResponseEntity.ok()
-            .headers(HeaderUtil.createEntityUpdateAlert(applicationName, <%= enableTranslation %>, ENTITY_NAME, res.getId()<% if (primaryKey.type !== 'String') { %>.toString()<% } %>))
-            .body(res)
-        )
+            .map { 
+                ResponseEntity.ok()
+                    .headers(HeaderUtil.createEntityUpdateAlert(applicationName, <%= enableTranslation %>, ENTITY_NAME, it.id<% if (primaryKey.type !== 'String') { %>.toString()<% } %>))
+                    .body(res)
+            }
             <%_ } _%>
     }
 

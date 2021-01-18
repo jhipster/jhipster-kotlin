@@ -21,17 +21,17 @@ const instanceType = (dto === 'mapstruct') ? asDto(entityClass) : asEntity(entit
 const instanceName = (dto === 'mapstruct') ? asDto(entityInstance) : asEntity(entityInstance);
 const returnType = reactive ? 'Mono' : 'Optional'
 const mapOrFlatMap = reactive ? 'flatMap' : 'map'
-const returnPrefix = (isService) ? 'return' : returnType + '<' + instanceType + '> result =';
+const returnPrefix = (isService) ? 'return' : 'val result =';
 const mapper = entityInstance  + 'Mapper';
 _%>
 <%_ if(viaService) { %>
    <%_ if(!reactive) { %>
-   val result = <%= entityInstance %>Service.partialUpdate(<%= instanceName %>)
+   <%- returnPrefix %> <%= entityInstance %>Service.partialUpdate(<%= instanceName %>)
    <%_ } else { %>
-   val result = <%= entityInstance %>Service.partialUpdate(<%= instanceName %>)
+   <%- returnPrefix %> <%= entityInstance %>Service.partialUpdate(<%= instanceName %>)
    <%_ } %>
 <%_ } else { %>
-   val <%= entityInstance %>Repository.findById(<%= instanceName %>.id)
+   <%- returnPrefix %> <%= entityInstance %>Repository.findById(<%= instanceName %>.id)
    .map { 
     <%_ for (field of fields) { 
        if (field.id) continue; _%>

@@ -360,19 +360,19 @@ class UserSqlHelper {
 <%_ } else if (databaseType === 'cassandra') { _%>
 @Repository
 class UserRepository(
+    <%_ if (reactive) { _%>
+    private val cqlTemplate: ReactiveCassandraTemplate, 
+    <%_ } _%>
+    private val session: <% if (reactive) { %>Reactive<% } else { %>Cql<% } %>Session,
     <%_ if (!reactive) { _%>
-    private val session: CqlSession,
-    <%_ } else { _%>
-    private val session: ReactiveSession,
-    <%_ } _%>
-    private val validator: Validator<% if(reactive) { %>,
-    private val cqlTemplate: ReactiveCassandraTemplate
-    <%_ } _%>
+    private val validator: Validator<%_ } _%><%_ if (!reactive) { _%>,
+    private val cassandraProperties: CassandraProperties<% } %>
 ) {
+    
     <%_ if(!reactive) { _%>
 
     private val userTokenMapper = UserTokenMapperBuilder(session).build()
-    private val userDao = userTokenMapper.userTokenDao(CqlIdentifier.fromCql(cassandraProperties.getKeyspaceName()))
+    private val userDao = userTokenMapper.userTokenDao(CqlIdentifier.fromCql(cassandraProperties.keyspaceName))
     <%_ } else { _%>
     
     private val findAllStmt = session.prepare("SELECT * FROM user")<% if(reactive) { %>.block()<% } %>

@@ -75,7 +75,7 @@ class DomainUserDetailsService(private val userRepository: UserRepository) : <% 
 
     private fun createSpringSecurityUser(lowercaseLogin: String, user: <%= asEntity('User') %>)
         : org.springframework.security.core.userdetails.User {
-        if (!user.activated) {
+        if (user.activated == null || user.activated == false) {
             throw UserNotActivatedException("User $lowercaseLogin was not activated")
         }
         val grantedAuthorities = user.authorities.map { SimpleGrantedAuthority(it<% if (databaseType === 'sql' || databaseType === 'mongodb' || databaseType === 'neo4j') { %>.name<% } %>) }
