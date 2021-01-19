@@ -122,7 +122,7 @@ class <%= entityClass %>RepositoryInternalImpl(
             const colName = _getJoinColumnName(rel); %>
             .leftOuterJoin(<%= rel.relationshipName %>Table).on(Column.create("<%= colName %>", entityTable)).equals(Column.create("id", <%= rel.relationshipName %>Table ))<%_ }); _%>;
 
-        String select = entityManager.createSelect(selectFrom, <%= asEntity(entityClass) %>.class, pageable/*, criteria */);
+        val select = entityManager.createSelect(selectFrom, <%= asEntity(entityClass) %>::class, pageable/*, criteria */);
         return db.execute(select)
                 .map(this::process);
     }
@@ -180,7 +180,7 @@ class <%= entityClass %>RepositoryInternalImpl(
 
     override fun update(entity: <%= asEntity(entityClass) %>): Mono<Integer> {
         <%_ if (fields.length + reactiveEagerRelations.length > 0) { _%>
-        return db.update().table(<%= asEntity(entityClass) %>.class).using(entity).fetch().rowsUpdated()
+        return db.update().table(<%= asEntity(entityClass) %>::class).using(entity).fetch().rowsUpdated()
         <%_ } else { _%>
         // What can we update on this field?
         return Mono.just(1)
@@ -191,7 +191,7 @@ class <%= entityClass %>RepositoryInternalImpl(
 
     override fun deleteById(entityId: Long): Mono<Void> {
         return deleteRelations(entityId).then(
-             db.delete().from(<%= asEntity(entityClass) %>.class).matching(Criteria.from(Criteria.where("id").is(entityId))).then()
+             db.delete().from(<%= asEntity(entityClass) %>::class).matching(Criteria.from(Criteria.where("id").is(entityId))).then()
         );
     }
 
