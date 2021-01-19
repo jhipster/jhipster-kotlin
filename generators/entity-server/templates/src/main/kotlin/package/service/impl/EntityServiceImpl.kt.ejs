@@ -119,7 +119,6 @@ class <%= serviceClassName %>(
     <% if (service === 'serviceImpl') { %>override <% } %>fun partialUpdate(<%= instanceName %>: <%= instanceType %>): <% if (!reactive) { %>Optional<<% } %><% if (reactive) { %>Mono<<% } %><%= instanceType %>> {
         log.debug("Request to partially update <%= entityClass %> : {}", <%= instanceName %>)
         <%- include('../../common/patch_template', {asEntity, asDto, isService: true, viaService: false}); -%>
-        return result
     }
 
     <%_ if (service !== 'serviceImpl') { _%>
@@ -137,7 +136,7 @@ class <%= serviceClassName %>(
         log.debug("Request to get all <%= entityClassPlural %>")
         <%_ if (pagination === 'no') { _%>
         return <%= entityInstance %>Repository.<% if (relationshipsContainEagerLoad) { %>findAllWithEagerRelationships<% } else { %>findAll<% } %>()<% if (dto === 'mapstruct') { %><% if (reactive !== true) { %>
-            .mapTo(mutableListOf(), <%= entityToDtoReference %>)<% } else { %>.map(<%= entityToDtoReference %> )<% } %><% } %>            
+            .mapTo(mutableListOf(), <%= entityToDtoReference %>)<% } else { %>.map(<%= entityToDtoReference %> )<% } %><% } %>
         <%_ } else { _%>
         return <%= entityInstance %>Repository.findAll<% if (reactive) { %>By<% } %>(pageable)<% if (dto === 'mapstruct') { %>
             .map(<%= entityToDtoReference %>)<% } %>
