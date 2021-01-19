@@ -175,7 +175,7 @@ class <%= asEntity('User') %> (
     @org.springframework.data.elasticsearch.annotations.Field(type = FieldType.Keyword)
     <%_ } _%>
 <%_ } _%>
-    var id: <%= user.primaryKey.type %>? = null,  
+    var id: <%= user.primaryKey.type %>? = null,
 
     @field:NotNull
     @field:Pattern(regexp = LOGIN_REGEX)
@@ -342,32 +342,29 @@ class <%= asEntity('User') %> (
 <%_ } _%>
 
     @JsonIgnore
-    <%_ if (databaseType === 'neo4j') { _%>
-    @Relationship("HAS_AUTHORITY")
-    <%_ } _%>
-    <%_ if (databaseType === 'sql' && !reactive) { _%>
+    <% if (databaseType === 'neo4j') { %>@Relationship("HAS_AUTHORITY")<% } %>
+    <% if (databaseType === 'sql' && !reactive) { %>
     @ManyToMany
     @JoinTable(
         name = "<%= user.entityTableName %>_authority",
         joinColumns = [JoinColumn(name = "user_id", referencedColumnName = "id")],
         inverseJoinColumns = [JoinColumn(name = "authority_name", referencedColumnName = "name")]
     )
-        <%_ if (enableHibernateCache) { if (cacheProvider === 'infinispan') { _%>
+        <% if (enableHibernateCache) { if (cacheProvider === 'infinispan') { %>
     @Cache(usage = CacheConcurrencyStrategy.READ_WRITE)
-        <%_ } else { _%>
+        <% } else { %>
     @Cache(usage = CacheConcurrencyStrategy.NONSTRICT_READ_WRITE)
-        <%_ } } _%>
+        <% } } %>
     @BatchSize(size = 20)
-    <%_ } _%>
-    <%_ if (databaseType === 'sql' && reactive) { _%>
+    <% } %>
+    <% if (databaseType === 'sql' && reactive) { %>
     @Transient
-    <%_ } _%>
-    <%_ if (['sql', 'mongodb', 'neo4j'].includes(databaseType)) { _%>
-    var authorities: MutableSet<Authority> = mutableSetOf(),
-    <%_ } else if (['cassandra', 'couchbase'].includes(databaseType)) { _%>
-    var authorities: MutableSet<String> = mutableSetOf(),
-    <%_ } _%>
-    <%_ if (authenticationType === 'session' && databaseType === 'sql' && !reactive) { _%>
+    <% } %>
+    <% if (['sql', 'mongodb', 'neo4j'].includes(databaseType)) { %>
+    var authorities: MutableSet<Authority> = mutableSetOf()
+    <% } else if (['cassandra', 'couchbase'].includes(databaseType)) { %>
+    var authorities: MutableSet<String> = mutableSetOf()
+    <% } %><% if (authenticationType === 'session' && databaseType === 'sql' && !reactive) { %>,
 
     @JsonIgnore
     @OneToMany(cascade = [ CascadeType.ALL ], orphanRemoval = true, mappedBy = "user")
