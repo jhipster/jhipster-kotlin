@@ -2159,7 +2159,7 @@ function writeFiles() {
                             <annotationProcessorPath>
                             <groupId>com.datastax.oss</groupId>
                             <artifactId>java-driver-mapper-processor</artifactId>
-                            <version>${java-driver.version}</version>
+                            <version>$\{java-driver.version}</version>
                             </annotationProcessorPath>
                         </annotationProcessorPaths>
                         </configuration>
