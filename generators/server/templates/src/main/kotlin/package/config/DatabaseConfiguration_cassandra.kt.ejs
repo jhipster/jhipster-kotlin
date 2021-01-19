@@ -46,7 +46,7 @@ import java.util.List
 public class DatabaseConfiguration {
 
     private val log = LoggerFactory.getLogger(javaClass)
-    
+
     @Bean
     fun customConversions() =
         CassandraCustomConversions(
@@ -57,7 +57,7 @@ public class DatabaseConfiguration {
         )
 
     @ReadingConverter
-    class TupleToZonedDateTimeConverter: Converter<TupleValue, ZonedDateTime> {
+    object TupleToZonedDateTimeConverter: Converter<TupleValue, ZonedDateTime> {
         override fun convert(source: TupleValue): ZonedDateTime {
             val instant = source.getInstant(0)!!
             val zoneId = ZoneId.of(source.getString(1))
@@ -66,7 +66,7 @@ public class DatabaseConfiguration {
     }
 
     @WritingConverter
-    class ZonedDateTimeToTupleConverter: Converter<ZonedDateTime, TupleValue> {
+    object ZonedDateTimeToTupleConverter: Converter<ZonedDateTime, TupleValue> {
         private val type = DataTypes.tupleOf(DataTypes.TIMESTAMP, DataTypes.ASCII)
 
         override fun convert(@Nonnull source: ZonedDateTime): TupleValue {

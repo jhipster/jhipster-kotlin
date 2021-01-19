@@ -128,7 +128,7 @@ public class DatabaseConfiguration<% if (devDatabaseType === 'h2Disk' || devData
     }
 <%_ } _%>
 <% if (uuidConversionNeeded) { %>
-    
+
     /**
      * Simple singleton to convert [UUID]s to their [String] representation.
      */
@@ -160,7 +160,7 @@ public class DatabaseConfiguration<% if (devDatabaseType === 'h2Disk' || devData
         return R2dbcCustomConversions(CustomConversions.StoreConversions.of(dialect.simpleTypeHolder, converters), mutableListOf<Any>())
     }
 
-   
+
 
     @Bean
     fun dialect(connectionFactory: ConnectionFactory) = DialectResolver.getDialect(connectionFactory)
@@ -173,14 +173,14 @@ public class DatabaseConfiguration<% if (devDatabaseType === 'h2Disk' || devData
         val factory = RenderContextFactory(dialect)
         return SqlRenderer.create(factory.createRenderContext())
     }
-    
+
     @WritingConverter
-    class InstantWriteConverter: Converter<Instant, LocalDateTime> {
+    object InstantWriteConverter: Converter<Instant, LocalDateTime> {
         override fun convert(source: Instant) = LocalDateTime.ofInstant(source, ZoneOffset.UTC)
     }
 
     @ReadingConverter
-    class InstantReadConverter: Converter<LocalDateTime, Instant> {
+    object InstantReadConverter: Converter<LocalDateTime, Instant> {
         override fun convert(localDateTime: LocalDateTime) = localDateTime.toInstant(ZoneOffset.UTC)
     }
 
