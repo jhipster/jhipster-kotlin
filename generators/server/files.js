@@ -2146,6 +2146,24 @@ function writeFiles() {
 
                 updatePom(this);
                 const defaultCompileOther = `                <executions>
+                ${this.databaseType === 'cassandra' ? 
+                    `<execution>
+                        <id>kapt</id>
+                        <goals><goal>kapt</goal></goals>
+                        <configuration>
+                        <sourceDirs>
+                            <sourceDir>src/main/kotlin</sourceDir>
+                            <sourceDir>src/main/java</sourceDir>
+                        </sourceDirs>
+                        <annotationProcessorPaths>
+                            <annotationProcessorPath>
+                            <groupId>com.datastax.oss</groupId>
+                            <artifactId>java-driver-mapper-processor</artifactId>
+                            <version>${java-driver.version}</version>
+                            </annotationProcessorPath>
+                        </annotationProcessorPaths>
+                        </configuration>
+                    </execution>` : ''}
                     <!-- Replacing default-compile as it is treated specially by maven -->
                     <execution>
                         <id>default-compile</id>
