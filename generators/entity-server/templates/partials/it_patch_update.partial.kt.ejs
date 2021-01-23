@@ -25,35 +25,37 @@
 val databaseSizeBeforeUpdate = <%= entityInstance %>Repository.findAll()<%= callListBlock %>.size
 
 // Update the <%= entityInstance %> using partial update
-var partialUpdated<%= asEntity(entityClass) %> = <%= asEntity(entityClass) %>()
-partialUpdated<%= asEntity(entityClass) %>.<%= primaryKey.name %> = <%= asEntity(entityInstance) %>.id
-<%_ fieldsToUpdate = fields.filter(field => field.includeField) %>
+val partialUpdated<%= asEntity(entityClass) %> = <%= asEntity(entityClass) %>().apply {
+    <%= primaryKey.name %> = <%= asEntity(entityInstance) %>.id
+    <%_ fieldsToUpdate = fields.filter(field => field.includeField) %>
 <%_ if (fluentMethods && fieldsToUpdate.length > 0) { _%>
-    partialUpdated<%= asEntity(entityClass) %><% for (field of fieldsToUpdate) { %>
-        .<%= field.fieldName %>(<%= 'UPDATED_' + field.fieldNameUnderscored.toUpperCase() %>)<% if (field.fieldWithContentType) { %>
-            .<%= field.fieldName %>ContentType(<%= 'UPDATED_' + field.fieldNameUnderscored.toUpperCase() %>_CONTENT_TYPE)<% } %><% } %>
+    <% for (field of fieldsToUpdate) { %>
+        <%= field.fieldName %> = <%= 'UPDATED_' + field.fieldNameUnderscored.toUpperCase() %><% if (field.fieldWithContentType) { %>
+        <%= field.fieldName %>ContentType = <%= 'UPDATED_' + field.fieldNameUnderscored.toUpperCase() %>_CONTENT_TYPE<% } %><% } %>
 <%_ } else { _%>
 <%_ for (field of fieldsToUpdate) { _%>
     <%_ if (field.includeField) { %>
-    partialUpdated<%= asEntity(entityClass) %>.<%= field.fieldName %> = <%= field.updateWithValue %>
+    <%= field.fieldName %> = <%= field.updateWithValue %>
         <%_ if (field.fieldWithContentType) { _%>
-        partialUpdated<%= asEntity(entityClass) %>.<%= field.fieldName %>ContentType = <%= field.updateWithValue %>_CONTENT_TYPE
+    <%= field.fieldName %>ContentType = <%= field.updateWithValue %>_CONTENT_TYPE
         <%_ } _%>
     <%_ } _%>
 <%_ } _%>
 <%_ } _%>
+}
+
 
 <%_ if (!reactive) { _%>
 rest<%= entityClass %>MockMvc.perform(patch("/api/<%= entityApiUrl %>")<% if (testsNeedCsrf) { %>.with(csrf())<% }%>
 .contentType("application/merge-patch+json")
-.content(TestUtil.convertObjectToJsonBytes(<%= 'partialUpdated' + asEntity(entityClass) %>)))
+.content(convertObjectToJsonBytes(<%= 'partialUpdated' + asEntity(entityClass) %>)))
 .andExpect(status().isOk)
 <%_ } else { _%>
 webTestClient
 .patch()
 .uri("/api/<%= entityApiUrl %>")
 .contentType(MediaType.valueOf("application/merge-patch+json"))
-.bodyValue(TestUtil.convertObjectToJsonBytes(<%= 'partialUpdated' + asEntity(entityClass) %>))
+.bodyValue(convertObjectToJsonBytes(<%= 'partialUpdated' + asEntity(entityClass) %>))
 .exchange()
 .expectStatus()
 .isOk
@@ -65,14 +67,14 @@ SecurityContextHolder.setContext(TestSecurityContextHolder.getContext())
 <%_ } _%>
 val <%= entityInstance %>List = <%= entityInstance %>Repository.findAll()<%= callListBlock %>
 assertThat(<%= entityInstance %>List).hasSize(databaseSizeBeforeUpdate)
-val test<%= entityClass %> = <%= entityInstance %>List.get(<%= entityInstance %>List.size() - 1)
+val test<%= entityClass %> = <%= entityInstance %>List.last()
 <%_ for (field of fields) { if (field.fieldType === 'ZonedDateTime') { _%>
     assertThat(test<%= entityClass %>.<%= field.fieldName %>).isEqualTo(<%= field.testWithConstant %>)
 <%_ } else if ((field.fieldType === 'byte[]' || field.fieldType === 'ByteBuffer') && field.fieldTypeBlobContent !== 'text') { _%>
-    assertThat(test<%= entityClass %>.<%= field.fieldName %>)).isEqualTo(<%= field.testWithConstant %>)
-    assertThat(test<%= entityClass %>.<%= field.fieldName %>ontentType()).isEqualTo(<%= field.testWithConstant %>_CONTENT_TYPE)
+    assertThat(test<%= entityClass %>.<%= field.fieldName %>).isEqualTo(<%= field.testWithConstant %>)
+    assertThat(test<%= entityClass %>.<%= field.fieldName %>ContentType).isEqualTo(<%= field.testWithConstant %>_CONTENT_TYPE)
 <%_ } else if (field.fieldType === 'BigDecimal'){ _%>
-    assertThat(test<%= entityClass %>.<%= field.fieldName %>)).isEqualByComparingTo(<%= field.testWithConstant %>)
+    assertThat(test<%= entityClass %>.<%= field.fieldName %>).isEqualByComparingTo(<%= field.testWithConstant %>)
 <%_ } else { _%>
-    assertThat(test<%= entityClass %>.<%= field.fieldName %>)).isEqualTo(<%= field.testWithConstant %>)
+    assertThat(test<%= entityClass %>.<%= field.fieldName %>).isEqualTo(<%= field.testWithConstant %>)
 <%_ } } _%>

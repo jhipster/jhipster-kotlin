@@ -86,7 +86,7 @@ import <%= packageName %>.repository.<%= mapsIdAssoc.otherEntityNameCapitalized 
 <%_ if (searchEngine === 'elasticsearch') { _%>
 import <%= packageName %>.repository.search.<%= entityClass %>SearchRepository
 <%_ } _%>
-<%_ if (service !== 'no' && relationshipsContainEagerLoad) { _%>
+<%_ if (service !== 'no') { _%>
 import <%= packageName %>.service.<%= entityClass %>Service
 <%_ } _%>
 <%_ if (dto === 'mapstruct') { _%>
@@ -107,11 +107,11 @@ import org.junit.jupiter.api.AfterEach
 import org.junit.jupiter.api.BeforeEach
 import org.junit.jupiter.api.Test
 <%_ if (searchEngine === 'elasticsearch' || fieldsContainOwnerManyToMany || cacheProvider === 'redis' || databaseType === 'neo4j' || reactiveSqlTestContainers) { _%>
-import org.mockito.Mock
 import org.junit.jupiter.api.extension.Extensions
 import org.junit.jupiter.api.extension.ExtendWith
 import org.mockito.junit.jupiter.MockitoExtension
 <%_ } _%>
+import org.mockito.Mock
 import org.mockito.MockitoAnnotations
 import org.springframework.beans.factory.annotation.Autowired
 <%_ if (!reactive) { _%>
@@ -183,9 +183,6 @@ import java.time.temporal.ChronoUnit
 import java.util.UUID
 <%_ } _%>
 
-<%_ if (fieldsContainBigDecimal === true) { _%>
-import <%= packageName %>.web.rest.TestUtil.sameNumber
-<%_ } _%>
 import org.assertj.core.api.Assertions.assertThat
 <%_ if (searchEngine === 'elasticsearch' && !reactive) { _%>
 import org.elasticsearch.index.query.QueryBuilders.queryStringQuery
@@ -203,19 +200,11 @@ import org.springframework.security.test.web.servlet.request.SecurityMockMvcRequ
 <%_ } _%>
 <%_ if (searchEngine === 'elasticsearch' || relationshipsContainEagerLoad) { _%>
 import org.mockito.ArgumentMatchers.*
-import org.mockito.Mockito.`when`
-import org.mockito.Mockito.reset
-import org.mockito.Mockito.times
-import org.mockito.Mockito.verify
+import org.mockito.Mockito.*
 <%_ } _%>
 <%_ if (!reactive) { _%>
-import org.springframework.test.web.servlet.request.MockMvcRequestBuilders.delete
-import org.springframework.test.web.servlet.request.MockMvcRequestBuilders.get
-import org.springframework.test.web.servlet.request.MockMvcRequestBuilders.post
-import org.springframework.test.web.servlet.request.MockMvcRequestBuilders.put
-import org.springframework.test.web.servlet.result.MockMvcResultMatchers.content
-import org.springframework.test.web.servlet.result.MockMvcResultMatchers.jsonPath
-import org.springframework.test.web.servlet.result.MockMvcResultMatchers.status
+import org.springframework.test.web.servlet.request.MockMvcRequestBuilders.*
+import org.springframework.test.web.servlet.result.MockMvcResultMatchers.*
 <%_ } _%>
 
 <%_ for (idx in fields) { if (fields[idx].fieldIsEnum === true) { _%>import <%= packageName %>.domain.enumeration.<%= fields[idx].fieldType %>
@@ -250,7 +239,7 @@ class <%= entityClass %>ResourceIT <% if (databaseType === 'cassandra') { %>: Ab
     @Autowired
     private lateinit var userRepository: UserRepository
     <%_ } _%>
-    <%_ if (relationshipsContainEagerLoad) { _%>
+    <%_ if (fieldsContainOwnerManyToMany === true) { _%>
 
     @Mock
     private lateinit var <%= entityInstance %>RepositoryMock: <%= entityClass %>Repository
@@ -260,11 +249,9 @@ class <%= entityClass %>ResourceIT <% if (databaseType === 'cassandra') { %>: Ab
     @Autowired
     private lateinit var <%= entityInstance %>Mapper: <%= entityClass %>Mapper
     <%_ } if (service !== 'no') { _%>
-    <%_ if (relationshipsContainEagerLoad) { _%>
 
     @Mock
     private lateinit var <%= entityInstance %>ServiceMock: <%= entityClass %>Service
-    <%_ } _%>
     <%_ } if (searchEngine === 'elasticsearch') { _%>
 
     /**
@@ -496,7 +483,7 @@ class <%= entityClass %>ResourceIT <% if (databaseType === 'cassandra') { %>: Ab
         <%_ if (reactive) { _%>
         webTestClient.put().uri("/api/<%= entityApiUrl %>")
             .contentType(MediaType.APPLICATION_JSON)
-            .bodyValue(TestUtil.convertObjectToJsonBytes(<%_ if (dto === 'mapstruct') { _%>updated<%= asDto(entityClass) %> <%_ } else { _%> updated<%= asEntity(entityClass) %> <%_ } _%>))
+            .bodyValue(convertObjectToJsonBytes(<%_ if (dto === 'mapstruct') { _%>updated<%= asDto(entityClass) %> <%_ } else { _%> updated<%= asEntity(entityClass) %> <%_ } _%>))
             .exchange()
             .expectStatus().isOk
         <%_ } else { _%>
@@ -636,7 +623,7 @@ class <%= entityClass %>ResourceIT <% if (databaseType === 'cassandra') { %>: Ab
                             if (fields[idx].fieldType === 'Integer') { %><% } else 
                                 if (fields[idx].fieldType === 'Long') { %>?.toInt()<% } else 
                                     if (fields[idx].fieldType === 'Float' || fields[idx].fieldType === 'Double') { %>.toDouble()<% } else
-                                        if (fields[idx].fieldType === 'BigDecimal') { %>?.toInt()<% } else 
+                                        if (fields[idx].fieldType === 'BigDecimal') { %>)<% } else 
                                             if (fields[idx].fieldType === 'Boolean') { %><% } else 
                                                 if (fields[idx].fieldType === 'ZonedDateTime') { %>)<% } else 
                                                     if (fields[idx].fieldType !== 'String') { %>.toString()<% } %>))<%= !reactive ? ')' : '' %><%_ } _%>
@@ -748,7 +735,7 @@ class <%= entityClass %>ResourceIT <% if (databaseType === 'cassandra') { %>: Ab
                             if (fields[idx].fieldType === 'Integer') { %><% } else 
                                 if (fields[idx].fieldType === 'Long') { %>?.toInt()<% } else 
                                     if (fields[idx].fieldType === 'Float' || fields[idx].fieldType === 'Double') { %>.toDouble()<% } else 
-                                        if (fields[idx].fieldType === 'BigDecimal') { %>?.toInt()<% } else
+                                        if (fields[idx].fieldType === 'BigDecimal') { %>)<% } else
                                             if (fields[idx].fieldType === 'Boolean') { %><% } else
                                                 if (fields[idx].fieldType === 'ZonedDateTime') { %>)<% } else
                                                     if (fields[idx].fieldType !== 'String') { %>.toString()<% } %>))<%_ } _%>
@@ -988,10 +975,11 @@ class <%= entityClass %>ResourceIT <% if (databaseType === 'cassandra') { %>: Ab
                         if ((fields[idx].fieldType === 'byte[]' || fields[idx].fieldType === 'ByteBuffer') && fields[idx].fieldTypeBlobContent !== 'text') { %><% if (databaseType === 'cassandra') { %>.array()<% } %>)<% } else
                             if (fields[idx].fieldType === 'Integer') { %><% } else
                                 if (fields[idx].fieldType === 'Long') { %>?.toInt()<% } else
-                                    if (fields[idx].fieldType === 'Float' || fields[idx].fieldType === 'Double') { %>?.toDouble()<% } else
-                                        if (fields[idx].fieldType === 'BigDecimal') { %>)<% } else
-                                            if (fields[idx].fieldType === 'Boolean') { %><% } else
-                                                if (fields[idx].fieldType === 'ZonedDateTime') { %>)<% } else
+                                    if (fields[idx].fieldType === 'Float') { %>?.toDouble()<% } else
+                                        if (fields[idx].fieldType === 'Double') { %><% } else
+                                            if (fields[idx].fieldType === 'BigDecimal') { %>))<% } else
+                                                if (fields[idx].fieldType === 'Boolean') { %><% } else
+                                                    if (fields[idx].fieldType === 'ZonedDateTime') { %>)<% } else
                                                         if (field.fieldType !== 'String') { %>.toString()<% } %>)))<% }; %>
 
         // Check, that the count call also returns 1
@@ -1022,7 +1010,7 @@ class <%= entityClass %>ResourceIT <% if (databaseType === 'cassandra') { %>: Ab
                             if (field.fieldType === 'Long') { %>?.toInt()<% } else 
                                 if (field.fieldType === 'Float') { %>?.toDouble()<% } else 
                                     if (field.fieldType === 'Double') { %><% } else 
-                                        if (field.fieldType === 'BigDecimal') { %>?.toInt()<% } else 
+                                        if (field.fieldType === 'BigDecimal') { %>)<% } else 
                                             if (field.fieldType === 'Boolean') { %><% } else 
                                                 if (field.fieldType === 'ZonedDateTime') { %>)<% } else 
                                                         if (field.fieldType !== 'String') { %>.toString()<% } %>)))<% }); %>
@@ -1202,15 +1190,15 @@ class <%= entityClass %>ResourceIT <% if (databaseType === 'cassandra') { %>: Ab
     @Test<%= transactionalAnnotation %>
     @Throws(Exception::class)
     fun partialUpdate<%= entityClass %>WithPatch() {
-<% const fieldsToIncludeInPartialPatchTest = fields.filter(field => !field.id).map(field => prepareFieldForPatchTest(field, () => faker.random.boolean())); %>
-<%- include('/partials/it_patch_update.partial.kt.ejs', {fields: fieldsToIncludeInPartialPatchTest, saveMethod, asEntity, callBlock, callListBlock}); -%>
+        <% const fieldsToIncludeInPartialPatchTest = fields.filter(field => !field.id).map(field => prepareFieldForPatchTest(field, () => faker.random.boolean())); %>
+        <%- include('/partials/it_patch_update.partial.kt.ejs', {fields: fieldsToIncludeInPartialPatchTest, saveMethod, asEntity, callBlock, callListBlock}); -%>
     }
 
     @Test<%= transactionalAnnotation %>
     @Throws(Exception::class)
     fun fullUpdate<%= entityClass %>WithPatch() {
-<% const fieldsToIncludeInFullPatchTest = fields.filter(field => !field.id).map(field => prepareFieldForPatchTest(field, () => true)); %>
-<%- include('/partials/it_patch_update.partial.kt.ejs', {fields: fieldsToIncludeInFullPatchTest, saveMethod, asEntity, callBlock, callListBlock}); -%>
+        <% const fieldsToIncludeInFullPatchTest = fields.filter(field => !field.id).map(field => prepareFieldForPatchTest(field, () => true)); %>
+        <%- include('/partials/it_patch_update.partial.kt.ejs', {fields: fieldsToIncludeInFullPatchTest, saveMethod, asEntity, callBlock, callListBlock}); -%>
     }
 
     @Test<%= transactionalAnnotation %>
@@ -1222,14 +1210,14 @@ class <%= entityClass %>ResourceIT <% if (databaseType === 'cassandra') { %>: Ab
         <%_ if (!reactive) { _%>
         rest<%= entityClass %>MockMvc.perform(patch("/api/<%= entityApiUrl %>")<% if (testsNeedCsrf) { %>.with(csrf())<% }%>
             .contentType("application/merge-patch+json")
-            .content(TestUtil.convertObjectToJsonBytes(<%= 'partialUpdated' + asEntity(entityClass) %>)))
+            .content(convertObjectToJsonBytes(<%= 'partialUpdated' + asEntity(entityClass) %>)))
             .andExpect(status().isBadRequest)
         <%_ } else { _%>
         webTestClient
             .patch()
             .uri("/api/<%= entityApiUrl %>")
             .contentType(MediaType.valueOf("application/merge-patch+json"))
-            .bodyValue(TestUtil.convertObjectToJsonBytes(<%= 'partialUpdated' + asEntity(entityClass) %>))
+            .bodyValue(convertObjectToJsonBytes(<%= 'partialUpdated' + asEntity(entityClass) %>))
             .exchange()
             .expectStatus()
             .isBadRequest
@@ -1343,7 +1331,7 @@ class <%= entityClass %>ResourceIT <% if (databaseType === 'cassandra') { %>: Ab
                                 if (fields[idx].fieldType === 'Boolean') { %><% } else
                                     if (fields[idx].fieldType === 'Long') { %>?.toInt()<% } else
                                         if (fields[idx].fieldType === 'Float' || fields[idx].fieldType === 'Double') { %>.toDouble()<% } else
-                                            if (fields[idx].fieldType === 'BigDecimal') { %>?.toInt()<% } else
+                                            if (fields[idx].fieldType === 'BigDecimal') { %>)<% } else
                                                 if (fields[idx].fieldType === 'ZonedDateTime') { %>)<% } else
                                                     if (fields[idx].fieldType !== 'String') { %>.toString()<% } %>))<%= !reactive ? ')' : '' %><%_ } _%>
     }

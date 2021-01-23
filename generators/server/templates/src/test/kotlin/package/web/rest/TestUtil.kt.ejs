@@ -142,43 +142,40 @@ class ZonedDateTimeMatcher(private val date: ZonedDateTime) : TypeSafeDiagnosing
  */
 fun sameInstant(date: ZonedDateTime) = ZonedDateTimeMatcher(date)
 
-
 /**
 * A matcher that tests that the examined number represents the same value - it can be Long, Double, etc - as the reference BigDecimal.
 */
-class NumberMatcher(value: BigDecimal):TypeSafeMatcher<Number>() {
+class NumberMatcher(private val value: BigDecimal):TypeSafeMatcher<Number>() {
     override fun describeTo(description: Description) {
         description.appendText("a numeric value is ").appendValue(value)
     }
 
-    override protected fun matchesSafely(item: Number): boolean {
+    override fun matchesSafely(item: Number): Boolean {
         val bigDecimal = asDecimal(item)
-        return bigDecimal != null && value.compareTo(bigDecimal) == 0
+        return value.compareTo(bigDecimal) == 0
     }
 
-    fun asDecimal(item: Number?): BigDecimal {
+    fun asDecimal(item: Number?): BigDecimal? {
         if (item == null) {
             return null
         }
-
-        when (item) {
-            is BigDecimal -> return item as BigDecimal
-            is Long -> return BigDecimal.valueOf(item as Long)
-            is Integer -> return BigDecimal.valueOf(item as Integer)
-            is Float -> return BigDecimal.valueOf(item as Float)
-            is Double -> return BigDecimal.valueOf(item as Double)
-            _ -> return BigDecimal.valueOf(item.doubleValue())
+        
+        return when (item) {
+            is BigDecimal -> item
+            is Long -> item.toBigDecimal()
+            is Int -> item.toLong().toBigDecimal()
+            is Float -> item.toBigDecimal()
+            is Double -> item.toBigDecimal()
+            else -> item.toDouble().toBigDecimal()
         }
     }
 }
-
 
 /**
 * Creates a matcher that matches when the examined number represents the same value as the reference BigDecimal.
 *
 * @param number the reference BigDecimal against which the examined number is checked.
 */
-@JvmStatic
 fun sameNumber(number: BigDecimal): NumberMatcher = NumberMatcher(number)
 
 /**

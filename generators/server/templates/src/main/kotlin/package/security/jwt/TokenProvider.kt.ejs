@@ -97,19 +97,19 @@ class TokenProvider(private val jHipsterProperties: JHipsterProperties) {
     }
 
     fun getAuthentication(token: String): Authentication {
-        val claims = jwtParser.parseClaimsJws(token).body
+        val claims = jwtParser?.parseClaimsJws(token)?.body
 
-        val authorities = claims[AUTHORITIES_KEY].toString().splitToSequence(",")
-            .mapTo(mutableListOf()) { SimpleGrantedAuthority(it) }
+        val authorities = claims?.get(AUTHORITIES_KEY)?.toString()?.splitToSequence(",")
+            ?.mapTo(mutableListOf()) { SimpleGrantedAuthority(it) }
 
-        val principal = User(claims.subject, "", authorities)
+        val principal = User(claims?.subject, "", authorities)
 
         return UsernamePasswordAuthenticationToken(principal, token, authorities)
     }
 
     fun validateToken(authToken: String): Boolean {
         try {
-            jwtParser.parseClaimsJws(authToken)
+            jwtParser?.parseClaimsJws(authToken)
             return true
         } catch (e: JwtException) {
             log.info("Invalid JWT token.")

@@ -692,14 +692,14 @@ class UserService<% if (databaseType !== 'no') { %>(
     <%_ } _%>
     <%_ if (['sql', 'mongodb', 'neo4j', 'couchbase'].includes(databaseType)) { _%>
     fun getAllManagedUsers(pageable: Pageable): <% if (reactive) { %>Flux<% } else { %>Page<% } %><<%= asDto('AdminUser') %>> {
-        return userRepository.findAll<% if (reactive) { %>ByIdNotNull<% } %>(pageable).map(<%= asDto('AdminUser') %>::new)
+        return userRepository.findAll<% if (reactive) { %>ByIdNotNull<% } %>(pageable).map { <%= asDto('AdminUser') %>(it) }
     }
 
     <%_ if (databaseType === 'sql') { _%>
     @Transactional(readOnly = true)
     <%_ } _%>
     fun getAllPublicUsers(pageable: Pageable): <% if (reactive) { %>Flux<% } else { %>Page<% } %><<%= asDto('User') %>> {
-        return userRepository.findAllByIdNotNullAndActivatedIsTrue(pageable).map(<%= asDto('User') %>::new)
+        return userRepository.findAllByIdNotNullAndActivatedIsTrue(pageable).map { <%= asDto('User') %>(it) }
     }
 
         <%_ if (reactive) { _%>
