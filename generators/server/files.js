@@ -2145,15 +2145,17 @@ function writeFiles() {
                 this.addMavenPlugin('org.jetbrains.kotlin', 'kotlin-maven-plugin', '${kotlin.version}', kotlinOther);
 
                 updatePom(this);
-                const defaultCompileOther = `                <executions>
-                ${this.databaseType === 'cassandra' ? 
-                    `<execution>
-                        <id>kapt</id>
-                        <goals><goal>kapt</goal></goals>
-                        <configuration>
+                const defaultCompileOther = `                <executions>${
+                    this.databaseType === 'cassandra'
+                        ? `<execution>
+                    <id>kapt</id>
+                    <goals>
+                        <goal>kapt</goal>
+                    </goals>
+                    <configuration>
                         <sourceDirs>
-                            <sourceDir>src/main/kotlin</sourceDir>
-                            <sourceDir>src/main/java</sourceDir>
+                            <sourceDir>$\{project.basedir}/src/main/kotlin</sourceDir>
+                            <sourceDir>$\{project.basedir}/src/main/java</sourceDir>
                         </sourceDirs>
                         <annotationProcessorPaths>
                             <annotationProcessorPath>
@@ -2163,7 +2165,9 @@ function writeFiles() {
                             </annotationProcessorPath>
                         </annotationProcessorPaths>
                         </configuration>
-                    </execution>` : ''}
+                    </execution>`
+                        : ''
+                }
                     <!-- Replacing default-compile as it is treated specially by maven -->
                     <execution>
                         <id>default-compile</id>
