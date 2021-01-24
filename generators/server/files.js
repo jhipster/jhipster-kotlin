@@ -2051,24 +2051,34 @@ function writeFiles() {
                                 <sourceDir>$\{project.basedir}/src/main/java</sourceDir>
                             </sourceDirs>
                             <annotationProcessorPaths>
-                                <path>
+                                <annotationProcessorPath>
                                     <groupId>org.mapstruct</groupId>
                                     <artifactId>mapstruct-processor</artifactId>
                                     <version>$\{mapstruct.version}</version>
-                                </path>
+                                </annotationProcessorPath>
                                 ${
                                     this.databaseType === 'sql'
                                         ? `<!-- For JPA static metamodel generation -->
-                                <path>
+                                <annotationProcessorPath>
                                     <groupId>org.hibernate</groupId>
                                     <artifactId>hibernate-jpamodelgen</artifactId>
                                     <version>$\{hibernate.version}</version>
-                                </path>
-                                <path>
+                                </annotationProcessorPath>
+                                <annotationProcessorPath>
                                     <groupId>org.glassfish.jaxb</groupId>
                                     <artifactId>jaxb-runtime</artifactId>
                                     <version>$\{jaxb-runtime.version}</version>
-                                </path>`
+                                </annotationProcessorPath>`
+                                        : ''
+                                }
+                                ${
+                                    this.databaseType === 'cassandra'
+                                        ? `
+                                <annotationProcessorPath>
+                                    <groupId>com.datastax.oss</groupId>
+                                    <artifactId>java-driver-mapper-processor</artifactId>
+                                    <version>$\{java-driver.version}</version>
+                                </annotationProcessorPath>`
                                         : ''
                                 }
                             </annotationProcessorPaths>
@@ -2145,29 +2155,7 @@ function writeFiles() {
                 this.addMavenPlugin('org.jetbrains.kotlin', 'kotlin-maven-plugin', '${kotlin.version}', kotlinOther);
 
                 updatePom(this);
-                const defaultCompileOther = `                <executions>${
-                    this.databaseType === 'cassandra'
-                        ? `<execution>
-                    <id>kapt</id>
-                    <goals>
-                        <goal>kapt</goal>
-                    </goals>
-                    <configuration>
-                        <sourceDirs>
-                            <sourceDir>$\{project.basedir}/src/main/kotlin</sourceDir>
-                            <sourceDir>$\{project.basedir}/src/main/java</sourceDir>
-                        </sourceDirs>
-                        <annotationProcessorPaths>
-                            <annotationProcessorPath>
-                            <groupId>com.datastax.oss</groupId>
-                            <artifactId>java-driver-mapper-processor</artifactId>
-                            <version>$\{java-driver.version}</version>
-                            </annotationProcessorPath>
-                        </annotationProcessorPaths>
-                        </configuration>
-                    </execution>`
-                        : ''
-                }
+                const defaultCompileOther = `                <executions>
                     <!-- Replacing default-compile as it is treated specially by maven -->
                     <execution>
                         <id>default-compile</id>
