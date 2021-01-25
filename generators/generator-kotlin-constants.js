@@ -19,10 +19,11 @@
 
 const KOTLIN_VERSION = '1.3.70';
 const MOCKITO_KOTLIN_VERSION = '2.2.0';
-const KTLINT_MAVEN_VERSION = '1.2.2';
-const KTLINT_GRADLE_VERSION = '9.4.0';
+const KTLINT_MAVEN_VERSION = '1.7.0';
+const KTLINT_GRADLE_VERSION = '9.4.1';
 const DETEKT_VERSION = '1.1.0';
 const MAVEN_ANTRUN_VERSION = '1.8';
+const MAPSTRUCT_VERSION = '1.4.1.Final'
 
 const DETEKT_CONFIG_FILE = 'detekt-config.yml';
 
@@ -34,6 +35,7 @@ const constants = {
     DETEKT_VERSION,
     MAVEN_ANTRUN_VERSION,
     DETEKT_CONFIG_FILE,
+    MAPSTRUCT_VERSION,
 };
 
 module.exports = constants;

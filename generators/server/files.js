@@ -1997,6 +1997,7 @@ function writeFiles() {
         modifyFiles() {
             if (this.buildTool === 'gradle') {
                 this.addGradleProperty('kotlin_version', kotlinConstants.KOTLIN_VERSION);
+                this.addGradleProperty('mapstruct_version', kotlinConstants.MAPSTRUCT_VERSION);
                 this.addGradleProperty('detekt_version', kotlinConstants.DETEKT_VERSION);
                 this.addGradlePlugin('org.jetbrains.kotlin', 'kotlin-gradle-plugin', '${kotlin_version}');
                 this.addGradlePlugin('org.jetbrains.kotlin', 'kotlin-allopen', '${kotlin_version}');
@@ -2013,6 +2014,7 @@ function writeFiles() {
                 this.addMavenPluginRepository('jcenter', 'https://jcenter.bintray.com/');
 
                 this.addMavenProperty('kotlin.version', kotlinConstants.KOTLIN_VERSION);
+                this.addMavenProperty('mapstruct.version', kotlinConstants.MAPSTRUCT_VERSION):
                 this.addMavenProperty('ktlint-maven-plugin.version', kotlinConstants.KTLINT_MAVEN_VERSION);
                 this.addMavenProperty('maven-antrun-plugin.version', kotlinConstants.MAVEN_ANTRUN_VERSION);
                 this.addMavenProperty('detekt.version', kotlinConstants.DETEKT_VERSION);
@@ -2077,7 +2079,7 @@ function writeFiles() {
                                 <annotationProcessorPath>
                                     <groupId>com.datastax.oss</groupId>
                                     <artifactId>java-driver-mapper-processor</artifactId>
-                                    <version>$\{java-driver.version}</version>
+                                    <version>$\{cassandra-driver.version}</version>
                                 </annotationProcessorPath>`
                                         : ''
                                 }

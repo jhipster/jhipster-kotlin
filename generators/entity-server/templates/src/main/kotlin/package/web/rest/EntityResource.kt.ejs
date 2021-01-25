@@ -97,9 +97,6 @@ import reactor.core.publisher.Mono
 
 <%_ if (validation) { _%>
 import javax.validation.Valid
-<%_ } _%>
-
-<%_ if (validation && !readOnly) { _%>
 import javax.validation.constraints.NotNull
 <%_ } _%>
 import java.net.URI
@@ -145,10 +142,17 @@ _%><%- include('../../common/inject_template', {viaService: viaService, construc
 ) {
 
     private val log = LoggerFactory.getLogger(javaClass)
-    <%_ if (!readOnly) { _%>
+
+    companion object {
+        <%_ let entityName = entityInstance;
+        if (clientRootFolder && !skipUiGrouping) {
+            entityName = _.camelCase(`${clientRootFolder}${entityClass}`);
+        } _%>
+        const val ENTITY_NAME = "<%= entityName %>"
+    }
+
     @Value("\${jhipster.clientApp.name}")
     private var applicationName: String? = null
-    <%_ } _%>
 
     <%_ if (!readOnly) { _%>
     /**
@@ -294,7 +298,7 @@ _%><%- include('../../common/inject_template', {viaService: viaService, construc
             .map { 
                 ResponseEntity.ok()
                     .headers(HeaderUtil.createEntityUpdateAlert(applicationName, <%= enableTranslation %>, ENTITY_NAME, it.id<% if (primaryKey.type !== 'String') { %>.toString()<% } %>))
-                    .body(res)
+                    .body(it)
             }
             <%_ } _%>
     }
