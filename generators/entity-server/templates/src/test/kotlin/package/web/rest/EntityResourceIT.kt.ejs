@@ -395,7 +395,7 @@ class <%= entityClass %>ResourceIT <% if (databaseType === 'cassandra') { %>: Ab
         <%_ if (isUsingMapsId === true) { _%>
 
         // Validate the id for MapsId, the ids must be same
-        assertThat(test<%= entityClass %><%= primaryKey.name %>).isEqualTo(test<%= entityClass %>.<%= mapsIdEntityInstance %>?<%= primaryKey.name %>)
+        assertThat(test<%= entityClass %>.<%= primaryKey.name %>).isEqualTo(test<%= entityClass %>.<%= mapsIdEntityInstance %>?.<%= primaryKey.name %>)
         <%_ } _%>
         <%_ if (searchEngine === 'elasticsearch') { _%>
 
@@ -504,7 +504,7 @@ class <%= entityClass %>ResourceIT <% if (databaseType === 'cassandra') { %>: Ab
         // Validate the id for MapsId, the ids must be same
         // Uncomment the following line for assertion. However, please note that there is a known issue and uncommenting will fail the test.
         // Please look at https://github.com/jhipster/generator-jhipster/issues/9100. You can modify this test as necessary.
-        // assertThat(test<%= entityClass %><%= primaryKey.name %>).isEqualTo(test<%= entityClass %>.<%= mapsIdEntityInstance %>?<%= primaryKey.name %>)
+        // assertThat(test<%= entityClass %>.<%= primaryKey.name %>).isEqualTo(test<%= entityClass %>.<%= mapsIdEntityInstance %>?.<%= primaryKey.name %>)
         <%_ if (searchEngine === 'elasticsearch') { _%>
         // Validate the <%= entityClass %> in Elasticsearch
         verify(mock<%= entityClass %>SearchRepository).save(<%= asEntity(entityInstance) %>)
@@ -1303,7 +1303,7 @@ class <%= entityClass %>ResourceIT <% if (databaseType === 'cassandra') { %>: Ab
     <%_ } else if (searchEngine === 'couchbase') { _%>
 
         // Wait for the <%= entityInstance %> to be indexed
-        retryUntilNotEmpty(() -> <%= entityInstance %>Repository.search(<%= entityClass %>.PREFIX, "id:" + <%= entityInstance %><%= primaryKey.name %>)<% if (reactive) { %>.collectList().block()<% } %>)
+        retryUntilNotEmpty(() -> <%= entityInstance %>Repository.search(<%= entityClass %>.PREFIX, "id:" + <%= entityInstance %>.<%= primaryKey.name %>)<% if (reactive) { %>.collectList().block()<% } %>)
     <%_ } _%>
         // Search the <%= entityInstance %>
     <%_ if (!reactive) { _%>
@@ -1537,6 +1537,7 @@ class <%= entityClass %>ResourceIT <% if (databaseType === 'cassandra') { %>: Ab
                 const otherEntityNameCapitalized = relationships[idx].otherEntityNameCapitalized;
                 const relationshipType = relationships[idx].relationshipType;
                 const relationshipName = relationships[idx].relationshipName;
+                const relationshipNamePlural = relationships[idx].relationshipNamePlural;
                 const mapsIdUse = relationships[idx].useJPADerivedIdentifier;
                 if ((relationshipValidate !== null && relationshipValidate === true) || mapsIdUse === true) { _%>
             // Add required entity
@@ -1564,12 +1565,12 @@ class <%= entityClass %>ResourceIT <% if (databaseType === 'cassandra') { %>: Ab
             <%= otherEntityName %> = <%= createEntityPrefix %><%= otherEntityNameCapitalized %>ResourceIT.create<% if (fieldStatus === 'UPDATED_') { %>Updated<% } %>Entity(<% if (databaseType === 'sql') { %>em<% } %>)
             <%_ } _%>
             <%_ if (databaseType === 'mongodb') { _%>
-            <%= otherEntityName %><%= primaryKey.name %> = "fixed-id-for-tests"
+            <%= otherEntityName %>.<%= primaryKey.name %> = "fixed-id-for-tests"
             <%_ } _%>
         <%_ } _%>
                 <%_ } _%>
                 <%_ if (relationshipType === 'many-to-many' || relationshipType === 'one-to-many') { _%>
-            <%= asEntity(entityInstance) %>.relationshipNamePlural.add(<%= otherEntityName %>);
+            <%= asEntity(entityInstance) %>.<%= relationshipNamePlural %>.add(<%= otherEntityName %>)
             <%_ } else { _%>
             <%= asEntity(entityInstance) %>.<%= relationshipName %> = <%= otherEntityName %>
             <%_ } _%>

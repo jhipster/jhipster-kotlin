@@ -34,14 +34,12 @@ for (const idx in relationships) { if (relationships[idx].relationshipType === '
         return <%= entityInstance %>Repository.findAllWhere<%= relationships[idx].relationshipNameCapitalized %>IsNull()<% if (dto === 'mapstruct') { _%>
              .map(<%= entityToDtoReference %>)<%_ } _%>
         <%_ } else { _%>
-        return StreamSupport
-            .stream(<%= entityInstance %>Repository.findAll().spliterator(), false)
-            .filter(<%= entityInstance %> -> <%= entityInstance %>.<%= relationships[idx].relationshipName %> == null)
+        return <%= entityInstance %>Repository.findAll()
+            .filter { it.<%= relationships[idx].relationshipName %> == null }
             <%_ if (dto === 'mapstruct') { _%>
-            .map(<%= entityToDtoReference %>)
-            .collect(Collectors.toCollection(LinkedList::new));
-            <%_ } else { _%>
-            .collect(Collectors.toList());
+            .map { <%= entityToDtoReference %> }
+            <%_ } if (!reactiveSql) { _%>
+            .toMutableList()
             <%_ } _%>
         <%_ } _%>
     }
