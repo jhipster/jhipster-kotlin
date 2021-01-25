@@ -93,7 +93,8 @@ open class <%= asDto('AdminUser') %>(
         user?.lastModifiedBy,
         user?.lastModifiedDate,
         <%_ } _%>
-        user?.authorities?.map { it.name }?.filterNotNullTo(mutableSetOf()) ?: mutableSetOf()
+        
+        user?.authorities?.<% if (['sql', 'mongodb', 'neo4j'].includes(databaseType)) { %>toMutableSet()<% } else { %>map { it.name }?.filterNotNullTo(mutableSetOf())<% } %> ?: mutableSetOf()
     )
     <%_ } _%>
 

@@ -63,49 +63,54 @@ import <%= packageName %>.domain.enumeration.<%= element %>
 @ApiModel(description = "<%- formatAsApiDescription(javadoc) %>")
 <%_ } _%>
 data class <%= asDto(entityClass) %>(
-   <%_ 
-        let index = 0;
-        for (reference of dtoReferences) {
-            let comma = index === (dtoReferences.length - 1) ?  '' : ',';
-            index++;
+    <%_
+        const entityClassProperties = [];
+        dtoReferences.forEach(reference => {
+            const classProperty = [];
             if (typeof reference.doc !== 'undefined') {
-    _%>
-    <%- formatAsFieldJavadoc(reference.doc) %>
-    <%_ }
-        const field = reference.field;
-        const required = field && field.fieldValidate && field.fieldValidateRules.includes('required');
-        if (field) {
-            if (field.fieldValidate === true) {
-    _%>
-    <%- include('../../common/field_validators', {field, reactive}); -%>
-    <%_     }
-        }
-    _%>
-    <%_ if (reference.doc) { _%>
-    @ApiModelProperty(value = "<%- formatAsApiDescription(reference.doc) %>"<% if (required) { %>, required = true<% } %>)
-    <%_ } _%>
-    <%_ if (reference.type === 'byte[]' && databaseType === 'sql') { _%>
-    @Lob
-    <%_ } _%>
-    <%_ if (reference.field && reference.field.fieldTypeBlobContent === 'text') { _%>
-    var <%= reference.name %>: String? = null<%= comma %>
-    <%_ } else if (reference.collection && reference.relationship) { _%>
-    var <%= reference.name %>: MutableSet<<%= asDto(reference.relationship.otherEntity.entityNameCapitalized) %>> = mutableSetOf()<%= comma %>
-    <%_ } else if (reference.relationship) { _%>
-    var <%= reference.name %>: <%= asDto(reference.relationship.otherEntity.entityNameCapitalized) %>? = null<%= comma %>
-    <%_ } else if (reference.type === 'byte[]') { _%>
-    var <%= reference.name %>: ByteArray? = null<%= comma %>
-    <%_ } else if (reference.type === 'Integer') { _%>
-    var <%= reference.name %>: Int? = null<%= comma %>
-    <%_ } else { _%>
-    var <%= reference.name %>: <%= reference.type %>? = null<%= comma %>
-    <%_ } _%>
+                classProperty.push(formatAsFieldJavadoc(reference.doc));
+            }
+            const field = reference.field;
+            const required = field && field.fieldValidate && field.fieldValidateRules.includes('required');
+            if (field) {
+                if (field.fieldValidate === true) {
+                    classProperty.push(include('../../common/field_validators', {field, reactive}));
+                }
+            }
+            if (reference.doc) {
+                classProperty.push(`@ApiModelProperty(value="${formatAsApiDescription(reference.doc)}"${required ? ', required = true': ''})`);
+            }
+            if (reference.type === 'byte[]' && databaseType === 'sql') {
+                classProperty.push('@Lob');
+            }
 
-    <%_ if (reference.field && reference.field.fieldWithContentType) { _%>
-    var <%= reference.name %>ContentType:String? = null<%= comma %>
-    <%_     }
-        }
+            let property = '';
+            
+            if (reference.field && reference.field.fieldTypeBlobContent === 'text') {
+                property = `var ${reference.name}: String? = null`;
+            } else if (reference.collection && reference.relationship) {
+                property = `var ${reference.name}: MutableSet<${asDto(reference.relationship.otherEntity.entityNameCapitalized)}> = mutableSetOf()`;
+            } else if (reference.relationship) {
+                property = `var ${reference.name}: ${asDto(reference.relationship.otherEntity.entityNameCapitalized)}? = null`;
+            } else if (reference.type === 'byte[]') {
+                property = `var ${reference.name}: ByteArray? = null`;
+            } else if (reference.type === 'Integer') {
+                property = `var ${reference.name}: Int? = null`;
+            } else {
+                property = `var ${reference.name}: ${reference.type}? = null`;
+            }
+
+            if (reference.field && reference.field.fieldWithContentType) {
+                property += `,\n\tvar ${reference.name}ContentType: String? = null`;
+            }
+
+            classProperty.push(property);
+
+            entityClassProperties.push(classProperty.join('\t'));
+        });
     _%>
+
+    <%- entityClassProperties.join(',\n\n\t') %> 
 ) : Serializable {
 
     <%_ const idNames = [...idFields.map(f => f.fieldName)] _%>

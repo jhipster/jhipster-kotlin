@@ -95,10 +95,10 @@ interface PersistentTokenRepository : <% if (databaseType === 'sql') { %>JpaRepo
 }
 <%_ } else if (databaseType === 'cassandra') { _%>
 @Repository
-class PersistentTokenRepository (private val session: CqlSession, private val validator: Validator, private val cassandraProperties: CassandraProperties) {
+class PersistentTokenRepository (private val session: CqlSession, private val validator: Validator, cassandraProperties: CassandraProperties) {
 
     private val persistentTokenMapper = PersistentTokenMapperBuilder(session).build()
-    private val persistentTokenDao = persistentTokenMapper.persistentTokenDao(CqlIdentifier.fromCql(cassandraProperties.getKeyspaceName()))
+    private val persistentTokenDao = persistentTokenMapper.persistentTokenDao(CqlIdentifier.fromCql(cassandraProperties.keyspaceName))
 
 
     private val findPersistentTokenSeriesByUserIdStmt = session.prepare(
@@ -130,14 +130,11 @@ class PersistentTokenRepository (private val session: CqlSession, private val va
         val statementBuilder = findPersistentTokenSeriesByUserIdStmt.boundStatementBuilder()
         statementBuilder.setString("user_id", user.id)
         val rs = session.execute(statementBuilder.build())
-        val persistentTokens = mutableListOf<PersistentToken>()
         return rs.all().asSequence()
-            .map { row ->
-                val token = row.getString("persistent_token_series")
-                persistentTokenDao.get(token)
-            }
+            .map { row -> row.getString("persistent_token_series") }
+            .filterNotNull()
+            .map { persistentTokenDao.get(it) }
             .toMutableList()
-            
     }
 
     fun save(token: PersistentToken) {

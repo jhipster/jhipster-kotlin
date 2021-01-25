@@ -515,7 +515,7 @@ class UserRepository(
             throw ConstraintViolationException(violations)
         }
         <%_ if(!reactive) { _%>
-        val oldUser = userDao.get(user.id).orElse(null)
+        val oldUser = user.id?.let { userDao.get(it) }?.orElse(null)
         if (oldUser != null) {
             if (!StringUtils.isEmpty(oldUser.activationKey) && oldUser.activationKey != user.activationKey) {
                 session.execute(deleteByActivationKeyStmt.bind().setString("activation_key", oldUser.activationKey))
@@ -631,7 +631,7 @@ class UserRepository(
         val rs = session.execute(stmt)
         return Optional.ofNullable(rs.one())
             .map { it.getString("id") }
-            .flatMap { userDao.get(it) }
+            .flatMap { it?.let { userDao.get(it) } }
     }
 
     fun deleteAll() {

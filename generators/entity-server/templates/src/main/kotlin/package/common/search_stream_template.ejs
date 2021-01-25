@@ -22,20 +22,16 @@ const entityToDtoReference = `${mapper}::toDto`; %>
 <%_ if (!viaService) { _%>
     <%_ if (!reactive) { _%>
         <%_ if (searchEngine === 'elasticsearch') { _%>
-            return StreamSupport
-                .stream(<%= entityInstance %>SearchRepository.search(queryStringQuery(query)).spliterator(), false)
+            return <%= entityInstance %>SearchRepository.search(queryStringQuery(query))
         <%_ } else { _%>
             return <%= entityInstance %>Repository.search(<%= entityClass %>.PREFIX, query)
         <%_ } _%>
         <%_ if (dto === 'mapstruct') { _%>
-                .map(<%= entityToDtoReference %>)
-        <%_ } _%>
-        <%_ if (dto === 'mapstruct' || searchEngine === 'elasticsearch') { _%>
-                .collect(Collectors.toList())
+                .map { <%= entityToDtoReference %>(it) }
         <%_ } _%>
     <%_ } else { _%>
         return <%= entityInstance %><% if (searchEngine === 'elasticsearch') { %>Search<% } %>Repository.search(<% if (searchEngine === 'couchbase') { %><%= entityClass %>.PREFIX, <% } %>query)<%_ if (dto === 'mapstruct') { %>
-            .map(<%= entityToDtoReference %>)<%_ } %><%_ if (fromResource) { _%>.collectList()<%_ } _%>
+            .map { <%= entityToDtoReference %>(it) }<%_ } %>    
     <%_ } _%>
 <%_ } else { _%>
         return <%= entityInstance %>Service.search(query)<% if (reactive && fromResource) { %>.collectList()<% } %>
