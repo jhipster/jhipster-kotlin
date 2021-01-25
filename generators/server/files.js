@@ -2014,7 +2014,7 @@ function writeFiles() {
                 this.addMavenPluginRepository('jcenter', 'https://jcenter.bintray.com/');
 
                 this.addMavenProperty('kotlin.version', kotlinConstants.KOTLIN_VERSION);
-                this.addMavenProperty('mapstruct.version', kotlinConstants.MAPSTRUCT_VERSION):
+                this.addMavenProperty('mapstruct.version', kotlinConstants.MAPSTRUCT_VERSION);
                 this.addMavenProperty('ktlint-maven-plugin.version', kotlinConstants.KTLINT_MAVEN_VERSION);
                 this.addMavenProperty('maven-antrun-plugin.version', kotlinConstants.MAVEN_ANTRUN_VERSION);
                 this.addMavenProperty('detekt.version', kotlinConstants.DETEKT_VERSION);
