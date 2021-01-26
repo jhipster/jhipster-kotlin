@@ -212,21 +212,19 @@ import org.springframework.test.web.servlet.result.MockMvcResultMatchers.*
 
 /**
  * Integration tests for the [<%= entityClass %>Resource] REST controller.
- *
- * @see <%= entityClass %>Resource
  */
 @IntegrationTest
+<%_ if (cacheProvider === 'redis' || searchEngine === 'elasticsearch' || fieldsContainOwnerManyToMany === true) { _%>
+@Extensions(
+    ExtendWith(MockitoExtension::class)
+)
+<%_ } _%>
 <%_ if (!reactive) { _%>
 @AutoConfigureMockMvc
 <%_ } else { _%>
 @AutoConfigureWebTestClient
 <%_ } _%>
 @WithMockUser
-<%_ if (cacheProvider === 'redis' || searchEngine === 'elasticsearch' || fieldsContainOwnerManyToMany === true) { _%>
-@Extensions(
-    ExtendWith(MockitoExtension::class)
-)
-<%_ } _%>
 class <%= entityClass %>ResourceIT <% if (databaseType === 'cassandra') { %>: AbstractCassandraTest() <% } %> {
     @Autowired
     private lateinit var <%= entityInstance %>Repository: <%= entityClass %>Repository
@@ -249,9 +247,11 @@ class <%= entityClass %>ResourceIT <% if (databaseType === 'cassandra') { %>: Ab
     @Autowired
     private lateinit var <%= entityInstance %>Mapper: <%= entityClass %>Mapper
     <%_ } if (service !== 'no') { _%>
+    <%_ if (fieldsContainOwnerManyToMany === true) { _%>
 
     @Mock
     private lateinit var <%= entityInstance %>ServiceMock: <%= entityClass %>Service
+    <%_ } _%>
     <%_ } if (searchEngine === 'elasticsearch') { _%>
 
     /**
@@ -282,14 +282,15 @@ class <%= entityClass %>ResourceIT <% if (databaseType === 'cassandra') { %>: Ab
     private lateinit var validator: Validator
     <%_ } _%>
 
-<%_ if (databaseType === 'sql') { _%>
+    <%_ if (databaseType === 'sql') { _%>
 
     @Autowired
     private lateinit var em: EntityManager
-<%_ } _%>
+    <%_ } _%>
 
     <%_ if (!reactive) { _%>
 
+    @Autowired
     private lateinit var rest<%= entityClass %>MockMvc: MockMvc
     <%_ } else { _%>
 
@@ -304,8 +305,8 @@ class <%= entityClass %>ResourceIT <% if (databaseType === 'cassandra') { %>: Ab
     fun cleanup() {
         deleteEntities(em)
     }
-    <%_ } _%>
 
+    <%_ } _%>
     <%_ if (reactive && testsNeedCsrf) { _%>
     @BeforeEach
     fun setupCsrf() {
@@ -313,25 +314,6 @@ class <%= entityClass %>ResourceIT <% if (databaseType === 'cassandra') { %>: Ab
     }
 
     <%_ } _%>
-    
-    <%_ if (!reactive) { _%>
-    @BeforeEach
-    fun setup() {
-        MockitoAnnotations.initMocks(this)
-            <%_ if (service !== 'no') { _%>
-        val <%= entityInstance %>Resource = <%= entityClass %>Resource(<%= entityInstance %>ServiceMock<% if (jpaMetamodelFiltering) { %>, <%= entityInstance %>QueryService<% } %><% if (saveUserSnapshot) { %>, userRepository<% } %>)
-            <%_ } else { _%>
-        val <%= entityInstance %>Resource = <%= entityClass %>Resource(<%= entityInstance %>Repository<% if (dto === 'mapstruct') { %>, <%= entityInstance %>Mapper<% } %><% if (searchEngine === 'elasticsearch') { %>, mock<%= entityClass %>SearchRepository<% } %><% if (saveUserSnapshot) { %>, userRepository<% } %><% if (isUsingMapsId === true && dto !== 'mapstruct') { %>, <%= mapsIdRepoInstance _%> <% } %>)
-            <%_ } _%>
-        this.rest<%= entityClass %>MockMvc = MockMvcBuilders.standaloneSetup(<%= entityInstance %>Resource)
-             .setCustomArgumentResolvers(pageableArgumentResolver)
-             .setControllerAdvice(exceptionTranslator)
-             .setConversionService(createFormattingConversionService())
-             .setMessageConverters(jacksonMessageConverter)
-             .setValidator(validator).build()
-    }
-    <%_ } _%>
-
 
     @BeforeEach
     fun initTest() {
@@ -361,7 +343,7 @@ class <%= entityClass %>ResourceIT <% if (databaseType === 'cassandra') { %>: Ab
         <%_ } _%>
         <%_ if (!reactive) { _%>
         rest<%= entityClass %>MockMvc.perform(
-            post("/api/<%= entityApiUrl %>")
+            post("/api/<%= entityApiUrl %>")<% if (testsNeedCsrf) { %>.with(csrf())<% }%>
                 .contentType(MediaType.APPLICATION_JSON)
                 .content(convertObjectToJsonBytes(<%=(dto === 'mapstruct' ? asDto(entityInstance) : asEntity(entityInstance))%>))
         ).andExpect(status().isCreated)
@@ -375,22 +357,22 @@ class <%= entityClass %>ResourceIT <% if (databaseType === 'cassandra') { %>: Ab
 
         // Validate the <%= entityClass %> in the database
         <%_ if (databaseType === 'couchbase') { _%>
-        SecurityContextHolder.setContext(TestSecurityContextHolder.getContext());
+        SecurityContextHolder.setContext(TestSecurityContextHolder.getContext())
         <%_ } _%>
         val <%= entityInstance %>List = <%= entityInstance %>Repository.findAll()<%= callListBlock %>
         assertThat(<%= entityInstance %>List).hasSize(databaseSizeBeforeCreate + 1)
-        <%_ if ( fields.length>0  || searchEngine === 'elasticsearch') { _%>
         val test<%= entityClass %> = <%= entityInstance %>List[<%= entityInstance %>List.size - 1]
-        <%_ } _%>
-        <%_ for (idx in fields) { if (fields[idx].id) continue; if (fields[idx].fieldType === 'ZonedDateTime') { _%>
-        assertThat(test<%= entityClass %>.<%=fields[idx].fieldName%>).isEqualTo(<%='DEFAULT_' + fields[idx].fieldNameUnderscored.toUpperCase()%>)
-        <%_ } else if ((fields[idx].fieldType === 'byte[]' || fields[idx].fieldType === 'ByteBuffer') && fields[idx].fieldTypeBlobContent !== 'text') { _%>
-        assertThat(test<%= entityClass %>.<%=fields[idx].fieldName%>).isEqualTo(<%='DEFAULT_' + fields[idx].fieldNameUnderscored.toUpperCase()%>)
-        assertThat(test<%= entityClass %>.<%=fields[idx].fieldName%>ContentType).isEqualTo(<%='DEFAULT_' + fields[idx].fieldNameUnderscored.toUpperCase()%>_CONTENT_TYPE)
-        <%_ } else if (fields[idx].fieldType === 'BigDecimal') { _%>
-        assertThat(test<%= entityClass %>.<%=fields[idx].fieldName%>).isEqualTo(<%='DEFAULT_' + fields[idx].fieldNameUnderscored.toUpperCase()%>)
+
+        <%_ for (const field of fields.filter(field => !field.id && !field.transient)) {
+                if (field.fieldType === 'ZonedDateTime') { _%>
+        assertThat(test<%= entityClass %>.<%=field.fieldName%>).isEqualTo(<%='DEFAULT_' + field.fieldNameUnderscored.toUpperCase()%>)
+        <%_ } else if ((field.fieldType === 'byte[]' || field.fieldType === 'ByteBuffer') && field.fieldTypeBlobContent !== 'text') { _%>
+        assertThat(test<%= entityClass %>.<%=field.fieldName%>).isEqualTo(<%='DEFAULT_' + field.fieldNameUnderscored.toUpperCase()%>)
+        assertThat(test<%= entityClass %>.<%=field.fieldName%>ContentType).isEqualTo(<%='DEFAULT_' + field.fieldNameUnderscored.toUpperCase()%>_CONTENT_TYPE)
+        <%_ } else if (field.fieldType === 'BigDecimal') { _%>
+        assertThat(test<%= entityClass %>.<%=field.fieldName%>).isEqualTo(<%='DEFAULT_' + field.fieldNameUnderscored.toUpperCase()%>)
         <%_ } else { _%>
-        assertThat(test<%= entityClass %>.<%=fields[idx].fieldName%>).isEqualTo(<%='DEFAULT_' + fields[idx].fieldNameUnderscored.toUpperCase()%>)
+        assertThat(test<%= entityClass %>.<%=field.fieldName%>).isEqualTo(<%='DEFAULT_' + field.fieldNameUnderscored.toUpperCase()%>)
         <%_ }} _%>
         <%_ if (isUsingMapsId === true) { _%>
 
@@ -407,19 +389,24 @@ class <%= entityClass %>ResourceIT <% if (databaseType === 'cassandra') { %>: Ab
     }
 
     @Test<%= transactionalAnnotation %>
+    @Throws(Exception::class)
     fun create<%= entityClass %>WithExistingId() {
-        val databaseSizeBeforeCreate = <%= entityInstance %>Repository.findAll()<%= callListBlock %>.size
-
         // Create the <%= entityClass %> with an existing ID
-        <%= asEntity(entityInstance) %>.<%= primaryKey.name %> = <% if (databaseType === 'sql' && hasOauthUser === true) { %>UUID.randomUUID().toString()<% } else if (databaseType === 'sql') { %>1L<% } else if (databaseType === 'mongodb' || databaseType === 'couchbase') { %>"existing_id"<% } else if (databaseType === 'cassandra') { %>UUID.randomUUID()<% } %>
+        <%_ if (primaryKey.type === 'UUID' && databaseType === 'sql') { _%>
+        <%= entityInstance %>Repository.<%= saveMethod %>(<%= asEntity(entityInstance) %>)<%= callBlock %>
+        <%_ } else { _%>
+        <%= asEntity(entityInstance) %>.<%= primaryKey.name %> = <% if (primaryKey.type === 'UUID') { %>UUID.randomUUID()<% } else if (primaryKey.type === 'Long') { %>1L<% } else { %>"existing_id"<% } %>
+        <%_ } _%>
         <%_ if (dto === 'mapstruct') { _%>
         val <%= asDto(entityInstance) %> = <%= entityInstance %>Mapper.toDto(<%= asEntity(entityInstance) %>)
         <%_ } _%>
 
+        val databaseSizeBeforeCreate = <%= entityInstance %>Repository.findAll()<%= callListBlock %>.size
+
         // An entity with an existing ID cannot be created, so this API call must fail
         <%_ if (!reactive) { _%>
         rest<%= entityClass %>MockMvc.perform(
-            post("/api/<%= entityApiUrl %>")
+            post("/api/<%= entityApiUrl %>")<% if (testsNeedCsrf) { %>.with(csrf())<% }%>
                 .contentType(MediaType.APPLICATION_JSON)
                 .content(convertObjectToJsonBytes(<%=(dto === 'mapstruct' ? asDto(entityInstance) : asEntity(entityInstance))%>))
         ).andExpect(status().isBadRequest)
@@ -432,6 +419,9 @@ class <%= entityClass %>ResourceIT <% if (databaseType === 'cassandra') { %>: Ab
         <%_ } _%>
 
         // Validate the <%= entityClass %> in the database
+        <%_ if (databaseType === 'couchbase') { _%>
+        SecurityContextHolder.setContext(TestSecurityContextHolder.getContext())
+        <%_ } _%>
         val <%= entityInstance %>List = <%= entityInstance %>Repository.findAll()<%= callListBlock %>
         assertThat(<%= entityInstance %>List).hasSize(databaseSizeBeforeCreate)
         <%_ if (searchEngine === 'elasticsearch') { _%>
@@ -458,13 +448,14 @@ class <%= entityClass %>ResourceIT <% if (databaseType === 'cassandra') { %>: Ab
             if (mapsIdUse === true) { _%>
         // Add a new parent entity
                 <%_ if (alreadyGeneratedEntities.indexOf(otherEntityName) == -1) { _%>
-        val <%= otherEntityName %> = <%= otherEntityNameCapitalized %>ResourceIT.createEntity(<% if (databaseType === 'sql') { %>em<% } %>)
+        val <%= otherEntityName %> = <%= otherEntityNameCapitalized %>ResourceIT.create<% if (otherEntityName !== 'user') { _%>Updated<%_ } %>Entity(<% if (databaseType === 'sql') { %>em<% } %>)
                 <%_   if (databaseType === 'sql' && !reactive) { _%>
         em.persist(<%= otherEntityName %>)
         em.flush()
                 <%_ } _%>
+                <%_ } _%>
         <%_ alreadyGeneratedEntities.push(otherEntityName) _%>
-        <%_ } break; } }_%>
+        <%_ } break; } _%>
 
         // Load the <%= entityInstance %>
         val updated<%= asEntity(entityClass) %> = <%= entityInstance %>Repository.findById(<%= asEntity(entityInstance) %>.<%= primaryKey.name %>)<%= reactive ? '.block()' : '.get()' %>
@@ -487,7 +478,7 @@ class <%= entityClass %>ResourceIT <% if (databaseType === 'cassandra') { %>: Ab
             .exchange()
             .expectStatus().isOk
         <%_ } else { _%>
-        rest<%= entityClass %>MockMvc.perform(put("/api/<%= entityApiUrl %>")
+        rest<%= entityClass %>MockMvc.perform(put("/api/<%= entityApiUrl %>")<% if (testsNeedCsrf) { %>.with(csrf())<% }%>
             .contentType(MediaType.APPLICATION_JSON)
             .content(convertObjectToJsonBytes(<%_ if (dto === 'mapstruct') { _%>updated<%= asDto(entityClass) %> <%_ } else { _%> updated<%= asEntity(entityClass) %> <%_ } _%>)))
             .andExpect(status().isOk)
@@ -499,36 +490,38 @@ class <%= entityClass %>ResourceIT <% if (databaseType === 'cassandra') { %>: Ab
         <%_ } _%>
         val <%= entityInstance %>List = <%= entityInstance %>Repository.findAll()<%= callListBlock %>
         assertThat(<%= entityInstance %>List).hasSize(databaseSizeBeforeCreate)
-        val test<%= entityClass %> = <%= entityInstance %>List.get(<%= entityInstance %>List.size - 1)
+        val test<%= entityClass %> = <%= entityInstance %>List[<%= entityInstance %>List.size - 1]
 
         // Validate the id for MapsId, the ids must be same
         // Uncomment the following line for assertion. However, please note that there is a known issue and uncommenting will fail the test.
         // Please look at https://github.com/jhipster/generator-jhipster/issues/9100. You can modify this test as necessary.
         // assertThat(test<%= entityClass %>.<%= primaryKey.name %>).isEqualTo(test<%= entityClass %>.<%= mapsIdEntityInstance %>?.<%= primaryKey.name %>)
         <%_ if (searchEngine === 'elasticsearch') { _%>
+
         // Validate the <%= entityClass %> in Elasticsearch
         verify(mock<%= entityClass %>SearchRepository).save(<%= asEntity(entityInstance) %>)
         <%_ } _%>
     }
 <%_ } _%>
-<% for (idx in fields) { if (fields[idx].id) continue; %><% if (fields[idx].fieldValidate === true) {
+<% for (field of fields.filter(field => !field.id && !field.transient)) { %><% if (field.fieldValidate === true) {
     let required = false;
-    if (fields[idx].fieldType !== 'byte[]' && fields[idx].fieldValidate === true && fields[idx].fieldValidateRules.includes('required')) {
+    if (field.fieldType !== 'byte[]' && field.fieldValidate === true && field.fieldValidateRules.includes('required')) {
         required = true;
     }
     if (required) { %>
     @Test<%= transactionalAnnotation %>
-    fun check<%= fields[idx].fieldInJavaBeanMethod %>IsRequired() {
+    @Throws(Exception::class)
+    fun check<%= field.fieldInJavaBeanMethod %>IsRequired() {
         val databaseSizeBeforeTest = <%= entityInstance %>Repository.findAll()<%= callListBlock %>.size
         // set the field null
-        <%= asEntity(entityInstance) %>.<%= fields[idx].fieldName %> = null
+        <%= asEntity(entityInstance) %>.<%= field.fieldName %> = null
 
         // Create the <%= entityClass %>, which fails.<% if (dto === 'mapstruct') { %>
         val <%= asDto(entityInstance) %> = <%= entityInstance %>Mapper.toDto(<%= asEntity(entityInstance) %>)<% } %>
 
         <%_ if (!reactive) { _%>
         rest<%= entityClass %>MockMvc.perform(
-            post("/api/<%= entityApiUrl %>")
+            post("/api/<%= entityApiUrl %>")<% if (testsNeedCsrf) { %>.with(csrf())<% }%>
                 .contentType(MediaType.APPLICATION_JSON)
                 .content(convertObjectToJsonBytes(<%=(dto === 'mapstruct' ? asDto(entityInstance) : asEntity(entityInstance))%>))
         ).andExpect(status().isBadRequest)
@@ -549,6 +542,7 @@ class <%= entityClass %>ResourceIT <% if (databaseType === 'cassandra') { %>: Ab
 <%  } } } %>
 <%_ } _%>
 <%_ if (reactive && pagination === 'no') { _%>
+    
     @Test
     fun getAll<%= entityClassPlural %>AsStream() {
         // Initialize the database
@@ -574,7 +568,7 @@ class <%= entityClass %>ResourceIT <% if (databaseType === 'cassandra') { %>: Ab
         assertThat(<%= entityInstance %>List).isNotNull
         assertThat(<%= entityInstance %>List).hasSize(1)
         val test<%= entityClass %> = <%= entityInstance %>List[0]
-        <%_ for (idx in fields) { if (fields[idx].id) continue; if (fields[idx].fieldType === 'ZonedDateTime') { _%>
+        <%_ for (idx in fields) { if (field.id) continue; if (fields[idx].fieldType === 'ZonedDateTime') { _%>
         assertThat(test<%= entityClass %>.<%= fields[idx].fieldName %>).isEqualTo(<%= 'DEFAULT_' + fields[idx].fieldNameUnderscored.toUpperCase() %>)
         <%_ } else if ((fields[idx].fieldType === 'byte[]' || fields[idx].fieldType === 'ByteBuffer') && fields[idx].fieldTypeBlobContent !== 'text') { _%>
         assertThat(test<%= entityClass %>.<%= fields[idx].fieldName %>).isEqualTo(<%= 'DEFAULT_' + fields[idx].fieldNameUnderscored.toUpperCase() %>)
@@ -586,6 +580,7 @@ class <%= entityClass %>ResourceIT <% if (databaseType === 'cassandra') { %>: Ab
         <%_ }} _%>
     }
 <%_  } _%>
+    
     @Test<%= transactionalAnnotation %>
     <% if (!reactive) { %>@Throws(Exception::class)<% } %>
     fun getAll<%= entityClassPlural %>() {
@@ -628,7 +623,7 @@ class <%= entityClass %>ResourceIT <% if (databaseType === 'cassandra') { %>: Ab
                                                 if (fields[idx].fieldType === 'ZonedDateTime') { %>)<% } else 
                                                     if (fields[idx].fieldType !== 'String') { %>.toString()<% } %>))<%= !reactive ? ')' : '' %><%_ } _%>
     }
-    <% if (relationshipsContainEagerLoad) { %>
+    <% if (fieldsContainOwnerManyToMany === true && databaseType !== 'neo4j') { %>
     @Suppress("unchecked")
     <% if (!reactive) { %>@Throws(Exception::class)<% } %>
     fun getAll<%= entityClassPlural %>WithEagerRelationshipsIsEnabled() {
@@ -722,7 +717,7 @@ class <%= entityClass %>ResourceIT <% if (databaseType === 'cassandra') { %>: Ab
             .expectBody()
         <%_ } _%>
         <%_ if (['sql', 'mongodb', 'couchbase', 'cassandra'].includes(databaseType)) { _%>
-            <%= !reactive ? '.andExpect(' : '.' %>jsonPath("$<%= primaryKey.name %>").value(<%= reactive ? '`is`(' : '' %><%= idValue %>))<%_ } _%><% for (idx in fields) { if (fields[idx].id) continue; %>
+            <%= !reactive ? '.andExpect(' : '.' %>jsonPath("$.<%= primaryKey.name %>").value(<%= reactive ? '`is`(' : '' %><%= idValue %>))<%_ } _%><% for (idx in fields) { if (fields[idx].id) continue; %>
             <%_ if ((fields[idx].fieldType === 'byte[]' || fields[idx].fieldType === 'ByteBuffer') && fields[idx].fieldTypeBlobContent !== 'text') { _%>
             <%= !reactive ? '.andExpect(' : '.' %>jsonPath("$.<%= fields[idx].fieldName %>ContentType").value(<%= reactive ? '`is`(' : '' %><%= 'DEFAULT_' + fields[idx].fieldNameUnderscored.toUpperCase() %>_CONTENT_TYPE))
             <%_ } _%>
@@ -1338,88 +1333,89 @@ class <%= entityClass %>ResourceIT <% if (databaseType === 'cassandra') { %>: Ab
 <%_ } _%>
 
     companion object {
-        <%_ for (idx in fields) {
-        const defaultValueName = 'DEFAULT_' + fields[idx].fieldNameUnderscored.toUpperCase();
-        const updatedValueName = 'UPDATED_' + fields[idx].fieldNameUnderscored.toUpperCase();
-        const smallerValueName = 'SMALLER_' + fields[idx].fieldNameUnderscored.toUpperCase();
-        const needsSmallerValueName = jpaMetamodelFiltering && isFilterableType(fields[idx].fieldType)
-            && ['BigDecimal', 'Byte', 'Double', 'Duration', 'Float', 'Short', 'Integer', 'Long', 'LocalDate', 'ZonedDateTime'].includes(fields[idx].fieldType);
+        <%_ for (field of fields.filter(field => !field.id && !field.transient)) {
+            const defaultValueName = 'DEFAULT_' + field.fieldNameUnderscored.toUpperCase();
+            const updatedValueName = 'UPDATED_' + field.fieldNameUnderscored.toUpperCase();
+            const smallerValueName = 'SMALLER_' + field.fieldNameUnderscored.toUpperCase();
+            const needsSmallerValueName = jpaMetamodelFiltering && isFilterableType(field.fieldType)
+                && ['BigDecimal', 'Byte', 'Double', 'Duration', 'Float', 'Short', 'Integer', 'Long', 'LocalDate', 'ZonedDateTime'].includes(field.fieldType);
 
-        let defaultValue = 1;
-        let updatedValue = 2;
+            let defaultValue = 1;
+            let updatedValue = 2;
 
-        if (fields[idx].fieldValidate === true) {
-            if (fields[idx].fieldValidateRules.includes('max')) {
-                defaultValue = fields[idx].fieldValidateRulesMax;
-                updatedValue = parseInt(fields[idx].fieldValidateRulesMax) - 1;
-            }
-            if (fields[idx].fieldValidateRules.includes('min')) {
-                defaultValue = fields[idx].fieldValidateRulesMin;
-                updatedValue = parseInt(fields[idx].fieldValidateRulesMin) + 1;
-            }
-            if (fields[idx].fieldValidateRules.includes('minbytes')) {
-                defaultValue = fields[idx].fieldValidateRulesMinbytes;
-                updatedValue = fields[idx].fieldValidateRulesMinbytes;
-            }
-            if (fields[idx].fieldValidateRules.includes('maxbytes')) {
-                updatedValue = fields[idx].fieldValidateRulesMaxbytes;
-            }
-        }
-
-        const fieldType = fields[idx].fieldType;
-        const fieldTypeBlobContent = fields[idx].fieldTypeBlobContent;
-        const isEnum = fields[idx].fieldIsEnum;
-        let enumValue1;
-        let enumValue2;
-        if (isEnum) {
-            const enumValues = fields[idx].enumValues;
-            enumValue1 = enumValues[0];
-            if (enumValues.length > 1) {
-                enumValue2 = enumValues[1];
-            } else {
-                enumValue2 = enumValue1;
-            }
-        }
-
-        if (fieldType === 'String' || fieldTypeBlobContent === 'text') {
-            // Generate Strings, using the min and max string length if they are configured
-            let sampleTextString = "";
-            let updatedTextString = "";
-            let sampleTextLength = 10;
-            if (fields[idx].fieldValidateRulesMinlength > sampleTextLength) {
-                sampleTextLength = fields[idx].fieldValidateRulesMinlength;
-            }
-            if (fields[idx].fieldValidateRulesMaxlength < sampleTextLength) {
-                sampleTextLength = fields[idx].fieldValidateRulesMaxlength;
-            }
-            for (let i = 0; i < sampleTextLength; i++) {
-                sampleTextString += "A";
-                updatedTextString += "B";
-            }
-            if (fields[idx].fieldValidateRulesPattern !== undefined) {
-                // Generate Strings, using pattern
-                try {
-                    const patternRegExp = new RegExp(fields[idx].fieldValidateRulesPattern);
-                    const randExp = fields[idx].createRandexp();
-                    // set infinite repetitionals max range
-                    if (!patternRegExp.test(sampleTextString.replace(/\\"/g, '"').replace(/\\\\/g, '\\'))) {
-                        sampleTextString = randExp.gen().replace(/\\/g, '\\\\').replace(/"/g, '\\"');
-                    }
-                    if (!patternRegExp.test(updatedTextString.replace(/\\"/g, '"').replace(/\\\\/g, '\\'))) {
-                        updatedTextString = randExp.gen().replace(/\\/g, '\\\\').replace(/"/g, '\\"');
-                    }
-                } catch (error) {
-                    log(this.chalkRed('Error generating test value for entity "' + entityClass +
-                        '" field "' + fields[idx].fieldName + '" with pattern "' + fields[idx].fieldValidateRulesPattern +
-                        '", generating default values for this field. Detailed error message: "' + error.message + '".'));
+            if (field.fieldValidate === true) {
+                if (field.fieldValidateRules.includes('max')) {
+                    defaultValue = field.fieldValidateRulesMax;
+                    updatedValue = parseInt(field.fieldValidateRulesMax) - 1;
                 }
-                if (sampleTextString === updatedTextString) {
-                    updatedTextString = updatedTextString + "B";
-                    log(this.chalkRed('Randomly generated first and second test values for entity "' + entityClass +
-                        '" field "' + fields[idx].fieldName + '" with pattern "' + fields[idx].fieldValidateRulesPattern +
-                        '" in file "' + entityClass + 'ResourceIT" where equal, added symbol "B" to second value.'));
+                if (field.fieldValidateRules.includes('min')) {
+                    defaultValue = field.fieldValidateRulesMin;
+                    updatedValue = parseInt(field.fieldValidateRulesMin) + 1;
                 }
-            }_%>
+                if (field.fieldValidateRules.includes('minbytes')) {
+                    defaultValue = field.fieldValidateRulesMinbytes;
+                    updatedValue = field.fieldValidateRulesMinbytes;
+                }
+                if (field.fieldValidateRules.includes('maxbytes')) {
+                    updatedValue = field.fieldValidateRulesMaxbytes;
+                }
+            }
+
+            const fieldType = field.fieldType;
+            const fieldTypeBlobContent = field.fieldTypeBlobContent;
+            const isEnum = field.fieldIsEnum;
+            let enumValue1;
+            let enumValue2;
+            if (isEnum) {
+                const enumValues = field.enumValues;
+                enumValue1 = enumValues[0];
+                if (enumValues.length > 1) {
+                    enumValue2 = enumValues[1];
+                } else {
+                    enumValue2 = enumValue1;
+                }
+            }
+
+            if (fieldType === 'String' || fieldTypeBlobContent === 'text') {
+                // Generate Strings, using the min and max string length if they are configured
+                let sampleTextString = "";
+                let updatedTextString = "";
+                let sampleTextLength = 10;
+                if (field.fieldValidateRulesMinlength > sampleTextLength) {
+                    sampleTextLength = field.fieldValidateRulesMinlength;
+                }
+                if (field.fieldValidateRulesMaxlength < sampleTextLength) {
+                    sampleTextLength = field.fieldValidateRulesMaxlength;
+                }
+                for (let i = 0; i < sampleTextLength; i++) {
+                    sampleTextString += "A";
+                    updatedTextString += "B";
+                }
+                if (field.fieldValidateRulesPattern !== undefined) {
+                    // Generate Strings, using pattern
+                    try {
+                        const patternRegExp = new RegExp(field.fieldValidateRulesPattern);
+                        const randExp = field.createRandexp();
+                        // set infinite repetitions max range
+                        if (!patternRegExp.test(sampleTextString.replace(/\\"/g, '"').replace(/\\\\/g, '\\'))) {
+                            sampleTextString = randExp.gen().replace(/\\/g, '\\\\').replace(/"/g, '\\"');
+                        }
+                        if (!patternRegExp.test(updatedTextString.replace(/\\"/g, '"').replace(/\\\\/g, '\\'))) {
+                            updatedTextString = randExp.gen().replace(/\\/g, '\\\\').replace(/"/g, '\\"');
+                        }
+                    } catch (error) {
+                        log(this.chalkRed('Error generating test value for entity "' + entityClass +
+                            '" field "' + field.fieldName + '" with pattern "' + field.fieldValidateRulesPattern +
+                            '", generating default values for this field. Detailed error message: "' + error.message + '".'));
+                    }
+                    if (sampleTextString === updatedTextString) {
+                        updatedTextString = updatedTextString + "B";
+                        log(this.chalkRed('Randomly generated first and second test values for entity "' + entityClass +
+                            '" field "' + field.fieldName + '" with pattern "' + field.fieldValidateRulesPattern +
+                            '" in file "' + entityClass + 'ResourceIT" where equal, added symbol "B" to second value.'));
+                    }
+                }
+        _%>
 
         private const val <%=defaultValueName %> = "<%-sampleTextString %>"
         private const val <%=updatedValueName %> = "<%-updatedTextString %>"
@@ -1521,11 +1517,13 @@ class <%= entityClass %>ResourceIT <% if (databaseType === 'cassandra') { %>: Ab
         @JvmStatic
         fun create<% if (fieldStatus === 'UPDATED_') { _%>Updated<%_ } %>Entity(<% if (databaseType === 'sql') { %>em: EntityManager<% } %>): <%= asEntity(entityClass) %> {
             val <%= asEntity(entityInstance) %> = <%= asEntity(entityClass) %>(
-            <%_ for (idx in fields) {
-                const comma = (parseInt(idx, 10) === (fields.length - 1)) ?  '' : ',';
+            <%_ 
+                const filteredFields = fields.filter(field => !field.id && !field.transient);
+                for (idx in filteredFields) {
+                    const comma = (parseInt(idx, 10) === (filteredFields.length - 1)) ?  '' : ',';
             _%>
-                <%= fields[idx].fieldName %> = <%=fieldStatus + fields[idx].fieldNameUnderscored.toUpperCase()%><% if ((fields[idx].fieldType === 'byte[]' || fields[idx].fieldType === 'ByteBuffer') && fields[idx].fieldTypeBlobContent !== 'text') { %>,
-                <%= fields[idx].fieldName %>ContentType = <%=fieldStatus + fields[idx].fieldNameUnderscored.toUpperCase()%>_CONTENT_TYPE<% } %><%= comma %>
+                <%= filteredFields[idx].fieldName %> = <%=fieldStatus + filteredFields[idx].fieldNameUnderscored.toUpperCase()%><% if ((filteredFields[idx].fieldType === 'byte[]' || filteredFields[idx].fieldType === 'ByteBuffer') && filteredFields[idx].fieldTypeBlobContent !== 'text') { %>,
+                <%= filteredFields[idx].fieldName %>ContentType = <%=fieldStatus + filteredFields[idx].fieldNameUnderscored.toUpperCase()%>_CONTENT_TYPE<% } %><%= comma %>
             <%_ } _%>
             )
 
@@ -1543,7 +1541,7 @@ class <%= entityClass %>ResourceIT <% if (databaseType === 'cassandra') { %>: Ab
             // Add required entity
                 <%_ if (alreadyGeneratedEntities.indexOf(otherEntityName) == -1) { _%>
         <%_ if (otherEntityName === 'user') { // TODO or other entity has no unique fields _%>
-            val <%= otherEntityName %> = <%= otherEntityNameCapitalized %>ResourceIT.createEntity(<% if (databaseType === 'sql') { %>em<% } %>)
+            val <%= otherEntityName %> = <%= createEntityPrefix %><%= otherEntityNameCapitalized %>ResourceIT.createEntity(<% if (databaseType === 'sql') { %>em<% } %>)<%= createEntityPostfix %>
                 <%_ if (databaseType === 'sql' && !reactive) { _%>
             em.persist(<%= otherEntityName %>)
             em.flush()
@@ -1555,14 +1553,14 @@ class <%= entityClass %>ResourceIT <% if (databaseType === 'cassandra') { %>: Ab
             val <%= otherEntityName %>: <%= otherEntityNameCapitalized %>
             <%_ if (databaseType === 'sql' && !reactive) { _%>
             if (em.findAll(<%= otherEntityNameCapitalized %>::class).isEmpty()) {
-                <%= otherEntityName %> = <%= createEntityPrefix %><%= otherEntityNameCapitalized %>ResourceIT.create<% if (fieldStatus === 'UPDATED_') { %>Updated<% } %>Entity(<% if (databaseType === 'sql') { %>em<% } %>)
+                <%= otherEntityName %> = <%= createEntityPrefix %><%= otherEntityNameCapitalized %>ResourceIT.create<% if (fieldStatus === 'UPDATED_') { %>Updated<% } %>Entity(<% if (databaseType === 'sql') { %>em<% } %>)%= createEntityPostfix %>
                 em.persist(<%= otherEntityName %>)
                 em.flush()
             } else {
                 <%= otherEntityName %> = em.findAll(<%= otherEntityNameCapitalized %>::class).get(0)
             }
             <%_ } else { _%>
-            <%= otherEntityName %> = <%= createEntityPrefix %><%= otherEntityNameCapitalized %>ResourceIT.create<% if (fieldStatus === 'UPDATED_') { %>Updated<% } %>Entity(<% if (databaseType === 'sql') { %>em<% } %>)
+            <%= otherEntityName %> = <%= createEntityPrefix %><%= otherEntityNameCapitalized %>ResourceIT.create<% if (fieldStatus === 'UPDATED_') { %>Updated<% } %>Entity(<% if (databaseType === 'sql') { %>em<% } %>)%= createEntityPostfix %>
             <%_ } _%>
             <%_ if (databaseType === 'mongodb') { _%>
             <%= otherEntityName %>.<%= primaryKey.name %> = "fixed-id-for-tests"
@@ -1586,9 +1584,8 @@ class <%= entityClass %>ResourceIT <% if (databaseType === 'cassandra') { %>: Ab
         fun deleteEntities(em: EntityManager) {
             try {
             <%_ relationships.forEach(function(rel) {
-                if (rel.relationshipType === 'many-to-many' && rel.ownerSide) {
-                    const joinTableName = getJoinTableName(entityTableName, rel.relationshipName, prodDatabaseType); _%>
-                    em.deleteAll("<%= joinTableName %>").block()
+                if (rel.shouldWriteJoinTable) { _%>
+                    em.deleteAll("<%= rel.joinTable.name %>").block()
             <%_ }}); _%>
                     em.deleteAll(<%= entityClass %>::class).block()
             } catch (e: Exception) {
