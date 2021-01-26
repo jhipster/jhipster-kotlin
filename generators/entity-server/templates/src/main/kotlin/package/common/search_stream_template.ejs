@@ -18,7 +18,7 @@
 -%>
 <%_
 const mapper = `${entityInstance}Mapper`;
-const entityToDtoReference = `${mapper}::toDto`; %>
+const entityToDtoReference = `${mapper}.toDto`; %>
 <%_ if (!viaService) { _%>
     <%_ if (!reactive) { _%>
         <%_ if (searchEngine === 'elasticsearch') { _%>
@@ -28,6 +28,7 @@ const entityToDtoReference = `${mapper}::toDto`; %>
         <%_ } _%>
         <%_ if (dto === 'mapstruct') { _%>
                 .map { <%= entityToDtoReference %>(it) }
+                .toMutableList()
         <%_ } _%>
     <%_ } else { _%>
         return <%= entityInstance %><% if (searchEngine === 'elasticsearch') { %>Search<% } %>Repository.search(<% if (searchEngine === 'couchbase') { %><%= entityClass %>.PREFIX, <% } %>query)<%_ if (dto === 'mapstruct') { %>
