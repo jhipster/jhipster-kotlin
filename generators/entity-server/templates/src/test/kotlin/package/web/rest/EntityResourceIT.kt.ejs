@@ -925,6 +925,7 @@ class <%= entityClass %>ResourceIT <% if (databaseType === 'cassandra') { %>: Ab
         val <%= relationship.relationshipFieldName %> = <%= asEntity(entityInstance) %>.<%= relationship.relationshipName %>
         <%_ } else { _%>
         // Initialize the database
+        <%= entityInstance %>Repository.saveAndFlush(<%= asEntity(entityInstance) %>)
         val <%= relationship.relationshipFieldName %> = <%= relationship.otherEntityNameCapitalized %>ResourceIT.createEntity(em)
         em.persist(<%= relationship.relationshipFieldName %>)
         em.flush()
@@ -1108,7 +1109,7 @@ class <%= entityClass %>ResourceIT <% if (databaseType === 'cassandra') { %>: Ab
 
         <%_ if (!reactive) { _%>
         rest<%= entityClass %>MockMvc.perform(
-            put("/api/<%= entityApiUrl %>")
+            put("/api/<%= entityApiUrl %>")<% if (testsNeedCsrf) { %>.with(csrf())<% }%>
                 .contentType(MediaType.APPLICATION_JSON)
                 .content(convertObjectToJsonBytes(<% if (dto === 'mapstruct') { %><%= asDto(entityInstance) %><% } else { %>updated<%= entityClass %><% } %>))
         ).andExpect(status().isOk)
@@ -1151,7 +1152,7 @@ class <%= entityClass %>ResourceIT <% if (databaseType === 'cassandra') { %>: Ab
         // If the entity doesn't have an ID, it will throw BadRequestAlertException
         <%_ if (!reactive) { _%>
         rest<%= entityClass %>MockMvc.perform(
-            put("/api/<%= entityApiUrl %>")
+            put("/api/<%= entityApiUrl %>")<% if (testsNeedCsrf) { %>.with(csrf())<% }%>
                 .contentType(MediaType.APPLICATION_JSON)
                 .content(convertObjectToJsonBytes(<%=(dto === 'mapstruct' ? asDto(entityInstance) : asEntity(entityInstance))%>))
         ).andExpect(status().isBadRequest)
@@ -1241,7 +1242,7 @@ class <%= entityClass %>ResourceIT <% if (databaseType === 'cassandra') { %>: Ab
         <%_ if (!reactive) { _%>
         // Delete the <%= entityInstance %>
         rest<%= entityClass %>MockMvc.perform(
-            delete("/api/<%= entityApiUrl %>/{id}", <%= asEntity(entityInstance) %>.<%= primaryKey.name %><% if (primaryKey.type === 'UUID' && databaseType === 'sql') { %>.toString()<% } %>)
+            delete("/api/<%= entityApiUrl %>/{id}", <%= asEntity(entityInstance) %>.<%= primaryKey.name %><% if (primaryKey.type === 'UUID' && databaseType === 'sql') { %>.toString()<% } %>)<% if (testsNeedCsrf) { %>.with(csrf())<% }%>
                 .accept(MediaType.APPLICATION_JSON)
         ).andExpect(status().isNoContent)
         <%_ } else { _%>
