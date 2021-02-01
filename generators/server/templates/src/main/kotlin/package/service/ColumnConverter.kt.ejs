@@ -27,17 +27,19 @@ import org.springframework.util.ClassUtils
 
 import io.r2dbc.spi.Row
 
+
 /**
  * This service provides helper function dealing with the low level {@link Row} and Spring's {@link R2dbcCustomConversions}, so type conversions can be applied.
  */
 @Service
 class ColumnConverter(
-    private val conversionService: ConversionService,
-    private val conversions: R2dbcCustomConversions
+    private var conversionService: ConversionService,
+    private val conversions: R2dbcCustomConversions,
+    dataAccessStrategy: ReactiveDataAccessStrategy
 ) {
 
     init {
-        this.conversionService = dataAccess.converter.conversionService
+        conversionService = dataAccessStrategy.converter.conversionService
     }
 
     /**
@@ -53,15 +55,14 @@ class ColumnConverter(
             return value as T
         }
 
-        if (conversions.hasCustomReadTarget(value.getClass(), target)) {
-            return conversionService.convert(value, target)
+        if (conversions.hasCustomReadTarget(value::class.java, target)) {
+            return conversionService.convert<T>(value, target)
         }
 
-        if (Enum.class.isAssignableFrom(target)) {
-            return Enum.valueOf((target as (Class<Enum>)), value.toString()) as T
-        }
+        return if (Enum::class.java.isAssignableFrom(target)) {
+            java.lang.Enum.valueOf(target as Class<Enum<*>?>, value.toString()) as T
+        } else conversionService.convert<T>(value, target)
 
-        return conversionService.convert(value, target)
     }
 
     /**
@@ -81,5 +82,4 @@ class ColumnConverter(
             return convert(obj, target)
         }
     }
-
 }

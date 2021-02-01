@@ -22,9 +22,6 @@ package <%= packageName %>.web.rest
 import <%= packageName %>.AbstractCassandraTest
 <%_ } _%>
 import <%= packageName %>.IntegrationTest
-<%_ if (databaseType === 'sql' && reactive) { _%>
-import <%= packageName %>.config.Constants
-<%_ } _%>
 import <%= packageName %>.security.ADMIN
 import <%= packageName %>.security.USER
 <%_ if (authenticationType === 'oauth2') { _%>
@@ -190,14 +187,14 @@ class PublicUserResourceIT <% if (databaseType === 'cassandra') { %>: AbstractCa
             <%_ } _%>
             .andExpect(jsonPath("$.[*].langKey").doesNotExist())
         <%_ } else { _%>
-        <%= asDto('User') %> foundUser = webTestClient.get().uri("/api/users?sort=id,DESC")
+        val foundUser = webTestClient.get().uri("/api/users?sort=id,DESC")
             .accept(MediaType.APPLICATION_JSON)
             .exchange()
-            .expectStatus().isOk()
+            .expectStatus().isOk
             .expectHeader().contentType(MediaType.APPLICATION_JSON)
-            .returnResult(<%= asDto('User') %>::class).getResponseBody().blockFirst()
+            .returnResult<<%= asDto('User') %>>().responseBody.blockFirst()
 
-        assertThat(foundUser.getLogin()).isEqualTo(DEFAULT_LOGIN)
+        assertThat(foundUser.login).isEqualTo(DEFAULT_LOGIN)
         <% } _%>
     }
 

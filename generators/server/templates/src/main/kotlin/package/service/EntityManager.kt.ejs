@@ -18,7 +18,6 @@ This file is part of the JHipster project, see https://jhipster.github.io/
 -%>
 package <%= packageName %>.service
 
-import java.util.Stream
 import org.springframework.data.domain.Pageable
 import org.springframework.data.domain.Sort
 import org.springframework.data.r2dbc.core.DatabaseClient
@@ -59,25 +58,29 @@ class EntityManager(
         const val ENTITY_ALIAS: String = "e"
         const val ALIAS_PREFIX: String = "e_"
 
-        private fun createOrderByFields(table: Table, sortToUse: Sort): Collection<*:OrderByField()>  {
-
-            val fields = listOf<OrderByField>()
-
-            sortToUse.forEach {
+        private fun <T: OrderByField> createOrderByFields(table: Table, sortToUse: Sort): Collection<T> {
+            val fields = mutableListOf<OrderByField>()
+            sortToUse.forEach { 
                 val propertyName = it.property
-                val orderByField = OrderByField.from(table.column(propertyName).as(ALIAS_PREFIX + propertyName))
-                if (it.direction() != null) {
-                    fields.add(it.isAscending() ? orderByField.asc() : orderByField.desc())
+                val orderByField = OrderByField.from(table.column(propertyName).`as`(ALIAS_PREFIX + propertyName))
+                if (it.direction != null) {
+                    val sort = if (it.isAscending) orderByField.asc() else orderByField.desc()
+                    fields.add(sort)
                 } else {
                     fields.add(orderByField)
                 }
             }
-    
-            return fields
-        }
+            return fields as Collection<T>
+        } 
     }
 
-    class LinkTable(private val tableName: String, private val idColumn: String, private val referenceColumn: String)
+    data class LinkTable(val tableName: String, val idColumn: String, val referenceColumn: String) {
+        init {
+            Assert.notNull(tableName, "tableName is null")
+            Assert.notNull(idColumn, "idColumn is null")
+            Assert.notNull(referenceColumn, "referenceColumn is null")
+        }
+    }
 
     /**
      * Creates an SQL select statement from the given fragment and pagination parameters.
@@ -87,10 +90,10 @@ class EntityManager(
      * @return sql select statement
      */
     fun createSelect(selectFrom: SelectFromAndJoin, entityType: Class<*>, pageable: Pageable): String {
-        if (pageable != null) {
-            return createSelectImpl(selectFrom.limitOffset(pageable.pageSize, pageable.offset), entityType, pageable.sort)
+        return if (pageable != null) {
+            createSelectImpl(selectFrom.limitOffset(pageable.pageSize.toLong(), pageable.offset), entityType, pageable.sort)
         } else {
-            return createSelectImpl(selectFrom, entityType, null)
+            createSelectImpl(selectFrom, entityType, null)
         }
     }
 
@@ -102,21 +105,21 @@ class EntityManager(
      * @return sql select statement
      */
     fun createSelect(selectFrom: SelectFromAndJoinCondition, entityType: Class<*>, pageable: Pageable): String {
-        if (pageable != null) {
-            return createSelectImpl(selectFrom.limitOffset(pageable.pageSize, pageable.offset), entityType, pageable.sort)
+        return if (pageable != null) {
+            createSelectImpl(selectFrom.limitOffset(pageable.pageSize.toLong(), pageable.offset), entityType, pageable.sort)
         } else {
-            return createSelectImpl(selectFrom, entityType, null)
+            createSelectImpl(selectFrom, entityType, null)
         }
     }
 
-    private fun createSelectImpl(selectFrom: SelectOrdered, entityType: Class<*>, sortParameter: Sort): String {
+    private fun createSelectImpl(selectFrom: SelectOrdered, entityType: Class<*>, sortParameter: Sort?): String {
         var select: Select? = null;
-        if (sortParameter != null && sortParameter.isSorted()) {
+        select = if (sortParameter != null && sortParameter.isSorted()) {
             val entity: RelationalPersistentEntity<*> = getPersistentEntity(entityType)
             val sort = updateMapper.getMappedObject(sortParameter, entity)
-            select = selectFrom.orderBy(createOrderByFields(Table.create(entity.tableName).as(EntityManager.ENTITY_ALIAS), sort)).build()
+            selectFrom.orderBy(createOrderByFields(Table.create(entity.tableName).`as`(EntityManager.ENTITY_ALIAS), sort)).build()
         } else {
-            select = selectFrom.build()
+            selectFrom.build()
         }
         return createSelect(select)
     }
@@ -131,7 +134,7 @@ class EntityManager(
      * @param entityType the entity type which holds the table name.
      * @return the number of deleted entity
      */
-    fun deleteAll(entityType: Class<*>): Mono<Integer> {
+    fun deleteAll(entityType: Class<*>): Mono<Int> {
         return db.delete().from(entityType).fetch().rowsUpdated()
     }
 
@@ -140,7 +143,7 @@ class EntityManager(
      * @param tableName the name of the table to delete.
      * @return the number of deleted rows.
      */
-    fun deleteAll(tableName: String): Mono<Integer> {
+    fun deleteAll(tableName: String): Mono<Int> {
         return db.delete().from(tableName).fetch().rowsUpdated()
     }
 
@@ -161,20 +164,17 @@ class EntityManager(
      */
     fun <S> insert(entity: S): Mono<S> {
         val row = dataAccessStrategy.getOutboundRow(entity)
-        val persistentEntity: RelationalPersistentEntity<*> = getPersistentEntity(entity.getClass())
+        val persistentEntity: RelationalPersistentEntity<*> = getPersistentEntity(entity!!::class.java.javaClass)
 
-        var insertSpec: GenericInsertSpec<Map<String, Any>> = db.insert().into(persistentEntity.getTableName())
-        val idColumn = persistentEntity.getIdColumn()
-
+        var insertSpec: GenericInsertSpec<Map<String, Any>> = db.insert().into(persistentEntity.tableName)
+        val idColumn = persistentEntity.idColumn
+        
         row.forEach {
-            k, v -> {
-                if (k.hasValue() || k != idColumn) {
-                    insertSpec = insertSpec.value(k, v)
-                }
+            if (!it.key.isEmpty || it.key != idColumn) {
+                insertSpec = insertSpec.value(it.key, it.value)
             }
         }
-
-        return insertSpec.map(dataAccessStrategy.getConverter().populateIdIfNecessary(entity))
+        return insertSpec.map(dataAccessStrategy.converter.populateIdIfNecessary(entity))
             .first()
             .defaultIfEmpty(entity)
     }
@@ -186,29 +186,34 @@ class EntityManager(
      * @param referencedIds the id of the referred entities.
      * @return the number of inserted rows.
      */
-    fun updateLinkTable(table: LinkTable, entityId: Long, referencedIds:  Stream<Long>): Mono<Integer> {
+    fun updateLinkTable(table: LinkTable, entityId: Long, referencedIds:  Stream<Long>): Mono<Int> {
         return deleteFromLinkTable(table, entityId)
-                .then(
-                    Flux.fromStream(referencedIds)
-                        .flatMap((Long referenceId) ->
-                            db.insert()
-                                .into(table.tableName)
-                                .value(table.idColumn, entityId)
-                                .value(table.referenceColumn, referenceId)
-                                .fetch()
-                                .rowsUpdated()
-                                )
-                        .toList()
-                        .map {
-                            (it as List<Integer>).fold(0)
-                        }
+        .then(
+            Flux.fromStream(referencedIds)
+                .flatMap { referenceId: Long? ->
+                  db.insert()
+                    .into(table.tableName)
+                    .value(table.idColumn, entityId)
+                    .value(table.referenceColumn, referenceId)
+                    .fetch()
+                    .rowsUpdated()
+                }
+                .collectList()
+                .map { updates: List<Int> ->
+                    updates.stream().reduce { a: Int, b: Int ->
+                        Integer.sum(
+                            a,
+                            b
+                        )
+                    }.orElse(0)
+        })
     }
 
     fun deleteFromLinkTable(table: LinkTable, entityId: Long): Mono<Void>  {
         Assert.notNull(entityId, "entityId is null")
         return db.delete()
                 .from(table.tableName)
-                .matching(Criteria.from(Criteria.where(table.idColumn).is(entityId)))
+                .matching(Criteria.from(Criteria.where(table.idColumn).`is`(entityId)))
                 .then()
     }
 }
