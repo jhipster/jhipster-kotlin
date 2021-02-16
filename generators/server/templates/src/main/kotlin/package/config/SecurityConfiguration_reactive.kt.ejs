@@ -23,6 +23,9 @@ import <%= packageName %>.security.ADMIN
 import <%= packageName %>.security.jwt.JWTFilter
 import <%= packageName %>.security.jwt.TokenProvider
 <%_ } _%>
+<%_ if (authenticationType === 'oauth2' && applicationType !== 'microservice') { _%>
+import <%= packageName %>.security.extractAuthorityFromClaims
+<%_ } _%>
 <%_ if (authenticationType === 'session' || authenticationType === 'oauth2') { _%>
     <%_ if (authenticationType === 'oauth2') { _%>
 import <%= packageName %>.security.SecurityUtils
@@ -141,6 +144,12 @@ class SecurityConfiguration(
 <%_ } _%>
     private val problemSupport: SecurityProblemSupport
 ) {
+
+    <%_ if (authenticationType === 'oauth2') { _%>
+
+    @Value("\${spring.security.oauth2.client.provider.oidc.issuer-uri}")
+    private lateinit var issuerUri: String
+    <%_ } _%>
 
     <%_ if (!skipUserManagement && authenticationType !== 'oauth2') { _%>
     @Bean

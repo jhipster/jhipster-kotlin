@@ -53,8 +53,7 @@ class <%= entityClass %>RowMapper(val converter: ColumnConverter): BiFunction<Ro
      * Take a {@link Row} and a column prefix, and extract all the fields.
      * @return the {@link <%= asEntity(entityClass) %>} stored in the database.
      */
-    @Override
-    fun apply(row: Row, prefix: String): <%= asEntity(entityClass) %> {
+     override fun apply(row: Row, prefix: String): <%= asEntity(entityClass) %> {
         val entity = <%= asEntity(entityClass) %>()
         <%_ fields.forEach(function(field) {
             let fieldType = field.fieldType;
@@ -62,12 +61,12 @@ class <%= entityClass %>RowMapper(val converter: ColumnConverter): BiFunction<Ro
                 fieldType = 'String';
             }
             if (field.fieldType === 'byte[]' && field.fieldTypeBlobContent !== 'text') { _%>
-        entity.<%= field.fieldName %>ContentType = converter.fromRow(row, prefix + "_<%= field.fieldNameAsDatabaseColumn %>_content_type", String::class)
+        entity.<%= field.fieldName %>ContentType = converter.fromRow(row, prefix + "_<%= field.fieldNameAsDatabaseColumn %>_content_type", String::class.java)
             <%_ } _%>
-        entity.<%= field.fieldName %> = converter.fromRow(row, prefix + "_<%= field.fieldNameAsDatabaseColumn %>", <%= fieldType %>::class)
+        entity.<%= field.fieldName %> = converter.fromRow(row, prefix + "_<%= field.fieldNameAsDatabaseColumn %>", <%= fieldType %>::class.java)
         <%_ }); _%>
         <%_ reactiveRegularEagerRelations.forEach(function(rel) { _%>
-        entity.<%= rel.fieldName %>Id = converter.fromRow(row, prefix + "_<%= getColumnName(rel.relationshipName) %>_id", Long::class)
+        entity.<%= rel.fieldName %>Id = converter.fromRow(row, prefix + "_<%= getColumnName(rel.relationshipName) %>_id", Long::class.java)
         <%_ }); _%> 
         return entity;
     }

@@ -568,7 +568,7 @@ class <%= entityClass %>ResourceIT <% if (databaseType === 'cassandra') { %>: Ab
         assertThat(<%= entityInstance %>List).isNotNull
         assertThat(<%= entityInstance %>List).hasSize(1)
         val test<%= entityClass %> = <%= entityInstance %>List[0]
-        <%_ for (idx in fields) { if (field.id) continue; if (fields[idx].fieldType === 'ZonedDateTime') { _%>
+        <%_ for (idx in fields) { if (fields[idx].id || fields[idx].transient) continue; if (fields[idx].fieldType === 'ZonedDateTime') { _%>
         assertThat(test<%= entityClass %>.<%= fields[idx].fieldName %>).isEqualTo(<%= 'DEFAULT_' + fields[idx].fieldNameUnderscored.toUpperCase() %>)
         <%_ } else if ((fields[idx].fieldType === 'byte[]' || fields[idx].fieldType === 'ByteBuffer') && fields[idx].fieldTypeBlobContent !== 'text') { _%>
         assertThat(test<%= entityClass %>.<%= fields[idx].fieldName %>).isEqualTo(<%= 'DEFAULT_' + fields[idx].fieldNameUnderscored.toUpperCase() %>)
@@ -1028,7 +1028,7 @@ class <%= entityClass %>ResourceIT <% if (databaseType === 'cassandra') { %>: Ab
         webTestClient.get().uri("/api/<%= entityApiUrl %>?sort=id,desc&" + filter)
             .accept(MediaType.APPLICATION_JSON)
             .exchange()
-            .expectStatus().isOk()
+            .expectStatus().isOk
             .expectHeader().contentType(MediaType.APPLICATION_JSON)
             .expectBody()
             .jsonPath("$").isArray()
@@ -1309,7 +1309,7 @@ class <%= entityClass %>ResourceIT <% if (databaseType === 'cassandra') { %>: Ab
     <%_ } else { _%>
         webTestClient.get().uri("/api/_search/<%= entityApiUrl %>?query=id:" + <%= asEntity(entityInstance) %>.<%= primaryKey.name %>)
             .exchange()
-            .expectStatus().isOk()
+            .expectStatus().isOk
             .expectHeader().contentType(MediaType.APPLICATION_JSON)
             .expectBody()
     <%_ } _%>

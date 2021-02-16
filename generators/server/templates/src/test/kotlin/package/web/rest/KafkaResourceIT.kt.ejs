@@ -108,12 +108,12 @@ class <%= upperFirstCamelCase(baseName) %>KafkaResourceIT {
     fun producesMessages() {
         <%_ if (!reactive) { _%>
         restMockMvc.perform(post("/api/<%= dasherizedBaseName %>-kafka/publish/topic-produce?message=value-produce"))
-            .andExpect(status().isOk())
+            .andExpect(status().isOk)
             .andExpect(content().contentType(MediaType.APPLICATION_JSON))
         <%_ } else { _%>
         client.post().uri("/api/jhipster-kafka/publish/topic-produce?message=value-produce")
             .exchange()
-            .expectStatus().isOk()
+            .expectStatus().isOk
             .expectHeader().contentType(MediaType.APPLICATION_JSON)
         <%_ } _%>
 
@@ -139,7 +139,7 @@ class <%= upperFirstCamelCase(baseName) %>KafkaResourceIT {
 
         <%_ if (!reactive) { _%>
         val mvcResult = restMockMvc.perform(get("/api/<%= dasherizedBaseName %>-kafka/consume?topic=topic-consume"))
-            .andExpect(status().isOk())
+            .andExpect(status().isOk)
             .andExpect(request().asyncStarted())
             .andReturn()
 
@@ -155,7 +155,7 @@ class <%= upperFirstCamelCase(baseName) %>KafkaResourceIT {
         val value = client.get().uri("/api/jhipster-kafka/consume?topic=topic-consume")
             .accept(MediaType.TEXT_EVENT_STREAM)
             .exchange()
-            .expectStatus().isOk()
+            .expectStatus().isOk
             .expectHeader().contentTypeCompatibleWith(MediaType.TEXT_EVENT_STREAM)
             .returnResult(String::class)
             .getResponseBody().blockFirst(Duration.ofSeconds(10))
