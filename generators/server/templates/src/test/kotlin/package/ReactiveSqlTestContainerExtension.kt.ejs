@@ -35,35 +35,43 @@ import java.util.concurrent.atomic.AtomicBoolean
 
 class ReactiveSqlTestContainerExtension: BeforeAllCallback {
 
-    @JvmStatic
-    private val started: AtomicBoolean = AtomicBoolean(false)
+    companion object {
+        @JvmStatic
+        private val started: AtomicBoolean = AtomicBoolean(false)
+        
+        <%_ if (prodDatabaseType === 'mysql') { _%>
+        @JvmStatic
+        private val container: MySQLContainer<*> = MySQLContainer<Nothing>("<%= DOCKER_MYSQL %>").apply {
+                withDatabaseName("<%= baseName %>")
+                withTmpFs(Collections.singletonMap("/testtmpfs", "rw"))
+        }
+        <%_ } else if (prodDatabaseType === 'mariadb') { _%>
+        @JvmStatic
+        private val container: MariaDBContainer<*> = MariaDBContainer<Nothing>("<%= DOCKER_MARIADB %>").apply {
+                withDatabaseName("<%= baseName %>")
+                withTmpFs(Collections.singletonMap("/testtmpfs", "rw"))
+        }
+        <%_ } else if (prodDatabaseType === 'postgresql') { _%>
+        @JvmStatic        
+        private val container: PostgreSQLContainer<*> = PostgreSQLContainer<Nothing>("<%= DOCKER_POSTGRESQL %>").apply {
+                withDatabaseName("<%= baseName %>")
+                withTmpFs(Collections.singletonMap("/testtmpfs", "rw"))
+        }
+        <%_ } else if (prodDatabaseType === 'mssql') { _%>
+        @JvmStatic
+        private val container: MSSQLServerContainer<*> =  MSSQLServerContainer<Nothing>("<%= DOCKER_MSSQL %>").apply {
+                withTmpFs(Collections.singletonMap("/testtmpfs", "rw"))
+        }
+        <%_ } _%>
+    }
+
     
-    <%_ if (prodDatabaseType === 'mysql') { _%>
-    @JvmStatic
-    private val container: MySQLContainer<*> = MySQLContainer<>("<%= DOCKER_MYSQL %>")
-            .withDatabaseName("<%= baseName %>")
-            .withTmpFs(Collections.singletonMap("/testtmpfs", "rw"))
-    <%_ } else if (prodDatabaseType === 'mariadb') { _%>
-    @JvmStatic
-    private val container: MariaDBContainer<*> = MariaDBContainer<>("<%= DOCKER_MARIADB %>")
-            .withDatabaseName("<%= baseName %>")
-            .withTmpFs(Collections.singletonMap("/testtmpfs", "rw"))
-    <%_ } else if (prodDatabaseType === 'postgresql') { _%>
-    @JvmStatic        
-    private val container: PostgreSQLContainer<*> = PostgreSQLContainer<>("<%= DOCKER_POSTGRESQL %>")
-            .withDatabaseName("<%= baseName %>")
-            .withTmpFs(Collections.singletonMap("/testtmpfs", "rw"))
-    <%_ } else if (prodDatabaseType === 'mssql') { _%>
-    @JvmStatic
-    private val container: MSSQLServerContainer<*> =  MSSQLServerContainer<>("<%= DOCKER_MSSQL %>")
-            .withTmpFs(Collections.singletonMap("/testtmpfs", "rw"))
-    <%_ } _%>
 
     @Throws(Exception::class)
     override fun beforeAll(extensionContext: ExtensionContext) {
         if (!started.get() && useTestcontainers()) {
             container.start()
-            System.setProperty("spring.r2dbc.url", container.getJdbcUrl().replace("jdbc", "r2dbc"))
+            System.setProperty("spring.r2dbc.url", container.jdbcUrl.replace("jdbc", "r2dbc"))
             System.setProperty("spring.r2dbc.username", container.username)
             System.setProperty("spring.r2dbc.password", container.password)
             System.setProperty("spring.liquibase.url", container.jdbcUrl)
@@ -73,7 +81,7 @@ class ReactiveSqlTestContainerExtension: BeforeAllCallback {
         }
     }
 
-    private fun useTestcontainers(): boolean  {
+    private fun useTestcontainers(): Boolean  {
 
         val systemProperties = StringUtils.defaultIfBlank(System.getProperty("spring.profiles.active"), "")
         val environmentVariables = StringUtils.defaultIfBlank(System.getenv("SPRING_PROFILES_ACTIVE"), "")
