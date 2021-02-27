@@ -21,21 +21,21 @@ const instanceType = (dto === 'mapstruct') ? asDto(entityClass) : asEntity(entit
 const mapper = entityInstance  + 'Mapper';
 const entityToDtoReference = mapper + '.toDto(it)';
 const reactiveSql = (databaseType === 'sql' && reactive);
-for (const idx in relationships) { if (relationships[idx].relationshipType === 'one-to-one' && relationships[idx].ownerSide !== true) { %>
+for (const relationship of relationships) { if (relationship.relationshipType === 'one-to-one' && relationship.ownerSide !== true) { %>
 
     /**
-     *  Get all the <%= entityInstancePlural %> where <%= relationships[idx].relationshipNameCapitalized %> is `null`.
+     *  Get all the <%= entityInstancePlural %> where <%= relationship.relationshipNameCapitalized %> is `null`.
      *  @return the list of entities.
      */<% if (databaseType === 'sql') { %>
     @Transactional(readOnly = true) <% } %>
-    <% if (service === 'serviceImpl') { %>override <% } %>fun findAllWhere<%= relationships[idx].relationshipNameCapitalized %>IsNull(): <%= reactiveSql ? 'Flux' : 'MutableList' %><<%= instanceType %>> {
-        log.debug("Request to get all <%= entityInstancePlural %> where <%= relationships[idx].relationshipNameCapitalized %> is null")
+    <% if (service === 'serviceImpl') { %>override <% } %>fun findAllWhere<%= relationship.relationshipNameCapitalized %>IsNull(): <%= reactiveSql ? 'Flux' : 'MutableList' %><<%= instanceType %>> {
+        log.debug("Request to get all <%= entityInstancePlural %> where <%= relationship.relationshipNameCapitalized %> is null")
         <%_ if (reactiveSql) { _%>
-        return <%= entityInstance %>Repository.findAllWhere<%= relationships[idx].relationshipNameCapitalized %>IsNull()<% if (dto === 'mapstruct') { _%>
+        return <%= entityInstance %>Repository.findAllWhere<%= relationship.relationshipNameCapitalized %>IsNull()<% if (dto === 'mapstruct') { _%>
              .map(<%= entityToDtoReference %>)<%_ } _%>
         <%_ } else { _%>
         return <%= entityInstance %>Repository.findAll()
-            .filter { it.<%= relationships[idx].relationshipName %> == null }
+            .filter { it.<%= relationship.relationshipName %> == null }
             <%_ if (dto === 'mapstruct') { _%>
             .map { <%= entityToDtoReference %> }
             <%_ } if (!reactiveSql) { _%>

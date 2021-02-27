@@ -24,7 +24,7 @@ let hasTextBlob = false;
 let hasRelationship = relationships.length !== 0;
 _%>
 <%_
-    for (field of fields.filter(field => !field.transient)) {
+    for (const field of fields.filter(field => !field.transient)) {
         if (prodDatabaseType === 'postgresql' && field.fieldTypeBlobContent === 'text') {
             hasTextBlob = true;
             break;
@@ -189,8 +189,9 @@ const relationshipLength = relationships.filter(r => {
 }).length - 1;
 
 const filteredFields = fields.filter(field => !field.id && !field.transient);
-
-for (field of filteredFields) {
+let idx = 0;
+for (const field of filteredFields) {
+    idx++;
     if (typeof field.javadoc !== 'undefined') { _%>
 <%- formatAsFieldJavadoc(field.javadoc) %>
     <%_ }
@@ -341,7 +342,7 @@ for (field of filteredFields) {
     _%>
     @ManyToOne<%_ if (relationshipRequired) { _%>(optional = false)<%_ } _%>
         <%_ if (relationshipValidate) { _%>
-    <%- include('relationship_validators', { relationships, idx }); -%>
+    <%- include('relationship_validators', { relationship }); -%>
         <%_ }
     } else if ((databaseType === 'mongodb' || databaseType === 'couchbase') && !otherEntityIsEmbedded) {
         if (databaseType === 'mongodb') { _%>
@@ -380,7 +381,7 @@ for (field of filteredFields) {
     @Cache(usage = CacheConcurrencyStrategy.READ_WRITE)
         <%_ } if (ownerSide === true) {
             if (relationshipValidate) { _%>
-    <%- include('relationship_validators', { relationships, idx }); -%>
+    <%- include('relationship_validators', { relationship }); -%>
             <%_ } _%>
     @JoinTable(name = "<%= relationship.joinTable.name %>",
         joinColumns = [
@@ -428,7 +429,7 @@ for (field of filteredFields) {
             if (ownerSide) { _%>
     @OneToOne<%_ if (relationshipRequired) { _%>(optional = false)<%_ } _%>
             <%_ if (relationshipValidate) { _%>
-    <%- include('relationship_validators', { relationships, idx }); -%>
+    <%- include('relationship_validators', { relationship }); -%>
             <%_ }_%>
             <%_ if (isUsingMapsId === true) { %>
     @MapsId
@@ -582,7 +583,7 @@ for (field of filteredFields) {
             ", <%= relationshipFieldName %>='$<%= relationshipFieldName %>'" +
             <%_ } } } _%>
             "}"
-            
+
     companion object {
         private const val serialVersionUID = 1L
         <%_ if (databaseType === 'couchbase' && !embedded) { _%>

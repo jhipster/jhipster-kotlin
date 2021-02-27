@@ -30,17 +30,17 @@ if (pagination !== 'no') {
         toResponseEntityPostfix = ', HttpStatus.OK)';
     }
 }
-for (idx in relationships) { 
-    if (relationships[idx].relationshipType === 'one-to-one' && relationships[idx].ownerSide !== true) { %>
-        if ("<%= relationships[idx].relationshipName.toLowerCase() %>-is-null".equals(filter)) {
-            log.debug("REST request to get all <%= entityClass %>s where <%= relationships[idx].relationshipName %> is null")
+for (const relationship of relationships) {
+    if (relationship.relationshipType === 'one-to-one' && relationship.ownerSide !== true) { %>
+        if ("<%= relationship.relationshipName.toLowerCase() %>-is-null".equals(filter)) {
+            log.debug("REST request to get all <%= entityClass %>s where <%= relationship.relationshipName %> is null")
             <%_ if (viaService) { _%>
-            return <%- toResponseEntityPrefix %><%= entityInstance %>Service.findAllWhere<%= relationships[idx].relationshipNameCapitalized %>IsNull()<% if (reactiveSql) { %>.collectList()<% } %><%= toResponseEntityPostfix %>
+            return <%- toResponseEntityPrefix %><%= entityInstance %>Service.findAllWhere<%= relationship.relationshipNameCapitalized %>IsNull()<% if (reactiveSql) { %>.collectList()<% } %><%= toResponseEntityPostfix %>
             <%_ } else { _%>
-            return <%- toResponseEntityPrefix %><% if (reactiveSql) { %><%= entityInstance %>Repository.findAllWhere<%= relationships[idx].relationshipNameCapitalized %>IsNull()<% if (dto === 'mapstruct') { %>.map(<%= entityToDtoReference %>)<% } %>.collectList()<%= toResponseEntityPostfix %>
+            return <%- toResponseEntityPrefix %><% if (reactiveSql) { %><%= entityInstance %>Repository.findAllWhere<%= relationship.relationshipNameCapitalized %>IsNull()<% if (dto === 'mapstruct') { %>.map(<%= entityToDtoReference %>)<% } %>.collectList()<%= toResponseEntityPostfix %>
                 <%_ } else { _%><%= entityInstance %>Repository.findAll()
                 .asSequence()
-                .filter { it.<%= relationships[idx].relationshipName %> == null }<% if (dto === 'mapstruct') { %>
+                .filter { it.<%= relationship.relationshipName %> == null }<% if (dto === 'mapstruct') { %>
                 .map(<%= entityToDtoReference %>)<% } if (pagination !== 'no') { %>
                 .toMutableList(), HttpStatus.OK)<% } else { %>
                 .toMutableList()<% } %>

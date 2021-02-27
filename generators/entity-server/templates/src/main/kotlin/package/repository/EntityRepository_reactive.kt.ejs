@@ -107,30 +107,30 @@ interface <%= entityClass %>Repository: <% if (databaseType === 'sql') { %>R2dbc
 
         <%_ } _%>
 
-        <%_ for (idx in relationships) { 
-                let relationshipType = relationships[idx].relationshipType;
-                let relationshipName = relationships[idx].relationshipName;
-                let ownerSide = relationships[idx].ownerSide;
+        <%_ for (const relationship of relationships) {
+                let relationshipType = relationship.relationshipType;
+                let relationshipName = relationship.relationshipName;
+                let ownerSide = relationship.ownerSide;
                 if (relationshipType === 'many-to-one' || (relationshipType === 'one-to-one' && ownerSide === true)) { _%>
 
     @Query("SELECT * FROM <%= entityTableName %> entity WHERE entity.<%= getColumnName(relationshipName) %>_id = :id")
-    fun findBy<%= relationships[idx].relationshipNameCapitalized %>(id: <%= primaryKey.type %>): Flux<<%= asEntity(entityClass) %>>
+    fun findBy<%= relationship.relationshipNameCapitalized %>(id: <%= primaryKey.type %>): Flux<<%= asEntity(entityClass) %>>
 
     @Query("SELECT * FROM <%= entityTableName %> entity WHERE entity.<%= getColumnName(relationshipName) %>_id IS NULL")
-    fun findAllWhere<%= relationships[idx].relationshipNameCapitalized %>IsNull(): Flux<<%= asEntity(entityClass) %>>
+    fun findAllWhere<%= relationship.relationshipNameCapitalized %>IsNull(): Flux<<%= asEntity(entityClass) %>>
             <%_ } else if (relationshipType === 'many-to-many') { 
                 const joinTableName = getJoinTableName(entityTableName, relationshipName, prodDatabaseType);
                 _%>
 
     @Query("SELECT entity.* FROM <%= entityTableName %> entity JOIN <%= joinTableName %> joinTable ON entity.id = joinTable.<%= getColumnName(name) %>_id WHERE joinTable.<%= getColumnName(relationshipName) %>_id = :id")
-    fun findBy<%= relationships[idx].relationshipNameCapitalized %>(id: <%= primaryKey.type %>): Flux<<%= asEntity(entityClass) %>>
+    fun findBy<%= relationship.relationshipNameCapitalized %>(id: <%= primaryKey.type %>): Flux<<%= asEntity(entityClass) %>>
             <%_ } else if (relationshipType === 'one-to-one' && ownerSide === false) {
-                let otherEntityRelationshipName = relationships[idx].otherEntityRelationshipName;
-                let otherEntityTableName = relationships[idx].otherEntityTableName;
+                let otherEntityRelationshipName = relationship.otherEntityRelationshipName;
+                let otherEntityTableName = relationship.otherEntityTableName;
                 _%>
 
     @Query("SELECT * FROM <%= entityTableName %> entity WHERE entity.id not in (select <%= getColumnName(otherEntityRelationshipName) %>_id from <%= otherEntityTableName %>)")
-    fun findAllWhere<%= relationships[idx].relationshipNameCapitalized %>IsNull(): Flux<<%= asEntity(entityClass) %>>
+    fun findAllWhere<%= relationship.relationshipNameCapitalized %>IsNull(): Flux<<%= asEntity(entityClass) %>>
             <%_ } _%>
         <%_ } _%>
 
