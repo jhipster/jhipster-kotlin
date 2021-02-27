@@ -278,10 +278,14 @@ for (const field of filteredFields) {
     <%_ } _%>
     <%_ }
     relationships.forEach((relationship, idx) => {
-        const otherEntityRelationshipName = relationship.otherEntityRelationshipName;
+        const otherEntityRelationshipName = databaseType === 'neo4j'
+            ? "HAS_" + _.toUpper(_.snakeCase(relationship.otherEntityRelationshipName))
+            : relationship.otherEntityRelationshipName;
         const otherEntityRelationshipNamePlural = relationship.otherEntityRelationshipNamePlural;
         const otherEntityIsEmbedded = relationship.otherEntityIsEmbedded;
-        const relationshipName = relationship.relationshipName;
+        const relationshipName = databaseType === 'neo4j'
+            ? "HAS_" + _.toUpper(_.snakeCase(relationship.relationshipName))
+            : relationship.relationshipName;
         const relationshipFieldName = relationship.relationshipFieldName;
         const relationshipFieldNamePlural = relationship.relationshipFieldNamePlural;
         const relationshipType = relationship.relationshipType;
@@ -324,7 +328,7 @@ for (const field of filteredFields) {
     @N1qlJoin(on = "lks.<%= relationshipFieldName %>=meta(rks).id", fetchType = FetchType.IMMEDIATE)
         <%_ } _%>
         <%_ } else if (databaseType === 'neo4j') { _%>
-    @Relationship
+    @Relationship("<%= relationshipName %>")
         <%_ } else if (databaseType === 'sql' && reactive) { _%>
     @Transient
         <%_ } _%>
@@ -354,8 +358,13 @@ for (const field of filteredFields) {
 
     @N1qlJoin(on = "lks.<%= relationshipFieldName %>=meta(rks).id", fetchType = FetchType.IMMEDIATE)
     <%_ }
-    } else if (databaseType === 'neo4j') { _%>
-    @Relationship("<%= relationshipFieldName %>")
+    } else if (databaseType === 'neo4j') {
+        if (relationship.ignoreOtherSideProperty) { _%>
+            @Relationship(value = "<%= otherEntityRelationshipName %>", direction = Relationship.Direction.INCOMING)
+        <%_ } else { _%>
+    @Relationship("<%= relationshipName %>")
+        <%_ }
+        } _%>
     <%_ } _%>
     <%_ if (relationship.ignoreOtherSideProperty) { _%>
     
@@ -405,7 +414,12 @@ for (const field of filteredFields) {
 
     @N1qlJoin(on = "lks.<%= relationshipFieldNamePlural %>=meta(rks).id", fetchType = FetchType.IMMEDIATE)
         <%_ }
-        } if (relationship.ignoreOtherSideProperty) { _%>
+        } else if (databaseType === 'neo4j') { _%>
+    @Relationship(<%_
+        if (ownerSide === true) { _%>"<%= relationshipName %>"<%_
+        } else { _%>value = "<%= otherEntityRelationshipName %>", direction = Relationship.Direction.INCOMING<%_ } _%>)<%_
+    }
+        if (relationship.ignoreOtherSideProperty) { _%>
     
     @JsonIgnoreProperties(value = [
         <%_ const rels = relationship.otherEntity.relationships.map(otherRelationship => `"${otherRelationship.relationshipReferenceField}"`).join(',') _%>
@@ -414,6 +428,8 @@ for (const field of filteredFields) {
     <%_ } _%>
     <%_ if (databaseType === 'sql' && reactive) { _%>
     @Transient
+    <%_ } else if (databaseType === 'neo4j') { _%>
+    @Relationship("<%= relationshipName %>")
     <%_ } _%>
     var <%= relationshipFieldNamePlural %>: MutableSet<<%= asEntity(otherEntityNameCapitalized) %>> = mutableSetOf()<%= comma %>
 

@@ -100,7 +100,7 @@ class TokenProvider(private val jHipsterProperties: JHipsterProperties) {
         val claims = jwtParser?.parseClaimsJws(token)?.body
 
         val authorities = claims?.get(AUTHORITIES_KEY)?.toString()?.splitToSequence(",")
-            ?.mapTo(mutableListOf()) { SimpleGrantedAuthority(it) }
+            ?.filter{ !it.isBlank() }?.mapTo(mutableListOf()) { SimpleGrantedAuthority(it) }
 
         val principal = User(claims?.subject, "", authorities)
 
