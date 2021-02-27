@@ -101,6 +101,11 @@ import <%= packageName %>.security.oauth2.JwtGrantedAuthorityConverter
     <%_ if (authenticationType === 'jwt' && applicationType !== 'microservice') { _%>
 import org.springframework.security.web.authentication.UsernamePasswordAuthenticationFilter
     <%_ } _%>
+    <%_ if (authenticationType === 'oauth2' && (applicationType === 'monolith' || applicationType === 'microservice' || applicationType === 'gateway')) { _%>
+import org.springframework.security.oauth2.client.registration.ClientRegistrationRepository
+import org.springframework.boot.web.client.RestTemplateBuilder
+import <%= packageName %>.security.oauth2.CustomClaimConverter
+    <%_ } _%>
 import org.springframework.security.web.header.writers.ReferrerPolicyHeaderWriter
     <%_ if (applicationType !== 'microservice') { _%>
 import org.springframework.web.filter.CorsFilter
@@ -313,7 +318,7 @@ class SecurityConfiguration(
     <%_ } _%>
 
     @Bean
-    fun jwtDecoder(): JwtDecoder {
+    fun jwtDecoder(<%_ if (authenticationType === 'oauth2' && applicationType === 'microservice') { _%>clientRegistrationRepository: ClientRegistrationRepository, restTemplateBuilder: RestTemplateBuilder<%_ } _%>): JwtDecoder {
         val jwtDecoder = JwtDecoders.fromOidcIssuerLocation(issuerUri) as NimbusJwtDecoder
 
         val audienceValidator = AudienceValidator(jHipsterProperties.security.oauth2.audience)
@@ -321,6 +326,9 @@ class SecurityConfiguration(
         val withAudience = DelegatingOAuth2TokenValidator(withIssuer, audienceValidator)
 
         jwtDecoder.setJwtValidator(withAudience)
+        <%_ if (authenticationType === 'oauth2' && applicationType === 'microservice') { _%>
+        jwtDecoder.setClaimSetConverter(CustomClaimConverter(clientRegistrationRepository.findByRegistrationId("oidc"), restTemplateBuilder.build()))
+        <%_ } _%>
 
         return jwtDecoder
     }

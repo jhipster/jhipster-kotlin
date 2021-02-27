@@ -443,6 +443,38 @@ const serverFiles = {
                 },
             ],
         },
+        {
+            condition: generator =>
+                !generator.reactive &&
+                generator.authenticationType === 'oauth2' &&
+                (generator.applicationType === 'monolith' ||
+                    generator.applicationType === 'microservice' ||
+                    generator.applicationType === 'gateway'),
+            path: SERVER_MAIN_KOTLIN_SRC_DIR,
+            templates: [
+                {
+                    file: 'package/security/oauth2/CustomClaimConverter.kt',
+                    renameTo: generator => `${generator.javaDir}security/oauth2/CustomClaimConverter.kt`,
+                    useBluePrint: true,
+                },
+            ],
+        },
+        {
+            condition: generator =>
+                !generator.reactive &&
+                generator.authenticationType === 'oauth2' &&
+                (generator.applicationType === 'monolith' ||
+                    generator.applicationType === 'microservice' ||
+                    generator.applicationType === 'gateway'),
+            path: SERVER_MAIN_KOTLIN_SRC_DIR,
+            templates: [
+                {
+                    file: 'package/security/oauth2/CustomClaimConverterIT.kt',
+                    renameTo: generator => `${generator.javaDir}security/oauth2/CustomClaimConverterIT.kt`,
+                    useBluePrint: true,
+                },
+            ],
+        },
     ],
     serverJavaGateway: [
         {
