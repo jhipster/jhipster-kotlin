@@ -37,6 +37,8 @@ import io.jsonwebtoken.SignatureAlgorithm
 import io.jsonwebtoken.io.Decoders
 import io.jsonwebtoken.security.Keys
 
+import java.nio.charset.StandardCharsets
+
 import org.assertj.core.api.Assertions.assertThat
 
 private const val ONE_MINUTE: Long = 60000
@@ -102,6 +104,34 @@ class TokenProviderTest {
 
         assertThat(isTokenValid).isFalse()
     }
+
+
+    @Test
+    fun testKeyIsSetFromSecretWhenSecretIsNotEmpty() {
+        val secret = "NwskoUmKHZtzGRKJKVjsJF7BtQMMxNWi"
+        val jHipsterProperties = JHipsterProperties()
+        jHipsterProperties.security.authentication.jwt.secret = secret
+
+        val tokenProvider = TokenProvider(jHipsterProperties)
+
+        val key = ReflectionTestUtils.getField(tokenProvider, "key") as Key
+        assertThat(key).isNotNull()
+        assertThat(key).isEqualTo(Keys.hmacShaKeyFor(secret.getBytes(StandardCharsets.UTF_8)))
+    }
+
+    @Test
+    fun testKeyIsSetFromBase64SecretWhenSecretIsEmpty() {
+        val base64Secret = "fd54a45s65fds737b9aafcb3412e07ed99b267f33413274720ddbb7f6c5e64e9f14075f2d7ed041592f0b7657baf8"
+        val jHipsterProperties = JHipsterProperties()
+        jHipsterProperties.security.authentication.jwt.base64Secret = base64Secret
+
+        val tokenProvider = TokenProvider(jHipsterProperties)
+
+        val key = ReflectionTestUtils.getField(tokenProvider, "key") as Key
+        assertThat(key).isNotNull()
+        assertThat(key).isEqualTo(Keys.hmacShaKeyFor(Decoders.BASE64.decode(base64Secret)))
+    }
+
 
     private fun createAuthentication(): Authentication {
         val authorities = mutableListOf(SimpleGrantedAuthority(ANONYMOUS))
