@@ -20,6 +20,7 @@ const path = require('path');
 const cleanup = require('generator-jhipster/generators/cleanup');
 const constants = require('generator-jhipster/generators/generator-constants');
 const baseServerFiles = require('generator-jhipster/generators/server/files').serverFiles;
+// const writeFilesToDisk = require('generator-jhipster/generators/generator-base').writeFilesToDisk;
 const cheerio = require('cheerio');
 const kotlinConstants = require('../generator-kotlin-constants');
 
@@ -2026,7 +2027,9 @@ function writeFiles() {
         },
 
         writeFiles() {
-            writeFilesToDisk(serverFiles, this, false, this.fetchFromInstalledJHipster('server/templates'));
+            // writeFilesToDisk(serverFiles, this, false, this.fetchFromInstalledJHipster('server/templates'));
+
+            this.writeFilesToDisk(serverFiles);
         },
 
         modifyFiles() {
@@ -2286,7 +2289,7 @@ function writeFiles() {
  * @param {boolean} returnFiles - weather to return the generated file list or to write them
  * @param {string} prefix - prefix to add in the path
  */
-function writeFilesToDisk(files, generator, returnFiles, prefix) {
+/* function writeFilesToDisk(files, generator, returnFiles, prefix) {
     const _this = generator || this;
     const filesOut = [];
     const startTime = new Date();
@@ -2346,7 +2349,7 @@ function writeFilesToDisk(files, generator, returnFiles, prefix) {
     }
     _this.debug(`Time taken to write files: ${new Date() - startTime}ms`);
     return filesOut;
-}
+} */
 
 /**
  * Manually updates the pom.xml file to perform the following operations:
@@ -2376,6 +2379,6 @@ function updatePom(generator) {
 
 module.exports = {
     writeFiles,
-    writeFilesToDisk,
+    // writeFilesToDisk,
     serverFiles,
 };
