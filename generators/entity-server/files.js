@@ -23,7 +23,8 @@ const fs = require('fs');
 const utils = require('generator-jhipster/generators/utils');
 const constants = require('generator-jhipster/generators/generator-constants');
 const baseServerFiles = require('generator-jhipster/generators/entity-server/files').serverFiles;
-const writeFilesToDisk = require('../server/files').writeFilesToDisk;
+const writeFilesToDisk = require('generator-jhipster/generators/generator-base').writeFilesToDisk;
+// const writeFilesToDisk = require('../server/files').writeFilesToDisk;
 const NeedleServerChacheKt = require('./needle-server-cache-kt');
 
 /* Constants use throughout */
@@ -264,7 +265,12 @@ function writeFiles() {
             if (this.skipServer) return;
 
             // write server side files
-            writeFilesToDisk(serverFiles, this, false, this.fetchFromInstalledJHipster('entity-server/templates'));
+            // writeFilesToDisk(serverFiles, this, false, this.fetchFromInstalledJHipster('entity-server/templates'));
+            if (this.reactive) {
+                this.writeFilesToDisk(serverFiles, ['reactive', '']);
+            } else {
+                this.writeFilesToDisk(serverFiles);
+            }
 
             if (this.databaseType === 'sql') {
                 const serverCacheKt = new NeedleServerChacheKt(this);

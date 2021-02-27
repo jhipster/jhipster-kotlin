@@ -189,13 +189,12 @@ _%><%- include('../../common/inject_template', {viaService: viaService, construc
         <%_ if (primaryKey.type === 'UUID' && databaseType !== 'sql') { _%>
         <%= instanceName %>.<%= primaryKey.name %> = UUID.randomUUID()
         <%_ } _%>
+<%- include('/partials/save_template', {asEntity, asDto, viaService: viaService, returnDirectly: false, isUsingMapsId: isUsingMapsId, mapsIdAssoc: mapsIdAssoc, isController: true}); -%>
         <%_ if (!reactive) { _%>
-<%- include('../../common/save_template', {asEntity, asDto, viaService: viaService, returnDirectly: false, isUsingMapsId: isUsingMapsId, mapsIdAssoc: mapsIdAssoc, isController: true}); -%>
         return ResponseEntity.created(URI("/api/<%= entityApiUrl %>/${result.<%= primaryKey.name %>}"))
             .headers(HeaderUtil.createEntityCreationAlert(applicationName, <%= enableTranslation %>, ENTITY_NAME, result.<%= primaryKey.name %><% if (primaryKey.type !== 'String') { %>.toString()<% } %>))
             .body(result)
         <%_ } else { _%>
-<%- include('../../common/save_template_reactive', {asEntity, asDto, viaService: viaService, returnDirectly: false}); -%>
             .map { result -> 
                 try {
                     ResponseEntity.created(URI("/api/<%= entityApiUrl %>/${result.<%= primaryKey.name %>}"))
@@ -236,8 +235,8 @@ _%><%- include('../../common/inject_template', {viaService: viaService, construc
                 }
                 <%_ } _%>
         <%_ } _%>
+<%- include('/partials/save_template', {asEntity, asDto, viaService: viaService, returnDirectly: false, isUsingMapsId: false, mapsIdAssoc: mapsIdAssoc}); -%>
         <%_ if (!reactive) { _%>
-<%- include('../../common/save_template', {asEntity, asDto, viaService: viaService, returnDirectly: false, isUsingMapsId: false, mapsIdAssoc: mapsIdAssoc}); -%>
         return ResponseEntity.ok()
             .headers(
                 HeaderUtil.createEntityUpdateAlert(
@@ -247,7 +246,6 @@ _%><%- include('../../common/inject_template', {viaService: viaService, construc
             )
             .body(result)
         <%_ } else { _%>
-<%- include('../../common/save_template_reactive', {asEntity, asDto, viaService: viaService, returnDirectly: false}); -%>
                         .switchIfEmpty(Mono.error(ResponseStatusException(HttpStatus.NOT_FOUND)))
                         .map { result -> ResponseEntity.ok()
                             .headers(HeaderUtil.createEntityUpdateAlert(applicationName, <%= enableTranslation %>, ENTITY_NAME, result.<%= primaryKey.name %><% if (primaryKey.type !== 'String') { %>.toString()<% } %>))
