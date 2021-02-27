@@ -87,16 +87,16 @@ interface <%=entityClass%>Repository : <% if (databaseType === 'sql') { %>JpaRep
         if (databaseType === 'sql') { _%>
 
     @Query(value = "select distinct <%= entityInstance %> from <%= asEntity(entityClass) %> <%= entityInstance %><% for (const relationship of relationships) {
-    if (relationship.relationshipEagerLoad) { %> left join fetch <%= entityInstance %>.<%= relationship.relationshipFieldNamePlural %><% } } %>",
+    if (relationship.relationshipEagerLoad) { %> left join fetch <%= entityInstance %>.<%= relationship.reference.name %><% } } %>",
         countQuery = "select count(distinct <%= entityInstance %>) from <%= asEntity(entityClass) %> <%= entityInstance %>")
     fun findAllWithEagerRelationships(pageable: Pageable): Page<<%= asEntity(entityClass) %>>
 
     @Query("select distinct <%= entityInstance %> from <%= asEntity(entityClass) %> <%= entityInstance %><% for (const relationship of relationships) {
-    if (relationship.relationshipEagerLoad) { %> left join fetch <%= entityInstance %>.<%= relationship.relationshipFieldNamePlural %><% } } %>")
+    if (relationship.relationshipEagerLoad) { %> left join fetch <%= entityInstance %>.<%= relationship.reference.name %><% } } %>")
     fun findAllWithEagerRelationships(): MutableList<<%= asEntity(entityClass) %>>
 
     @Query("select <%= entityInstance %> from <%= asEntity(entityClass) %> <%= entityInstance %><% for (const relationship of relationships) {
-    if (relationship.relationshipEagerLoad) { %> left join fetch <%= entityInstance %>.<%= relationship.relationshipFieldNamePlural %><% } } %> where <%= entityInstance %>.id =:id")
+    if (relationship.relationshipEagerLoad) { %> left join fetch <%= entityInstance %>.<%= relationship.reference.name %><% } } %> where <%= entityInstance %>.id =:id")
     fun findOneWithEagerRelationships(@Param("id") id: <%= primaryKey.type %>): Optional<<%= asEntity(entityClass) %>>
     <%_
         } else if (databaseType === 'mongodb' || databaseType === 'couchbase')  { _%>
