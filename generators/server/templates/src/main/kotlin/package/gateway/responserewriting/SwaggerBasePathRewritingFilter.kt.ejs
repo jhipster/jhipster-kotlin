@@ -43,6 +43,10 @@ class SwaggerBasePathRewritingFilter : SendResponseFilter(ZuulProperties()) {
 
     private val mapper = ObjectMapper()
 
+    private val SERVERS = "servers"
+
+    private val URL = "url"
+
     override fun filterType() = "post"
 
     override fun filterOrder() = 100
@@ -82,6 +86,13 @@ class SwaggerBasePathRewritingFilter : SendResponseFilter(ZuulProperties()) {
             if (response != null) {
                 @Suppress("UNCHECKED_CAST")
                 val map = this.mapper.readValue(response, LinkedHashMap::class.java) as LinkedHashMap<String, Any>
+
+                if (map.containsKey(SERVERS)) {
+                    val listServers = map[SERVERS] as List<Map<String, Any>>>
+                    if (listServers.size() > 0 && listServers.first().containsKey(URL)) {
+                        map[SERVERS] = listOf(mapOf(Pair(URL, listServers.first()[URL] + basePath)))
+                    }
+                }
 
                 val basePath = requestUri.replace("/v3/api-docs", "")
                 map["basePath"] = basePath

@@ -70,7 +70,7 @@ class SwaggerBasePathRewritingFilterTest {
     @Test
     @Throws(Exception::class)
     fun run_on_valid_response() {
-        val request = MockHttpServletRequest("GET", "/service1$"/v3/api-docs"")
+        val request = MockHttpServletRequest("GET", "services/service1/v3/api-docs")
         val context = RequestContext.getCurrentContext()
         context.request = request
 
@@ -78,19 +78,19 @@ class SwaggerBasePathRewritingFilterTest {
         context.responseGZipped = false
         context.response = response
 
-        val `in` = IOUtils.toInputStream("{\"basePath\":\"/\"}", StandardCharsets.UTF_8)
+        val `in` = IOUtils.toInputStream("{\"servers\":[{\"url\":\"http://localhost:8080\"}]}", StandardCharsets.UTF_8)
         context.responseDataStream = `in`
 
         filter.run()
 
         assertEquals("UTF-8", response.characterEncoding)
-        assertEquals("{\"basePath\":\"/service1\"}", context.responseBody)
+        assertEquals("{\"servers\":[{\"url\":\"http://localhost:8080/services/service1\"}]}", context.responseBody)
     }
 
     @Test
     @Throws(Exception::class)
     fun run_on_valid_response_gzip() {
-        val request = MockHttpServletRequest("GET", "/service1$"/v3/api-docs"")
+        val request = MockHttpServletRequest("GET", "services/service1/v3/api-docs")
         val context = RequestContext.getCurrentContext()
         context.request = request
 
@@ -98,7 +98,7 @@ class SwaggerBasePathRewritingFilterTest {
         context.responseGZipped = true
         context.response = response
 
-        context.responseDataStream = ByteArrayInputStream(gzipData("{\"basePath\":\"/\"}"))
+        context.responseDataStream = ByteArrayInputStream(gzipData("{\"servers\":[{\"url\":\"http://localhost:8080\"}]}"))
 
         filter.run()
 
@@ -106,6 +106,94 @@ class SwaggerBasePathRewritingFilterTest {
 
         val responseDataStream = GZIPInputStream(context.responseDataStream)
         val responseBody = IOUtils.toString(responseDataStream, StandardCharsets.UTF_8)
-        assertEquals("{\"basePath\":\"/service1\"}", responseBody)
+        assertEquals("{\"servers\":[{\"url\":\"http://localhost:8080/services/service1\"}]}", responseBody)
+    }
+
+    @Test
+    @Throws(Exception::class)
+    fun run_on_empty() {
+        val request = MockHttpServletRequest("GET", "/services/service1/v3/api-docs")
+        val context = RequestContext.getCurrentContext()
+        context.request = request
+
+        val response = MockHttpServletResponse()
+        context.responseGZipped = true
+        context.response = response
+
+        context.responseDataStream = ByteArrayInputStream(gzipData("{}"))
+
+        filter.run()
+
+        assertEquals("UTF-8", response.characterEncoding);
+
+        val responseDataStream = GZIPInputStream(context.responseDataStream)
+        val responseBody = IOUtils.toString(responseDataStream, StandardCharsets.UTF_8)
+        assertEquals("{}", responseBody)
+    }
+
+    @Test
+    @Throws(Exception::class)
+    fun run_on_empty_servers() {
+        val request = MockHttpServletRequest("GET", "/services/service1/v3/api-docs")
+        val context = RequestContext.getCurrentContext()
+        context.request = request
+
+        val response = MockHttpServletResponse()
+        context.responseGZipped = true
+        context.response = response
+
+        context.responseDataStream = ByteArrayInputStream(gzipData("{\"servers\":[]}"))
+
+        filter.run()
+
+        assertEquals("UTF-8", response.characterEncoding)
+
+        val responseDataStream = GZIPInputStream(context.responseDataStream)
+        val responseBody = IOUtils.toString(responseDataStream, StandardCharsets.UTF_8)
+        assertEquals("{\"servers\":[]}", responseBody)
+    }
+
+    @Test
+    @Throws(Exception::class)
+    fun run_on_empty_urls() {
+        val request = MockHttpServletRequest("GET", "/services/service1/v3/api-docs")
+        val context = RequestContext.getCurrentContext()
+        context.request = request
+
+        val response = MockHttpServletResponse()
+        context.responseGZipped = true
+        context.response = response
+
+        context.responseDataStream = ByteArrayInputStream(gzipData("{\"servers\":[{\"description\":\"description without urls\"}]}"))
+
+        filter.run()
+
+        assertEquals("UTF-8", response.characterEncoding)
+
+        val responseDataStream = GZIPInputStream(context.responseDataStream)
+        val responseBody = IOUtils.toString(responseDataStream, StandardCharsets.UTF_8)
+        assertEquals("{\"servers\":[{\"description\":\"description without urls\"}]}", responseBody)
+    }
+
+    @Test
+    @Throws(Exception::class)
+    fun run_on_bad_response() {
+        val request = MockHttpServletRequest("GET", "/services/service1/v3/api-docs")
+        val context = RequestContext.getCurrentContext()
+        context.request = request
+
+        val response = MockHttpServletResponse()
+        context.responseGZipped = true
+        context.response = response
+
+        context.responseDataStream = ByteArrayInputStream(gzipData("bad response"))
+
+        filter.run()
+
+        assertEquals("UTF-8", response.characterEncoding)
+
+        val responseDataStream = GZIPInputStream(context.responseDataStream)
+        val responseBody = IOUtils.toString(responseDataStream, StandardCharsets.UTF_8)
+        assertEquals(responseBody, "null")
     }
 }
