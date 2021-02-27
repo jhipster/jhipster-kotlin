@@ -85,9 +85,6 @@ import javax.persistence.EntityManager
 import java.time.Instant
 <%_ } _%>
 import java.util.function.Consumer
-<%_ if (databaseType === 'cassandra' || (authenticationType === 'oauth2' && databaseType !== 'couchbase')) { _%>
-import java.util.UUID
-<%_ } _%>
 
 import org.assertj.core.api.Assertions.assertThat
 <%_ if (reactive && searchEngine === 'elasticsearch') { _%>
@@ -260,7 +257,7 @@ class UserResourceIT<% if (databaseType === 'cassandra') { %>: AbstractCassandra
             <%_ } else if (databaseType === 'mongodb' || databaseType === 'neo4j' || databaseType === 'couchbase') { _%>
             id = "1L"
             <%_ } else { _%>
-            id = 1L
+            id = DEFAULT_ID
             <%_ } _%>
             login = DEFAULT_LOGIN
             password = DEFAULT_PASSWORD
@@ -860,10 +857,10 @@ class UserResourceIT<% if (databaseType === 'cassandra') { %>: AbstractCassandra
     @Throws(Exception::class)
     fun testUserEquals() {
         equalsVerifier(<%= asEntity('User') %>::class)
-        val user1 = <%= asEntity('User') %>(id = <% if (databaseType === 'sql' && authenticationType !== 'oauth2') { %>1L<% } else { %>"id1"<% } %>)
+        val user1 = <%= asEntity('User') %>(id = DEFAULT_ID)
         val user2 = <%= asEntity('User') %>(id = user1.id)
         assertThat(user1).isEqualTo(user2)
-        user2.id = <% if (databaseType === 'sql' && authenticationType !== 'oauth2') { %>2L<% } else { %>"id2"<% } %>
+        user2.id = <%- getPrimaryKeyValue(user.primaryKey.type, databaseType, 2) %>
         assertThat(user1).isNotEqualTo(user2)
         user1.id = null
         assertThat(user1).isNotEqualTo(user2)
@@ -980,12 +977,10 @@ class UserResourceIT<% if (databaseType === 'cassandra') { %>: AbstractCassandra
         private const val UPDATED_LOGIN = "jhipster"
         <%_ } _%>
 
-        <%_ if (databaseType === 'sql' && authenticationType !== 'oauth2') { _%>
-        private const val DEFAULT_ID = 1L
-        <%_ } else if (databaseType === 'couchbase'){ _%>
+        <%_ if (databaseType === 'couchbase'){ _%>
         private const val DEFAULT_ID = <%= asEntity('User') %>.PREFIX + DEFAULT_LOGIN
         <%_ } else { _%>
-        private const val DEFAULT_ID = "id1"
+        private const val DEFAULT_ID = <%- getPrimaryKeyValue(user.primaryKey.type) %>
         <%_ } _%>
 
         <%_ if (authenticationType !== 'oauth2') { _%>

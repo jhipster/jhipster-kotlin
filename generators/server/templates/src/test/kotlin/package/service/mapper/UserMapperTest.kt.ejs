@@ -27,17 +27,19 @@ import org.apache.commons.lang3.RandomStringUtils
 import org.junit.jupiter.api.BeforeEach
 import org.junit.jupiter.api.Test
 
+<%_ if (user.primaryKey.type === 'UUID') { _%>
+import java.util.UUID
+<%_ } _%>
+
 import org.assertj.core.api.Assertions.assertThat
 import kotlin.test.assertNotNull
 import kotlin.test.assertNull
 
 private const val DEFAULT_LOGIN = "johndoe"
-<%_ if (databaseType === 'sql' && authenticationType !== 'oauth2') { _%>
-private const val DEFAULT_ID = 1L
-<%_ } else if (databaseType === 'couchbase'){ _%>
+<%_ if (databaseType === 'couchbase'){ _%>
 private const val DEFAULT_ID = <%= asEntity('User') %>.PREFIX + DEFAULT_LOGIN
 <%_ } else { _%>
-private const val DEFAULT_ID = "id1"
+private const val DEFAULT_ID = <%- getPrimaryKeyValue(user.primaryKey.type) %>
 <%_ } _%>
 
 /**
