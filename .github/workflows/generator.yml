@@ -1,43 +1,55 @@
-name: KHipster Generator CI
+#
+# Copyright 2013-2021 the original author or authors from the JHipster project.
+#
+# This file is part of the JHipster project, see https://www.jhipster.tech/
+# for more information.
+#
+# Licensed under the Apache License, Version 2.0 (the "License");
+# you may not use this file except in compliance with the License.
+# You may obtain a copy of the License at
+#
+#      https://www.apache.org/licenses/LICENSE-2.0
+#
+# Unless required by applicable law or agreed to in writing, software
+# distributed under the License is distributed on an "AS IS" BASIS,
+# WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
+# See the License for the specific language governing permissions and
+# limitations under the License.
+#
+
+name: Generator
 on: [push, pull_request]
-env:
-    JHI_RUN_APP: 1
-    JHI_E2E: 0
-    JHI_JDK: 11
-    JHI_LIB_REPO: https://github.com/jhipster/jhipster-bom.git
-    JHI_LIB_BRANCH: release
-    JHI_GEN_REPO: https://github.com/jhipster/generator-jhipster.git
-    JHI_GEN_BRANCH: v7.0.0-beta.1
-    SPRING_OUTPUT_ANSI_ENABLED: ALWAYS
-    SPRING_JPA_SHOW_SQL: false
-    JHI_DISABLE_WEBPACK_LOGS: true
-    JHI_E2E_HEADLESS: true
-    JHI_SCRIPTS: $HOME/generator-jhipster/test-integration/scripts
-    KOTLIN_JHI_SCRIPTS: ${{ github.workspace }}/test-integration/scripts
-    JHI_GITHUB_CI: true
-    JHI_APP: ''
 jobs:
-    kotlin-hipster:
-        name: KHipster generator unit test suite
-        runs-on: ${{ matrix.os }}
+  generator-jhipster:
+    name: npm test
+    runs-on: ${{ matrix.os }}
+    timeout-minutes: 20
+    strategy:
+      fail-fast: false
+      matrix:
+        node_version: [14.15.0]
+        os: [ubuntu-20.04]
+        npm_version: [7.5.2]
+    steps:
+      - uses: actions/checkout@v2
+      - uses: actions/setup-node@v2.1.4
+        with:
+          node-version: ${{ matrix.node_version }}
+      - name: 'install npm@${{ matrix.npm_version }}'
+        run: npm install -g npm@${{ matrix.npm_version }}
+      - run: git --no-pager log -n 10 --graph --pretty='%Cred%h%Creset -%C(yellow)%d%Creset %s %Cgreen(%cr) %C(bold blue) <%an>%Creset' --abbrev-commit
+        shell: bash
+      - name: Config git variables
+        env:
+          JHI_SCRIPTS: ./test-integration/scripts
+        run: $JHI_SCRIPTS/04-git-config.sh
+        shell: bash
+      - run: npm ci
+      - run: npm run prettier:check
+      - run: npm test
         if: >-
-            !contains(github.event.head_commit.message, '[ci skip]') &&
-            !contains(github.event.head_commit.message, '[skip ci]') &&
-            !contains(github.event.pull_request.title, '[skip ci]') &&
-            !contains(github.event.pull_request.title, '[ci skip]') &&
-            (github.event.pull_request.draft == false || !contains(github.event.pull_request.labels.*.name, 'pr: skip-ci'))
-        timeout-minutes: 20
-        strategy:
-            fail-fast: false
-            matrix:
-                node_version: [14.15.0]
-                os: [ubuntu-20.04]
-        steps:
-            - uses: actions/checkout@v2
-            - uses: actions/setup-node@v1
-              with:
-                  node-version: ${{ matrix.node_version }}
-            - name: Config git variables
-              run: $KOTLIN_JHI_SCRIPTS/04-git-config.sh
-            - name: Install and execute unit tests
-              run: $KOTLIN_JHI_SCRIPTS/10-install-jhipster-kotlin.sh
+          !contains(github.event.head_commit.message, '[ci skip]') &&
+          !contains(github.event.head_commit.message, '[skip ci]') &&
+          !contains(github.event.pull_request.title, '[skip ci]') &&
+          !contains(github.event.pull_request.title, '[ci skip]') &&
+          (github.event.pull_request.draft == false || !contains(github.event.pull_request.labels.*.name, 'pr: skip-ci'))
