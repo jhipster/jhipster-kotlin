@@ -34,7 +34,6 @@ env:
     JHI_FOLDER_UAA: ${{ github.workspace }}/uaa
     JHI_HOME: ${{ github.workspace }}/generator-jhipster-kotlin
     KOTLIN_JHI_SCRIPTS: ${{ github.workspace }}/generator-jhipster-kotlin/test-integration/scripts
-    JHI_CLONED_SCRIPTS: ~/generator-jhipster/test-integration/scripts
     NG_CLI_ANALYTICS: 'false'
     JHI_GITHUB_CI: true
     FORCE_COLOR: 1
@@ -224,7 +223,7 @@ jobs:
             - name: 'GENERATION: project'
               run: $KOTLIN_JHI_SCRIPTS/12-generate-project-kotlin.sh
             - name: 'GENERATION: jhipster info'
-              run: $JHI_CLONED_SCRIPTS/14-jhipster-info.sh
+              run: $KOTLIN_JHI_SCRIPTS/14-jhipster-info.sh
             #----------------------------------------------------------------------
             # Detect changes against base commit
             #----------------------------------------------------------------------
@@ -245,10 +244,10 @@ jobs:
               if: steps.base-checkout.outcome == 'success'
               working-directory: ${{ github.workspace }}/base/app
               run: |
-                  $JHI_CLONED_SCRIPTS/11-generate-config.sh
+                  $KOTLIN_JHI_SCRIPTS/11-generate-config.sh
                   # 11-generate-entities.sh removes current dir, we need to switch to the new one
                   cd ../app
-                  $JHI_CLONED_SCRIPTS/12-generate-project.sh --skip-install --skip-git
+                  $KOTLIN_JHI_SCRIPTS/12-generate-project-kotlin.sh --skip-install --skip-git
               env:
                   JHI_FOLDER_APP: ${{ github.workspace }}/base/app
                   JHI_FOLDER_UAA: ${{ github.workspace }}/base/uaa
@@ -329,7 +328,7 @@ jobs:
                   name: screenshots-${{ matrix.app-type }}
                   path: ${{ github.workspace }}/app/*/cypress/screenshots
             - name: 'ANALYSIS: Sonar analysis'
-              run: $JHI_CLONED_SCRIPTS/25-sonar-analyze.sh
+              run: $KOTLIN_JHI_SCRIPTS/25-sonar-analyze.sh
               env:
                   GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
                   SONAR_TOKEN: ${{ secrets.SONAR_TOKEN }}
