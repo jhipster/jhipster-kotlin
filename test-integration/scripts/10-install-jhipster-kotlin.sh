@@ -18,6 +18,9 @@ echo "*** Checkout branch $JHI_GEN_BRANCH"
 git checkout "$JHI_GEN_BRANCH"
 git --no-pager log -n 10 --graph --pretty='%Cred%h%Creset -%C(yellow)%d%Creset %s %Cgreen(%cr) %C(bold blue)<%an>%Creset' --abbrev-commit
 
+
+ls "$HOME"/generator-jhipster/test-integration/scripts/
+
 #-------------------------------------------------------------------------------
 # Override config
 #-------------------------------------------------------------------------------
