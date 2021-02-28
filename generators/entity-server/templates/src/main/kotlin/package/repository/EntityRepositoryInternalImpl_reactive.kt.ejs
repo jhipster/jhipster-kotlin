@@ -163,15 +163,15 @@ class <%= entityClass %>RepositoryInternalImpl(
     }
 
     override fun <S:<%= asEntity(entityClass) %>> save(entity: S): Mono<S>  {
-        if (entity.id == null) {
+        if (entity.<%= primaryKey.name %> == null) {
             <%_ if (isUsingMapsId) { _%>
-            entity.setId(entity.get<%= mapsIdAssoc.relationshipNameCapitalized %>().getId());
+            entity.set<%= primaryKey.nameCapitalized %>(entity.get<%= mapsIdAssoc.relationshipNameCapitalized %>().get<%= primaryKey.nameCapitalized %>());
             <%_ } _%>
             return insert(entity)<% if (fieldsContainOwnerManyToMany) { %>.flatMap{ updateRelations(it) }<% } %>
         } else {
             return update(entity).map {
                 if (it.toInt() <= 0) {
-                    throw IllegalStateException("Unable to update <%= entityClass %> with id = " + entity.id)
+                    throw IllegalStateException("Unable to update <%= entityClass %> with id = " + entity.<%= primaryKey.name %>)
                 }
                 return entity;
             }<% if (fieldsContainOwnerManyToMany) { %>.then(updateRelations(entity))<% } %>;
@@ -200,9 +200,9 @@ class <%= entityClass %>RepositoryInternalImpl(
                 return (rel.relationshipType === 'many-to-many' && rel.ownerSide)
             }).forEach(function(rel, idx) {
                 if (idx === 0) { _%>
-        val result = entityManager.updateLinkTable(<%= rel.relationshipName %>Link, entity.id, entity.get<%= rel.relationshipNameCapitalizedPlural %>().stream().map(<%= asEntity(rel.otherEntityNameCapitalized) %>::getId)).then();
+        val result = entityManager.updateLinkTable(<%= rel.relationshipName %>Link, entity.<%= primaryKey.name %>, entity.get<%= rel.relationshipNameCapitalizedPlural %>().stream().map(<%= asEntity(rel.otherEntityNameCapitalized) %>::getId)).then();
         <%_     } else { _%>
-        result = result.and(entityManager.updateLinkTable(<%= rel.relationshipName %>Link, entity.id, entity.get<%= rel.relationshipNameCapitalizedPlural %>().stream().map(<%= asEntity(rel.otherEntityNameCapitalized) %>::getId)));
+        result = result.and(entityManager.updateLinkTable(<%= rel.relationshipName %>Link, entity.<%= primaryKey.name %>, entity.get<%= rel.relationshipNameCapitalizedPlural %>().stream().map(<%= asEntity(rel.otherEntityNameCapitalized) %>::getId)));
         <%_
                 }
             }); _%>

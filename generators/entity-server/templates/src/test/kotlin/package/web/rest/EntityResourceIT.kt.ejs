@@ -605,7 +605,7 @@ class <%= entityClass %>ResourceIT <% if (databaseType === 'cassandra') { %>: Ab
         <%_ } _%>
         <%_ if (['sql', 'mongodb', 'couchbase', 'cassandra'].includes(databaseType)) { 
         _%>
-            <%= !reactive ? '.andExpect(' : '.' %>jsonPath("$.[*].id").value(hasItem(<%= idValue %>))<%= !reactive ? ')' : '' %><%_ } _%><% for (field of fields.filter(field => !field.id && !field.transient)) { %>
+            <%= !reactive ? '.andExpect(' : '.' %>jsonPath("$.[*].<%= primaryKey.name %>").value(hasItem(<%= idValue %>))<%= !reactive ? ')' : '' %><%_ } _%><% for (field of fields.filter(field => !field.id && !field.transient)) { %>
             <%_ if ((field.fieldType === 'byte[]' || field.fieldType === 'ByteBuffer') && field.fieldTypeBlobContent !== 'text') { _%>
             <%= !reactive ? '.andExpect(' : '.' %>jsonPath("$.[*].<%= field.fieldName %>ContentType").value(hasItem(<%= 'DEFAULT_' + field.fieldNameUnderscored.toUpperCase() %>_CONTENT_TYPE))<%= !reactive ? ')' : '' %>
             <%_ } _%>
@@ -938,7 +938,7 @@ class <%= entityClass %>ResourceIT <% if (databaseType === 'cassandra') { %>: Ab
 <%_     } _%>
 <%_ } _%>
         <%= entityInstance %>Repository.<%= saveMethod %>(<%= asEntity(entityInstance) %>)
-        val <%= relationship.relationshipFieldName %>Id = <%= relationship.relationshipFieldName %>.id
+        val <%= relationship.relationshipFieldName %>Id = <%= relationship.relationshipFieldName %>.<%= primaryKey.name %>
 
         // Get all the <%= entityInstance %>List where <%= relationship.relationshipFieldName %> equals to <%= relationship.relationshipFieldName %>Id
         default<%= entityClass %>ShouldBeFound("<%= relationship.relationshipFieldName %>Id.equals=$<%= relationship.relationshipFieldName %>Id")
@@ -960,7 +960,7 @@ class <%= entityClass %>ResourceIT <% if (databaseType === 'cassandra') { %>: Ab
             .expectStatus().isOk
             .expectHeader().contentType(MediaType.APPLICATION_JSON)
             .expectBody()
-            .jsonPath("$.[*].id").value(hasItem(<%= idValue %>))<% for (field of fields.filter(field => !field.id && !field.transient)) { %>
+            .jsonPath("$.[*].<%= primaryKey.name %>").value(hasItem(<%= idValue %>))<% for (field of fields.filter(field => !field.id && !field.transient)) { %>
             <%_ if ((field.fieldType === 'byte[]' || field.fieldType === 'ByteBuffer') && field.fieldTypeBlobContent !== 'text') { _%>
             .jsonPath("$.[*].<%= field.fieldName %>ContentType").value(hasItem(<%= 'DEFAULT_' + field.fieldNameUnderscored.toUpperCase() %>_CONTENT_TYPE))
             <%_ } _%>
@@ -992,7 +992,7 @@ class <%= entityClass %>ResourceIT <% if (databaseType === 'cassandra') { %>: Ab
         rest<%= entityClass %>MockMvc.perform(get("/api/<%= entityApiUrl %>?sort=id,desc&$filter"))
             .andExpect(status().isOk)
             .andExpect(content().contentType(MediaType.APPLICATION_JSON_VALUE))
-            .andExpect(jsonPath("$.[*].id").value(hasItem(<%= asEntity(entityInstance) %><% if (primaryKey.type !== 'Long') { %>.id<% } else { %>.id?.toInt()<% } %>)))<% fields.filter(field => !field.id && !field.transient).forEach((field) => { %>
+            .andExpect(jsonPath("$.[*].<%= primaryKey.name %>").value(hasItem(<%= asEntity(entityInstance) %><% if (primaryKey.type !== 'Long') { %>.<%= primaryKey.name %><% } else { %>.<%= primaryKey.name %>?.toInt()<% } %>)))<% fields.filter(field => !field.id && !field.transient).forEach((field) => { %>
             <%_ if ((field.fieldType === 'byte[]' || field.fieldType === 'ByteBuffer') && field.fieldTypeBlobContent !== 'text') { _%>
             .andExpect(jsonPath("$.[*].<%=field.fieldName%>ContentType").value(hasItem(<%='DEFAULT_' + field.fieldNameUnderscored.toUpperCase()%>_CONTENT_TYPE)))
             <%_ } _%>
@@ -1314,7 +1314,7 @@ class <%= entityClass %>ResourceIT <% if (databaseType === 'cassandra') { %>: Ab
             .expectBody()
     <%_ } _%>
     <%_ if (['sql', 'mongodb', 'couchbase', 'cassandra'].includes(databaseType)) { _%>
-            <%= !reactive ? '.andExpect(' : '.' %>jsonPath("$.[*].id").value(hasItem(<%= idValue %>))<%= !reactive ? ')' : '' %><%_ } _%><% for (field of fields.filter(field => !field.id && !field.transient)) { %>
+            <%= !reactive ? '.andExpect(' : '.' %>jsonPath("$.[*].<%= primaryKey.name %>").value(hasItem(<%= idValue %>))<%= !reactive ? ')' : '' %><%_ } _%><% for (field of fields.filter(field => !field.id && !field.transient)) { %>
             <%_ if ((field.fieldType === 'byte[]' || field.fieldType === 'ByteBuffer') && field.fieldTypeBlobContent !== 'text') { _%>
             <%= !reactive ? '.andExpect(' : '.' %>jsonPath("$.[*].<%= field.fieldName %>ContentType").value(hasItem(<%= 'DEFAULT_' + field.fieldNameUnderscored.toUpperCase() %>_CONTENT_TYPE))<%= !reactive ? ')' : '' %><%_ } _%>
             <%= !reactive ? '.andExpect(' : '.' %>jsonPath("$.[*].<%= field.fieldName %>").value(hasItem(<%
