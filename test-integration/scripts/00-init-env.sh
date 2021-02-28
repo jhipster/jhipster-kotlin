@@ -31,7 +31,7 @@ fi
 
 # folder for samples
 if [[ "$KHI_SAMPLES" == "" ]]; then
-    KHI_SAMPLES="$KHI_INTEG"/samples
+    KHI_SAMPLES="$KHI_INTEG"/samples-kotlin
 fi
 
 # folder for scripts
