@@ -46,6 +46,9 @@ jobs:
     applications:
         name: ${{ matrix.app-type }}
         runs-on: ${{ matrix.os }}
+        defaults:
+          run:
+            working-directory: ${{ github.workspace }}/app
         if: >-
             !contains(github.event.head_commit.message, '[ci skip]') &&
             !contains(github.event.head_commit.message, '[skip ci]') &&
@@ -57,9 +60,12 @@ jobs:
             fail-fast: false
             matrix:
                 node_version: [14.15.0]
+                npm_version: [7.5.2]
                 os: [ubuntu-20.04]
+                cache: [angular]
                 app-type:
                     - ngx-default
+                    - ngx-default-additional
                     - ngx-mysql-es-noi18n-mapsid
                     - ngx-mariadb-oauth2-infinispan
                     - ngx-mongodb-kafka-cucumber
@@ -72,6 +78,15 @@ jobs:
                 include:
                     - app-type: ngx-default
                       entity: sqlfull
+                      jdl-entity: '*'
+                      environment: prod
+                      war: 0
+                      e2e: 1
+                      testcontainers: 1
+                      sonar-analyse: 1
+                    - app-type: ngx-default-additional
+                      jhi-app-type: ngx-default
+                      entity: none
                       jdl-entity: '*'
                       environment: prod
                       war: 0
