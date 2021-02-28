@@ -32,8 +32,6 @@ env:
     JHI_E2E_HEADLESS: true
     JHI_FOLDER_APP: ${{ github.workspace }}/app
     JHI_FOLDER_UAA: ${{ github.workspace }}/uaa
-    JHI_SCRIPTS_PATH: generator-jhipster/test-integration/scripts
-    KOTLIN_JHI_SCRIPTS: ${{ github.workspace }}/generator-jhipster-kotlin/test-integration/scripts
     NG_CLI_ANALYTICS: 'false'
     JHI_GITHUB_CI: true
     FORCE_COLOR: 1
@@ -208,24 +206,24 @@ jobs:
                   restore-keys: |
                       ${{ runner.os }}-cypress-
             - name: 'ENV: display variables'
-              run: $KOTLIN_JHI_SCRIPTS/01-display-configuration.sh
+              run: $JHI_SCRIPTS/01-display-configuration.sh
             - name: 'TOOLS: configure tools installed by the system'
-              run: $KOTLIN_JHI_SCRIPTS/03-system.sh
+              run: $JHI_SCRIPTS/03-system.sh
             - name: 'TOOLS: configure git'
-              run: $KOTLIN_JHI_SCRIPTS/04-git-config.sh
+              run: $JHI_SCRIPTS/04-git-config.sh
             #----------------------------------------------------------------------
             # Install JHipster and generate project+entities
             #----------------------------------------------------------------------
             - name: 'GENERATION: install JHipster'
-              run: $KOTLIN_JHI_SCRIPTS/10-install-jhipster-kotlin.sh
+              run: $JHI_SCRIPTS/10-install-jhipster-kotlin.sh
             - name: 'GENERATION: config'
-              run: $HOME/$JHI_SCRIPTS_PATH/11-generate-config.sh
+              run: $JHI_SCRIPTS/11-generate-config.sh
             - name: 'GENERATION: project'
-              run: $KOTLIN_JHI_SCRIPTS/12-generate-project-kotlin.sh
+              run: $JHI_SCRIPTS/12-generate-project-kotlin.sh
             - name: 'GENERATION: replace version in generated project'
-              run: $HOME/$JHI_SCRIPTS_PATH/13-replace-version-generated-project.sh
+              run: $JHI_SCRIPTS/13-replace-version-generated-project.sh
             - name: 'GENERATION: jhipster info'
-              run: $HOME/$JHI_SCRIPTS_PATH/14-jhipster-info.sh
+              run: $JHI_SCRIPTS/14-jhipster-info.sh
             #----------------------------------------------------------------------
             # Detect changes against base commit
             #----------------------------------------------------------------------
@@ -246,10 +244,10 @@ jobs:
               if: steps.base-checkout.outcome == 'success'
               working-directory: ${{ github.workspace }}/base/app
               run: |
-                  $HOME/$JHI_SCRIPTS_PATH/11-generate-config.sh
+                  $JHI_SCRIPTS/11-generate-config.sh
                   # 11-generate-entities.sh removes current dir, we need to switch to the new one
                   cd ../app
-                  $KOTLIN_JHI_SCRIPTS/12-generate-project.sh --skip-install --skip-git
+                  $JHI_SCRIPTS/12-generate-project.sh --skip-install --skip-git
               env:
                   JHI_FOLDER_APP: ${{ github.workspace }}/base/app
                   JHI_FOLDER_UAA: ${{ github.workspace }}/base/uaa
@@ -330,8 +328,7 @@ jobs:
                   name: screenshots-${{ matrix.app-type }}
                   path: ${{ github.workspace }}/app/*/cypress/screenshots
             - name: 'ANALYSIS: Sonar analysis'
-              if: steps.tests-should-be-skipped.outputs.skip-tests != 'true'
-              run: $HOME/$JHI_SCRIPTS_PATH/25-sonar-analyze.sh
+              run: $JHI_SCRIPTS/25-sonar-analyze.sh
               env:
                   GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
                   SONAR_TOKEN: ${{ secrets.SONAR_TOKEN }}

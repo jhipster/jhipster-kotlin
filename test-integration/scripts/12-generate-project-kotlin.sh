@@ -19,19 +19,9 @@ if [[ "$JHI_ENTITY" == "jdl" ]]; then
     cp -f "$JHI_SAMPLES"/"$JHI_APP"/*.jdl "$JHI_FOLDER_APP"/
     cd "$JHI_FOLDER_APP"
     npm link generator-jhipster-kotlin
-    jhipster import-jdl *.jdl --no-insight --blueprint kotlin $@
+    khipster import-jdl *.jdl --no-insight --blueprint kotlin $@
 
 else
-    #-------------------------------------------------------------------------------
-    # Generate UAA project with jhipster
-    #-------------------------------------------------------------------------------
-    if [[ "$JHI_APP" == *"uaa"* ]]; then
-        mkdir -p "$JHI_FOLDER_UAA"
-        cp -f "$JHI_SAMPLES"/uaa/.yo-rc.json "$JHI_FOLDER_UAA"/
-        cd "$JHI_FOLDER_UAA"
-        jhipster --force --no-insight --with-entities --skip-checks $@
-        ls -al "$JHI_FOLDER_UAA"
-    fi
 
     #-------------------------------------------------------------------------------
     # Generate project with jhipster
