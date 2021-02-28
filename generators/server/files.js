@@ -467,7 +467,7 @@ const serverFiles = {
                 (generator.applicationType === 'monolith' ||
                     generator.applicationType === 'microservice' ||
                     generator.applicationType === 'gateway'),
-            path: SERVER_MAIN_KOTLIN_SRC_DIR,
+            path: SERVER_TEST_SRC_KOTLIN_DIR,
             templates: [
                 {
                     file: 'package/security/oauth2/CustomClaimConverterIT.kt',
