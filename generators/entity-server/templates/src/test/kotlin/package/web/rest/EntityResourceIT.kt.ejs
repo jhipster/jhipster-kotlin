@@ -1517,18 +1517,20 @@ class <%= entityClass %>ResourceIT <% if (databaseType === 'cassandra') { %>: Ab
          */
         @JvmStatic
         fun create<% if (fieldStatus === 'UPDATED_') { _%>Updated<%_ } %>Entity(<% if (databaseType === 'sql') { %>em: EntityManager<% } %>): <%= asEntity(entityClass) %> {
-            val <%= asEntity(entityInstance) %> = <%= asEntity(entityClass) %>(
-            <%_ 
+            val <%= asEntity(entityInstance) %> = <%= asEntity(entityClass) %>()<% 
                 const filteredFields = fields.filter(field => !field.id && !field.transient);
                 let idx = 0;
+                if (filteredFields.length !== 0) { %>
+                    .apply{
+            <%_  }
                 for (field of filteredFields) {
                     const comma = (parseInt(idx, 10) === (filteredFields.length - 1)) ?  '' : ',';
                     idx++;
             _%>
                 <%= field.fieldName %> = <%=fieldStatus + field.fieldNameUnderscored.toUpperCase()%><% if ((field.fieldType === 'byte[]' || field.fieldType === 'ByteBuffer') && field.fieldTypeBlobContent !== 'text') { %>,
                 <%= field.fieldName %>ContentType = <%=fieldStatus + field.fieldNameUnderscored.toUpperCase()%>_CONTENT_TYPE<% } %><%= comma %>
-            <%_ } _%>
-            )
+            <%_ } if (filteredFields.length !== 0) { _%> } <%_ } _%>
+            
 
             <%_
             const alreadyGeneratedEntities = []
