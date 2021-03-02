@@ -1062,10 +1062,7 @@ describe('JHipster generator for entity', () => {
                         ])
                         .inTmpDir(dir => {
                             fse.copySync('~/generator-jhipster/test/templates/default-ng2', dir);
-                            fse.copySync(
-                                '~/generator-jhipster/test/templates/.jhipster/Simple.json',
-                                path.join(dir, '.jhipster/Foo.json')
-                            );
+                            fse.copySync('~/generator-jhipster/test/templates/.jhipster/Simple.json', path.join(dir, '.jhipster/Foo.json'));
                         })
                         .withArguments(['Foo'])
                         .withOptions({ regenerate: true, force: true })
@@ -1104,10 +1101,7 @@ describe('JHipster generator for entity', () => {
                         ])
                         .inTmpDir(dir => {
                             fse.copySync('~/generator-jhipster/test/templates/default-ng2', dir);
-                            fse.copySync(
-                                '~/generator-jhipster/test/templates/.jhipster/Simple.json',
-                                path.join(dir, '.jhipster/Foo.json')
-                            );
+                            fse.copySync('~/generator-jhipster/test/templates/.jhipster/Simple.json', path.join(dir, '.jhipster/Foo.json'));
                         })
                         .withArguments(['Foo'])
                         .withOptions({ regenerate: true, force: true, skipDbChangelog: true })
@@ -1146,14 +1140,8 @@ describe('JHipster generator for entity', () => {
                             ],
                         ])
                         .inTmpDir(dir => {
-                            fse.copySync(
-                               '~/generator-jhipster/test/templates/compose/05-cassandra',
-                                dir
-                            );
-                            fse.copySync(
-                                '~/generator-jhipster/test/templates/.jhipster/Simple.json',
-                                path.join(dir, '.jhipster/Foo.json')
-                            );
+                            fse.copySync('~/generator-jhipster/test/templates/compose/05-cassandra', dir);
+                            fse.copySync('~/generator-jhipster/test/templates/.jhipster/Simple.json', path.join(dir, '.jhipster/Foo.json'));
                         })
                         .withArguments(['Foo'])
                         .withOptions({ regenerate: true, force: true, skipDbChangelog: true })
