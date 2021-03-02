@@ -1517,19 +1517,26 @@ class <%= entityClass %>ResourceIT <% if (databaseType === 'cassandra') { %>: Ab
          */
         @JvmStatic
         fun create<% if (fieldStatus === 'UPDATED_') { _%>Updated<%_ } %>Entity(<% if (databaseType === 'sql') { %>em: EntityManager<% } %>): <%= asEntity(entityClass) %> {
-            val <%= asEntity(entityInstance) %> = <%= asEntity(entityClass) %>()<% 
+            <%_ 
                 const filteredFields = fields.filter(field => !field.id && !field.transient);
-                let idx = 0;
-                if (filteredFields.length !== 0) { %>
-                    .apply{
-            <%_  }
-                for (field of filteredFields) {
-                    const comma = (parseInt(idx, 10) === (filteredFields.length - 1)) ?  '' : ',';
-                    idx++;
+                if (filteredFields.length === 0) { 
             _%>
+            val <%= asEntity(entityInstance) %> = <%= asEntity(entityClass) %>()
+            <%_  } else { _%> 
+            val <%= asEntity(entityInstance) %> = <%= asEntity(entityClass) %>(
+
+                <%_
+                    let idx = 0;
+                    for (field of filteredFields) {
+                        const comma = (parseInt(idx, 10) === (filteredFields.length - 1)) ?  '' : ',';
+                        idx++;    
+                _%>
                 <%= field.fieldName %> = <%=fieldStatus + field.fieldNameUnderscored.toUpperCase()%><% if ((field.fieldType === 'byte[]' || field.fieldType === 'ByteBuffer') && field.fieldTypeBlobContent !== 'text') { %>,
                 <%= field.fieldName %>ContentType = <%=fieldStatus + field.fieldNameUnderscored.toUpperCase()%>_CONTENT_TYPE<% } %><%= comma %>
-            <%_ } if (filteredFields.length !== 0) { _%> } <%_ } _%>
+
+                <%_ } _%>
+            )
+            <%_ } _%>
             
 
             <%_
