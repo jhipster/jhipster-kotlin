@@ -106,33 +106,33 @@ class <%= entityClass %>RepositoryInternalImpl(
     }
 
     override fun findAllBy(pageable: Pageable): Flux<<%= asEntity(entityClass) %>> {
-        return findAllBy(pageable, null)
+        return createQuery(pageable, null).all()
     }
 
-    override fun findAllBy(Criteria: pageable: Pageable, criteria:): Flux<<%= asEntity(entityClass) %>> {
+    override fun findAllBy(pageable: Pageable, criteria: Criteria): Flux<<%= asEntity(entityClass) %>> {
         return createQuery(pageable, criteria).all()
     }
 
-    fun createQuery(pageable: Pageable, criteria: Criteria): RowsFetchSpec<<%= asEntity(entityClass) %>> {
-        List<Expression> columns = <%= asEntity(entityClass) %>SqlHelper.getColumns(entityTable, EntityManager.ENTITY_ALIAS);
+    fun createQuery(pageable: Pageable?, criteria: Criteria?): RowsFetchSpec<<%= asEntity(entityClass) %>> {
+        val columns = <%= asEntity(entityClass) %>SqlHelper().getColumns(entityTable, EntityManager.ENTITY_ALIAS)
         <%_ reactiveEagerRelations.forEach(function(rel) { _%>
-        columns.addAll(<%= rel.otherEntityNameCapitalized %>SqlHelper.getColumns(<%= rel.relationshipName %>Table, "<%= rel.relationshipName %>"));
+        columns.addAll(<%= rel.otherEntityNameCapitalized %>SqlHelper().getColumns(<%= rel.relationshipName %>Table, "<%= rel.relationshipName %>"))
         <%_ }); _%>
-        SelectFromAndJoin<% if (reactiveEagerRelations.length > 0) { %>Condition<% } %> selectFrom = Select.builder().select(columns).from(entityTable)<%_ reactiveEagerRelations.forEach(function(rel) { 
+        val selectFrom = Select.builder().select(columns).from(entityTable)<%_ reactiveEagerRelations.forEach(function(rel) { 
             const colName = _getJoinColumnName(rel); %>
-            .leftOuterJoin(<%= rel.relationshipName %>Table).on(Column.create("<%= colName %>", entityTable)).equals(Column.create("id", <%= rel.relationshipName %>Table ))<%_ }); _%>;
+            .leftOuterJoin(<%= rel.relationshipName %>Table).on(Column.create("<%= colName %>", entityTable)).equals(Column.create("id", <%= rel.relationshipName %>Table ))<%_ }); _%>
 
-        val select = entityManager.createSelect(selectFrom, <%= asEntity(entityClass) %>::class, pageable/*, criteria */);
+        val select = entityManager.createSelect(selectFrom, <%= asEntity(entityClass) %>::class.java, pageable, criteria)
         return db.execute(select)
-                .map(this::process);
+                .map(this::process)
     }
 
     override fun findAll(): Flux<<%= asEntity(entityClass) %>> {
-        return findAllBy(null, null);
+        return createQuery(null, null).all()
     }
 
     override fun findById(id: <%= primaryKey.type %>): Mono<<%= asEntity(entityClass) %>> {
-        return createQuery(null, Criteria.where("id").is(id)).one();
+        return createQuery(null, Criteria.where("id").`is`(id)).one();
     }
 
     <%_ if (fieldsContainOwnerManyToMany) { _%>
@@ -153,7 +153,7 @@ class <%= entityClass %>RepositoryInternalImpl(
     private fun process(row: Row, metadata: RowMetadata): <%= asEntity(entityClass) %> {
         val entity = <%= entityClass.toLowerCase() %>Mapper.apply(row, "e")
         <%_ reactiveEagerRelations.forEach(function(rel) { _%>
-        entity.set<%= rel.relationshipNameCapitalized %>(<%= rel.otherEntityNameCapitalized.toLowerCase() %>Mapper.apply(row, "<%= rel.relationshipName %>"))
+        entity.<%= rel.relationshipName %> = <%= rel.otherEntityNameCapitalized.toLowerCase() %>Mapper.apply(row, "<%= rel.relationshipName %>")
         <%_ }); _%>
         return entity
     }
@@ -165,7 +165,7 @@ class <%= entityClass %>RepositoryInternalImpl(
     override fun <S:<%= asEntity(entityClass) %>> save(entity: S): Mono<S>  {
         if (entity.<%= primaryKey.name %> == null) {
             <%_ if (isUsingMapsId) { _%>
-            entity.set<%= primaryKey.nameCapitalized %>(entity.get<%= mapsIdAssoc.relationshipNameCapitalized %>().get<%= primaryKey.nameCapitalized %>());
+            entity.<%= primaryKey.name %> = entity.get<%= mapsIdAssoc.relationshipNameCapitalized %>().get<%= primaryKey.nameCapitalized %>()
             <%_ } _%>
             return insert(entity)<% if (fieldsContainOwnerManyToMany) { %>.flatMap{ updateRelations(it) }<% } %>
         } else {
@@ -173,17 +173,17 @@ class <%= entityClass %>RepositoryInternalImpl(
                 if (it.toInt() <= 0) {
                     throw IllegalStateException("Unable to update <%= entityClass %> with id = " + entity.<%= primaryKey.name %>)
                 }
-                return entity;
+                entity
             }<% if (fieldsContainOwnerManyToMany) { %>.then(updateRelations(entity))<% } %>;
         }
     }
 
     override fun update(entity: <%= asEntity(entityClass) %>): Mono<Integer> {
         <%_ if (fields.length + reactiveEagerRelations.length > 0) { _%>
-        return db.update().table(<%= asEntity(entityClass) %>::class).using(entity).fetch().rowsUpdated()
+        return db.update().table(<%= asEntity(entityClass) %>::class.java).using(entity).fetch().rowsUpdated().map{ it as Integer }
         <%_ } else { _%>
         // What can we update on this field?
-        return Mono.just(1)
+        return Mono.just(1).map{ it as Integer }
         <%_ } _%>
     }
 
@@ -191,7 +191,7 @@ class <%= entityClass %>RepositoryInternalImpl(
 
     override fun deleteById(entityId: Long): Mono<Void> {
         return deleteRelations(entityId).then(
-             db.delete().from(<%= asEntity(entityClass) %>::class).matching(Criteria.from(Criteria.where("id").is(entityId))).then()
+             db.delete().from(<%= asEntity(entityClass) %>::class.java).matching(Criteria.from(Criteria.where("id").`is`(entityId))).then()
         );
     }
 
@@ -200,9 +200,9 @@ class <%= entityClass %>RepositoryInternalImpl(
                 return (rel.relationshipType === 'many-to-many' && rel.ownerSide)
             }).forEach(function(rel, idx) {
                 if (idx === 0) { _%>
-        val result = entityManager.updateLinkTable(<%= rel.relationshipName %>Link, entity.<%= primaryKey.name %>, entity.get<%= rel.relationshipNameCapitalizedPlural %>().stream().map(<%= asEntity(rel.otherEntityNameCapitalized) %>::getId)).then();
+        val result = entityManager.updateLinkTable(<%= rel.relationshipName %>Link, entity.<%= primaryKey.name %>, entity.<%= rel.relationshipNamePlural %>.toList().map { it.id }).then()
         <%_     } else { _%>
-        result = result.and(entityManager.updateLinkTable(<%= rel.relationshipName %>Link, entity.<%= primaryKey.name %>, entity.get<%= rel.relationshipNameCapitalizedPlural %>().stream().map(<%= asEntity(rel.otherEntityNameCapitalized) %>::getId)));
+        result = result.and(entityManager.updateLinkTable(<%= rel.relationshipName %>Link, entity.<%= primaryKey.name %>, entity.<%= rel.relationshipNamePlural %>.toList().map { it.id })
         <%_
                 }
             }); _%>
@@ -224,7 +224,7 @@ class <%= entityClass %>RepositoryInternalImpl(
 }
 
 class <%= entityClass %>SqlHelper {
-    fun getColumns(table: Table, columnPrefix: String): List<Expression> {
+    fun getColumns(table: Table, columnPrefix: String): MutableList<Expression> {
         val columns = mutableListOf<Expression>();
         columns.add(Column.aliased("id", table, columnPrefix + "_id"));
 <%_ fields.forEach(function(field) { 

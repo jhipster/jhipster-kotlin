@@ -62,11 +62,15 @@ class <%= entityClass %>RowMapper(val converter: ColumnConverter): BiFunction<Ro
             }
             if (field.fieldType === 'byte[]' && field.fieldTypeBlobContent !== 'text') { _%>
         entity.<%= field.fieldName %>ContentType = converter.fromRow(row, prefix + "_<%= field.fieldNameAsDatabaseColumn %>_content_type", String::class.java)
-            <%_ } _%>
+            <%_ } if (field.fieldType === 'byte[]' && field.fieldTypeBlobContent !== 'text') { _%>
+        entity.<%= field.fieldName %> = converter.fromRow(row, prefix + "_<%= field.fieldNameAsDatabaseColumn %>", ByteArray::class.java)
+        <%_ } else if (field.fieldType === 'Integer') { _%>
+        entity.<%= field.fieldName %> = converter.fromRow(row, prefix + "_<%= field.fieldNameAsDatabaseColumn %>", Int::class.java)
+        <%_ } else { _%>
         entity.<%= field.fieldName %> = converter.fromRow(row, prefix + "_<%= field.fieldNameAsDatabaseColumn %>", <%= fieldType %>::class.java)
-        <%_ }); _%>
+        <%_ }}); _%>
         <%_ reactiveRegularEagerRelations.forEach(function(rel) { _%>
-        entity.<%= rel.fieldName %>Id = converter.fromRow(row, prefix + "_<%= getColumnName(rel.relationshipName) %>_id", <%= rel.otherEntity.primaryKey.type %>::class.java)
+        entity.<%= rel.relationshipName %>Id = converter.fromRow(row, prefix + "_<%= getColumnName(rel.relationshipName) %>_id", <%= rel.otherEntity.primaryKey.type %>::class.java)
         <%_ }); _%> 
         return entity;
     }

@@ -91,7 +91,7 @@ class EntityManager(
      * @param pageable page parameter, or null, if everything needs to be returned
      * @return sql select statement
      */
-    fun createSelect(selectFrom: SelectFromAndJoin, entityType: Class<*>, pageable: Pageable, criteria: Criteria): String {
+    fun createSelect(selectFrom: SelectFromAndJoin, entityType: Class<*>, pageable: Pageable?, criteria: Criteria?): String {
         if (pageable != null) {
             if (criteria != null) {
                 return createSelectImpl(selectFrom.limitOffset(pageable.pageSize.toLong(), pageable.offset).where(Conditions.just(criteria.toString())), entityType, pageable.sort)
@@ -113,7 +113,7 @@ class EntityManager(
      * @param pageable page parameter, or null, if everything needs to be returned
      * @return sql select statement
      */
-    fun createSelect(selectFrom: SelectFromAndJoinCondition, entityType: Class<*>, pageable: Pageable, criteria: Criteria): String {
+    fun createSelect(selectFrom: SelectFromAndJoinCondition, entityType: Class<*>, pageable: Pageable?, criteria: Criteria?): String {
         if (pageable != null) {
             if (criteria != null) {
                 return createSelectImpl(selectFrom.limitOffset(pageable.pageSize.toLong(), pageable.offset).where(Conditions.just(criteria.toString())), entityType, pageable.sort)
@@ -203,10 +203,10 @@ class EntityManager(
      * @param referencedIds the id of the referred entities.
      * @return the number of inserted rows.
      */
-    fun updateLinkTable(table: LinkTable, entityId: Long, referencedIds:  Stream<Long>): Mono<Int> {
+    fun updateLinkTable(table: LinkTable, entityId: Long?, referencedIds: List<Long?>): Mono<Int> {
         return deleteFromLinkTable(table, entityId)
         .then(
-            Flux.fromStream(referencedIds)
+            Flux.fromIterable(referencedIds)
                 .flatMap { referenceId: Long? ->
                   db.insert()
                     .into(table.tableName)
@@ -226,7 +226,7 @@ class EntityManager(
         })
     }
 
-    fun deleteFromLinkTable(table: LinkTable, entityId: Long): Mono<Void>  {
+    fun deleteFromLinkTable(table: LinkTable, entityId: Long?): Mono<Void>  {
         Assert.notNull(entityId, "entityId is null")
         return db.delete()
                 .from(table.tableName)

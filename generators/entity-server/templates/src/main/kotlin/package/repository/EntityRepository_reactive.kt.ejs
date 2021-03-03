@@ -33,7 +33,7 @@ import org.springframework.data.couchbase.repository.ReactiveCouchbaseSortingRep
 import org.neo4j.springframework.data.repository.ReactiveNeo4jRepository
 import org.neo4j.springframework.data.repository.query.Query
 <%_ } _%>
-<%_ if (pagination !== 'no' || relationshipsContainEagerLoad) { _%>
+<%_ if (pagination !== 'no' || relationshipsContainEagerLoad || databaseType === 'sql') { _%>
 import org.springframework.data.domain.Pageable
 <%_ } _%>
 <%_ if (databaseType === 'sql') { _%>
@@ -68,7 +68,7 @@ interface <%= entityClass %>Repository: <% if (databaseType === 'sql') { %>R2dbc
 
     <%_ if (pagination !== 'no') { _%>
 
-    fun findAllBy(pageable: Pageable): Flux<<%= asEntity(entityClass) %>> 
+    <% if (databaseType === 'sql') { %>override <% } %>fun findAllBy(pageable: Pageable): Flux<<%= asEntity(entityClass) %>> 
     <%_ } _%>
     <%_ if (relationshipsContainEagerLoad) { _%>
         <%_ if (['couchbase', 'mongodb'].includes(databaseType)) { _%>
@@ -137,13 +137,13 @@ interface <%= entityClass %>Repository: <% if (databaseType === 'sql') { %>R2dbc
     // just to avoid having unambigous methods
     override fun findAll(): Flux<<%= asEntity(entityClass) %>>
 
-    override fun findById(id: Long): Mono<<%= asEntity(entityClass) %>>
+    override fun findById(id: Long?): Mono<<%= asEntity(entityClass) %>>
 
-    override <S:<%= asEntity(entityClass) %>> Mono<S> save(S entity);
+    override fun <S:<%= asEntity(entityClass) %>> save(entity: S): Mono<S>
 
     <%_ } _%>
 
-    }
+}
     <%_ if (databaseType === 'sql') { _%>
 interface <%= entityClass %>RepositoryInternal {
     fun <S:<%= asEntity(entityClass) %>> insert (entity: S): Mono<S>
@@ -151,7 +151,7 @@ interface <%= entityClass %>RepositoryInternal {
     fun update(entity: <%= asEntity(entityClass) %>): Mono<Integer> 
 
     fun findAll(): Flux<<%= asEntity(entityClass) %>> 
-    fun findById(id: <%= primaryKey.type %> ): Mono<<%= asEntity(entityClass) %>> 
+    fun findById(id: <%= primaryKey.type %>): Mono<<%= asEntity(entityClass) %>> 
     fun findAllBy(pageable: Pageable): Flux<<%= asEntity(entityClass) %>> 
     fun findAllBy(pageable: Pageable, criteria: Criteria): Flux<<%= asEntity(entityClass) %>> 
 
