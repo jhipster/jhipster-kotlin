@@ -22,31 +22,26 @@ import org.junit.jupiter.api.Test
 import org.assertj.core.api.Assertions.assertThat
 import <%= packageName %>.web.rest.equalsVerifier
 <%_
-let hasOauthUser = false;
 
-if (isUsingMapsId) {
-    hasOauthUser = mapsIdAssoc.otherEntityName === 'user' && authenticationType === 'oauth2';
-}
-_%>
-<%_ if ((!embedded && primaryKey.type === 'UUID') || (databaseType === 'sql' && hasOauthUser === true)) { _%>
+<%_ if (primaryKey && primaryKey.fields.some(f => f.fieldType === 'UUID')) { _%>
 import java.util.UUID
 <%_ } _%>
 
-class <%= entityClass %>Test {
+class <%= persistClass %>Test {
 
     @Test
     fun equalsVerifier() {
-        equalsVerifier(<%= asEntity(entityClass) %>::class)
+        equalsVerifier(<%= persistClass %>::class)
     <%_if (!embedded) { _%>
-        val <%= asEntity(entityInstance) %>1 = <%= asEntity(entityClass) %>()
-        <%= asEntity(entityInstance) %>1.<%= primaryKey.name %> = <% if (databaseType === 'sql' && hasOauthUser === true) { %>UUID.randomUUID().toString()<% } else if (primaryKey.type === 'Long') { %>1L<% } else if (primaryKey.type === 'String') { %>"id1"<% } else if (primaryKey.type === 'UUID') { %>UUID.randomUUID()<% } %>
-        val <%= asEntity(entityInstance) %>2 = <%= asEntity(entityClass) %>()
-        <%= asEntity(entityInstance) %>2.<%= primaryKey.name %> = <%= asEntity(entityInstance) %>1.<%= primaryKey.name %>
-        assertThat(<%= asEntity(entityInstance) %>1).isEqualTo(<%= asEntity(entityInstance) %>2)
-        <%= asEntity(entityInstance) %>2.<%= primaryKey.name %> = <% if (databaseType === 'sql' && hasOauthUser === true) { %>UUID.randomUUID().toString()<% } else if (primaryKey.type === 'Long') { %>2L<% } else if (primaryKey.type === 'String') { %>"id2"<% } else if (primaryKey.type === 'UUID') { %>UUID.randomUUID()<% } %>
-        assertThat(<%= asEntity(entityInstance) %>1).isNotEqualTo(<%= asEntity(entityInstance) %>2)
-        <%= asEntity(entityInstance) %>1.<%= primaryKey.name %> = null
-        assertThat(<%= asEntity(entityInstance) %>1).isNotEqualTo(<%= asEntity(entityInstance) %>2)
+        val <%= persistInstance %>1 = <%= persistClass %>()
+        <%= persistInstance %>1.<%= primaryKey.name %> = <% if (databaseType === 'sql' && hasOauthUser === true) { %>UUID.randomUUID().toString()<% } else if (primaryKey.type === 'Long') { %>1L<% } else if (primaryKey.type === 'String') { %>"id1"<% } else if (primaryKey.type === 'UUID') { %>UUID.randomUUID()<% } %>
+        val <%= persistInstance %>2 = <%= persistClass %>()
+        <%= persistInstance %>2.<%= primaryKey.name %> = <%= persistInstance %>1.<%= primaryKey.name %>
+        assertThat(<%= persistInstance %>1).isEqualTo(<%= persistInstance %>2)
+        <%= persistInstance %>2.<%= primaryKey.name %> = <% if (databaseType === 'sql' && hasOauthUser === true) { %>UUID.randomUUID().toString()<% } else if (primaryKey.type === 'Long') { %>2L<% } else if (primaryKey.type === 'String') { %>"id2"<% } else if (primaryKey.type === 'UUID') { %>UUID.randomUUID()<% } %>
+        assertThat(<%= persistInstance %>1).isNotEqualTo(<%= persistInstance %>2)
+        <%= persistInstance %>1.<%= primaryKey.name %> = null
+        assertThat(<%= persistInstance %>1).isNotEqualTo(<%= persistInstance %>2)
     <%_ } _%>
     }
 }

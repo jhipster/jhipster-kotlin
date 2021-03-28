@@ -561,6 +561,9 @@ class UserService<% if (databaseType !== 'no') { %>(
      <%_ if (['sql', 'mongodb', 'couchbase', 'neo4j'].includes(databaseType)) { _%>
      * @param imageUrl  image URL of user.
      <%_ } _%>
+     <%_ if (reactive) { _%>
+    * @return a completed {@link Mono}.
+    <%_ } _%>
      */
     <%_ if (databaseType === 'sql' && reactive) { _%>
     @Transactional
@@ -934,6 +937,7 @@ class UserService<% if (databaseType !== 'no') { %>(
 
         @JvmStatic
         private fun getUser(details: Map<String, Any>): <%= databaseType === 'no' ? asDto('AdminUser') : asEntity('User') %> {
+            var activated = true
             val user = <%= databaseType === 'no' ? asDto('AdminUser') : asEntity('User') %>()
             // handle resource server JWT, where sub claim is email and uid is ID
             if (details["uid"] != null) {
@@ -954,7 +958,7 @@ class UserService<% if (databaseType !== 'no') { %>(
                 user.lastName = details["family_name"] as String
             }
             if (details["email_verified"] != null) {
-                user.activated = details["email_verified"] as Boolean
+                activated = details["email_verified"] as Boolean
             }
             if (details["email"] != null) {
                 user.email = (details["email"] as String).toLowerCase()
@@ -979,7 +983,7 @@ class UserService<% if (databaseType !== 'no') { %>(
             if (details["picture"] != null) {
                 user.imageUrl = details["picture"] as String
             }
-            user.activated = true
+            user.activated = activated
             return user
         }
     }

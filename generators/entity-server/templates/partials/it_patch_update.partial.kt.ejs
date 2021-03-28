@@ -18,15 +18,15 @@
 -%>
 // Initialize the database
 <%_ if (primaryKey.type === 'UUID' && databaseType !== 'sql') { _%>
-    <%= asEntity(entityInstance) %>.<%= primaryKey.name %> =UUID.randomUUID()
+    <%= <%= persistInstance %> %>.<%= primaryKey.name %> =UUID.randomUUID()
 <%_ } _%>
-<%= entityInstance %>Repository.<%= saveMethod %>(<%= asEntity(entityInstance) %>)<%= callBlock %>
+<%= entityInstance %>Repository.<%= saveMethod %>(<%= <%= persistInstance %> %>)<%= callBlock %>
 
 val databaseSizeBeforeUpdate = <%= entityInstance %>Repository.findAll()<%= callListBlock %>.size
 
 // Update the <%= entityInstance %> using partial update
-val partialUpdated<%= asEntity(entityClass) %> = <%= asEntity(entityClass) %>().apply {
-    <%= primaryKey.name %> = <%= asEntity(entityInstance) %>.<%= primaryKey.name %>
+val partialUpdated<%= persistClass%> = <%= persistClass%>().apply {
+    <%= primaryKey.name %> = <%= <%= persistInstance %> %>.<%= primaryKey.name %>
     <%_ fieldsToUpdate = fields.filter(field => field.includeField) %>
 <%_ if (fluentMethods && fieldsToUpdate.length > 0) { _%>
     <% for (field of fieldsToUpdate) { %>
@@ -46,16 +46,16 @@ val partialUpdated<%= asEntity(entityClass) %> = <%= asEntity(entityClass) %>().
 
 
 <%_ if (!reactive) { _%>
-rest<%= entityClass %>MockMvc.perform(patch("/api/<%= entityApiUrl %>")<% if (testsNeedCsrf) { %>.with(csrf())<% }%>
+rest<%= entityClass %>MockMvc.perform(patch(ENTITY_API_URL_ID, partialUpdated<%= persistClass %>.<%= primaryKey.name %>)<% if (testsNeedCsrf) { %>.with(csrf())<% }%>
 .contentType("application/merge-patch+json")
-.content(convertObjectToJsonBytes(<%= 'partialUpdated' + asEntity(entityClass) %>)))
+.content(convertObjectToJsonBytes(<%= 'partialUpdated' + persistClass %>)))
 .andExpect(status().isOk)
 <%_ } else { _%>
 webTestClient
 .patch()
-.uri("/api/<%= entityApiUrl %>")
+.uri(ENTITY_API_URL_ID, partialUpdated<%= persistClass %>.<%= primaryKey.name %>)
 .contentType(MediaType.valueOf("application/merge-patch+json"))
-.bodyValue(convertObjectToJsonBytes(<%= 'partialUpdated' + asEntity(entityClass) %>))
+.bodyValue(convertObjectToJsonBytes(<%= 'partialUpdated' + persistClass %>))
 .exchange()
 .expectStatus()
 .isOk

@@ -1,4 +1,4 @@
-#!/bin/bash
+#!/usr/bin/env bash
 
 set -e
 source $(dirname $0)/00-init-env.sh
@@ -17,6 +17,7 @@ cd generator-jhipster
 echo "*** Checkout branch $JHI_GEN_BRANCH"
 git checkout "$JHI_GEN_BRANCH"
 git --no-pager log -n 10 --graph --pretty='%Cred%h%Creset -%C(yellow)%d%Creset %s %Cgreen(%cr) %C(bold blue)<%an>%Creset' --abbrev-commit
+npm install -g npm@$(node -e "console.log(require('generator-jhipster/generators/generator-constants').NPM_VERSION);") || true
 
 
 ls "$HOME"/generator-jhipster/test-integration/scripts/

@@ -45,10 +45,9 @@ class CustomClaimConverter(private val registration: ClientRegistration, private
         if (RequestContextHolder.getRequestAttributes() != null) {
             // Retrieve and set the token
             val token = bearerTokenResolver.resolve((RequestContextHolder.getRequestAttributes() as ServletRequestAttributes).request)
-            val httpHeaders = HttpHeaders().apply {
-                set("Authorization", "Bearer $token")
-            }
-
+            var headers = HttpHeaders()
+            headers.set("Authorization", buildBearer(token))
+            
 
             // Retrieve user infos from OAuth provider if not already loaded
             val user = users.computeIfAbsent(claims["sub"].toString()) {
@@ -66,13 +65,18 @@ class CustomClaimConverter(private val registration: ClientRegistration, private
                 convertedClaims["preferred_username"] = user.get("preferred_username").asText()
                 convertedClaims["given_name"] = user.get("given_name").asText()
                 convertedClaims["family_name"] = user.get("family_name").asText()
-                val groups = user.get("groups").map(JsonNode::asText)
-                convertedClaims["groups"] = groups
+                if (user.has("groups")) {
+                   val groups = user.get("groups").map(JsonNode::asText)
+                    convertedClaims["groups"] = groups
+                }
             }
         }
 
         return convertedClaims
     }
 
+    private fun buildBearer(token: String): String {
+        return "Bearer " + token;
+    }
 }
 

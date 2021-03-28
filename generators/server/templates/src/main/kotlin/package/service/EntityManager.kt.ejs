@@ -20,11 +20,10 @@ package <%= packageName %>.service
 
 import org.springframework.data.domain.Pageable
 import org.springframework.data.domain.Sort
-import org.springframework.data.r2dbc.core.DatabaseClient
-import org.springframework.data.r2dbc.core.DatabaseClient.GenericInsertSpec
-import org.springframework.data.r2dbc.core.ReactiveDataAccessStrategy
+import org.springframework.data.r2dbc.convert.R2dbcConverter
+import org.springframework.data.r2dbc.core.R2dbcEntityTemplate
+import org.springframework.data.r2dbc.core.StatementMapper
 import org.springframework.data.r2dbc.mapping.OutboundRow
-import org.springframework.data.r2dbc.mapping.SettableValue
 import org.springframework.data.r2dbc.query.UpdateMapper
 import org.springframework.data.relational.core.query.Criteria
 import org.springframework.data.relational.core.mapping.RelationalPersistentEntity
@@ -50,11 +49,17 @@ import java.util.stream.Stream
  */
 @Service
 class EntityManager(
-    private val dataAccessStrategy: ReactiveDataAccessStrategy, 
     private val sqlRenderer: SqlRenderer, 
     private val updateMapper: UpdateMapper, 
-    private val db: DatabaseClient
+    private val db: DatabaseClient,
+    private val r2dbcEntityTemplate: R2dbcEntityTemplate
 ) {
+
+    private var statementMapper: StatementMapper? = null
+
+    init {
+        statementMapper = r2dbcEntityTemplate.dataAccessStrategy.statementMapper
+    }
 
     companion object {
         const val ENTITY_ALIAS: String = "e"
@@ -65,12 +70,8 @@ class EntityManager(
             sortToUse.forEach { 
                 val propertyName = it.property
                 val orderByField = OrderByField.from(table.column(propertyName).`as`(ALIAS_PREFIX + propertyName))
-                if (it.direction != null) {
-                    val sort = if (it.isAscending) orderByField.asc() else orderByField.desc()
-                    fields.add(sort)
-                } else {
-                    fields.add(orderByField)
-                }
+                val sort = if (it.isAscending) orderByField.asc() else orderByField.desc()
+                fields.add(sort)
             }
             return fields as Collection<T>
         } 
@@ -130,19 +131,18 @@ class EntityManager(
     }
 
     private fun createSelectImpl(selectFrom: SelectOrdered, entityType: Class<*>, sortParameter: Sort?): String {
-        var select: Select? = null;
-        select = if (sortParameter != null && sortParameter.isSorted()) {
+        if (sortParameter != null && sortParameter.isSorted()) {
             val entity: RelationalPersistentEntity<*> = getPersistentEntity(entityType)
-            val sort = updateMapper.getMappedObject(sortParameter, entity)
-            selectFrom.orderBy(createOrderByFields(Table.create(entity.tableName).`as`(EntityManager.ENTITY_ALIAS), sort)).build()
-        } else {
-            selectFrom.build()
+            if (entity != null) {
+                val sort = updateMapper.getMappedObject(sortParameter, entity)
+                selectFrom = selectFrom.orderBy(createOrderByFields((Table.create(entity.getTableName()).as(EntityManager.ENTITY_ALIAS), sort))))
+            }
         }
-        return createSelect(select)
+        return createSelect(selectFrom.build())
     }
 
     private fun  getPersistentEntity(entityType: Class<*>): RelationalPersistentEntity<*> {
-        return dataAccessStrategy.converter.mappingContext
+        return r2dbcEntityTemplate.converter.mappingContext
                 .getPersistentEntity(entityType) as RelationalPersistentEntity<*> 
     }
 
@@ -152,7 +152,7 @@ class EntityManager(
      * @return the number of deleted entity
      */
     fun deleteAll(entityType: Class<*>): Mono<Int> {
-        return db.delete().from(entityType).fetch().rowsUpdated()
+        return r2dbcEntityTemplate.delete(entityType).all()
     }
 
     /**
@@ -161,7 +161,8 @@ class EntityManager(
      * @return the number of deleted rows.
      */
     fun deleteAll(tableName: String): Mono<Int> {
-        return db.delete().from(tableName).fetch().rowsUpdated()
+        val delete = statementMapper.createDelete(tableName)
+        return r2dbcEntityTemplate.databaseClient.sql(statementMapper.getMappedObject(delete)).fetch().rowsUpdated()
     }
 
     /**
@@ -180,20 +181,7 @@ class EntityManager(
      * @return the persisted entity.
      */
     fun <S> insert(entity: S): Mono<S> {
-        val row = dataAccessStrategy.getOutboundRow(entity)
-        val persistentEntity: RelationalPersistentEntity<*> = getPersistentEntity(entity!!::class.java)
-
-        var insertSpec: GenericInsertSpec<Map<String, Any>> = db.insert().into(persistentEntity.tableName)
-        val idColumn = persistentEntity.idColumn
-        
-        row.forEach {
-            if (!it.key.isEmpty || it.key != idColumn) {
-                insertSpec = insertSpec.value(it.key, it.value)
-            }
-        }
-        return insertSpec.map(dataAccessStrategy.converter.populateIdIfNecessary(entity))
-            .first()
-            .defaultIfEmpty(entity)
+        return r2dbcEntityTemplate.insert(entity)
     }
 
     /**
@@ -208,12 +196,17 @@ class EntityManager(
         .then(
             Flux.fromIterable(referencedIds)
                 .flatMap { referenceId: Long? ->
-                  db.insert()
-                    .into(table.tableName)
-                    .value(table.idColumn, entityId)
-                    .value(table.referenceColumn, referenceId)
-                    .fetch()
-                    .rowsUpdated()
+                    val insert = r2dbcEntityTemplate
+                        .dataAccessStrategy
+                        .statementMapper
+                        .createInsert(table.tableName)
+                        .withColumn(table.idColumn, Parameter.from(entityId))
+                        .withColumn(table.referenceColumn, Parameter.from(referenceId))
+                    return r2dbcEntityTemplate
+                        .databaseClient
+                        .sql(statementMapper.getMappedObject(insert))
+                        .fetch()
+                        .rowsUpdated()
                 }
                 .collectList()
                 .map { updates: List<Int> ->
@@ -228,9 +221,9 @@ class EntityManager(
 
     fun deleteFromLinkTable(table: LinkTable, entityId: Long?): Mono<Void>  {
         Assert.notNull(entityId, "entityId is null")
-        return db.delete()
-                .from(table.tableName)
-                .matching(Criteria.from(Criteria.where(table.idColumn).`is`(entityId)))
-                .then()
+        val deleteSpec = r2dbcEntityTemplate.dataAccessStrategy.statementMapper
+            .createDelete(table.tableName)
+            .withCriteria(Criteria.from(Criteria.where(table.idColumn).`is`(entityId)))
+        return r2dbcEntityTemplate.databaseClient.sql(statementMapper.getMappedObject(deleteSpec)).then()
     }
 }

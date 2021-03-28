@@ -43,6 +43,7 @@ import java.io.File
 
 import org.assertj.core.api.Assertions.assertThat
 <%_ } _%>
+import org.assertj.core.api.Assertions.assertThatCode
 import org.mockito.ArgumentMatchers
 import org.mockito.ArgumentMatchers.any
 import org.mockito.ArgumentMatchers.anyString
@@ -86,10 +87,10 @@ class WebConfigurerTest {
 
     @Test
     @Throws(ServletException::class)
-    fun testStartUpProdServletContext() {
+    fun shouldStartUpProdServletContext() {
         env.setActiveProfiles(JHipsterConstants.SPRING_PROFILE_PRODUCTION)
-        webConfigurer.onStartup(servletContext)
 
+        assertThatCode(() -> webConfigurer.onStartup(servletContext)).doesNotThrowAnyException()
         <%_ if (devDatabaseType === 'h2Disk' || devDatabaseType === 'h2Memory') { _%>
         verify(servletContext, never())
             .addServlet(ArgumentMatchers.eq("H2Console"), any(WebServlet::class.java))
@@ -98,10 +99,10 @@ class WebConfigurerTest {
 
     @Test
     @Throws(ServletException::class)
-    fun testStartUpDevServletContext() {
+    fun shouldStartUpDevServletContext() {
         env.setActiveProfiles(JHipsterConstants.SPRING_PROFILE_DEVELOPMENT)
-        webConfigurer.onStartup(servletContext)
 
+        assertThatCode(() -> webConfigurer.onStartup(servletContext)).doesNotThrowAnyException()
         <%_ if (devDatabaseType === 'h2Disk' || devDatabaseType === 'h2Memory') { _%>
         verify(servletContext)
             .addServlet(ArgumentMatchers.eq("H2Console"), any(WebServlet::class.java))
@@ -110,7 +111,7 @@ class WebConfigurerTest {
 
     <%_ if (!skipClient) { _%>
     @Test
-    fun testCustomizeServletContainer() {
+    fun shouldCustomizeServletContainer() {
         env.setActiveProfiles(JHipsterConstants.SPRING_PROFILE_PRODUCTION)
         val container = UndertowServletWebServerFactory()
         webConfigurer.customize(container)
@@ -127,8 +128,8 @@ class WebConfigurerTest {
 
     @Test
     @Throws(Exception::class)
-    fun testCorsFilterOnApiPath() {
-        props.cors.allowedOrigins = listOf("*")
+    fun shouldCorsFilterOnApiPath() {
+        props.cors.allowedOrigins = listOf("other.domain.com")
         props.cors.allowedMethods = listOf("GET", "POST", "PUT", "DELETE")
         props.cors.allowedHeaders = listOf("*")
         props.cors.maxAge = 1800L
@@ -160,7 +161,7 @@ class WebConfigurerTest {
 
     @Test
     @Throws(Exception::class)
-    fun testCorsFilterOnOtherPath() {
+    fun shouldCorsFilterOnOtherPath() {
         props.cors.allowedOrigins = listOf("*")
         props.cors.allowedMethods = listOf("GET", "POST", "PUT", "DELETE")
         props.cors.allowedHeaders = listOf("*")
@@ -181,7 +182,7 @@ class WebConfigurerTest {
 
     @Test
     @Throws(Exception::class)
-    fun testCorsFilterDeactivated() {
+    fun shouldCorsFilterDeactivatedForNullAllowedOrigins() {
         props.cors.allowedOrigins = null
 
         val mockMvc = MockMvcBuilders.standaloneSetup(WebConfigurerTestController())
@@ -198,7 +199,7 @@ class WebConfigurerTest {
 
     @Test
     @Throws(Exception::class)
-    fun testCorsFilterDeactivated2() {
+    fun shouldCorsFilterDeactivatedForEmptyAllowedOrigins() {
         props.cors.allowedOrigins = mutableListOf()
 
         val mockMvc = MockMvcBuilders.standaloneSetup(WebConfigurerTestController())

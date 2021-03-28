@@ -1,4 +1,4 @@
-#!/bin/bash
+#!/usr/bin/env bash
 
 #-------------------------------------------------------------------------------
 # Eg: 11-generate-config.sh ./ ngx-default sqlfull
@@ -81,10 +81,10 @@ elif [[ "$JHI_ENTITY" == "neo4j" ]]; then
 elif [[ "$JHI_ENTITY" == "cassandra" ]]; then
     moveEntity CassBankAccount
 
-    moveEntity CassTestEntity
-    moveEntity CassTestMapstructEntity
-    moveEntity CassTestServiceClassEntity
-    moveEntity CassTestServiceImplEntity
+    moveEntity FieldTestEntity
+    moveEntity FieldTestServiceImplEntity
+    moveEntity FieldTestMapstructAndServiceClassEntity
+    moveEntity FieldTestPaginationEntity
 
 elif [[ "$JHI_ENTITY" == "micro" ]]; then
     moveEntity MicroserviceBankAccount

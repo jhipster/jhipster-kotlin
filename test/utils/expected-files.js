@@ -383,10 +383,8 @@ const expectedFiles = {
         'angular.json',
         'ngsw-config.json',
         '.eslintrc.json',
-        '.npmrc',
         'package.json',
         '.browserslistrc',
-        `${CLIENT_MAIN_SRC_DIR}404.html`,
         `${CLIENT_MAIN_SRC_DIR}main.ts`,
         `${CLIENT_MAIN_SRC_DIR}polyfills.ts`,
         `${CLIENT_MAIN_SRC_DIR}app/admin/admin-routing.module.ts`,
@@ -443,6 +441,8 @@ const expectedFiles = {
         `${CLIENT_MAIN_SRC_DIR}app/shared/auth/has-any-authority.directive.ts`,
         `${CLIENT_MAIN_SRC_DIR}app/core/auth/state-storage.service.ts`,
         `${CLIENT_MAIN_SRC_DIR}app/core/auth/user-route-access.service.ts`,
+        `${CLIENT_MAIN_SRC_DIR}app/core/config/application-config.service.spec.ts`,
+        `${CLIENT_MAIN_SRC_DIR}app/core/config/application-config.service.ts`,
         `${CLIENT_MAIN_SRC_DIR}app/config/authority.constants.ts`,
         `${CLIENT_MAIN_SRC_DIR}app/config/error.constants.ts`,
         `${CLIENT_MAIN_SRC_DIR}app/config/input.constants.ts`,
@@ -467,17 +467,12 @@ const expectedFiles = {
         `${CLIENT_MAIN_SRC_DIR}app/shared/shared.module.ts`,
         `${CLIENT_MAIN_SRC_DIR}app/core/auth/account.model.ts`,
         `${CLIENT_MAIN_SRC_DIR}content/scss/global.scss`,
-        `${CLIENT_MAIN_SRC_DIR}content/css/loading.css`,
         `${CLIENT_MAIN_SRC_DIR}content/scss/vendor.scss`,
         `${CLIENT_MAIN_SRC_DIR}content/scss/_bootstrap-variables.scss`,
-        `${CLIENT_MAIN_SRC_DIR}WEB-INF/web.xml`,
-        `${CLIENT_MAIN_SRC_DIR}favicon.ico`,
-        `${CLIENT_MAIN_SRC_DIR}index.html`,
-        `${CLIENT_MAIN_SRC_DIR}robots.txt`,
-        `${CLIENT_MAIN_SRC_DIR}swagger-ui/dist/images/throbber.gif`,
-        `${CLIENT_MAIN_SRC_DIR}swagger-ui/index.html`,
         'jest.conf.js',
         `${CLIENT_MAIN_SRC_DIR}app/core/auth/account.service.spec.ts`,
+        `${CLIENT_MAIN_SRC_DIR}app/core/util/operators.ts`,
+        `${CLIENT_MAIN_SRC_DIR}app/core/util/operators.spec.ts`,
         `${CLIENT_MAIN_SRC_DIR}app/core/util/event-manager.service.spec.ts`,
         `${CLIENT_MAIN_SRC_DIR}app/core/util/data-util.service.spec.ts`,
         `${CLIENT_MAIN_SRC_DIR}app/core/util/parse-links.service.spec.ts`,
@@ -506,6 +501,10 @@ const expectedFiles = {
     clientCommon: [
         '.eslintignore',
         `${CLIENT_MAIN_SRC_DIR}manifest.webapp`,
+        `${CLIENT_MAIN_SRC_DIR}404.html`,
+        `${CLIENT_MAIN_SRC_DIR}favicon.ico`,
+        `${CLIENT_MAIN_SRC_DIR}index.html`,
+        `${CLIENT_MAIN_SRC_DIR}robots.txt`,
         `${CLIENT_MAIN_SRC_DIR}content/images/jhipster_family_member_0.svg`,
         `${CLIENT_MAIN_SRC_DIR}content/images/jhipster_family_member_0_head-192.png`,
         `${CLIENT_MAIN_SRC_DIR}content/images/jhipster_family_member_0_head-256.png`,
@@ -527,6 +526,10 @@ const expectedFiles = {
         `${CLIENT_MAIN_SRC_DIR}content/images/jhipster_family_member_3_head-384.png`,
         `${CLIENT_MAIN_SRC_DIR}content/images/jhipster_family_member_3_head-512.png`,
         `${CLIENT_MAIN_SRC_DIR}content/images/logo-jhipster.png`,
+        `${CLIENT_MAIN_SRC_DIR}content/css/loading.css`,
+        `${CLIENT_MAIN_SRC_DIR}swagger-ui/dist/images/throbber.gif`,
+        `${CLIENT_MAIN_SRC_DIR}swagger-ui/index.html`,
+        `${CLIENT_MAIN_SRC_DIR}WEB-INF/web.xml`,
     ],
 
     clientAdminAngular: [
@@ -632,9 +635,17 @@ const expectedFiles = {
         `${SERVER_TEST_SRC_DIR}com/mycompany/myapp/security/jwt/TokenProviderTest.kt`,
     ],
 
+    jwtServerGateway: [
+        `${SERVER_MAIN_SRC_DIR}com/mycompany/myapp/security/jwt/JWTFilter.java`,
+        `${SERVER_MAIN_SRC_DIR}com/mycompany/myapp/security/jwt/TokenProvider.java`,
+        `${SERVER_TEST_SRC_DIR}com/mycompany/myapp/security/jwt/JWTFilterTest.java`,
+        `${SERVER_TEST_SRC_DIR}com/mycompany/myapp/security/jwt/TokenProviderTest.java`,
+    ],
+
     jwtClient: [
         `${CLIENT_MAIN_SRC_DIR}app/core/interceptor/auth.interceptor.ts`,
         `${CLIENT_MAIN_SRC_DIR}app/core/auth/auth-jwt.service.ts`,
+        `${CLIENT_MAIN_SRC_DIR}app/core/auth/auth-jwt.service.spec.ts`,
     ],
 
     oauth2: [
@@ -660,25 +671,14 @@ const expectedFiles = {
 
     swaggerCodegenGradle: ['gradle/swagger.gradle'],
 
-    uaa: [
-        `${SERVER_MAIN_SRC_DIR}com/mycompany/myapp/config/UaaWebSecurityConfiguration.kt`,
-        `${SERVER_MAIN_SRC_DIR}com/mycompany/myapp/config/UaaConfiguration.kt`,
-        `${SERVER_MAIN_SRC_DIR}com/mycompany/myapp/config/UaaProperties.kt`,
-        `${SERVER_MAIN_SRC_DIR}com/mycompany/myapp/security/IatTokenEnhancer.kt`,
-        `${SERVER_TEST_SRC_DIR}com/mycompany/myapp/config/OAuth2TestConfiguration.kt`,
-        `${SERVER_TEST_SRC_DIR}com/mycompany/myapp/config/SecurityBeanOverrideConfiguration.kt`,
-        `${SERVER_TEST_SRC_DIR}com/mycompany/myapp/security/OAuth2TokenMockUtil.kt`,
-    ],
-
     gateway: [
         `${SERVER_MAIN_RES_DIR}config/bootstrap.yml`,
         `${SERVER_MAIN_RES_DIR}config/bootstrap-prod.yml`,
         `${SERVER_TEST_RES_DIR}config/bootstrap.yml`,
-        `${SERVER_MAIN_SRC_DIR}com/mycompany/myapp/config/GatewayConfiguration.kt`,
-        `${SERVER_MAIN_SRC_DIR}com/mycompany/myapp/config/apidoc/GatewaySwaggerResourcesProvider.kt`,
-        `${SERVER_MAIN_SRC_DIR}com/mycompany/myapp/gateway/accesscontrol/AccessControlFilter.kt`,
-        `${SERVER_MAIN_SRC_DIR}com/mycompany/myapp/gateway/responserewriting/SwaggerBasePathRewritingFilter.kt`,
-        `${SERVER_TEST_SRC_DIR}com/mycompany/myapp/gateway/responserewriting/SwaggerBasePathRewritingFilterTest.kt`,
+        `${SERVER_MAIN_SRC_DIR}com/mycompany/myapp/config/apidocs/GatewaySwaggerResourcesProvider.kt`,
+        `${SERVER_TEST_SRC_DIR}com/mycompany/myapp/config/apidocs/GatewaySwaggerResourcesProviderTest.kt`,
+        `${SERVER_MAIN_SRC_DIR}com/mycompany/myapp/web/filter/ModifyServersOpenApiFilter.kt`,
+        `${SERVER_TEST_SRC_DIR}com/mycompany/myapp/web/filter/ModifyServersOpenApiFilterTest.kt`,
         `${SERVER_MAIN_SRC_DIR}com/mycompany/myapp/web/rest/vm/RouteVM.kt`,
         `${SERVER_MAIN_SRC_DIR}com/mycompany/myapp/web/rest/GatewayResource.kt`,
         `${CLIENT_MAIN_SRC_DIR}app/admin/gateway/gateway.component.ts`,
@@ -686,32 +686,7 @@ const expectedFiles = {
         `${CLIENT_MAIN_SRC_DIR}app/admin/gateway/gateway.module.ts`,
         `${CLIENT_MAIN_SRC_DIR}app/admin/gateway/gateway.component.html`,
         `${CLIENT_MAIN_SRC_DIR}app/admin/gateway/gateway-routes.service.ts`,
-    ],
-
-    rateLimitingFilesForGateways: [`${SERVER_MAIN_SRC_DIR}com/mycompany/myapp/gateway/ratelimiting/RateLimitingFilter.kt`],
-
-    gatewayWithUaa: [
-        `${SERVER_MAIN_SRC_DIR}com/mycompany/myapp/config/CacheConfiguration.kt`,
-        `${SERVER_MAIN_SRC_DIR}com/mycompany/myapp/web/rest/AuthResource.kt`,
-        `${SERVER_MAIN_SRC_DIR}com/mycompany/myapp/web/filter/RefreshTokenFilter.kt`,
-        `${SERVER_MAIN_SRC_DIR}com/mycompany/myapp/web/filter/RefreshTokenFilterConfigurer.kt`,
-        `${SERVER_MAIN_SRC_DIR}com/mycompany/myapp/config/oauth2/OAuth2AuthenticationConfiguration.kt`,
-        `${SERVER_MAIN_SRC_DIR}com/mycompany/myapp/security/oauth2/CookieCollection.kt`,
-        `${SERVER_MAIN_SRC_DIR}com/mycompany/myapp/security/oauth2/CookiesHttpServletRequestWrapper.kt`,
-        `${SERVER_MAIN_SRC_DIR}com/mycompany/myapp/security/oauth2/CookieTokenExtractor.kt`,
-        `${SERVER_MAIN_SRC_DIR}com/mycompany/myapp/security/oauth2/OAuth2AuthenticationService.kt`,
-        `${SERVER_MAIN_SRC_DIR}com/mycompany/myapp/security/oauth2/OAuth2CookieHelper.kt`,
-        `${SERVER_MAIN_SRC_DIR}com/mycompany/myapp/security/oauth2/OAuth2Cookies.kt`,
-        `${SERVER_MAIN_SRC_DIR}com/mycompany/myapp/security/oauth2/OAuth2TokenEndpointClient.kt`,
-        `${SERVER_MAIN_SRC_DIR}com/mycompany/myapp/security/oauth2/OAuth2TokenEndpointClientAdapter.kt`,
-        `${SERVER_MAIN_SRC_DIR}com/mycompany/myapp/security/oauth2/UaaTokenEndpointClient.kt`,
-        `${SERVER_TEST_SRC_DIR}com/mycompany/myapp/config/SecurityBeanOverrideConfiguration.kt`,
-        `${SERVER_TEST_SRC_DIR}com/mycompany/myapp/security/OAuth2TokenMockUtil.kt`,
-        `${SERVER_TEST_SRC_DIR}com/mycompany/myapp/security/oauth2/OAuth2CookieHelperTest.kt`,
-        `${SERVER_TEST_SRC_DIR}com/mycompany/myapp/security/oauth2/OAuth2AuthenticationServiceTest.kt`,
-        `${SERVER_TEST_SRC_DIR}com/mycompany/myapp/security/oauth2/CookieTokenExtractorTest.kt`,
-        `${SERVER_TEST_SRC_DIR}com/mycompany/myapp/security/oauth2/CookieCollectionTest.kt`,
-    ],
+      ],
 
     feignConfig: [
         `${SERVER_MAIN_SRC_DIR}com/mycompany/myapp/config/FeignConfiguration.kt`,
@@ -844,7 +819,6 @@ const expectedFiles = {
 
     cypress: [
         'cypress.json',
-        `${CLIENT_TEST_SRC_DIR}cypress/fixtures/users/user.json`,
         `${CLIENT_TEST_SRC_DIR}cypress/plugins/index.ts`,
         `${CLIENT_TEST_SRC_DIR}cypress/integration/administration/administration.spec.ts`,
         `${CLIENT_TEST_SRC_DIR}cypress/support/commands.ts`,
@@ -862,7 +836,7 @@ const expectedFiles = {
         `${CLIENT_TEST_SRC_DIR}cypress/integration/account/reset-password-page.spec.ts`,
     ],
 
-    cypressWithOauth2: [`${CLIENT_TEST_SRC_DIR}cypress/support/keycloak-oauth2.ts`],
+    cypressWithOauth2: [`${CLIENT_TEST_SRC_DIR}cypress/support/oauth2.ts`],
 };
 
 module.exports = expectedFiles;

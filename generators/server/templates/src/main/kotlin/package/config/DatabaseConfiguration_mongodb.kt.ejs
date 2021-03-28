@@ -19,16 +19,12 @@ This file is part of the JHipster project, see https://jhipster.github.io/
 package <%= packageName %>.config
 
 import tech.jhipster.config.JHipsterConstants
-import com.github.cloudyrock.mongock.driver.mongodb.springdata.v3.SpringDataMongo3Driver
-import com.github.cloudyrock.spring.v5.MongockSpring5
-import com.github.cloudyrock.spring.v5.MongockSpring5.MongockInitializingBeanRunner
+import com.github.cloudyrock.spring.v5.EnableMongock
 import tech.jhipster.domain.util.JSR310DateConverters.DateToZonedDateTimeConverter
 import tech.jhipster.domain.util.JSR310DateConverters.ZonedDateTimeToDateConverter
 import org.slf4j.Logger
 import org.slf4j.LoggerFactory
-import org.springframework.beans.factory.annotation.Value
 import org.springframework.boot.autoconfigure.mongo.MongoAutoConfiguration
-import org.springframework.context.ApplicationContext
 <%_ if (reactive) { _%>
 import org.springframework.boot.autoconfigure.mongo.MongoReactiveAutoConfiguration
 <%_ } _%>
@@ -47,7 +43,6 @@ import org.springframework.data.elasticsearch.repository.config.Enable<% if (rea
 <%_ if (!reactive) { _%>
 import org.springframework.data.mongodb.config.EnableMongoAuditing
 <%_ } _%>
-import org.springframework.data.mongodb.core.MongoTemplate
 import org.springframework.data.mongodb.core.convert.MongoCustomConversions
 import org.springframework.data.mongodb.core.mapping.event.ValidatingMongoEventListener
 <%_ if (searchEngine === 'elasticsearch') { _%>
@@ -59,6 +54,7 @@ import java.util.ArrayList
 import java.util.List
 
 @Configuration
+@EnableMongock
 <%_ if (searchEngine === 'elasticsearch') { _%>
 @Enable<% if (reactive) { %>Reactive<% } %>ElasticsearchRepositories("<%= packageName %>.repository.search")
 <%_ } _%>
@@ -81,8 +77,6 @@ import java.util.List
 <%_ } _%>
 class DatabaseConfiguration {
 
-    private val log = LoggerFactory.getLogger(javaClass)
-
     @Bean
     fun validatingMongoEventListener() = ValidatingMongoEventListener(validator())
 
@@ -97,20 +91,4 @@ class DatabaseConfiguration {
                 ZonedDateTimeToDateConverter.INSTANCE
             )
         )
-
-    @Bean
-    fun mongockInitializingBeanRunner(
-        springContext: ApplicationContext,
-        mongoTemplate: MongoTemplate, 
-        @Value("\${mongock.lockAcquiredForMinutes:5}") lockAcquiredForMinutes: Long,
-        @Value("\${mongock.maxWaitingForLockMinutes:3}") maxWaitingForLockMinutes: Long,
-        @Value("\${mongock.maxTries:3}") maxTries: Int
-    ) : MongockInitializingBeanRunner {
-        val driver = SpringDataMongo3Driver.withLockSetting(mongoTemplate, lockAcquiredForMinutes, maxWaitingForLockMinutes, maxTries)
-        return  MongockSpring5.builder()
-            .setDriver(driver)
-            .addChangeLogsScanPackage("<%= packageName %>.config.dbmigrations")
-            .setSpringContext(springContext)
-            .buildInitializingBeanRunner()
-    }
 }

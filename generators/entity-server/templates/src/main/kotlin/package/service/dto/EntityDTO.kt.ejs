@@ -46,7 +46,7 @@ import java.math.BigDecimal
 <%_ if (fieldsContainBlob && databaseType === 'cassandra') { _%>
 import java.nio.ByteBuffer
 <%_ } _%>
-<%_ if ((!embedded && primaryKey.type === 'UUID') || fieldsContainUUID === true) { _%>
+<%_ if (fieldsContainUUID === true) { _%>
 import java.util.UUID
 <%_ } _%>
 <%_ if (fieldsContainBlob && databaseType === 'sql') { _%>
@@ -57,12 +57,12 @@ import <%= packageName %>.domain.enumeration.<%= element %>
 <%_ }); _%>
 
 /**
- * A DTO for the [<%= packageName %>.domain.<%= asEntity(entityClass) %>] entity.
+ * A DTO for the [<%= packageName %>.domain.<%= persistClass %>] entity.
  */
 <%_ if (typeof javadoc !== 'undefined') { _%>
 @ApiModel(description = "<%- formatAsApiDescription(javadoc) %>")
 <%_ } _%>
-data class <%= asDto(entityClass) %>(
+data class <%= dtoClass %>(
     <%_
         const entityClassProperties = [];
         dtoReferences.forEach(reference => {
@@ -113,17 +113,17 @@ data class <%= asDto(entityClass) %>(
     <%- entityClassProperties.join(',\n\n    ') %> 
 ) : Serializable {
 
-    <%_ const idNames = [...idFields.map(f => f.fieldName)] _%>
+    <%_ const idNames = primaryKey ? [...primaryKey.fields.map(f => f.fieldName)] : [] _%>
 
     override fun equals(other: Any?): Boolean {
         if (this === other) return true
-        if (other !is <%= asDto(entityClass) %>) return false
+        if (other !is <%= dtoClass %>) return false
         <%_ if (!embedded) { _%>
-        val <%= asDto(entityInstance) %> = other
+        val <%= dtoInstance %> = other
         if (<%- idNames.map(n => `this.${n} == null`).join(' && ') %>){
             return false;
         }
-        return <%- idNames.map(n => `Objects.equals(this.${n}, ${asDto(entityInstance)}.${n})`).join(' &&\n            ') %>;
+        return <%- idNames.map(n => `Objects.equals(this.${n}, ${dtoInstance}.${n})`).join(' &&\n            ') %>;
         <%_ } else { _%>
         return false
         <%_ } _%>

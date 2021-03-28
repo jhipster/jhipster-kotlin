@@ -16,8 +16,8 @@
  See the License for the specific language governing permissions and
  limitations under the License.
 -%>
-<%_ //const instanceType = (dto === 'mapstruct') ? asDto(entityClass) : asEntity(entityClass);
-const instanceName = (dto === 'mapstruct') ? asDto(entityInstance) : asEntity(entityInstance);
+<%_
+const instanceName = restInstance;
 const mapper = `${entityInstance}Mapper`;
 const dtoToEntity = `${mapper}.toEntity`;
 const entityToDto = `${mapper}.toDto`;
@@ -40,26 +40,26 @@ if (isUsingMapsId === true) {
 <%_ }
 if (!viaService) {
     if (dto === 'mapstruct') {
-        resultEntity = asEntity(entityInstance) %>
-        var <%= asEntity(entityInstance) %> = <%= dtoToEntity %>(<%= instanceName %>)
+        resultEntity = persistInstance %>
+        var <%= persistInstance %> = <%= dtoToEntity %>(<%= instanceName %>)
         <%_ if (isUsingMapsId === true) { _%>
         val <%= otherEntityName %>Id = <%= instanceName %>.<%= mapsIdAssoc.relationshipName %>?.<%= primaryKey.name %>
         if (<%= otherEntityName %>Id != null) {
             <%= mapsIdRepoInstance %>.findById(<%= otherEntityName %>Id)
-                .ifPresent { <%= asEntity(entityInstance) %>.<%= otherEntityName %> = it }
+                .ifPresent { <%= persistInstance %>.<%= otherEntityName %> = it }
         }
         <%_ } _%>
-        <%= asEntity(entityInstance) %> = <%= entityInstance %>Repository.save(<%= asEntity(entityInstance) %>)
-        <%= returnPrefix %> <%= entityToDto %>(<%= asEntity(entityInstance) %>)
+        <%= persistInstance %> = <%= entityInstance %>Repository.save(<%= persistInstance %>)
+        <%= returnPrefix %> <%= entityToDto %>(<%= persistInstance %>)
     <%_ } else { resultEntity = 'result'; _%>
         <%_ if (isUsingMapsId === true) { _%>
         val <%= otherEntityName %>Id = <%= instanceName %>.<%= mapsIdAssoc.relationshipName %>?.<%= primaryKey.name %>
         if (<%= otherEntityName %>Id != null) {
             <%= mapsIdRepoInstance %>.findById(<%= otherEntityName %>Id)
-                .ifPresent { <%= asEntity(entityInstance) %>.<%= otherEntityName %> = it }
+                .ifPresent { <%= persistInstance %>.<%= otherEntityName %> = it }
         }
         <%_ } _%>
-        <%= returnPrefix %> <%= entityInstance %>Repository.save(<%= asEntity(entityInstance) %>)
+        <%= returnPrefix %> <%= entityInstance %>Repository.save(<%= persistInstance %>)
         <%_ }
         if (searchEngine === 'elasticsearch') { _%>
         <%= entityInstance %>SearchRepository.save(<%= resultEntity %>)
@@ -72,7 +72,7 @@ if (!viaService) {
         val <%= otherEntityName %>Id = <%= entityInstance %>.<%= mapsIdAssoc.relationshipName %>?.<%= primaryKey.name %>
         if (<%= otherEntityName %>Id != null) {
             <%= mapsIdRepoInstance %>.findById(<%= otherEntityName %>Id)
-                .ifPresent { <%= asEntity(entityInstance) %>.<%= otherEntityName %> = it }
+                .ifPresent { <%= persistInstance %>.<%= otherEntityName %> = it }
         }
         <%_ } _%>
         <%= returnPrefix %> <%= entityInstance %>Service.save(<%= instanceName %>)

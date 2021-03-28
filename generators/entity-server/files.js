@@ -66,8 +66,8 @@ const serverFiles = {
             path: SERVER_MAIN_SRC_KOTLIN_DIR,
             templates: [
                 {
-                    file: 'package/service/dto/EntityCriteria.kt',
-                    renameTo: generator => `${generator.packageFolder}/service/dto/${generator.entityClass}Criteria.kt`,
+                    file: 'package/service/criteria/EntityCriteria.kt',
+                    renameTo: generator => `${generator.packageFolder}/service/criteria/${generator.entityClass}Criteria.kt`,
                     useBluePrint: true,
                 },
                 {
@@ -223,7 +223,7 @@ const serverFiles = {
             templates: [
                 {
                     file: 'package/domain/EntityTest.kt',
-                    renameTo: generator => `${generator.packageFolder}/domain/${generator.entityClass}Test.kt`,
+                    renameTo: generator => `${generator.packageFolder}/domain/${generator.asEntity(generator.entityClass)}Test.kt`,
                     useBluePrint: true,
                 },
             ],
@@ -257,6 +257,7 @@ const serverFiles = {
 module.exports = {
     writeFiles,
     serverFiles,
+    customizeFiles,
 };
 
 function writeFiles() {
@@ -268,23 +269,9 @@ function writeFiles() {
             // writeFilesToDisk(serverFiles, this, false, this.fetchFromInstalledJHipster('entity-server/templates'));
             if (this.reactive) {
                 this.writeFilesToDisk(serverFiles, ['reactive', '']);
-            } else {
-                this.writeFilesToDisk(serverFiles);
             }
-
-            if (this.databaseType === 'sql') {
-                const serverCacheKt = new NeedleServerChacheKt(this);
-
-                if (['ehcache', 'caffeine', 'infinispan', 'redis'].includes(this.cacheProvider) && this.enableHibernateCache) {
-                    serverCacheKt.addEntityToCache(
-                        this.asEntity(this.entityClass),
-                        this.relationships,
-                        this.packageName,
-                        this.packageFolder,
-                        this.cacheProvider
-                    );
-                }
-            }
+            
+            this.writeFilesToDisk(serverFiles);
         },
 
         writeEnumFiles() {
@@ -318,3 +305,19 @@ function writeFiles() {
         },
     };
 }
+
+function customizeFiles() {
+    if (this.databaseType === 'sql') {
+        const serverCacheKt = new NeedleServerChacheKt(this);
+
+        if (['ehcache', 'caffeine', 'infinispan', 'redis'].includes(this.cacheProvider) && this.enableHibernateCache) {
+            serverCacheKt.addEntityToCache(
+                this.asEntity(this.entityClass),
+                this.relationships,
+                this.packageName,
+                this.packageFolder,
+                this.cacheProvider
+            );
+        }
+    }
+  }

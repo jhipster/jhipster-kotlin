@@ -1,31 +1,23 @@
 const path = require('path');
 const assert = require('yeoman-assert');
-const helpers = require('yeoman-test');
-const fse = require('fs-extra');
+
+const { skipPrettierHelpers: helpers, getFilesForOptions, shouldBeV3DockerfileCompatible } = require('./utils/utils');
+
 const constants = require('generator-jhipster/generators/generator-constants');
 const angularFiles = require('generator-jhipster/generators/client/files-angular').files;
 const reactFiles = require('generator-jhipster/generators/client/files-react').files;
-const getFilesForOptions = require('./utils/utils').getFilesForOptions;
-const shouldBeV3DockerfileCompatible = require('./utils/utils').shouldBeV3DockerfileCompatible;
 const expectedFiles = require('./utils/expected-files');
 
-const ANGULAR = constants.SUPPORTED_CLIENT_FRAMEWORKS.ANGULAR;
-const REACT = constants.SUPPORTED_CLIENT_FRAMEWORKS.REACT;
-const CLIENT_MAIN_SRC_DIR = constants.CLIENT_MAIN_SRC_DIR;
-const SERVER_MAIN_SRC_DIR = `${constants.MAIN_DIR}kotlin/`;
-const SERVER_MAIN_RES_DIR = constants.SERVER_MAIN_RES_DIR;
-const TEST_DIR = constants.TEST_DIR;
+const { ANGULAR, REACT } = constants.SUPPORTED_CLIENT_FRAMEWORKS;
+const { CLIENT_MAIN_SRC_DIR, SERVER_MAIN_SRC_DIR, SERVER_MAIN_RES_DIR, TEST_DIR } = constants;
 
 describe('JHipster generator', () => {
     context('Default configuration with', () => {
         describe(ANGULAR, () => {
-            before(done => {
-                helpers
+            before(async () => {
+                await helpers
                     .run('generator-jhipster/generators/app')
                     .withOptions({
-                        fromCli: true,
-                        skipInstall: true,
-                        skipChecks: true,
                         jhiPrefix: 'test',
                         blueprint: 'kotlin',
                         withGeneratedFlag: true,
@@ -59,7 +51,7 @@ describe('JHipster generator', () => {
                         skipUserManagement: false,
                         serverSideOptions: [],
                     })
-                    .on('end', done);
+                    
             });
 
             it('creates expected default files for angularX', () => {
@@ -89,31 +81,14 @@ describe('JHipster generator', () => {
             it('generates a README with no undefined value', () => {
                 assert.noFileContent('README.md', /undefined/);
             });
-            // it('uses correct prettier formatting', () => {
-            //     // tabWidth = 2 (see generators/common/templates/.prettierrc.ejs)
-            //     assert.fileContent('webpack/webpack.custom.js', / {2}\/\/ PLUGINS/);
-            // });
-            // it Should be a KTLINT check
-            // it('uses correct prettier formatting for Kotlin file', () => {
-            //     // tabWidth = 4 (see generators/common/templates/.prettierrc.ejs)
-            //     assert.fileContent('src/main/kotlin/com/mycompany/myapp/JhipsterApp.kt', / {8}fun main(args: Array<String>)/);
-            //     assert.fileContent('src/main/kotlin/com/mycompany/myapp/JhipsterApp.kt', / {12}val env = runApplication/);
-            // });
-            // it('has @GeneratedByJHipster annotation', () => {
-            //     assert.fileContent('src/main/kotlin/com/mycompany/myapp/JhipsterApp.kt', /@GeneratedByJHipster/);
-            // });
         });
 
         describe(REACT, () => {
-            before(done => {
-                helpers
+            before( async () => { 
+                await helpers
                     .run('generator-jhipster/generators/app')
                     .withOptions({
-                        fromCli: true,
-                        skipInstall: true,
-                        skipChecks: true,
                         jhiPrefix: 'test',
-                        experimental: true,
                         blueprint: 'kotlin',
                         'skip-ktlint-format': true,
                     })
@@ -145,7 +120,7 @@ describe('JHipster generator', () => {
                         skipUserManagement: false,
                         serverSideOptions: [],
                     })
-                    .on('end', done);
+                    
             });
 
             it('creates expected default files for react', () => {
@@ -169,22 +144,13 @@ describe('JHipster generator', () => {
             it('contains clientFramework with react value', () => {
                 assert.fileContent('.yo-rc.json', /"clientFramework": "react"/);
             });
-            // it('uses correct prettier formatting', () => {
-            //     // tabWidth = 2 (see generators/common/templates/.prettierrc.ejs)
-            //     assert.fileContent('webpack/webpack.dev.js', / {2}devtool:/);
-            //     assert.fileContent('tsconfig.json', / {2}"compilerOptions":/);
-            // });
         });
 
         describe('using npm flag', () => {
-            before(done => {
-                helpers
+            before( async () => { 
+                await helpers
                     .run('generator-jhipster/generators/app')
                     .withOptions({
-                        fromCli: true,
-                        skipInstall: true,
-                        skipChecks: true,
-                        npm: true,
                         blueprint: 'kotlin',
                         'skip-ktlint-format': true,
                     })
@@ -216,7 +182,7 @@ describe('JHipster generator', () => {
                         skipUserManagement: false,
                         serverSideOptions: [],
                     })
-                    .on('end', done);
+                    
             });
 
             it('creates expected default files', () => {
@@ -246,13 +212,10 @@ describe('JHipster generator', () => {
         });
 
         describe('Gradle', () => {
-            before(done => {
-                helpers
+            before( async () => { 
+                await helpers
                     .run('generator-jhipster/generators/app')
                     .withOptions({
-                        fromCli: true,
-                        skipInstall: true,
-                        skipChecks: true,
                         blueprint: 'kotlin',
                         'skip-ktlint-format': true,
                     })
@@ -282,7 +245,7 @@ describe('JHipster generator', () => {
                         rememberMeKey: '5c37379956bd1242f5636c8cb322c2966ad81277',
                         serverSideOptions: [],
                     })
-                    .on('end', done);
+                    
             });
 
             it('creates expected default files for gradle', () => {
@@ -306,13 +269,10 @@ describe('JHipster generator', () => {
         });
 
         describe('Maven with ktlint-format', () => {
-            before(done => {
-                helpers
+            before( async () => { 
+                await helpers
                     .run('generator-jhipster/generators/app')
                     .withOptions({
-                        fromCli: true,
-                        skipInstall: true,
-                        skipChecks: true,
                         jhiPrefix: 'test',
                         blueprint: 'kotlin',
                     })
@@ -345,7 +305,7 @@ describe('JHipster generator', () => {
                         skipUserManagement: false,
                         serverSideOptions: [],
                     })
-                    .on('end', done);
+                    
             });
 
             it('creates expected default files for angularX', () => {
@@ -376,21 +336,13 @@ describe('JHipster generator', () => {
             it('generates a README with no undefined value', () => {
                 assert.noFileContent('README.md', /undefined/);
             });
-            // it('uses correct prettier formatting', () => {
-            //     // tabWidth = 2 (see generators/common/templates/.prettierrc.ejs)
-            //     assert.fileContent('webpack/webpack.dev.js', / {2}devtool:/);
-            //     assert.fileContent('tsconfig.base.json', / {2}"compilerOptions":/);
-            // });
         });
 
         describe('Gradle with ktlint-format', () => {
-            before(done => {
-                helpers
+            before( async () => { 
+                await helpers
                     .run('generator-jhipster/generators/app')
                     .withOptions({
-                        fromCli: true,
-                        skipInstall: true,
-                        skipChecks: true,
                         blueprint: 'kotlin',
                     })
                     .withGenerators([
@@ -419,7 +371,7 @@ describe('JHipster generator', () => {
                         rememberMeKey: '5c37379956bd1242f5636c8cb322c2966ad81277',
                         serverSideOptions: [],
                     })
-                    .on('end', done);
+                    
             });
 
             it('creates expected default files for gradle', () => {
@@ -445,13 +397,10 @@ describe('JHipster generator', () => {
 
     context('Application with DB option', () => {
         describe('mariadb', () => {
-            before(done => {
-                helpers
+            before( async () => { 
+                await helpers
                     .run('generator-jhipster/generators/app')
                     .withOptions({
-                        fromCli: true,
-                        skipInstall: true,
-                        skipChecks: true,
                         blueprint: 'kotlin',
                         'skip-ktlint-format': true,
                     })
@@ -483,7 +432,7 @@ describe('JHipster generator', () => {
                         skipUserManagement: false,
                         serverSideOptions: [],
                     })
-                    .on('end', done);
+                    
             });
 
             it('creates expected default files', () => {
@@ -508,13 +457,10 @@ describe('JHipster generator', () => {
         });
 
         describe('mongodb', () => {
-            before(done => {
-                helpers
+            before( async () => { 
+                await helpers
                     .run('generator-jhipster/generators/app')
                     .withOptions({
-                        fromCli: true,
-                        skipInstall: true,
-                        skipChecks: true,
                         blueprint: 'kotlin',
                         'skip-ktlint-format': true,
                     })
@@ -546,7 +492,7 @@ describe('JHipster generator', () => {
                         skipUserManagement: false,
                         serverSideOptions: [],
                     })
-                    .on('end', done);
+                    
             });
 
             it('creates expected files with "MongoDB"', () => {
@@ -560,13 +506,10 @@ describe('JHipster generator', () => {
         });
 
         describe('couchbase', () => {
-            before(done => {
-                helpers
+            before( async () => { 
+                await helpers
                     .run('generator-jhipster/generators/app')
                     .withOptions({
-                        fromCli: true,
-                        skipInstall: true,
-                        skipChecks: true,
                         blueprint: 'kotlin',
                         'skip-ktlint-format': true,
                     })
@@ -598,7 +541,7 @@ describe('JHipster generator', () => {
                         skipUserManagement: false,
                         serverSideOptions: [],
                     })
-                    .on('end', done);
+                    
             });
 
             it('creates expected files with "Couchbase"', () => {
@@ -612,13 +555,10 @@ describe('JHipster generator', () => {
         });
 
         describe('neo4j', () => {
-            before(done => {
-                helpers
+            before( async () => { 
+                await helpers
                     .run('generator-jhipster/generators/app')
                     .withOptions({
-                        fromCli: true,
-                        skipInstall: true,
-                        skipChecks: true,
                         blueprint: 'kotlin',
                         'skip-ktlint-format': true,
                     })
@@ -650,7 +590,7 @@ describe('JHipster generator', () => {
                         skipUserManagement: false,
                         serverSideOptions: [],
                     })
-                    .on('end', done);
+                    
             });
 
             it('creates expected files with "Neo4j"', () => {
@@ -664,13 +604,10 @@ describe('JHipster generator', () => {
         });
 
         describe('mssql', () => {
-            before(done => {
-                helpers
+            before( async () => { 
+                await helpers
                     .run('generator-jhipster/generators/app')
                     .withOptions({
-                        fromCli: true,
-                        skipInstall: true,
-                        skipChecks: true,
                         blueprint: 'kotlin',
                         'skip-ktlint-format': true,
                     })
@@ -702,29 +639,22 @@ describe('JHipster generator', () => {
                         skipUserManagement: false,
                         serverSideOptions: [],
                     })
-                    .on('end', done);
+                    
             });
 
             it('creates expected files with "Microsoft SQL Server"', () => {
                 assert.file(expectedFiles.mssql);
                 assert.file(expectedFiles.hibernateTimeZoneConfig);
                 assert.fileContent('pom.xml', /mssql-jdbc/);
-                assert.fileContent(
-                    `${SERVER_MAIN_RES_DIR}config/liquibase/changelog/00000000000000_initial_schema.xml`,
-                    /identityInsertEnabled/
-                );
             });
             shouldBeV3DockerfileCompatible('mssql');
         });
 
         describe('cassandra', () => {
-            before(done => {
-                helpers
+            before( async () => { 
+                await helpers
                     .run('generator-jhipster/generators/app')
                     .withOptions({
-                        fromCli: true,
-                        skipInstall: true,
-                        skipChecks: true,
                         blueprint: 'kotlin',
                         'skip-ktlint-format': true,
                     })
@@ -756,7 +686,7 @@ describe('JHipster generator', () => {
                         skipUserManagement: false,
                         serverSideOptions: [],
                     })
-                    .on('end', done);
+                    
             });
 
             it('creates expected files with "Cassandra"', () => {
@@ -770,13 +700,10 @@ describe('JHipster generator', () => {
         });
 
         describe('cassandra no i18n', () => {
-            before(done => {
-                helpers
+            before( async () => { 
+                await helpers
                     .run('generator-jhipster/generators/app')
                     .withOptions({
-                        fromCli: true,
-                        skipInstall: true,
-                        skipChecks: true,
                         blueprint: 'kotlin',
                         'skip-ktlint-format': true,
                     })
@@ -806,7 +733,7 @@ describe('JHipster generator', () => {
                         skipUserManagement: false,
                         serverSideOptions: [],
                     })
-                    .on('end', done);
+                    
             });
 
             it('creates expected files with "Cassandra"', () => {
@@ -817,13 +744,10 @@ describe('JHipster generator', () => {
         });
 
         describe('MySQL and elasticsearch', () => {
-            before(done => {
-                helpers
+            before( async () => { 
+                await helpers
                     .run('generator-jhipster/generators/app')
                     .withOptions({
-                        fromCli: true,
-                        skipInstall: true,
-                        skipChecks: true,
                         blueprint: 'kotlin',
                         'skip-ktlint-format': true,
                     })
@@ -855,7 +779,7 @@ describe('JHipster generator', () => {
                         skipUserManagement: false,
                         serverSideOptions: ['searchEngine:elasticsearch'],
                     })
-                    .on('end', done);
+                    
             });
 
             it('creates expected files with "MySQL" and "Elasticsearch"', () => {
@@ -867,13 +791,10 @@ describe('JHipster generator', () => {
         });
 
         describe('couchbase FTS', () => {
-            before(done => {
-                helpers
+            before( async () => { 
+                await helpers
                     .run('generator-jhipster/generators/app')
                     .withOptions({
-                        fromCli: true,
-                        skipInstall: true,
-                        skipChecks: true,
                         blueprint: 'kotlin',
                         'skip-ktlint-format': true,
                     })
@@ -905,7 +826,7 @@ describe('JHipster generator', () => {
                         skipUserManagement: false,
                         serverSideOptions: ['searchEngine:couchbase'],
                     })
-                    .on('end', done);
+                    
             });
 
             it('creates expected files with "Couchbbase FTS"', () => {
@@ -916,13 +837,10 @@ describe('JHipster generator', () => {
         });
 
         describe('no database', () => {
-            before(done => {
-                helpers
+            before( async () => { 
+                await helpers
                     .run('generator-jhipster/generators/app')
                     .withOptions({
-                        fromCli: true,
-                        skipInstall: true,
-                        skipChecks: true,
                         blueprint: 'kotlin',
                         'skip-ktlint-format': true,
                     })
@@ -952,7 +870,7 @@ describe('JHipster generator', () => {
                         rememberMeKey: '5c37379956bd1242f5636c8cb322c2966ad81277',
                         serverSideOptions: [],
                     })
-                    .on('end', done);
+                    
             });
 
             it('creates expected files with the microservice application type', () => {
@@ -971,13 +889,10 @@ describe('JHipster generator', () => {
 
     context('Application with other options', () => {
         describe('oauth2', () => {
-            before(done => {
-                helpers
+            before( async () => { 
+                await helpers
                     .run('generator-jhipster/generators/app')
                     .withOptions({
-                        fromCli: true,
-                        skipInstall: true,
-                        skipChecks: true,
                         blueprint: 'kotlin',
                         'skip-ktlint-format': true,
                     })
@@ -1007,7 +922,7 @@ describe('JHipster generator', () => {
                         rememberMeKey: '5c37379956bd1242f5636c8cb322c2966ad81277',
                         serverSideOptions: [],
                     })
-                    .on('end', done);
+                    
             });
 
             it('creates expected files with authenticationType "oauth2"', () => {
@@ -1022,13 +937,10 @@ describe('JHipster generator', () => {
         });
 
         describe('oauth2 + elasticsearch', () => {
-            before(done => {
-                helpers
+            before( async () => { 
+                await helpers
                     .run('generator-jhipster/generators/app')
                     .withOptions({
-                        fromCli: true,
-                        skipInstall: true,
-                        skipChecks: true,
                         blueprint: 'kotlin',
                         'skip-ktlint-format': true,
                     })
@@ -1058,7 +970,7 @@ describe('JHipster generator', () => {
                         rememberMeKey: '5c37379956bd1242f5636c8cb322c2966ad81277',
                         serverSideOptions: ['searchEngine:elasticsearch'],
                     })
-                    .on('end', done);
+                    
             });
 
             it('creates expected files with authenticationType "oauth2" and elasticsearch', () => {
@@ -1071,13 +983,10 @@ describe('JHipster generator', () => {
         });
 
         describe('oauth2 + mongodb', () => {
-            before(done => {
-                helpers
+            before( async () => { 
+                await helpers
                     .run('generator-jhipster/generators/app')
                     .withOptions({
-                        fromCli: true,
-                        skipInstall: true,
-                        skipChecks: true,
                         blueprint: 'kotlin',
                         'skip-ktlint-format': true,
                     })
@@ -1107,7 +1016,7 @@ describe('JHipster generator', () => {
                         rememberMeKey: '5c37379956bd1242f5636c8cb322c2966ad81277',
                         serverSideOptions: [],
                     })
-                    .on('end', done);
+                    
             });
 
             it('creates expected files with authenticationType "oauth2" and mongodb', () => {
@@ -1118,13 +1027,10 @@ describe('JHipster generator', () => {
         });
 
         describe('hazelcast', () => {
-            before(done => {
-                helpers
+            before( async () => { 
+                await helpers
                     .run('generator-jhipster/generators/app')
                     .withOptions({
-                        fromCli: true,
-                        skipInstall: true,
-                        skipChecks: true,
                         blueprint: 'kotlin',
                         'skip-ktlint-format': true,
                     })
@@ -1154,7 +1060,7 @@ describe('JHipster generator', () => {
                         rememberMeKey: '5c37379956bd1242f5636c8cb322c2966ad81277',
                         serverSideOptions: [],
                     })
-                    .on('end', done);
+                    
             });
             it('creates expected files with "Hazelcast"', () => {
                 assert.file(expectedFiles.common);
@@ -1167,13 +1073,10 @@ describe('JHipster generator', () => {
         });
 
         describe('Infinispan', () => {
-            before(done => {
-                helpers
+            before( async () => { 
+                await helpers
                     .run('generator-jhipster/generators/app')
                     .withOptions({
-                        fromCli: true,
-                        skipInstall: true,
-                        skipChecks: true,
                         blueprint: 'kotlin',
                         'skip-ktlint-format': true,
                     })
@@ -1203,7 +1106,7 @@ describe('JHipster generator', () => {
                         rememberMeKey: '5c37379956bd1242f5636c8cb322c2966ad81277',
                         serverSideOptions: [],
                     })
-                    .on('end', done);
+                    
             });
             it('creates expected files with "Infinispan"', () => {
                 assert.file(expectedFiles.common);
@@ -1217,13 +1120,10 @@ describe('JHipster generator', () => {
         });
 
         describe('Infinispan and Eureka', () => {
-            before(done => {
-                helpers
+            before( async () => { 
+                await helpers
                     .run('generator-jhipster/generators/app')
                     .withOptions({
-                        fromCli: true,
-                        skipInstall: true,
-                        skipChecks: true,
                         blueprint: 'kotlin',
                         'skip-ktlint-format': true,
                     })
@@ -1253,7 +1153,7 @@ describe('JHipster generator', () => {
                         rememberMeKey: '5c37379956bd1242f5636c8cb322c2966ad81277',
                         serverSideOptions: [],
                     })
-                    .on('end', done);
+                    
             });
             it('creates expected files with "Infinispan and Eureka"', () => {
                 assert.file(expectedFiles.common);
@@ -1268,13 +1168,10 @@ describe('JHipster generator', () => {
         });
 
         describe('Memcached', () => {
-            before(done => {
-                helpers
+            before( async () => { 
+                await helpers
                     .run('generator-jhipster/generators/app')
                     .withOptions({
-                        fromCli: true,
-                        skipInstall: true,
-                        skipChecks: true,
                         blueprint: 'kotlin',
                         'skip-ktlint-format': true,
                     })
@@ -1304,7 +1201,7 @@ describe('JHipster generator', () => {
                         rememberMeKey: '5c37379956bd1242f5636c8cb322c2966ad81277',
                         serverSideOptions: [],
                     })
-                    .on('end', done);
+                    
             });
             it('creates expected files with "Memcached"', () => {
                 assert.file(expectedFiles.common);
@@ -1318,13 +1215,10 @@ describe('JHipster generator', () => {
         });
 
         describe('Redis', () => {
-            before(done => {
-                helpers
+            before( async () => { 
+                await helpers
                     .run('generator-jhipster/generators/app')
                     .withOptions({
-                        fromCli: true,
-                        skipInstall: true,
-                        skipChecks: true,
                         blueprint: 'kotlin',
                         'skip-ktlint-format': true,
                     })
@@ -1354,7 +1248,7 @@ describe('JHipster generator', () => {
                         rememberMeKey: '5c37379956bd1242f5636c8cb322c2966ad81277',
                         serverSideOptions: [],
                     })
-                    .on('end', done);
+                    
             });
             it('creates expected files with "Redis"', () => {
                 assert.file(expectedFiles.common);
@@ -1368,13 +1262,10 @@ describe('JHipster generator', () => {
         });
 
         describe('Messaging with Kafka configuration', () => {
-            before(done => {
-                helpers
+            before( async () => { 
+                await helpers
                     .run('generator-jhipster/generators/app')
                     .withOptions({
-                        fromCli: true,
-                        skipInstall: true,
-                        skipChecks: true,
                         blueprint: 'kotlin',
                         'skip-ktlint-format': true,
                     })
@@ -1410,7 +1301,7 @@ describe('JHipster generator', () => {
                         languages: ['en'],
                         serverSideOptions: ['messageBroker:kafka'],
                     })
-                    .on('end', done);
+                    
             });
 
             it('creates expected files with Kafka message broker enabled', () => {
@@ -1426,13 +1317,10 @@ describe('JHipster generator', () => {
         });
 
         describe('API first using OpenAPI-generator (maven)', () => {
-            before(done => {
-                helpers
+            before( async () => { 
+                await helpers
                     .run('generator-jhipster/generators/app')
                     .withOptions({
-                        fromCli: true,
-                        skipInstall: true,
-                        skipChecks: true,
                         blueprint: 'kotlin',
                         'skip-ktlint-format': true,
                     })
@@ -1468,7 +1356,7 @@ describe('JHipster generator', () => {
                         languages: ['en'],
                         serverSideOptions: ['enableSwaggerCodegen:true'],
                     })
-                    .on('end', done);
+                    
             });
 
             it('creates expected files with OpenAPI first enabled', () => {
@@ -1487,13 +1375,10 @@ describe('JHipster generator', () => {
         });
 
         describe('API first using OpenAPI-generator (gradle)', () => {
-            before(done => {
-                helpers
+            before( async () => { 
+                await helpers
                     .run('generator-jhipster/generators/app')
                     .withOptions({
-                        fromCli: true,
-                        skipInstall: true,
-                        skipChecks: true,
                         blueprint: 'kotlin',
                         'skip-ktlint-format': true,
                     })
@@ -1529,7 +1414,7 @@ describe('JHipster generator', () => {
                         languages: ['en'],
                         serverSideOptions: ['enableSwaggerCodegen:true'],
                     })
-                    .on('end', done);
+                    
             });
 
             it('creates expected files with OpenAPI first enabled', () => {
@@ -1549,13 +1434,10 @@ describe('JHipster generator', () => {
 
     context('Application names', () => {
         describe('package names', () => {
-            before(done => {
-                helpers
+            before( async () => { 
+                await helpers
                     .run('generator-jhipster/generators/app')
                     .withOptions({
-                        fromCli: true,
-                        skipInstall: true,
-                        skipChecks: true,
                         blueprint: 'kotlin',
                         'skip-ktlint-format': true,
                     })
@@ -1585,7 +1467,7 @@ describe('JHipster generator', () => {
                         rememberMeKey: '5c37379956bd1242f5636c8cb322c2966ad81277',
                         serverSideOptions: [],
                     })
-                    .on('end', done);
+                    
             });
 
             it('creates expected files with correct package names', () => {
@@ -1596,13 +1478,10 @@ describe('JHipster generator', () => {
         });
 
         describe('bad application name for java', () => {
-            before(done => {
-                helpers
+            before( async () => { 
+                await helpers
                     .run('generator-jhipster/generators/app')
                     .withOptions({
-                        fromCli: true,
-                        skipInstall: true,
-                        skipChecks: true,
                         blueprint: 'kotlin',
                         'skip-ktlint-format': true,
                     })
@@ -1632,7 +1511,7 @@ describe('JHipster generator', () => {
                         rememberMeKey: '5c37379956bd1242f5636c8cb322c2966ad81277',
                         serverSideOptions: [],
                     })
-                    .on('end', done);
+                    
             });
 
             it('creates expected files with default application name', () => {
@@ -1645,13 +1524,10 @@ describe('JHipster generator', () => {
         });
 
         describe('application names', () => {
-            before(done => {
-                helpers
+            before( async () => { 
+                await helpers
                     .run('generator-jhipster/generators/app')
                     .withOptions({
-                        fromCli: true,
-                        skipInstall: true,
-                        skipChecks: true,
                         blueprint: 'kotlin',
                         'skip-ktlint-format': true,
                     })
@@ -1681,7 +1557,7 @@ describe('JHipster generator', () => {
                         rememberMeKey: '5c37379956bd1242f5636c8cb322c2966ad81277',
                         serverSideOptions: [],
                     })
-                    .on('end', done);
+                    
             });
 
             it('creates expected files with correct application name', () => {
@@ -1693,13 +1569,10 @@ describe('JHipster generator', () => {
 
     context('i18n', () => {
         describe('no i18n', () => {
-            before(done => {
-                helpers
+            before( async () => { 
+                await helpers
                     .run('generator-jhipster/generators/app')
                     .withOptions({
-                        fromCli: true,
-                        skipInstall: true,
-                        skipChecks: true,
                         blueprint: 'kotlin',
                         'skip-ktlint-format': true,
                     })
@@ -1727,7 +1600,7 @@ describe('JHipster generator', () => {
                         rememberMeKey: '5c37379956bd1242f5636c8cb322c2966ad81277',
                         serverSideOptions: [],
                     })
-                    .on('end', done);
+                    
             });
 
             it('does not create i18n files if i18n is disabled', () => {
@@ -1737,13 +1610,10 @@ describe('JHipster generator', () => {
         });
 
         describe('with RTL support', () => {
-            before(done => {
-                helpers
+            before( async () => { 
+                await helpers
                     .run('generator-jhipster/generators/app')
                     .withOptions({
-                        fromCli: true,
-                        skipInstall: true,
-                        skipChecks: true,
                         blueprint: 'kotlin',
                         'skip-ktlint-format': true,
                     })
@@ -1775,7 +1645,7 @@ describe('JHipster generator', () => {
                         skipUserManagement: false,
                         serverSideOptions: [],
                     })
-                    .on('end', done);
+                    
             });
 
             it('creates expected default files for i18n with RTL support', () => {
@@ -1797,13 +1667,10 @@ describe('JHipster generator', () => {
 
     context('Auth options', () => {
         describe('JWT authentication', () => {
-            before(done => {
-                helpers
+            before( async () => { 
+                await helpers
                     .run('generator-jhipster/generators/app')
                     .withOptions({
-                        fromCli: true,
-                        skipInstall: true,
-                        skipChecks: true,
                         blueprint: 'kotlin',
                         'skip-ktlint-format': true,
                     })
@@ -1833,7 +1700,7 @@ describe('JHipster generator', () => {
                         rememberMeKey: '5c37379956bd1242f5636c8cb322c2966ad81277',
                         serverSideOptions: [],
                     })
-                    .on('end', done);
+                    
             });
 
             it('creates expected files with JWT authentication', () => {
@@ -1850,13 +1717,10 @@ describe('JHipster generator', () => {
         });
 
         describe('HTTP session authentication', () => {
-            before(done => {
-                helpers
+            before( async () => { 
+                await helpers
                     .run('generator-jhipster/generators/app')
                     .withOptions({
-                        fromCli: true,
-                        skipInstall: true,
-                        skipChecks: true,
                         blueprint: 'kotlin',
                         'skip-ktlint-format': true,
                     })
@@ -1886,7 +1750,7 @@ describe('JHipster generator', () => {
                         rememberMeKey: '5c37379956bd1242f5636c8cb322c2966ad81277',
                         serverSideOptions: [],
                     })
-                    .on('end', done);
+                    
             });
 
             it('creates expected files with HTTP session authentication', () => {
@@ -1905,13 +1769,10 @@ describe('JHipster generator', () => {
 
     context('Testing options', () => {
         describe('Protractor tests', () => {
-            before(done => {
-                helpers
+            before( async () => { 
+                await helpers
                     .run('generator-jhipster/generators/app')
                     .withOptions({
-                        fromCli: true,
-                        skipInstall: true,
-                        skipChecks: true,
                         blueprint: 'kotlin',
                         'skip-ktlint-format': true,
                     })
@@ -1946,7 +1807,7 @@ describe('JHipster generator', () => {
                         nativeLanguage: 'en',
                         languages: ['en'],
                     })
-                    .on('end', done);
+                    
             });
 
             it('creates expected files with Protractor enabled', () => {
@@ -1968,13 +1829,10 @@ describe('JHipster generator', () => {
         });
 
         describe('Cucumber tests', () => {
-            before(done => {
-                helpers
+            before( async () => { 
+                await helpers
                     .run('generator-jhipster/generators/app')
                     .withOptions({
-                        fromCli: true,
-                        skipInstall: true,
-                        skipChecks: true,
                         blueprint: 'kotlin',
                         'skip-ktlint-format': true,
                     })
@@ -2009,7 +1867,7 @@ describe('JHipster generator', () => {
                         nativeLanguage: 'en',
                         languages: ['en'],
                     })
-                    .on('end', done);
+                    
             });
 
             it('creates expected files with Cucumber enabled', () => {
@@ -2050,7 +1908,7 @@ describe('JHipster generator', () => {
                     languages: ['fr', 'en'],
                     rememberMeKey: '5c37379956bd1242f5636c8cb322c2966ad81277',
                 })
-                .on('end', done);
+                
         });
 
         it('creates expected files for default configuration with skip server option enabled', () => {
@@ -2079,13 +1937,10 @@ describe('JHipster generator', () => {
 
     context('App with skip client', () => {
         describe('Maven', () => {
-            before(done => {
-                helpers
+            before( async () => { 
+                await helpers
                     .run('generator-jhipster/generators/app')
                     .withOptions({
-                        fromCli: true,
-                        skipInstall: true,
-                        skipChecks: true,
                         skipClient: true,
                         blueprint: 'kotlin',
                         'skip-ktlint-format': true,
@@ -2115,7 +1970,7 @@ describe('JHipster generator', () => {
                         rememberMeKey: '5c37379956bd1242f5636c8cb322c2966ad81277',
                         serverSideOptions: [],
                     })
-                    .on('end', done);
+                    
             });
 
             it('creates expected files for default configuration with skip client option enabled', () => {
@@ -2160,13 +2015,10 @@ describe('JHipster generator', () => {
         });
 
         describe('Gradle', () => {
-            before(done => {
-                helpers
+            before( async () => { 
+                await helpers
                     .run('generator-jhipster/generators/app')
                     .withOptions({
-                        fromCli: true,
-                        skipInstall: true,
-                        skipChecks: true,
                         skipClient: true,
                         blueprint: 'kotlin',
                         'skip-ktlint-format': true,
@@ -2196,7 +2048,7 @@ describe('JHipster generator', () => {
                         rememberMeKey: '5c37379956bd1242f5636c8cb322c2966ad81277',
                         serverSideOptions: [],
                     })
-                    .on('end', done);
+                    
             });
 
             it('creates expected files for default configuration with skip client option enabled', () => {
@@ -2228,15 +2080,12 @@ describe('JHipster generator', () => {
 
     context('App with skip client and skip user management', () => {
         describe('Maven', () => {
-            before(done => {
-                helpers
+            before( async () => { 
+                await helpers
                     .run('generator-jhipster/generators/app')
                     .withOptions({
-                        fromCli: true,
-                        skipInstall: true,
                         skipClient: true,
                         skipUserManagement: true,
-                        skipChecks: true,
                         blueprint: 'kotlin',
                         'skip-ktlint-format': true,
                     })
@@ -2266,7 +2115,7 @@ describe('JHipster generator', () => {
                         rememberMeKey: '5c37379956bd1242f5636c8cb322c2966ad81277',
                         serverSideOptions: [],
                     })
-                    .on('end', done);
+                    
             });
 
             it('creates expected server files', () => {
@@ -2281,13 +2130,10 @@ describe('JHipster generator', () => {
 
     context('Eureka', () => {
         describe('gateway with eureka', () => {
-            before(done => {
-                helpers
+            before( async () => { 
+                await helpers
                     .run('generator-jhipster/generators/app')
                     .withOptions({
-                        fromCli: true,
-                        skipInstall: true,
-                        skipChecks: true,
                         blueprint: 'kotlin',
                         'skip-ktlint-format': true,
                     })
@@ -2318,27 +2164,22 @@ describe('JHipster generator', () => {
                         rememberMeKey: '5c37379956bd1242f5636c8cb322c2966ad81277',
                         serverSideOptions: [],
                     })
-                    .on('end', done);
+                    
             });
 
             it('creates expected files with the gateway application type', () => {
-                assert.file(expectedFiles.jwtServer);
+                assert.file(expectedFiles.jwtServerGateway);
                 assert.file(expectedFiles.gateway);
-                assert.noFile(expectedFiles.rateLimitingFilesForGateways);
-                assert.file(expectedFiles.feignConfig);
                 assert.file(expectedFiles.eureka);
                 assert.noFile(expectedFiles.consul);
             });
         });
 
         describe('gateway with eureka and rate limiting', () => {
-            before(done => {
-                helpers
+            before( async () => { 
+                await helpers
                     .run('generator-jhipster/generators/app')
                     .withOptions({
-                        fromCli: true,
-                        skipInstall: true,
-                        skipChecks: true,
                         blueprint: 'kotlin',
                         'skip-ktlint-format': true,
                     })
@@ -2369,27 +2210,22 @@ describe('JHipster generator', () => {
                         rememberMeKey: '5c37379956bd1242f5636c8cb322c2966ad81277',
                         serverSideOptions: [],
                     })
-                    .on('end', done);
+                    
             });
 
             it('creates expected files with the gateway application type', () => {
-                assert.file(expectedFiles.jwtServer);
+                assert.file(expectedFiles.jwtServerGateway);
                 assert.file(expectedFiles.gateway);
-                assert.file(expectedFiles.rateLimitingFilesForGateways);
-                assert.file(expectedFiles.feignConfig);
-                assert.file(expectedFiles.eureka);
+                ssert.file(expectedFiles.eureka);
                 assert.noFile(expectedFiles.consul);
             });
         });
 
         describe('microservice with eureka', () => {
-            before(done => {
-                helpers
+            before( async () => { 
+                await helpers
                     .run('generator-jhipster/generators/app')
                     .withOptions({
-                        fromCli: true,
-                        skipInstall: true,
-                        skipChecks: true,
                         blueprint: 'kotlin',
                         'skip-ktlint-format': true,
                     })
@@ -2419,7 +2255,7 @@ describe('JHipster generator', () => {
                         rememberMeKey: '5c37379956bd1242f5636c8cb322c2966ad81277',
                         serverSideOptions: [],
                     })
-                    .on('end', done);
+                    
             });
 
             it('creates expected files with the microservice application type', () => {
@@ -2433,13 +2269,10 @@ describe('JHipster generator', () => {
         });
 
         describe('monolith with eureka', () => {
-            before(done => {
-                helpers
+            before( async () => { 
+                await helpers
                     .run('generator-jhipster/generators/app')
                     .withOptions({
-                        fromCli: true,
-                        skipInstall: true,
-                        skipChecks: true,
                         blueprint: 'kotlin',
                         'skip-ktlint-format': true,
                     })
@@ -2469,7 +2302,7 @@ describe('JHipster generator', () => {
                         rememberMeKey: '5c37379956bd1242f5636c8cb322c2966ad81277',
                         serverSideOptions: ['serviceDiscoveryType:eureka'],
                     })
-                    .on('end', done);
+                    
             });
 
             it('creates expected files with the monolith application type', () => {
@@ -2485,13 +2318,10 @@ describe('JHipster generator', () => {
         });
 
         describe('microservice with gradle and eureka', () => {
-            before(done => {
-                helpers
+            before( async () => { 
+                await helpers
                     .run('generator-jhipster/generators/app')
                     .withOptions({
-                        fromCli: true,
-                        skipInstall: true,
-                        skipChecks: true,
                         blueprint: 'kotlin',
                         'skip-ktlint-format': true,
                     })
@@ -2523,7 +2353,7 @@ describe('JHipster generator', () => {
                         skipClient: true,
                         skipUserManagement: true,
                     })
-                    .on('end', done);
+                    
             });
 
             it('creates expected files with the microservice application type', () => {
@@ -2537,119 +2367,14 @@ describe('JHipster generator', () => {
             });
         });
 
-        describe('UAA server with Eureka', () => {
-            before(done => {
-                helpers
-                    .run('generator-jhipster/generators/app')
-                    .withOptions({
-                        fromCli: true,
-                        skipInstall: true,
-                        skipChecks: true,
-                        blueprint: 'kotlin',
-                        'skip-ktlint-format': true,
-                    })
-                    .withGenerators([
-                        [
-                            require('../generators/server'), // eslint-disable-line global-require
-                            'jhipster-kotlin:server',
-                            path.join(__dirname, '../generators/server/index.js'),
-                        ],
-                    ])
-                    .withPrompts({
-                        applicationType: 'uaa',
-                        baseName: 'jhipster-uaa',
-                        packageName: 'com.mycompany.myapp',
-                        packageFolder: 'com/mycompany/myapp',
-                        serverPort: '9999',
-                        authenticationType: 'uaa',
-                        cacheProvider: 'no',
-                        enableHibernateCache: false,
-                        databaseType: 'sql',
-                        devDatabaseType: 'postgresql',
-                        prodDatabaseType: 'postgresql',
-                        enableTranslation: true,
-                        nativeLanguage: 'en',
-                        languages: ['fr', 'en'],
-                        buildTool: 'maven',
-                        rememberMeKey: '5c37379956bd1242f5636c8cb322c2966ad81277',
-                        serverSideOptions: [],
-                        serviceDiscoveryType: 'eureka',
-                    })
-                    .on('end', done);
-            });
-
-            it('creates expected files with the UAA application type', () => {
-                assert.file(expectedFiles.uaa);
-                assert.file(expectedFiles.dockerServices);
-                assert.file(expectedFiles.eureka);
-            });
-        });
-
-        describe('UAA gateway with eureka', () => {
-            before(done => {
-                helpers
-                    .run('generator-jhipster/generators/app')
-                    .withOptions({
-                        fromCli: true,
-                        skipInstall: true,
-                        skipChecks: true,
-                        blueprint: 'kotlin',
-                        'skip-ktlint-format': true,
-                    })
-                    .withGenerators([
-                        [
-                            require('../generators/server'), // eslint-disable-line global-require
-                            'jhipster-kotlin:server',
-                            path.join(__dirname, '../generators/server/index.js'),
-                        ],
-                    ])
-                    .inTmpDir(dir => {
-                        fse.copySync(path.join(__dirname, '../test/templates/uaaserver/'), dir);
-                    })
-                    .withPrompts({
-                        applicationType: 'gateway',
-                        baseName: 'jhipster',
-                        packageName: 'com.mycompany.myapp',
-                        packageFolder: 'com/mycompany/myapp',
-                        serverPort: '8080',
-                        authenticationType: 'uaa',
-                        uaaBaseName: 'uaaBaseName',
-                        cacheProvider: 'hazelcast',
-                        enableHibernateCache: true,
-                        databaseType: 'sql',
-                        devDatabaseType: 'postgresql',
-                        prodDatabaseType: 'postgresql',
-                        enableTranslation: true,
-                        nativeLanguage: 'en',
-                        languages: ['fr', 'en'],
-                        buildTool: 'maven',
-                        rememberMeKey: '5c37379956bd1242f5636c8cb322c2966ad81277',
-                        serverSideOptions: [],
-                        serviceDiscoveryType: 'eureka',
-                    })
-                    .on('end', done);
-            });
-
-            it('creates expected files for UAA auth with the Gateway application type', () => {
-                assert.file(expectedFiles.gateway);
-                assert.file(expectedFiles.rateLimitingFilesForGateways);
-                assert.file(expectedFiles.gatewayWithUaa);
-                assert.file(expectedFiles.dockerServices);
-                assert.file(expectedFiles.eureka);
-                assert.file(expectedFiles.hazelcast);
-            });
-        });
     });
 
     context('Consul', () => {
         describe('gateway with consul', () => {
-            before(done => {
-                helpers
+            before( async () => { 
+                await helpers
                     .run('generator-jhipster/generators/app')
                     .withOptions({
-                        fromCli: true,
-                        skipInstall: true,
-                        skipChecks: true,
                         blueprint: 'kotlin',
                         'skip-ktlint-format': true,
                     })
@@ -2680,26 +2405,22 @@ describe('JHipster generator', () => {
                         rememberMeKey: '5c37379956bd1242f5636c8cb322c2966ad81277',
                         serverSideOptions: [],
                     })
-                    .on('end', done);
+                    
             });
 
             it('creates expected files with the gateway application type', () => {
-                assert.file(expectedFiles.jwtServer);
+                assert.file(expectedFiles.jwtServerGateway);
                 assert.file(expectedFiles.gateway);
-                assert.file(expectedFiles.rateLimitingFilesForGateways);
                 assert.noFile(expectedFiles.eureka);
                 assert.file(expectedFiles.consul);
             });
         });
 
         describe('gateway with consul and rate limiting', () => {
-            before(done => {
-                helpers
+            before( async () => { 
+                await helpers
                     .run('generator-jhipster/generators/app')
                     .withOptions({
-                        fromCli: true,
-                        skipInstall: true,
-                        skipChecks: true,
                         blueprint: 'kotlin',
                         'skip-ktlint-format': true,
                     })
@@ -2730,26 +2451,22 @@ describe('JHipster generator', () => {
                         rememberMeKey: '5c37379956bd1242f5636c8cb322c2966ad81277',
                         serverSideOptions: [],
                     })
-                    .on('end', done);
+                    
             });
 
             it('creates expected files with the gateway application type', () => {
-                assert.file(expectedFiles.jwtServer);
+                assert.file(expectedFiles.jwtServerGateway);
                 assert.file(expectedFiles.gateway);
-                assert.file(expectedFiles.rateLimitingFilesForGateways);
                 assert.noFile(expectedFiles.eureka);
                 assert.file(expectedFiles.consul);
             });
         });
 
         describe('microservice with consul', () => {
-            before(done => {
-                helpers
+            before( async () => { 
+                await helpers
                     .run('generator-jhipster/generators/app')
                     .withOptions({
-                        fromCli: true,
-                        skipInstall: true,
-                        skipChecks: true,
                         blueprint: 'kotlin',
                         'skip-ktlint-format': true,
                     })
@@ -2779,7 +2496,7 @@ describe('JHipster generator', () => {
                         rememberMeKey: '5c37379956bd1242f5636c8cb322c2966ad81277',
                         serverSideOptions: [],
                     })
-                    .on('end', done);
+                    
             });
 
             it('creates expected files with the microservice application type', () => {
@@ -2794,13 +2511,10 @@ describe('JHipster generator', () => {
 
     context('No Service Discovery', () => {
         describe('gateway with no service discovery', () => {
-            before(done => {
-                helpers
+            before( async () => { 
+                await helpers
                     .run('generator-jhipster/generators/app')
                     .withOptions({
-                        fromCli: true,
-                        skipInstall: true,
-                        skipChecks: true,
                         blueprint: 'kotlin',
                         'skip-ktlint-format': true,
                     })
@@ -2830,77 +2544,22 @@ describe('JHipster generator', () => {
                         buildTool: 'maven',
                         rememberMeKey: '5c37379956bd1242f5636c8cb322c2966ad81277',
                         serverSideOptions: [],
-                    })
-                    .on('end', done);
+                    });
             });
 
             it('creates expected files with the gateway application type', () => {
-                assert.file(expectedFiles.jwtServer);
+                assert.file(expectedFiles.jwtServerGateway);
                 assert.noFile(expectedFiles.gateway);
-                assert.noFile(expectedFiles.rateLimitingFilesForGateways);
-                assert.noFile(expectedFiles.eureka);
-                assert.noFile(expectedFiles.consul);
-            });
-        });
-
-        describe('UAA gateway with no service discovery', () => {
-            before(done => {
-                helpers
-                    .run('generator-jhipster/generators/app')
-                    .withOptions({
-                        fromCli: true,
-                        skipInstall: true,
-                        skipChecks: true,
-                        blueprint: 'kotlin',
-                        'uaa-base-name': 'jhipsterApp',
-                    })
-                    .withGenerators([
-                        [
-                            require('../generators/server'), // eslint-disable-line global-require
-                            'jhipster-kotlin:server',
-                            path.join(__dirname, '../generators/server/index.js'),
-                        ],
-                    ])
-                    .withPrompts({
-                        applicationType: 'gateway',
-                        baseName: 'jhipster',
-                        packageName: 'com.mycompany.myapp',
-                        packageFolder: 'com/mycompany/myapp',
-                        clientFramework: ANGULAR,
-                        serviceDiscoveryType: false,
-                        authenticationType: 'uaa',
-                        cacheProvider: 'ehcache',
-                        enableHibernateCache: true,
-                        databaseType: 'sql',
-                        devDatabaseType: 'h2Memory',
-                        prodDatabaseType: 'postgresql',
-                        enableTranslation: true,
-                        nativeLanguage: 'en',
-                        languages: ['fr', 'en'],
-                        buildTool: 'maven',
-                        rememberMeKey: '5c37379956bd1242f5636c8cb322c2966ad81277',
-                        serverSideOptions: [],
-                    })
-                    .on('end', done);
-            });
-
-            it('creates expected files with the gateway application type', () => {
-                assert.file(expectedFiles.gatewayWithUaa);
-                assert.noFile(expectedFiles.gateway);
-                assert.noFile(expectedFiles.rateLimitingFilesForGateways);
                 assert.noFile(expectedFiles.eureka);
                 assert.noFile(expectedFiles.consul);
             });
         });
 
         describe('microservice with no service discovery', () => {
-            before(done => {
-                helpers
+            before( async () => { 
+                await helpers
                     .run('generator-jhipster/generators/app')
                     .withOptions({
-                        fromCli: true,
-                        skipInstall: true,
-                        skipChecks: true,
                         blueprint: 'kotlin',
                         'skip-ktlint-format': true,
                     })
@@ -2929,7 +2588,7 @@ describe('JHipster generator', () => {
                         rememberMeKey: '5c37379956bd1242f5636c8cb322c2966ad81277',
                         serverSideOptions: [],
                     })
-                    .on('end', done);
+                    
             });
 
             it('creates expected files with the microservice application type', () => {
@@ -2941,51 +2600,4 @@ describe('JHipster generator', () => {
             });
         });
     });
-
-    describe('microservice with skip generated flag', () => {
-        before(done => {
-            helpers
-                .run('generator-jhipster/generators/app')
-                .withOptions({
-                    fromCli: true,
-                    skipInstall: true,
-                    skipChecks: true,
-                    blueprint: 'kotlin',
-                    'skip-ktlint-format': true,
-                    withGeneratedFlag: false,
-                })
-                .withGenerators([
-                    [
-                        require('../generators/server'), // eslint-disable-line global-require
-                        'jhipster-kotlin:server',
-                        path.join(__dirname, '../generators/server/index.js'),
-                    ],
-                ])
-                .withPrompts({
-                    applicationType: 'microservice',
-                    baseName: 'jhipster',
-                    packageName: 'com.mycompany.myapp',
-                    packageFolder: 'com/mycompany/myapp',
-                    serviceDiscoveryType: false,
-                    authenticationType: 'jwt',
-                    cacheProvider: 'ehcache',
-                    enableHibernateCache: true,
-                    databaseType: 'sql',
-                    devDatabaseType: 'mysql',
-                    prodDatabaseType: 'mysql',
-                    enableTranslation: true,
-                    nativeLanguage: 'en',
-                    languages: ['fr', 'en'],
-                    buildTool: 'maven',
-                    rememberMeKey: '5c37379956bd1242f5636c8cb322c2966ad81277',
-                    serverSideOptions: [],
-                })
-                .on('end', done);
-        });
-
-        // it('does have @GeneratedByJHipster annotation', () => {
-        //     assert.noFileContent('src/main/kotlin/com/mycompany/myapp/JhipsterApp.kt', /@GeneratedByJHipster/);
-        // });
-    });
-    // TODO: Add enum test
 });

@@ -34,6 +34,10 @@ module.exports = class extends EntityServerGenerator {
         return super._initializing();
     }
 
+    get preparingFields() {
+        return super._preparingFields();
+    }
+
     get default() {
         return super._default();
     }
@@ -47,5 +51,9 @@ module.exports = class extends EntityServerGenerator {
 
     get preparing() {
         return super._preparing();
+    }
+
+    get postWriting() {
+        return super._postWriting();
     }
 };

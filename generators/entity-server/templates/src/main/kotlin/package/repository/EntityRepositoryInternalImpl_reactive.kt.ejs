@@ -42,21 +42,21 @@ import org.springframework.data.domain.Pageable
 import io.r2dbc.spi.Row
 import io.r2dbc.spi.RowMetadata
 
-import org.springframework.data.r2dbc.core.DatabaseClient
-import org.springframework.data.r2dbc.core.DatabaseClient.GenericInsertSpec
-import org.springframework.data.r2dbc.core.ReactiveDataAccessStrategy
-import org.springframework.data.r2dbc.core.RowsFetchSpec
-import org.springframework.data.r2dbc.mapping.OutboundRow
-import org.springframework.data.r2dbc.mapping.SettableValue
+import org.springframework.data.relational.core.query.Criteria.where
+import org.springframework.data.relational.core.query.Query.query
+
+import org.springframework.data.r2dbc.core.R2dbcEntityTemplate
 import org.springframework.data.relational.core.query.Criteria
 import org.springframework.data.relational.core.sql.Column
 import org.springframework.data.relational.core.sql.Expression
 import org.springframework.data.relational.core.sql.Select
 import org.springframework.data.relational.core.sql.SelectBuilder.SelectFromAndJoin<% if (reactiveEagerRelations.length > 0) { %>Condition<% } %>
 import org.springframework.data.relational.core.sql.Table
+import org.springframework.r2dbc.core.DatabaseClient
+import org.springframework.r2dbc.core.RowsFetchSpec
 <%_ } _%>
 
-import <%= packageName %>.domain.<%= asEntity(entityClass) %>
+import <%= packageName %>.domain.<%= persistClass %>
 <% relationships.forEach(function(rel) {
     if (rel.relationshipType === 'many-to-many' && rel.ownerSide) { _%>
 import <%= packageName %>.domain.<%= asEntity(rel.otherEntityNameCapitalized) %>
@@ -79,12 +79,12 @@ import reactor.core.publisher.Flux
 import reactor.core.publisher.Mono
 
 /**
- * Spring Data <%= officialDatabaseType %> reactive custom repository implementation for the <%= asEntity(entityClass) %> entity.
+ * Spring Data <%= officialDatabaseType %> reactive custom repository implementation for the <%= persistClass %> entity.
  */
 @SuppressWarnings("unused")
 class <%= entityClass %>RepositoryInternalImpl(
     val db: DatabaseClient,
-    val dataAccessStrategy: ReactiveDataAccessStrategy,
+    val r2dbcEntityTemplate: R2dbcEntityTemplate,
     val entityManager: EntityManager <% reactiveUniqueEntityTypes.forEach(function(element) { %>,
     val <%= element.toLowerCase() %>Mapper: <%= element %>RowMapper
     <%_ }); _%>
@@ -105,16 +105,16 @@ class <%= entityClass %>RepositoryInternalImpl(
 
     }
 
-    override fun findAllBy(pageable: Pageable): Flux<<%= asEntity(entityClass) %>> {
+    override fun findAllBy(pageable: Pageable): Flux<<%= persistClass %>> {
         return createQuery(pageable, null).all()
     }
 
-    override fun findAllBy(pageable: Pageable, criteria: Criteria): Flux<<%= asEntity(entityClass) %>> {
+    override fun findAllBy(pageable: Pageable, criteria: Criteria): Flux<<%= persistClass %>> {
         return createQuery(pageable, criteria).all()
     }
 
-    fun createQuery(pageable: Pageable?, criteria: Criteria?): RowsFetchSpec<<%= asEntity(entityClass) %>> {
-        val columns = <%= asEntity(entityClass) %>SqlHelper().getColumns(entityTable, EntityManager.ENTITY_ALIAS)
+    fun createQuery(pageable: Pageable?, criteria: Criteria?): RowsFetchSpec<<%= persistClass %>> {
+        val columns = <%= persistClass %>SqlHelper().getColumns(entityTable, EntityManager.ENTITY_ALIAS)
         <%_ reactiveEagerRelations.forEach(function(rel) { _%>
         columns.addAll(<%= rel.otherEntityNameCapitalized %>SqlHelper().getColumns(<%= rel.relationshipName %>Table, "<%= rel.relationshipName %>"))
         <%_ }); _%>
@@ -122,35 +122,42 @@ class <%= entityClass %>RepositoryInternalImpl(
             const colName = _getJoinColumnName(rel); %>
             .leftOuterJoin(<%= rel.relationshipName %>Table).on(Column.create("<%= colName %>", entityTable)).equals(Column.create("id", <%= rel.relationshipName %>Table ))<%_ }); _%>
 
-        val select = entityManager.createSelect(selectFrom, <%= asEntity(entityClass) %>::class.java, pageable, criteria)
-        return db.execute(select)
+        val select = entityManager.createSelect(selectFrom, <%= persistClass %>::class.java, pageable, criteria)
+    
+        <%_ if (databaseType === 'sql') { _%>
+        val alias = entityTable.getReferenceName().getReference()
+        val selectWhere =
+            Optional.ofNullable(criteria).map {
+                StringBuilder(select).append(" ").append("WHERE").append(" ").append(alias).append(".").append(it.toString()).toString()}.orElse(select) // TODO remove once https://github.com/spring-projects/spring-data-jdbc/issues/907 will be fixed
+        <%_ } _%>
+        return db.sql(select<% if (databaseType === 'sql') { %>Where<% } %>)
                 .map(this::process)
     }
 
-    override fun findAll(): Flux<<%= asEntity(entityClass) %>> {
+    override fun findAll(): Flux<<%= persistClass %>> {
         return createQuery(null, null).all()
     }
 
-    override fun findById(id: <%= primaryKey.type %>): Mono<<%= asEntity(entityClass) %>> {
+    override fun findById(id: <%= primaryKey.type %>): Mono<<%= persistClass %>> {
         return createQuery(null, Criteria.where("id").`is`(id)).one();
     }
 
     <%_ if (fieldsContainOwnerManyToMany) { _%>
 
-    override fun findOneWithEagerRelationships(id: Long): Mono<<%= asEntity(entityClass) %>> {
+    override fun findOneWithEagerRelationships(id: Long): Mono<<%= persistClass %>> {
         return findById(id);
     }
 
-    override fun findAllWithEagerRelationships(): Flux<<%= asEntity(entityClass) %>> {
+    override fun findAllWithEagerRelationships(): Flux<<%= persistClass %>> {
         return findAll();
     }
 
-    override fun findAllWithEagerRelationships(page: Pageable): Flux<<%= asEntity(entityClass) %>> {
+    override fun findAllWithEagerRelationships(page: Pageable): Flux<<%= persistClass %>> {
         return findAllBy(page);
     }
 
     <%_ } _%>
-    private fun process(row: Row, metadata: RowMetadata): <%= asEntity(entityClass) %> {
+    private fun process(row: Row, metadata: RowMetadata): <%= persistClass %> {
         val entity = <%= entityClass.toLowerCase() %>Mapper.apply(row, "e")
         <%_ reactiveEagerRelations.forEach(function(rel) { _%>
         entity.<%= rel.relationshipName %> = <%= rel.otherEntityNameCapitalized.toLowerCase() %>Mapper.apply(row, "<%= rel.relationshipName %>")
@@ -158,11 +165,11 @@ class <%= entityClass %>RepositoryInternalImpl(
         return entity
     }
 
-    override fun <S:<%= asEntity(entityClass) %>> insert(entity: S): Mono<S> {
+    override fun <S:<%= persistClass %>> insert(entity: S): Mono<S> {
         return entityManager.insert(entity);
     }
 
-    override fun <S:<%= asEntity(entityClass) %>> save(entity: S): Mono<S>  {
+    override fun <S:<%= persistClass %>> save(entity: S): Mono<S>  {
         if (entity.<%= primaryKey.name %> == null) {
             <%_ if (isUsingMapsId) { _%>
             entity.<%= primaryKey.name %> = entity.<%= mapsIdAssoc.relationshipName %>?.<%= primaryKey.name %>
@@ -178,9 +185,10 @@ class <%= entityClass %>RepositoryInternalImpl(
         }
     }
 
-    override fun update(entity: <%= asEntity(entityClass) %>): Mono<Integer> {
+    override fun update(entity: <%= persistClass %>): Mono<Integer> {
         <%_ if (fields.length + reactiveEagerRelations.length > 0) { _%>
-        return db.update().table(<%= asEntity(entityClass) %>::class.java).using(entity).fetch().rowsUpdated().map{ it as Integer }
+        //fixme is this the proper way?
+        return r2dbcEntityTemplate.update(entity).thenReturn(1)
         <%_ } else { _%>
         // What can we update on this field?
         return Mono.just(1).map{ it as Integer }
@@ -191,11 +199,11 @@ class <%= entityClass %>RepositoryInternalImpl(
 
     override fun deleteById(entityId: Long): Mono<Void> {
         return deleteRelations(entityId).then(
-             db.delete().from(<%= asEntity(entityClass) %>::class.java).matching(Criteria.from(Criteria.where("id").`is`(entityId))).then()
+            r2dbcEntityTemplate.from(<%= persistClass %>::class.java).matching(query(where("id").`is`(entityId))).all().then()
         );
     }
 
-    protected fun <S:<%= asEntity(entityClass) %>> updateRelations(entity: S): Mono<S> {
+    protected fun <S:<%= persistClass %>> updateRelations(entity: S): Mono<S> {
         <%_ relationships.filter(function(rel) {
                 return (rel.relationshipType === 'many-to-many' && rel.ownerSide)
             }).forEach(function(rel, idx) {

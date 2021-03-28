@@ -18,7 +18,7 @@
 -%>
 package <%= packageName %>.repository
 
-import <%= packageName %>.domain.<%= asEntity(entityClass) %>
+import <%= packageName %>.domain.<%= persistClass %>
 <%_ if (databaseType === 'cassandra') { _%>
 import org.springframework.data.cassandra.repository.ReactiveCassandraRepository
 <%_ } _%>
@@ -30,8 +30,8 @@ import org.springframework.data.couchbase.core.query.Query
 import org.springframework.data.couchbase.repository.ReactiveCouchbaseSortingRepository
 <%_ } _%>
 <%_ if (databaseType === 'neo4j') { _%>
-import org.neo4j.springframework.data.repository.ReactiveNeo4jRepository
-import org.neo4j.springframework.data.repository.query.Query
+import org.springframework.data.neo4j.repository.ReactiveNeo4jRepository
+import org.springframework.data.neo4j.repository.query.Query
 <%_ } _%>
 <%_ if (pagination !== 'no' || relationshipsContainEagerLoad || databaseType === 'sql') { _%>
 import org.springframework.data.domain.Pageable
@@ -60,48 +60,48 @@ import java.util.UUID
 <%_ } _%>
 
  /**
- * Spring Data <%= officialDatabaseType %> reactive repository for the <%= asEntity(entityClass) %> entity.
+ * Spring Data <%= officialDatabaseType %> reactive repository for the <%= persistClass %> entity.
  */
 @SuppressWarnings("unused")
 @Repository
-interface <%= entityClass %>Repository: <% if (databaseType === 'sql') { %>R2dbc<% } if (databaseType === 'mongodb') { %>ReactiveMongo<% } if (databaseType === 'couchbase') { %>ReactiveN1qlCouchbase<% } if (databaseType === 'neo4j') { %>ReactiveNeo4j<% } if (databaseType === 'cassandra') { %>ReactiveCassandra<% } %>Repository<<%= asEntity(entityClass) %>, <%= primaryKey.type %>><% if (searchEngine === 'couchbase') { %>, SearchCouchbaseRepository<<%= asEntity(entityClass) %>, <%= primaryKey.type %>><% } %><% if (databaseType === 'sql') { %>, <%= entityClass %>RepositoryInternal<% } %>  {
+interface <%= entityClass %>Repository: <% if (databaseType === 'sql') { %>R2dbc<% } if (databaseType === 'mongodb') { %>ReactiveMongo<% } if (databaseType === 'couchbase') { %>ReactiveN1qlCouchbase<% } if (databaseType === 'neo4j') { %>ReactiveNeo4j<% } if (databaseType === 'cassandra') { %>ReactiveCassandra<% } %>Repository<<%= persistClass %>, <%= primaryKey.type %>><% if (searchEngine === 'couchbase') { %>, SearchCouchbaseRepository<<%= persistClass %>, <%= primaryKey.type %>><% } %><% if (databaseType === 'sql') { %>, <%= entityClass %>RepositoryInternal<% } %>  {
 
     <%_ if (pagination !== 'no') { _%>
 
-    <% if (databaseType === 'sql') { %>override <% } %>fun findAllBy(pageable: Pageable): Flux<<%= asEntity(entityClass) %>> 
+    <% if (databaseType === 'sql') { %>override <% } %>fun findAllBy(pageable: Pageable): Flux<<%= persistClass %>> 
     <%_ } _%>
     <%_ if (relationshipsContainEagerLoad) { _%>
         <%_ if (['couchbase', 'mongodb'].includes(databaseType)) { _%>
 
     @Query("<%= (databaseType === 'mongodb') ? '{}' : '#{#n1ql.selectEntity} WHERE #{#n1ql.filter}' %>")
-    fun findAllWithEagerRelationships(pageable: Pageable): Flux<<%= asEntity(entityClass) %>> 
+    fun findAllWithEagerRelationships(pageable: Pageable): Flux<<%= persistClass %>> 
 
     @Query("<%= (databaseType === 'mongodb') ? '{}' : '#{#n1ql.selectEntity} WHERE #{#n1ql.filter}' %>")
-    fun findAllWithEagerRelationships(): Flux<<%= asEntity(entityClass) %>> 
+    fun findAllWithEagerRelationships(): Flux<<%= persistClass %>> 
 
     @Query("<%- (databaseType === 'mongodb') ? "{'id': ?0}" : "#{#n1ql.selectEntity} USE KEYS $1 WHERE #{#n1ql.filter}" %>")
-    fun findOneWithEagerRelationships(id: <%= primaryKey.type %>): Mono<<%= asEntity(entityClass) %>> 
+    fun findOneWithEagerRelationships(id: <%= primaryKey.type %>): Mono<<%= persistClass %>> 
         <%_ } _%>
         <%_ if (databaseType === 'neo4j') { _%>
-    @Query("MATCH (n:<%= asEntity(entityClass) %>)<-[]-(m) RETURN n,m")
-    fun findAllWithEagerRelationships(pageable: Pageable): Flux<<%= asEntity(entityClass) %>> 
+    @Query("MATCH (n:<%= persistClass %>)<-[]-(m) RETURN n,m")
+    fun findAllWithEagerRelationships(pageable: Pageable): Flux<<%= persistClass %>> 
 
-    @Query("MATCH (n:<%= asEntity(entityClass) %>)<-[]-(m) RETURN n,m")
-    fun findAllWithEagerRelationships(): Flux<<%= asEntity(entityClass) %>> 
+    @Query("MATCH (n:<%= persistClass %>)<-[]-(m) RETURN n,m")
+    fun findAllWithEagerRelationships(): Flux<<%= persistClass %>> 
 
-    @Query("MATCH (e:<%= asEntity(entityClass) %> {id: $id}) RETURN e")
-    fun findOneWithEagerRelationships(id: <%= primaryKey.type %>): Mono<<%= asEntity(entityClass) %>> 
+    @Query("MATCH (e:<%= persistClass %> {id: $id}) RETURN e")
+    fun findOneWithEagerRelationships(id: <%= primaryKey.type %>): Mono<<%= persistClass %>> 
         <%_ } _%>
     <%_ } _%>
 
     <%_ if (databaseType === 'sql') {
         if (fieldsContainOwnerManyToMany) { _%>
 
-    override fun findOneWithEagerRelationships(id: <%= primaryKey.type %>): Mono<<%= asEntity(entityClass) %>>
+    override fun findOneWithEagerRelationships(id: <%= primaryKey.type %>): Mono<<%= persistClass %>>
 
-    override fun findAllWithEagerRelationships(): Flux<<%= asEntity(entityClass) %>> 
+    override fun findAllWithEagerRelationships(): Flux<<%= persistClass %>> 
 
-    override fun findAllWithEagerRelationships(page: Pageable): Flux<<%= asEntity(entityClass) %>>
+    override fun findAllWithEagerRelationships(page: Pageable): Flux<<%= persistClass %>>
     
     override fun deleteById(id: Long): Mono<Void>
 
@@ -114,54 +114,54 @@ interface <%= entityClass %>Repository: <% if (databaseType === 'sql') { %>R2dbc
                 if (relationshipType === 'many-to-one' || (relationshipType === 'one-to-one' && ownerSide === true)) { _%>
 
     @Query("SELECT * FROM <%= entityTableName %> entity WHERE entity.<%= getColumnName(relationshipName) %>_id = :id")
-    fun findBy<%= relationship.relationshipNameCapitalized %>(id: <%= primaryKey.type %>): Flux<<%= asEntity(entityClass) %>>
+    fun findBy<%= relationship.relationshipNameCapitalized %>(id: <%= primaryKey.type %>): Flux<<%= persistClass %>>
 
     @Query("SELECT * FROM <%= entityTableName %> entity WHERE entity.<%= getColumnName(relationshipName) %>_id IS NULL")
-    fun findAllWhere<%= relationship.relationshipNameCapitalized %>IsNull(): Flux<<%= asEntity(entityClass) %>>
+    fun findAllWhere<%= relationship.relationshipNameCapitalized %>IsNull(): Flux<<%= persistClass %>>
             <%_ } else if (relationshipType === 'many-to-many') { 
                 const joinTableName = getJoinTableName(entityTableName, relationshipName, prodDatabaseType);
                 _%>
 
     @Query("SELECT entity.* FROM <%= entityTableName %> entity JOIN <%= joinTableName %> joinTable ON entity.id = joinTable.<%= getColumnName(name) %>_id WHERE joinTable.<%= getColumnName(relationshipName) %>_id = :id")
-    fun findBy<%= relationship.relationshipNameCapitalized %>(id: <%= primaryKey.type %>): Flux<<%= asEntity(entityClass) %>>
+    fun findBy<%= relationship.relationshipNameCapitalized %>(id: <%= primaryKey.type %>): Flux<<%= persistClass %>>
             <%_ } else if (relationshipType === 'one-to-one' && ownerSide === false) {
                 let otherEntityRelationshipName = relationship.otherEntityRelationshipName;
                 let otherEntityTableName = relationship.otherEntityTableName;
                 _%>
 
     @Query("SELECT * FROM <%= entityTableName %> entity WHERE entity.id not in (select <%= getColumnName(otherEntityRelationshipName) %>_id from <%= otherEntityTableName %>)")
-    fun findAllWhere<%= relationship.relationshipNameCapitalized %>IsNull(): Flux<<%= asEntity(entityClass) %>>
+    fun findAllWhere<%= relationship.relationshipNameCapitalized %>IsNull(): Flux<<%= persistClass %>>
             <%_ } _%>
         <%_ } _%>
 
     // just to avoid having unambigous methods
-    override fun findAll(): Flux<<%= asEntity(entityClass) %>>
+    override fun findAll(): Flux<<%= persistClass %>>
 
-    override fun findById(id: Long?): Mono<<%= asEntity(entityClass) %>>
+    override fun findById(id: Long?): Mono<<%= persistClass %>>
 
-    override fun <S:<%= asEntity(entityClass) %>> save(entity: S): Mono<S>
+    override fun <S:<%= persistClass %>> save(entity: S): Mono<S>
 
     <%_ } _%>
 
 }
     <%_ if (databaseType === 'sql') { _%>
 interface <%= entityClass %>RepositoryInternal {
-    fun <S:<%= asEntity(entityClass) %>> insert (entity: S): Mono<S>
-    fun <S:<%= asEntity(entityClass) %>> save(entity: S): Mono<S>
-    fun update(entity: <%= asEntity(entityClass) %>): Mono<Integer> 
+    fun <S:<%= persistClass %>> insert (entity: S): Mono<S>
+    fun <S:<%= persistClass %>> save(entity: S): Mono<S>
+    fun update(entity: <%= persistClass %>): Mono<Integer> 
 
-    fun findAll(): Flux<<%= asEntity(entityClass) %>> 
-    fun findById(id: <%= primaryKey.type %>): Mono<<%= asEntity(entityClass) %>> 
-    fun findAllBy(pageable: Pageable): Flux<<%= asEntity(entityClass) %>> 
-    fun findAllBy(pageable: Pageable, criteria: Criteria): Flux<<%= asEntity(entityClass) %>> 
+    fun findAll(): Flux<<%= persistClass %>> 
+    fun findById(id: <%= primaryKey.type %>): Mono<<%= persistClass %>> 
+    fun findAllBy(pageable: Pageable): Flux<<%= persistClass %>> 
+    fun findAllBy(pageable: Pageable, criteria: Criteria): Flux<<%= persistClass %>> 
 
     <%_ if (fieldsContainOwnerManyToMany) { _%>
 
-    fun findOneWithEagerRelationships(id: <%= primaryKey.type %>): Mono<<%= asEntity(entityClass) %>> 
+    fun findOneWithEagerRelationships(id: <%= primaryKey.type %>): Mono<<%= persistClass %>> 
 
-    fun findAllWithEagerRelationships(): Flux<<%= asEntity(entityClass) %>> 
+    fun findAllWithEagerRelationships(): Flux<<%= persistClass %>> 
 
-    fun findAllWithEagerRelationships(page: Pageable): Flux<<%= asEntity(entityClass) %>> 
+    fun findAllWithEagerRelationships(page: Pageable): Flux<<%= persistClass %>> 
 
     fun deleteById(id: Long): Mono<Void> 
     <%_ } _%>

@@ -30,7 +30,10 @@ import java.util.UUID
  */
 open class <%= asDto('User') %>(
     var id: <%= user.primaryKey.type %>? = null,
-    var login: String? = null
+    var login: String? = null,
+    <%_ for (field of user.fields.filter(field => !field.builtIn && field.relatedByOtherEntity)) { _%>
+    val <%= field.fieldName %>: String? = null,
+    <%_ } _%>
 ){
 
     <%_ if (databaseType !== 'no') { _%>
@@ -39,5 +42,8 @@ open class <%= asDto('User') %>(
     
     override fun toString() = "<%= asDto('User') %>{" +
         "login='" + login + '\'' +
+<%_ for (field of user.fields.filter(field => !field.builtIn && field.relatedByOtherEntity)) { _%>
+        ", <%= field.fieldName %>='" + <%= field.fieldName %> + '\'' +
+<%_ } _%>
         "}"
 }

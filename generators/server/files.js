@@ -270,7 +270,7 @@ const serverFiles = {
             ],
         },
         {
-            condition: generator => !generator.reactive && generator.applicationType !== 'uaa' && generator.authenticationType !== 'uaa',
+            condition: generator => !generator.reactive,
             path: SERVER_MAIN_KOTLIN_SRC_DIR,
             templates: [
                 {
@@ -281,49 +281,12 @@ const serverFiles = {
             ],
         },
         {
-            condition: generator => !generator.reactive && generator.applicationType !== 'uaa' && generator.authenticationType === 'uaa',
-            path: SERVER_MAIN_KOTLIN_SRC_DIR,
-            templates: [
-                {
-                    file: 'package/config/SecurityConfiguration_uaa.kt',
-                    renameTo: generator => `${generator.javaDir}config/SecurityConfiguration.kt`,
-                    useBluePrint: true,
-                },
-            ],
-        },
-        {
-            condition: generator => generator.reactive && generator.applicationType !== 'uaa',
+            condition: generator => generator.reactive,
             path: SERVER_MAIN_KOTLIN_SRC_DIR,
             templates: [
                 {
                     file: 'package/config/SecurityConfiguration_reactive.kt',
                     renameTo: generator => `${generator.javaDir}config/SecurityConfiguration.kt`,
-                    useBluePrint: true,
-                },
-            ],
-        },
-        {
-            condition: generator => !shouldSkipUserManagement(generator) && generator.applicationType === 'uaa',
-            path: SERVER_MAIN_KOTLIN_SRC_DIR,
-            templates: [
-                {
-                    file: 'package/config/UaaWebSecurityConfiguration.kt',
-                    renameTo: generator => `${generator.javaDir}config/UaaWebSecurityConfiguration.kt`,
-                    useBluePrint: true,
-                },
-                {
-                    file: 'package/config/UaaConfiguration.kt',
-                    renameTo: generator => `${generator.javaDir}config/UaaConfiguration.kt`,
-                    useBluePrint: true,
-                },
-                {
-                    file: 'package/config/UaaProperties.kt',
-                    renameTo: generator => `${generator.javaDir}config/UaaProperties.kt`,
-                    useBluePrint: true,
-                },
-                {
-                    file: 'package/security/IatTokenEnhancer.kt',
-                    renameTo: generator => `${generator.javaDir}security/IatTokenEnhancer.kt`,
                     useBluePrint: true,
                 },
             ],
@@ -445,12 +408,7 @@ const serverFiles = {
             ],
         },
         {
-            condition: generator =>
-                !generator.reactive &&
-                generator.authenticationType === 'oauth2' &&
-                (generator.applicationType === 'monolith' ||
-                    generator.applicationType === 'microservice' ||
-                    generator.applicationType === 'gateway'),
+            condition: generator => !generator.reactive && generator.authenticationType === 'oauth2' && generator.applicationType === 'monolith',
             path: SERVER_MAIN_KOTLIN_SRC_DIR,
             templates: [
                 {
@@ -461,12 +419,7 @@ const serverFiles = {
             ],
         },
         {
-            condition: generator =>
-                !generator.reactive &&
-                generator.authenticationType === 'oauth2' &&
-                (generator.applicationType === 'monolith' ||
-                    generator.applicationType === 'microservice' ||
-                    generator.applicationType === 'gateway'),
+            condition: generator => !generator.reactive && generator.authenticationType === 'oauth2' && generator.applicationType === 'monolith',
             path: SERVER_TEST_SRC_KOTLIN_DIR,
             templates: [
                 {
@@ -478,32 +431,6 @@ const serverFiles = {
         },
     ],
     serverJavaGateway: [
-        {
-            condition: generator => !generator.reactive && generator.applicationType === 'gateway' && generator.serviceDiscoveryType,
-            path: SERVER_MAIN_KOTLIN_SRC_DIR,
-            templates: [
-                {
-                    file: 'package/config/GatewayConfiguration.kt',
-                    renameTo: generator => `${generator.javaDir}config/GatewayConfiguration.kt`,
-                    useBluePrint: true,
-                },
-                {
-                    file: 'package/config/apidoc/GatewaySwaggerResourcesProvider.kt',
-                    renameTo: generator => `${generator.javaDir}config/apidoc/GatewaySwaggerResourcesProvider.kt`,
-                    useBluePrint: true,
-                },
-                {
-                    file: 'package/gateway/accesscontrol/AccessControlFilter.kt',
-                    renameTo: generator => `${generator.javaDir}gateway/accesscontrol/AccessControlFilter.kt`,
-                    useBluePrint: true,
-                },
-                {
-                    file: 'package/gateway/responserewriting/SwaggerBasePathRewritingFilter.kt',
-                    renameTo: generator => `${generator.javaDir}gateway/responserewriting/SwaggerBasePathRewritingFilter.kt`,
-                    useBluePrint: true,
-                },
-            ],
-        },
         {
             condition: generator => generator.applicationType === 'gateway' && generator.serviceDiscoveryType,
             path: SERVER_MAIN_KOTLIN_SRC_DIR,
@@ -521,199 +448,39 @@ const serverFiles = {
             ],
         },
         {
-            condition: generator =>
-                generator.applicationType === 'gateway' && generator.serviceDiscoveryType && generator.cacheProvider === 'hazelcast',
+            condition: generator => generator.applicationType === 'gateway' && generator.serviceDiscoveryType && generator.reactive,
             path: SERVER_MAIN_KOTLIN_SRC_DIR,
             templates: [
                 {
-                    file: 'package/gateway/ratelimiting/RateLimitingFilter.kt',
-                    renameTo: generator => `${generator.javaDir}gateway/ratelimiting/RateLimitingFilter.kt`,
-                    useBluePrint: true,
+                  file: 'package/config/apidocs/GatewaySwaggerResourcesProvider.kt',
+                  renameTo: generator => `${generator.javaDir}config/apidocs/GatewaySwaggerResourcesProvider.kt`,
+                  useBluePrint: true,
+                },
+                {
+                  file: 'package/web/filter/ModifyServersOpenApiFilter.kt',
+                  renameTo: generator => `${generator.javaDir}web/filter/ModifyServersOpenApiFilter.kt`,
+                  useBluePrint: true,
                 },
             ],
         },
         {
-            condition: generator =>
-                !generator.reactive &&
-                generator.applicationType === 'gateway' &&
-                generator.authenticationType === 'jwt' &&
-                generator.serviceDiscoveryType,
-            path: SERVER_MAIN_KOTLIN_SRC_DIR,
+            condition: generator => generator.applicationType === 'gateway' && generator.serviceDiscoveryType && generator.reactive,
+            path: SERVER_TEST_SRC_KOTLIN_DIR,
             templates: [
-                {
-                    file: 'package/gateway/TokenRelayFilter.kt',
-                    renameTo: generator => `${generator.javaDir}gateway/TokenRelayFilter.kt`,
-                    useBluePrint: true,
-                },
+              {
+                file: 'package/web/filter/ModifyServersOpenApiFilterTest.kt',
+                renameTo: generator => `${generator.testDir}web/filter/ModifyServersOpenApiFilterTest.kt`,
+                useBluePrint: true,
+              },
+              {
+                file: 'package/config/apidocs/GatewaySwaggerResourcesProviderTest.kt',
+                renameTo: generator => `${generator.testDir}config/apidocs/GatewaySwaggerResourcesProviderTest.kt`,
+                useBluePrint: true,
+              },
             ],
-        },
-        {
-            condition: generator => !generator.reactive && generator.applicationType === 'gateway' && !generator.serviceDiscoveryType,
-            path: SERVER_MAIN_KOTLIN_SRC_DIR,
-            templates: [
-                {
-                    file: 'package/web/filter/RouteDetectorFilter.kt',
-                    renameTo: generator => `${generator.javaDir}web/filter/RouteDetectorFilter.kt`,
-                    useBluePrint: true,
-                },
-            ],
-        },
-        {
-            condition: generator => generator.applicationType === 'gateway' && generator.authenticationType === 'uaa',
-            path: SERVER_MAIN_KOTLIN_SRC_DIR,
-            templates: [
-                {
-                    file: 'package/web/rest/AuthResource.kt',
-                    renameTo: generator => `${generator.javaDir}web/rest/AuthResource.kt`,
-                    useBluePrint: true,
-                },
-                {
-                    file: 'package/web/filter/RefreshTokenFilter.kt',
-                    renameTo: generator => `${generator.javaDir}web/filter/RefreshTokenFilter.kt`,
-                    useBluePrint: true,
-                },
-                {
-                    file: 'package/web/filter/RefreshTokenFilterConfigurer.kt',
-                    renameTo: generator => `${generator.javaDir}web/filter/RefreshTokenFilterConfigurer.kt`,
-                    useBluePrint: true,
-                },
-                {
-                    file: 'package/config/oauth2/OAuth2AuthenticationConfiguration.kt',
-                    renameTo: generator => `${generator.javaDir}config/oauth2/OAuth2AuthenticationConfiguration.kt`,
-                    useBluePrint: true,
-                },
-                {
-                    file: 'package/security/oauth2/CookieCollection.kt',
-                    renameTo: generator => `${generator.javaDir}security/oauth2/CookieCollection.kt`,
-                    useBluePrint: true,
-                },
-                {
-                    file: 'package/security/oauth2/CookiesHttpServletRequestWrapper.kt',
-                    renameTo: generator => `${generator.javaDir}security/oauth2/CookiesHttpServletRequestWrapper.kt`,
-                    useBluePrint: true,
-                },
-                {
-                    file: 'package/security/oauth2/CookieTokenExtractor.kt',
-                    renameTo: generator => `${generator.javaDir}security/oauth2/CookieTokenExtractor.kt`,
-                    useBluePrint: true,
-                },
-                {
-                    file: 'package/security/oauth2/OAuth2AuthenticationService.kt',
-                    renameTo: generator => `${generator.javaDir}security/oauth2/OAuth2AuthenticationService.kt`,
-                    useBluePrint: true,
-                },
-                {
-                    file: 'package/security/oauth2/OAuth2CookieHelper.kt',
-                    renameTo: generator => `${generator.javaDir}security/oauth2/OAuth2CookieHelper.kt`,
-                    useBluePrint: true,
-                },
-                {
-                    file: 'package/security/oauth2/OAuth2Cookies.kt',
-                    renameTo: generator => `${generator.javaDir}security/oauth2/OAuth2Cookies.kt`,
-                    useBluePrint: true,
-                },
-                {
-                    file: 'package/security/oauth2/OAuth2TokenEndpointClient.kt',
-                    renameTo: generator => `${generator.javaDir}security/oauth2/OAuth2TokenEndpointClient.kt`,
-                    useBluePrint: true,
-                },
-                {
-                    file: 'package/security/oauth2/OAuth2TokenEndpointClientAdapter.kt',
-                    renameTo: generator => `${generator.javaDir}security/oauth2/OAuth2TokenEndpointClientAdapter.kt`,
-                    useBluePrint: true,
-                },
-                {
-                    file: 'package/security/oauth2/UaaTokenEndpointClient.kt',
-                    renameTo: generator => `${generator.javaDir}security/oauth2/UaaTokenEndpointClient.kt`,
-                    useBluePrint: true,
-                },
-            ],
-        },
-        {
-            condition: generator =>
-                generator.authenticationType === 'oauth2' &&
-                (generator.applicationType === 'monolith' || generator.applicationType === 'gateway'),
-            path: SERVER_MAIN_KOTLIN_SRC_DIR,
-            templates: [
-                {
-                    file: 'package/web/rest/AuthInfoResource.kt',
-                    renameTo: generator => `${generator.javaDir}web/rest/AuthInfoResource.kt`,
-                    useBluePrint: true,
-                },
-                {
-                    file: 'package/web/rest/LogoutResource.kt',
-                    renameTo: generator => `${generator.javaDir}web/rest/LogoutResource.kt`,
-                    useBluePrint: true,
-                },
-            ],
-        },
-    ],
-    serverMicroservice: [
-        {
-            condition: generator =>
-                generator.authenticationType === 'uaa' &&
-                (generator.applicationType === 'microservice' || generator.applicationType === 'gateway'),
-            path: SERVER_MAIN_KOTLIN_SRC_DIR,
-            templates: [
-                {
-                    file: 'package/config/oauth2/OAuth2Properties.kt',
-                    renameTo: generator => `${generator.javaDir}config/oauth2/OAuth2Properties.kt`,
-                    useBluePrint: true,
-                },
-                {
-                    file: 'package/config/oauth2/OAuth2JwtAccessTokenConverter.kt',
-                    renameTo: generator => `${generator.javaDir}config/oauth2/OAuth2JwtAccessTokenConverter.kt`,
-                    useBluePrint: true,
-                },
-                {
-                    file: 'package/security/oauth2/OAuth2SignatureVerifierClient.kt',
-                    renameTo: generator => `${generator.javaDir}security/oauth2/OAuth2SignatureVerifierClient.kt`,
-                    useBluePrint: true,
-                },
-                {
-                    file: 'package/security/oauth2/UaaSignatureVerifierClient.kt',
-                    renameTo: generator => `${generator.javaDir}security/oauth2/UaaSignatureVerifierClient.kt`,
-                    useBluePrint: true,
-                },
-            ],
-        },
-        {
-            condition: generator =>
-                !generator.reactive && generator.applicationType === 'microservice' && generator.authenticationType === 'uaa',
-            path: SERVER_MAIN_KOTLIN_SRC_DIR,
-            templates: [
-                {
-                    file: 'package/config/FeignConfiguration.kt',
-                    renameTo: generator => `${generator.javaDir}config/FeignConfiguration.kt`,
-                    useBluePrint: true,
-                },
-                {
-                    file: 'package/client/AuthorizedFeignClient.kt',
-                    renameTo: generator => `${generator.javaDir}client/AuthorizedFeignClient.kt`,
-                    useBluePrint: true,
-                },
-                {
-                    file: 'package/client/OAuth2InterceptedFeignConfiguration.kt',
-                    renameTo: generator => `${generator.javaDir}client/OAuth2InterceptedFeignConfiguration.kt`,
-                    useBluePrint: true,
-                },
-                {
-                    file: 'package/client/AuthorizedUserFeignClient.kt',
-                    renameTo: generator => `${generator.javaDir}client/AuthorizedUserFeignClient.kt`,
-                    useBluePrint: true,
-                },
-                {
-                    file: 'package/client/OAuth2_UserFeignClientInterceptor.kt',
-                    renameTo: generator => `${generator.javaDir}client/UserFeignClientInterceptor.kt`,
-                    useBluePrint: true,
-                },
-                {
-                    file: 'package/client/OAuth2UserClientFeignConfiguration.kt',
-                    renameTo: generator => `${generator.javaDir}client/OAuth2UserClientFeignConfiguration.kt`,
-                    useBluePrint: true,
-                },
-            ],
-        },
+          },
+        ],
+        serverMicroservice: [
         {
             condition: generator =>
                 !generator.reactive &&
@@ -729,18 +496,6 @@ const serverFiles = {
                 {
                     file: 'package/client/JWT_UserFeignClientInterceptor.kt',
                     renameTo: generator => `${generator.javaDir}client/UserFeignClientInterceptor.kt`,
-                    useBluePrint: true,
-                },
-            ],
-        },
-        {
-            condition: generator =>
-                !generator.reactive && generator.authenticationType === 'oauth2' && generator.applicationType === 'gateway',
-            path: SERVER_MAIN_KOTLIN_SRC_DIR,
-            templates: [
-                {
-                    file: 'package/security/oauth2/AuthorizationHeaderFilter.kt',
-                    renameTo: generator => `${generator.javaDir}security/oauth2/AuthorizationHeaderFilter.kt`,
                     useBluePrint: true,
                 },
             ],
@@ -780,9 +535,7 @@ const serverFiles = {
             ],
         },
         {
-            condition: generator =>
-                (!generator.reactive && generator.applicationType === 'gateway' && !generator.serviceDiscoveryType) ||
-                generator.authenticationType === 'uaa',
+            condition: generator => !generator.reactive && generator.applicationType === 'gateway' && !generator.serviceDiscoveryType,
             path: SERVER_MAIN_KOTLIN_SRC_DIR,
             templates: [
                 {
@@ -793,14 +546,7 @@ const serverFiles = {
             ],
         },
         {
-            condition: generator =>
-                !(
-                    generator.applicationType !== 'microservice' &&
-                    !(
-                        generator.applicationType === 'gateway' &&
-                        (generator.authenticationType === 'uaa' || generator.authenticationType === 'oauth2')
-                    )
-                ) && generator.applicationType === 'microservice',
+            condition: generator => generator.applicationType === 'microservice',
             path: SERVER_MAIN_RES_DIR,
             templates: [{ file: 'static/microservices_index.html', renameTo: () => 'static/index.html' }],
         },
@@ -1429,74 +1175,13 @@ const serverFiles = {
             ],
         },
         {
-            condition: generator => !generator.reactive && generator.applicationType === 'gateway' && generator.serviceDiscoveryType,
-            path: SERVER_TEST_SRC_KOTLIN_DIR,
-            templates: [
-                // Create Gateway tests files
-                {
-                    file: 'package/gateway/responserewriting/SwaggerBasePathRewritingFilterTest.kt',
-                    renameTo: generator => `${generator.testDir}gateway/responserewriting/SwaggerBasePathRewritingFilterTest.kt`,
-                    useBluePrint: true,
-                },
-            ],
-        },
-        {
             condition: generator => generator.serviceDiscoveryType,
             path: SERVER_TEST_RES_DIR,
             templates: ['config/bootstrap.yml'],
         },
         {
-            condition: generator => generator.authenticationType === 'uaa',
-            path: SERVER_TEST_SRC_KOTLIN_DIR,
-            templates: [
-                {
-                    file: 'package/config/OAuth2TestConfiguration.kt',
-                    renameTo: generator => `${generator.testDir}config/OAuth2TestConfiguration.kt`,
-                    useBluePrint: true,
-                },
-                {
-                    file: 'package/security/OAuth2TokenMockUtil.kt',
-                    renameTo: generator => `${generator.testDir}security/OAuth2TokenMockUtil.kt`,
-                    useBluePrint: true,
-                },
-                {
-                    file: 'package/config/SecurityBeanOverrideConfiguration.kt',
-                    renameTo: generator => `${generator.testDir}config/SecurityBeanOverrideConfiguration.kt`,
-                    useBluePrint: true,
-                },
-            ],
-        },
-        {
-            condition: generator => generator.authenticationType === 'uaa' && generator.applicationType === 'gateway',
-            path: SERVER_TEST_SRC_KOTLIN_DIR,
-            templates: [
-                {
-                    file: 'package/security/oauth2/OAuth2CookieHelperTest.kt',
-                    renameTo: generator => `${generator.testDir}security/oauth2/OAuth2CookieHelperTest.kt`,
-                    useBluePrint: true,
-                },
-                {
-                    file: 'package/security/oauth2/OAuth2AuthenticationServiceTest.kt',
-                    renameTo: generator => `${generator.testDir}security/oauth2/OAuth2AuthenticationServiceTest.kt`,
-                    useBluePrint: true,
-                },
-                {
-                    file: 'package/security/oauth2/CookieTokenExtractorTest.kt',
-                    renameTo: generator => `${generator.testDir}security/oauth2/CookieTokenExtractorTest.kt`,
-                    useBluePrint: true,
-                },
-                {
-                    file: 'package/security/oauth2/CookieCollectionTest.kt',
-                    renameTo: generator => `${generator.testDir}security/oauth2/CookieCollectionTest.kt`,
-                    useBluePrint: true,
-                },
-            ],
-        },
-        {
             condition: generator =>
-                generator.authenticationType === 'oauth2' &&
-                (generator.applicationType === 'monolith' || generator.applicationType === 'gateway') &&
-                !generator.reactive,
+                generator.authenticationType === 'oauth2' && (generator.applicationType === 'monolith' || generator.applicationType === 'gateway'),
             path: SERVER_TEST_SRC_KOTLIN_DIR,
             templates: [
                 {
@@ -1670,10 +1355,7 @@ const serverFiles = {
             ],
         },
         {
-            condition: generator =>
-                generator.skipUserManagement &&
-                generator.authenticationType !== 'uaa' &&
-                ['monolith', 'gateway'].includes(generator.applicationType),
+            condition: generator => generator.skipUserManagement && ['monolith', 'gateway'].includes(generator.applicationType),
             path: SERVER_MAIN_KOTLIN_SRC_DIR,
             templates: [
                 {
@@ -1719,7 +1401,6 @@ const serverFiles = {
             condition: generator =>
                 generator.skipUserManagement &&
                 generator.authenticationType !== 'oauth2' &&
-                generator.authenticationType !== 'uaa' &&
                 ['monolith', 'gateway'].includes(generator.applicationType),
             path: SERVER_TEST_SRC_KOTLIN_DIR,
             templates: [
@@ -2029,7 +1710,7 @@ function writeFiles() {
         writeFiles() {
             // writeFilesToDisk(serverFiles, this, false, this.fetchFromInstalledJHipster('server/templates'));
 
-            this.writeFilesToDisk(serverFiles);
+            return this.writeFilesToDisk(serverFiles);
         },
 
         modifyFiles() {

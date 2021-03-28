@@ -27,14 +27,15 @@ jobs:
     strategy:
       fail-fast: false
       matrix:
-        node_version: [14.15.0]
+        node_version: [14.16.0]
         os: [ubuntu-20.04]
-        npm_version: [7.5.2]
     steps:
       - uses: actions/checkout@v2
-      - uses: actions/setup-node@v2.1.4
+      - uses: actions/setup-node@v2.1.5
         with:
           node-version: ${{ matrix.node_version }}
+      - name: 'install required npm version'
+        run: npm install -g npm@$(node -e "console.log(require('generator-jhipster/generators/generator-constants').NPM_VERSION);")
       - name: 'install npm@${{ matrix.npm_version }}'
         run: npm install -g npm@${{ matrix.npm_version }}
       - run: git --no-pager log -n 10 --graph --pretty='%Cred%h%Creset -%C(yellow)%d%Creset %s %Cgreen(%cr) %C(bold blue) <%an>%Creset' --abbrev-commit

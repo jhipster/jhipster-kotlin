@@ -19,8 +19,8 @@ This file is part of the JHipster project, see https://jhipster.github.io/
 package <%= packageName %>.service
 
 import org.springframework.core.convert.ConversionService
+import org.springframework.data.r2dbc.convert.R2dbcConverter
 import org.springframework.data.r2dbc.convert.R2dbcCustomConversions
-import org.springframework.data.r2dbc.core.ReactiveDataAccessStrategy
 import org.springframework.lang.Nullable
 import org.springframework.stereotype.Service
 import org.springframework.util.ClassUtils
@@ -35,11 +35,11 @@ import io.r2dbc.spi.Row
 class ColumnConverter(
     private var conversionService: ConversionService,
     private val conversions: R2dbcCustomConversions,
-    dataAccessStrategy: ReactiveDataAccessStrategy
+    private val r2dbcConverter: R2dbcConverter
 ) {
 
     init {
-        conversionService = dataAccessStrategy.converter.conversionService
+        conversionService = r2dbcConverter.conversionService
     }
 
     /**
@@ -49,6 +49,7 @@ class ColumnConverter(
      * @param <T> the parameter for the intended type.
      * @return the value which can be constructed from the input.
      */
+    @SuppressWarnings("unchecked")
     fun <T> convert(@Nullable value: Any, @Nullable target: Class<T>): T {
 
         if (value == null || target == null || ClassUtils.isAssignableValue(target, value)) {

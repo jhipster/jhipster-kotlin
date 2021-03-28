@@ -76,14 +76,14 @@ import org.springframework.data.couchbase.core.query.FetchType
 import org.springframework.data.couchbase.core.query.N1qlJoin
     <%_ } _%>
 <%_ } else if (databaseType === 'neo4j') { _%>
-import org.neo4j.springframework.data.core.schema.GeneratedValue
-import org.neo4j.springframework.data.core.schema.Id
-import org.neo4j.springframework.data.core.schema.Node
-import org.neo4j.springframework.data.core.schema.Property
-import org.neo4j.springframework.data.core.support.UUIDStringGenerator
-    <%_ if (hasRelationship) { _%>
-import org.neo4j.springframework.data.core.schema.Relationship
-    <%_ } _%>
+import org.springframework.data.neo4j.core.schema.GeneratedValue;
+import org.springframework.data.neo4j.core.schema.Id;
+import org.springframework.data.neo4j.core.schema.Node;
+import org.springframework.data.neo4j.core.schema.Property;
+import org.springframework.data.neo4j.core.support.UUIDStringGenerator;
+<%_ if (hasRelationship) { _%>
+import org.springframework.data.neo4j.core.schema.Relationship;
+<%_ } _%>
 <%_ } if (databaseType === 'sql') { _%>
     <%_ if (reactive) { _%>
 import org.springframework.data.annotation.Id;
@@ -114,7 +114,7 @@ import java.time.ZonedDateTime
 <%_ } if (fieldsContainDuration === true) { _%>
 import java.time.Duration
 <%_ } _%>
-<%_ if ((!embedded && primaryKey.type === 'UUID') || fieldsContainUUID === true) { _%>
+<%_ if (fieldsContainUUID) { _%>
 import java.util.UUID
 <%_ }
 Object.keys(uniqueEnums).forEach(function(element) { _%>
@@ -129,7 +129,7 @@ import org.springframework.data.couchbase.core.mapping.id.GenerationStrategy.UNI
 <%_ } _%>
 <%_ if (typeof javadoc == 'undefined') { _%>
 /**
- * A <%= asEntity(entityClass) %>.
+ * A <%= persistClass %>.
  */
 <%_ } else { _%>
 <%- formatAsClassJavadoc(javadoc) %>
@@ -162,7 +162,7 @@ import org.springframework.data.couchbase.core.mapping.id.GenerationStrategy.UNI
 <%_ if (searchEngine === 'elasticsearch') { _%>
 @org.springframework.data.elasticsearch.annotations.Document(indexName = "<%= entityInstance.toLowerCase() %>")
     <%_ } _%>
-data class <%= asEntity(entityClass) %>(
+data class <%= persistClass %>(
     <%_ if (!embedded) { _%>
     @Id
         <%_ if (databaseType === 'sql' && isUsingMapsId === false && !reactive && !primaryKey.composite) { _%>
@@ -293,7 +293,7 @@ for (const field of filteredFields) {
         const relationshipRequired = relationship.relationshipRequired;
         const otherEntityNameCapitalized = relationship.otherEntityNameCapitalized;
         const ownerSide = relationship.ownerSide || false;
-        const isUsingMapsId = relationship.useJPADerivedIdentifier;
+        const isUsingMapsId = relationship.id;
         const comma = parseInt(idx,10) === relationshipLength ?  '' : ',';
         if (otherEntityRelationshipName) {
             mappedBy = otherEntityRelationshipName.charAt(0).toLowerCase() + otherEntityRelationshipName.slice(1)
@@ -467,7 +467,7 @@ for (const field of filteredFields) {
     <%_ } 
     } else if (databaseType === 'sql' && reactive) { _%>
         <%_ if (ownerSide === true && isUsingMapsId !== true) { _%>
-    var <%= relationshipFieldName %>Id: Long? = null,
+    var <%= relationshipFieldName %>Id: <%= relationship.otherEntity.primaryKey.type %>? = null,
         <%_ } _%>
     @Transient
     <%_ } _%>
@@ -505,14 +505,14 @@ for (const field of filteredFields) {
             continue;
         }
 
-        const useJPADerivedIdentifier = relationship.useJPADerivedIdentifier;
+        const id = relationship.id;
         const reactiveRelationshipWithId = (databaseType === 'sql' && reactive && !(relationshipType === 'one-to-one' &&
-                (ownerSide === false || (ownerSide === true && useJPADerivedIdentifier === true))));
+                (ownerSide === false || (ownerSide === true && id === true))));
     _%>
     <%_ if (relationshipType === 'one-to-many' || relationshipType === 'many-to-many') { _%>
         <%_ if (fluentMethods) { _%>
 
-    fun add<%= relationshipNameCapitalized %>(<%= otherEntityName %>: <%= asEntity(otherEntityNameCapitalized) %>): <%= asEntity(entityClass) %> {
+    fun add<%= relationshipNameCapitalized %>(<%= otherEntityName %>: <%= asEntity(otherEntityNameCapitalized) %>): <%= persistClass %> {
         this.<%= relationshipFieldNamePlural %>.add(<%= otherEntityName %>)
         <%_ if (!otherEntityIsEmbedded || embedded && ownerSide === true) { _%>
             <%_ if (databaseType === 'couchbase' && !otherEntityIsEmbedded) { _%>
@@ -532,7 +532,7 @@ for (const field of filteredFields) {
         return this
     }
 
-    fun remove<%= relationshipNameCapitalized %>(<%= otherEntityName %>: <%= asEntity(otherEntityNameCapitalized) %>): <%= asEntity(entityClass) %> {
+    fun remove<%= relationshipNameCapitalized %>(<%= otherEntityName %>: <%= asEntity(otherEntityNameCapitalized) %>): <%= persistClass %> {
         this.<%= relationshipFieldNamePlural %>.remove(<%= otherEntityName %>)
         <%_ if (!otherEntityIsEmbedded || (embedded && ownerSide === true)) { _%>
             <%_ if (databaseType === 'couchbase' && !otherEntityIsEmbedded) { _%>
@@ -559,7 +559,7 @@ for (const field of filteredFields) {
 
     override fun equals(other: Any?): Boolean {
         if (this === other) return true
-        if (other !is <%= asEntity(entityClass) %>) return false
+        if (other !is <%= persistClass %>) return false
 
         <%_ if (!embedded) { _%>
         return <%= primaryKey.name %> != null && other.<%= primaryKey.name %> != null && <%= primaryKey.name %> == other.<%= primaryKey.name %>
@@ -570,7 +570,7 @@ for (const field of filteredFields) {
 
     override fun hashCode() = 31
 
-    override fun toString() = "<%= asEntity(entityClass) %>{" +
+    override fun toString() = "<%= persistClass %>{" +
         <%_ if (!embedded) { _%>
             "<%= primaryKey.name %>=$<%= primaryKey.name %>" +
         <%_ } _%>

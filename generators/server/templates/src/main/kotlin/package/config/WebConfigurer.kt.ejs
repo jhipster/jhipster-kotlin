@@ -21,11 +21,11 @@ package <%= packageName %>.config
 <%_ if (reactive) { _%>
 import com.fasterxml.jackson.databind.ObjectMapper
 <%_ } _%>
-<%_ if (!skipClient || ['h2Disk', 'h2Memory'].includes(devDatabaseType) && !reactive) { _%>
+<%_ if (!skipClient || ['h2Disk', 'h2Memory'].includes(devDatabaseType)) { _%>
 import tech.jhipster.config.JHipsterConstants
 <%_ } _%>
 import tech.jhipster.config.JHipsterProperties
-<%_ if (['h2Disk', 'h2Memory'].includes(devDatabaseType) && !reactive) { _%>
+<%_ if (['h2Disk', 'h2Memory'].includes(devDatabaseType)) { _%>
 import tech.jhipster.config.h2.H2ConfigurationHelper
 <%_ } _%>
 <%_ if (!skipClient && reactive) { _%>
@@ -54,7 +54,7 @@ import org.springframework.core.annotation.Order
 import org.springframework.data.web.ReactivePageableHandlerMethodArgumentResolver
 import org.springframework.data.web.ReactiveSortHandlerMethodArgumentResolver
 <%_ } _%>
-<%_ if (!reactive) { _%>
+<%_ if (!reactive || (['h2Disk', 'h2Memory'].includes(devDatabaseType) && reactive)) { _%>
 import org.springframework.core.env.Environment
 import org.springframework.core.env.Profiles
 <%_ } _%>
@@ -114,11 +114,19 @@ import java.util.concurrent.TimeUnit
  */
 @Configuration
 class WebConfigurer(
-    <%_ if (!reactive) { _%>
+    <% if (!reactive || (['h2Disk', 'h2Memory'].includes(devDatabaseType) && reactive)) { %>
     private val env: Environment,
     <%_ } _%>
     private val jHipsterProperties: JHipsterProperties
 ) : <% if (!reactive) { %>ServletContextInitializer<% if (!skipClient) { %>, WebServerFactoryCustomizer<WebServerFactory><% } %><% } %><% if (reactive) { %>WebFluxConfigurer<% } %> {
+
+    <%_ if (['h2Disk', 'h2Memory'].includes(devDatabaseType) && reactive) { _%>
+    init {
+        if (env.acceptsProfiles(Profiles.of(JHipsterConstants.SPRING_PROFILE_DEVELOPMENT))) {
+            H2ConfigurationHelper.initH2Console()
+        }
+    }
+    <%_ } _%>  
 
     private val log = LoggerFactory.getLogger(javaClass)
     <%_ if (!reactive) { _%>
@@ -191,16 +199,11 @@ class WebConfigurer(
                 registerCorsConfiguration("/v2/api-docs", config)
                 registerCorsConfiguration("/v3/api-docs", config)
                 registerCorsConfiguration("/swagger-resources", config)
-                <%_ if (applicationType === 'gateway' && authenticationType === 'uaa') { _%>
-                registerCorsConfiguration("/auth/**", config)
-                <%_ } _%>
+                registerCorsConfiguration("/swagger-ui/**", config)
                 <%_ if (applicationType === 'gateway') { _%>
                 registerCorsConfiguration("/*/api/**", config)
                 registerCorsConfiguration("/services/*/api/**", config)
                 registerCorsConfiguration("/*/management/**", config)
-                    <%_ if (authenticationType === 'uaa') { _%>
-                registerCorsConfiguration("/*/oauth/**", config)
-                    <%_ } _%>
                 <%_ } _%>
             }
         }
