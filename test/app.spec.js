@@ -1,12 +1,12 @@
 const path = require('path');
 const assert = require('yeoman-assert');
 
-const { skipPrettierHelpers: helpers, getFilesForOptions, shouldBeV3DockerfileCompatible } = require('./utils/utils');
-
 const constants = require('generator-jhipster/generators/generator-constants');
 const angularFiles = require('generator-jhipster/generators/client/files-angular').files;
 const reactFiles = require('generator-jhipster/generators/client/files-react').files;
 const expectedFiles = require('./utils/expected-files');
+
+const { skipPrettierHelpers: helpers, getFilesForOptions, shouldBeV3DockerfileCompatible } = require('./utils/utils');
 
 const { ANGULAR, REACT } = constants.SUPPORTED_CLIENT_FRAMEWORKS;
 const { CLIENT_MAIN_SRC_DIR, SERVER_MAIN_SRC_DIR, SERVER_MAIN_RES_DIR, TEST_DIR } = constants;
@@ -50,8 +50,7 @@ describe('JHipster generator', () => {
                         skipClient: false,
                         skipUserManagement: false,
                         serverSideOptions: [],
-                    })
-                    
+                    });
             });
 
             it('creates expected default files for angularX', () => {
@@ -84,7 +83,7 @@ describe('JHipster generator', () => {
         });
 
         describe(REACT, () => {
-            before( async () => { 
+            before(async () => {
                 await helpers
                     .run('generator-jhipster/generators/app')
                     .withOptions({
@@ -119,8 +118,7 @@ describe('JHipster generator', () => {
                         skipClient: false,
                         skipUserManagement: false,
                         serverSideOptions: [],
-                    })
-                    
+                    });
             });
 
             it('creates expected default files for react', () => {
@@ -147,7 +145,7 @@ describe('JHipster generator', () => {
         });
 
         describe('using npm flag', () => {
-            before( async () => { 
+            before(async () => {
                 await helpers
                     .run('generator-jhipster/generators/app')
                     .withOptions({
@@ -181,8 +179,7 @@ describe('JHipster generator', () => {
                         skipClient: false,
                         skipUserManagement: false,
                         serverSideOptions: [],
-                    })
-                    
+                    });
             });
 
             it('creates expected default files', () => {
@@ -212,7 +209,7 @@ describe('JHipster generator', () => {
         });
 
         describe('Gradle', () => {
-            before( async () => { 
+            before(async () => {
                 await helpers
                     .run('generator-jhipster/generators/app')
                     .withOptions({
@@ -244,8 +241,7 @@ describe('JHipster generator', () => {
                         buildTool: 'gradle',
                         rememberMeKey: '5c37379956bd1242f5636c8cb322c2966ad81277',
                         serverSideOptions: [],
-                    })
-                    
+                    });
             });
 
             it('creates expected default files for gradle', () => {
@@ -269,7 +265,7 @@ describe('JHipster generator', () => {
         });
 
         describe('Maven with ktlint-format', () => {
-            before( async () => { 
+            before(async () => {
                 await helpers
                     .run('generator-jhipster/generators/app')
                     .withOptions({
@@ -304,8 +300,7 @@ describe('JHipster generator', () => {
                         skipClient: false,
                         skipUserManagement: false,
                         serverSideOptions: [],
-                    })
-                    
+                    });
             });
 
             it('creates expected default files for angularX', () => {
@@ -339,7 +334,7 @@ describe('JHipster generator', () => {
         });
 
         describe('Gradle with ktlint-format', () => {
-            before( async () => { 
+            before(async () => {
                 await helpers
                     .run('generator-jhipster/generators/app')
                     .withOptions({
@@ -370,8 +365,7 @@ describe('JHipster generator', () => {
                         buildTool: 'gradle',
                         rememberMeKey: '5c37379956bd1242f5636c8cb322c2966ad81277',
                         serverSideOptions: [],
-                    })
-                    
+                    });
             });
 
             it('creates expected default files for gradle', () => {
@@ -397,7 +391,7 @@ describe('JHipster generator', () => {
 
     context('Application with DB option', () => {
         describe('mariadb', () => {
-            before( async () => { 
+            before(async () => {
                 await helpers
                     .run('generator-jhipster/generators/app')
                     .withOptions({
@@ -431,8 +425,7 @@ describe('JHipster generator', () => {
                         skipClient: false,
                         skipUserManagement: false,
                         serverSideOptions: [],
-                    })
-                    
+                    });
             });
 
             it('creates expected default files', () => {
@@ -457,7 +450,7 @@ describe('JHipster generator', () => {
         });
 
         describe('mongodb', () => {
-            before( async () => { 
+            before(async () => {
                 await helpers
                     .run('generator-jhipster/generators/app')
                     .withOptions({
@@ -491,8 +484,7 @@ describe('JHipster generator', () => {
                         skipClient: false,
                         skipUserManagement: false,
                         serverSideOptions: [],
-                    })
-                    
+                    });
             });
 
             it('creates expected files with "MongoDB"', () => {
@@ -506,7 +498,7 @@ describe('JHipster generator', () => {
         });
 
         describe('couchbase', () => {
-            before( async () => { 
+            before(async () => {
                 await helpers
                     .run('generator-jhipster/generators/app')
                     .withOptions({
@@ -540,8 +532,7 @@ describe('JHipster generator', () => {
                         skipClient: false,
                         skipUserManagement: false,
                         serverSideOptions: [],
-                    })
-                    
+                    });
             });
 
             it('creates expected files with "Couchbase"', () => {
@@ -555,7 +546,7 @@ describe('JHipster generator', () => {
         });
 
         describe('neo4j', () => {
-            before( async () => { 
+            before(async () => {
                 await helpers
                     .run('generator-jhipster/generators/app')
                     .withOptions({
@@ -589,8 +580,7 @@ describe('JHipster generator', () => {
                         skipClient: false,
                         skipUserManagement: false,
                         serverSideOptions: [],
-                    })
-                    
+                    });
             });
 
             it('creates expected files with "Neo4j"', () => {
@@ -604,7 +594,7 @@ describe('JHipster generator', () => {
         });
 
         describe('mssql', () => {
-            before( async () => { 
+            before(async () => {
                 await helpers
                     .run('generator-jhipster/generators/app')
                     .withOptions({
@@ -638,8 +628,7 @@ describe('JHipster generator', () => {
                         skipClient: false,
                         skipUserManagement: false,
                         serverSideOptions: [],
-                    })
-                    
+                    });
             });
 
             it('creates expected files with "Microsoft SQL Server"', () => {
@@ -651,7 +640,7 @@ describe('JHipster generator', () => {
         });
 
         describe('cassandra', () => {
-            before( async () => { 
+            before(async () => {
                 await helpers
                     .run('generator-jhipster/generators/app')
                     .withOptions({
@@ -685,8 +674,7 @@ describe('JHipster generator', () => {
                         skipClient: false,
                         skipUserManagement: false,
                         serverSideOptions: [],
-                    })
-                    
+                    });
             });
 
             it('creates expected files with "Cassandra"', () => {
@@ -700,7 +688,7 @@ describe('JHipster generator', () => {
         });
 
         describe('cassandra no i18n', () => {
-            before( async () => { 
+            before(async () => {
                 await helpers
                     .run('generator-jhipster/generators/app')
                     .withOptions({
@@ -732,8 +720,7 @@ describe('JHipster generator', () => {
                         skipClient: false,
                         skipUserManagement: false,
                         serverSideOptions: [],
-                    })
-                    
+                    });
             });
 
             it('creates expected files with "Cassandra"', () => {
@@ -744,7 +731,7 @@ describe('JHipster generator', () => {
         });
 
         describe('MySQL and elasticsearch', () => {
-            before( async () => { 
+            before(async () => {
                 await helpers
                     .run('generator-jhipster/generators/app')
                     .withOptions({
@@ -778,8 +765,7 @@ describe('JHipster generator', () => {
                         skipClient: false,
                         skipUserManagement: false,
                         serverSideOptions: ['searchEngine:elasticsearch'],
-                    })
-                    
+                    });
             });
 
             it('creates expected files with "MySQL" and "Elasticsearch"', () => {
@@ -791,7 +777,7 @@ describe('JHipster generator', () => {
         });
 
         describe('couchbase FTS', () => {
-            before( async () => { 
+            before(async () => {
                 await helpers
                     .run('generator-jhipster/generators/app')
                     .withOptions({
@@ -825,8 +811,7 @@ describe('JHipster generator', () => {
                         skipClient: false,
                         skipUserManagement: false,
                         serverSideOptions: ['searchEngine:couchbase'],
-                    })
-                    
+                    });
             });
 
             it('creates expected files with "Couchbbase FTS"', () => {
@@ -837,7 +822,7 @@ describe('JHipster generator', () => {
         });
 
         describe('no database', () => {
-            before( async () => { 
+            before(async () => {
                 await helpers
                     .run('generator-jhipster/generators/app')
                     .withOptions({
@@ -869,8 +854,7 @@ describe('JHipster generator', () => {
                         buildTool: 'maven',
                         rememberMeKey: '5c37379956bd1242f5636c8cb322c2966ad81277',
                         serverSideOptions: [],
-                    })
-                    
+                    });
             });
 
             it('creates expected files with the microservice application type', () => {
@@ -889,7 +873,7 @@ describe('JHipster generator', () => {
 
     context('Application with other options', () => {
         describe('oauth2', () => {
-            before( async () => { 
+            before(async () => {
                 await helpers
                     .run('generator-jhipster/generators/app')
                     .withOptions({
@@ -921,8 +905,7 @@ describe('JHipster generator', () => {
                         buildTool: 'maven',
                         rememberMeKey: '5c37379956bd1242f5636c8cb322c2966ad81277',
                         serverSideOptions: [],
-                    })
-                    
+                    });
             });
 
             it('creates expected files with authenticationType "oauth2"', () => {
@@ -937,7 +920,7 @@ describe('JHipster generator', () => {
         });
 
         describe('oauth2 + elasticsearch', () => {
-            before( async () => { 
+            before(async () => {
                 await helpers
                     .run('generator-jhipster/generators/app')
                     .withOptions({
@@ -969,8 +952,7 @@ describe('JHipster generator', () => {
                         buildTool: 'maven',
                         rememberMeKey: '5c37379956bd1242f5636c8cb322c2966ad81277',
                         serverSideOptions: ['searchEngine:elasticsearch'],
-                    })
-                    
+                    });
             });
 
             it('creates expected files with authenticationType "oauth2" and elasticsearch', () => {
@@ -983,7 +965,7 @@ describe('JHipster generator', () => {
         });
 
         describe('oauth2 + mongodb', () => {
-            before( async () => { 
+            before(async () => {
                 await helpers
                     .run('generator-jhipster/generators/app')
                     .withOptions({
@@ -1015,8 +997,7 @@ describe('JHipster generator', () => {
                         buildTool: 'maven',
                         rememberMeKey: '5c37379956bd1242f5636c8cb322c2966ad81277',
                         serverSideOptions: [],
-                    })
-                    
+                    });
             });
 
             it('creates expected files with authenticationType "oauth2" and mongodb', () => {
@@ -1027,7 +1008,7 @@ describe('JHipster generator', () => {
         });
 
         describe('hazelcast', () => {
-            before( async () => { 
+            before(async () => {
                 await helpers
                     .run('generator-jhipster/generators/app')
                     .withOptions({
@@ -1059,8 +1040,7 @@ describe('JHipster generator', () => {
                         buildTool: 'maven',
                         rememberMeKey: '5c37379956bd1242f5636c8cb322c2966ad81277',
                         serverSideOptions: [],
-                    })
-                    
+                    });
             });
             it('creates expected files with "Hazelcast"', () => {
                 assert.file(expectedFiles.common);
@@ -1073,7 +1053,7 @@ describe('JHipster generator', () => {
         });
 
         describe('Infinispan', () => {
-            before( async () => { 
+            before(async () => {
                 await helpers
                     .run('generator-jhipster/generators/app')
                     .withOptions({
@@ -1105,8 +1085,7 @@ describe('JHipster generator', () => {
                         buildTool: 'maven',
                         rememberMeKey: '5c37379956bd1242f5636c8cb322c2966ad81277',
                         serverSideOptions: [],
-                    })
-                    
+                    });
             });
             it('creates expected files with "Infinispan"', () => {
                 assert.file(expectedFiles.common);
@@ -1120,7 +1099,7 @@ describe('JHipster generator', () => {
         });
 
         describe('Infinispan and Eureka', () => {
-            before( async () => { 
+            before(async () => {
                 await helpers
                     .run('generator-jhipster/generators/app')
                     .withOptions({
@@ -1152,8 +1131,7 @@ describe('JHipster generator', () => {
                         buildTool: 'maven',
                         rememberMeKey: '5c37379956bd1242f5636c8cb322c2966ad81277',
                         serverSideOptions: [],
-                    })
-                    
+                    });
             });
             it('creates expected files with "Infinispan and Eureka"', () => {
                 assert.file(expectedFiles.common);
@@ -1168,7 +1146,7 @@ describe('JHipster generator', () => {
         });
 
         describe('Memcached', () => {
-            before( async () => { 
+            before(async () => {
                 await helpers
                     .run('generator-jhipster/generators/app')
                     .withOptions({
@@ -1200,8 +1178,7 @@ describe('JHipster generator', () => {
                         buildTool: 'maven',
                         rememberMeKey: '5c37379956bd1242f5636c8cb322c2966ad81277',
                         serverSideOptions: [],
-                    })
-                    
+                    });
             });
             it('creates expected files with "Memcached"', () => {
                 assert.file(expectedFiles.common);
@@ -1215,7 +1192,7 @@ describe('JHipster generator', () => {
         });
 
         describe('Redis', () => {
-            before( async () => { 
+            before(async () => {
                 await helpers
                     .run('generator-jhipster/generators/app')
                     .withOptions({
@@ -1247,8 +1224,7 @@ describe('JHipster generator', () => {
                         buildTool: 'maven',
                         rememberMeKey: '5c37379956bd1242f5636c8cb322c2966ad81277',
                         serverSideOptions: [],
-                    })
-                    
+                    });
             });
             it('creates expected files with "Redis"', () => {
                 assert.file(expectedFiles.common);
@@ -1262,7 +1238,7 @@ describe('JHipster generator', () => {
         });
 
         describe('Messaging with Kafka configuration', () => {
-            before( async () => { 
+            before(async () => {
                 await helpers
                     .run('generator-jhipster/generators/app')
                     .withOptions({
@@ -1300,8 +1276,7 @@ describe('JHipster generator', () => {
                         nativeLanguage: 'en',
                         languages: ['en'],
                         serverSideOptions: ['messageBroker:kafka'],
-                    })
-                    
+                    });
             });
 
             it('creates expected files with Kafka message broker enabled', () => {
@@ -1317,7 +1292,7 @@ describe('JHipster generator', () => {
         });
 
         describe('API first using OpenAPI-generator (maven)', () => {
-            before( async () => { 
+            before(async () => {
                 await helpers
                     .run('generator-jhipster/generators/app')
                     .withOptions({
@@ -1355,8 +1330,7 @@ describe('JHipster generator', () => {
                         nativeLanguage: 'en',
                         languages: ['en'],
                         serverSideOptions: ['enableSwaggerCodegen:true'],
-                    })
-                    
+                    });
             });
 
             it('creates expected files with OpenAPI first enabled', () => {
@@ -1375,7 +1349,7 @@ describe('JHipster generator', () => {
         });
 
         describe('API first using OpenAPI-generator (gradle)', () => {
-            before( async () => { 
+            before(async () => {
                 await helpers
                     .run('generator-jhipster/generators/app')
                     .withOptions({
@@ -1413,8 +1387,7 @@ describe('JHipster generator', () => {
                         nativeLanguage: 'en',
                         languages: ['en'],
                         serverSideOptions: ['enableSwaggerCodegen:true'],
-                    })
-                    
+                    });
             });
 
             it('creates expected files with OpenAPI first enabled', () => {
@@ -1434,7 +1407,7 @@ describe('JHipster generator', () => {
 
     context('Application names', () => {
         describe('package names', () => {
-            before( async () => { 
+            before(async () => {
                 await helpers
                     .run('generator-jhipster/generators/app')
                     .withOptions({
@@ -1466,8 +1439,7 @@ describe('JHipster generator', () => {
                         buildTool: 'maven',
                         rememberMeKey: '5c37379956bd1242f5636c8cb322c2966ad81277',
                         serverSideOptions: [],
-                    })
-                    
+                    });
             });
 
             it('creates expected files with correct package names', () => {
@@ -1478,7 +1450,7 @@ describe('JHipster generator', () => {
         });
 
         describe('bad application name for java', () => {
-            before( async () => { 
+            before(async () => {
                 await helpers
                     .run('generator-jhipster/generators/app')
                     .withOptions({
@@ -1510,8 +1482,7 @@ describe('JHipster generator', () => {
                         buildTool: 'maven',
                         rememberMeKey: '5c37379956bd1242f5636c8cb322c2966ad81277',
                         serverSideOptions: [],
-                    })
-                    
+                    });
             });
 
             it('creates expected files with default application name', () => {
@@ -1524,7 +1495,7 @@ describe('JHipster generator', () => {
         });
 
         describe('application names', () => {
-            before( async () => { 
+            before(async () => {
                 await helpers
                     .run('generator-jhipster/generators/app')
                     .withOptions({
@@ -1556,8 +1527,7 @@ describe('JHipster generator', () => {
                         buildTool: 'maven',
                         rememberMeKey: '5c37379956bd1242f5636c8cb322c2966ad81277',
                         serverSideOptions: [],
-                    })
-                    
+                    });
             });
 
             it('creates expected files with correct application name', () => {
@@ -1569,7 +1539,7 @@ describe('JHipster generator', () => {
 
     context('i18n', () => {
         describe('no i18n', () => {
-            before( async () => { 
+            before(async () => {
                 await helpers
                     .run('generator-jhipster/generators/app')
                     .withOptions({
@@ -1599,8 +1569,7 @@ describe('JHipster generator', () => {
                         buildTool: 'maven',
                         rememberMeKey: '5c37379956bd1242f5636c8cb322c2966ad81277',
                         serverSideOptions: [],
-                    })
-                    
+                    });
             });
 
             it('does not create i18n files if i18n is disabled', () => {
@@ -1610,7 +1579,7 @@ describe('JHipster generator', () => {
         });
 
         describe('with RTL support', () => {
-            before( async () => { 
+            before(async () => {
                 await helpers
                     .run('generator-jhipster/generators/app')
                     .withOptions({
@@ -1644,8 +1613,7 @@ describe('JHipster generator', () => {
                         skipClient: false,
                         skipUserManagement: false,
                         serverSideOptions: [],
-                    })
-                    
+                    });
             });
 
             it('creates expected default files for i18n with RTL support', () => {
@@ -1667,7 +1635,7 @@ describe('JHipster generator', () => {
 
     context('Auth options', () => {
         describe('JWT authentication', () => {
-            before( async () => { 
+            before(async () => {
                 await helpers
                     .run('generator-jhipster/generators/app')
                     .withOptions({
@@ -1699,8 +1667,7 @@ describe('JHipster generator', () => {
                         buildTool: 'maven',
                         rememberMeKey: '5c37379956bd1242f5636c8cb322c2966ad81277',
                         serverSideOptions: [],
-                    })
-                    
+                    });
             });
 
             it('creates expected files with JWT authentication', () => {
@@ -1717,7 +1684,7 @@ describe('JHipster generator', () => {
         });
 
         describe('HTTP session authentication', () => {
-            before( async () => { 
+            before(async () => {
                 await helpers
                     .run('generator-jhipster/generators/app')
                     .withOptions({
@@ -1749,8 +1716,7 @@ describe('JHipster generator', () => {
                         buildTool: 'maven',
                         rememberMeKey: '5c37379956bd1242f5636c8cb322c2966ad81277',
                         serverSideOptions: [],
-                    })
-                    
+                    });
             });
 
             it('creates expected files with HTTP session authentication', () => {
@@ -1769,7 +1735,7 @@ describe('JHipster generator', () => {
 
     context('Testing options', () => {
         describe('Protractor tests', () => {
-            before( async () => { 
+            before(async () => {
                 await helpers
                     .run('generator-jhipster/generators/app')
                     .withOptions({
@@ -1806,8 +1772,7 @@ describe('JHipster generator', () => {
                         enableTranslation: true,
                         nativeLanguage: 'en',
                         languages: ['en'],
-                    })
-                    
+                    });
             });
 
             it('creates expected files with Protractor enabled', () => {
@@ -1829,7 +1794,7 @@ describe('JHipster generator', () => {
         });
 
         describe('Cucumber tests', () => {
-            before( async () => { 
+            before(async () => {
                 await helpers
                     .run('generator-jhipster/generators/app')
                     .withOptions({
@@ -1866,8 +1831,7 @@ describe('JHipster generator', () => {
                         enableTranslation: true,
                         nativeLanguage: 'en',
                         languages: ['en'],
-                    })
-                    
+                    });
             });
 
             it('creates expected files with Cucumber enabled', () => {
@@ -1907,8 +1871,7 @@ describe('JHipster generator', () => {
                     nativeLanguage: 'en',
                     languages: ['fr', 'en'],
                     rememberMeKey: '5c37379956bd1242f5636c8cb322c2966ad81277',
-                })
-                
+                });
         });
 
         it('creates expected files for default configuration with skip server option enabled', () => {
@@ -1937,7 +1900,7 @@ describe('JHipster generator', () => {
 
     context('App with skip client', () => {
         describe('Maven', () => {
-            before( async () => { 
+            before(async () => {
                 await helpers
                     .run('generator-jhipster/generators/app')
                     .withOptions({
@@ -1969,8 +1932,7 @@ describe('JHipster generator', () => {
                         languages: ['fr', 'en'],
                         rememberMeKey: '5c37379956bd1242f5636c8cb322c2966ad81277',
                         serverSideOptions: [],
-                    })
-                    
+                    });
             });
 
             it('creates expected files for default configuration with skip client option enabled', () => {
@@ -2015,7 +1977,7 @@ describe('JHipster generator', () => {
         });
 
         describe('Gradle', () => {
-            before( async () => { 
+            before(async () => {
                 await helpers
                     .run('generator-jhipster/generators/app')
                     .withOptions({
@@ -2047,8 +2009,7 @@ describe('JHipster generator', () => {
                         languages: ['fr', 'en'],
                         rememberMeKey: '5c37379956bd1242f5636c8cb322c2966ad81277',
                         serverSideOptions: [],
-                    })
-                    
+                    });
             });
 
             it('creates expected files for default configuration with skip client option enabled', () => {
@@ -2080,7 +2041,7 @@ describe('JHipster generator', () => {
 
     context('App with skip client and skip user management', () => {
         describe('Maven', () => {
-            before( async () => { 
+            before(async () => {
                 await helpers
                     .run('generator-jhipster/generators/app')
                     .withOptions({
@@ -2114,8 +2075,7 @@ describe('JHipster generator', () => {
                         languages: ['fr', 'en'],
                         rememberMeKey: '5c37379956bd1242f5636c8cb322c2966ad81277',
                         serverSideOptions: [],
-                    })
-                    
+                    });
             });
 
             it('creates expected server files', () => {
@@ -2130,7 +2090,7 @@ describe('JHipster generator', () => {
 
     context('Eureka', () => {
         describe('gateway with eureka', () => {
-            before( async () => { 
+            before(async () => {
                 await helpers
                     .run('generator-jhipster/generators/app')
                     .withOptions({
@@ -2163,8 +2123,7 @@ describe('JHipster generator', () => {
                         buildTool: 'maven',
                         rememberMeKey: '5c37379956bd1242f5636c8cb322c2966ad81277',
                         serverSideOptions: [],
-                    })
-                    
+                    });
             });
 
             it('creates expected files with the gateway application type', () => {
@@ -2176,7 +2135,7 @@ describe('JHipster generator', () => {
         });
 
         describe('gateway with eureka and rate limiting', () => {
-            before( async () => { 
+            before(async () => {
                 await helpers
                     .run('generator-jhipster/generators/app')
                     .withOptions({
@@ -2209,20 +2168,19 @@ describe('JHipster generator', () => {
                         buildTool: 'maven',
                         rememberMeKey: '5c37379956bd1242f5636c8cb322c2966ad81277',
                         serverSideOptions: [],
-                    })
-                    
+                    });
             });
 
             it('creates expected files with the gateway application type', () => {
                 assert.file(expectedFiles.jwtServerGateway);
                 assert.file(expectedFiles.gateway);
-                ssert.file(expectedFiles.eureka);
+                assert.file(expectedFiles.eureka);
                 assert.noFile(expectedFiles.consul);
             });
         });
 
         describe('microservice with eureka', () => {
-            before( async () => { 
+            before(async () => {
                 await helpers
                     .run('generator-jhipster/generators/app')
                     .withOptions({
@@ -2254,8 +2212,7 @@ describe('JHipster generator', () => {
                         buildTool: 'maven',
                         rememberMeKey: '5c37379956bd1242f5636c8cb322c2966ad81277',
                         serverSideOptions: [],
-                    })
-                    
+                    });
             });
 
             it('creates expected files with the microservice application type', () => {
@@ -2269,7 +2226,7 @@ describe('JHipster generator', () => {
         });
 
         describe('monolith with eureka', () => {
-            before( async () => { 
+            before(async () => {
                 await helpers
                     .run('generator-jhipster/generators/app')
                     .withOptions({
@@ -2301,8 +2258,7 @@ describe('JHipster generator', () => {
                         buildTool: 'maven',
                         rememberMeKey: '5c37379956bd1242f5636c8cb322c2966ad81277',
                         serverSideOptions: ['serviceDiscoveryType:eureka'],
-                    })
-                    
+                    });
             });
 
             it('creates expected files with the monolith application type', () => {
@@ -2318,7 +2274,7 @@ describe('JHipster generator', () => {
         });
 
         describe('microservice with gradle and eureka', () => {
-            before( async () => { 
+            before(async () => {
                 await helpers
                     .run('generator-jhipster/generators/app')
                     .withOptions({
@@ -2352,8 +2308,7 @@ describe('JHipster generator', () => {
                         serverSideOptions: [],
                         skipClient: true,
                         skipUserManagement: true,
-                    })
-                    
+                    });
             });
 
             it('creates expected files with the microservice application type', () => {
@@ -2366,12 +2321,11 @@ describe('JHipster generator', () => {
                 assert.noFile(expectedFiles.userManagementServer);
             });
         });
-
     });
 
     context('Consul', () => {
         describe('gateway with consul', () => {
-            before( async () => { 
+            before(async () => {
                 await helpers
                     .run('generator-jhipster/generators/app')
                     .withOptions({
@@ -2404,8 +2358,7 @@ describe('JHipster generator', () => {
                         buildTool: 'maven',
                         rememberMeKey: '5c37379956bd1242f5636c8cb322c2966ad81277',
                         serverSideOptions: [],
-                    })
-                    
+                    });
             });
 
             it('creates expected files with the gateway application type', () => {
@@ -2417,7 +2370,7 @@ describe('JHipster generator', () => {
         });
 
         describe('gateway with consul and rate limiting', () => {
-            before( async () => { 
+            before(async () => {
                 await helpers
                     .run('generator-jhipster/generators/app')
                     .withOptions({
@@ -2450,8 +2403,7 @@ describe('JHipster generator', () => {
                         buildTool: 'maven',
                         rememberMeKey: '5c37379956bd1242f5636c8cb322c2966ad81277',
                         serverSideOptions: [],
-                    })
-                    
+                    });
             });
 
             it('creates expected files with the gateway application type', () => {
@@ -2463,7 +2415,7 @@ describe('JHipster generator', () => {
         });
 
         describe('microservice with consul', () => {
-            before( async () => { 
+            before(async () => {
                 await helpers
                     .run('generator-jhipster/generators/app')
                     .withOptions({
@@ -2495,8 +2447,7 @@ describe('JHipster generator', () => {
                         buildTool: 'maven',
                         rememberMeKey: '5c37379956bd1242f5636c8cb322c2966ad81277',
                         serverSideOptions: [],
-                    })
-                    
+                    });
             });
 
             it('creates expected files with the microservice application type', () => {
@@ -2511,7 +2462,7 @@ describe('JHipster generator', () => {
 
     context('No Service Discovery', () => {
         describe('gateway with no service discovery', () => {
-            before( async () => { 
+            before(async () => {
                 await helpers
                     .run('generator-jhipster/generators/app')
                     .withOptions({
@@ -2556,7 +2507,7 @@ describe('JHipster generator', () => {
         });
 
         describe('microservice with no service discovery', () => {
-            before( async () => { 
+            before(async () => {
                 await helpers
                     .run('generator-jhipster/generators/app')
                     .withOptions({
@@ -2587,8 +2538,7 @@ describe('JHipster generator', () => {
                         buildTool: 'maven',
                         rememberMeKey: '5c37379956bd1242f5636c8cb322c2966ad81277',
                         serverSideOptions: [],
-                    })
-                    
+                    });
             });
 
             it('creates expected files with the microservice application type', () => {

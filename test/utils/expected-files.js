@@ -686,7 +686,7 @@ const expectedFiles = {
         `${CLIENT_MAIN_SRC_DIR}app/admin/gateway/gateway.module.ts`,
         `${CLIENT_MAIN_SRC_DIR}app/admin/gateway/gateway.component.html`,
         `${CLIENT_MAIN_SRC_DIR}app/admin/gateway/gateway-routes.service.ts`,
-      ],
+    ],
 
     feignConfig: [
         `${SERVER_MAIN_SRC_DIR}com/mycompany/myapp/config/FeignConfiguration.kt`,

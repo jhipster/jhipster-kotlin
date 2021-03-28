@@ -408,7 +408,8 @@ const serverFiles = {
             ],
         },
         {
-            condition: generator => !generator.reactive && generator.authenticationType === 'oauth2' && generator.applicationType === 'monolith',
+            condition: generator =>
+                !generator.reactive && generator.authenticationType === 'oauth2' && generator.applicationType === 'monolith',
             path: SERVER_MAIN_KOTLIN_SRC_DIR,
             templates: [
                 {
@@ -419,7 +420,8 @@ const serverFiles = {
             ],
         },
         {
-            condition: generator => !generator.reactive && generator.authenticationType === 'oauth2' && generator.applicationType === 'monolith',
+            condition: generator =>
+                !generator.reactive && generator.authenticationType === 'oauth2' && generator.applicationType === 'monolith',
             path: SERVER_TEST_SRC_KOTLIN_DIR,
             templates: [
                 {
@@ -452,14 +454,14 @@ const serverFiles = {
             path: SERVER_MAIN_KOTLIN_SRC_DIR,
             templates: [
                 {
-                  file: 'package/config/apidocs/GatewaySwaggerResourcesProvider.kt',
-                  renameTo: generator => `${generator.javaDir}config/apidocs/GatewaySwaggerResourcesProvider.kt`,
-                  useBluePrint: true,
+                    file: 'package/config/apidocs/GatewaySwaggerResourcesProvider.kt',
+                    renameTo: generator => `${generator.javaDir}config/apidocs/GatewaySwaggerResourcesProvider.kt`,
+                    useBluePrint: true,
                 },
                 {
-                  file: 'package/web/filter/ModifyServersOpenApiFilter.kt',
-                  renameTo: generator => `${generator.javaDir}web/filter/ModifyServersOpenApiFilter.kt`,
-                  useBluePrint: true,
+                    file: 'package/web/filter/ModifyServersOpenApiFilter.kt',
+                    renameTo: generator => `${generator.javaDir}web/filter/ModifyServersOpenApiFilter.kt`,
+                    useBluePrint: true,
                 },
             ],
         },
@@ -467,20 +469,20 @@ const serverFiles = {
             condition: generator => generator.applicationType === 'gateway' && generator.serviceDiscoveryType && generator.reactive,
             path: SERVER_TEST_SRC_KOTLIN_DIR,
             templates: [
-              {
-                file: 'package/web/filter/ModifyServersOpenApiFilterTest.kt',
-                renameTo: generator => `${generator.testDir}web/filter/ModifyServersOpenApiFilterTest.kt`,
-                useBluePrint: true,
-              },
-              {
-                file: 'package/config/apidocs/GatewaySwaggerResourcesProviderTest.kt',
-                renameTo: generator => `${generator.testDir}config/apidocs/GatewaySwaggerResourcesProviderTest.kt`,
-                useBluePrint: true,
-              },
+                {
+                    file: 'package/web/filter/ModifyServersOpenApiFilterTest.kt',
+                    renameTo: generator => `${generator.testDir}web/filter/ModifyServersOpenApiFilterTest.kt`,
+                    useBluePrint: true,
+                },
+                {
+                    file: 'package/config/apidocs/GatewaySwaggerResourcesProviderTest.kt',
+                    renameTo: generator => `${generator.testDir}config/apidocs/GatewaySwaggerResourcesProviderTest.kt`,
+                    useBluePrint: true,
+                },
             ],
-          },
-        ],
-        serverMicroservice: [
+        },
+    ],
+    serverMicroservice: [
         {
             condition: generator =>
                 !generator.reactive &&
@@ -1181,7 +1183,8 @@ const serverFiles = {
         },
         {
             condition: generator =>
-                generator.authenticationType === 'oauth2' && (generator.applicationType === 'monolith' || generator.applicationType === 'gateway'),
+                generator.authenticationType === 'oauth2' &&
+                (generator.applicationType === 'monolith' || generator.applicationType === 'gateway'),
             path: SERVER_TEST_SRC_KOTLIN_DIR,
             templates: [
                 {

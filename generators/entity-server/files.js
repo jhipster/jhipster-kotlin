@@ -270,7 +270,7 @@ function writeFiles() {
             if (this.reactive) {
                 this.writeFilesToDisk(serverFiles, ['reactive', '']);
             }
-            
+
             this.writeFilesToDisk(serverFiles);
         },
 
@@ -320,4 +320,4 @@ function customizeFiles() {
             );
         }
     }
-  }
+}
