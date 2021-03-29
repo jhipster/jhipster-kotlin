@@ -13,7 +13,7 @@ describe('JHipster server generator', () => {
                 .withOptions({
                     'from-cli': true,
                     skipInstall: true,
-                    
+
                     skipChecks: true,
                     'skip-ktlint-format': true,
                 })
@@ -76,7 +76,7 @@ describe('JHipster server generator', () => {
                 .withOptions({
                     'from-cli': true,
                     skipInstall: true,
-                    
+
                     skipChecks: true,
                     'skip-ktlint-format': true,
                 })

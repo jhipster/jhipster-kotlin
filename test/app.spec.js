@@ -87,7 +87,7 @@ describe('JHipster generator', () => {
                     .run('generator-jhipster/generators/app')
                     .withOptions({
                         jhiPrefix: 'test',
-                        
+
                         'skip-ktlint-format': true,
                     })
                     .withGenerators([
@@ -261,7 +261,6 @@ describe('JHipster generator', () => {
                     .run('generator-jhipster/generators/app')
                     .withOptions({
                         jhiPrefix: 'test',
-                        
                     })
                     .withGenerators([
                         [
@@ -328,9 +327,7 @@ describe('JHipster generator', () => {
             before(async () => {
                 await helpers
                     .run('generator-jhipster/generators/app')
-                    .withOptions({
-                        
-                    })
+                    .withOptions({})
                     .withGenerators([
                         [
                             require('../generators/server'), // eslint-disable-line global-require
@@ -1718,7 +1715,7 @@ describe('JHipster generator', () => {
     });
 
     context('App with skip server', () => {
-        before(async() => {
+        before(async () => {
             await helpers
                 .run('generator-jhipster/generators/app')
                 .withOptions({
@@ -1728,7 +1725,7 @@ describe('JHipster generator', () => {
                     skipServer: true,
                     db: 'postgresql',
                     auth: 'jwt',
-                    
+
                     'skip-ktlint-format': true,
                 })
                 .withPrompts({
@@ -1776,7 +1773,7 @@ describe('JHipster generator', () => {
                     .run('generator-jhipster/generators/app')
                     .withOptions({
                         skipClient: true,
-                        
+
                         'skip-ktlint-format': true,
                     })
                     .withGenerators([
@@ -1853,7 +1850,7 @@ describe('JHipster generator', () => {
                     .run('generator-jhipster/generators/app')
                     .withOptions({
                         skipClient: true,
-                        
+
                         'skip-ktlint-format': true,
                     })
                     .withGenerators([
@@ -1918,7 +1915,7 @@ describe('JHipster generator', () => {
                     .withOptions({
                         skipClient: true,
                         skipUserManagement: true,
-                        
+
                         'skip-ktlint-format': true,
                     })
                     .withGenerators([

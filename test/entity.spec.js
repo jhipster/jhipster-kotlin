@@ -20,7 +20,6 @@ describe('JHipster generator for entity', () => {
                             fse.copySync(path.join(__dirname, '../test/templates/default-elasticsearch'), dir);
                         })
                         .withOptions({
-                            
                             'skip-ktlint-format': true,
                         })
                         .withArguments(['foo'])
@@ -52,7 +51,7 @@ describe('JHipster generator for entity', () => {
                         .withOptions({
                             creationTimestamp: '2016-01-20',
                             withEntities: true,
-                            
+
                             'skip-ktlint-format': true,
                         })
                         .withArguments(['foo'])
@@ -82,7 +81,6 @@ describe('JHipster generator for entity', () => {
                             fse.copySync(path.join(__dirname, '../test/templates/entity-dto-suffixes'), dir);
                         })
                         .withOptions({
-                            
                             'skip-ktlint-format': true,
                         })
                         .withArguments(['foo'])
@@ -137,7 +135,6 @@ describe('JHipster generator for entity', () => {
                             fse.copySync(path.join(__dirname, '../test/templates/entity-dto-suffixes'), dir);
                         })
                         .withOptions({
-                            
                             'skip-ktlint-format': true,
                         })
                         .withArguments(['foo'])
@@ -185,7 +182,6 @@ describe('JHipster generator for entity', () => {
                             fse.copySync(path.join(__dirname, '../test/templates/default-ng2'), dir);
                         })
                         .withOptions({
-                            
                             'skip-ktlint-format': true,
                         })
                         .withArguments(['foo'])
@@ -214,7 +210,6 @@ describe('JHipster generator for entity', () => {
                             fse.copySync(path.join(__dirname, '../test/templates/default-ng2'), dir);
                         })
                         .withOptions({
-                            
                             'skip-ktlint-format': true,
                         })
                         .withArguments(['foo'])
@@ -242,7 +237,6 @@ describe('JHipster generator for entity', () => {
                             fse.copySync(path.join(__dirname, '../test/templates/default-ng2'), dir);
                         })
                         .withOptions({
-                            
                             'skip-ktlint-format': true,
                         })
                         .withArguments(['foo'])
@@ -270,7 +264,6 @@ describe('JHipster generator for entity', () => {
                             fse.copySync(path.join(__dirname, '../test/templates/default-ng2'), dir);
                         })
                         .withOptions({
-                            
                             'skip-ktlint-format': true,
                         })
                         .withArguments(['foo'])
@@ -302,7 +295,6 @@ describe('JHipster generator for entity', () => {
                             fse.copySync(path.join(__dirname, '../test/templates/default-ng2'), dir);
                         })
                         .withOptions({
-                            
                             'skip-ktlint-format': true,
                         })
                         .withArguments(['foo'])
@@ -337,7 +329,7 @@ describe('JHipster generator for entity', () => {
                         .withArguments(['foo'])
                         .withOptions({
                             angularSuffix: 'management',
-                            
+
                             'skip-ktlint-format': true,
                         })
                         .withPrompts({
@@ -367,7 +359,7 @@ describe('JHipster generator for entity', () => {
                         .withArguments(['foo'])
                         .withOptions({
                             clientRootFolder: 'test-root',
-                            
+
                             'skip-ktlint-format': true,
                         })
                         .withPrompts({
@@ -398,7 +390,7 @@ describe('JHipster generator for entity', () => {
                         .withOptions({
                             clientRootFolder: 'test-root',
                             angularSuffix: 'management',
-                            
+
                             'skip-ktlint-format': true,
                         })
                         .withPrompts({
@@ -428,7 +420,6 @@ describe('JHipster generator for entity', () => {
                             fse.copySync(path.join(__dirname, '../test/templates/psql-with-no-fake-data'), dir);
                         })
                         .withOptions({
-                            
                             'skip-ktlint-format': true,
                         })
                         .withArguments(['foo'])
@@ -456,7 +447,6 @@ describe('JHipster generator for entity', () => {
                             fse.copySync(path.join(__dirname, '../test/templates/noi18n'), dir);
                         })
                         .withOptions({
-                            
                             'skip-ktlint-format': true,
                         })
                         .withArguments(['foo'])
@@ -487,7 +477,6 @@ describe('JHipster generator for entity', () => {
                             fse.copySync(path.join(__dirname, '../test/templates/all-languages'), dir);
                         })
                         .withOptions({
-                            
                             'skip-ktlint-format': true,
                         })
                         .withArguments(['foo'])
@@ -517,7 +506,7 @@ describe('JHipster generator for entity', () => {
                         .withArguments(['foo'])
                         .withOptions({
                             clientRootFolder: 'test-root',
-                            
+
                             'skip-ktlint-format': true,
                         })
                         .withPrompts({
@@ -549,7 +538,7 @@ describe('JHipster generator for entity', () => {
                         .withArguments(['foo'])
                         .withOptions({
                             clientRootFolder: 'test-root',
-                            
+
                             'skip-ktlint-format': true,
                         })
                         .withPrompts({
@@ -576,7 +565,6 @@ describe('JHipster generator for entity', () => {
                             fse.copySync(path.join(__dirname, '../test/templates/default-microservice'), dir);
                         })
                         .withOptions({
-                            
                             'skip-ktlint-format': true,
                         })
                         .withArguments(['foo'])
@@ -607,7 +595,6 @@ describe('JHipster generator for entity', () => {
                             fse.copySync(path.join(__dirname, '../test/templates/mongodb-with-relations'), dir);
                         })
                         .withOptions({
-                            
                             'skip-ktlint-format': true,
                         })
                         .withArguments(['foo'])
@@ -635,7 +622,6 @@ describe('JHipster generator for entity', () => {
                             fse.copySync(path.join(__dirname, '../test/templates/default-gateway'), dir);
                         })
                         .withOptions({
-                            
                             'skip-ktlint-format': true,
                         })
                         .withPrompts({
@@ -672,7 +658,6 @@ describe('JHipster generator for entity', () => {
                             fse.copySync(path.join(__dirname, '../test/templates/default-gateway'), dir);
                         })
                         .withOptions({
-                            
                             'skip-ktlint-format': true,
                         })
                         .withArguments(['foo'])
@@ -701,7 +686,6 @@ describe('JHipster generator for entity', () => {
                             fse.copySync(path.join(__dirname, '../test/templates/default-gateway'), dir);
                         })
                         .withOptions({
-                            
                             'skip-ktlint-format': true,
                         })
                         .withArguments(['baz'])
@@ -730,7 +714,7 @@ describe('JHipster generator for entity', () => {
                     .inTmpDir(dir => {
                         fse.copySync(path.join(__dirname, '../test/templates/default-ng2'), dir);
                     })
-                    .withOptions({ creationTimestamp: '2016-01-20', withEntities: true,  'skip-ktlint-format': true })
+                    .withOptions({ creationTimestamp: '2016-01-20', withEntities: true, 'skip-ktlint-format': true })
                     .withArguments(['foo'])
                     .withPrompts({
                         fieldAdd: false,
@@ -759,7 +743,7 @@ describe('JHipster generator for entity', () => {
                     .withOptions({
                         creationTimestamp: '2016-01-20T00:00:00.000Z',
                         withEntities: true,
-                        
+
                         'skip-ktlint-format': true,
                     })
                     .withArguments(['foo'])
@@ -787,7 +771,7 @@ describe('JHipster generator for entity', () => {
                     .inTmpDir(dir => {
                         fse.copySync(path.join(__dirname, '../test/templates/default-ng2'), dir);
                     })
-                    .withOptions({ baseChangelogDate: '20-01-2016',  'skip-ktlint-format': true })
+                    .withOptions({ baseChangelogDate: '20-01-2016', 'skip-ktlint-format': true })
                     .withArguments(['foo'])
                     .withPrompts({
                         fieldAdd: false,
@@ -818,7 +802,7 @@ describe('JHipster generator for entity', () => {
                             fse.copySync(path.join(__dirname, 'templates/.jhipster/Simple.json'), path.join(dir, '.jhipster/Foo.json'));
                         })
                         .withArguments(['Foo'])
-                        .withOptions({ regenerate: true, force: true,  'skip-ktlint-format': true });
+                        .withOptions({ regenerate: true, force: true, 'skip-ktlint-format': true });
                 });
 
                 it('creates expected default files', () => {
@@ -846,7 +830,7 @@ describe('JHipster generator for entity', () => {
                             regenerate: true,
                             force: true,
                             skipDbChangelog: true,
-                            
+
                             'skip-ktlint-format': true,
                         });
                 });
@@ -877,7 +861,7 @@ describe('JHipster generator for entity', () => {
                             regenerate: true,
                             force: true,
                             skipDbChangelog: true,
-                            
+
                             'skip-ktlint-format': true,
                         });
                 });
@@ -905,7 +889,7 @@ describe('JHipster generator for entity', () => {
                             );
                         })
                         .withArguments(['Foo'])
-                        .withOptions({ regenerate: true, force: true,  'skip-ktlint-format': true });
+                        .withOptions({ regenerate: true, force: true, 'skip-ktlint-format': true });
                 });
 
                 it('creates expected default files', () => {
@@ -932,7 +916,7 @@ describe('JHipster generator for entity', () => {
                         .inTmpDir(dir => {
                             fse.copySync(path.join(__dirname, '../test/templates/reproducible'), dir);
                         })
-                        .withOptions({  'skip-ktlint-format': true })
+                        .withOptions({ 'skip-ktlint-format': true })
                         .withArguments(['foo']);
                 });
 
@@ -974,7 +958,7 @@ describe('JHipster generator for entity', () => {
                     .inTmpDir(dir => {
                         fse.copySync(path.join(__dirname, '../test/templates/enums'), dir);
                     })
-                    .withOptions({  'skip-ktlint-format': true })
+                    .withOptions({ 'skip-ktlint-format': true })
                     .withArguments(['A']);
             });
 
@@ -1042,7 +1026,7 @@ describe('JHipster generator for entity', () => {
                         fse.ensureDirSync(jhipsterFolder);
                         fse.writeJsonSync(path.join(jhipsterFolder, 'Foo.json'), {});
                     })
-                    .withOptions({ creationTimestamp: '2016-01-20', withEntities: true,  'skip-ktlint-format': true })
+                    .withOptions({ creationTimestamp: '2016-01-20', withEntities: true, 'skip-ktlint-format': true })
                     .run();
             });
 
