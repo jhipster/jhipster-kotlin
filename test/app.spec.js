@@ -19,7 +19,6 @@ describe('JHipster generator', () => {
                     .run('generator-jhipster/generators/app')
                     .withOptions({
                         jhiPrefix: 'test',
-                        blueprint: 'kotlin',
                         withGeneratedFlag: true,
                         'skip-ktlint-format': true,
                     })
@@ -88,7 +87,7 @@ describe('JHipster generator', () => {
                     .run('generator-jhipster/generators/app')
                     .withOptions({
                         jhiPrefix: 'test',
-                        blueprint: 'kotlin',
+                        
                         'skip-ktlint-format': true,
                     })
                     .withGenerators([
@@ -148,10 +147,6 @@ describe('JHipster generator', () => {
             before(async () => {
                 await helpers
                     .run('generator-jhipster/generators/app')
-                    .withOptions({
-                        blueprint: 'kotlin',
-                        'skip-ktlint-format': true,
-                    })
                     .withGenerators([
                         [
                             require('../generators/server'), // eslint-disable-line global-require
@@ -212,10 +207,6 @@ describe('JHipster generator', () => {
             before(async () => {
                 await helpers
                     .run('generator-jhipster/generators/app')
-                    .withOptions({
-                        blueprint: 'kotlin',
-                        'skip-ktlint-format': true,
-                    })
                     .withGenerators([
                         [
                             require('../generators/server'), // eslint-disable-line global-require
@@ -270,7 +261,7 @@ describe('JHipster generator', () => {
                     .run('generator-jhipster/generators/app')
                     .withOptions({
                         jhiPrefix: 'test',
-                        blueprint: 'kotlin',
+                        
                     })
                     .withGenerators([
                         [
@@ -338,7 +329,7 @@ describe('JHipster generator', () => {
                 await helpers
                     .run('generator-jhipster/generators/app')
                     .withOptions({
-                        blueprint: 'kotlin',
+                        
                     })
                     .withGenerators([
                         [
@@ -394,10 +385,6 @@ describe('JHipster generator', () => {
             before(async () => {
                 await helpers
                     .run('generator-jhipster/generators/app')
-                    .withOptions({
-                        blueprint: 'kotlin',
-                        'skip-ktlint-format': true,
-                    })
                     .withGenerators([
                         [
                             require('../generators/server'), // eslint-disable-line global-require
@@ -453,10 +440,6 @@ describe('JHipster generator', () => {
             before(async () => {
                 await helpers
                     .run('generator-jhipster/generators/app')
-                    .withOptions({
-                        blueprint: 'kotlin',
-                        'skip-ktlint-format': true,
-                    })
                     .withGenerators([
                         [
                             require('../generators/server'), // eslint-disable-line global-require
@@ -501,10 +484,6 @@ describe('JHipster generator', () => {
             before(async () => {
                 await helpers
                     .run('generator-jhipster/generators/app')
-                    .withOptions({
-                        blueprint: 'kotlin',
-                        'skip-ktlint-format': true,
-                    })
                     .withGenerators([
                         [
                             require('../generators/server'), // eslint-disable-line global-require
@@ -549,10 +528,6 @@ describe('JHipster generator', () => {
             before(async () => {
                 await helpers
                     .run('generator-jhipster/generators/app')
-                    .withOptions({
-                        blueprint: 'kotlin',
-                        'skip-ktlint-format': true,
-                    })
                     .withGenerators([
                         [
                             require('../generators/server'), // eslint-disable-line global-require
@@ -597,10 +572,6 @@ describe('JHipster generator', () => {
             before(async () => {
                 await helpers
                     .run('generator-jhipster/generators/app')
-                    .withOptions({
-                        blueprint: 'kotlin',
-                        'skip-ktlint-format': true,
-                    })
                     .withGenerators([
                         [
                             require('../generators/server'), // eslint-disable-line global-require
@@ -643,10 +614,6 @@ describe('JHipster generator', () => {
             before(async () => {
                 await helpers
                     .run('generator-jhipster/generators/app')
-                    .withOptions({
-                        blueprint: 'kotlin',
-                        'skip-ktlint-format': true,
-                    })
                     .withGenerators([
                         [
                             require('../generators/server'), // eslint-disable-line global-require
@@ -691,10 +658,6 @@ describe('JHipster generator', () => {
             before(async () => {
                 await helpers
                     .run('generator-jhipster/generators/app')
-                    .withOptions({
-                        blueprint: 'kotlin',
-                        'skip-ktlint-format': true,
-                    })
                     .withGenerators([
                         [
                             require('../generators/server'), // eslint-disable-line global-require
@@ -734,10 +697,6 @@ describe('JHipster generator', () => {
             before(async () => {
                 await helpers
                     .run('generator-jhipster/generators/app')
-                    .withOptions({
-                        blueprint: 'kotlin',
-                        'skip-ktlint-format': true,
-                    })
                     .withGenerators([
                         [
                             require('../generators/server'), // eslint-disable-line global-require
@@ -780,10 +739,6 @@ describe('JHipster generator', () => {
             before(async () => {
                 await helpers
                     .run('generator-jhipster/generators/app')
-                    .withOptions({
-                        blueprint: 'kotlin',
-                        'skip-ktlint-format': true,
-                    })
                     .withGenerators([
                         [
                             require('../generators/server'), // eslint-disable-line global-require
@@ -825,10 +780,6 @@ describe('JHipster generator', () => {
             before(async () => {
                 await helpers
                     .run('generator-jhipster/generators/app')
-                    .withOptions({
-                        blueprint: 'kotlin',
-                        'skip-ktlint-format': true,
-                    })
                     .withGenerators([
                         [
                             require('../generators/server'), // eslint-disable-line global-require
@@ -876,10 +827,6 @@ describe('JHipster generator', () => {
             before(async () => {
                 await helpers
                     .run('generator-jhipster/generators/app')
-                    .withOptions({
-                        blueprint: 'kotlin',
-                        'skip-ktlint-format': true,
-                    })
                     .withGenerators([
                         [
                             require('../generators/server'), // eslint-disable-line global-require
@@ -923,10 +870,6 @@ describe('JHipster generator', () => {
             before(async () => {
                 await helpers
                     .run('generator-jhipster/generators/app')
-                    .withOptions({
-                        blueprint: 'kotlin',
-                        'skip-ktlint-format': true,
-                    })
                     .withGenerators([
                         [
                             require('../generators/server'), // eslint-disable-line global-require
@@ -968,10 +911,6 @@ describe('JHipster generator', () => {
             before(async () => {
                 await helpers
                     .run('generator-jhipster/generators/app')
-                    .withOptions({
-                        blueprint: 'kotlin',
-                        'skip-ktlint-format': true,
-                    })
                     .withGenerators([
                         [
                             require('../generators/server'), // eslint-disable-line global-require
@@ -1011,10 +950,6 @@ describe('JHipster generator', () => {
             before(async () => {
                 await helpers
                     .run('generator-jhipster/generators/app')
-                    .withOptions({
-                        blueprint: 'kotlin',
-                        'skip-ktlint-format': true,
-                    })
                     .withGenerators([
                         [
                             require('../generators/server'), // eslint-disable-line global-require
@@ -1056,10 +991,6 @@ describe('JHipster generator', () => {
             before(async () => {
                 await helpers
                     .run('generator-jhipster/generators/app')
-                    .withOptions({
-                        blueprint: 'kotlin',
-                        'skip-ktlint-format': true,
-                    })
                     .withGenerators([
                         [
                             require('../generators/server'), // eslint-disable-line global-require
@@ -1102,10 +1033,6 @@ describe('JHipster generator', () => {
             before(async () => {
                 await helpers
                     .run('generator-jhipster/generators/app')
-                    .withOptions({
-                        blueprint: 'kotlin',
-                        'skip-ktlint-format': true,
-                    })
                     .withGenerators([
                         [
                             require('../generators/server'), // eslint-disable-line global-require
@@ -1149,10 +1076,6 @@ describe('JHipster generator', () => {
             before(async () => {
                 await helpers
                     .run('generator-jhipster/generators/app')
-                    .withOptions({
-                        blueprint: 'kotlin',
-                        'skip-ktlint-format': true,
-                    })
                     .withGenerators([
                         [
                             require('../generators/server'), // eslint-disable-line global-require
@@ -1195,10 +1118,6 @@ describe('JHipster generator', () => {
             before(async () => {
                 await helpers
                     .run('generator-jhipster/generators/app')
-                    .withOptions({
-                        blueprint: 'kotlin',
-                        'skip-ktlint-format': true,
-                    })
                     .withGenerators([
                         [
                             require('../generators/server'), // eslint-disable-line global-require
@@ -1241,10 +1160,6 @@ describe('JHipster generator', () => {
             before(async () => {
                 await helpers
                     .run('generator-jhipster/generators/app')
-                    .withOptions({
-                        blueprint: 'kotlin',
-                        'skip-ktlint-format': true,
-                    })
                     .withGenerators([
                         [
                             require('../generators/server'), // eslint-disable-line global-require
@@ -1295,10 +1210,6 @@ describe('JHipster generator', () => {
             before(async () => {
                 await helpers
                     .run('generator-jhipster/generators/app')
-                    .withOptions({
-                        blueprint: 'kotlin',
-                        'skip-ktlint-format': true,
-                    })
                     .withGenerators([
                         [
                             require('../generators/server'), // eslint-disable-line global-require
@@ -1352,10 +1263,6 @@ describe('JHipster generator', () => {
             before(async () => {
                 await helpers
                     .run('generator-jhipster/generators/app')
-                    .withOptions({
-                        blueprint: 'kotlin',
-                        'skip-ktlint-format': true,
-                    })
                     .withGenerators([
                         [
                             require('../generators/server'), // eslint-disable-line global-require
@@ -1410,10 +1317,6 @@ describe('JHipster generator', () => {
             before(async () => {
                 await helpers
                     .run('generator-jhipster/generators/app')
-                    .withOptions({
-                        blueprint: 'kotlin',
-                        'skip-ktlint-format': true,
-                    })
                     .withGenerators([
                         [
                             require('../generators/server'), // eslint-disable-line global-require
@@ -1453,10 +1356,6 @@ describe('JHipster generator', () => {
             before(async () => {
                 await helpers
                     .run('generator-jhipster/generators/app')
-                    .withOptions({
-                        blueprint: 'kotlin',
-                        'skip-ktlint-format': true,
-                    })
                     .withGenerators([
                         [
                             require('../generators/server'), // eslint-disable-line global-require
@@ -1498,10 +1397,6 @@ describe('JHipster generator', () => {
             before(async () => {
                 await helpers
                     .run('generator-jhipster/generators/app')
-                    .withOptions({
-                        blueprint: 'kotlin',
-                        'skip-ktlint-format': true,
-                    })
                     .withGenerators([
                         [
                             require('../generators/server'), // eslint-disable-line global-require
@@ -1542,10 +1437,6 @@ describe('JHipster generator', () => {
             before(async () => {
                 await helpers
                     .run('generator-jhipster/generators/app')
-                    .withOptions({
-                        blueprint: 'kotlin',
-                        'skip-ktlint-format': true,
-                    })
                     .withGenerators([
                         [
                             require('../generators/server'), // eslint-disable-line global-require
@@ -1582,10 +1473,6 @@ describe('JHipster generator', () => {
             before(async () => {
                 await helpers
                     .run('generator-jhipster/generators/app')
-                    .withOptions({
-                        blueprint: 'kotlin',
-                        'skip-ktlint-format': true,
-                    })
                     .withGenerators([
                         [
                             require('../generators/server'), // eslint-disable-line global-require
@@ -1638,10 +1525,6 @@ describe('JHipster generator', () => {
             before(async () => {
                 await helpers
                     .run('generator-jhipster/generators/app')
-                    .withOptions({
-                        blueprint: 'kotlin',
-                        'skip-ktlint-format': true,
-                    })
                     .withGenerators([
                         [
                             require('../generators/server'), // eslint-disable-line global-require
@@ -1687,10 +1570,6 @@ describe('JHipster generator', () => {
             before(async () => {
                 await helpers
                     .run('generator-jhipster/generators/app')
-                    .withOptions({
-                        blueprint: 'kotlin',
-                        'skip-ktlint-format': true,
-                    })
                     .withGenerators([
                         [
                             require('../generators/server'), // eslint-disable-line global-require
@@ -1738,10 +1617,6 @@ describe('JHipster generator', () => {
             before(async () => {
                 await helpers
                     .run('generator-jhipster/generators/app')
-                    .withOptions({
-                        blueprint: 'kotlin',
-                        'skip-ktlint-format': true,
-                    })
                     .withGenerators([
                         [
                             require('../generators/server'), // eslint-disable-line global-require
@@ -1797,10 +1672,6 @@ describe('JHipster generator', () => {
             before(async () => {
                 await helpers
                     .run('generator-jhipster/generators/app')
-                    .withOptions({
-                        blueprint: 'kotlin',
-                        'skip-ktlint-format': true,
-                    })
                     .withGenerators([
                         [
                             require('../generators/server'), // eslint-disable-line global-require
@@ -1847,8 +1718,8 @@ describe('JHipster generator', () => {
     });
 
     context('App with skip server', () => {
-        before(done => {
-            helpers
+        before(async() => {
+            await helpers
                 .run('generator-jhipster/generators/app')
                 .withOptions({
                     fromCli: true,
@@ -1857,7 +1728,7 @@ describe('JHipster generator', () => {
                     skipServer: true,
                     db: 'postgresql',
                     auth: 'jwt',
-                    blueprint: 'kotlin',
+                    
                     'skip-ktlint-format': true,
                 })
                 .withPrompts({
@@ -1905,7 +1776,7 @@ describe('JHipster generator', () => {
                     .run('generator-jhipster/generators/app')
                     .withOptions({
                         skipClient: true,
-                        blueprint: 'kotlin',
+                        
                         'skip-ktlint-format': true,
                     })
                     .withGenerators([
@@ -1982,7 +1853,7 @@ describe('JHipster generator', () => {
                     .run('generator-jhipster/generators/app')
                     .withOptions({
                         skipClient: true,
-                        blueprint: 'kotlin',
+                        
                         'skip-ktlint-format': true,
                     })
                     .withGenerators([
@@ -2047,7 +1918,7 @@ describe('JHipster generator', () => {
                     .withOptions({
                         skipClient: true,
                         skipUserManagement: true,
-                        blueprint: 'kotlin',
+                        
                         'skip-ktlint-format': true,
                     })
                     .withGenerators([
@@ -2093,10 +1964,6 @@ describe('JHipster generator', () => {
             before(async () => {
                 await helpers
                     .run('generator-jhipster/generators/app')
-                    .withOptions({
-                        blueprint: 'kotlin',
-                        'skip-ktlint-format': true,
-                    })
                     .withGenerators([
                         [
                             require('../generators/server'), // eslint-disable-line global-require
@@ -2138,10 +2005,6 @@ describe('JHipster generator', () => {
             before(async () => {
                 await helpers
                     .run('generator-jhipster/generators/app')
-                    .withOptions({
-                        blueprint: 'kotlin',
-                        'skip-ktlint-format': true,
-                    })
                     .withGenerators([
                         [
                             require('../generators/server'), // eslint-disable-line global-require
@@ -2183,10 +2046,6 @@ describe('JHipster generator', () => {
             before(async () => {
                 await helpers
                     .run('generator-jhipster/generators/app')
-                    .withOptions({
-                        blueprint: 'kotlin',
-                        'skip-ktlint-format': true,
-                    })
                     .withGenerators([
                         [
                             require('../generators/server'), // eslint-disable-line global-require
@@ -2229,10 +2088,6 @@ describe('JHipster generator', () => {
             before(async () => {
                 await helpers
                     .run('generator-jhipster/generators/app')
-                    .withOptions({
-                        blueprint: 'kotlin',
-                        'skip-ktlint-format': true,
-                    })
                     .withGenerators([
                         [
                             require('../generators/server'), // eslint-disable-line global-require
@@ -2277,10 +2132,6 @@ describe('JHipster generator', () => {
             before(async () => {
                 await helpers
                     .run('generator-jhipster/generators/app')
-                    .withOptions({
-                        blueprint: 'kotlin',
-                        'skip-ktlint-format': true,
-                    })
                     .withGenerators([
                         [
                             require('../generators/server'), // eslint-disable-line global-require
@@ -2328,10 +2179,6 @@ describe('JHipster generator', () => {
             before(async () => {
                 await helpers
                     .run('generator-jhipster/generators/app')
-                    .withOptions({
-                        blueprint: 'kotlin',
-                        'skip-ktlint-format': true,
-                    })
                     .withGenerators([
                         [
                             require('../generators/server'), // eslint-disable-line global-require
@@ -2373,10 +2220,6 @@ describe('JHipster generator', () => {
             before(async () => {
                 await helpers
                     .run('generator-jhipster/generators/app')
-                    .withOptions({
-                        blueprint: 'kotlin',
-                        'skip-ktlint-format': true,
-                    })
                     .withGenerators([
                         [
                             require('../generators/server'), // eslint-disable-line global-require
@@ -2418,10 +2261,6 @@ describe('JHipster generator', () => {
             before(async () => {
                 await helpers
                     .run('generator-jhipster/generators/app')
-                    .withOptions({
-                        blueprint: 'kotlin',
-                        'skip-ktlint-format': true,
-                    })
                     .withGenerators([
                         [
                             require('../generators/server'), // eslint-disable-line global-require
@@ -2465,10 +2304,6 @@ describe('JHipster generator', () => {
             before(async () => {
                 await helpers
                     .run('generator-jhipster/generators/app')
-                    .withOptions({
-                        blueprint: 'kotlin',
-                        'skip-ktlint-format': true,
-                    })
                     .withGenerators([
                         [
                             require('../generators/server'), // eslint-disable-line global-require
@@ -2510,10 +2345,6 @@ describe('JHipster generator', () => {
             before(async () => {
                 await helpers
                     .run('generator-jhipster/generators/app')
-                    .withOptions({
-                        blueprint: 'kotlin',
-                        'skip-ktlint-format': true,
-                    })
                     .withGenerators([
                         [
                             require('../generators/server'), // eslint-disable-line global-require
