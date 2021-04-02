@@ -36,6 +36,7 @@ import java.util.ArrayList
 import java.util.List
 import java.util.Map
 import java.util.Map.Entry
+import java.util.Optional
 
 import org.springframework.data.domain.Pageable
 <%_ if (databaseType === 'sql') { _%>
@@ -125,7 +126,7 @@ class <%= entityClass %>RepositoryInternalImpl(
         val select = entityManager.createSelect(selectFrom, <%= persistClass %>::class.java, pageable, criteria)
     
         <%_ if (databaseType === 'sql') { _%>
-        val alias = entityTable.getReferenceName().getReference()
+        val alias = entityTable.referenceName.reference
         val selectWhere =
             Optional.ofNullable(criteria).map {
                 StringBuilder(select).append(" ").append("WHERE").append(" ").append(alias).append(".").append(it.toString()).toString()}.orElse(select) // TODO remove once https://github.com/spring-projects/spring-data-jdbc/issues/907 will be fixed
@@ -188,7 +189,7 @@ class <%= entityClass %>RepositoryInternalImpl(
     override fun update(entity: <%= persistClass %>): Mono<Integer> {
         <%_ if (fields.length + reactiveEagerRelations.length > 0) { _%>
         //fixme is this the proper way?
-        return r2dbcEntityTemplate.update(entity).thenReturn(1)
+        return r2dbcEntityTemplate.update(entity).thenReturn(Integer.valueOf(1) as Integer)
         <%_ } else { _%>
         // What can we update on this field?
         return Mono.just(1).map{ it as Integer }
@@ -199,7 +200,7 @@ class <%= entityClass %>RepositoryInternalImpl(
 
     override fun deleteById(entityId: Long): Mono<Void> {
         return deleteRelations(entityId).then(
-            r2dbcEntityTemplate.from(<%= persistClass %>::class.java).matching(query(where("id").`is`(entityId))).all().then()
+            r2dbcEntityTemplate.delete(<%= asEntity(entityClass) %>::class.java).matching(query(where("id").`is`(entityId))).all().then()
         );
     }
 

@@ -64,11 +64,11 @@ class GatewaySwaggerResourcesProvider(
             .join()
 
         microservices
-            .filter(this::isNotGateway)
+            .filter { isNotGateway(it) }
             <%_ if (serviceDiscoveryType === 'consul') { _%>
-            .filter(this::isNotConsul)
+            .filter { isNotConsul(it) }
             <%_ } _%>
-            .forEach { microservice -> swaggerResources.add(swaggerResource(microservice, getMicroserviceApiDocs(microservice))) }
+            .forEach { swaggerResources.add(swaggerResource(it, getMicroserviceApiDocs(it))) }
 
         return swaggerResources
     }
@@ -93,7 +93,7 @@ class GatewaySwaggerResourcesProvider(
         return "/services/$name/v3/api-docs"
     }
 
-    private fun getMicroserviceName(route: Route): String {
+    private fun getMicroservicesName(route: Route): String {
         return route.uri.toString().replace("lb://", "").toLowerCase()
     }
 }
