@@ -268,10 +268,10 @@ function writeFiles() {
             // write server side files
             // writeFilesToDisk(serverFiles, this, false, this.fetchFromInstalledJHipster('entity-server/templates'));
             if (this.reactive) {
-                this.writeFilesToDisk(serverFiles, ['reactive', '']);
+                return this.writeFilesToDisk(serverFiles, ['reactive', '']);
             }
 
-            this.writeFilesToDisk(serverFiles);
+            return this.writeFilesToDisk(serverFiles);
         },
 
         writeEnumFiles() {

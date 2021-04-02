@@ -189,13 +189,13 @@ _%><%- include('../../common/inject_template', {viaService: viaService, construc
         <%_ if (primaryKey.type === 'UUID' && databaseType !== 'sql') { _%>
         <%= instanceName %>.<%= primaryKey.name %> = UUID.randomUUID()
         <%_ } _%>
-<%- include('/partials/save_template', {asEntity, asDto, viaService: viaService, returnDirectly: false, isUsingMapsId: isUsingMapsId, mapsIdAssoc: mapsIdAssoc, isController: true}); -%>
+<%- include('/partials/save_template', {asEntity, asDto, viaService: viaService, returnDirectly: false, isUsingMapsId: isUsingMapsId, mapsIdAssoc: mapsIdAssoc, isController: true, noReturn: false}); -%>
         <%_ if (!reactive) { _%>
         return ResponseEntity.created(URI("/api/<%= entityApiUrl %>/${result.<%= primaryKey.name %>}"))
             .headers(HeaderUtil.createEntityCreationAlert(applicationName, <%= enableTranslation %>, ENTITY_NAME, result.<%= primaryKey.name %><% if (primaryKey.type !== 'String') { %>.toString()<% } %>))
             .body(result)
         <%_ } else { _%>
-        return  result.map { result -> 
+            .map { result -> 
                 try {
                     ResponseEntity.created(URI("/api/<%= entityApiUrl %>/${result.<%= primaryKey.name %>}"))
                         .headers(HeaderUtil.createEntityCreationAlert(applicationName, <%= enableTranslation %>, ENTITY_NAME, result.<%= primaryKey.name %><% if (primaryKey.type !== 'String') { %>.toString()<% } %>))
@@ -256,7 +256,7 @@ _%><%- include('../../common/inject_template', {viaService: viaService, construc
                 }
                 <%_ } _%>
         <%_ } _%>
-<%- include('/partials/save_template', {asEntity, asDto, viaService: viaService, returnDirectly: false, isUsingMapsId: false, mapsIdAssoc: mapsIdAssoc}); -%>
+<%- include('/partials/save_template', {asEntity, asDto, viaService: viaService, returnDirectly: false, isUsingMapsId: false, mapsIdAssoc: mapsIdAssoc, noReturn: true}); -%>
         <%_ if (!reactive) { _%>
         return ResponseEntity.ok()
             .headers(
@@ -267,8 +267,7 @@ _%><%- include('../../common/inject_template', {viaService: viaService, construc
             )
             .body(result)
         <%_ } else { _%>
-            result
-                .switchIfEmpty(Mono.error(ResponseStatusException(HttpStatus.NOT_FOUND)))
+           .switchIfEmpty(Mono.error(ResponseStatusException(HttpStatus.NOT_FOUND)))
                 .map { result -> ResponseEntity.ok()
                     .headers(HeaderUtil.createEntityUpdateAlert(applicationName, <%= enableTranslation %>, ENTITY_NAME, result.<%= primaryKey.name %><% if (primaryKey.type !== 'String') { %>.toString()<% } %>))
                     .body(result)
