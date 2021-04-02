@@ -17,6 +17,7 @@
  limitations under the License.
 -%>
 <%_
+    const instanceClass = restClass;
     const instanceType = restInstance;
     const mapper = entityInstance + 'Mapper';
     const entityListToDtoListReference = mapper + '.' + 'toDto';
@@ -28,7 +29,7 @@ _%>
         criteria: <%= entityClass %>Criteria<% if (pagination != 'no') { %>,
         pageable: Pageable
         <% if (reactive) { %>, request: ServerHttpRequest<% } %><% } %>
-    ): ResponseEntity<MutableList<<%= instanceType %>>> {
+    ): ResponseEntity<MutableList<<%= instanceClass %>>> {
         log.debug("REST request to get <%= entityClassPlural %> by criteria: $criteria")
     <%_ if (pagination === 'no') { _%>
         val entityList = <%= entityInstance %>QueryService.findByCriteria(criteria)
@@ -53,7 +54,7 @@ _%>
     }
 <% } else { %>
     <%_ if (pagination === 'no') { _%>
-    fun getAll<%= entityClassPlural %>(<% if (fieldsContainNoOwnerOneToOne) { %>@RequestParam(required = false) filter: String?<% } %><% if (relationshipsContainEagerLoad && fieldsContainNoOwnerOneToOne) { %>,<% } %><% if (relationshipsContainEagerLoad) { %>@RequestParam(required = false, defaultValue = "false") eagerload: Boolean<% }%>): <% if (reactive) { %>Mono<<% } %>MutableList<<%= instanceType %>><% if (reactive) { %>><% } %> {<%- include('get_all_stream_template', {viaService: viaService}); -%>
+    fun getAll<%= entityClassPlural %>(<% if (fieldsContainNoOwnerOneToOne) { %>@RequestParam(required = false) filter: String?<% } %><% if (relationshipsContainEagerLoad && fieldsContainNoOwnerOneToOne) { %>,<% } %><% if (relationshipsContainEagerLoad) { %>@RequestParam(required = false, defaultValue = "false") eagerload: Boolean<% }%>): <% if (reactive) { %>Mono<<% } %>MutableList<<%= instanceClass %>><% if (reactive) { %>><% } %> {<%- include('get_all_stream_template', {viaService: viaService}); -%>
         log.debug("REST request to get all <%= entityClassPlural %>")
         <% if (viaService) { %>
         return <%= entityInstance %>Service.findAll()<% if (reactive) { %>.collectList()<% } %>
@@ -68,11 +69,11 @@ _%>
         return <%= entityInstance %>Repository.<% if (relationshipsContainEagerLoad) { %>findAllWithEagerRelationships<% } else { %>findAll<% } %>()<% if (reactive) { %>.collectList()<% } %>
         <%_ } _%>
     <%_ } else { _%>
-    fun getAll<%= entityClassPlural %>(pageable: Pageable<% if (reactive) { %>, request: ServerHttpRequest<% } %><% if (fieldsContainNoOwnerOneToOne) { %>, @RequestParam(required = false) filter: String?<% } %><% if (relationshipsContainEagerLoad) { %>, @RequestParam(required = false, defaultValue = "false") eagerload: Boolean<% } %>): <% if (reactive) { %>Mono<ResponseEntity<List<<%= instanceType %>>>><% } else { %>ResponseEntity<List<<%= instanceType %>>><% } %> {<%- include('get_all_stream_template', {viaService: viaService}); -%>
+    fun getAll<%= entityClassPlural %>(pageable: Pageable<% if (reactive) { %>, request: ServerHttpRequest<% } %><% if (fieldsContainNoOwnerOneToOne) { %>, @RequestParam(required = false) filter: String?<% } %><% if (relationshipsContainEagerLoad) { %>, @RequestParam(required = false, defaultValue = "false") eagerload: Boolean<% } %>): <% if (reactive) { %>Mono<ResponseEntity<List<<%= instanceClass %>>>><% } else { %>ResponseEntity<List<<%= instanceClass %>>><% } %> {<%- include('get_all_stream_template', {viaService: viaService}); -%>
         log.debug("REST request to get a page of <%= entityClassPlural %>")
         <%_ if (!reactive) { _%>
             <%_ if (relationshipsContainEagerLoad) { _%>
-        val page: Page<<%= instanceType %>> = if (eagerload) {
+        val page: Page<<%= instanceClass %>> = if (eagerload) {
             <%= entityInstance %><%= viaService ? 'Service' : 'Repository' %>.findAllWithEagerRelationships(pageable)<%= reactiveEntityToDto %>
         } else {
             <%= entityInstance %><%= viaService ? 'Service' : 'Repository' %>.findAll(pageable)<%= reactiveEntityToDto %>
