@@ -51,17 +51,18 @@ class GatewaySwaggerResourcesProvider(
     override fun get(): MutableList<SwaggerResource> {
         val swaggerResources = mutableListOf(
             // Add the default swagger resource that correspond to the gateway's own swagger doc
-            swaggerResource(gatewayName.concat(" (default)"), "/v3/api-docs"),
-            swaggerResource(gatewayName.concat(" (management)"), "/v3/api-docs?group=management")
+            swaggerResource(gatewayName.plus(" (default)"), "/v3/api-docs"),
+            swaggerResource(gatewayName.plus(" (management)"), "/v3/api-docs?group=management")
         )
 
         val microservices = routeLocator.routes.map { getMicroservicesName(it) }
-            .ifEmpty { listOf<String>() }
+            .collectList()
+            .defaultIfEmpty(listOf())
             .subscribeOn(Schedulers.boundedElastic())
             .toFuture()
             .orTimeout(10, TimeUnit.SECONDS)
             .join()
-        
+
         microservices
             .filter(this::isNotGateway)
             <%_ if (serviceDiscoveryType === 'consul') { _%>
@@ -69,17 +70,17 @@ class GatewaySwaggerResourcesProvider(
             <%_ } _%>
             .forEach { microservice -> swaggerResources.add(swaggerResource(microservice, getMicroserviceApiDocs(microservice))) }
 
-
-
-        return resources
+        return swaggerResources
     }
 
-    private fun swaggerResource(name: String, location: String) =
-        SwaggerResource().apply {
-            this.name = name
-            this.location = location
-            swaggerVersion = "3.0"
-        }
+    companion object {
+        fun swaggerResource(name: String, location: String) =
+            SwaggerResource().apply {
+                this.name = name
+                this.location = location
+                swaggerVersion = "3.0"
+            }
+    }
     
     private fun isNotGateway(name: String) = !name.equals(gatewayName, ignoreCase = true)
 
@@ -93,6 +94,6 @@ class GatewaySwaggerResourcesProvider(
     }
 
     private fun getMicroserviceName(route: Route): String {
-        return route.getUri().toString().replace("lb://", "").toLowerCase()
+        return route.uri.toString().replace("lb://", "").toLowerCase()
     }
 }
