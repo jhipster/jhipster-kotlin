@@ -31,10 +31,10 @@ _%>
 <%_ if (dto !== 'mapstruct' || service === 'no') { _%>
 import <%= packageName %>.domain.<%= persistClass %>
 <%_ } _%>
+import <%= packageName %>.repository.<%= entityClass %>Repository
 <%_ if (service !== 'no') { _%>
 import <%= packageName %>.service.<%= entityClass %>Service
 <%_ } else { _%>
-import <%= packageName %>.repository.<%= entityClass %>Repository
     <%_ if (isUsingMapsId === true) { _%>
 import <%= packageName %>.repository.<%= mapsIdAssoc.otherEntityNameCapitalized %>Repository
     <%_ } _%>
@@ -288,14 +288,14 @@ _%><%- include('../../common/inject_template', {viaService: viaService, construc
     * or with status {@code 500 (Internal Server Error)} if the <%= instanceName %> couldn't be updated.
     * @throws URISyntaxException if the Location URI syntax is incorrect.
     */
-    @PatchMapping(value = "/<%= entityApiUrl %>/{<%= primaryKey.name %>}", consumes = "application/merge-patch+json")
+    @PatchMapping(value = ["/<%= entityApiUrl %>/{<%= primaryKey.name %>}"], consumes = ["application/merge-patch+json"])
     @Throws(URISyntaxException::class)
     fun partialUpdate<%= entityClass %>(
         @PathVariable(value = "<%= primaryKey.name %>", required = false) <%= primaryKey.name %>: <%= primaryKey.type %>,
         <% if (validation) { %>@NotNull <% } %>@RequestBody <%= instanceName %>:<%= instanceType %>
     ): <% if (reactive) { %>Mono<<% } %>ResponseEntity<<%= instanceType %>><% if (reactive) { %>><% } %> {
         log.debug("REST request to partial update <%= entityClass %> partially : {}, {}", <%= primaryKey.name %>, <%= instanceName %>)
-        if (<%= instanceName %>.get<%= primaryKey.nameCapitalized %>() == null) {
+        if (<%= instanceName %>.<%= primaryKey.name %> == null) {
             throw BadRequestAlertException("Invalid id", ENTITY_NAME, "idnull")
         }
         if (!Objects.equals(<%= primaryKey.name %>, <%= instanceName %>.<%= primaryKey.name %>)) {
