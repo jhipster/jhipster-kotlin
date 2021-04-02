@@ -3,18 +3,14 @@ package <%= packageName %>.web.filter
 import com.fasterxml.jackson.core.JsonProcessingException
 import com.fasterxml.jackson.databind.JsonNode
 import com.fasterxml.jackson.databind.ObjectMapper
-import com.fasterxml.jackson.databind.node.ArrayNode
 import com.fasterxml.jackson.databind.node.ObjectNode
 import java.io.ByteArrayInputStream
 import java.io.ByteArrayOutputStream
 import java.io.IOException
-import java.nio.charset.StandardCharsets
-import java.util.List
 import java.util.Objects
 import java.util.zip.GZIPInputStream
 import java.util.zip.GZIPOutputStream
 import org.reactivestreams.Publisher
-import org.slf4j.Logger
 import org.slf4j.LoggerFactory
 import org.springframework.cloud.gateway.filter.GatewayFilterChain
 import org.springframework.cloud.gateway.filter.GlobalFilter
@@ -34,19 +30,17 @@ import reactor.core.publisher.Mono
 @Component
 class ModifyServersOpenApiFilter: GlobalFilter, Ordered {
 
-    private val log = LoggerFactory.getLogger(javaClass)
-
     override fun filter(exchange: ServerWebExchange, chain: GatewayFilterChain): Mono<Void> {
         val path = exchange.request.uri.path
-        if (path.startsWith("/services") && path.contains("/v3/api-docs")) {
+        return if (path.startsWith("/services") && path.contains("/v3/api-docs")) {
             val originalResponse = exchange.response
             val bufferFactory = originalResponse.bufferFactory()
             val decoratedResponse = createModifyServersOpenApiInterceptor(path, originalResponse, bufferFactory)
 
             // replace response with decorator
-            return chain.filter(exchange.mutate().response(decoratedResponse).build())
+            chain.filter(exchange.mutate().response(decoratedResponse).build())
         } else {
-            return chain.filter(exchange)
+            chain.filter(exchange)
         }
     }
 
@@ -61,25 +55,29 @@ class ModifyServersOpenApiFilter: GlobalFilter, Ordered {
     }
 
     class ModifyServersOpenApiInterceptor(
-        path: String, 
-        originalResponse: ServerHttpResponse,
-        bufferFactory: DataBufferFactory
+        private val path: String,
+        private val originalResponse: ServerHttpResponse,
+        private val bufferFactory: DataBufferFactory
     ): ServerHttpResponseDecorator(originalResponse) {
 
+        private val log = LoggerFactory.getLogger(javaClass)
+
+        private var rewritedBody = ""
+        
         fun getRewritedBody() = rewritedBody
 
-        override fun <X: DataBuffer> writeWith(body: Publisher<X>): Mono<Void> {
+        override fun writeWith(body: Publisher<out DataBuffer>): Mono<Void> {
             rewritedBody = ""
-            if (body instanceof Flux) {
-                val fluxBody = (Flux<X: DataBuffer>) body
-
-                return super.writeWith(fluxBody.buffer().map(dataBuffers -> rewriteBodyWithServers(dataBuffers)))
+            if (body is Flux) {
+                return super.writeWith(body.buffer().map {
+                    rewriteBodyWithServers(it)
+                })
             }
             // when body is not a flux
             return super.writeWith(body)
         }
 
-        private fun <X: DataBuffer> rewriteBodyWithServers(dataBuffers: List<X>): DataBuffer {
+        private fun rewriteBodyWithServers(dataBuffers: MutableList<out DataBuffer>): DataBuffer {
             val dataBufferFactory = DefaultDataBufferFactory()
             val join = dataBufferFactory.join(dataBuffers)
             val content = ByteArray(join.readableByteCount())
@@ -92,20 +90,19 @@ class ModifyServersOpenApiFilter: GlobalFilter, Ordered {
             try {
                 // create custom server
                 val mapper = ObjectMapper()
-                val jsonBody = mapper.readTree(strBody)
+                val jsonBody: JsonNode = mapper.readTree(strBody)
                 val serversToJson = mapper.createObjectNode()
-                serversToJson.set("url", mapper.valueToTree(path.replace("/v3/api-docs", "")))
-                serversToJson.set("description", mapper.valueToTree("added by global filter"))
+                serversToJson.set<JsonNode>("url", mapper.valueToTree(path.replace("/v3/api-docs", "")))
+                serversToJson.set<JsonNode>("description", mapper.valueToTree("added by global filter"))
 
                 // add custom server
                 val servers = mapper.createArrayNode()
                 servers.add(serversToJson)
-                (jsonBody as ObjectNode).set("servers", servers)
-
+                (jsonBody as ObjectNode).set<JsonNode>("servers", servers)
                 rewritedBody = jsonBody.toString()
                 return rewritedBodyToDataBuffer()
-            } catch (e: JsonProcessingException) { 
-                log.error("Error when modify servers from api-doc of {}: {}", path, e.getMessage())
+            } catch (e: JsonProcessingException) {
+                log.error("Error when modify servers from api-doc of {}: {}", path, e.message)
             }
             return join
         }
@@ -113,14 +110,14 @@ class ModifyServersOpenApiFilter: GlobalFilter, Ordered {
         private fun rewritedBodyToDataBuffer(): DataBuffer {
             if (isZippedResponse()) {
                 val zippedBody = zipContent(rewritedBody)
-                originalResponse.headers.setContentLength(zippedBody.length)
+                originalResponse.headers.contentLength = zippedBody.size.toLong()
                 return bufferFactory.wrap(zippedBody)
             }
-            originalResponse.headers.setContentLength(rewritedBody.getBytes().length)
-            return bufferFactory.wrap(rewritedBody.getBytes())
+            originalResponse.headers.contentLength = rewritedBody.toByteArray().size.toLong()
+            return bufferFactory.wrap(rewritedBody.toByteArray())
         }
 
-        private fun contentToString(content: byteArray): String {
+        private fun contentToString(content: ByteArray): String {
             if (isZippedResponse()) {
                 val unzippedContent = unzipContent(content)
                 return String(unzippedContent, Charsets.UTF_8)
@@ -129,32 +126,32 @@ class ModifyServersOpenApiFilter: GlobalFilter, Ordered {
         }
 
         private fun isZippedResponse() =
-            !originalResponse.getHeaders().isEmpty() &&
-                originalResponse.getHeaders().get(HttpHeaders.CONTENT_ENCODING) != null &&
-                Objects.requireNonNull(originalResponse.getHeaders().get(HttpHeaders.CONTENT_ENCODING)).contains("gzip")
+            !originalResponse.headers.isEmpty() &&
+                originalResponse.headers[HttpHeaders.CONTENT_ENCODING] != null &&
+                Objects.requireNonNull(originalResponse.headers[HttpHeaders.CONTENT_ENCODING]).contains("gzip")
 
-        private fun unzipContent(byte[] content): ByteArray {
+        private fun unzipContent(content: ByteArray): ByteArray {
             try {
                 val gzipInputStream = GZIPInputStream(ByteArrayInputStream(content))
                 val unzippedContent = gzipInputStream.readAllBytes()
                 gzipInputStream.close()
                 return unzippedContent
             } catch (e: IOException) {
-                log.error("Error when unzip content during modify servers from api-doc of {}: {}", path, e.getMessage())
+                log.error("Error when unzip content during modify servers from api-doc of {}: {}", path, e.message)
             }
             return content
         }
 
         private fun zipContent(content: String): ByteArray {
             try {
-                ByteArrayOutputStream byteArrayOutputStream = ByteArrayOutputStream(content.length)
-                GZIPOutputStream gzipOutputStream = GZIPOutputStream(byteArrayOutputStream)
+                val byteArrayOutputStream = ByteArrayOutputStream(content.length)
+                val gzipOutputStream = GZIPOutputStream(byteArrayOutputStream)
                 gzipOutputStream.write(content.encodeToByteArray())
                 gzipOutputStream.flush()
                 gzipOutputStream.close()
                 return byteArrayOutputStream.toByteArray()
-            } catch (IOException e) {
-                log.error("Error when zip content during modify servers from api-doc of {}: {}", path, e.getMessage())
+            } catch ( e: IOException) {
+                log.error("Error when zip content during modify servers from api-doc of {}: {}", path, e.message)
             }
             return content.encodeToByteArray()
         }

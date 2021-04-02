@@ -1,8 +1,8 @@
 package <%= packageName %>.web.filter
 
-import static org.assertj.core.api.Assertions.assertThat
-import static org.junit.jupiter.api.Assertions.assertEquals
-import static org.mockito.Mockito.*
+import org.assertj.core.api.Assertions.assertThat
+import org.junit.jupiter.api.Assertions.assertEquals
+import org.mockito.Mockito.*
 
 import java.io.ByteArrayOutputStream
 import java.io.IOException
@@ -25,9 +25,8 @@ import reactor.core.publisher.Mono
 
 class ModifyServersOpenApiFilterTest {
 
-    private val log = LoggerFactory.getLogger(javaClass)
-    private val filterChain: GatewayFilterChain = mock(GatewayFilterChain::class)
-    private val captor: ArgumentCaptor<ServerWebExchange> = ArgumentCaptor.forClass(ServerWebExchange::class)
+    private val filterChain: GatewayFilterChain = mock(GatewayFilterChain::class.java)
+    private val captor: ArgumentCaptor<ServerWebExchange> = ArgumentCaptor.forClass(ServerWebExchange::class.java)
 
     @BeforeEach
     fun setup() {
@@ -77,6 +76,8 @@ class ModifyServersOpenApiFilterTest {
     @Nested
     class ModifyServersOpenApiInterceptorTest {
 
+        private val log = LoggerFactory.getLogger(javaClass)
+
         private val path: String = "/services/service-test/instance-test/v3/api-docs"
         private val request: MockServerHttpRequest = MockServerHttpRequest.get(path).build()
         private val exchange: ServerWebExchange = MockServerWebExchange.from(request)
@@ -95,9 +96,9 @@ class ModifyServersOpenApiFilterTest {
             interceptor.writeWith(Flux.just(body)).subscribe()
             assertThat(
                 interceptor
-                    .rewritedBody
+                    .getRewritedBody()
                     .contains("\"servers\":[{\"url\":\"/services/service-test/instance-test\",\"description\":\"added by global filter\"}]")
-            ).isTrue()
+            ).isTrue
         }
 
         @Test
@@ -114,9 +115,9 @@ class ModifyServersOpenApiFilterTest {
             interceptor.writeWith(Flux.just(body)).subscribe()
             assertThat(
                 interceptor
-                    .rewritedBody()
+                    .getRewritedBody()
                     .contains("\"servers\":[{\"url\":\"/services/service-test/instance-test\",\"description\":\"added by global filter\"}]")
-            ).isTrue()
+            ).isTrue
         }
 
         @Test
@@ -130,7 +131,7 @@ class ModifyServersOpenApiFilterTest {
             val bytes = "{}".encodeToByteArray()
             val body = exchange.response.bufferFactory().wrap(bytes)
             interceptor.writeWith(Mono.just(body)).subscribe()
-            assertThat(interceptor.rewritedBody).isEmpty
+            assertThat(interceptor.getRewritedBody()).isEmpty()
         }
 
         private fun zipContent(): ByteArray {
@@ -142,9 +143,9 @@ class ModifyServersOpenApiFilterTest {
                 gzipOutputStream.close()
                 return byteArrayOutputStream.toByteArray()
             } catch (e: IOException) {
-                log.error("Error in test when zip content during modify servers from api-doc of {}: {}", path, e.getMessage())
+                log.error("Error in test when zip content during modify servers from api-doc of {}: {}", path, e.message)
             }
-            return "{}".encodeToByteArray
+            return "{}".encodeToByteArray()
         }
     }
 }
