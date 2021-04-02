@@ -35,6 +35,7 @@ import org.springframework.data.relational.core.sql.SelectBuilder.SelectFromAndJ
 import org.springframework.data.relational.core.sql.SelectBuilder.SelectOrdered
 import org.springframework.data.relational.core.sql.SqlIdentifier
 import org.springframework.data.relational.core.sql.Table
+import org.springframework.r2dbc.core.Parameter;
 import org.springframework.data.relational.core.sql.render.SqlRenderer
 import org.springframework.stereotype.Service
 import org.springframework.util.Assert
@@ -50,8 +51,7 @@ import java.util.stream.Stream
 @Service
 class EntityManager(
     private val sqlRenderer: SqlRenderer, 
-    private val updateMapper: UpdateMapper, 
-    private val db: DatabaseClient,
+    private val updateMapper: UpdateMapper,
     private val r2dbcEntityTemplate: R2dbcEntityTemplate
 ) {
 
@@ -131,14 +131,16 @@ class EntityManager(
     }
 
     private fun createSelectImpl(selectFrom: SelectOrdered, entityType: Class<*>, sortParameter: Sort?): String {
-        if (sortParameter != null && sortParameter.isSorted()) {
+        var selected = selectFrom
+        if (sortParameter != null && sortParameter.isSorted) {
             val entity: RelationalPersistentEntity<*> = getPersistentEntity(entityType)
             if (entity != null) {
                 val sort = updateMapper.getMappedObject(sortParameter, entity)
-                selectFrom = selectFrom.orderBy(createOrderByFields((Table.create(entity.getTableName()).as(EntityManager.ENTITY_ALIAS), sort))))
+                selected = selectFrom.orderBy(
+                    createOrderByFields((Table.create(entity.tableName).`as`(EntityManager.ENTITY_ALIAS)), sort))
             }
         }
-        return createSelect(selectFrom.build())
+        return createSelect(selected.build())
     }
 
     private fun  getPersistentEntity(entityType: Class<*>): RelationalPersistentEntity<*> {
@@ -161,8 +163,8 @@ class EntityManager(
      * @return the number of deleted rows.
      */
     fun deleteAll(tableName: String): Mono<Int> {
-        val delete = statementMapper.createDelete(tableName)
-        return r2dbcEntityTemplate.databaseClient.sql(statementMapper.getMappedObject(delete)).fetch().rowsUpdated()
+        val delete = statementMapper?.createDelete(tableName)
+        return r2dbcEntityTemplate.databaseClient.sql(statementMapper?.getMappedObject(delete)).fetch().rowsUpdated()
     }
 
     /**
@@ -202,9 +204,9 @@ class EntityManager(
                         .createInsert(table.tableName)
                         .withColumn(table.idColumn, Parameter.from(entityId))
                         .withColumn(table.referenceColumn, Parameter.from(referenceId))
-                    return r2dbcEntityTemplate
+                    r2dbcEntityTemplate
                         .databaseClient
-                        .sql(statementMapper.getMappedObject(insert))
+                        .sql(statementMapper?.getMappedObject(insert))
                         .fetch()
                         .rowsUpdated()
                 }
@@ -224,6 +226,6 @@ class EntityManager(
         val deleteSpec = r2dbcEntityTemplate.dataAccessStrategy.statementMapper
             .createDelete(table.tableName)
             .withCriteria(Criteria.from(Criteria.where(table.idColumn).`is`(entityId)))
-        return r2dbcEntityTemplate.databaseClient.sql(statementMapper.getMappedObject(deleteSpec)).then()
+        return r2dbcEntityTemplate.databaseClient.sql(statementMapper?.getMappedObject(deleteSpec)).then()
     }
 }

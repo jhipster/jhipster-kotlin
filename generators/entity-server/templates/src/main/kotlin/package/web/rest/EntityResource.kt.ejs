@@ -195,7 +195,7 @@ _%><%- include('../../common/inject_template', {viaService: viaService, construc
             .headers(HeaderUtil.createEntityCreationAlert(applicationName, <%= enableTranslation %>, ENTITY_NAME, result.<%= primaryKey.name %><% if (primaryKey.type !== 'String') { %>.toString()<% } %>))
             .body(result)
         <%_ } else { _%>
-            .map { result -> 
+        return  result.map { result -> 
                 try {
                     ResponseEntity.created(URI("/api/<%= entityApiUrl %>/${result.<%= primaryKey.name %>}"))
                         .headers(HeaderUtil.createEntityCreationAlert(applicationName, <%= enableTranslation %>, ENTITY_NAME, result.<%= primaryKey.name %><% if (primaryKey.type !== 'String') { %>.toString()<% } %>))
@@ -239,7 +239,7 @@ _%><%- include('../../common/inject_template', {viaService: viaService, construc
     <%_ } else { _%>
         return <%= entityInstance %>Repository.existsById(<%= primaryKey.name %>).flatMap{ 
             if (!it) {
-                return Mono.error(BadRequestAlertException("Entity not found", ENTITY_NAME, "idnotfound"))
+                return@flatMap Mono.error(BadRequestAlertException("Entity not found", ENTITY_NAME, "idnotfound"))
             }
     <%_ } _%>
 
@@ -267,11 +267,12 @@ _%><%- include('../../common/inject_template', {viaService: viaService, construc
             )
             .body(result)
         <%_ } else { _%>
-                        .switchIfEmpty(Mono.error(ResponseStatusException(HttpStatus.NOT_FOUND)))
-                        .map { result -> ResponseEntity.ok()
-                            .headers(HeaderUtil.createEntityUpdateAlert(applicationName, <%= enableTranslation %>, ENTITY_NAME, result.<%= primaryKey.name %><% if (primaryKey.type !== 'String') { %>.toString()<% } %>))
-                            .body(result)
-                        }
+            result
+                .switchIfEmpty(Mono.error(ResponseStatusException(HttpStatus.NOT_FOUND)))
+                .map { result -> ResponseEntity.ok()
+                    .headers(HeaderUtil.createEntityUpdateAlert(applicationName, <%= enableTranslation %>, ENTITY_NAME, result.<%= primaryKey.name %><% if (primaryKey.type !== 'String') { %>.toString()<% } %>))
+                    .body(result)
+                }
             }
                 <%_ } _%>
     }
@@ -309,7 +310,7 @@ _%><%- include('../../common/inject_template', {viaService: viaService, construc
     <%_ } else { _%>
         return <%= entityInstance %>Repository.existsById(<%= primaryKey.name %>).flatMap {
             if (!it) {
-                return Mono.error(BadRequestAlertException("Entity not found", ENTITY_NAME, "idnotfound"))
+                return@flatMap Mono.error(BadRequestAlertException("Entity not found", ENTITY_NAME, "idnotfound"))
             }
     <%_ } _%>
 
@@ -326,23 +327,21 @@ _%><%- include('../../common/inject_template', {viaService: viaService, construc
         }
             <%_ } _%>
         <%_ } _%>
-
-        <%- include('../../common/patch_template', {asEntity, asDto, isService: false, viaService: viaService}); -%>
+<%- include('../../common/patch_template', {asEntity, asDto, isService: false, viaService: viaService}); -%>
             <%_ if (!reactive) { _%>
         return ResponseUtil.wrapOrNotFound(
             result,
             HeaderUtil.createEntityUpdateAlert(applicationName, <%= enableTranslation %>, ENTITY_NAME, <%= instanceName %>.<%= primaryKey.name %><% if (primaryKey.type !== 'String') { %>.toString()<% } %>)
         )
             <%_ } else { _%>
-        return result
-            .switchIfEmpty(Mono.error(ResponseStatusException(HttpStatus.NOT_FOUND)))
-            .map { 
-                ResponseEntity.ok()
-                    .headers(HeaderUtil.createEntityUpdateAlert(applicationName, <%= enableTranslation %>, ENTITY_NAME, it.<%= primaryKey.name %><% if (primaryKey.type !== 'String') { %>.toString()<% } %>))
-                    .body(it)
+            result
+                .switchIfEmpty(Mono.error(ResponseStatusException(HttpStatus.NOT_FOUND)))
+                .map { 
+                    ResponseEntity.ok()
+                        .headers(HeaderUtil.createEntityUpdateAlert(applicationName, <%= enableTranslation %>, ENTITY_NAME, it.<%= primaryKey.name %><% if (primaryKey.type !== 'String') { %>.toString()<% } %>))
+                        .body(it)
+                }
             }
-
-        }
             <%_ } _%>
     }
 
