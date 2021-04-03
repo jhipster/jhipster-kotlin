@@ -450,6 +450,23 @@ const serverFiles = {
             ],
         },
         {
+            condition: generator =>
+              generator.authenticationType === 'oauth2' && (generator.applicationType === 'monolith' || generator.applicationType === 'gateway'),
+            path: SERVER_MAIN_KOTLIN_SRC_DIR,
+            templates: [
+              {
+                file: 'package/web/rest/AuthInfoResource.kt',
+                renameTo: generator => `${generator.javaDir}web/rest/AuthInfoResource.kt`,
+                useBluePrint: true,
+              },
+              {
+                file: 'package/web/rest/LogoutResource.kt',
+                renameTo: generator => `${generator.javaDir}web/rest/LogoutResource.kt`,
+                useBluePrint: true,
+              },
+            ],
+          },
+        {
             condition: generator => generator.applicationType === 'gateway' && generator.serviceDiscoveryType && generator.reactive,
             path: SERVER_MAIN_KOTLIN_SRC_DIR,
             templates: [

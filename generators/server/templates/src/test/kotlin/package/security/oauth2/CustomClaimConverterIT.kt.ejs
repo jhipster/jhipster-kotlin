@@ -20,40 +20,31 @@ package <%= packageName %>.security.oauth2
 
 import com.fasterxml.jackson.databind.ObjectMapper
 import com.fasterxml.jackson.databind.node.ObjectNode
+import org.assertj.core.api.Assertions.assertThat
+import org.assertj.core.api.Assertions.assertThatCode
+import org.junit.jupiter.api.BeforeEach
+import org.junit.jupiter.api.Test
+import org.mockito.ArgumentMatchers.any
+import org.mockito.ArgumentMatchers.eq
+import org.mockito.Mockito.`when`
+import org.springframework.beans.factory.annotation.Autowired
+import org.springframework.boot.test.mock.mockito.MockBean
+import org.springframework.http.HttpEntity
+import org.springframework.http.HttpMethod
+import org.springframework.http.ResponseEntity
+import org.springframework.security.oauth2.client.registration.ClientRegistrationRepository
+import org.springframework.web.client.RestTemplate
 import <%= packageName %>.<%= mainClass %>
 import <%= packageName %>.config.TestSecurityConfiguration
 import <%= packageName %>.security.ADMIN
 import <%= packageName %>.security.USER
 import <%= packageName %>.IntegrationTest
-import org.junit.jupiter.api.BeforeEach
-import org.junit.jupiter.api.Test
-import org.junit.jupiter.api.extension.ExtendWith
-import org.mockito.ArgumentMatchers
-import org.mockito.Mock
-import org.mockito.junit.jupiter.MockitoExtension
-import org.springframework.beans.factory.annotation.Autowired
-import org.springframework.boot.test.context.SpringBootTest
-import org.springframework.http.HttpEntity
-import org.springframework.http.HttpMethod
-import org.springframework.http.ResponseEntity
-import org.springframework.security.oauth2.client.registration.ClientRegistrationRepository
-<%_ if (databaseType !== 'no') { _%>
-import org.springframework.transaction.annotation.Transactional
-<%_ } _%>
-import org.springframework.web.client.RestTemplate
-
-import org.assertj.core.api.Assertions.assertThat
-import org.mockito.ArgumentMatchers.any
-import org.mockito.ArgumentMatchers.eq
-import org.mockito.Mockito.`when`
-
 
 private const val USERNAME = "admin"
 private const val NAME = "John"
 private const val FAMILY_NAME = "Doe"
 
 @IntegrationTest
-@ExtendWith(MockitoExtension::class)
 class CustomClaimConverterIT {
 
     @Mock
@@ -67,28 +58,58 @@ class CustomClaimConverterIT {
     @BeforeEach
     fun initTest() {
         customClaimConverter = CustomClaimConverter(clientRegistrationRepository.findByRegistrationId("oidc"), restTemplate)
-        val mapper = ObjectMapper()
-        val user = mapper.createObjectNode()
+    }
+
+    private fun mockHttpGetUserInfo(userInfo: ObjectNode) {
+        `when`(
+            restTemplate.exchange(
+                eq("https://api.jhipster.org/user"),
+                eq(HttpMethod.GET),
+                any(HttpEntity::class.java),
+                any<Class<ObjectNode>>()
+            )
+        )
+            .thenReturn(ResponseEntity.ok(userInfo))
+    }
+
+    @Test
+    fun testConvert() {
+        // GIVEN
+        val claims = hashMapOf<String, Any>()
+        claims["sub"] = "123"
+        // AND
+        val user: ObjectNode = mapper.createObjectNode()
         user.put("preferred_username", USERNAME)
         user.put("given_name", NAME)
         user.put("family_name", FAMILY_NAME)
         user.putArray("groups").add(ADMIN).add(USER)
-        val userInfo:ResponseEntity<ObjectNode> = ResponseEntity.ok(user)
-        `when`(restTemplate.exchange(eq("https://api.jhipster.org/user"), eq(HttpMethod.GET), any(HttpEntity::class.java), ArgumentMatchers.any<Class<ObjectNode>>())).thenReturn(userInfo)
+
+        mockHttpGetUserInfo(user)
+
+        val convertedClaims = customClaimConverter.convert(claims)
+
+        // THEN
+        assertThat(convertedClaims)
+            .containsEntry("sub", "123")
+            .containsEntry("preferred_username", USERNAME)
+            .containsEntry("given_name", NAME)
+            .containsEntry("family_name", FAMILY_NAME)
+            .containsEntry("groups", listOf(ADMIN, USER))
     }
 
     @Test
-    <%_ if (databaseType !== 'no') { _%>
-    @Transactional
-    <%_ } _%>
-    fun testConvert() {
-        val claims = hashMapOf<String, Any>()
+    fun testConvert_withoutGroups() {
+        // GIVEN
+        val claims: MutableMap<String, Any> = HashMap()
         claims["sub"] = "123"
-        val convertedClaims = customClaimConverter.convert(claims)
+        // AND
+        val user = mapper.createObjectNode()
+        user.put("preferred_username", USERNAME)
+        user.put("given_name", NAME)
+        user.put("family_name", FAMILY_NAME)
+        mockHttpGetUserInfo(user)
 
-        assertThat(convertedClaims?.get("preferred_username")).isEqualTo(USERNAME)
-        assertThat(convertedClaims?.get("given_name")).isEqualTo(NAME)
-        assertThat(convertedClaims?.get("family_name")).isEqualTo(FAMILY_NAME)
-        assertThat(convertedClaims?.get("groups")).isEqualTo(listOf(ADMIN, USER))
+        // THEN
+        assertThatCode { customClaimConverter.convert(claims) }.doesNotThrowAnyException()
     }
 }
