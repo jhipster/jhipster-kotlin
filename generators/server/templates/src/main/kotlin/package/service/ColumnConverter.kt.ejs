@@ -18,29 +18,23 @@ This file is part of the JHipster project, see https://jhipster.github.io/
 -%>
 package <%= packageName %>.service
 
-import org.springframework.core.convert.ConversionService
+import io.r2dbc.spi.Row
 import org.springframework.data.r2dbc.convert.R2dbcConverter
 import org.springframework.data.r2dbc.convert.R2dbcCustomConversions
 import org.springframework.lang.Nullable
 import org.springframework.stereotype.Service
 import org.springframework.util.ClassUtils
 
-import io.r2dbc.spi.Row
-
-
 /**
  * This service provides helper function dealing with the low level {@link Row} and Spring's {@link R2dbcCustomConversions}, so type conversions can be applied.
  */
 @Service
 class ColumnConverter(
-    private var conversionService: ConversionService,
     private val conversions: R2dbcCustomConversions,
     private val r2dbcConverter: R2dbcConverter
 ) {
 
-    init {
-        conversionService = r2dbcConverter.conversionService
-    }
+    private val conversionService = r2dbcConverter.conversionService
 
     /**
      * Converts the value to the target class with the help of the {@link ConversionService}.
@@ -53,7 +47,7 @@ class ColumnConverter(
     fun <T> convert(@Nullable value: Any, @Nullable target: Class<T>): T? {
 
         if (value == null || target == null){ 
-            return null
+            return null as T
         }
 
         if (ClassUtils.isAssignableValue(target, value))) {
@@ -79,12 +73,12 @@ class ColumnConverter(
      * @return the value which can be constructed from the input.
      */
     fun <T> fromRow(row: Row, columnName: String, target: Class<T>): T? {
-        try {
+        return try {
             // try, directly the driver
-            return row.get(columnName, target)
+            row.get(columnName, target)
         } catch (e: Exception) {
             val obj = row.get(columnName)
-            return convert(obj, target)
+            convert(obj, target)
         }
     }
 }
