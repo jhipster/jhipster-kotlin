@@ -193,32 +193,37 @@ class EntityManager(
      * @param referencedIds the id of the referred entities.
      * @return the number of inserted rows.
      */
-    fun updateLinkTable(table: LinkTable, entityId: Long?, referencedIds: List<Long?>): Mono<Int> {
+    fun updateLinkTable(table: LinkTable, entityId: Long?, referencedIds: List<Long?>?): Mono<Int> {
+        
+        if (referencedIds == null) {
+            return deleteFromLinkTable(table, entityId).then(Mono.just(0))
+        }
+
         return deleteFromLinkTable(table, entityId)
-        .then(
-            Flux.fromIterable(referencedIds)
-                .flatMap { referenceId: Long? ->
-                    val insert = r2dbcEntityTemplate
-                        .dataAccessStrategy
-                        .statementMapper
-                        .createInsert(table.tableName)
-                        .withColumn(table.idColumn, Parameter.from(entityId))
-                        .withColumn(table.referenceColumn, Parameter.from(referenceId))
-                    r2dbcEntityTemplate
-                        .databaseClient
-                        .sql(statementMapper?.getMappedObject(insert))
-                        .fetch()
-                        .rowsUpdated()
-                }
-                .collectList()
-                .map { updates: List<Int> ->
-                    updates.stream().reduce { a: Int, b: Int ->
-                        Integer.sum(
-                            a,
-                            b
-                        )
-                    }.orElse(0)
-        })
+            .then(
+                Flux.fromIterable(referencedIds)
+                    .flatMap { referenceId: Long? ->
+                        val insert = r2dbcEntityTemplate
+                            .dataAccessStrategy
+                            .statementMapper
+                            .createInsert(table.tableName)
+                            .withColumn(table.idColumn, Parameter.from(entityId))
+                            .withColumn(table.referenceColumn, Parameter.from(referenceId))
+                        r2dbcEntityTemplate
+                            .databaseClient
+                            .sql(statementMapper?.getMappedObject(insert))
+                            .fetch()
+                            .rowsUpdated()
+                    }
+                    .collectList()
+                    .map { updates: List<Int> ->
+                        updates.stream().reduce { a: Int, b: Int ->
+                            Integer.sum(
+                                a,
+                                b
+                            )
+                        }.orElse(0)
+            })
     }
 
     fun deleteFromLinkTable(table: LinkTable, entityId: Long?): Mono<Void>  {
