@@ -1764,6 +1764,11 @@ function writeFiles() {
 
                 this.addMavenDependencyManagement('org.jetbrains.kotlin', 'kotlin-stdlib', '${kotlin.version}');
                 this.addMavenDependencyManagement('org.jetbrains.kotlin', 'kotlin-stdlib-jdk7', '${kotlin.version}');
+                
+                this.addMavenDependency('org.jetbrains.kotlinx', 'kotlinx-coroutines-debug');
+                this.addMavenDependency('org.jetbrains.kotlinx', 'kotlinx-coroutines-reactor');                
+                this.addMavenDependency('io.projectreactor.kotlin', 'reactor-kotlin-extensions');
+                
                 this.addMavenDependency('com.fasterxml.jackson.datatype', 'jackson-datatype-json-org');
                 this.addMavenDependency('org.jetbrains.kotlin', 'kotlin-stdlib-jdk8', '${kotlin.version}');
                 this.addMavenDependency('org.jetbrains.kotlin', 'kotlin-reflect', '${kotlin.version}');
