@@ -163,16 +163,7 @@ const expectedFiles = {
 
     maven: ['pom.xml', 'mvnw', 'mvnw.cmd', '.mvn/wrapper/maven-wrapper.jar', '.mvn/wrapper/maven-wrapper.properties', 'checkstyle.xml'],
 
-    common: [
-        '.prettierignore',
-        '.prettierrc',
-        'README.md',
-        '.gitignore',
-        '.gitattributes',
-        '.editorconfig',
-        '.huskyrc',
-        '.lintstagedrc.js',
-    ],
+    common: ['README.md', '.gitignore', '.gitattributes', '.editorconfig', '.huskyrc', '.lintstagedrc.js'],
 
     server: [
         `${SERVER_MAIN_RES_DIR}banner.txt`,

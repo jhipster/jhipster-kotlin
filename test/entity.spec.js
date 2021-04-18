@@ -7,7 +7,10 @@ const { skipPrettierHelpers: helpers } = require('./utils/utils');
 
 const expectedFiles = require('./utils/expected-files').entity;
 
-const { CLIENT_MAIN_SRC_DIR, SERVER_MAIN_SRC_DIR, SERVER_MAIN_RES_DIR, SERVER_TEST_SRC_DIR } = constants;
+const { CLIENT_MAIN_SRC_DIR, MAIN_DIR, SERVER_MAIN_RES_DIR, TEST_DIR } = constants;
+
+const SERVER_MAIN_KOTLIN_SRC_DIR = `${MAIN_DIR}kotlin/`;
+const SERVER_TEST_KOTLIN_SRC_DIR = `${TEST_DIR}kotlin/`;
 
 describe('JHipster generator for entity', () => {
     context('creation from CLI', () => {
@@ -33,7 +36,7 @@ describe('JHipster generator for entity', () => {
                 });
 
                 it('does creates search files', () => {
-                    assert.file(`${SERVER_MAIN_SRC_DIR}com/mycompany/myapp/repository/search/FooSearchRepository.kt`);
+                    assert.file(`${SERVER_MAIN_KOTLIN_SRC_DIR}com/mycompany/myapp/repository/search/FooSearchRepository.kt`);
                     assert.file(expectedFiles.server);
                     assert.file(expectedFiles.gatling);
                 });
@@ -51,8 +54,8 @@ describe('JHipster generator for entity', () => {
                         .withOptions({
                             creationTimestamp: '2016-01-20',
                             withEntities: true,
-
                             'skip-ktlint-format': true,
+                            blueprints: 'kotlin',
                         })
                         .withArguments(['foo'])
                         .withPrompts({
@@ -82,6 +85,7 @@ describe('JHipster generator for entity', () => {
                         })
                         .withOptions({
                             'skip-ktlint-format': true,
+                            blueprints: 'kotlin',
                         })
                         .withArguments(['foo'])
                         .withPrompts({
@@ -96,34 +100,28 @@ describe('JHipster generator for entity', () => {
                 it('creates expected files with suffix', () => {
                     assert.file([
                         '.jhipster/Foo.json',
-                        `${SERVER_MAIN_SRC_DIR}com/mycompany/myapp/domain/FooXXX.kt`,
-                        `${SERVER_MAIN_SRC_DIR}com/mycompany/myapp/repository/FooRepository.kt`,
-                        `${SERVER_MAIN_SRC_DIR}com/mycompany/myapp/web/rest/FooResource.kt`,
-                        `${SERVER_MAIN_SRC_DIR}com/mycompany/myapp/service/dto/FooYYY.kt`,
-                        `${SERVER_MAIN_SRC_DIR}com/mycompany/myapp/service/mapper/FooMapper.kt`,
-                        `${SERVER_MAIN_SRC_DIR}com/mycompany/myapp/service/FooService.kt`,
+                        `${SERVER_MAIN_KOTLIN_SRC_DIR}com/mycompany/myapp/domain/FooXXX.kt`,
+                        `${SERVER_MAIN_KOTLIN_SRC_DIR}com/mycompany/myapp/repository/FooRepository.kt`,
+                        `${SERVER_MAIN_KOTLIN_SRC_DIR}com/mycompany/myapp/web/rest/FooResource.kt`,
+                        `${SERVER_MAIN_KOTLIN_SRC_DIR}com/mycompany/myapp/service/dto/FooYYY.kt`,
+                        `${SERVER_MAIN_KOTLIN_SRC_DIR}com/mycompany/myapp/service/mapper/FooMapper.kt`,
+                        `${SERVER_MAIN_KOTLIN_SRC_DIR}com/mycompany/myapp/service/FooService.kt`,
                     ]);
                 });
 
                 it('correctly writes the repository', () => {
                     assert.fileContent(
-                        `${SERVER_MAIN_SRC_DIR}com/mycompany/myapp/repository/FooRepository.kt`,
-                        'public interface FooRepository '
+                        `${SERVER_MAIN_KOTLIN_SRC_DIR}com/mycompany/myapp/repository/FooRepository.kt`,
+                        'interface FooRepository '
                     );
                 });
 
                 it('correctly writes the entity', () => {
-                    assert.fileContent(
-                        `${SERVER_MAIN_SRC_DIR}com/mycompany/myapp/domain/FooXXX.kt`,
-                        'public class FooXXX implements Serializable'
-                    );
+                    assert.fileContent(`${SERVER_MAIN_KOTLIN_SRC_DIR}com/mycompany/myapp/domain/FooXXX.kt`, 'data class FooXXX');
                 });
 
                 it('correctly writes the dto file', () => {
-                    assert.fileContent(
-                        `${SERVER_MAIN_SRC_DIR}com/mycompany/myapp/service/dto/FooYYY.kt`,
-                        'public class FooYYY implements Serializable'
-                    );
+                    assert.fileContent(`${SERVER_MAIN_KOTLIN_SRC_DIR}com/mycompany/myapp/service/dto/FooYYY.kt`, 'data class FooYYY');
                 });
             });
 
@@ -136,6 +134,7 @@ describe('JHipster generator for entity', () => {
                         })
                         .withOptions({
                             'skip-ktlint-format': true,
+                            blueprints: 'kotlin',
                         })
                         .withArguments(['foo'])
                         .withPrompts({
@@ -149,26 +148,23 @@ describe('JHipster generator for entity', () => {
                 it('creates expected files with suffix', () => {
                     assert.file([
                         '.jhipster/Foo.json',
-                        `${SERVER_MAIN_SRC_DIR}com/mycompany/myapp/domain/FooXXX.kt`,
-                        `${SERVER_MAIN_SRC_DIR}com/mycompany/myapp/repository/FooRepository.kt`,
-                        `${SERVER_MAIN_SRC_DIR}com/mycompany/myapp/web/rest/FooResource.kt`,
-                        `${SERVER_MAIN_SRC_DIR}com/mycompany/myapp/service/FooService.kt`,
+                        `${SERVER_MAIN_KOTLIN_SRC_DIR}com/mycompany/myapp/domain/FooXXX.kt`,
+                        `${SERVER_MAIN_KOTLIN_SRC_DIR}com/mycompany/myapp/repository/FooRepository.kt`,
+                        `${SERVER_MAIN_KOTLIN_SRC_DIR}com/mycompany/myapp/web/rest/FooResource.kt`,
+                        `${SERVER_MAIN_KOTLIN_SRC_DIR}com/mycompany/myapp/service/FooService.kt`,
                     ]);
 
                     assert.noFile([
-                        `${SERVER_MAIN_SRC_DIR}com/mycompany/myapp/service/dto/FooYYY.kt`,
-                        `${SERVER_MAIN_SRC_DIR}com/mycompany/myapp/service/mapper/FooMapper.kt`,
+                        `${SERVER_MAIN_KOTLIN_SRC_DIR}com/mycompany/myapp/service/dto/FooYYY.kt`,
+                        `${SERVER_MAIN_KOTLIN_SRC_DIR}com/mycompany/myapp/service/mapper/FooMapper.kt`,
                     ]);
 
                     assert.fileContent(
-                        `${SERVER_MAIN_SRC_DIR}com/mycompany/myapp/repository/FooRepository.kt`,
-                        'public interface FooRepository '
+                        `${SERVER_MAIN_KOTLIN_SRC_DIR}com/mycompany/myapp/repository/FooRepository.kt`,
+                        'interface FooRepository '
                     );
 
-                    assert.fileContent(
-                        `${SERVER_MAIN_SRC_DIR}com/mycompany/myapp/domain/FooXXX.kt`,
-                        'public class FooXXX implements Serializable'
-                    );
+                    assert.fileContent(`${SERVER_MAIN_KOTLIN_SRC_DIR}com/mycompany/myapp/domain/FooXXX.kt`, 'data class FooXXX');
                 });
             });
         });
@@ -281,8 +277,8 @@ describe('JHipster generator for entity', () => {
                     assert.file(expectedFiles.clientNg2);
                     assert.file(expectedFiles.gatling);
                     assert.file([
-                        `${SERVER_MAIN_SRC_DIR}com/mycompany/myapp/service/FooService.kt`,
-                        `${SERVER_MAIN_SRC_DIR}com/mycompany/myapp/service/impl/FooServiceImpl.kt`,
+                        `${SERVER_MAIN_KOTLIN_SRC_DIR}com/mycompany/myapp/service/FooService.kt`,
+                        `${SERVER_MAIN_KOTLIN_SRC_DIR}com/mycompany/myapp/service/impl/FooServiceImpl.kt`,
                     ]);
                 });
             });
@@ -312,9 +308,9 @@ describe('JHipster generator for entity', () => {
                     assert.file(expectedFiles.clientNg2);
                     assert.file(expectedFiles.gatling);
                     assert.file([
-                        `${SERVER_MAIN_SRC_DIR}com/mycompany/myapp/service/dto/FooDTO.kt`,
-                        `${SERVER_MAIN_SRC_DIR}com/mycompany/myapp/service/mapper/FooMapper.kt`,
-                        `${SERVER_MAIN_SRC_DIR}com/mycompany/myapp/service/FooService.kt`,
+                        `${SERVER_MAIN_KOTLIN_SRC_DIR}com/mycompany/myapp/service/dto/FooDTO.kt`,
+                        `${SERVER_MAIN_KOTLIN_SRC_DIR}com/mycompany/myapp/service/mapper/FooMapper.kt`,
+                        `${SERVER_MAIN_KOTLIN_SRC_DIR}com/mycompany/myapp/service/FooService.kt`,
                     ]);
                 });
             });
@@ -646,7 +642,7 @@ describe('JHipster generator for entity', () => {
                         `${CLIENT_MAIN_SRC_DIR}app/entities/sampleMicroservice/bar/bar.module.ts`,
                         'SampleMicroserviceBarModule'
                     );
-                    assert.noFile(`${SERVER_MAIN_SRC_DIR}com/mycompany/myapp/web/rest/BarResource.kt`);
+                    assert.noFile(`${SERVER_MAIN_KOTLIN_SRC_DIR}com/mycompany/myapp/web/rest/BarResource.kt`);
                 });
             });
 
@@ -674,7 +670,7 @@ describe('JHipster generator for entity', () => {
                     assert.file(`${CLIENT_MAIN_SRC_DIR}i18n/en/testRootFoo.json`);
                     assert.file(expectedFiles.clientNg2WithRootFolder);
                     assert.noFile(expectedFiles.gatling);
-                    assert.noFile(`${SERVER_MAIN_SRC_DIR}com/mycompany/myapp/web/rest/FooResource.kt`);
+                    assert.noFile(`${SERVER_MAIN_KOTLIN_SRC_DIR}com/mycompany/myapp/web/rest/FooResource.kt`);
                 });
             });
 
@@ -811,7 +807,7 @@ describe('JHipster generator for entity', () => {
                     assert.file(expectedFiles.gatling);
                 });
                 it('generates OpenAPI annotations on domain model', () => {
-                    assert.fileContent(`${SERVER_MAIN_SRC_DIR}com/mycompany/myapp/domain/Foo.kt`, /@ApiModelProperty/);
+                    assert.fileContent(`${SERVER_MAIN_KOTLIN_SRC_DIR}com/mycompany/myapp/domain/Foo.kt`, /@ApiModelProperty/);
                 });
             });
         });
@@ -830,7 +826,6 @@ describe('JHipster generator for entity', () => {
                             regenerate: true,
                             force: true,
                             skipDbChangelog: true,
-
                             'skip-ktlint-format': true,
                         });
                 });
@@ -861,8 +856,8 @@ describe('JHipster generator for entity', () => {
                             regenerate: true,
                             force: true,
                             skipDbChangelog: true,
-
                             'skip-ktlint-format': true,
+                            blueprints: 'kotlin',
                         });
                 });
 
@@ -896,14 +891,14 @@ describe('JHipster generator for entity', () => {
                     assert.file(expectedFiles.server);
                     assert.noFile(expectedFiles.clientNg2);
                     assert.file([
-                        `${SERVER_MAIN_SRC_DIR}com/mycompany/myapp/service/dto/FooDTO.kt`,
-                        `${SERVER_MAIN_SRC_DIR}com/mycompany/myapp/service/mapper/FooMapper.kt`,
-                        `${SERVER_MAIN_SRC_DIR}com/mycompany/myapp/service/FooService.kt`,
+                        `${SERVER_MAIN_KOTLIN_SRC_DIR}com/mycompany/myapp/service/dto/FooDTO.kt`,
+                        `${SERVER_MAIN_KOTLIN_SRC_DIR}com/mycompany/myapp/service/mapper/FooMapper.kt`,
+                        `${SERVER_MAIN_KOTLIN_SRC_DIR}com/mycompany/myapp/service/FooService.kt`,
                     ]);
                 });
                 it('generates OpenAPI annotations on DTO', () => {
-                    assert.noFileContent(`${SERVER_MAIN_SRC_DIR}com/mycompany/myapp/domain/Foo.kt`, /@ApiModelProperty/);
-                    assert.fileContent(`${SERVER_MAIN_SRC_DIR}com/mycompany/myapp/service/dto/FooDTO.kt`, /@ApiModelProperty/);
+                    assert.noFileContent(`${SERVER_MAIN_KOTLIN_SRC_DIR}com/mycompany/myapp/domain/Foo.kt`, /@ApiModelProperty/);
+                    assert.fileContent(`${SERVER_MAIN_KOTLIN_SRC_DIR}com/mycompany/myapp/service/dto/FooDTO.kt`, /@ApiModelProperty/);
                 });
             });
         });
@@ -933,88 +928,18 @@ describe('JHipster generator for entity', () => {
 
                 it('creates reproducible backend test', () => {
                     assert.fileContent(
-                        `${SERVER_TEST_SRC_DIR}com/mycompany/myapp/web/rest/FooResourceIT.kt`,
-                        /DEFAULT_NUMBER_PATTERN_REQUIRED = "66225"/
+                        `${SERVER_TEST_KOTLIN_SRC_DIR}com/mycompany/myapp/web/rest/FooResourceIT.kt`,
+                        /DEFAULT_NUMBER_PATTERN_REQUIRED = "4244"/
                     );
                     assert.fileContent(
-                        `${SERVER_TEST_SRC_DIR}com/mycompany/myapp/web/rest/FooResourceIT.kt`,
-                        /UPDATED_NUMBER_PATTERN_REQUIRED = "24"/
+                        `${SERVER_TEST_KOTLIN_SRC_DIR}com/mycompany/myapp/web/rest/FooResourceIT.kt`,
+                        /UPDATED_NUMBER_PATTERN_REQUIRED = "257856"/
                     );
-                });
-            });
-        });
-
-        context('when generating enums', () => {
-            let enumWithoutCustomValuesPath;
-            let enumWithSomeCustomValuesPath;
-            let enumWithOnlyCustomValuesPath;
-
-            before(async () => {
-                enumWithoutCustomValuesPath = `${SERVER_MAIN_SRC_DIR}com/mycompany/myapp/domain/enumeration/MyEnumA.kt`;
-                enumWithSomeCustomValuesPath = `${SERVER_MAIN_SRC_DIR}com/mycompany/myapp/domain/enumeration/MyEnumB.kt`;
-                enumWithOnlyCustomValuesPath = `${SERVER_MAIN_SRC_DIR}com/mycompany/myapp/domain/enumeration/MyEnumC.kt`;
-                await helpers
-                    .run(require.resolve('generator-jhipster/generators/entity'))
-                    .inTmpDir(dir => {
-                        fse.copySync(path.join(__dirname, '../test/templates/enums'), dir);
-                    })
-                    .withOptions({ 'skip-ktlint-format': true })
-                    .withArguments(['A']);
-            });
-
-            context('for enum content without custom values', () => {
-                it('generates the java enum content', () => {
-                    assert.fileContent(enumWithoutCustomValuesPath, /AAA,\s+BBB/);
-                });
-                it('does not generate a private field', () => {
-                    assert.noFileContent(enumWithoutCustomValuesPath, /private final String value;/);
-                });
-                it('does not generate an empty constructor', () => {
-                    assert.noFileContent(enumWithoutCustomValuesPath, /MyEnumA\(\)/);
-                });
-                it('does not generate a non-empty constructor', () => {
-                    assert.noFileContent(enumWithoutCustomValuesPath, /MyEnumA\(String value\)/);
-                });
-                it('does not generate a getter for the value', () => {
-                    assert.noFileContent(enumWithoutCustomValuesPath, /public String getValue\(\)/);
-                });
-            });
-            context('for enum content with some custom values', () => {
-                it('generates the java enum content', () => {
-                    assert.fileContent(enumWithSomeCustomValuesPath, /AAA\("aaa_aaa"\),\s+BBB;/);
-                });
-                it('generates a non-final private field', () => {
-                    assert.fileContent(enumWithSomeCustomValuesPath, /private String value;/);
-                });
-                it('generates an empty constructor', () => {
-                    assert.fileContent(enumWithSomeCustomValuesPath, /MyEnumB\(\)/);
-                });
-                it('generates a non-empty constructor', () => {
-                    assert.fileContent(enumWithSomeCustomValuesPath, /MyEnumB\(String value\)/);
-                });
-                it('generates a getter for the value', () => {
-                    assert.fileContent(enumWithSomeCustomValuesPath, /public String getValue\(\)/);
-                });
-            });
-            context('for enum content with only custom values', () => {
-                it('generates the java enum content', () => {
-                    assert.fileContent(enumWithOnlyCustomValuesPath, /AAA\("aaa_aaa"\),\s+BBB\("bbb"\);/);
-                });
-                it('generates a final private field', () => {
-                    assert.fileContent(enumWithOnlyCustomValuesPath, /private final String value;/);
-                });
-                it('does not generate an empty constructor', () => {
-                    assert.noFileContent(enumWithOnlyCustomValuesPath, /MyEnumC\(\)/);
-                });
-                it('generates a non-empty constructor', () => {
-                    assert.fileContent(enumWithOnlyCustomValuesPath, /MyEnumC\(String value\)/);
-                });
-                it('generates a getter for the value', () => {
-                    assert.fileContent(enumWithOnlyCustomValuesPath, /public String getValue\(\)/);
                 });
             });
         });
     });
+
     describe('regeneration from app generator', () => {
         describe('with creation timestamp', () => {
             before(async () => {

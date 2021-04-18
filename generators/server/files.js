@@ -451,21 +451,22 @@ const serverFiles = {
         },
         {
             condition: generator =>
-              generator.authenticationType === 'oauth2' && (generator.applicationType === 'monolith' || generator.applicationType === 'gateway'),
+                generator.authenticationType === 'oauth2' &&
+                (generator.applicationType === 'monolith' || generator.applicationType === 'gateway'),
             path: SERVER_MAIN_KOTLIN_SRC_DIR,
             templates: [
-              {
-                file: 'package/web/rest/AuthInfoResource.kt',
-                renameTo: generator => `${generator.javaDir}web/rest/AuthInfoResource.kt`,
-                useBluePrint: true,
-              },
-              {
-                file: 'package/web/rest/LogoutResource.kt',
-                renameTo: generator => `${generator.javaDir}web/rest/LogoutResource.kt`,
-                useBluePrint: true,
-              },
+                {
+                    file: 'package/web/rest/AuthInfoResource.kt',
+                    renameTo: generator => `${generator.javaDir}web/rest/AuthInfoResource.kt`,
+                    useBluePrint: true,
+                },
+                {
+                    file: 'package/web/rest/LogoutResource.kt',
+                    renameTo: generator => `${generator.javaDir}web/rest/LogoutResource.kt`,
+                    useBluePrint: true,
+                },
             ],
-          },
+        },
         {
             condition: generator => generator.applicationType === 'gateway' && generator.serviceDiscoveryType && generator.reactive,
             path: SERVER_MAIN_KOTLIN_SRC_DIR,
@@ -1764,11 +1765,11 @@ function writeFiles() {
 
                 this.addMavenDependencyManagement('org.jetbrains.kotlin', 'kotlin-stdlib', '${kotlin.version}');
                 this.addMavenDependencyManagement('org.jetbrains.kotlin', 'kotlin-stdlib-jdk8', '${kotlin.version}');
-                
+
                 this.addMavenDependency('org.jetbrains.kotlinx', 'kotlinx-coroutines-debug');
-                this.addMavenDependency('org.jetbrains.kotlinx', 'kotlinx-coroutines-reactor');                
+                this.addMavenDependency('org.jetbrains.kotlinx', 'kotlinx-coroutines-reactor');
                 this.addMavenDependency('io.projectreactor.kotlin', 'reactor-kotlin-extensions');
-                
+
                 this.addMavenDependency('com.fasterxml.jackson.datatype', 'jackson-datatype-json-org');
                 this.addMavenDependency('org.jetbrains.kotlin', 'kotlin-stdlib-jdk8', '${kotlin.version}');
                 this.addMavenDependency('org.jetbrains.kotlin', 'kotlin-reflect', '${kotlin.version}');
