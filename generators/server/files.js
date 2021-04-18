@@ -1763,7 +1763,7 @@ function writeFiles() {
                 this.addMavenProperty('sonar.coverage.jacoco.xmlReportPaths', '${jacoco.reportFolder}/jacoco.xml');
 
                 this.addMavenDependencyManagement('org.jetbrains.kotlin', 'kotlin-stdlib', '${kotlin.version}');
-                this.addMavenDependencyManagement('org.jetbrains.kotlin', 'kotlin-stdlib-jdk7', '${kotlin.version}');
+                this.addMavenDependencyManagement('org.jetbrains.kotlin', 'kotlin-stdlib-jdk8', '${kotlin.version}');
                 
                 this.addMavenDependency('org.jetbrains.kotlinx', 'kotlinx-coroutines-debug');
                 this.addMavenDependency('org.jetbrains.kotlinx', 'kotlinx-coroutines-reactor');                
