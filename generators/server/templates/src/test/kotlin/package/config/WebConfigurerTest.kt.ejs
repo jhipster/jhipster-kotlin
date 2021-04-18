@@ -18,11 +18,8 @@
 -%>
 package <%= packageName %>.config
 
-import io.github.jhipster.config.JHipsterConstants
-import io.github.jhipster.config.JHipsterProperties
-<%_ if (!skipClient) { _%>
-import io.github.jhipster.web.filter.CachingHttpHeadersFilter
-<%_ } _%>
+import tech.jhipster.config.JHipsterConstants
+import tech.jhipster.config.JHipsterProperties
 <%_ if (devDatabaseType === 'h2Disk' || devDatabaseType === 'h2Memory') { _%>
 import org.h2.server.web.WebServlet
 <%_ } _%>
@@ -46,6 +43,7 @@ import java.io.File
 
 import org.assertj.core.api.Assertions.assertThat
 <%_ } _%>
+import org.assertj.core.api.Assertions.assertThatCode
 import org.mockito.ArgumentMatchers
 import org.mockito.ArgumentMatchers.any
 import org.mockito.ArgumentMatchers.anyString
@@ -89,10 +87,12 @@ class WebConfigurerTest {
 
     @Test
     @Throws(ServletException::class)
-    fun testStartUpProdServletContext() {
+    fun shouldStartUpProdServletContext() {
         env.setActiveProfiles(JHipsterConstants.SPRING_PROFILE_PRODUCTION)
-        webConfigurer.onStartup(servletContext)
 
+        assertThatCode { 
+            webConfigurer.onStartup(servletContext)
+        }.doesNotThrowAnyException()
         <%_ if (devDatabaseType === 'h2Disk' || devDatabaseType === 'h2Memory') { _%>
         verify(servletContext, never())
             .addServlet(ArgumentMatchers.eq("H2Console"), any(WebServlet::class.java))
@@ -101,10 +101,12 @@ class WebConfigurerTest {
 
     @Test
     @Throws(ServletException::class)
-    fun testStartUpDevServletContext() {
+    fun shouldStartUpDevServletContext() {
         env.setActiveProfiles(JHipsterConstants.SPRING_PROFILE_DEVELOPMENT)
-        webConfigurer.onStartup(servletContext)
 
+        assertThatCode { 
+            webConfigurer.onStartup(servletContext)
+        }.doesNotThrowAnyException()
         <%_ if (devDatabaseType === 'h2Disk' || devDatabaseType === 'h2Memory') { _%>
         verify(servletContext)
             .addServlet(ArgumentMatchers.eq("H2Console"), any(WebServlet::class.java))
@@ -113,13 +115,13 @@ class WebConfigurerTest {
 
     <%_ if (!skipClient) { _%>
     @Test
-    fun testCustomizeServletContainer() {
+    fun shouldCustomizeServletContainer() {
         env.setActiveProfiles(JHipsterConstants.SPRING_PROFILE_PRODUCTION)
         val container = UndertowServletWebServerFactory()
         webConfigurer.customize(container)
         assertThat(container.mimeMappings.get("abs")).isEqualTo("audio/x-mpeg")
-        assertThat(container.mimeMappings.get("html")).isEqualTo("text/html;charset=utf-8")
-        assertThat(container.mimeMappings.get("json")).isEqualTo("text/html;charset=utf-8")
+        assertThat(container.mimeMappings.get("html")).isEqualTo("text/html")
+        assertThat(container.mimeMappings.get("json")).isEqualTo("application/json")
         <%_ if (!skipClient) { _%>
         if (container.documentRoot != null) {
             assertThat(container.documentRoot).isEqualTo(File("<%= CLIENT_DIST_DIR %>"))
@@ -130,8 +132,8 @@ class WebConfigurerTest {
 
     @Test
     @Throws(Exception::class)
-    fun testCorsFilterOnApiPath() {
-        props.cors.allowedOrigins = listOf("*")
+    fun shouldCorsFilterOnApiPath() {
+        props.cors.allowedOrigins = listOf("other.domain.com")
         props.cors.allowedMethods = listOf("GET", "POST", "PUT", "DELETE")
         props.cors.allowedHeaders = listOf("*")
         props.cors.maxAge = 1800L
@@ -163,7 +165,7 @@ class WebConfigurerTest {
 
     @Test
     @Throws(Exception::class)
-    fun testCorsFilterOnOtherPath() {
+    fun shouldCorsFilterOnOtherPath() {
         props.cors.allowedOrigins = listOf("*")
         props.cors.allowedMethods = listOf("GET", "POST", "PUT", "DELETE")
         props.cors.allowedHeaders = listOf("*")
@@ -184,7 +186,7 @@ class WebConfigurerTest {
 
     @Test
     @Throws(Exception::class)
-    fun testCorsFilterDeactivated() {
+    fun shouldCorsFilterDeactivatedForNullAllowedOrigins() {
         props.cors.allowedOrigins = null
 
         val mockMvc = MockMvcBuilders.standaloneSetup(WebConfigurerTestController())
@@ -201,7 +203,7 @@ class WebConfigurerTest {
 
     @Test
     @Throws(Exception::class)
-    fun testCorsFilterDeactivated2() {
+    fun shouldCorsFilterDeactivatedForEmptyAllowedOrigins() {
         props.cors.allowedOrigins = mutableListOf()
 
         val mockMvc = MockMvcBuilders.standaloneSetup(WebConfigurerTestController())

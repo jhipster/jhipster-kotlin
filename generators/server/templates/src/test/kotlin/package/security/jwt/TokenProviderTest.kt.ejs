@@ -31,11 +31,13 @@ import org.springframework.security.core.GrantedAuthority
 import org.springframework.security.core.authority.SimpleGrantedAuthority
 import org.springframework.test.util.ReflectionTestUtils
 
-import io.github.jhipster.config.JHipsterProperties
+import tech.jhipster.config.JHipsterProperties
 import io.jsonwebtoken.Jwts
 import io.jsonwebtoken.SignatureAlgorithm
 import io.jsonwebtoken.io.Decoders
 import io.jsonwebtoken.security.Keys
+
+import java.nio.charset.StandardCharsets
 
 import org.assertj.core.api.Assertions.assertThat
 
@@ -48,11 +50,11 @@ class TokenProviderTest {
 
     @BeforeEach
     fun setup() {
-        tokenProvider = TokenProvider(JHipsterProperties())
-        key = Keys.hmacShaKeyFor(
-            Decoders.BASE64
-                .decode("fd54a45s65fds737b9aafcb3412e07ed99b267f33413274720ddbb7f6c5e64e9f14075f2d7ed041592f0b7657baf8")
-        )
+        val jHipsterProperties = JHipsterProperties()
+        val base64Secret = "fd54a45s65fds737b9aafcb3412e07ed99b267f33413274720ddbb7f6c5e64e9f14075f2d7ed041592f0b7657baf8"
+        jHipsterProperties.security.authentication.jwt.base64Secret = base64Secret
+        tokenProvider = TokenProvider(jHipsterProperties)
+        key = Keys.hmacShaKeyFor(Decoders.BASE64.decode(base64Secret))
 
         ReflectionTestUtils.setField(tokenProvider, "key", key)
         ReflectionTestUtils.setField(tokenProvider, "tokenValidityInMilliseconds", ONE_MINUTE)
@@ -62,7 +64,7 @@ class TokenProviderTest {
     fun testReturnFalseWhenJWThasInvalidSignature() {
         val isTokenValid = tokenProvider.validateToken(createTokenWithDifferentSignature())
 
-        assertThat(isTokenValid).isEqualTo(false)
+        assertThat(isTokenValid).isFalse()
     }
 
     @Test
@@ -72,7 +74,7 @@ class TokenProviderTest {
         val invalidToken = token.substring(1)
         val isTokenValid = tokenProvider.validateToken(invalidToken)
 
-        assertThat(isTokenValid).isEqualTo(false)
+        assertThat(isTokenValid).isFalse()
     }
 
     @Test
@@ -84,7 +86,7 @@ class TokenProviderTest {
 
         val isTokenValid = tokenProvider.validateToken(token)
 
-        assertThat(isTokenValid).isEqualTo(false)
+        assertThat(isTokenValid).isFalse()
     }
 
     @Test
@@ -93,15 +95,40 @@ class TokenProviderTest {
 
         val isTokenValid = tokenProvider.validateToken(unsupportedToken)
 
-        assertThat(isTokenValid).isEqualTo(false)
+        assertThat(isTokenValid).isFalse()
     }
 
     @Test
     fun testReturnFalseWhenJWTisInvalid() {
         val isTokenValid = tokenProvider.validateToken("")
 
-        assertThat(isTokenValid).isEqualTo(false)
+        assertThat(isTokenValid).isFalse()
     }
+
+    @Test
+    fun testKeyIsSetFromSecretWhenSecretIsNotEmpty() {
+        val secret = "NwskoUmKHZtzGRKJKVjsJF7BtQMMxNWi"
+        val jHipsterProperties = JHipsterProperties()
+        jHipsterProperties.security.authentication.jwt.secret = secret
+
+        val tokenProvider = TokenProvider(jHipsterProperties)
+
+        val key = ReflectionTestUtils.getField(tokenProvider, "key") as Key
+        assertThat(key).isNotNull.isEqualTo(Keys.hmacShaKeyFor(secret.encodeToByteArray()))
+    }
+
+    @Test
+    fun testKeyIsSetFromBase64SecretWhenSecretIsEmpty() {
+        val base64Secret = "fd54a45s65fds737b9aafcb3412e07ed99b267f33413274720ddbb7f6c5e64e9f14075f2d7ed041592f0b7657baf8"
+        val jHipsterProperties = JHipsterProperties()
+        jHipsterProperties.security.authentication.jwt.base64Secret = base64Secret
+
+        val tokenProvider = TokenProvider(jHipsterProperties)
+
+        val key = ReflectionTestUtils.getField(tokenProvider, "key") as Key
+        assertThat(key).isNotNull.isEqualTo(Keys.hmacShaKeyFor(Decoders.BASE64.decode(base64Secret)))
+    }
+
 
     private fun createAuthentication(): Authentication {
         val authorities = mutableListOf(SimpleGrantedAuthority(ANONYMOUS))

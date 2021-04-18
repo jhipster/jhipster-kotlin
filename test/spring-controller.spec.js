@@ -15,7 +15,7 @@ describe('JHipster generator spring-controller', () => {
                 .withOptions({
                     'from-cli': true,
                     skipInstall: true,
-                    blueprint: 'kotlin',
+
                     skipChecks: true,
                 })
                 .inTmpDir(dir => {
@@ -42,7 +42,7 @@ describe('JHipster generator spring-controller', () => {
                 .withOptions({
                     'from-cli': true,
                     skipInstall: true,
-                    blueprint: 'kotlin',
+
                     skipChecks: true,
                     default: true,
                 })

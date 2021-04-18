@@ -26,7 +26,7 @@ import org.ehcache.config.builders.ExpiryPolicyBuilder
 import org.ehcache.config.builders.ResourcePoolsBuilder
 import org.ehcache.jsr107.Eh107Configuration
 
-import io.github.jhipster.config.JHipsterProperties
+import tech.jhipster.config.JHipsterProperties
 
     <%_ if (enableHibernateCache) { _%>
 import org.hibernate.cache.jcache.ConfigSettings
@@ -41,18 +41,14 @@ import java.util.concurrent.TimeUnit
 <%_ if (enableHibernateCache) { _%>
 import org.hibernate.cache.jcache.ConfigSettings
 <%_ } _%>
-import io.github.jhipster.config.JHipsterProperties
+import tech.jhipster.config.JHipsterProperties
 
 <%_ } _%>
 <%_ if (cacheProvider === 'hazelcast') { _%>
-import io.github.jhipster.config.JHipsterConstants
-import io.github.jhipster.config.JHipsterProperties
+import tech.jhipster.config.JHipsterConstants
+import tech.jhipster.config.JHipsterProperties
 
-import com.hazelcast.config.Config
-import com.hazelcast.config.EvictionPolicy
-import com.hazelcast.config.ManagementCenterConfig
-import com.hazelcast.config.MapConfig
-import com.hazelcast.config.MaxSizeConfig
+import com.hazelcast.config.*
 import com.hazelcast.core.Hazelcast
 import com.hazelcast.core.HazelcastInstance
 
@@ -76,7 +72,7 @@ import org.springframework.boot.info.BuildProperties
 import org.springframework.boot.info.GitProperties
 import org.springframework.cache.interceptor.KeyGenerator
 import org.springframework.beans.factory.annotation.Autowired
-import io.github.jhipster.config.cache.PrefixedKeyGenerator
+import tech.jhipster.config.cache.PrefixedKeyGenerator
 <%_ } _%>
 <%_ if (cacheProvider === 'memcached') { _%>
     <%_ if (!skipUserManagement || (authenticationType === 'oauth2' && databaseType !== 'no')) { _%>
@@ -112,11 +108,9 @@ import org.infinispan.configuration.cache.ConfigurationBuilder
 import org.infinispan.configuration.global.GlobalConfigurationBuilder
 import org.infinispan.jboss.marshalling.core.JBossUserMarshaller
 import org.slf4j.LoggerFactory
-import io.github.jhipster.config.JHipsterProperties
+import tech.jhipster.config.JHipsterProperties
 import java.util.concurrent.TimeUnit
 import org.hibernate.cfg.AvailableSettings
-import org.infinispan.eviction.EvictionType
-import org.infinispan.manager.EmbeddedCacheManager
 import org.infinispan.spring.starter.embedded.InfinispanCacheConfigurer
 import org.infinispan.spring.starter.embedded.InfinispanGlobalConfigurer
 import org.infinispan.transaction.TransactionMode
@@ -148,7 +142,7 @@ import com.google.code.ssm.providers.xmemcached.MemcacheClientFactoryImpl
 import com.google.code.ssm.spring.SSMCache
 import com.google.code.ssm.spring.SSMCacheManager
 
-import io.github.jhipster.config.JHipsterProperties
+import tech.jhipster.config.JHipsterProperties
 <%_ } _%>
 <%_ if (cacheProvider === 'redis') { _%>
 import java.net.URI
@@ -169,7 +163,7 @@ import javax.cache.configuration.MutableConfiguration
 import javax.cache.expiry.CreatedExpiryPolicy
 import javax.cache.expiry.Duration
 
-import io.github.jhipster.config.JHipsterProperties
+import tech.jhipster.config.JHipsterProperties
 <%_ } _%>
 
 @Configuration
@@ -250,7 +244,9 @@ class CacheConfiguration(<%_ if (cacheProvider !== 'no') { _%>
 
     private fun createCache(cm: javax.cache.CacheManager, cacheName: String) {
         val cache: javax.cache.Cache<Any, Any>? = cm.getCache(cacheName)
-        if (cache == null) {
+        if (cache != null) {
+            cache.clear()
+        } else {
             cm.createCache(cacheName, jcacheConfiguration)
         }
     }
@@ -294,7 +290,6 @@ class CacheConfiguration(<%_ if (cacheProvider !== 'no') { _%>
             if (env.acceptsProfiles(Profiles.of(JHipsterConstants.SPRING_PROFILE_DEVELOPMENT))) {
                 log.debug("Application is running with the \"dev\" profile, Hazelcast cluster will only work with localhost instances")
 
-                System.setProperty("hazelcast.local.localAddress", "127.0.0.1")
                 config.networkConfig.port = serverProperties.port!! + 5701
                 config.networkConfig.join.tcpIpConfig.isEnabled = true
                 for (instance in discoveryClient.getInstances(serviceId)) {
@@ -325,26 +320,17 @@ class CacheConfiguration(<%_ if (cacheProvider !== 'no') { _%>
             config.networkConfig.join.tcpIpConfig.isEnabled = false
         }
         <%_ } _%>
-        config.mapConfigs["default"] = initializeDefaultMapConfig(jHipsterProperties)
 
-        // Full reference is available at: https://docs.hazelcast.org/docs/management-center/3.9/manual/html/Deploying_and_Starting.html
-        config.managementCenterConfig = initializeDefaultManagementCenterConfig(jHipsterProperties)
+        config.managementCenterConfig = ManagementCenterConfig()
+        config.addMapConfig(initializeDefaultMapConfig(jHipsterProperties))
         <%_ if (enableHibernateCache) { _%>
-        config.mapConfigs["<%= packageName %>.domain.*"] = initializeDomainMapConfig(jHipsterProperties)
+        config.addMapConfig(initializeDomainMapConfig(jHipsterProperties))
         <%_ } _%>
         return Hazelcast.newHazelcastInstance(config)
     }
 
-    private fun initializeDefaultManagementCenterConfig(jHipsterProperties: JHipsterProperties): ManagementCenterConfig {
-        return ManagementCenterConfig().apply {
-            isEnabled = jHipsterProperties.cache.hazelcast.managementCenter.isEnabled
-            url = jHipsterProperties.cache.hazelcast.managementCenter.url
-            updateInterval = jHipsterProperties.cache.hazelcast.managementCenter.updateInterval
-        }
-    }
-
     private fun initializeDefaultMapConfig(jHipsterProperties: JHipsterProperties): MapConfig {
-        val mapConfig = MapConfig()
+        val mapConfig = MapConfig("default")
 
         /*
         Number of backups. If 1 is set as the backup-count for example,
@@ -360,7 +346,7 @@ class CacheConfiguration(<%_ if (cacheProvider !== 'no') { _%>
         LFU (Least Frequently Used).
         NONE is the default.
         */
-        mapConfig.evictionPolicy = EvictionPolicy.LRU
+        mapConfig.evictionConfig.evictionPolicy = EvictionPolicy.LRU
 
         /*
         Maximum size of the map. When max size is reached,
@@ -368,14 +354,14 @@ class CacheConfiguration(<%_ if (cacheProvider !== 'no') { _%>
         Any integer between 0 and Integer.MAX_VALUE. 0 means
         Integer.MAX_VALUE. Default is 0.
         */
-        mapConfig.maxSizeConfig = MaxSizeConfig(0, MaxSizeConfig.MaxSizePolicy.USED_HEAP_SIZE)
+        mapConfig.evictionConfig.maxSizePolicy = MaxSizePolicy.USED_HEAP_SIZE
 
         return mapConfig
     }
     <%_ if (cacheProvider === 'hazelcast') { _%>
 
     private fun initializeDomainMapConfig(jHipsterProperties: JHipsterProperties): MapConfig =
-        MapConfig().apply { timeToLiveSeconds = jHipsterProperties.cache.hazelcast.timeToLiveSeconds }
+        MapConfig("<%= packageName %>.domain.*").apply { timeToLiveSeconds = jHipsterProperties.cache.hazelcast.timeToLiveSeconds }
     <%_ } _%>
     <%_ } _%>
     <%_ if (cacheProvider === 'infinispan') { _%>
@@ -410,7 +396,7 @@ class CacheConfiguration(<%_ if (cacheProvider !== 'no') { _%>
             log.warn("No discovery service is set up, Infinispan will use default discovery for cluster formation")
             return InfinispanGlobalConfigurer {
                 GlobalConfigurationBuilder
-                    .defaultClusteredBuilder().defaultCacheName("infinispan-<%=baseName%>-cluster-cache").transport().defaultTransport()
+                    .defaultClusteredBuilder().transport().defaultTransport()
                     .addProperty("configurationFile", jHipsterProperties.cache.infinispan.configFile)
                     .clusterName("infinispan-<%=baseName%>-cluster").jmx()
                     .enabled(jHipsterProperties.cache.infinispan.isStatsEnabled)
@@ -419,7 +405,7 @@ class CacheConfiguration(<%_ if (cacheProvider !== 'no') { _%>
         } else if (discoveryClient?.getInstances(registration?.serviceId)?.size == 0) {
           return InfinispanGlobalConfigurer {
             GlobalConfigurationBuilder
-                .defaultClusteredBuilder().defaultCacheName("infinispan-<%=baseName%>-cluster-cache").transport()
+                .defaultClusteredBuilder().transport()
                 .transport(JGroupsTransport())
                 .clusterName("infinispan-<%=baseName%>-cluster").jmx()
                 .enabled(jHipsterProperties.cache.infinispan.isStatsEnabled)
@@ -428,7 +414,7 @@ class CacheConfiguration(<%_ if (cacheProvider !== 'no') { _%>
         } else {
           return InfinispanGlobalConfigurer {
               GlobalConfigurationBuilder
-                  .defaultClusteredBuilder().defaultCacheName("infinispan-<%=baseName%>-cluster-cache").transport()
+                  .defaultClusteredBuilder().transport()
                   .transport(JGroupsTransport(getTransportChannel()))
                   .clusterName("infinispan-<%=baseName%>-cluster").jmx()
                   .enabled(jHipsterProperties.cache.infinispan.isStatsEnabled)
@@ -438,7 +424,7 @@ class CacheConfiguration(<%_ if (cacheProvider !== 'no') { _%>
         <%_ } else { _%>
         return InfinispanGlobalConfigurer {
             GlobalConfigurationBuilder
-                .defaultClusteredBuilder().defaultCacheName("infinispan-<%=baseName%>-cluster-cache").transport().defaultTransport()
+                .defaultClusteredBuilder().transport().defaultTransport()
                 .addProperty("configurationFile", jHipsterProperties.cache.infinispan.configFile)
                 .clusterName("infinispan-<%=baseName%>-cluster").jmx()
                 .enabled(jHipsterProperties.cache.infinispan.isStatsEnabled)
@@ -480,17 +466,17 @@ class CacheConfiguration(<%_ if (cacheProvider !== 'no') { _%>
             manager.defineConfiguration("local-app-data", ConfigurationBuilder()
                 .clustering().cacheMode(CacheMode.LOCAL)
                 .statistics().enabled(cacheInfo.isStatsEnabled)
-                .memory().evictionType(EvictionType.COUNT).size(cacheInfo.local.maxEntries).expiration()
+                .memory().maxCount(cacheInfo.local.maxEntries).expiration()
                 .lifespan(cacheInfo.local.timeToLiveSeconds, TimeUnit.SECONDS).build())
             manager.defineConfiguration("dist-app-data", ConfigurationBuilder()
                 .clustering().cacheMode(CacheMode.DIST_SYNC).hash().numOwners(cacheInfo.distributed.instanceCount)
                 .statistics().enabled(cacheInfo.isStatsEnabled)
-                .memory().evictionType(EvictionType.COUNT).size(cacheInfo.distributed.maxEntries).expiration()
+                .memory().maxCount(cacheInfo.local.maxEntries).expiration()
                 .lifespan(cacheInfo.distributed.timeToLiveSeconds, TimeUnit.SECONDS).build())
             manager.defineConfiguration("repl-app-data", ConfigurationBuilder()
                 .clustering().cacheMode(CacheMode.REPL_SYNC)
                 .statistics().enabled(cacheInfo.isStatsEnabled)
-                .memory().evictionType(EvictionType.COUNT).size(cacheInfo.replicated.maxEntries).expiration()
+                .memory().maxCount(cacheInfo.local.maxEntries).expiration()
                 .lifespan(cacheInfo.replicated.timeToLiveSeconds, TimeUnit.SECONDS).build())
 
             // initialize Hibernate L2 cache configuration templates
@@ -528,7 +514,7 @@ class CacheConfiguration(<%_ if (cacheProvider !== 'no') { _%>
             manager.defineConfiguration("oAuth2Authentication", ConfigurationBuilder()
                 .clustering().cacheMode(CacheMode.LOCAL)
                 .statistics().enabled(cacheInfo.isStatsEnabled())
-                .memory().evictionType(EvictionType.COUNT).size(cacheInfo.getLocal().getMaxEntries()).expiration()
+                .memory().maxCount(cacheInfo.local.maxEntries).expiration()
                 .lifespan(cacheInfo.getLocal().getTimeToLiveSeconds(), TimeUnit.SECONDS).build())
             <%_ } _%>
         }
@@ -648,6 +634,11 @@ class CacheConfiguration(<%_ if (cacheProvider !== 'no') { _%>
         cacheManager.caches = ssmCaches
         return cacheManager
     }
+
+    @Bean
+    fun defaultCacheFactory(jHipsterProperties: JHipsterProperties): CacheFactory? {
+        return createCache("default", jHipsterProperties)
+    }
     <%_ if (!skipUserManagement || (authenticationType === 'oauth2' && databaseType !== 'no')) { _%>
 
     @Bean
@@ -739,8 +730,8 @@ class CacheConfiguration(<%_ if (cacheProvider !== 'no') { _%>
     fun cacheManagerCustomizer(jcacheConfiguration: javax.cache.configuration.Configuration<Any, Any> ): JCacheManagerCustomizer {
         return JCacheManagerCustomizer {
             <%_ if (!skipUserManagement || (authenticationType === 'oauth2' && databaseType !== 'no')) { _%>
-            createCache(it, <%= packageName %>.repository<% if (reactive) { %>.reactive<% } %>.UserRepository.USERS_BY_LOGIN_CACHE, jcacheConfiguration)
-            createCache(it, <%= packageName %>.repository<% if (reactive) { %>.reactive<% } %>.UserRepository.USERS_BY_EMAIL_CACHE, jcacheConfiguration)
+            createCache(it, <%= packageName %>.repository.UserRepository.USERS_BY_LOGIN_CACHE, jcacheConfiguration)
+            createCache(it, <%= packageName %>.repository.UserRepository.USERS_BY_EMAIL_CACHE, jcacheConfiguration)
                 <%_ if (enableHibernateCache) { _%>
             createCache(it, <%= packageName %>.domain.<%= asEntity('User') %>::class.java.name, jcacheConfiguration)
             createCache(it, <%= packageName %>.domain.Authority::class.java.name, jcacheConfiguration)
@@ -757,7 +748,9 @@ class CacheConfiguration(<%_ if (cacheProvider !== 'no') { _%>
 
     private fun createCache(cm: javax.cache.CacheManager, cacheName: String, jcacheConfiguration: javax.cache.configuration.Configuration<Any, Any>): Unit {
         val cache = cm.getCache<Any, Any>(cacheName)
-        if (cache == null) {
+        if (cache != null) {
+            cache.clear()
+        } else {
             cm.createCache(cacheName, jcacheConfiguration)
         }
     }

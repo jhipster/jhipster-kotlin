@@ -1,9 +1,10 @@
+const crypto = require('crypto');
 const path = require('path');
 const os = require('os');
-const shelljs = require('shelljs');
 const assert = require('yeoman-assert');
 const fse = require('fs-extra');
 const fs = require('fs');
+const { createHelpers } = require('yeoman-test');
 
 const Generator = require('generator-jhipster/generators/generator-base');
 const constants = require('generator-jhipster/generators/generator-constants');
@@ -11,16 +12,38 @@ const constants = require('generator-jhipster/generators/generator-constants');
 const DOCKER_DIR = constants.DOCKER_DIR;
 const FAKE_BLUEPRINT_DIR = path.join(__dirname, '../templates/fake-blueprint');
 
+const DEFAULT_TEST_SETTINGS = { forwardCwd: true };
+const DEFAULT_TEST_OPTIONS = { fromCli: true, skipInstall: true };
+const DEFAULT_TEST_ENV_OPTIONS = { skipInstall: true, dryRun: false };
+
 module.exports = {
+    DEFAULT_TEST_OPTIONS,
+    basicHelpers: createTestHelpers(),
+    skipPrettierHelpers: createTestHelpers({ generatorOptions: { skipPrettier: true } }),
+    dryRunHelpers: createTestHelpers({ generatorOptions: { skipPrettier: true }, environmentOptions: { dryRun: true } }),
+    createTestHelpers,
     getFilesForOptions,
     shouldBeV3DockerfileCompatible,
     getJHipsterCli,
+    prepareTempDir,
     testInTempDir,
     revertTempDir,
+    copyTemplateBlueprints,
     copyBlueprint,
     copyFakeBlueprint,
     lnYeoman,
 };
+
+function createTestHelpers(options = {}) {
+    const { environmentOptions = {} } = options;
+    const sharedOptions = { ...DEFAULT_TEST_OPTIONS, configOptions: {}, ...environmentOptions.sharedOptions };
+    const newOptions = {
+        settings: { ...DEFAULT_TEST_SETTINGS, ...options.settings },
+        environmentOptions: { ...DEFAULT_TEST_ENV_OPTIONS, ...environmentOptions, sharedOptions },
+        generatorOptions: { ...DEFAULT_TEST_OPTIONS, ...options.generatorOptions },
+    };
+    return createHelpers(newOptions);
+}
 
 function getFilesForOptions(files, options, prefix, excludeFiles) {
     const generator = options;
@@ -52,52 +75,73 @@ function getJHipsterCli() {
         // corrected test for windows user
         cmd = cmd.replace(/\\/g, '/');
     }
-    /* eslint-disable-next-line no-console */
-    console.log(cmd);
     return cmd;
 }
 
-function testInTempDir(cb, keepInTestDir) {
+function _prepareTempEnv() {
     const cwd = process.cwd();
-    /* eslint-disable-next-line no-console */
-    console.log(`current cwd: ${cwd}`);
-    const tempDir = path.join(os.tmpdir(), 'jhitemp');
-    shelljs.rm('-rf', tempDir);
-    shelljs.mkdir('-p', tempDir);
+    const tempDir = path.join(os.tmpdir(), crypto.randomBytes(20).toString('hex'));
+    process.chdir(os.tmpdir());
+    if (fs.existsSync(tempDir)) {
+        fs.rmdirSync(tempDir, { recursive: true });
+    }
+    fs.mkdirSync(tempDir, { recursive: true });
     process.chdir(tempDir);
-    /* eslint-disable-next-line no-console */
-    console.log(`New cwd: ${process.cwd()}`);
-    const cbReturn = cb(tempDir);
+    return { cwd, tempDir: process.cwd() };
+}
+
+/**
+ * Creates a temporary dir.
+ * @return {function} callback to cleanup the test dir.
+ */
+function prepareTempDir() {
+    const testEnv = _prepareTempEnv();
+    return () => {
+        revertTempDir(testEnv.cwd, testEnv.tempDir);
+    };
+}
+
+function testInTempDir(cb) {
+    const preparedEnv = _prepareTempEnv();
+    const cwd = preparedEnv.cwd;
+    const cbReturn = cb(preparedEnv.tempDir);
     if (cbReturn instanceof Promise) {
         return cbReturn.then(() => {
-            if (!keepInTestDir) {
-                revertTempDir(cwd);
-            }
             return cwd;
         });
-    }
-    if (!keepInTestDir) {
-        revertTempDir(cwd);
     }
     return cwd;
 }
 
-function revertTempDir(cwd) {
-    process.chdir(cwd);
-    /* eslint-disable-next-line no-console */
-    console.log(`reverted to cwd: ${process.cwd()}`);
+function revertTempDir(dest = path.join(__dirname, '..', '..'), tempDir) {
+    if (tempDir === undefined) {
+        const cwd = process.cwd();
+        if (cwd.includes(os.tmpdir())) {
+            tempDir = cwd;
+        }
+    }
+    if (tempDir && dest !== tempDir) {
+        fs.rmdirSync(tempDir, { recursive: true });
+    }
+    process.chdir(dest);
 }
 
-function copyBlueprint(sourceDir, packagePath, ...blueprintNames) {
-    const nodeModulesPath = `${packagePath}/node_modules`;
+function copyTemplateBlueprints(destDir, ...blueprintNames) {
+    blueprintNames.forEach(blueprintName =>
+        copyBlueprint(path.join(__dirname, `../templates/blueprints/generator-jhipster-${blueprintName}`), destDir, blueprintName)
+    );
+}
+
+function copyBlueprint(sourceDir, destDir, ...blueprintNames) {
+    const nodeModulesPath = `${destDir}/node_modules`;
     fse.ensureDirSync(nodeModulesPath);
     blueprintNames.forEach(blueprintName => {
         fse.copySync(sourceDir, `${nodeModulesPath}/generator-jhipster-${blueprintName}`);
     });
 }
 
-function copyFakeBlueprint(packagePath, ...blueprintName) {
-    copyBlueprint(FAKE_BLUEPRINT_DIR, packagePath, ...blueprintName);
+function copyFakeBlueprint(destDir, ...blueprintName) {
+    copyBlueprint(FAKE_BLUEPRINT_DIR, destDir, ...blueprintName);
 }
 
 function lnYeoman(packagePath) {

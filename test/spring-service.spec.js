@@ -14,7 +14,7 @@ describe('JHipster generator service', () => {
                 .withOptions({
                     'from-cli': true,
                     skipInstall: true,
-                    blueprint: 'kotlin',
+
                     skipChecks: true,
                 })
                 .inTmpDir(dir => {
@@ -43,7 +43,7 @@ describe('JHipster generator service', () => {
                 .withOptions({
                     'from-cli': true,
                     skipInstall: true,
-                    blueprint: 'kotlin',
+
                     skipChecks: true,
                 })
                 .inTmpDir(dir => {
@@ -71,7 +71,7 @@ describe('JHipster generator service', () => {
                 .withOptions({
                     'from-cli': true,
                     skipInstall: true,
-                    blueprint: 'kotlin',
+
                     skipChecks: true,
                 })
                 .inTmpDir(dir => {

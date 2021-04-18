@@ -16,7 +16,7 @@
  * See the License for the specific language governing permissions and
  * limitations under the License.
  */
-const jhiCore = require('jhipster-core');
+const { isReservedFieldName } = require('generator-jhipster/jdl/jhipster/reserved-keywords');
 
 module.exports = {
     askForControllerActions,
@@ -45,7 +45,7 @@ function askForControllerActions() {
                     if (input.charAt(0) === input.charAt(0).toUpperCase()) {
                         return 'Your action name cannot start with an upper case letter';
                     }
-                    if (jhiCore.isReservedFieldName(input)) {
+                    if (isReservedFieldName(input)) {
                         return 'Your action name cannot contain a Java, Angular or React reserved keyword';
                     }
 

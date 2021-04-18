@@ -18,13 +18,10 @@
 -%>
 package <%= packageName %>
 
-<%_ if (applicationType === 'microservice' && authenticationType === 'uaa') { _%>
-import <%= packageName %>.client.OAuth2InterceptedFeignConfiguration
-<%_ } _%>
 import <%= packageName %>.config.ApplicationProperties
-import io.github.jhipster.config.DefaultProfileUtil
+import tech.jhipster.config.DefaultProfileUtil
 
-import io.github.jhipster.config.JHipsterConstants
+import tech.jhipster.config.JHipsterConstants
 
 import org.slf4j.LoggerFactory
 import org.springframework.boot.runApplication
@@ -33,32 +30,14 @@ import org.springframework.boot.autoconfigure.SpringBootApplication
 import org.springframework.boot.autoconfigure.liquibase.LiquibaseProperties
 <%_ } _%>
 import org.springframework.boot.context.properties.EnableConfigurationProperties
-<%_ if (applicationType === 'gateway' && !reactive) { _%>
-import org.springframework.cloud.netflix.zuul.EnableZuulProxy
-<%_ } _%>
-<%_ if (applicationType === 'microservice' && authenticationType === 'uaa') { _%>
-import org.springframework.context.annotation.ComponentScan
-import org.springframework.context.annotation.FilterType
-<%_ } _%>
 import org.springframework.core.env.Environment
 
 import javax.annotation.PostConstruct
 import java.net.InetAddress
 import java.net.UnknownHostException
 
-<%_ if (applicationType === 'microservice' && authenticationType === 'uaa') { _%>
-@ComponentScan(
-    excludeFilters = [ComponentScan.Filter(
-        type = FilterType.ASSIGNABLE_TYPE,
-        classes = [OAuth2InterceptedFeignConfiguration::class]
-    )]
-)
-<%_ } _%>
 @SpringBootApplication
 @EnableConfigurationProperties(<% if (databaseType === 'sql') { %>LiquibaseProperties::class, <% } %>ApplicationProperties::class)
-<%_ if (applicationType === 'gateway' && !reactive) { _%>
-@EnableZuulProxy
-<%_ } _%>
 class <%= mainClass %>(private val env: Environment) {
 
     private val log = LoggerFactory.getLogger(javaClass)
@@ -129,7 +108,7 @@ class <%= mainClass %>(private val env: Environment) {
                 ----------------------------------------------------------
                 """.trimIndent()
             )
-            <%_ if (serviceDiscoveryType && (applicationType === 'microservice' || applicationType === 'gateway' || applicationType === 'uaa')) { _%>
+            <%_ if (serviceDiscoveryType && (applicationType === 'microservice' || applicationType === 'gateway')) { _%>
 
             val configServerStatus = 
                 env.getProperty("configserver.status") 

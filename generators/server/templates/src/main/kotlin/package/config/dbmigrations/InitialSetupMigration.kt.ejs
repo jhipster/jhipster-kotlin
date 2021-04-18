@@ -22,10 +22,11 @@ import <%= packageName %>.domain.Authority
 import <%= packageName %>.domain.<%= asEntity('User') %>
 import <%= packageName %>.security.ADMIN
 import <%= packageName %>.security.USER
+import <%= packageName %>.config.SYSTEM_ACCOUNT
 
-import com.github.mongobee.changeset.ChangeLog
-import com.github.mongobee.changeset.ChangeSet
-import org.springframework.data.mongodb.core.MongoTemplate
+import com.github.cloudyrock.mongock.ChangeLog
+import com.github.cloudyrock.mongock.ChangeSet
+import com.github.cloudyrock.mongock.driver.mongodb.springdata.v3.decorator.impl.MongockTemplate
 
 import java.time.Instant
 
@@ -37,7 +38,7 @@ import java.time.Instant
 class InitialSetupMigration {
 
     @ChangeSet(order = "01", author = "initiator", id = "01-addAuthorities")
-    fun addAuthorities(mongoTemplate: MongoTemplate) {
+    fun addAuthorities(mongoTemplate: MongockTemplate) {
         val adminAuthority = Authority(ADMIN)
         val userAuthority = Authority(USER)
 
@@ -47,45 +48,12 @@ class InitialSetupMigration {
     <%_ if (authenticationType !== 'oauth2') { _%>
 
     @ChangeSet(order = "02", author = "initiator", id = "02-addUsers")
-    fun addUsers(mongoTemplate: MongoTemplate) {
+    fun addUsers(mongoTemplate: MongockTemplate) {
         val adminAuthority = Authority(ADMIN)
         val userAuthority = Authority(USER)
 
-        val systemUser = <%= asEntity('User') %>(
-            id = "user-0",
-            login = "system",
-            <%_ if (authenticationType !== 'oauth2') { _%>
-            password = "\$2a\$10\$mE.qmcV0mFU5NcKh73TZx.z4ueI/.bDWbj0T1BYyqP481kGGarKLG",
-            <%_ } _%>
-            firstName = "",
-            lastName = "System",
-            email = "system@localhost",
-            activated = true,
-            langKey = "en",
-            createdBy = "system",
-            createdDate = Instant.now(),
-            authorities = mutableSetOf(adminAuthority, userAuthority)
-        )
-        mongoTemplate.save(systemUser)
-
-        val anonymousUser = <%= asEntity('User') %>(
-            id = "user-1",
-            login = "anonymoususer",
-            <%_ if (authenticationType !== 'oauth2') { _%>
-            password = "\$2a\$10\$j8S5d7Sr7.8VTOYNviDPOeWX8KcYILUVJBsYV83Y5NtECayypx9lO",
-            <%_ } _%>
-            firstName = "Anonymous",
-            lastName = "User",
-            email = "anonymous@localhost",
-            activated = true,
-            langKey = "en",
-            createdBy = systemUser.login,
-            createdDate = Instant.now()
-        )
-        mongoTemplate.save(anonymousUser)
-
         val adminUser = <%= asEntity('User') %>(
-            id = "user-2",
+            id = "user-1",
             login = "admin",
             <%_ if (authenticationType !== 'oauth2') { _%>
             password = "\$2a\$10\$gSAhZrxMllrbgj/kkK9UceBPpChGWJA7SYIb1Mqo.n5aNLq1/oRrC",
@@ -95,14 +63,14 @@ class InitialSetupMigration {
             email = "admin@localhost",
             activated = true,
             langKey = "en",
-            createdBy = systemUser.login,
+            createdBy = SYSTEM_ACCOUNT,
             createdDate = Instant.now(),
             authorities = mutableSetOf(adminAuthority, userAuthority)
         )
         mongoTemplate.save(adminUser)
 
         val userUser = <%= asEntity('User') %>(
-            id = "user-3",
+            id = "user-2",
             login = "user",
             <%_ if (authenticationType !== 'oauth2') { _%>
             password = "\$2a\$10\$VEjxo0jq2YG9Rbk2HmX9S.k1uZBGYUHdUcid3g/vfiEl7lwWgOH/K",
@@ -112,7 +80,7 @@ class InitialSetupMigration {
             email = "user@localhost",
             activated = true,
             langKey = "en",
-            createdBy = systemUser.login,
+            createdBy = SYSTEM_ACCOUNT,
             createdDate = Instant.now(),
             authorities = mutableSetOf(userAuthority)
         )

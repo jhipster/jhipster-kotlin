@@ -18,8 +18,8 @@
 -%>
 package <%= packageName %>.repository
 
-import <%= packageName %>.domain.<%= asEntity(entityClass) %>
-<%_ if (fieldsContainOwnerManyToMany) { _%>
+import <%= packageName %>.domain.<%= persistClass %>
+<%_ if (relationshipsContainEagerLoad) { _%>
 import org.springframework.data.domain.Page
 import org.springframework.data.domain.Pageable
 <%_ } _%>
@@ -29,7 +29,7 @@ import org.springframework.data.jpa.repository.JpaRepository
 import org.springframework.data.jpa.repository.JpaSpecificationExecutor
     <%_ } _%>
 import org.springframework.data.jpa.repository.Query
-    <%_ if (fieldsContainOwnerManyToMany) { _%>
+    <%_ if (relationshipsContainEagerLoad) { _%>
 import org.springframework.data.repository.query.Param
     <%_ } _%>
 <%_ } _%>
@@ -38,13 +38,12 @@ import org.springframework.data.mongodb.repository.Query
 import org.springframework.data.mongodb.repository.MongoRepository
 <%_ } _%>
 <%_ if (databaseType === 'neo4j') { _%>
-import org.neo4j.springframework.data.repository.Neo4jRepository
-import org.neo4j.springframework.data.repository.query.Query
+import org.springframework.data.neo4j.repository.Neo4jRepository
 <%_ } _%>
 <%_ if (searchEngine === 'couchbase') { _%>
 import <%= packageName %>.repository.search.SearchCouchbaseRepository
 <%_ } _%>
-<%_ if (databaseType === 'couchbase' && fieldsContainOwnerManyToMany === true) { _%>
+<%_ if (databaseType === 'couchbase' && relationshipsContainEagerLoad) { _%>
 import org.springframework.data.couchbase.core.query.Query
 <%_ } _%>
 <%_ if (databaseType === 'cassandra') { _%>
@@ -52,7 +51,7 @@ import org.springframework.data.cassandra.repository.CassandraRepository
 <%_ } _%>
 import org.springframework.stereotype.Repository
 <%_
-if (databaseType === 'sql' || databaseType === 'mongodb' || databaseType === 'neo4j' || databaseType === 'couchbase') {
+if (databaseType === 'sql' || databaseType === 'mongodb' || databaseType === 'couchbase') {
     let importList = fieldsContainOwnerManyToMany;
     for (r of relationships) {
         if (r.relationshipType === 'many-to-one' && r.otherEntityName === 'user') {
@@ -60,62 +59,55 @@ if (databaseType === 'sql' || databaseType === 'mongodb' || databaseType === 'ne
         }
     }
 _%>
-    <%_ if (fieldsContainOwnerManyToMany) { _%>
+    <%_ if (relationshipsContainEagerLoad) { _%>
 import java.util.Optional
     <%_ } _%>
 <%_ } _%>
-<%_ if (databaseType === 'cassandra') { _%>
+<%_ if (primaryKey.type === 'UUID') { _%>
 
 import java.util.UUID
 <%_ } _%>
 
 /**
- * Spring Data <% if (databaseType === 'mongodb') { %>MongoDB<% } if (databaseType === 'neo4j') { %>Neo4j<% } if (databaseType === 'couchbase') { %>Couchbase<% } if (databaseType === 'cassandra') { %>Cassandra<% } %> repository for the [<%= asEntity(entityClass) %>] entity.
+ * Spring Data <%= officialDatabaseType %> repository for the [<%= persistClass %>] entity.
  */
-<%_ if (!fieldsContainOwnerManyToMany) { _%>
+<%_ if (!relationshipsContainEagerLoad) { _%>
 @Suppress("unused")
 <%_ } _%>
 @Repository
-interface <%=entityClass%>Repository : <% if (databaseType === 'sql') { %>JpaRepository<% } %><% if (databaseType === 'mongodb') { %>MongoRepository<% } %><% if (databaseType === 'neo4j') { %>Neo4jRepository<% } %><% if (databaseType === 'cassandra') { %>CassandraRepository<% } %><% if (databaseType === 'couchbase') { %>N1qlCouchbaseRepository<% } %><<%=asEntity(entityClass)%>, <%= primaryKeyType %>><% if (jpaMetamodelFiltering) { %>, JpaSpecificationExecutor<<%= asEntity(entityClass) %>><% } %><% if (searchEngine === 'couchbase') { %>, SearchCouchbaseRepository<<%= asEntity(entityClass) %>, <%= primaryKeyType %>><% } %> {
-    <%_ for (idx in relationships) {
-        if (relationships[idx].relationshipType === 'many-to-one' && relationships[idx].otherEntityName === 'user' && databaseType === 'sql') { _%>
+interface <%=entityClass%>Repository : <% if (databaseType === 'sql') { %>JpaRepository<% } %><% if (databaseType === 'mongodb') { %>MongoRepository<% } %><% if (databaseType === 'neo4j') { %>Neo4jRepository<% } %><% if (databaseType === 'cassandra') { %>CassandraRepository<% } %><% if (databaseType === 'couchbase') { %>N1qlCouchbaseRepository<% } %><<%=persistClass%>, <%= primaryKey.type %>><% if (jpaMetamodelFiltering) { %>, JpaSpecificationExecutor<<%= persistClass %>><% } %><% if (searchEngine === 'couchbase') { %>, SearchCouchbaseRepository<<%= persistClass %>, <%= primaryKey.type %>><% } %> {
+    <%_ for (const relationship of relationships) {
+        if (relationship.relationshipType === 'many-to-one' && relationship.otherEntityName === 'user' && databaseType === 'sql') { _%>
 
-    @Query("select <%= entityInstance %> from <%= asEntity(entityClass) %> <%= entityInstance %> where <%= entityInstance %>.<%= relationships[idx].relationshipFieldName %>.login = ?#{principal.<% if (authenticationType === 'oauth2') { %>preferredUsername<% } else { %>username<% } %>}")
-    fun findBy<%= relationships[idx].relationshipNameCapitalized %>IsCurrentUser(): MutableList<<%= asEntity(entityClass) %>>
+    @Query("select <%= entityInstance %> from <%= persistClass %> <%= entityInstance %> where <%= entityInstance %>.<%= relationship.relationshipFieldName %>.login = ?#{principal.<% if (authenticationType === 'oauth2') { %>preferredUsername<% } else { %>username<% } %>}")
+    fun findBy<%= relationship.relationshipNameCapitalized %>IsCurrentUser(): MutableList<<%= persistClass %>>
     <%_ } } _%>
-    <%_ if (fieldsContainOwnerManyToMany === true) {
+    <%_ if (relationshipsContainEagerLoad) {
         if (databaseType === 'sql') { _%>
 
-    @Query(value = "select distinct <%= entityInstance %> from <%= asEntity(entityClass) %> <%= entityInstance %><% for (idx in relationships) {
-    if (relationships[idx].relationshipType === 'many-to-many' && relationships[idx].ownerSide === true) { %> left join fetch <%= entityInstance %>.<%= relationships[idx].relationshipFieldNamePlural %><% } } %>",
-        countQuery = "select count(distinct <%= entityInstance %>) from <%= asEntity(entityClass) %> <%= entityInstance %>")
-    fun findAllWithEagerRelationships(pageable: Pageable): Page<<%= asEntity(entityClass) %>>
+    @Query(value = "select distinct <%= entityInstance %> from <%= persistClass %> <%= entityInstance %><% for (const relationship of relationships) {
+    if (relationship.relationshipEagerLoad) { %> left join fetch <%= entityInstance %>.<%= relationship.reference.name %><% } } %>",
+        countQuery = "select count(distinct <%= entityInstance %>) from <%= persistClass %> <%= entityInstance %>")
+    fun findAllWithEagerRelationships(pageable: Pageable): Page<<%= persistClass %>>
 
-    @Query("select distinct <%= entityInstance %> from <%= asEntity(entityClass) %> <%= entityInstance %><% for (idx in relationships) {
-    if (relationships[idx].relationshipType === 'many-to-many' && relationships[idx].ownerSide === true) { %> left join fetch <%= entityInstance %>.<%= relationships[idx].relationshipFieldNamePlural %><% } } %>")
-    fun findAllWithEagerRelationships(): MutableList<<%= asEntity(entityClass) %>>
+    @Query("select distinct <%= entityInstance %> from <%= persistClass %> <%= entityInstance %><% for (const relationship of relationships) {
+    if (relationship.relationshipEagerLoad) { %> left join fetch <%= entityInstance %>.<%= relationship.reference.name %><% } } %>")
+    fun findAllWithEagerRelationships(): MutableList<<%= persistClass %>>
 
-    @Query("select <%= entityInstance %> from <%= asEntity(entityClass) %> <%= entityInstance %><% for (idx in relationships) {
-    if (relationships[idx].relationshipType === 'many-to-many' && relationships[idx].ownerSide === true) { %> left join fetch <%= entityInstance %>.<%= relationships[idx].relationshipFieldNamePlural %><% } } %> where <%= entityInstance %>.id =:id")
-    fun findOneWithEagerRelationships(@Param("id") id: <%= primaryKeyType %>): Optional<<%= asEntity(entityClass) %>>
+    @Query("select <%= entityInstance %> from <%= persistClass %> <%= entityInstance %><% for (const relationship of relationships) {
+    if (relationship.relationshipEagerLoad) { %> left join fetch <%= entityInstance %>.<%= relationship.reference.name %><% } } %> where <%= entityInstance %>.id =:id")
+    fun findOneWithEagerRelationships(@Param("id") id: <%= primaryKey.type %>): Optional<<%= persistClass %>>
     <%_
         } else if (databaseType === 'mongodb' || databaseType === 'couchbase')  { _%>
 
     @Query("<%= (databaseType === 'mongodb')?'{}':'#{#n1ql.selectEntity} WHERE #{#n1ql.filter}'%>")
-    fun findAllWithEagerRelationships(pageable: Pageable): Page<<%= asEntity(entityClass) %>>
+    fun findAllWithEagerRelationships(pageable: Pageable): Page<<%= persistClass %>>
 
     @Query("<%= (databaseType === 'mongodb')?'{}':'#{#n1ql.selectEntity} WHERE #{#n1ql.filter}'%>")
-    fun findAllWithEagerRelationships(): MutableList<<%= asEntity(entityClass) %>>
+    fun findAllWithEagerRelationships(): MutableList<<%= persistClass %>>
 
     @Query("<%- (databaseType === 'mongodb')?"{'id': ?0}":"#{#n1ql.selectEntity} USE KEYS $1 WHERE #{#n1ql.filter}"%>")
-    fun findOneWithEagerRelationships(id: <%= primaryKeyType %>): Optional<<%= asEntity(entityClass) %>>
-    <%_ } else if (databaseType === 'neo4j') { _%>
-
-    @Query("MATCH (n:<%= asEntity(entityClass) %>)<-[]-(m) RETURN n,m")
-    fun findAllWithEagerRelationships(pageable: Pageable): Page<<%= asEntity(entityClass) %>> 
-
-    @Query("MATCH (e:<%= asEntity(entityClass) %> {id: $id}) RETURN e")
-    fun findOneWithEagerRelationships(id: <%= primaryKeyType %>): Optional<<%= asEntity(entityClass) %>>
-    <%_ }
+    fun findOneWithEagerRelationships(id: <%= primaryKey.type %>): Optional<<%= persistClass %>>
+    <%_ } 
     } _%>
 }

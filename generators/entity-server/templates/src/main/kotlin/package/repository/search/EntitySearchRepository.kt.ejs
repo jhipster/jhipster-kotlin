@@ -19,19 +19,20 @@
 package <%= packageName %>.repository.search
 
 
-import <%= packageName %>.domain.<%= asEntity(entityClass) %>
+import <%= packageName %>.domain.<%= persistClass %>
 <%_ if (reactive) { _%>
      <%_ if (pagination !== 'no') { _%>
 import org.springframework.data.domain.Pageable
      <%_ } _%>
 import org.springframework.data.elasticsearch.core.ReactiveElasticsearchTemplate
+import org.springframework.data.elasticsearch.core.SearchHit
 import org.springframework.data.elasticsearch.core.query.NativeSearchQuery
 <%_ } _%>
 import org.springframework.data.elasticsearch.repository.<% if (reactive) {%>Reactive<% } %>ElasticsearchRepository
 <%_ if (reactive) { _%>
 import reactor.core.publisher.Flux
 <%_ } _%>
-<%_ if (primaryKeyType === 'UUID') { _%>
+<%_ if (primaryKey.type === 'UUID') { _%>
 
 import java.util.UUID
 <%_ } _%>
@@ -44,9 +45,9 @@ import org.springframework.data.elasticsearch.core.query.Query
 <%_ } _%>
 
 /**
- * Spring Data Elasticsearch repository for the [<%= asEntity(entityClass) %>] entity.
+ * Spring Data Elasticsearch repository for the [<%= persistClass %>] entity.
  */
-interface <%=entityClass%>SearchRepository :  <% if (reactive) {%>Reactive<% } %>ElasticsearchRepository<<%= asEntity(entityClass) %>, <%=primaryKeyType%>><% if (reactive) {%>, <%= entityClass %>SearchRepositoryInternal<% } %>{}
+interface <%=entityClass%>SearchRepository :  <% if (reactive) {%>Reactive<% } %>ElasticsearchRepository<<%= persistClass %>, <%=primaryKey.type%>><% if (reactive) {%>, <%= entityClass %>SearchRepositoryInternal<% } %>{}
 <%_ if (reactive) { _%>
 interface <%= entityClass %>SearchRepositoryInternal {
      fun search(query: String<% if (pagination !== 'no') { %>, pageable: Pageable<% } %>): Flux<<%= entityClass %>> 
@@ -60,7 +61,9 @@ class <%= entityClass %>SearchRepositoryInternalImpl(private val reactiveElastic
         <%_ if (pagination !== 'no') { _%>
         nativeSearchQuery.setPageable<Query>(pageable)
         <%_ } _%>
-        return reactiveElasticsearchTemplate.find(nativeSearchQuery, <%= entityClass %>::class.java)
+        return reactiveElasticsearchTemplate
+          .search(nativeSearchQuery, <%= entityClass %>::class.java)
+          .map(SearchHit<<%= entityClass %>>::getContent)
     }
 }
 <%_ } _%>

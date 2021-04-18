@@ -17,10 +17,11 @@
  limitations under the License.
 -%>
 package <%= packageName %>.service<% if (service === 'serviceImpl') { %>.impl<% } %>
+
 <%_
     const serviceClassName = service === 'serviceImpl' ? entityClass + 'ServiceImpl' : entityClass + 'Service';
-    const instanceType = (dto === 'mapstruct') ? asDto(entityClass) : asEntity(entityClass);
-    const instanceName = (dto === 'mapstruct') ? asDto(entityInstance) : asEntity(entityInstance);
+    const instanceType = restClass;
+    const instanceName = restInstance;
     const optionalOrMono = (reactive === true) ? 'Mono' : 'Optional';
     const listOrFlux = (reactive === true) ? 'Flux' : 'MutableList';
     const pageOrFlux = (reactive === true) ? 'Flux' : 'Page';
@@ -30,20 +31,11 @@ package <%= packageName %>.service<% if (service === 'serviceImpl') { %>.impl<% 
     const entityToDtoReference = mapper + '::'+ 'toDto';
     const repository = entityInstance  + 'Repository';
     const searchRepository = entityInstance  + 'SearchRepository';
-    let isUsingMapsId = false;
-    let mapsIdAssoc;
-    for (idx in relationships) {
-        isUsingMapsId = relationships[idx].useJPADerivedIdentifier === true;
-        if (isUsingMapsId) {
-            mapsIdAssoc = relationships[idx];
-            break;
-        }
-    }
 _%>
 <%_ if (service === 'serviceImpl') { %>
 import <%= packageName %>.service.<%= entityClass %>Service
 <%_ } _%>
-import <%= packageName %>.domain.<%= asEntity(entityClass) %>
+import <%= packageName %>.domain.<%= persistClass %>
 import <%= packageName %>.repository.<%= entityClass %>Repository
 <%_ if (isUsingMapsId === true) { _%>
 import <%= packageName %>.repository.<%= mapsIdAssoc.otherEntityNameCapitalized %>Repository
@@ -52,12 +44,12 @@ import <%= packageName %>.repository.<%= mapsIdAssoc.otherEntityNameCapitalized 
 import <%= packageName %>.repository.search.<%= entityClass %>SearchRepository
 <%_ } _%>
 <%_ if (dto === 'mapstruct') { _%>
-import <%= packageName %>.service.dto.<%= asDto(entityClass) %>
+import <%= packageName %>.service.dto.<%= dtoClass %>
 import <%= packageName %>.service.mapper.<%= entityClass %>Mapper
 <%_ } _%>
 import org.slf4j.LoggerFactory
 
-<%_ if (pagination !== 'no' || fieldsContainOwnerManyToMany === true) { _%>
+<%_ if (pagination !== 'no' || relationshipsContainEagerLoad) { _%>
     <%_ if (!reactive) { _%>
 import org.springframework.data.domain.Page
     <%_ } _%>
@@ -67,14 +59,14 @@ import org.springframework.stereotype.Service
 <%_ if (databaseType === 'sql') { _%>
 import org.springframework.transaction.annotation.Transactional
 <%_ } _%>
-<%_ if (reactiveRepositories) { _%>
+<%_ if (reactive) { _%>
 import reactor.core.publisher.Flux
 import reactor.core.publisher.Mono
 <%_ } _%>
 <%_ if (!reactive) { _%>
 import java.util.Optional
 <%_ } _%>
-<%_ if (databaseType === 'cassandra') { _%>
+<%_ if (primaryKey.type === 'UUID') { _%>
 import java.util.UUID
 <%_ } _%>
 <%_ if (fieldsContainNoOwnerOneToOne === true || (pagination === 'no' && ((searchEngine !== false) || dto === 'mapstruct'))) { _%>
@@ -89,12 +81,12 @@ import org.elasticsearch.index.query.QueryBuilders.queryStringQuery
 <%_ } _%>
 
 /**
- * Service Implementation for managing [<%= asEntity(entityClass) %>].
+ * Service Implementation for managing [<%= persistClass %>].
  */
 @Service<% if (databaseType === 'sql') { %>
 @Transactional<% } %>
 class <%= serviceClassName %>(
-    <%- include('../../common/inject_template', {asEntity, asDto, viaService: false, constructorName: serviceClassName, queryService: false, isUsingMapsId: isUsingMapsId, mapsIdAssoc: mapsIdAssoc, isController: false}); -%>
+    <%- include('../../common/inject_template', {asEntity, asDto, viaService: false, constructorName: serviceClassName, queryService: false, isUsingMapsId: isUsingMapsId, mapsIdAssoc: mapsIdAssoc, isController: false, noReturn: false}); -%>
 )<% if (service === 'serviceImpl') { %> : <%= entityClass %>Service<% } %> {
 
     private val log = LoggerFactory.getLogger(javaClass)
@@ -109,11 +101,20 @@ class <%= serviceClassName %>(
      <%_ } _%>
     <% if (service === 'serviceImpl') { _%>override <% } %>fun save(<%= instanceName %>: <%= instanceType %>): <% if (reactive) { %>Mono<<% } %><%= instanceType %><% if (reactive) { %>><% } %> {
         log.debug("Request to save <%= entityClass %> : $<%= instanceName %>")
-        <%_ if (!reactive) { _%>
-<%- include('../../common/save_template', {asEntity, asDto, viaService: false, returnDirectly: true, isUsingMapsId: isUsingMapsId, mapsIdAssoc: mapsIdAssoc, isController: false}); -%>
-        <%_ } else { _%>
-<%- include('../../common/save_reactive_template', {asEntity, asDto, viaService: false, returnDirectly: true}); -%>
-        <%_ } _%>
+<%- include('/partials/save_template', {asEntity, asDto, viaService: false, returnDirectly: true, isUsingMapsId: isUsingMapsId, mapsIdAssoc: mapsIdAssoc, isController: false, noReturn: false}); -%>
+    }
+
+    <%_ if (service !== 'serviceImpl') { _%>
+    /**
+        * Partially updates a <%= entityInstance %>.
+        *
+        * @param <%= instanceName %> the entity to update partially.
+        * @return the persisted entity.
+        */
+    <%_ } _%>
+    <% if (service === 'serviceImpl') { %>override <% } %>fun partialUpdate(<%= instanceName %>: <%= instanceType %>): <% if (!reactive) { %>Optional<<% } %><% if (reactive) { %>Mono<<% } %><%= instanceType %>> {
+        log.debug("Request to partially update <%= entityClass %> : {}", <%= instanceName %>)
+<%- include('../../common/patch_template', {asEntity, asDto, isService: true, viaService: false}); -%>
     }
 
     <%_ if (service !== 'serviceImpl') { _%>
@@ -130,15 +131,15 @@ class <%= serviceClassName %>(
     <% if (service === 'serviceImpl') { %>override <% } %>fun findAll(<% if (pagination !== 'no') { %>pageable: Pageable<% } %>): <% if (pagination !== 'no') { %><%= pageOrFlux %><<%= instanceType %><% } else { %><%= listOrFlux %><<%= instanceType %><% } %>> {
         log.debug("Request to get all <%= entityClassPlural %>")
         <%_ if (pagination === 'no') { _%>
-        return <%= entityInstance %>Repository.<% if (fieldsContainOwnerManyToMany === true) { %>findAllWithEagerRelationships<% } else { %>findAll<% } %>()<% if (dto === 'mapstruct') { %><% if (reactive !== true) { %>
-            .mapTo(mutableListOf(), <%= entityToDtoReference %>)<% } else { %>.map(<%= entityToDtoReference %> )<% } %><% } %>            
+        return <%= entityInstance %>Repository.<% if (relationshipsContainEagerLoad) { %>findAllWithEagerRelationships<% } else { %>findAll<% } %>()<% if (dto === 'mapstruct') { %><% if (reactive !== true) { %>
+            .mapTo(mutableListOf(), <%= entityToDtoReference %>)<% } else { %>.map(<%= entityToDtoReference %> )<% } %><% } %>
         <%_ } else { _%>
         return <%= entityInstance %>Repository.findAll<% if (reactive) { %>By<% } %>(pageable)<% if (dto === 'mapstruct') { %>
             .map(<%= entityToDtoReference %>)<% } %>
         <%_ } _%>
     }
 
-    <%_ if (fieldsContainOwnerManyToMany === true) { _%>
+    <%_ if (relationshipsContainEagerLoad) { _%>
 
         <%_ if (service !== 'serviceImpl') { _%>
     /**
@@ -156,7 +157,7 @@ class <%= serviceClassName %>(
     <%_ if (service !== 'serviceImpl') { _%>
     /**
     * Returns the number of <%= entityInstancePlural %> available.
-    *
+    * @return the number of entities in the database.
     */
     <%_ } _%>
     <% if (service === 'serviceImpl') { %>override <% } %>fun countAll() = <%= entityInstance %>Repository.count()
@@ -183,7 +184,7 @@ class <%= serviceClassName %>(
     <%_ if (databaseType === 'sql') { _%>
     @Transactional(readOnly = true)
     <%_ } _%>
-    <% if (service === 'serviceImpl') { %>override <% } %>fun findOne(id: <%= primaryKeyType %>): <%= optionalOrMono %><<%= instanceType %>> {
+    <% if (service === 'serviceImpl') { %>override <% } %>fun findOne(id: <%= primaryKey.type %>): <%= optionalOrMono %><<%= instanceType %>> {
         log.debug("Request to get <%= entityClass %> : $id")<%- include('../../common/get_template', {asEntity, asDto, viaService: false, returnDirectly:true}); -%>
     }
 
@@ -192,9 +193,12 @@ class <%= serviceClassName %>(
      * Delete the <%= entityInstance %> by id.
      *
      * @param id the id of the entity.
+        <%_ if (reactive) { _%>
+     * @return a Mono to signal the deletion
+        <%_ } _%>
      */
      <%_ } _%>
-    <% if (service === 'serviceImpl') { %>override <% } %>fun delete(id: <%= primaryKeyType %>): <%- reactive ? 'Mono<Void>' : 'Unit' %> {
+    <% if (service === 'serviceImpl') { %>override <% } %>fun delete(id: <%= primaryKey.type %>): <%- reactive ? 'Mono<Void>' : 'Unit' %> {
         log.debug("Request to delete <%= entityClass %> : $id")
 <%- include('../../common/delete_template', {viaService: false, fromResource: false}); -%>
     }

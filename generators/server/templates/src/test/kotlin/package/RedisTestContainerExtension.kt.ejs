@@ -28,13 +28,16 @@ import java.util.concurrent.atomic.AtomicBoolean
 class RedisTestContainerExtension: BeforeAllCallback {
     private val started = AtomicBoolean(false)
 
+    companion object {
+        @JvmStatic
+        val redis = KGenericContainer("<%= DOCKER_REDIS %>").withExposedPorts(6379)
+    }
+
     @Throws(Exception::class)
     override fun beforeAll(extensionContext: ExtensionContext) {
         if(!started.get()) {
-            val redis = KGenericContainer("<%= DOCKER_REDIS %>")
-                    .withExposedPorts(6379)
             redis.start()
-            System.setProperty("redis.test.server", "redis://" + redis.getContainerIpAddress() + ":" + redis.getMappedPort(6379))
+            System.setProperty("jhipster.cache.redis.server", "redis://" + redis.containerIpAddress + ":" + redis.getMappedPort(6379))
             started.set(true)
         }
     }

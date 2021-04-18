@@ -21,11 +21,8 @@ package <%= packageName %>.service.mapper
 import org.junit.jupiter.api.BeforeEach
 import org.junit.jupiter.api.Test
 import org.assertj.core.api.Assertions.assertThat
-<%_
-let id = getPrimaryKeyValue(primaryKeyType, databaseType, '1');
-_%>
-<%_ if (id.includes('UUID')) { _%>
-import java.util.UUID;
+<%_ if (primaryKey && primaryKey.fields.some(field => field.fieldType === 'UUID')) { _%>
+import java.util.UUID
 <%_ } _%>
 
 class <%= entityClass %>MapperTest {
@@ -36,13 +33,4 @@ class <%= entityClass %>MapperTest {
     fun setUp() {
         <%= entityInstance %>Mapper = <%= entityClass %>MapperImpl()
     }
-
-    <%_if (!embedded) { _%>
-    @Test
-    fun testEntityFromId() {
-        val id = <%- id %>
-        assertThat(<%= entityInstance %>Mapper.fromId(id)?.id).isEqualTo(id)
-        assertThat(<%= entityInstance %>Mapper.fromId(null)).isNull()
-    }
-    <%_} _%>
 }

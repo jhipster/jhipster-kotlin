@@ -18,8 +18,8 @@
 -%>
 package <%= packageName %>.web.rest.errors
 
-import io.github.jhipster.config.JHipsterConstants
-import io.github.jhipster.web.util.HeaderUtil
+import tech.jhipster.config.JHipsterConstants
+import tech.jhipster.web.util.HeaderUtil
 
 import org.apache.commons.lang3.StringUtils
 import org.springframework.beans.factory.annotation.Value
@@ -112,12 +112,17 @@ _%>
             return Mono.just(entity)
             <%_ } _%>
         }
+        <%_ if (!reactive) { _%>
+            val nativeRequest = request?.getNativeRequest(HttpServletRequest::class.java);
+            val requestUri = if (nativeRequest != null) nativeRequest.requestURI else StringUtils.EMPTY
+        <%_ } _%>
+
         val builder = Problem.builder()
             .withType(if (Problem.DEFAULT_TYPE == problem.type) DEFAULT_TYPE else problem.type)
             .withStatus(problem.status)
             .withTitle(problem.title)
             <%_ if (!reactive) { _%>
-            .with(PATH_KEY, request!!.getNativeRequest(HttpServletRequest::class.java)!!.requestURI)
+            .with(PATH_KEY, requestUri)
             <%_ } else { _%>
             .with(PATH_KEY, request!!.request.path.value())
             <%_ } _%>
@@ -149,7 +154,13 @@ _%>
     : <%- returnType %>  {
     <%_ } _%>
         val result = ex.bindingResult
-        val fieldErrors = result.fieldErrors.map { FieldErrorVM(it.objectName.replaceFirst(Regex("<%= dtoSuffix %>$"), ""), it.field, it.code) }
+        val fieldErrors = result.fieldErrors.map { 
+            FieldErrorVM(
+                it.objectName.replaceFirst(Regex("<%= dtoSuffix %>$"), ""), 
+                it.field, 
+                if (StringUtils.isNotBlank(it.defaultMessage)) it.defaultMessage else it.code
+            )
+        }
 
         val problem = Problem.builder()
             .withType(CONSTRAINT_VIOLATION_TYPE)

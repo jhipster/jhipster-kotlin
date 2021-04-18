@@ -7,23 +7,18 @@ const expectedFiles = require('./utils/expected-files');
 
 describe('JHipster server generator', () => {
     describe('generate server with ehcache', () => {
-        before(done => {
-            helpers
-                .run('generator-jhipster/generators/server')
+        before(async () => {
+            await helpers
+                .create(path.join(__dirname, '../generators/app'))
                 .withOptions({
+                    withGeneratedFlag: true,
+                    blueprints: 'kotlin',
                     'from-cli': true,
                     skipInstall: true,
-                    blueprint: 'kotlin',
                     skipChecks: true,
                     'skip-ktlint-format': true,
+                    skipClient: true,
                 })
-                .withGenerators([
-                    [
-                        require('../generators/server'), // eslint-disable-line global-require
-                        'jhipster-kotlin:server',
-                        path.join(__dirname, '../generators/server/index.js'),
-                    ],
-                ])
                 .withPrompts({
                     baseName: 'jhipster',
                     packageName: 'com.mycompany.myapp',
@@ -34,7 +29,7 @@ describe('JHipster server generator', () => {
                     enableHibernateCache: true,
                     databaseType: 'sql',
                     devDatabaseType: 'h2Memory',
-                    prodDatabaseType: 'mysql',
+                    prodDatabaseType: 'postgresql',
                     enableTranslation: true,
                     nativeLanguage: 'en',
                     languages: ['fr'],
@@ -42,16 +37,16 @@ describe('JHipster server generator', () => {
                     rememberMeKey: '5c37379956bd1242f5636c8cb322c2966ad81277',
                     serverSideOptions: [],
                 })
-                .on('end', done);
+                .run();
         });
 
         it('creates expected files for default configuration for server generator', () => {
-            assert.noFile(expectedFiles.common);
+            assert.file(expectedFiles.common);
             assert.file(expectedFiles.server);
             assert.file(expectedFiles.jwtServer);
             assert.file(expectedFiles.userManagementServer);
             assert.file(expectedFiles.maven);
-            assert.file(expectedFiles.mysql);
+            assert.file(expectedFiles.postgresql);
             assert.file(expectedFiles.hibernateTimeZoneConfig);
             assert.noFile(
                 getFilesForOptions(
@@ -70,23 +65,18 @@ describe('JHipster server generator', () => {
     });
 
     describe('generate server with caffeine', () => {
-        before(done => {
-            helpers
-                .run('generator-jhipster/generators/server')
+        before(async () => {
+            await helpers
+                .create(path.join(__dirname, '../generators/app'))
                 .withOptions({
+                    withGeneratedFlag: true,
+                    blueprints: 'kotlin',
                     'from-cli': true,
                     skipInstall: true,
-                    blueprint: 'kotlin',
                     skipChecks: true,
                     'skip-ktlint-format': true,
+                    skipClient: true,
                 })
-                .withGenerators([
-                    [
-                        require('../generators/server/index.js'), // eslint-disable-line global-require
-                        'jhipster-kotlin:server',
-                        path.join(__dirname, '../generators/server/index.js'),
-                    ],
-                ])
                 .withPrompts({
                     baseName: 'jhipster',
                     packageName: 'com.mycompany.myapp',
@@ -97,7 +87,7 @@ describe('JHipster server generator', () => {
                     enableHibernateCache: true,
                     databaseType: 'sql',
                     devDatabaseType: 'h2Memory',
-                    prodDatabaseType: 'mysql',
+                    prodDatabaseType: 'postgresql',
                     enableTranslation: true,
                     nativeLanguage: 'en',
                     languages: ['fr'],
@@ -105,16 +95,16 @@ describe('JHipster server generator', () => {
                     rememberMeKey: '5c37379956bd1242f5636c8cb322c2966ad81277',
                     serverSideOptions: [],
                 })
-                .on('end', done);
+                .run();
         });
 
         it('creates expected files for caffeine cache configuration for server generator', () => {
-            assert.noFile(expectedFiles.common);
+            assert.file(expectedFiles.common);
             assert.file(expectedFiles.server);
             assert.file(expectedFiles.jwtServer);
             assert.file(expectedFiles.userManagementServer);
             assert.file(expectedFiles.maven);
-            assert.file(expectedFiles.mysql);
+            assert.file(expectedFiles.postgresql);
             assert.file(expectedFiles.hibernateTimeZoneConfig);
             assert.noFile(
                 getFilesForOptions(

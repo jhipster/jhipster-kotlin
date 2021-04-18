@@ -19,12 +19,12 @@
 const path = require('path');
 const _ = require('lodash');
 const chalk = require('chalk');
-const faker = require('faker');
 const fs = require('fs');
 const utils = require('generator-jhipster/generators/utils');
 const constants = require('generator-jhipster/generators/generator-constants');
 const baseServerFiles = require('generator-jhipster/generators/entity-server/files').serverFiles;
-const writeFilesToDisk = require('../server/files').writeFilesToDisk;
+// const writeFilesToDisk = require('generator-jhipster/generators/generator-base').writeFilesToDisk;
+// const writeFilesToDisk = require('../server/files').writeFilesToDisk;
 const NeedleServerChacheKt = require('./needle-server-cache-kt');
 
 /* Constants use throughout */
@@ -32,9 +32,6 @@ const INTERPOLATE_REGEX = constants.INTERPOLATE_REGEX;
 const TEST_DIR = constants.TEST_DIR;
 const SERVER_MAIN_SRC_KOTLIN_DIR = `${constants.MAIN_DIR}kotlin/`;
 const SERVER_TEST_SRC_KOTLIN_DIR = `${constants.TEST_DIR}kotlin/`;
-
-/* Use customized randexp */
-const randexp = utils.RandexpWithFaker;
 
 /**
  * The default is to use a file path string. It implies use of the template method.
@@ -69,8 +66,8 @@ const serverFiles = {
             path: SERVER_MAIN_SRC_KOTLIN_DIR,
             templates: [
                 {
-                    file: 'package/service/dto/EntityCriteria.kt',
-                    renameTo: generator => `${generator.packageFolder}/service/dto/${generator.entityClass}Criteria.kt`,
+                    file: 'package/service/criteria/EntityCriteria.kt',
+                    renameTo: generator => `${generator.packageFolder}/service/criteria/${generator.entityClass}Criteria.kt`,
                     useBluePrint: true,
                 },
                 {
@@ -81,7 +78,7 @@ const serverFiles = {
             ],
         },
         {
-            condition: generator => generator.searchEngine === 'elasticsearch',
+            condition: generator => generator.searchEngine === 'elasticsearch' && !generator.embedded,
             path: SERVER_MAIN_SRC_KOTLIN_DIR,
             templates: [
                 {
@@ -92,9 +89,7 @@ const serverFiles = {
             ],
         },
         {
-            condition: generator =>
-                (!generator.reactive || !['mongodb', 'cassandra', 'couchbase', 'neo4j'].includes(generator.databaseType)) &&
-                !generator.embedded,
+            condition: generator => !generator.reactive && !generator.embedded,
             path: SERVER_MAIN_SRC_KOTLIN_DIR,
             templates: [
                 {
@@ -105,15 +100,28 @@ const serverFiles = {
             ],
         },
         {
-            condition: generator =>
-                generator.reactive &&
-                ['mongodb', 'cassandra', 'couchbase', 'neo4j'].includes(generator.databaseType) &&
-                !generator.embedded,
+            condition: generator => generator.reactive && !generator.embedded,
             path: SERVER_MAIN_SRC_KOTLIN_DIR,
             templates: [
                 {
-                    file: 'package/repository/EntityReactiveRepository.kt',
+                    file: 'package/repository/EntityRepository_reactive.kt',
                     renameTo: generator => `${generator.packageFolder}/repository/${generator.entityClass}ReactiveRepository.kt`,
+                    useBluePrint: true,
+                },
+            ],
+        },
+        {
+            condition: generator => generator.reactive && generator.databaseType === 'sql' && !generator.embedded,
+            path: SERVER_MAIN_SRC_KOTLIN_DIR,
+            templates: [
+                {
+                    file: 'package/repository/EntityRepositoryInternalImpl_reactive.kt',
+                    renameTo: generator => `${generator.packageFolder}/repository/${generator.entityClass}RepositoryInternalImpl.kt`,
+                    useBluePrint: true,
+                },
+                {
+                    file: 'package/repository/rowmapper/EntityRowMapper.kt',
+                    renameTo: generator => `${generator.packageFolder}/repository/rowmapper/${generator.entityClass}RowMapper.kt`,
                     useBluePrint: true,
                 },
             ],
@@ -176,7 +184,6 @@ const serverFiles = {
                     file: 'package/web/rest/EntityResourceIT.kt',
                     options: {
                         context: {
-                            randexp,
                             _,
                             chalkRed: chalk.red,
                             fs,
@@ -189,7 +196,7 @@ const serverFiles = {
             ],
         },
         {
-            condition: generator => generator.searchEngine === 'elasticsearch',
+            condition: generator => generator.searchEngine === 'elasticsearch' && !generator.embedded,
             path: SERVER_TEST_SRC_KOTLIN_DIR,
             templates: [
                 {
@@ -216,7 +223,7 @@ const serverFiles = {
             templates: [
                 {
                     file: 'package/domain/EntityTest.kt',
-                    renameTo: generator => `${generator.packageFolder}/domain/${generator.entityClass}Test.kt`,
+                    renameTo: generator => `${generator.packageFolder}/domain/${generator.asEntity(generator.entityClass)}Test.kt`,
                     useBluePrint: true,
                 },
             ],
@@ -250,53 +257,21 @@ const serverFiles = {
 module.exports = {
     writeFiles,
     serverFiles,
+    customizeFiles,
 };
 
 function writeFiles() {
     return {
-        saveRemoteEntityPath() {
-            if (_.isUndefined(this.microservicePath)) {
-                return;
-            }
-            this.copy(
-                `${this.microservicePath}/${this.jhipsterConfigDirectory}/${this.entityNameCapitalized}.json`,
-                this.destinationPath(`${this.jhipsterConfigDirectory}/${this.entityNameCapitalized}.json`)
-            );
-        },
-
-        setupReproducibility() {
-            if (this.skipServer) return;
-
-            // In order to have consistent results with Faker, restart seed with current entity name hash.
-            faker.seed(utils.stringHashCode(this.name.toLowerCase()));
-        },
-
         writeServerFiles() {
             if (this.skipServer) return;
 
             // write server side files
-            writeFilesToDisk(serverFiles, this, false, this.fetchFromInstalledJHipster('entity-server/templates'));
-
-            if (this.databaseType === 'sql') {
-                if (!this.skipDbChangelog) {
-                    if (this.fieldsContainOwnerManyToMany || this.fieldsContainOwnerOneToOne || this.fieldsContainManyToOne) {
-                        this.addConstraintsChangelogToLiquibase(`${this.changelogDate}_added_entity_constraints_${this.entityClass}`);
-                    }
-                    this.addChangelogToLiquibase(`${this.changelogDate}_added_entity_${this.entityClass}`);
-                }
-
-                const serverCacheKt = new NeedleServerChacheKt(this);
-
-                if (['ehcache', 'caffeine', 'infinispan', 'redis'].includes(this.cacheProvider) && this.enableHibernateCache) {
-                    serverCacheKt.addEntityToCache(
-                        this.asEntity(this.entityClass),
-                        this.relationships,
-                        this.packageName,
-                        this.packageFolder,
-                        this.cacheProvider
-                    );
-                }
+            // writeFilesToDisk(serverFiles, this, false, this.fetchFromInstalledJHipster('entity-server/templates'));
+            if (this.reactive) {
+                return this.writeFilesToDisk(serverFiles, ['reactive', '']);
             }
+
+            return this.writeFilesToDisk(serverFiles);
         },
 
         writeEnumFiles() {
@@ -310,7 +285,7 @@ function writeFiles() {
                 const fieldType = field.fieldType;
                 const enumInfo = {
                     ...utils.getEnumInfo(field, this.clientRootFolder),
-                    angularAppName: this.angularAppName,
+                    frontendAppName: this.frontendAppName,
                     packageName: this.packageName,
                 };
                 // eslint-disable-next-line no-console
@@ -329,4 +304,20 @@ function writeFiles() {
             });
         },
     };
+}
+
+function customizeFiles() {
+    if (this.databaseType === 'sql') {
+        const serverCacheKt = new NeedleServerChacheKt(this);
+
+        if (['ehcache', 'caffeine', 'infinispan', 'redis'].includes(this.cacheProvider) && this.enableHibernateCache) {
+            serverCacheKt.addEntityToCache(
+                this.asEntity(this.entityClass),
+                this.relationships,
+                this.packageName,
+                this.packageFolder,
+                this.cacheProvider
+            );
+        }
+    }
 }
