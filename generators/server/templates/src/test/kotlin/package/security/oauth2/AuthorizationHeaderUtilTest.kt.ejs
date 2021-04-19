@@ -71,15 +71,15 @@ class AuthorizationHeaderUtilTest {
         MockitoAnnotations.initMocks(this)
         SecurityContextHolder.setContext(securityContext)
 
-        doReturn(restTemplateBuilder).when(restTemplateBuilder).additionalMessageConverters(any(HttpMessageConverter::class))
-        doReturn(restTemplateBuilder).when(restTemplateBuilder).errorHandler(any(ResponseErrorHandler::class))
-        doReturn(restTemplateBuilder).when(restTemplateBuilder).basicAuthentication(anyString(), anyString())
+        doReturn(restTemplateBuilder).`when`(restTemplateBuilder).additionalMessageConverters(any(HttpMessageConverter::class.java))
+        doReturn(restTemplateBuilder).`when`(restTemplateBuilder).errorHandler(any(ResponseErrorHandler::class.java))
+        doReturn(restTemplateBuilder).`when`(restTemplateBuilder).basicAuthentication(anyString(), anyString())
     }
 
     @Test
     fun getAuthorizationHeader_Authentication() {
         val authenticationToken = UsernamePasswordAuthenticationToken("principal", "credentials")
-        doReturn(authenticationToken).when(securityContext).getAuthentication()
+        doReturn(authenticationToken).`when`(securityContext).authentication
 
         val header = authorizationHeaderUtil.getAuthorizationHeader()
 
@@ -89,12 +89,13 @@ class AuthorizationHeaderUtilTest {
     @Test
     fun getAuthorizationHeader_JwtAuthentication() {
         val jwtToken = JwtAuthenticationToken(Jwt("tokenVal", Instant.now(),
-            Instant.now().plus(Duration.ofMinutes(3)),hashMapOf("alg" to "HS256"), hashMapOf("sub" to SUB_VALUE)))
-        doReturn(jwtToken).when(securityContext).getAuthentication()
+            Instant.now().plus(Duration.ofMinutes(3)), hashMapOf("alg" to "HS256") as Map<String, Any>?, hashMapOf("sub" to SUB_VALUE) as Map<String, Any>?
+        ))
+        doReturn(jwtToken).`when`(securityContext).authentication
 
         val header = authorizationHeaderUtil.getAuthorizationHeader()
 
-        Assertions.assertThat(header).isNotNull().isNotEmpty().get().isEqualTo("Bearer tokenVal")
+        Assertions.assertThat(header).isNotNull.isNotEmpty.isEqualTo("Bearer tokenVal")
     }
 
     @Test
@@ -102,13 +103,12 @@ class AuthorizationHeaderUtilTest {
         val oauth2Token = getTestOAuth2AuthenticationToken("INVALID")
         val authorizedClient = getTestOAuth2AuthorizedClient()
 
-        doReturn(oauth2Token).when(securityContext).getAuthentication()
-        doReturn(authorizedClient).when(clientService).loadAuthorizedClient(eq(VALID_REGISTRATION_ID), eq(SUB_VALUE))
+        doReturn(oauth2Token).`when`(securityContext).authentication
+        doReturn(authorizedClient).`when`(clientService).loadAuthorizedClient<OAuth2AuthorizedClient>(eq(VALID_REGISTRATION_ID), eq(SUB_VALUE))
 
-        Assertions.assertThatThrownBy(() -> {
-            val header = authorizationHeaderUtil.getAuthorizationHeader()
-        }).isInstanceOf(OAuth2AuthorizationException::class)
-            .hasMessageContaining("[access_denied] The token is expired")
+        Assertions.assertThatThrownBy {
+            authorizationHeaderUtil.getAuthorizationHeader()
+        }.isInstanceOf(OAuth2AuthorizationException::class.java).hasMessageContaining("[access_denied] The token is expired")
     }
 
     @Test
@@ -116,11 +116,11 @@ class AuthorizationHeaderUtilTest {
         val oauth2Token = getTestOAuth2AuthenticationToken(VALID_REGISTRATION_ID)
         val authorizedClient = getTestOAuth2AuthorizedClient()
 
-        doReturn(oauth2Token).when(securityContext).getAuthentication()
-        doReturn(authorizedClient).when(clientService).loadAuthorizedClient(eq(VALID_REGISTRATION_ID), eq(SUB_VALUE))
+        doReturn(oauth2Token).`when`(securityContext).authentication
+        doReturn(authorizedClient).`when`(clientService).loadAuthorizedClient<OAuth2AuthorizedClient>(eq(VALID_REGISTRATION_ID), eq(SUB_VALUE))
 
         val header = authorizationHeaderUtil.getAuthorizationHeader()
-        Assertions.assertThat(header).isNotNull().isNotEmpty().get().isEqualTo("Bearer tokenVal")
+        Assertions.assertThat(header).isNotNull.isNotEmpty.isEqualTo("Bearer tokenVal")
     }
 
     @Test
@@ -128,16 +128,16 @@ class AuthorizationHeaderUtilTest {
         val oauth2Token = getTestOAuth2AuthenticationToken(VALID_REGISTRATION_ID)
         val authorizedClient = getTestOAuth2AuthorizedClient(true)
 
-        doReturn(oauth2Token).when(securityContext).getAuthentication()
-        doReturn(authorizedClient).when(clientService).loadAuthorizedClient(eq(VALID_REGISTRATION_ID), eq(SUB_VALUE))
+        doReturn(oauth2Token).`when`(securityContext).authentication
+        doReturn(authorizedClient).`when`(clientService).loadAuthorizedClient<OAuth2AuthorizedClient>(eq(VALID_REGISTRATION_ID), eq(SUB_VALUE))
 
-        val restTemplate = mock(RestTemplate::class)
+        val restTemplate = mock(RestTemplate::class.java)
         val refreshResponse = ResponseEntity.of(getTestOAuthIdpTokenResponseDTO(true))
-        doReturn(refreshResponse).when(restTemplate).exchange(any(RequestEntity::class), eq(OAuthIdpTokenResponseDTO::class))
-        doReturn(restTemplate).when(restTemplateBuilder).build()
+        doReturn(refreshResponse).`when`(restTemplate).exchange(any(RequestEntity::class.java), eq(OAuthIdpTokenResponseDTO::class.java))
+        doReturn(restTemplate).`when`(restTemplateBuilder).build()
 
         val header = authorizationHeaderUtil.getAuthorizationHeader()
-        Assertions.assertThat(header).isNotNull().isNotEmpty().get().isEqualTo("Bearer tokenVal")
+        Assertions.assertThat(header).isNotNull.isNotEmpty.isEqualTo("Bearer tokenVal")
     }
 
     @Test
@@ -145,16 +145,16 @@ class AuthorizationHeaderUtilTest {
         val oauth2Token = getTestOAuth2AuthenticationToken(VALID_REGISTRATION_ID)
         val authorizedClient = getTestOAuth2AuthorizedClient(true)
 
-        doReturn(oauth2Token).when(securityContext).getAuthentication()
-        doReturn(authorizedClient).when(clientService).loadAuthorizedClient(eq(VALID_REGISTRATION_ID), eq(SUB_VALUE))
+        doReturn(oauth2Token).`when`(securityContext).authentication
+        doReturn(authorizedClient).`when`(clientService).loadAuthorizedClient<OAuth2AuthorizedClient>(eq(VALID_REGISTRATION_ID), eq(SUB_VALUE))
 
-        val restTemplate = mock(RestTemplate::class)
+        val restTemplate = mock(RestTemplate::class.java)
         val refreshResponse = ResponseEntity.of(getTestOAuthIdpTokenResponseDTO(false))
-        doReturn(refreshResponse).when(restTemplate).exchange(any(RequestEntity::class), eq(OAuthIdpTokenResponseDTO::class))
-        doReturn(restTemplate).when(restTemplateBuilder).build()
+        doReturn(refreshResponse).`when`(restTemplate).exchange(any(RequestEntity::class.java), eq(OAuthIdpTokenResponseDTO::class.java))
+        doReturn(restTemplate).`when`(restTemplateBuilder).build()
 
         val header = authorizationHeaderUtil.getAuthorizationHeader()
-        Assertions.assertThat(header).isNotNull().isNotEmpty().get().isEqualTo("Bearer tokenVal")
+        Assertions.assertThat(header).isNotNull.isNotEmpty.isEqualTo("Bearer tokenVal")
     }
 
     @Test
@@ -162,22 +162,20 @@ class AuthorizationHeaderUtilTest {
         val oauth2Token = getTestOAuth2AuthenticationToken(VALID_REGISTRATION_ID)
         val authorizedClient = getTestOAuth2AuthorizedClient(true)
 
-        doReturn(oauth2Token).when(securityContext).getAuthentication()
-        doReturn(authorizedClient).when(clientService).loadAuthorizedClient(eq(VALID_REGISTRATION_ID), eq(SUB_VALUE))
+        doReturn(oauth2Token).`when`(securityContext).authentication
+        doReturn(authorizedClient).`when`(clientService).loadAuthorizedClient<OAuth2AuthorizedClient>(eq(VALID_REGISTRATION_ID), eq(SUB_VALUE))
 
-        val restTemplate = mock(RestTemplate::class)
-        doThrow(OAuth2AuthorizationException(OAuth2Error("E"), "error")).when(restTemplate).exchange(any(RequestEntity::class), eq(OAuthIdpTokenResponseDTO::class))
-        doReturn(restTemplate).when(restTemplateBuilder).build()
+        val restTemplate = mock(RestTemplate::class.java)
+        doThrow(OAuth2AuthorizationException(OAuth2Error("E"), "error")).`when`(restTemplate).exchange(any(RequestEntity::class.java), eq(OAuthIdpTokenResponseDTO::class.java))
+        doReturn(restTemplate).`when`(restTemplateBuilder).build()
 
-        Assertions.assertThatThrownBy(() -> {
-            val header = authorizationHeaderUtil.getAuthorizationHeader()
-        }).isInstanceOf(OAuth2AuthenticationException::class)
+        Assertions.assertThatThrownBy { authorizationHeaderUtil.getAuthorizationHeader() }.isInstanceOf(OAuth2AuthenticationException::class.java)
             .hasMessageContaining("error")
     }
 
     private fun getTestOAuth2AuthorizedClient() = getTestOAuth2AuthorizedClient(false)
 
-    private fun getTestOAuth2AuthorizedClient(accessTokenExpired: boolean):OAuth2AuthorizedClient {
+    private fun getTestOAuth2AuthorizedClient(accessTokenExpired: Boolean):OAuth2AuthorizedClient {
         val end = if (accessTokenExpired) Instant.now() else  Instant.now().plus(Duration.ofMinutes(3))
         return OAuth2AuthorizedClient(
             ClientRegistration.withRegistrationId(VALID_REGISTRATION_ID)
@@ -193,14 +191,14 @@ class AuthorizationHeaderUtilTest {
             OAuth2RefreshToken("refreshVal", Instant.now()))
     }
 
-    private fun getTestOAuth2AuthenticationToken(registrationId" String): OAuth2AuthenticationToken{
+    private fun getTestOAuth2AuthenticationToken(registrationId: String): OAuth2AuthenticationToken {
         return OAuth2AuthenticationToken(
             DefaultOidcUser(listOf(SimpleGrantedAuthority("USER")),
                 OidcIdToken.withTokenValue("tokenVal").claim("sub", SUB_VALUE).build()),
             listOf(SimpleGrantedAuthority("USER")), registrationId)
     }
 
-    private fun getTestOAuthIdpTokenResponseDTO(hasRefreshToken: boolean): Optional<OAuthIdpTokenResponseDTO> {
+    private fun getTestOAuthIdpTokenResponseDTO(hasRefreshToken: Boolean): Optional<OAuthIdpTokenResponseDTO> {
         val dto = OAuthIdpTokenResponseDTO()
         dto.accessToken = "tokenVal"
         dto.idToken = "tokenVal"

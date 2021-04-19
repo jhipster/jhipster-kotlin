@@ -42,7 +42,6 @@ import java.time.Instant
 import java.util.*
 import java.util.regex.Pattern
 
-
 @Component
 class AuthorizationHeaderUtil(
     private val clientService: OAuth2AuthorizedClientService,
@@ -50,7 +49,6 @@ class AuthorizationHeaderUtil(
 ) {
 
     private val log = LoggerFactory.getLogger(javaClass)
-
 
     fun getAuthorizationHeader(): String? {
         when (val authentication = SecurityContextHolder.getContext().authentication) {
@@ -63,7 +61,7 @@ class AuthorizationHeaderUtil(
 
                 val tokenType = accessToken.tokenType.value
 
-                if(isExpired(accessToken)) {
+                if (isExpired(accessToken)) {
                     log.info("AccessToken expired, refreshing automatically")
                     val accessTokenValue = refreshToken(client, authentication)
 
@@ -90,7 +88,7 @@ class AuthorizationHeaderUtil(
             return null
         }
 
-        val refreshToken = atr.refreshToken?: client.refreshToken
+        val refreshToken = atr.refreshToken ?: client.refreshToken
         val updatedClient = OAuth2AuthorizedClient(
             client.clientRegistration,
             client.principalName,
@@ -119,23 +117,22 @@ class AuthorizationHeaderUtil(
             log.error("Unable to refresh token $e")
             throw OAuth2AuthenticationException(e.error, e)
         }
-
     }
 
     private fun toOAuth2AccessTokenResponse(oAuthIdpResponse: OAuthIdpTokenResponseDTO): OAuth2AccessTokenResponse {
-      val additionalParameters = hashMapOf<String, Any>(
-         "id_token" to oAuthIdpResponse.idToken,
-         "not-before-policy" to oAuthIdpResponse.notBefore,
-         "refresh_expires_in" to oAuthIdpResponse.refreshExpiresIn,
-         "session_state" to oAuthIdpResponse.sessionState
-     )
+        val additionalParameters = hashMapOf<String, Any?>(
+            "id_token" to oAuthIdpResponse.idToken,
+            "not-before-policy" to oAuthIdpResponse.notBefore,
+            "refresh_expires_in" to oAuthIdpResponse.refreshExpiresIn,
+            "session_state" to oAuthIdpResponse.sessionState
+        )
 
-     return OAuth2AccessTokenResponse.withToken(oAuthIdpResponse.accessToken)
-         .expiresIn(oAuthIdpResponse.expiresIn)
-         .refreshToken(oAuthIdpResponse.refreshToken)
-         .additionalParameters(additionalParameters)
-         .scopes(Pattern.compile("\\s").split(oAuthIdpResponse.scope).toHashSet())
-         .build()
+        return OAuth2AccessTokenResponse.withToken(oAuthIdpResponse.accessToken)
+            .expiresIn(oAuthIdpResponse.expiresIn!!)
+            .refreshToken(oAuthIdpResponse.refreshToken)
+            .additionalParameters(additionalParameters)
+            .scopes(Pattern.compile("\\s").split(oAuthIdpResponse.scope).toHashSet())
+            .build()
     }
 
     private fun restTemplate(clientId: String?, clientSecret: String?): RestTemplate {
