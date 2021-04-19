@@ -500,7 +500,13 @@ class UserService<% if (databaseType !== 'no') { %>(
             }
         <%_ } else { // reactive _%>
                 <%_ if (['sql', 'mongodb'].includes(databaseType)) { _%>
+                    <%_ if (databaseType === 'sql') { _%>
+                userRepository
+                    .deleteUserAuthorities(user.id)
+                    .thenMany(Flux.fromIterable(userDTO.authorities!!))
+                    <%_ } else { _%>
                 Flux.fromIterable(userDTO.authorities!!)
+                    <%_ } _%>
                     .flatMap(authorityRepository::findById)
                     .map(managedAuthorities::add)
                     .then(Mono.just(user))
@@ -695,7 +701,7 @@ class UserService<% if (databaseType !== 'no') { %>(
     <%_ } _%>
     <%_ if (['sql', 'mongodb', 'neo4j', 'couchbase'].includes(databaseType)) { _%>
     fun getAllManagedUsers(pageable: Pageable): <% if (reactive) { %>Flux<% } else { %>Page<% } %><<%= asDto('AdminUser') %>> {
-        return userRepository.findAll<% if (reactive) { %>ByIdNotNull<% } %>(pageable).map { <%= asDto('AdminUser') %>(it) }
+        return userRepository.findAll<% if (reactive) { %><% if (databaseType === 'sql') { %>WithAuthorities<% } else { %>ByIdNotNull<% }} %>(pageable).map { <%= asDto('AdminUser') %>(it) }
     }
 
     <%_ if (databaseType === 'sql') { _%>

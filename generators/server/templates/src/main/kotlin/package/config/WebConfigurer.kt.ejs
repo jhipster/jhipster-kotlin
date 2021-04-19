@@ -114,13 +114,13 @@ import java.util.concurrent.TimeUnit
  */
 @Configuration
 class WebConfigurer(
-    <% if (!reactive || (['h2Disk', 'h2Memory'].includes(devDatabaseType) && reactive)) { %>
+    <% if (!reactive || (devDatabaseTypeH2Any && reactive)) { %>
     private val env: Environment,
     <%_ } _%>
     private val jHipsterProperties: JHipsterProperties
 ) : <% if (!reactive) { %>ServletContextInitializer<% if (!skipClient) { %>, WebServerFactoryCustomizer<WebServerFactory><% } %><% } %><% if (reactive) { %>WebFluxConfigurer<% } %> {
 
-    <%_ if (['h2Disk', 'h2Memory'].includes(devDatabaseType) && reactive) { _%>
+    <%_ if (devDatabaseTypeH2Any && reactive) { _%>
     init {
         if (env.acceptsProfiles(Profiles.of(JHipsterConstants.SPRING_PROFILE_DEVELOPMENT))) {
             H2ConfigurationHelper.initH2Console()
@@ -137,7 +137,7 @@ class WebConfigurer(
             log.info("Web application configuration, using profiles: {}", *env.activeProfiles as Array<*>)
         }
 
-        <%_ if (devDatabaseType === 'h2Disk' || devDatabaseType === 'h2Memory') { _%>
+        <%_ if (devDatabaseTypeH2Any) { _%>
         if (env.acceptsProfiles(Profiles.of(JHipsterConstants.SPRING_PROFILE_DEVELOPMENT))) {
             initH2Console(servletContext)
         }
