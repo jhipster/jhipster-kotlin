@@ -29,6 +29,9 @@ import <%= packageName %>.config.SYSTEM_ACCOUNT
 import <%= packageName %>.domain.Authority
 <%_ } _%>
 import <%= packageName %>.domain.<%= asEntity('User') %>
+<%_ if (databaseType === 'sql' && reactive) { _%>
+import <%= packageName %>.repository.AuthorityRepository
+<%_ } _%>
 import <%= packageName %>.repository.UserRepository
 <%_ if (searchEngine === 'elasticsearch') { _%>
 import <%= packageName %>.repository.search.UserSearchRepository
@@ -128,6 +131,13 @@ class UserResourceIT<% if (databaseType === 'cassandra') { %>: AbstractCassandra
 
     @Autowired
     private lateinit var userRepository: UserRepository
+
+    <%_ if (databaseType === 'sql' && reactive) { _%>
+
+    @Autowired
+    private lateinit var authorityRepository: AuthorityRepository
+    <%_ } _%>
+
     <%_ if (searchEngine === 'elasticsearch') { _%>
 
     /**
@@ -403,7 +413,12 @@ class UserResourceIT<% if (databaseType === 'cassandra') { %>: AbstractCassandra
     fun getAllUsers() {
         // Initialize the database
         userRepository.<% if (databaseType === 'sql' && reactive && authenticationType === 'oauth2') { %>create<% } else { %>save<% } %><% if (databaseType === 'sql' && !reactive) { %>AndFlush<% } %>(user)<% if (reactive) { %>.block()<% } %>
-
+        <%_ if (databaseType === 'sql' && reactive) { _%>
+        authorityRepository
+            .findById(USER)
+            .flatMap { userRepository.saveUserAuthority(user.id, authority.name) }
+            .block()
+        <%_ } _%>
         // Get all the users
         <%_ if (!reactive) { _%>
         restUserMockMvc.perform(
@@ -438,6 +453,9 @@ class UserResourceIT<% if (databaseType === 'cassandra') { %>: AbstractCassandra
         <%_ } _%>
         assertThat(foundUser.langKey).isEqualTo(DEFAULT_LANGKEY)
         <%_ } _%>
+        <%_ if (databaseType === 'sql') { _%>
+        assertThat(foundUser.authorities).containsExactly(USER)
+        <%_ } _%>
     }
 
     @Test
@@ -450,6 +468,13 @@ class UserResourceIT<% if (databaseType === 'cassandra') { %>: AbstractCassandra
     fun getUser() {
         // Initialize the database
         userRepository.<% if (databaseType === 'sql' && reactive && authenticationType === 'oauth2') { %>create<% } else { %>save<% } %><% if (databaseType === 'sql' && !reactive) { %>AndFlush<% } %>(user)<% if (reactive) { %>.block()<% } %>
+        <%_ if (databaseType === 'sql' && reactive) { _%>
+        authorityRepository
+            .findById(USER)
+            .flatMap { userRepository.saveUserAuthority(user.id, authority.name) }
+            .block()
+        <%_ } _%>
+
         <%_ if (searchEngine === 'elasticsearch') { _%>
         mockUserSearchRepository.save(user)
         <%_ } _%>
@@ -484,7 +509,9 @@ class UserResourceIT<% if (databaseType === 'cassandra') { %>: AbstractCassandra
             <%_ if (databaseType !== 'cassandra') { _%>
             .jsonPath("\$.imageUrl").isEqualTo(DEFAULT_IMAGEURL)
             <%_ } _%>
-            .jsonPath("\$.langKey").isEqualTo(DEFAULT_LANGKEY)
+            .jsonPath("\$.langKey").isEqualTo(DEFAULT_LANGKEY)<% if (databaseType !== 'sql') { %>;<% } else { %>
+            .jsonPath("\$.authorities").isEqualTo(USER);
+            <% } %>
         <%_ } _%>
         <%_ if (cacheProvider === 'memcached') { _%>
         if (cacheManager !is NoOpCacheManager) {
