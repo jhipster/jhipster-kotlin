@@ -23,6 +23,13 @@ const { displayLogo } = require('./util');
 module.exports = class extends BaseGenerator {
     constructor(args, opts) {
         super(args, { fromBlueprint: true, ...opts });
+
+        // This adds support for a `--skip-ktlint-format` flag
+        this.option('skip-ktlint-format', {
+            desc: 'Indicates to skip formatting using ktlint',
+            type: Boolean,
+            defaults: false,
+        });
     }
 
     get initializing() {
