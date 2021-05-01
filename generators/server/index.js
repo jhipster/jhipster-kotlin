@@ -32,12 +32,6 @@ module.exports = class extends ServerGenerator {
         if (!jhContext) {
             this.error("This is a JHipster blueprint and should be used only like 'jhipster --blueprints myblueprint')}");
         }
-        // This adds support for a `--skip-ktlint-format` flag
-        this.option('skip-ktlint-format', {
-            desc: 'Indicates to skip formatting using ktlint',
-            type: Boolean,
-            defaults: false,
-        });
     }
 
     get initializing() {
@@ -80,7 +74,7 @@ module.exports = class extends ServerGenerator {
         const phaseFromJHipster = super._install();
         const myCustomPhaseSteps = {
             lintFiles() {
-                if (this.options['skip-ktlint-format']) {
+                if (this.options.skipKtlintFormat) {
                     this.log('Skipping ktlint format...');
                     return;
                 }
