@@ -25,12 +25,12 @@ const constants = require('generator-jhipster/generators/generator-constants');
 const baseServerFiles = require('generator-jhipster/generators/entity-server/files').serverFiles;
 // const writeFilesToDisk = require('generator-jhipster/generators/generator-base').writeFilesToDisk;
 // const writeFilesToDisk = require('../server/files').writeFilesToDisk;
-const NeedleServerChacheKt = require('./needle-server-cache-kt');
 
-const { CASSANDRA, COUCHBASE, MONGODB, NEO4J, SQL } = require('generator-jhipster/jdl/jhipster/database-types');
+const { COUCHBASE, MONGODB, NEO4J, SQL } = require('generator-jhipster/jdl/jhipster/database-types');
 const { ELASTICSEARCH } = require('generator-jhipster/jdl/jhipster/search-engine-types');
 const { MapperTypes, ServiceTypes } = require('generator-jhipster/jdl/jhipster/entity-options');
 const { EHCACHE, CAFFEINE, INFINISPAN, REDIS } = require('generator-jhipster/jdl/jhipster/cache-types');
+const NeedleServerChacheKt = require('./needle-server-cache-kt');
 
 const { MAPSTRUCT } = MapperTypes;
 const { SERVICE_CLASS, SERVICE_IMPL } = ServiceTypes;
@@ -40,7 +40,6 @@ const INTERPOLATE_REGEX = constants.INTERPOLATE_REGEX;
 const TEST_DIR = constants.TEST_DIR;
 const SERVER_MAIN_SRC_KOTLIN_DIR = `${constants.MAIN_DIR}kotlin/`;
 const SERVER_TEST_SRC_KOTLIN_DIR = `${constants.TEST_DIR}kotlin/`;
-
 
 /**
  * The default is to use a file path string. It implies use of the template method.
@@ -249,8 +248,7 @@ const serverFiles = {
             ],
         },
         {
-            condition: generator =>
-                generator.dto === MAPSTRUCT && [SQL, MONGODB, COUCHBASE, NEO4J].includes(generator.databaseType),
+            condition: generator => generator.dto === MAPSTRUCT && [SQL, MONGODB, COUCHBASE, NEO4J].includes(generator.databaseType),
             path: SERVER_TEST_SRC_KOTLIN_DIR,
             templates: [
                 {
@@ -316,7 +314,7 @@ function writeFiles() {
 }
 
 function customizeFiles() {
-    if (this.databaseType === SQL ) {
+    if (this.databaseType === SQL) {
         const serverCacheKt = new NeedleServerChacheKt(this);
 
         if ([EHCACHE, CAFFEINE, INFINISPAN, REDIS].includes(this.cacheProvider) && this.enableHibernateCache) {

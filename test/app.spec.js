@@ -19,10 +19,10 @@ describe('JHipster generator', () => {
                 await helpers
                     .create(path.join(__dirname, '../generators/app'))
                     .withOptions({
-                        jhiPrefix: 'test',
                         withGeneratedFlag: true,
-                        'skip-ktlint-format': true,
                         blueprints: 'kotlin',
+                        jhiPrefix: 'test',
+                        'skip-ktlint-format': true,
                     })
                     .withPrompts({
                         baseName: 'jhipster',

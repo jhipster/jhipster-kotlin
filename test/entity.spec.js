@@ -929,11 +929,11 @@ describe('JHipster generator for entity', () => {
                 it('creates reproducible backend test', () => {
                     assert.fileContent(
                         `${SERVER_TEST_KOTLIN_SRC_DIR}com/mycompany/myapp/web/rest/FooResourceIT.kt`,
-                        /DEFAULT_NUMBER_PATTERN_REQUIRED = "4244"/
+                        /DEFAULT_NUMBER_PATTERN_REQUIRED = "1504"/
                     );
                     assert.fileContent(
                         `${SERVER_TEST_KOTLIN_SRC_DIR}com/mycompany/myapp/web/rest/FooResourceIT.kt`,
-                        /UPDATED_NUMBER_PATTERN_REQUIRED = "257856"/
+                        /UPDATED_NUMBER_PATTERN_REQUIRED = "2841"/
                     );
                 });
             });
