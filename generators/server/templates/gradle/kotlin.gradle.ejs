@@ -17,6 +17,7 @@
  limitations under the License.
 -%>
 import org.gradle.internal.os.OperatingSystem
+import org.gradle.util.VersionNumber
 
 apply plugin: "kotlin" // Required for Kotlin integration
 apply plugin: "kotlin-kapt" // Required for annotations processing
@@ -52,6 +53,18 @@ dependencies {
     testImplementation "org.jetbrains.kotlin:kotlin-test-junit:${kotlin_version}"
 
     testImplementation "com.nhaarman.mockitokotlin2:mockito-kotlin:<%= MOCKITO_KOTLIN_VERSION %>"
+
+    /*
+     * Latest Detekt has dependencies on jcenter(). This ensures that mavenCentral() can be used to avoid surprieses
+     * on 2020-02-01 when jcenter() shuts down. 
+     */
+    if (VersionNumber.parse(detekt_version) <= VersionNumber.parse("1.7.1")) {
+        constraints {
+            detekt("org.jetbrains.kotlinx:kotlinx-html-jvm:0.7.3") {
+                because "Detekt requested version (0.7.1) is only availible on jcenter()"
+            }
+        }
+    }
 }<%_ if (databaseType === 'sql') { %>
 
 allOpen {
