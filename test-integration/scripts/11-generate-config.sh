@@ -27,7 +27,7 @@ fi
 #-------------------------------------------------------------------------------
 moveEntity() {
     local entity="$1"
-    cp "$JHI_ENTITY_SAMPLES"/"$entity".json "$JHI_FOLDER_APP"/.jhipster/
+    cp "$JHI_SAMPLES"/.jhipster/"$entity".json "$JHI_FOLDER_APP"/.jhipster/
 }
 
 prepareFolder() {
