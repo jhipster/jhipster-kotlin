@@ -19,10 +19,13 @@
 
 // TODO: Upgrade tp 1.5+
 const KOTLIN_VERSION = '1.4.32';
-// TODO: Upgrade to 3.2+
-const MOCKITO_KOTLIN_VERSION = '2.2.11';
+// TODO: Upgrade to 3.2.0
+// Requires package name change. Leave to future PR.
+const MOCKITO_KOTLIN_VERSION = '2.2.0';
 const KTLINT_MAVEN_VERSION = '1.9.0';
-const KTLINT_GRADLE_VERSION = '10.1.0';
+// TODO: Upgrade to 10.+
+// Breaking issues at time: https://github.com/JLLeitschuh/ktlint-gradle/issues/495
+const KTLINT_GRADLE_VERSION = '9.4.1';
 const DETEKT_VERSION = '1.17.1';
 // TODO: Latest is 3.0.0
 const MAVEN_ANTRUN_VERSION = '1.8';
