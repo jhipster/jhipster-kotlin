@@ -28,8 +28,8 @@ const mapper = entityInstance  + 'Mapper';
             val result = <%= entityInstance %>Service.partialUpdate(<%= instanceName %>)
 <%_ } else { %>
          <%- returnPrefix %> <%= entityInstance %>Repository.findById(<%= instanceName %>.<%= primaryKey.name %>)
-            .map { 
-            <%_ if(dto === 'mapstruct') { %><%= mapper %>.partialUpdate(it, <%= instanceName %>)<%_ } else { %>
+            .map {
+            <%_ if(dtoMapstruct) { %><%= mapper %>.partialUpdate(it, <%= instanceName %>)<%_ } else { %>
             <%_ for (const field of fields.filter(field => !field.id && !field.transient)) { _%>
                   if (<%= instanceName %>.<%= field.fieldName %>!= null) {
                      it.<%= field.fieldName %> = <%= instanceName %>.<%= field.fieldName %>
@@ -42,14 +42,14 @@ const mapper = entityInstance  + 'Mapper';
             <%_ } %>
                it
             }
-            .<%= mapOrFlatMap %> { <%= entityInstance %>Repository.save(it) }<% if (searchEngine === 'elasticsearch') { %>
-            .<%= mapOrFlatMap %> { 
+            .<%= mapOrFlatMap %> { <%= entityInstance %>Repository.save(it) }<% if (searchEngineElasticsearch) { %>
+            .<%= mapOrFlatMap %> {
                   <%= entityInstance %>SearchRepository.save(it)
-            <%_ if(!reactive) { %> 
+            <%_ if(!reactive) { %>
                   it
             <%_ } else { %>
                   Mono.just(it)
             <%_ } %>
-            }<% } %><% if (dto !== 'no') { %>
+            }<% } %><% if (dtoMapstruct) { %>
             .map { <%= mapper %>.toDto(it) }<% } %>
 <%_ } %>

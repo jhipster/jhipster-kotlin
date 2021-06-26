@@ -44,10 +44,13 @@ class JWTRelayGatewayFilterFactory(private val tokenProvider: TokenProvider) : A
             chain.filter(exchange)
         }
 
-     private fun extractJWTToken(request: ServerHttpRequest): String {
-        val bearerToken = request.headers.getFirst(AUTHORIZATION_HEADER);
+     private fun extractJWTToken(request: ServerHttpRequest): String? {
+        val bearerToken = request.headers.getFirst(AUTHORIZATION_HEADER)
+        if (bearerToken == null) {
+            return null
+        }
         if (StringUtils.hasText(bearerToken) && bearerToken.startsWith("Bearer ")) {
-            return bearerToken.substring(7);
+            return bearerToken.substring(7)
         }
         throw IllegalArgumentException("Invalid token in Authorization header")
     }

@@ -24,22 +24,22 @@ import java.util.function.BiFunction
 
 import org.springframework.stereotype.Service
 
-import <%= packageName %>.domain.User
+import <%= packageName %>.domain.<%= asEntity('User') %>
 import <%= packageName %>.service.ColumnConverter
 
 import io.r2dbc.spi.Row
 
 /**
- * Converter between [Row] to [User], with proper type conversions.
+ * Converter between [Row] to [<%= asEntity('User') %>], with proper type conversions.
  */
 @Service
-class UserRowMapper(private val converter: ColumnConverter): BiFunction<Row, String, User> {
+class UserRowMapper(private val converter: ColumnConverter): BiFunction<Row, String, <%= asEntity('User') %>> {
     /**
      * Take a [Row] and a column prefix, and extract all the fields.
-     * @return the [User] stored in the database.
+     * @return the [<%= asEntity('User') %>] stored in the database.
      */
-    override fun apply(row: Row, prefix: String): User {
-        val entity = User()
+    override fun apply(row: Row, prefix: String): <%= asEntity('User') %> {
+        val entity = <%= asEntity('User') %>()
         entity.id = converter.fromRow(row, "${prefix}_id", <%= user.primaryKey.type %>::class.java)
         entity.login = converter.fromRow(row, "${prefix}_login", String::class.java)
         <%_ if (authenticationType !== 'oauth2') { _%>

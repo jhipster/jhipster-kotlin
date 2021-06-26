@@ -164,4 +164,46 @@ class AccountResourceIT <% if (databaseType === 'cassandra') { %>: AbstractCassa
             .expectStatus().is5xxServerError()
     <%_ } _%>
     }
+
+    @Test
+    @WithUnauthenticatedMockUser
+    <% if (!reactive) { %>@Throws(Exception::class)<% } %>
+    <%_ if (!reactive) { _%>
+    fun testNonAuthenticatedUser(){
+        restAccountMockMvc.perform(get("/api/authenticate")
+            .accept(MediaType.APPLICATION_JSON))
+            .andExpect(status().isOk)
+            .andExpect(content().string(""))
+    <%_ } else { _%>
+    fun testNonAuthenticatedUser() {
+        webTestClient.get().uri("/api/authenticate")
+            .accept(MediaType.APPLICATION_JSON)
+            .exchange()
+            .expectStatus().isOk
+            .expectBody().isEmpty
+    <%_ } _%>
+    }
+
+    @Test
+    <% if (!reactive) { %>@Throws(Exception::class)<% } %>
+    <%_ if (!reactive) { _%>
+    fun testAuthenticatedUser() {
+        restAccountMockMvc.perform(get("/api/authenticate")
+            .with(request -> {
+                request.setRemoteUser(TEST_USER_LOGIN);
+                return request;
+            })
+            .accept(MediaType.APPLICATION_JSON))
+            .andExpect(status().isOk)
+            .andExpect(content().string(TEST_USER_LOGIN))
+    <%_ } else { _%>
+    fun testAuthenticatedUser() {
+        webTestClient
+            .get().uri("/api/authenticate")
+            .accept(MediaType.APPLICATION_JSON)
+            .exchange()
+            .expectStatus().isOk
+            .expectBody(String::class).isEqualTo(TEST_USER_LOGIN)
+    <%_ } _%>
+    }
 }

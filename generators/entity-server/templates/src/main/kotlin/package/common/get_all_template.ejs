@@ -22,7 +22,7 @@
     const mapper = entityInstance + 'Mapper';
     const entityListToDtoListReference = mapper + '.' + 'toDto';
     const entityToDtoReference = mapper + '::'+ 'toDto';
-    const reactiveEntityToDto = (dto === 'mapstruct' && !viaService) ? `.map(${entityToDtoReference})` : '';
+    const reactiveEntityToDto = (dtoMapstruct && !viaService) ? `.map(${entityToDtoReference})` : '';
 _%>
 <%_ if (jpaMetamodelFiltering) { _%>
     fun getAll<%= entityClassPlural %>(
@@ -31,7 +31,7 @@ _%>
         <% if (reactive) { %>, request: ServerHttpRequest<% } %><% } %>
     ): ResponseEntity<MutableList<<%= instanceClass %>>> {
         log.debug("REST request to get <%= entityClassPlural %> by criteria: $criteria")
-    <%_ if (pagination === 'no') { _%>
+    <%_ if (paginationNo) { _%>
         val entityList = <%= entityInstance %>QueryService.findByCriteria(criteria)
         return ResponseEntity.ok().body(entityList)
     <%_ } else { _%>
@@ -53,12 +53,12 @@ _%>
         return ResponseEntity.ok().body(<%= entityInstance %>QueryService.countByCriteria(criteria))
     }
 <% } else { %>
-    <%_ if (pagination === 'no') { _%>
+    <%_ if (paginationNo) { _%>
     fun getAll<%= entityClassPlural %>(<% if (fieldsContainNoOwnerOneToOne) { %>@RequestParam(required = false) filter: String?<% } %><% if (relationshipsContainEagerLoad && fieldsContainNoOwnerOneToOne) { %>,<% } %><% if (relationshipsContainEagerLoad) { %>@RequestParam(required = false, defaultValue = "false") eagerload: Boolean<% }%>): <% if (reactive) { %>Mono<<% } %>MutableList<<%= instanceClass %>><% if (reactive) { %>><% } %> {<%- include('get_all_stream_template', {viaService: viaService}); -%>
         log.debug("REST request to get all <%= entityClassPlural %>")
         <% if (viaService) { %>
         return <%= entityInstance %>Service.findAll()<% if (reactive) { %>.collectList()<% } %>
-        <% } else if (dto === 'mapstruct') { %>
+        <% } else if (dtoMapstruct) { %>
         val <%= entityInstancePlural %> = <%= entityInstance %>Repository.<% if (relationshipsContainEagerLoad) { %>findAllWithEagerRelationships<% } else { %>findAll<% } %>()
             <%_ if (!reactive) { _%>
         return <%= entityListToDtoListReference %>(<%= entityInstancePlural %>)
@@ -79,12 +79,12 @@ _%>
             <%= entityInstance %><%= viaService ? 'Service' : 'Repository' %>.findAll(pageable)<%= reactiveEntityToDto %>
         }
         val headers = PaginationUtil.generatePaginationHttpHeaders(<% if (!reactive) { %>ServletUriComponentsBuilder.fromCurrentRequest()<% } else { %>UriComponentsBuilder.fromHttpRequest(request)<% } %>, page)
-        <%_ } else { _%>    
+        <%_ } else { _%>
         val page = <%= entityInstance %><%= viaService ? 'Service' : 'Repository' %>.findAll(pageable)<%= reactiveEntityToDto %>
         val headers = PaginationUtil.generatePaginationHttpHeaders(<% if (!reactive) { %>ServletUriComponentsBuilder.fromCurrentRequest()<% } else { %>UriComponentsBuilder.fromHttpRequest(request)<% } %>, page);
         <%_ } _%>
         return ResponseEntity.ok().headers(headers).body(page.content)
-        <%_ } else { _%>  
+        <%_ } else { _%>
         // TODO:SK CHECK TYPE info
         return <%= entityInstance %><%= viaService ? 'Service.countAll' : 'Repository.count' %>()
             .zipWith(<%= entityInstance %><%= viaService ? 'Service.findAll' : 'Repository.findAllBy' %>(pageable)<%= reactiveEntityToDto %>.collectList())

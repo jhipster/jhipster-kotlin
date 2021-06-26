@@ -30,7 +30,7 @@ import javax.validation.constraints.*
 <%_ if (databaseType === 'mongodb' || databaseType === 'neo4j' || databaseType === 'couchbase' || databaseType === 'sql') { _%>
 import java.time.Instant
 <%_ } _%>
-<%_ if (user.primaryKey.type === 'UUID') { _%>
+<%_ if (user.primaryKey.typeUUID) { _%>
 import java.util.UUID
 <%_ } _%>
 
@@ -38,7 +38,7 @@ import java.util.UUID
  * A DTO representing a user, with his authorities.
  */
 open class <%= asDto('AdminUser') %>(
-    var id: <%= user.primaryKey.type %>? = null,    
+    var id: <%= user.primaryKey.type %>? = null,
 
     @field:NotBlank
     @field:Pattern(regexp = LOGIN_REGEX)
@@ -80,7 +80,7 @@ open class <%= asDto('AdminUser') %>(
 
     <%_ if (databaseType !== 'no') { _%>
     constructor(user: <%= asEntity('User') %>?) : this(
-        user?.id, 
+        user?.id,
         user?.login,
         user?.firstName,
         user?.lastName,
@@ -96,7 +96,7 @@ open class <%= asDto('AdminUser') %>(
         user?.lastModifiedBy,
         user?.lastModifiedDate,
         <%_ } _%>
-        
+
         user?.authorities?.<% if (!['sql', 'mongodb', 'neo4j'].includes(databaseType)) { %>toMutableSet()<% } else { %>map { it.name }?.filterNotNullTo(mutableSetOf())<% } %> ?: mutableSetOf()
     )
     <%_ } _%>

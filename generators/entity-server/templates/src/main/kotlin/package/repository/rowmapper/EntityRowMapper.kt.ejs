@@ -18,17 +18,17 @@
 -%>
 package <%= packageName %>.repository.rowmapper
 
-<%_ if (fieldsContainBigDecimal === true) { _%>
+<%_ if (fieldsContainBigDecimal) { _%>
 import java.math.BigDecimal
-<%_} if (fieldsContainInstant === true) { _%>
+<%_} if (fieldsContainInstant) { _%>
 import java.time.Instant
-<%_ } if (fieldsContainLocalDate === true) { _%>
+<%_ } if (fieldsContainLocalDate) { _%>
 import java.time.LocalDate
-<%_ } if (fieldsContainZonedDateTime === true) { _%>
+<%_ } if (fieldsContainZonedDateTime) { _%>
 import java.time.ZonedDateTime
-<%_ } if (fieldsContainDuration === true) { _%>
+<%_ } if (fieldsContainDuration) { _%>
 import java.time.Duration
-<%_ } if (fieldsContainUUID === true) { _%>
+<%_ } if (fieldsContainUUID) { _%>
 import java.util.UUID
 <%_ } _%>
 import java.util.function.BiFunction
@@ -57,21 +57,19 @@ class <%= entityClass %>RowMapper(val converter: ColumnConverter): BiFunction<Ro
         val entity = <%= persistClass %>()
         <%_ fields.forEach(function(field) {
             let fieldType = field.fieldType;
-            if (field.fieldTypeBlobContent === 'text') {
+            if (field.blobContentTypeText) {
                 fieldType = 'String';
             }
-            if (field.fieldType === 'byte[]' && field.fieldTypeBlobContent !== 'text') { _%>
+            if (field.fieldTypeBytes && !field.blobContentTypeText) { _%>
         entity.<%= field.fieldName %>ContentType = converter.fromRow(row, prefix + "_<%= field.fieldNameAsDatabaseColumn %>_content_type", String::class.java)
-            <%_ } if (field.fieldType === 'byte[]' && field.fieldTypeBlobContent !== 'text') { _%>
-        entity.<%= field.fieldName %> = converter.fromRow(row, prefix + "_<%= field.fieldNameAsDatabaseColumn %>", ByteArray::class.java)
-        <%_ } else if (field.fieldType === 'Integer') { _%>
+            <%_ } if (field.fieldTypeInteger) { _%>
         entity.<%= field.fieldName %> = converter.fromRow(row, prefix + "_<%= field.fieldNameAsDatabaseColumn %>", Int::class.java)
         <%_ } else { _%>
         entity.<%= field.fieldName %> = converter.fromRow(row, prefix + "_<%= field.fieldNameAsDatabaseColumn %>", <%= fieldType %>::class.java)
         <%_ }}); _%>
         <%_ reactiveRegularEagerRelations.forEach(function(rel) { _%>
         entity.<%= rel.relationshipName %>Id = converter.fromRow(row, prefix + "_<%= getColumnName(rel.relationshipName) %>_id", <%= rel.otherEntity.primaryKey.type %>::class.java)
-        <%_ }); _%> 
+        <%_ }); _%>
         return entity;
     }
 

@@ -121,4 +121,30 @@ describe('JHipster server generator', () => {
             );
         });
     });
+    describe('microfrontend', () => {
+        let runResult;
+        before(async () => {
+          runResult = await helpers
+            .create(path.join(__dirname, '../generators/server'))
+              .withOptions({
+                baseName: 'jhipster',
+                withGeneratedFlag: true,
+                blueprints: 'kotlin',
+                'from-cli': true,
+                skipInstall: true,
+                skipChecks: true,
+                'skip-ktlint-format': true,
+                skipClient: true,
+                auth: 'oauth2',
+                microfrontend: true,
+                enableTranslation: true,
+                nativeLanguage: 'en',
+                languages: ['fr', 'en'],
+            })
+            .run();
+        });
+        it('should match generated files snapshot', () => {
+          expect(runResult.getStateSnapshot()).toMatchSnapshot();
+        });
+      });
 });
