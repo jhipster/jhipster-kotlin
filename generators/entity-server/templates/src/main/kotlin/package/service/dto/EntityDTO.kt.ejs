@@ -71,7 +71,7 @@ data class <%= dtoClass %>(
                 classProperty.push(formatAsFieldJavadoc(reference.doc));
             }
             const field = reference.field;
-            const required = field && field.fieldValidate && field.fieldValidateRules.includes('required');
+            const required = field && field.fieldValidate && field.fieldValidationRequired;
             if (field) {
                 if (field.fieldValidate) {
                     classProperty.push(include('../../common/field_validators', {field, reactive}));
@@ -80,13 +80,13 @@ data class <%= dtoClass %>(
             if (reference.doc) {
                 classProperty.push(`@ApiModelProperty(value="${formatAsApiDescription(reference.doc)}"${required ? ', required = true': ''})`);
             }
-            if (reference.type === 'byte[]' && databaseTypeSql) {
+            if (field && field.fieldTypeBytes && databaseTypeSql) {
                 classProperty.push('@Lob');
             }
 
             let property = '';
 
-            if (reference.field && reference.field.fieldTypeBlobContent === 'text') {
+            if (field && field.blobContentTypeText) {
                 property = `var ${reference.name}: String? = null`;
             } else if (reference.collection && reference.relationship) {
                 property = `var ${reference.name}: MutableSet<${asDto(reference.relationship.otherEntity.entityNameCapitalized)}> = mutableSetOf()`;
