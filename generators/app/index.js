@@ -50,12 +50,20 @@ module.exports = class extends BaseGenerator {
         return super._configuring();
     }
 
+    get composing() {
+        return super._composing();
+    }
+
     get default() {
         return super._default();
     }
 
     get writing() {
         return super._writing();
+    }
+
+    get install() {
+        return super._install();
     }
 
     get end() {

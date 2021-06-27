@@ -59,6 +59,21 @@ module.exports = class extends ServerGenerator {
         return super._configuring();
     }
 
+    get composing() {
+        // Here we are not overriding this phase and hence its being handled by JHipster
+        return super._composing();
+    }
+
+    get loading() {
+        // Here we are not overriding this phase and hence its being handled by JHipster
+        return super._loading();
+    }
+
+    get preparing() {
+        // Here we are not overriding this phase and hence its being handled by JHipster
+        return super._preparing();
+    }
+
     get default() {
         // Here we are not overriding this phase and hence its being handled by JHipster
         return super._default();
