@@ -23,12 +23,12 @@ import <%= packageName %>.AbstractCassandraTest
 <%_ } _%>
 import <%= packageName %>.IntegrationTest
 import <%= packageName %>.config.TestSecurityConfiguration
-import <%= packageName %>.security.AuthoritiesConstants
 import <%= packageName %>.service.UserService
 
 <%_ if (reactive) { _%>
 import org.junit.jupiter.api.BeforeEach
 <%_ } _%>
+import org.assertj.core.api.Assertions.assertThat
 import org.junit.jupiter.api.Test
 import org.springframework.beans.factory.annotation.Autowired
 <%_ if (!reactive) { _%>
@@ -44,7 +44,6 @@ import org.springframework.security.oauth2.client.authentication.OAuth2Authentic
 import org.springframework.security.oauth2.core.user.DefaultOAuth2User
 import org.springframework.security.oauth2.core.user.OAuth2User
 import org.springframework.security.test.context.TestSecurityContextHolder
-import org.springframework.security.test.context.support.WithMockUser
 import org.springframework.test.web.servlet.MockMvc
     <%_ if (databaseType === 'sql' && !reactive) { _%>
 import org.springframework.transaction.annotation.Transactional
@@ -189,21 +188,22 @@ class AccountResourceIT <% if (databaseType === 'cassandra') { %>: AbstractCassa
     <%_ if (!reactive) { _%>
     fun testAuthenticatedUser() {
         restAccountMockMvc.perform(get("/api/authenticate")
-            .with(request -> {
-                request.setRemoteUser(TEST_USER_LOGIN);
-                return request;
-            })
+            .with {
+                it.remoteUser = TEST_USER_LOGIN
+                it
+            }
             .accept(MediaType.APPLICATION_JSON))
             .andExpect(status().isOk)
             .andExpect(content().string(TEST_USER_LOGIN))
     <%_ } else { _%>
     fun testAuthenticatedUser() {
-        webTestClient
+        val login = webTestClient
             .get().uri("/api/authenticate")
             .accept(MediaType.APPLICATION_JSON)
             .exchange()
             .expectStatus().isOk
-            .expectBody(String::class).isEqualTo(TEST_USER_LOGIN)
+            .expectBody(String::class).returnResult()
+        assertThat(login).isEqualTo(TEST_USER_LOGIN)
     <%_ } _%>
     }
 }

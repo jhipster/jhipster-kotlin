@@ -25,8 +25,8 @@ import <%= packageName %>.IntegrationTest
 <%_ if (reactive && searchEngine === 'elasticsearch') { _%>
 import <%= packageName %>.repository.search.UserSearchRepository
 <%_ } _%>
-import <%= packageName %>.security.AuthoritiesConstants
 import org.junit.jupiter.api.Test
+import org.assertj.core.api.Assertions.assertThat
 <%_ if (reactiveSqlTestContainers) { _%>
 import <%= packageName %>.ReactiveSqlTestContainerExtension
 <%_ } _%>
@@ -135,12 +135,13 @@ class AccountResourceIT <% if (databaseType === 'cassandra') { %>: AbstractCassa
             .andExpect(content().string(TEST_USER_LOGIN))
     <%_ } else { _%>
     fun testAuthenticatedUser() {
-        webTestClient
+        val login = webTestClient
             .get().uri("/api/authenticate")
             .accept(MediaType.APPLICATION_JSON)
             .exchange()
             .expectStatus().isOk
-            .expectBody(String::class).isEqualTo(TEST_USER_LOGIN)
+            .expectBody(String::class).returnResult()
+        assertThat(login).isEqualTo(TEST_USER_LOGIN)
     <%_ } _%>
     }
 }
