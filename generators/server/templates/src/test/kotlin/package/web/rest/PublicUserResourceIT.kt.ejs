@@ -24,7 +24,7 @@ import <%= packageName %>.AbstractCassandraTest
 import <%= packageName %>.IntegrationTest
 import <%= packageName %>.security.ADMIN
 import <%= packageName %>.security.USER
-<%_ if (authenticationType === 'oauth2') { _%>
+<%_ if (authenticationTypeOauth2) { _%>
 import <%= packageName %>.config.TestSecurityConfiguration
 <%_ } _%>
 import <%= packageName %>.domain.<%= asEntity('User') %>
@@ -172,12 +172,12 @@ class PublicUserResourceIT <% if (databaseType === 'cassandra') { %>: AbstractCa
     <%_ if (databaseType === 'sql' && !reactive) { _%>
     @Transactional
     <%_ } _%>
-    <%_ if (!reactive) { _%> 
+    <%_ if (!reactive) { _%>
     @Throws(Exception::class)
-    <%_ } _%> 
+    <%_ } _%>
     fun getAllPublicUsers() {
         // Initialize the database
-        userRepository.<% if (databaseType === 'sql' && reactive && authenticationType === 'oauth2') { %>create<% } else { %>save<% } %><% if (databaseType === 'sql' && !reactive) { %>AndFlush<% } %>(user)<% if (reactive) { %>.block()<% } %>
+        userRepository.<% if (databaseType === 'sql' && reactive && authenticationTypeOauth2) { %>create<% } else { %>save<% } %><% if (databaseType === 'sql' && !reactive) { %>AndFlush<% } %>(user)<% if (reactive) { %>.block()<% } %>
 
         // Get all the users
         <%_ if (!reactive) { _%>
@@ -205,19 +205,19 @@ class PublicUserResourceIT <% if (databaseType === 'cassandra') { %>: AbstractCa
         assertThat(foundUser.login).isEqualTo(DEFAULT_LOGIN)
         <%_ for (field of user.fields.filter(field => !field.builtIn && field.relatedByOtherEntity)) { _%>
         assertThat(foundUser.<%= field.fieldName %>).isEqualTo(DEFAULT_<%= field.fieldName.toUpperCase() %>)
-        <%_ } _%> 
+        <%_ } _%>
         <% } _%>
     }
 
     <%_ if ((databaseType === 'sql' || databaseType === 'mongodb' || databaseType === 'neo4j' || databaseType === 'couchbase')
-            && (!(authenticationType === 'oauth2' && applicationType === 'microservice'))) { _%>
+            && (!(authenticationTypeOauth2 && applicationTypeMicroservice))) { _%>
     @Test
     <%_ if (databaseType === 'sql' && !reactive) { _%>
     @Transactional
     <%_ } _%>
-    <%_ if (!reactive) { _%> 
+    <%_ if (!reactive) { _%>
     @Throws(Exception::class)
-    <%_ } _%> 
+    <%_ } _%>
     fun getAllAuthorities() {
         <%_ if (!reactive) { _%>
         restUserMockMvc.perform(get("/api/authorities")

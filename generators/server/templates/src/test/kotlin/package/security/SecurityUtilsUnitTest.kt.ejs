@@ -27,7 +27,7 @@ import org.springframework.security.core.authority.SimpleGrantedAuthority
 import org.springframework.security.core.context.ReactiveSecurityContextHolder
 <%_ } else { _%>
 import org.springframework.security.core.context.SecurityContextHolder
-    <%_ if (authenticationType === 'oauth2') { _%>
+    <%_ if (authenticationTypeOauth2) { _%>
 import org.springframework.security.oauth2.client.authentication.OAuth2AuthenticationToken
 import org.springframework.security.oauth2.core.oidc.OidcIdToken
 import org.springframework.security.oauth2.core.oidc.user.DefaultOidcUser
@@ -35,7 +35,7 @@ import org.springframework.security.oauth2.core.oidc.user.OidcUser
     <%_ } _%>
 <%_ } _%>
 
-<%_ if (authenticationType === 'oauth2') { _%>
+<%_ if (authenticationTypeOauth2) { _%>
 import java.time.Instant
 <%_ } else { _%>
     <%_ if (!reactive) { _%>
@@ -44,7 +44,7 @@ import java.util.Optional
 <%_ } _%>
 
 import org.assertj.core.api.Assertions.assertThat
-<%_ if (authenticationType === 'oauth2') { _%>
+<%_ if (authenticationTypeOauth2) { _%>
 import org.springframework.security.oauth2.core.oidc.endpoint.OidcParameterNames.ID_TOKEN
 <%_ } _%>
 
@@ -67,7 +67,7 @@ class SecurityUtilsUnitTest {
         val login = getCurrentUserLogin()
         assertThat(login).contains("admin")
     }
-    <%_ if (authenticationType === 'oauth2') { _%>
+    <%_ if (authenticationTypeOauth2) { _%>
 
     @Test
     fun testGetCurrentUserLoginForOAuth2() {
@@ -89,10 +89,10 @@ class SecurityUtilsUnitTest {
         assertThat(login).contains("admin")
     }
     <%_ } _%>
-    <%_ if (authenticationType === 'jwt') { _%>
+    <%_ if (authenticationTypeJwt) { _%>
 
     @Test
-    fun testgetCurrentUserJWT() {
+    fun testGetCurrentUserJWT() {
         val securityContext = SecurityContextHolder.createEmptyContext()
         securityContext.authentication = UsernamePasswordAuthenticationToken("admin", "token")
         SecurityContextHolder.setContext(securityContext)
@@ -143,10 +143,10 @@ class SecurityUtilsUnitTest {
             .block()
         assertThat(login).isEqualTo("admin")
     }
-    <%_ if (authenticationType === 'jwt') { _%>
+    <%_ if (authenticationTypeJwt) { _%>
 
     @Test
-    fun testgetCurrentUserJWT() {
+    fun testGetCurrentUserJWT() {
         val jwt = getCurrentUserJWT()
             .subscriberContext(
                 ReactiveSecurityContextHolder.withAuthentication(

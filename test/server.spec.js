@@ -121,4 +121,5 @@ describe('JHipster server generator', () => {
             );
         });
     });
+    // TODO: add microfront-end test here. Refer https://github.com/jhipster/generator-jhipster/pull/15312
 });

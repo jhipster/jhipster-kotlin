@@ -412,7 +412,7 @@ class UserResourceIT<% if (databaseType === 'cassandra') { %>: AbstractCassandra
     <%_ } _%>
     fun getAllUsers() {
         // Initialize the database
-        userRepository.<% if (databaseType === 'sql' && reactive && authenticationType === 'oauth2') { %>create<% } else { %>save<% } %><% if (databaseType === 'sql' && !reactive) { %>AndFlush<% } %>(user)<% if (reactive) { %>.block()<% } %>
+        userRepository.<% if (databaseType === 'sql' && reactive && authenticationTypeOauth2) { %>create<% } else { %>save<% } %><% if (databaseType === 'sql' && !reactive) { %>AndFlush<% } %>(user)<% if (reactive) { %>.block()<% } %>
         <%_ if (databaseType === 'sql' && reactive) { _%>
         authorityRepository
             .findById(USER)
@@ -467,7 +467,7 @@ class UserResourceIT<% if (databaseType === 'cassandra') { %>: AbstractCassandra
     <%_ } _%>
     fun getUser() {
         // Initialize the database
-        userRepository.<% if (databaseType === 'sql' && reactive && authenticationType === 'oauth2') { %>create<% } else { %>save<% } %><% if (databaseType === 'sql' && !reactive) { %>AndFlush<% } %>(user)<% if (reactive) { %>.block()<% } %>
+        userRepository.<% if (databaseType === 'sql' && reactive && authenticationTypeOauth2) { %>create<% } else { %>save<% } %><% if (databaseType === 'sql' && !reactive) { %>AndFlush<% } %>(user)<% if (reactive) { %>.block()<% } %>
         <%_ if (databaseType === 'sql' && reactive) { _%>
         authorityRepository
             .findById(USER)
@@ -1052,7 +1052,7 @@ class UserResourceIT<% if (databaseType === 'cassandra') { %>: AbstractCassandra
         @JvmStatic
         fun createEntity(<% if (databaseType === 'sql') { %>em: EntityManager?<% } %>): <%= asEntity('User') %> {
             return <%= asEntity('User') %>(
-                <%_ if (databaseType === 'cassandra' || (authenticationType === 'oauth2' && databaseType !== 'couchbase')) { _%>
+                <%_ if (databaseType === 'cassandra' || (authenticationTypeOauth2 && databaseType !== 'couchbase')) { _%>
                 id = UUID.randomUUID().toString(),
                 <%_ } _%>
                 login = DEFAULT_LOGIN<% if (databaseType === 'sql') { %> + RandomStringUtils.randomAlphabetic(5)<% } %>,
@@ -1082,7 +1082,7 @@ class UserResourceIT<% if (databaseType === 'cassandra') { %>: AbstractCassandra
         fun deleteEntities(em: EntityManager) {
             try {
                 em.deleteAll("<%= jhiTablePrefix %>_user_authority").block()
-                em.deleteAll(User::class.java).block()
+                em.deleteAll(<%= asEntity('User') %>::class.java).block()
             } catch (e: Exception) {
                 // It can fail, if other entities are still referring this - it will be removed later.
             }

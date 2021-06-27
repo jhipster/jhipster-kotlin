@@ -20,7 +20,7 @@ package <%= packageName %>.service.criteria
 
 import java.io.Serializable
 import tech.jhipster.service.Criteria
-<%_ for (const field of fields) { if (field.fieldIsEnum === true) { _%>
+<%_ for (const field of fields) { if (field.fieldIsEnum) { _%>
 import <%= packageName %>.domain.enumeration.<%= field.fieldType %>
 <%_ } } _%>
 import tech.jhipster.service.filter.BooleanFilter
@@ -30,20 +30,20 @@ import tech.jhipster.service.filter.FloatFilter
 import tech.jhipster.service.filter.IntegerFilter
 import tech.jhipster.service.filter.LongFilter
 import tech.jhipster.service.filter.StringFilter
-<%_ if (fieldsContainBigDecimal === true) { _%>
+<%_ if (fieldsContainBigDecimal) { _%>
 import tech.jhipster.service.filter.BigDecimalFilter
 <%_ } _%>
-<%_ if (fieldsContainDuration === true) { _%>
+<%_ if (fieldsContainDuration) { _%>
 import tech.jhipster.service.filter.DurationFilter
 <%_ } _%>
-<%_ if (fieldsContainInstant === true) { _%>
+<%_ if (fieldsContainInstant) { _%>
 import tech.jhipster.service.filter.InstantFilter
 <%_ } _%>
-<%_ if (fieldsContainLocalDate === true) { _%>
+<%_ if (fieldsContainLocalDate) { _%>
 import tech.jhipster.service.filter.LocalDateFilter
 <%_ } _%>
 import tech.jhipster.service.filter.UUIDFilter
-<%_ if (fieldsContainZonedDateTime === true) { _%>
+<%_ if (fieldsContainZonedDateTime) { _%>
 import tech.jhipster.service.filter.ZonedDateTimeFilter
 <%_ } _%>
 
@@ -57,7 +57,8 @@ import tech.jhipster.service.filter.ZonedDateTimeFilter
       if (field.fieldIsEnum == true) {
         filterType = fieldType + 'Filter';
         extraFilters[fieldType] = {type: filterType, superType: 'Filter<' + fieldType + '>', fieldType: fieldType};
-      } else if (['Duration', 'UUID', 'LocalDate', 'ZonedDateTime', 'Instant', 'String', 'Long', 'Integer', 'Float', 'Double', 'BigDecimal', 'Boolean'].includes(fieldType)) {
+      } else if (field.fieldTypeDuration || field.fieldTypeTemporal || field.fieldTypeCharSequence || field.fieldTypeNumeric || field.fieldTypeBoolean) {
+
         filterType = fieldType + 'Filter';
       } else {
         filterType = 'Filter<' + fieldType + '>';
@@ -73,7 +74,7 @@ import tech.jhipster.service.filter.ZonedDateTimeFilter
     const referenceFilterType = '' + relationshipType + 'Filter';
     // user has a String PK when using OAuth, so change relationships accordingly
     let oauthAwareReferenceFilterType = referenceFilterType;
-    if (relationship.otherEntityName === 'user' && authenticationType === 'oauth2') {
+    if (relationship.otherEntityUser && authenticationTypeOauth2) {
         oauthAwareReferenceFilterType = 'StringFilter';
     }
     filterVariables.push({ filterType : oauthAwareReferenceFilterType,

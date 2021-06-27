@@ -19,26 +19,26 @@
 package <%= packageName %>.web.rest
 
 <%_
-    const viaService = service !== 'no';
+    const viaService = !serviceNo;
     let manyToManyWithUser = false;
     for (const relationship in relationships) {
-        if (relationship.otherEntityName === 'user' && relationship.relationshipType === 'many-to-many') {
+        if (relationship.otherEntityUser && relationship.relationshipManyToMany) {
             manyToManyWithUser = true;
             break;
         }
     }
 _%>
-<%_ if (dto !== 'mapstruct' || service === 'no') { _%>
+<%_ if (!dtoMapstruct || serviceNo) { _%>
 import <%= packageName %>.domain.<%= persistClass %>
 <%_ } _%>
 import <%= packageName %>.repository.<%= entityClass %>Repository
-<%_ if (service !== 'no') { _%>
+<%_ if (!serviceNo) { _%>
 import <%= packageName %>.service.<%= entityClass %>Service
 <%_ } else { _%>
-    <%_ if (isUsingMapsId === true) { _%>
+    <%_ if (isUsingMapsId) { _%>
 import <%= packageName %>.repository.<%= mapsIdAssoc.otherEntityNameCapitalized %>Repository
     <%_ } _%>
-    <%_ if (searchEngine === 'elasticsearch') { _%>
+    <%_ if (searchEngineElasticsearch) { _%>
 import <%= packageName %>.repository.search.<%= entityClass %>SearchRepository
     <%_ } _%>
 <%_ } _%>
@@ -46,9 +46,9 @@ import <%= packageName %>.repository.search.<%= entityClass %>SearchRepository
 import <%= packageName %>.repository.UserRepository
 <%_ } _%>
 import <%= packageName %>.web.rest.errors.BadRequestAlertException
-<%_ if (dto === 'mapstruct') { _%>
+<%_ if (dtoMapstruct) { _%>
 import <%= packageName %>.service.dto.<%= dtoClass %>
-<%_ if (service === 'no') { _%>
+<%_ if (serviceNo) { _%>
 import <%= packageName %>.service.mapper.<%= entityClass %>Mapper
 <%_ } } _%>
 <%_ if (jpaMetamodelFiltering) {  _%>
@@ -57,13 +57,13 @@ import <%= packageName %>.service.<%= entityClass %>QueryService
 <%_ } _%>
 
 import tech.jhipster.web.util.HeaderUtil
-<%_ if (pagination !== 'no') { _%>
+<%_ if (!paginationNo) { _%>
 import tech.jhipster.web.util.PaginationUtil
 <%_ } _%>
 import tech.jhipster.web.util.<% if (reactive) { %>reactive.<% } %>ResponseUtil
 import org.slf4j.LoggerFactory
 import org.springframework.beans.factory.annotation.Value
-<%_ if (pagination !== 'no') { _%>
+<%_ if (!paginationNo) { _%>
 import org.springframework.data.domain.Page
 import org.springframework.data.domain.Pageable
 <%_ if (reactive) { _%>
@@ -79,13 +79,13 @@ import org.springframework.web.servlet.support.ServletUriComponentsBuilder
 import org.springframework.web.util.UriComponentsBuilder
     <%_ } _%>
 <%_ } else if (reactive) { _%>
-import org.springframework.http.HttpStatus  
+import org.springframework.http.HttpStatus
 <%_ } _%>
 <%_ if (reactive) { _%>
 import org.springframework.http.MediaType
 <%_ } _%>
 import org.springframework.http.ResponseEntity
-<%_ if (databaseType === 'sql' && !viaService && (!saveUserSnapshot || isUsingMapsId === true)) { _%>
+<%_ if (databaseTypeSql && !viaService && (!saveUserSnapshot || isUsingMapsId)) { _%>
 import org.springframework.transaction.annotation.Transactional
 <%_ } _%>
 import org.springframework.web.bind.annotation.*
@@ -102,10 +102,10 @@ import javax.validation.constraints.NotNull
 import java.net.URI
 import java.net.URISyntaxException
 import java.util.Objects
-<%_ if (primaryKey.fields.some(f => f.fieldType === 'UUID')) { _%>
+<%_ if (primaryKey.hasUUID) { _%>
 import java.util.UUID
 <%_ } _%>
-<%_ if ((searchEngine !== false || fieldsContainNoOwnerOneToOne === true) && !reactive) { _%>
+<%_ if ((searchEngine !== false || fieldsContainNoOwnerOneToOne) && !reactive) { _%>
     <%_ if (!viaService) { _%>
 import java.util.stream.Collectors
     <%_ } _%>
@@ -113,7 +113,7 @@ import java.util.stream.Collectors
 import java.util.stream.StreamSupport
     <%_ } _%>
 <%_ } _%>
-<%_ if (searchEngine === 'elasticsearch' && !reactive) { _%>
+<%_ if (searchEngineElasticsearch && !reactive) { _%>
 import org.elasticsearch.index.query.QueryBuilders.queryStringQuery
 <%_ } _%>
 <%_ if (!readOnly) { _%>
@@ -131,7 +131,7 @@ private const val ENTITY_NAME = "<%= entityName %>"
  */
 @RestController
 @RequestMapping("/api")
-<%_ if (databaseType === 'sql' && !viaService && !saveUserSnapshot) { _%>
+<%_ if (databaseTypeSql && !viaService && !saveUserSnapshot) { _%>
 @Transactional
 <%_ } _%>
 class <%= entityClass %>Resource(
@@ -186,19 +186,19 @@ _%><%- include('../../common/inject_template', {viaService: viaService, construc
             }
             <%_ } _%>
         <%_ } _%>
-        <%_ if (primaryKey.type === 'UUID' && databaseType !== 'sql') { _%>
-        <%= instanceName %>.<%= primaryKey.name %> = UUID.randomUUID()
+        <%_ for (field of primaryKey.fields.filter(f => f.autoGenerateByService)) { _%>
+        <%= instanceName %>.<%= field.fieldName %> = UUID.randomUUID()
         <%_ } _%>
 <%- include('/partials/save_template', {asEntity, asDto, viaService: viaService, returnDirectly: false, isUsingMapsId: isUsingMapsId, mapsIdAssoc: mapsIdAssoc, isController: true, noReturn: false}); -%>
         <%_ if (!reactive) { _%>
         return ResponseEntity.created(URI("/api/<%= entityApiUrl %>/${result.<%= primaryKey.name %>}"))
-            .headers(HeaderUtil.createEntityCreationAlert(applicationName, <%= enableTranslation %>, ENTITY_NAME, result.<%= primaryKey.name %><% if (primaryKey.type !== 'String') { %>.toString()<% } %>))
+            .headers(HeaderUtil.createEntityCreationAlert(applicationName, <%= enableTranslation %>, ENTITY_NAME, result.<%= primaryKey.name %><% if (!primaryKey.fields[0].fieldTypeString) { %>.toString()<% } %>))
             .body(result)
         <%_ } else { _%>
-            .map { result -> 
+            .map { result ->
                 try {
                     ResponseEntity.created(URI("/api/<%= entityApiUrl %>/${result.<%= primaryKey.name %>}"))
-                        .headers(HeaderUtil.createEntityCreationAlert(applicationName, <%= enableTranslation %>, ENTITY_NAME, result.<%= primaryKey.name %><% if (primaryKey.type !== 'String') { %>.toString()<% } %>))
+                        .headers(HeaderUtil.createEntityCreationAlert(applicationName, <%= enableTranslation %>, ENTITY_NAME, result.<%= primaryKey.name %><% if (!primaryKey.fields[0].fieldTypeString) { %>.toString()<% } %>))
                         .body(result)
                 } catch (e: URISyntaxException) {
                     throw RuntimeException(e)
@@ -231,13 +231,13 @@ _%><%- include('../../common/inject_template', {viaService: viaService, construc
             throw BadRequestAlertException("Invalid ID", ENTITY_NAME, "idinvalid")
         }
 
-        
+
     <%_ if (!reactive) { _%>
         if (!<%= entityInstance %>Repository.existsById(<%= primaryKey.name %>)) {
             throw BadRequestAlertException("Entity not found", ENTITY_NAME, "idnotfound")
         }
     <%_ } else { _%>
-        return <%= entityInstance %>Repository.existsById(<%= primaryKey.name %>).flatMap{ 
+        return <%= entityInstance %>Repository.existsById(<%= primaryKey.name %>).flatMap{
             if (!it) {
                 return@flatMap Mono.error(BadRequestAlertException("Entity not found", ENTITY_NAME, "idnotfound"))
             }
@@ -335,7 +335,7 @@ _%><%- include('../../common/inject_template', {viaService: viaService, construc
             <%_ } else { _%>
             result
                 .switchIfEmpty(Mono.error(ResponseStatusException(HttpStatus.NOT_FOUND)))
-                .map { 
+                .map {
                     ResponseEntity.ok()
                         .headers(HeaderUtil.createEntityUpdateAlert(applicationName, <%= enableTranslation %>, ENTITY_NAME, it.<%= primaryKey.name %><% if (primaryKey.type !== 'String') { %>.toString()<% } %>))
                         .body(it)
@@ -347,7 +347,7 @@ _%><%- include('../../common/inject_template', {viaService: viaService, construc
     /**
      * `GET  /<%= entityApiUrl %>` : get all the <%= entityInstancePlural %>.
      *
-    <%_ if (pagination !== 'no') { _%>
+    <%_ if (!paginationNo) { _%>
      * @param pageable the pagination information.
         <%_ if (reactive) { _%>
      * @param request a [ServerHttpRequest] request.
@@ -359,17 +359,17 @@ _%><%- include('../../common/inject_template', {viaService: viaService, construc
      * @param filter the filter of the request.<% } %>
      * @return the [ResponseEntity] with status `200 (OK)` and the list of <%= entityInstancePlural %> in body.
      */
-    @GetMapping("/<%= entityApiUrl %>")<%_ if (databaseType === 'sql' && isUsingMapsId === true && !viaService) { %>
+    @GetMapping("/<%= entityApiUrl %>")<%_ if (databaseTypeSql && isUsingMapsId&& !viaService) { %>
     @Transactional(readOnly = true)<%_ } _%>
     <%- include('../../common/get_all_template', {asEntity, asDto, viaService}); -%>
 
-    <%_ if (reactive && pagination === 'no') { _%>
+    <%_ if (reactive && paginationNo) { _%>
     /**
      * `GET  /<%= entityApiUrl %>` : get all the <%= entityInstancePlural %> as a stream.
      * @return the [Flux] of <%= entityInstancePlural %>.
      */
     @GetMapping(value = ["/<%= entityApiUrl %>"], produces = [MediaType.APPLICATION_NDJSON_VALUE])
-    <%_ if (databaseType === 'sql' && isUsingMapsId === true && !viaService) { _%>
+    <%_ if (databaseTypeSql && isUsingMapsId&& !viaService) { _%>
     @Transactional(readOnly = true)
     <%_ } _%>
     fun getAll<%= entityClassPlural %>AsStream(): Flux<<%= instanceType %>> {
@@ -377,7 +377,7 @@ _%><%- include('../../common/inject_template', {viaService: viaService, construc
         <%_ if (viaService) { _%>
         return <%= entityInstance %>Service.findAll()
         <%_ } else { _%>
-        return <%= entityInstance %>Repository.findAll()<%_ if (dto === 'mapstruct') { _%>.map(<%= entityToDtoReference %>)<%_ } _%>
+        return <%= entityInstance %>Repository.findAll()<%_ if (dtoMapstruct) { _%>.map(<%= entityToDtoReference %>)<%_ } _%>
         <%_ } _%>
     }
 
@@ -389,7 +389,7 @@ _%><%- include('../../common/inject_template', {viaService: viaService, construc
      * @return the [ResponseEntity] with status `200 (OK)` and with body the <%= instanceName %>, or with status `404 (Not Found)`.
      */
     @GetMapping("/<%= entityApiUrl %>/{id}")
-    <%_ if (databaseType === 'sql' && isUsingMapsId === true && !viaService) { _%>
+    <%_ if (databaseTypeSql && isUsingMapsId&& !viaService) { _%>
     @Transactional(readOnly = true)
     <%_ } _%>
     fun get<%= entityClass %>(@PathVariable id: <%= primaryKey.type %>): <% if (reactive) { %>Mono<<% } %>ResponseEntity<<%= instanceType %>><% if (reactive) { %>><% } %> {
@@ -412,9 +412,9 @@ _%><%- include('../../common/inject_template', {viaService: viaService, construc
 <%- include('../../common/delete_template', {viaService: viaService, fromResource: true}); -%>
         <%_ if (!reactive) { _%>
             return ResponseEntity.noContent()
-                .headers(HeaderUtil.createEntityDeletionAlert(applicationName, <%= enableTranslation %>, ENTITY_NAME, id<% if (primaryKey.type !== 'String') { %>.toString()<% } %>)).build()
+                .headers(HeaderUtil.createEntityDeletionAlert(applicationName, <%= enableTranslation %>, ENTITY_NAME, id<% if (!primaryKey.fields[0].fieldTypeString) { %>.toString()<% } %>)).build()
         <%_ } else { _%>
-            <%_ if (databaseType === 'couchbase') { _%>
+            <%_ if (databaseTypeCouchbase) { _%>
                 .then(Mono.just(ResponseEntity.noContent()
                     .headers(HeaderUtil.createEntityDeletionAlert(applicationName, <%= enableTranslation %>, ENTITY_NAME, id<% if (primaryKey.type !== 'String') { %>.toString()<% } %>)).build<Void>())
                 )
@@ -434,7 +434,7 @@ _%><%- include('../../common/inject_template', {viaService: viaService, construc
      * to the query.
      *
      * @param query the query of the <%= entityInstance %> search.
-    <%_ if (pagination !== 'no') { _%>
+    <%_ if (!paginationNo) { _%>
      * @param pageable the pagination information.
        <%_ if (reactive) { _%>
      * @param request a [ServerHttpRequest] request.

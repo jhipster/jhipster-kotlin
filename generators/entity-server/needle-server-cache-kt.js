@@ -28,7 +28,7 @@ module.exports = class extends needleServerCache {
         // Add the collections linked to that entity to ehcache
         relationships.forEach(relationship => {
             const relationshipType = relationship.relationshipType;
-            if (relationshipType === 'one-to-many' || relationshipType === 'many-to-many') {
+            if (relationshipType === 'one-to-many' || relationship.relationshipManyToMany) {
                 this.addEntryToCache(
                     `${packageName}.domain.${entityClass}::class.java.name + ".${relationship.relationshipFieldNamePlural}"`,
                     packageFolder,

@@ -17,6 +17,7 @@
  * limitations under the License.
  */
 const path = require('path');
+const fs = require('fs');
 const cleanup = require('generator-jhipster/generators/cleanup');
 const constants = require('generator-jhipster/generators/generator-constants');
 const baseServerFiles = require('generator-jhipster/generators/server/files').serverFiles;
@@ -111,7 +112,7 @@ const serverFiles = {
         {
             condition: generator =>
                 generator.databaseType === 'mongodb' &&
-                (!generator.skipUserManagement || (generator.skipUserManagement && generator.authenticationType === 'oauth2')),
+                (!generator.skipUserManagement || (generator.skipUserManagement && generator.authenticationTypeOauth2)),
             path: SERVER_MAIN_KOTLIN_SRC_DIR,
             templates: [
                 {
@@ -128,7 +129,7 @@ const serverFiles = {
         },
         {
             condition: generator =>
-                generator.databaseType === 'couchbase' && (!generator.skipUserManagement || generator.authenticationType === 'oauth2'),
+                generator.databaseType === 'couchbase' && (!generator.skipUserManagement || generator.authenticationTypeOauth2),
             path: SERVER_MAIN_RES_DIR,
             templates: [
                 'config/couchmove/changelog/V0.1__initial_setup/ROLE_ADMIN.json',
@@ -139,7 +140,7 @@ const serverFiles = {
         },
         {
             condition: generator =>
-                generator.databaseType === 'neo4j' && (!generator.skipUserManagement || generator.authenticationType === 'oauth2'),
+                generator.databaseType === 'neo4j' && (!generator.skipUserManagement || generator.authenticationTypeOauth2),
             path: SERVER_MAIN_SRC_DIR,
             templates: [
                 {
@@ -154,7 +155,7 @@ const serverFiles = {
         },
         {
             condition: generator =>
-                generator.databaseType === 'neo4j' && (!generator.skipUserManagement || generator.authenticationType === 'oauth2'),
+                generator.databaseType === 'neo4j' && (!generator.skipUserManagement || generator.authenticationTypeOauth2),
             path: SERVER_MAIN_RES_DIR,
             templates: [
                 {
@@ -181,7 +182,7 @@ const serverFiles = {
             condition: generator =>
                 generator.databaseType === 'cassandra' &&
                 generator.applicationType !== 'microservice' &&
-                (!generator.skipUserManagement || generator.authenticationType === 'oauth2'),
+                (!generator.skipUserManagement || generator.authenticationTypeOauth2),
             path: SERVER_MAIN_RES_DIR,
             templates: [
                 { file: 'config/cql/changelog/create-tables.cql', renameTo: () => 'config/cql/changelog/00000000000000_create-tables.cql' },
@@ -232,7 +233,7 @@ const serverFiles = {
             ],
         },
         {
-            condition: generator => generator.authenticationType === 'jwt',
+            condition: generator => generator.authenticationTypeJwt,
             path: SERVER_MAIN_KOTLIN_SRC_DIR,
             templates: [
                 {
@@ -248,7 +249,7 @@ const serverFiles = {
             ],
         },
         {
-            condition: generator => generator.authenticationType === 'jwt' && !generator.reactive,
+            condition: generator => generator.authenticationTypeJwt && !generator.reactive,
             path: SERVER_MAIN_KOTLIN_SRC_DIR,
             templates: [
                 {
@@ -259,7 +260,7 @@ const serverFiles = {
             ],
         },
         {
-            condition: generator => generator.reactive && generator.applicationType === 'gateway' && generator.authenticationType === 'jwt',
+            condition: generator => generator.reactive && generator.applicationTypeGateway && generator.authenticationTypeJwt,
             path: SERVER_MAIN_KOTLIN_SRC_DIR,
             templates: [
                 {
@@ -292,8 +293,7 @@ const serverFiles = {
             ],
         },
         {
-            condition: generator =>
-                !shouldSkipUserManagement(generator) && generator.authenticationType === 'session' && !generator.reactive,
+            condition: generator => !shouldSkipUserManagement(generator) && generator.authenticationTypeSession && !generator.reactive,
             path: SERVER_MAIN_KOTLIN_SRC_DIR,
             templates: [
                 {
@@ -314,7 +314,7 @@ const serverFiles = {
             ],
         },
         {
-            condition: generator => generator.authenticationType === 'oauth2',
+            condition: generator => generator.authenticationTypeOauth2,
             path: SERVER_MAIN_KOTLIN_SRC_DIR,
             templates: [
                 {
@@ -335,7 +335,7 @@ const serverFiles = {
             ],
         },
         {
-            condition: generator => generator.authenticationType === 'oauth2',
+            condition: generator => generator.authenticationTypeOauth2,
             path: SERVER_TEST_SRC_KOTLIN_DIR,
             templates: [
                 {
@@ -353,8 +353,8 @@ const serverFiles = {
         {
             condition: generator =>
                 !generator.reactive &&
-                generator.authenticationType === 'oauth2' &&
-                (generator.applicationType === 'microservice' || generator.applicationType === 'gateway'),
+                generator.authenticationTypeOauth2 &&
+                (generator.applicationTypeMicroservice || generator.applicationTypeGateway),
             path: SERVER_TEST_SRC_KOTLIN_DIR,
             templates: [
                 {
@@ -381,7 +381,7 @@ const serverFiles = {
             ],
         },
         {
-            condition: generator => generator.applicationType !== 'microservice' && generator.authenticationType === 'jwt',
+            condition: generator => generator.applicationType !== 'microservice' && generator.authenticationTypeJwt,
             path: SERVER_MAIN_KOTLIN_SRC_DIR,
             templates: [
                 {
@@ -408,8 +408,7 @@ const serverFiles = {
             ],
         },
         {
-            condition: generator =>
-                !generator.reactive && generator.authenticationType === 'oauth2' && generator.applicationType === 'monolith',
+            condition: generator => !generator.reactive && generator.authenticationTypeOauth2 && generator.applicationType === 'monolith',
             path: SERVER_MAIN_KOTLIN_SRC_DIR,
             templates: [
                 {
@@ -420,8 +419,7 @@ const serverFiles = {
             ],
         },
         {
-            condition: generator =>
-                !generator.reactive && generator.authenticationType === 'oauth2' && generator.applicationType === 'monolith',
+            condition: generator => !generator.reactive && generator.authenticationTypeOauth2 && generator.applicationType === 'monolith',
             path: SERVER_TEST_SRC_KOTLIN_DIR,
             templates: [
                 {
@@ -434,7 +432,7 @@ const serverFiles = {
     ],
     serverJavaGateway: [
         {
-            condition: generator => generator.applicationType === 'gateway' && generator.serviceDiscoveryType,
+            condition: generator => generator.applicationTypeGateway && generator.serviceDiscoveryType,
             path: SERVER_MAIN_KOTLIN_SRC_DIR,
             templates: [
                 {
@@ -451,8 +449,7 @@ const serverFiles = {
         },
         {
             condition: generator =>
-                generator.authenticationType === 'oauth2' &&
-                (generator.applicationType === 'monolith' || generator.applicationType === 'gateway'),
+                generator.authenticationTypeOauth2 && (generator.applicationType === 'monolith' || generator.applicationTypeGateway),
             path: SERVER_MAIN_KOTLIN_SRC_DIR,
             templates: [
                 {
@@ -468,7 +465,7 @@ const serverFiles = {
             ],
         },
         {
-            condition: generator => generator.applicationType === 'gateway' && generator.serviceDiscoveryType && generator.reactive,
+            condition: generator => generator.applicationTypeGateway && generator.serviceDiscoveryType && generator.reactive,
             path: SERVER_MAIN_KOTLIN_SRC_DIR,
             templates: [
                 {
@@ -484,7 +481,7 @@ const serverFiles = {
             ],
         },
         {
-            condition: generator => generator.applicationType === 'gateway' && generator.serviceDiscoveryType && generator.reactive,
+            condition: generator => generator.applicationTypeGateway && generator.serviceDiscoveryType && generator.reactive,
             path: SERVER_TEST_SRC_KOTLIN_DIR,
             templates: [
                 {
@@ -504,8 +501,8 @@ const serverFiles = {
         {
             condition: generator =>
                 !generator.reactive &&
-                (generator.applicationType === 'microservice' || generator.applicationType === 'gateway') &&
-                generator.authenticationType === 'jwt',
+                (generator.applicationTypeMicroservice || generator.applicationTypeGateway) &&
+                generator.authenticationTypeJwt,
             path: SERVER_MAIN_KOTLIN_SRC_DIR,
             templates: [
                 {
@@ -523,8 +520,8 @@ const serverFiles = {
         {
             condition: generator =>
                 !generator.reactive &&
-                generator.authenticationType === 'oauth2' &&
-                (generator.applicationType === 'microservice' || generator.applicationType === 'gateway'),
+                generator.authenticationTypeOauth2 &&
+                (generator.applicationTypeMicroservice || generator.applicationTypeGateway),
             path: SERVER_MAIN_KOTLIN_SRC_DIR,
             templates: [
                 {
@@ -555,7 +552,7 @@ const serverFiles = {
             ],
         },
         {
-            condition: generator => !generator.reactive && generator.applicationType === 'gateway' && !generator.serviceDiscoveryType,
+            condition: generator => !generator.reactive && generator.applicationTypeGateway && !generator.serviceDiscoveryType,
             path: SERVER_MAIN_KOTLIN_SRC_DIR,
             templates: [
                 {
@@ -566,7 +563,7 @@ const serverFiles = {
             ],
         },
         {
-            condition: generator => generator.applicationType === 'microservice',
+            condition: generator => generator.applicationTypeMicroservice,
             path: SERVER_MAIN_RES_DIR,
             templates: [{ file: 'static/microservices_index.html', renameTo: () => 'static/index.html' }],
         },
@@ -713,7 +710,7 @@ const serverFiles = {
         {
             condition: generator =>
                 ['ehcache', 'caffeine', 'hazelcast', 'infinispan', 'memcached', 'redis'].includes(generator.cacheProvider) ||
-                generator.applicationType === 'gateway',
+                generator.applicationTypeGateway,
             path: SERVER_MAIN_KOTLIN_SRC_DIR,
             templates: [
                 {
@@ -787,7 +784,7 @@ const serverFiles = {
             condition: generator =>
                 generator.databaseType === 'sql' &&
                 generator.reactive &&
-                (!generator.skipUserManagement || generator.authenticationType === 'oauth2'),
+                (!generator.skipUserManagement || generator.authenticationTypeOauth2),
             path: SERVER_MAIN_KOTLIN_SRC_DIR,
             templates: [
                 {
@@ -1201,8 +1198,7 @@ const serverFiles = {
         },
         {
             condition: generator =>
-                generator.authenticationType === 'oauth2' &&
-                (generator.applicationType === 'monolith' || generator.applicationType === 'gateway'),
+                generator.authenticationTypeOauth2 && (generator.applicationType === 'monolith' || generator.applicationTypeGateway),
             path: SERVER_TEST_SRC_KOTLIN_DIR,
             templates: [
                 {
@@ -1304,22 +1300,20 @@ const serverFiles = {
         },
         {
             condition: generator =>
-                (generator.authenticationType === 'oauth2' && generator.applicationType !== 'microservice') ||
+                (generator.authenticationTypeOauth2 && generator.applicationType !== 'microservice') ||
                 (!generator.skipUserManagement && generator.databaseType === 'sql'),
             path: SERVER_MAIN_RES_DIR,
             templates: ['config/liquibase/data/user.csv'],
         },
         {
             condition: generator =>
-                (generator.authenticationType === 'oauth2' &&
-                    generator.applicationType !== 'microservice' &&
-                    generator.databaseType === 'sql') ||
+                (generator.authenticationTypeOauth2 && generator.applicationType !== 'microservice' && generator.databaseType === 'sql') ||
                 (!generator.skipUserManagement && generator.databaseType === 'sql'),
             path: SERVER_MAIN_RES_DIR,
             templates: ['config/liquibase/data/authority.csv', 'config/liquibase/data/user_authority.csv'],
         },
         {
-            condition: generator => generator.authenticationType === 'oauth2',
+            condition: generator => generator.authenticationTypeOauth2,
             path: SERVER_MAIN_KOTLIN_SRC_DIR,
             templates: [
                 {
@@ -1345,7 +1339,7 @@ const serverFiles = {
             ],
         },
         {
-            condition: generator => generator.authenticationType === 'oauth2' && generator.databaseType !== 'no',
+            condition: generator => generator.authenticationTypeOauth2 && generator.databaseType !== 'no',
             path: SERVER_MAIN_KOTLIN_SRC_DIR,
             templates: [
                 {
@@ -1387,7 +1381,7 @@ const serverFiles = {
             ],
         },
         {
-            condition: generator => generator.authenticationType === 'oauth2',
+            condition: generator => generator.authenticationTypeOauth2,
             path: SERVER_TEST_SRC_KOTLIN_DIR,
             templates: [
                 {
@@ -1398,7 +1392,7 @@ const serverFiles = {
             ],
         },
         {
-            condition: generator => generator.authenticationType === 'oauth2' && generator.databaseType !== 'no',
+            condition: generator => generator.authenticationTypeOauth2 && generator.databaseType !== 'no',
             path: SERVER_TEST_SRC_KOTLIN_DIR,
             templates: [
                 {
@@ -1435,7 +1429,7 @@ const serverFiles = {
         {
             condition: generator =>
                 generator.skipUserManagement &&
-                generator.authenticationType === 'oauth2' &&
+                generator.authenticationTypeOauth2 &&
                 ['monolith', 'gateway'].includes(generator.applicationType),
             path: SERVER_TEST_SRC_KOTLIN_DIR,
             templates: [
@@ -1449,7 +1443,7 @@ const serverFiles = {
         {
             condition: generator =>
                 generator.skipUserManagement &&
-                generator.authenticationType === 'oauth2' &&
+                generator.authenticationTypeOauth2 &&
                 ['monolith', 'gateway'].includes(generator.applicationType),
             path: SERVER_TEST_SRC_KOTLIN_DIR,
             templates: [
@@ -1461,7 +1455,7 @@ const serverFiles = {
             ],
         },
         {
-            condition: generator => generator.authenticationType === 'oauth2' && generator.searchEngine === 'elasticsearch',
+            condition: generator => generator.authenticationTypeOauth2 && generator.searchEngine === 'elasticsearch',
             path: SERVER_MAIN_KOTLIN_SRC_DIR,
             templates: [
                 {
@@ -1472,7 +1466,7 @@ const serverFiles = {
             ],
         },
         {
-            condition: generator => generator.authenticationType === 'oauth2' && generator.searchEngine === 'elasticsearch',
+            condition: generator => generator.authenticationTypeOauth2 && generator.searchEngine === 'elasticsearch',
             path: SERVER_TEST_SRC_KOTLIN_DIR,
             templates: [
                 {
@@ -1585,7 +1579,7 @@ const serverFiles = {
             ],
         },
         {
-            condition: generator => generator.authenticationType === 'jwt',
+            condition: generator => generator.authenticationTypeJwt,
             path: SERVER_TEST_SRC_KOTLIN_DIR,
             templates: [
                 {
@@ -1601,7 +1595,7 @@ const serverFiles = {
             ],
         },
         {
-            condition: generator => generator.applicationType !== 'microservice' && generator.authenticationType === 'jwt',
+            condition: generator => generator.applicationType !== 'microservice' && generator.authenticationTypeJwt,
             path: SERVER_TEST_SRC_KOTLIN_DIR,
             templates: [
                 {
@@ -1684,7 +1678,7 @@ const serverFiles = {
             ],
         },
         {
-            condition: generator => !generator.skipUserManagement && generator.authenticationType === 'oauth2',
+            condition: generator => !generator.skipUserManagement && generator.authenticationTypeOauth2,
             path: SERVER_TEST_SRC_KOTLIN_DIR,
             templates: [
                 {
@@ -1695,7 +1689,6 @@ const serverFiles = {
             ],
         },
         {
-            condition: generator => !generator.skipUserManagement && generator.authenticationType !== 'oauth2',
             path: SERVER_TEST_SRC_KOTLIN_DIR,
             templates: [
                 {
@@ -1729,8 +1722,6 @@ function writeFiles() {
         },
 
         writeFiles() {
-            // writeFilesToDisk(serverFiles, this, false, this.fetchFromInstalledJHipster('server/templates'));
-
             return this.writeFilesToDisk(serverFiles);
         },
 
@@ -1990,81 +1981,11 @@ function writeFiles() {
 }
 
 /**
- * write the given files using provided config.
- *
- * @param {object} files - files to write
- * @param {object} generator - the generator instance to use
- * @param {boolean} returnFiles - weather to return the generated file list or to write them
- * @param {string} prefix - prefix to add in the path
- */
-/* function writeFilesToDisk(files, generator, returnFiles, prefix) {
-    const _this = generator || this;
-    const filesOut = [];
-    const startTime = new Date();
-    // using the fastest method for iterations
-    for (let i = 0, blocks = Object.keys(files); i < blocks.length; i++) {
-        for (let j = 0, blockTemplates = files[blocks[i]]; j < blockTemplates.length; j++) {
-            const blockTemplate = blockTemplates[j];
-            if (!blockTemplate.condition || blockTemplate.condition(_this)) {
-                const path = blockTemplate.path || '';
-                blockTemplate.templates.forEach(templateObj => {
-                    let templatePath = path;
-                    let method = 'template';
-                    let useTemplate = false;
-                    let options = {};
-                    let templatePathTo;
-                    if (typeof templateObj === 'string') {
-                        templatePath += templateObj;
-                    } else {
-                        if (typeof templateObj.file === 'string') {
-                            templatePath += templateObj.file;
-                        } else if (typeof templateObj.file === 'function') {
-                            templatePath += templateObj.file(_this);
-                        }
-                        method = templateObj.method ? templateObj.method : method;
-                        useTemplate = templateObj.template ? templateObj.template : useTemplate;
-                        options = templateObj.options ? templateObj.options : options;
-                    }
-                    if (templateObj && templateObj.renameTo) {
-                        templatePathTo = path + templateObj.renameTo(_this);
-                    } else {
-                        // remove the .ejs suffix
-                        templatePathTo = templatePath.replace('.ejs', '');
-                    }
-                    filesOut.push(templatePathTo);
-                    if (!returnFiles) {
-                        let templatePathFrom = prefix ? `${prefix}/${templatePath}` : templatePath;
-
-                        if (templateObj.useBluePrint) {
-                            templatePathFrom = templatePath;
-                        }
-                        if (
-                            !templateObj.noEjs &&
-                            !templatePathFrom.endsWith('.png') &&
-                            !templatePathFrom.endsWith('.jpg') &&
-                            !templatePathFrom.endsWith('.gif') &&
-                            !templatePathFrom.endsWith('.svg') &&
-                            !templatePathFrom.endsWith('.ico')
-                        ) {
-                            templatePathFrom = `${templatePathFrom}.ejs`;
-                        }
-                        // if (method === 'template')
-                        _this[method](templatePathFrom, templatePathTo, _this, options, useTemplate);
-                    }
-                });
-            }
-        }
-    }
-    _this.debug(`Time taken to write files: ${new Date() - startTime}ms`);
-    return filesOut;
-} */
-
-/**
  * Manually updates the pom.xml file to perform the following operations:
  * 1. Set the Kotlin source directories as the default (Needed for the ktlint plugin to properly format the sources)
  * 2. Remove the default <maven-compiler-plugin> configuration.
  */
-function updatePom(generator) {
+async function updatePom(generator) {
     const _this = generator || this;
 
     const fullPath = path.join(process.cwd(), 'pom.xml');
@@ -2087,6 +2008,5 @@ function updatePom(generator) {
 
 module.exports = {
     writeFiles,
-    // writeFilesToDisk,
     serverFiles,
 };

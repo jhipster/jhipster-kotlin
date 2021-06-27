@@ -23,7 +23,7 @@ import <%= packageName %>.AbstractCassandraTest
 <%_ } _%>
 import <%= packageName %>.IntegrationTest
 import <%= packageName %>.config.DEFAULT_LANGUAGE
-<%_ if (authenticationType === 'session' && !reactive) { _%>
+<%_ if (authenticationTypeSession && !reactive) { _%>
 import <%= packageName %>.domain.PersistentToken
 <%_ } _%>
 import <%= packageName %>.domain.<%= asEntity('User') %>
@@ -31,7 +31,7 @@ import <%= packageName %>.domain.<%= asEntity('User') %>
 <%_ if (databaseType === 'sql' || databaseType === 'mongodb' || databaseType === 'neo4j' || databaseType === 'couchbase') { _%>
 import <%= packageName %>.repository.AuthorityRepository
 <%_ } _%>
-<%_ if (authenticationType === 'session' && !reactive) { _%>
+<%_ if (authenticationTypeSession && !reactive) { _%>
 import <%= packageName %>.repository.PersistentTokenRepository
 <%_ } _%>
 import <%= packageName %>.repository.UserRepository
@@ -78,7 +78,7 @@ import reactor.core.publisher.Mono
 <%_ } _%>
 
 import java.time.Instant
-<%_ if (authenticationType === 'session' && !reactive && ['sql', 'mongodb', 'neo4j', 'couchbase'].includes(databaseType)) { _%>
+<%_ if (authenticationTypeSession && !reactive && ['sql', 'mongodb', 'neo4j', 'couchbase'].includes(databaseType)) { _%>
 import java.time.LocalDate
 <%_ } _%>
 <%_ if (!(databaseType === 'sql' || databaseType === 'mongodb' || databaseType === 'couchbase')) { _%>
@@ -93,7 +93,7 @@ import org.assertj.core.api.Assertions.assertThat
 <%_ if (reactive && searchEngine === 'elasticsearch') { _%>
 import org.mockito.Mockito.*
 <%_ } _%>
-<%_ if (authenticationType === 'session' && !reactive) { _%>
+<%_ if (authenticationTypeSession && !reactive) { _%>
 import org.hamcrest.Matchers.containsString
 import org.hamcrest.Matchers.hasItem
 <%_ } _%>
@@ -102,7 +102,7 @@ import <%= packageName %>.web.rest.TEST_USER_LOGIN
     <%_ if (testsNeedCsrf) { _%>
 import org.springframework.security.test.web.servlet.request.SecurityMockMvcRequestPostProcessors.csrf
     <%_ } _%>
-    <%_ if (authenticationType === 'session') { _%>
+    <%_ if (authenticationTypeSession) { _%>
 import org.springframework.test.web.servlet.request.MockMvcRequestBuilders.delete
     <%_ } _%>
 import org.springframework.test.web.servlet.request.MockMvcRequestBuilders.get
@@ -144,7 +144,7 @@ class AccountResourceIT <% if (databaseType === 'cassandra') { %>: AbstractCassa
 
     @Autowired
     private lateinit var userService: UserService
-<%_ if (authenticationType === 'session' && !reactive) { _%>
+<%_ if (authenticationTypeSession && !reactive) { _%>
 
     @Autowired
     private lateinit var persistentTokenRepository: PersistentTokenRepository
@@ -311,7 +311,7 @@ class AccountResourceIT <% if (databaseType === 'cassandra') { %>: AbstractCassa
         // Configure the mock search repository
         `when`(mockUserSearchRepository.save(any(User::class.java)))
             .thenAnswer { Mono.just(it.arguments[0] as User) }
-    
+
         <%_ } _%>
         val validUser = ManagedUserVM().apply {
             login = "test-register-valid"
@@ -506,7 +506,7 @@ class AccountResourceIT <% if (databaseType === 'cassandra') { %>: AbstractCassa
         // Configure the mock search repository
         `when`(mockUserSearchRepository.save(any(User::class.java)))
             .thenAnswer { Mono.just(it.arguments[0] as User) }
-    
+
         <%_ } _%>
         // First registration
         val firstUser = ManagedUserVM().apply {
@@ -607,7 +607,7 @@ class AccountResourceIT <% if (databaseType === 'cassandra') { %>: AbstractCassa
         // Configure the mock search repository
         `when`(mockUserSearchRepository.save(any(User::class.java)))
             .thenAnswer { Mono.just(it.arguments[0] as User) }
-    
+
         <%_ } _%>
         // First user
         val firstUser = ManagedUserVM().apply {
@@ -759,7 +759,7 @@ class AccountResourceIT <% if (databaseType === 'cassandra') { %>: AbstractCassa
         // Configure the mock search repository
         `when`(mockUserSearchRepository.save(any(User::class.java)))
             .thenAnswer { Mono.just(it.arguments[0] as User) }
-    
+
         <%_ } _%>
 
         <%_ if (!reactive) { _%>
@@ -794,7 +794,7 @@ class AccountResourceIT <% if (databaseType === 'cassandra') { %>: AbstractCassa
         // Configure the mock search repository
         `when`(mockUserSearchRepository.save(any(User::class.java)))
             .thenAnswer { Mono.just(it.arguments[0] as User) }
-    
+
         <%_ } _%>
         val activationKey = "some activation key"
         var user = <%= asEntity('User') %>(
@@ -1305,7 +1305,7 @@ class AccountResourceIT <% if (databaseType === 'cassandra') { %>: AbstractCassa
         assertNotNull(updatedUser)<% } %>
         assertThat(updatedUser.password).isEqualTo(user.password)
     }
-    <%_ if (authenticationType === 'session' && !reactive) { _%>
+    <%_ if (authenticationTypeSession && !reactive) { _%>
 
     @Test<% if (databaseType === 'sql' && !reactive) { %>
     @Transactional<% } %>

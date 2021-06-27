@@ -23,7 +23,6 @@ import <%= packageName %>.AbstractCassandraTest
 <%_ } _%>
 import <%= packageName %>.IntegrationTest
 import <%= packageName %>.config.TestSecurityConfiguration
-import <%= packageName %>.security.AuthoritiesConstants
 import <%= packageName %>.service.UserService
 
 <%_ if (reactive) { _%>
@@ -44,7 +43,6 @@ import org.springframework.security.oauth2.client.authentication.OAuth2Authentic
 import org.springframework.security.oauth2.core.user.DefaultOAuth2User
 import org.springframework.security.oauth2.core.user.OAuth2User
 import org.springframework.security.test.context.TestSecurityContextHolder
-import org.springframework.security.test.context.support.WithMockUser
 import org.springframework.test.web.servlet.MockMvc
     <%_ if (databaseType === 'sql' && !reactive) { _%>
 import org.springframework.transaction.annotation.Transactional
@@ -162,6 +160,48 @@ class AccountResourceIT <% if (databaseType === 'cassandra') { %>: AbstractCassa
             .accept(MediaType.APPLICATION_JSON)
             .exchange()
             .expectStatus().is5xxServerError()
+    <%_ } _%>
+    }
+
+    @Test
+    @WithUnauthenticatedMockUser
+    <% if (!reactive) { %>@Throws(Exception::class)<% } %>
+    <%_ if (!reactive) { _%>
+    fun testNonAuthenticatedUser(){
+        restAccountMockMvc.perform(get("/api/authenticate")
+            .accept(MediaType.APPLICATION_JSON))
+            .andExpect(status().isOk)
+            .andExpect(content().string(""))
+    <%_ } else { _%>
+    fun testNonAuthenticatedUser() {
+        webTestClient.get().uri("/api/authenticate")
+            .accept(MediaType.APPLICATION_JSON)
+            .exchange()
+            .expectStatus().isOk
+            .expectBody().isEmpty
+    <%_ } _%>
+    }
+
+    @Test
+    <% if (!reactive) { %>@Throws(Exception::class)<% } %>
+    <%_ if (!reactive) { _%>
+    fun testAuthenticatedUser() {
+        restAccountMockMvc.perform(get("/api/authenticate")
+            .with { request ->
+                request.remoteUser = TEST_USER_LOGIN
+                request
+            }
+            .accept(MediaType.APPLICATION_JSON))
+            .andExpect(status().isOk)
+            .andExpect(content().string(TEST_USER_LOGIN))
+    <%_ } else { _%>
+    fun testAuthenticatedUser() {
+        webTestClient
+            .get().uri("/api/authenticate")
+            .accept(MediaType.APPLICATION_JSON)
+            .exchange()
+            .expectStatus().isOk
+            // .expectBody<String>().isEqualTo(TEST_USER_LOGIN)
     <%_ } _%>
     }
 }

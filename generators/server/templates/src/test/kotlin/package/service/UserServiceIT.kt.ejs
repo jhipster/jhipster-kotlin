@@ -26,13 +26,13 @@ import <%= packageName %>.IntegrationTest
 import <%= packageName %>.config.SYSTEM_ACCOUNT
 <%_ } _%>
 import <%= packageName %>.config.DEFAULT_LANGUAGE
-<%_ if ((databaseType === 'sql' || databaseType === 'mongodb' || databaseType === 'neo4j' || databaseType === 'couchbase') && authenticationType === 'session' && !reactive) { _%>
+<%_ if ((databaseType === 'sql' || databaseType === 'mongodb' || databaseType === 'neo4j' || databaseType === 'couchbase') && authenticationTypeSession && !reactive) { _%>
 import <%= packageName %>.domain.PersistentToken
 <%_ } _%>
 <%_ if (databaseType !== 'no') { _%>
 import <%= packageName %>.domain.<%= asEntity('User') %>
 <%_ } _%>
-<%_ if ((databaseType === 'sql' || databaseType === 'mongodb' || databaseType === 'neo4j' || databaseType === 'couchbase') && authenticationType === 'session' && !reactive) { _%>
+<%_ if ((databaseType === 'sql' || databaseType === 'mongodb' || databaseType === 'neo4j' || databaseType === 'couchbase') && authenticationTypeSession && !reactive) { _%>
 import <%= packageName %>.repository.PersistentTokenRepository
 <%_ } _%>
 <%_ if (searchEngine === 'elasticsearch') { _%>
@@ -41,7 +41,7 @@ import <%= packageName %>.repository.search.UserSearchRepository
 <%_ if (databaseType !== 'no') { _%>
 import <%= packageName %>.repository.UserRepository
 <%_ } _%>
-<%_ if (authenticationType === 'oauth2') { _%>
+<%_ if (authenticationTypeOauth2) { _%>
 import <%= packageName %>.security.ANONYMOUS
 <%_ } _%>
 <%_ if (authenticationType !== 'oauth2' && (databaseType === 'sql' || databaseType === 'mongodb' || databaseType === 'neo4j' || databaseType === 'couchbase')) { _%>
@@ -62,7 +62,7 @@ import org.springframework.data.auditing.DateTimeProvider
 <%_ if (databaseType === 'sql' || databaseType === 'mongodb' || databaseType === 'neo4j' || databaseType === 'couchbase') { _%>
 import org.springframework.data.domain.PageRequest
 <%_ } _%>
-<%_ if (authenticationType === 'oauth2') { _%>
+<%_ if (authenticationTypeOauth2) { _%>
 import org.springframework.security.authentication.UsernamePasswordAuthenticationToken
 import org.springframework.security.core.GrantedAuthority
 import org.springframework.security.core.authority.SimpleGrantedAuthority
@@ -87,7 +87,7 @@ import java.time.temporal.ChronoUnit
 <%_ if (databaseType === 'sql') { _%>
 import java.time.temporal.TemporalAccessor
 <%_ } _%>
-<%_ if ((databaseType === 'sql' || databaseType === 'mongodb' || databaseType === 'neo4j' || databaseType === 'couchbase') && authenticationType === 'session' && !reactive) { _%>
+<%_ if ((databaseType === 'sql' || databaseType === 'mongodb' || databaseType === 'neo4j' || databaseType === 'couchbase') && authenticationTypeSession && !reactive) { _%>
 import java.time.LocalDate
 <%_ } _%>
 <%_ if (databaseType === 'sql' && reactive) { _%>
@@ -137,7 +137,7 @@ private const val DEFAULT_LANGKEY = "dummy"
 @Transactional
 <%_ } _%>
 class UserServiceIT <% if (databaseType === 'cassandra') { %>: AbstractCassandraTest() <% } %> {
-    <%_ if ((databaseType === 'sql' || databaseType === 'mongodb' || databaseType === 'neo4j' || databaseType === 'couchbase') && authenticationType === 'session' && !reactive) { _%>
+    <%_ if ((databaseType === 'sql' || databaseType === 'mongodb' || databaseType === 'neo4j' || databaseType === 'couchbase') && authenticationTypeSession && !reactive) { _%>
 
     @Autowired
     private lateinit var persistentTokenRepository: PersistentTokenRepository
@@ -172,7 +172,7 @@ class UserServiceIT <% if (databaseType === 'cassandra') { %>: AbstractCassandra
 
     private lateinit var user: <%= asEntity('User') %>
     <%_ } _%>
-    <%_ if (authenticationType === 'oauth2' ) { _%>
+    <%_ if (authenticationTypeOauth2 ) { _%>
 
     private lateinit var userDetails: MutableMap<String, Any>
     <%_ } _%>
@@ -182,7 +182,7 @@ class UserServiceIT <% if (databaseType === 'cassandra') { %>: AbstractCassandra
         <%_ if (databaseType === 'couchbase') { _%>
         mockAuthentication()
         <%_ } _%>
-        <%_ if ((databaseType === 'sql' || databaseType === 'mongodb' || databaseType === 'neo4j' || databaseType === 'couchbase') && authenticationType === 'session' && !reactive) { _%>
+        <%_ if ((databaseType === 'sql' || databaseType === 'mongodb' || databaseType === 'neo4j' || databaseType === 'couchbase') && authenticationTypeSession && !reactive) { _%>
         persistentTokenRepository.deleteAll()
         <%_ } _%>
         <%_ if (databaseType === 'sql' && reactive) { _%>
@@ -213,7 +213,7 @@ class UserServiceIT <% if (databaseType === 'cassandra') { %>: AbstractCassandra
             langKey = DEFAULT_LANGKEY
         )
         <%_ } _%>
-        <%_ if (authenticationType === 'oauth2' ) { _%>
+        <%_ if (authenticationTypeOauth2 ) { _%>
         userDetails = mutableMapOf(
             "sub" to DEFAULT_LOGIN,
             "email" to DEFAULT_EMAIL,
@@ -229,7 +229,7 @@ class UserServiceIT <% if (databaseType === 'cassandra') { %>: AbstractCassandra
         auditingHandler.setDateTimeProvider(dateTimeProvider)
         <%_ } _%>
     }
-    <%_ if ((databaseType === 'sql' || databaseType === 'neo4j' || databaseType === 'mongodb' || databaseType === 'couchbase') && authenticationType === 'session' && !reactive) { _%>
+    <%_ if ((databaseType === 'sql' || databaseType === 'neo4j' || databaseType === 'mongodb' || databaseType === 'couchbase') && authenticationTypeSession && !reactive) { _%>
 
     @Test
         <%_ if (databaseType === 'sql' && !reactive) { _%>
@@ -408,7 +408,7 @@ class UserServiceIT <% if (databaseType === 'cassandra') { %>: AbstractCassandra
         <%_ } _%>
     }
     <%_ } _%>
-    <%_ if ((databaseType === 'sql' || databaseType === 'neo4j' || databaseType === 'mongodb' || databaseType === 'couchbase') && authenticationType === 'session' && !reactive) { _%>
+    <%_ if ((databaseType === 'sql' || databaseType === 'neo4j' || databaseType === 'mongodb' || databaseType === 'couchbase') && authenticationTypeSession && !reactive) { _%>
 
     private fun generateUserToken(user: <%= asEntity('User') %>, tokenSeries: String, localDate: LocalDate) {
         val token = PersistentToken(
@@ -426,7 +426,7 @@ class UserServiceIT <% if (databaseType === 'cassandra') { %>: AbstractCassandra
         persistentTokenRepository.save<% if (databaseType === 'sql' && !reactive) { %>AndFlush<% } %>(token)
     }
     <%_ } _%>
-    <%_ if (authenticationType === 'oauth2') { _%>
+    <%_ if (authenticationTypeOauth2) { _%>
 
     @Test
     <%_ if (databaseType === 'sql' && !reactive) { _%>

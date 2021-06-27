@@ -58,13 +58,15 @@ class TokenProvider(private val jHipsterProperties: JHipsterProperties) {
 
     init {
         val keyBytes: ByteArray
-        val secret = jHipsterProperties.security.authentication.jwt.secret
+        var secret = jHipsterProperties.security.authentication.jwt.base64Secret
         keyBytes = if (!ObjectUtils.isEmpty(secret)) {
-            log.warn("Warning: the JWT key used is not Base64-encoded. We recommend using the `jhipster.security.authentication.jwt.base64-secret` key for optimum security.")
-            secret.toByteArray(StandardCharsets.UTF_8)
-        } else {
             log.debug("Using a Base64-encoded JWT secret key")
-            Decoders.BASE64.decode(jHipsterProperties.security.authentication.jwt.base64Secret)
+            Decoders.BASE64.decode(secret)
+        } else {
+            log.warn("Warning: the JWT key used is not Base64-encoded. " +
+                "We recommend using the `jhipster.security.authentication.jwt.base64-secret` key for optimum security.");
+            secret = jHipsterProperties.security.authentication.jwt.secret
+            secret.toByteArray(StandardCharsets.UTF_8)
         }
         this.key = Keys.hmacShaKeyFor(keyBytes)
         this.jwtParser = Jwts.parserBuilder().setSigningKey(key).build()

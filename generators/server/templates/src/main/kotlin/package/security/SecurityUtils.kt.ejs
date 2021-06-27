@@ -22,7 +22,7 @@ package <%= packageName %>.security
 
 import org.springframework.security.core.Authentication
 import org.springframework.security.core.GrantedAuthority
-<%_ if (authenticationType === 'oauth2') { _%>
+<%_ if (authenticationTypeOauth2) { _%>
 import org.springframework.security.core.authority.SimpleGrantedAuthority
 <%_ } _%>
 <%_ if (reactive) { _%>
@@ -33,14 +33,14 @@ import org.springframework.security.core.context.SecurityContext
 import org.springframework.security.core.context.SecurityContextHolder
 <%_ } _%>
 import org.springframework.security.core.userdetails.UserDetails
-<%_ if (authenticationType === 'oauth2') { _%>
+<%_ if (authenticationTypeOauth2) { _%>
 import org.springframework.security.oauth2.core.oidc.user.DefaultOidcUser
 import org.springframework.security.oauth2.server.resource.authentication.JwtAuthenticationToken
 <%_ } _%>
 <%_ if (reactive) { _%>
 import reactor.core.publisher.Mono
 <%_ } _%>
-<%_ if (authenticationType === 'oauth2') { _%>
+<%_ if (authenticationTypeOauth2) { _%>
 import java.util.Optional
 <%_ } _%>
 <%_ if (!reactive) { _%>
@@ -72,7 +72,7 @@ fun extractPrincipal(authentication: Authentication?): String? {
 
     return when (val principal = authentication.principal) {
         is UserDetails -> principal.username
-        <%_ if (authenticationType === 'oauth2') { _%>
+        <%_ if (authenticationTypeOauth2) { _%>
         is JwtAuthenticationToken -> (authentication as JwtAuthenticationToken).token.claims as String
         is DefaultOidcUser -> {
             if(principal.attributes.containsKey("preferred_username")) {
@@ -87,7 +87,7 @@ fun extractPrincipal(authentication: Authentication?): String? {
     }
 }
 
-<%_ if (authenticationType === 'jwt') { _%>
+<%_ if (authenticationTypeJwt) { _%>
 
 /**
  * Get the JWT of the current user.
@@ -166,7 +166,7 @@ fun hasCurrentUserThisAuthority(authority: String): <% if (!reactive) { %>Boolea
 
 <%_ if (!reactive) { _%>
 fun getAuthorities(authentication: Authentication): List<String>? {
-  <%_ if (authenticationType === 'oauth2') { _%>
+  <%_ if (authenticationTypeOauth2) { _%>
     val authorities = when (authentication) {
         is JwtAuthenticationToken ->
             extractAuthorityFromClaims(authentication.token.claims)
@@ -180,7 +180,7 @@ fun getAuthorities(authentication: Authentication): List<String>? {
 }
 <%_ } _%>
 
-<%_ if (authenticationType === 'oauth2') { _%>
+<%_ if (authenticationTypeOauth2) { _%>
     fun extractAuthorityFromClaims(claims: Map<String, Any>): List<GrantedAuthority>? {
         return mapRolesToGrantedAuthorities(getRolesFromClaims(claims))
     }

@@ -152,7 +152,7 @@ class <%= asEntity('User') %> (
     @GeneratedValue
         <%_ } _%>
     <%_ } _%>
-    <%_ if (searchEngine === 'elasticsearch' && authenticationType === 'oauth2') { _%>
+    <%_ if (searchEngine === 'elasticsearch' && authenticationTypeOauth2) { _%>
     @org.springframework.data.elasticsearch.annotations.Field(type = FieldType.Keyword)
     <%_ } _%>
     <%_ } else if (databaseType === 'neo4j') { _%>
@@ -369,7 +369,7 @@ class <%= asEntity('User') %> (
     var authorities: MutableSet<Authority> = mutableSetOf()
     <% } else if (['cassandra', 'couchbase'].includes(databaseType)) { %>
     var authorities: MutableSet<String> = mutableSetOf()
-    <% } %><% if (authenticationType === 'session' && databaseType === 'sql' && !reactive) { %>,
+    <% } %><% if (authenticationTypeSession && databaseType === 'sql' && !reactive) { %>,
 
     @JsonIgnore
     @OneToMany(cascade = [ CascadeType.ALL ], orphanRemoval = true, mappedBy = "user")
@@ -393,7 +393,7 @@ class <%= asEntity('User') %> (
     @PersistenceConstructor
     constructor(
     <%_ if (databaseType === 'sql') { _%>
-        id: <% if (authenticationType === 'oauth2') { %>String?<% } else { %>Long?<% } %>,
+        id: <% if (authenticationTypeOauth2) { %>String?<% } else { %>Long?<% } %>,
     <%_ } else { _%>
         id: String?,
     <%_ } _%>

@@ -7,6 +7,7 @@ source $(dirname $0)/00-init-env.sh
 # Install JHipster Dependencies and Server-side library
 #-------------------------------------------------------------------------------
 echo "Always use the ***Release*** version for the JHipster"
+
 #-------------------------------------------------------------------------------
 # Install JHipster Generator
 #-------------------------------------------------------------------------------

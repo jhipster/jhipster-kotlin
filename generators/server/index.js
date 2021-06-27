@@ -32,17 +32,21 @@ module.exports = class extends ServerGenerator {
         if (!jhContext) {
             this.error("This is a JHipster blueprint and should be used only like 'jhipster --blueprints myblueprint')}");
         }
+        this.loadAppConfig();
+        this.loadDerivedAppConfig();
+        this.loadServerConfig();
+        this.loadDerivedServerConfig();
     }
 
     get initializing() {
         const phaseFromJHipster = super._initializing();
-        const myCustomPhaseSteps = {
+        const khipsterCustomSteps = {
             setupConstants() {
                 this.MOCKITO_KOTLIN_VERSION = kotlinConstants.MOCKITO_KOTLIN_VERSION;
                 this.DETEKT_CONFIG_FILE = kotlinConstants.DETEKT_CONFIG_FILE;
             },
         };
-        return Object.assign(phaseFromJHipster, myCustomPhaseSteps);
+        return Object.assign(phaseFromJHipster, khipsterCustomSteps);
     }
 
     get prompting() {

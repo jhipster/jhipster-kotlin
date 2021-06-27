@@ -222,7 +222,7 @@ interface UserRepository : <% if (databaseType === 'sql') { %>JpaRepository<<%= 
     override fun count(): Mono<Long>
     <% } else { %>
 
-    fun findAllByIdNotNullAndActivatedIsTrue(pageable: Pageable): Page<<%= asEntity('User') %>> 
+    fun findAllByIdNotNullAndActivatedIsTrue(pageable: Pageable): Page<<%= asEntity('User') %>>
     <% } %>
 
     <%_ if (cacheManagerIsAvailable === true) { _%>
@@ -237,72 +237,72 @@ interface UserRepository : <% if (databaseType === 'sql') { %>JpaRepository<<%= 
 }
 <%_ } else if (databaseType === 'sql' && reactive) { _%>
 @Repository
-interface UserRepository: R2dbcRepository<User, <% if (authenticationType === 'oauth2') { %>String<% } else { %>Long<% } %>>, UserRepositoryInternal {
+interface UserRepository: R2dbcRepository<<%= asEntity('User') %>, <% if (authenticationTypeOauth2) { %>String<% } else { %>Long<% } %>>, UserRepositoryInternal {
 
     <%_ if (authenticationType !== 'oauth2') { _%>
-    fun findOneByActivationKey(activationKey: String): Mono<User> 
+    fun findOneByActivationKey(activationKey: String): Mono<<%= asEntity('User') %>>
 
-    fun findAllByActivatedIsFalseAndActivationKeyIsNotNullAndCreatedDateBefore(dateTime: LocalDateTime): Flux<User> 
+    fun findAllByActivatedIsFalseAndActivationKeyIsNotNullAndCreatedDateBefore(dateTime: LocalDateTime): Flux<<%= asEntity('User') %>>
 
-    fun findOneByResetKey(resetKey: String): Mono<User> 
+    fun findOneByResetKey(resetKey: String): Mono<<%= asEntity('User') %>>
 
-    fun findOneByEmailIgnoreCase(email: String): Mono<User>
+    fun findOneByEmailIgnoreCase(email: String): Mono<<%= asEntity('User') %>>
 
     <%_ } _%>
 
-    fun findOneByLogin(login: String): Mono<User> 
+    fun findOneByLogin(login: String): Mono<<%= asEntity('User') %>>
 
-    fun findAllByIdNotNull(pageable: Pageable): Flux<User> 
+    fun findAllByIdNotNull(pageable: Pageable): Flux<<%= asEntity('User') %>>
 
-    fun findAllByIdNotNullAndActivatedIsTrue(pageable: Pageable): Flux<User>
-    
-    override fun count(): Mono<Long> 
+    fun findAllByIdNotNullAndActivatedIsTrue(pageable: Pageable): Flux<<%= asEntity('User') %>>
+
+    override fun count(): Mono<Long>
 
     @Query("INSERT INTO <%= jhiTablePrefix %>_user_authority VALUES(:userId, :authority)")
-    fun saveUserAuthority(userId: <%= user.primaryKey.type %>, authority: String): Mono<Void> 
+    fun saveUserAuthority(userId: <%= user.primaryKey.type %>, authority: String): Mono<Void>
 
     @Query("DELETE FROM <%= jhiTablePrefix %>_user_authority")
     fun deleteAllUserAuthorities(): Mono<Void>
-    
+
     @Query("DELETE FROM <%= jhiTablePrefix %>_user_authority WHERE user_id = :userId")
     fun deleteUserAuthorities(userId: Long): Mono<Void>
 }
-    
+
     <%_ if (authenticationType !== 'oauth2') { _%>
 interface DeleteExtended<T> {
-    fun delete(user: T): Mono<Void> 
+    fun delete(user: T): Mono<Void>
 }
-    
-    <%_ } _%>
-interface UserRepositoryInternal<% if (authenticationType !== 'oauth2') { %> : DeleteExtended<User><% } %> {
 
-    fun findOneWithAuthoritiesByLogin(login: String): Mono<User>
+    <%_ } _%>
+interface UserRepositoryInternal<% if (authenticationType !== 'oauth2') { %> : DeleteExtended<<%= asEntity('User') %>><% } %> {
+
+    fun findOneWithAuthoritiesByLogin(login: String): Mono<<%= asEntity('User') %>>
 
     <%_ if (authenticationType !== 'oauth2') { _%>
-    fun findOneWithAuthoritiesByEmailIgnoreCase(email: String): Mono<User>
+    fun findOneWithAuthoritiesByEmailIgnoreCase(email: String): Mono<<%= asEntity('User') %>>
 
     <%_ } _%>
     <%_ if (authenticationType == 'oauth2') { _%>
 
-    fun create(user: User): Mono<User>
+    fun create(user: User): Mono<<%= asEntity('User') %>>
     <%_ } _%>
-    fun findAllWithAuthorities(pageable: Pageable): Flux<User>
+    fun findAllWithAuthorities(pageable: Pageable): Flux<<%= asEntity('User') %>>
 }
-    
+
 class UserRepositoryInternalImpl(val db: DatabaseClient, val r2dbcEntityTemplate: R2dbcEntityTemplate, val r2dbcConverter: R2dbcConverter): UserRepositoryInternal {
-    
-    override fun findOneWithAuthoritiesByLogin(login: String): Mono<User> {
+
+    override fun findOneWithAuthoritiesByLogin(login: String): Mono<<%= asEntity('User') %>> {
         return findOneWithAuthoritiesBy("login", login);
     }
 
     <%_ if (authenticationType !== 'oauth2') { _%>
-    override fun findOneWithAuthoritiesByEmailIgnoreCase(email: String): Mono<User> {
+    override fun findOneWithAuthoritiesByEmailIgnoreCase(email: String): Mono<<%= asEntity('User') %>> {
         return findOneWithAuthoritiesBy("email", email.toLowerCase());
     }
 
     <%_ } _%>
 
-    override fun findAllWithAuthorities(pageable: Pageable): Flux<User> {
+    override fun findAllWithAuthorities(pageable: Pageable): Flux<<%= asEntity('User') %>> {
         val property = pageable.sort.map(Sort.Order::getProperty).first()
         val direction = pageable.sort.map(Sort.Order::getDirection).first()
         val comparator = if (direction == Sort.DEFAULT_DIRECTION) { BeanComparator(property) } else { BeanComparator<Any>(property).reversed() }
@@ -313,7 +313,7 @@ class UserRepositoryInternalImpl(val db: DatabaseClient, val r2dbcEntityTemplate
             .sql("SELECT * FROM jhi_user u LEFT JOIN jhi_user_authority ua ON u.id=ua.user_id")
             .map { row, metadata ->
                 return@map Tuples.of(
-                    r2dbcConverter.read(User::class.java, row, metadata),
+                    r2dbcConverter.read(<%= asEntity('User') %>::class.java, row, metadata),
                     Optional.ofNullable(row.get("authority_name", String::class.java))
                 )
             }.all()
@@ -325,31 +325,31 @@ class UserRepositoryInternalImpl(val db: DatabaseClient, val r2dbcEntityTemplate
     }
 
     <%_ if (authenticationType !== 'oauth2') { _%>
-    override fun delete(user: User): Mono<Void> {
+    override fun delete(user: <%= asEntity('User') %>): Mono<Void> {
         return db.sql("DELETE FROM <%= jhiTablePrefix %>_user_authority WHERE user_id = :userId")
             .bind("userId", user.id)
             .then()
-            .then(r2dbcEntityTemplate.delete(User::class.java)
+            .then(r2dbcEntityTemplate.delete(<%= asEntity('User') %>::class.java)
                 .matching(query(where("id").`is`(user.id))).all()
                 .then()
             );
     }
 
     <%_ } _%>
-    <%_ if (authenticationType === 'oauth2') { _%>
-    override fun create(user: User): Mono<User> {
-        return r2dbcEntityTemplate.insert(User::class.java).using(user)
+    <%_ if (authenticationTypeOauth2) { _%>
+    override fun create(user: <%= asEntity('User') %>): Mono<<%= asEntity('User') %>> {
+        return r2dbcEntityTemplate.insert(<%= asEntity('User') %>::class.java).using(user)
             .defaultIfEmpty(user)
     }
-    
+
         <%_ } _%>
-    
-    private fun findOneWithAuthoritiesBy(fieldName: String, fieldValue: Any): Mono<User> {
+
+    private fun findOneWithAuthoritiesBy(fieldName: String, fieldValue: Any): Mono<<%= asEntity('User') %>> {
         return db.sql("SELECT * FROM <%= jhiTablePrefix %>_user u LEFT JOIN <%= jhiTablePrefix %>_user_authority ua ON u.id=ua.user_id WHERE u.$fieldName = :$fieldName")
             .bind(fieldName, fieldValue)
             .map { row, metadata ->
                 return@map Tuples.of(
-                    r2dbcConverter.read(User::class.java, row, metadata),
+                    r2dbcConverter.read(<%= asEntity('User') %>::class.java, row, metadata),
                     Optional.ofNullable(row.get("authority_name", String::class.java))
                 )
             }.all()
@@ -358,7 +358,7 @@ class UserRepositoryInternalImpl(val db: DatabaseClient, val r2dbcEntityTemplate
             .map { l -> updateUserWithAuthorities(l[0].t1, l) }
     }
 
-    private fun updateUserWithAuthorities(user: User, tuples: List<Tuple2<User, Optional<String>>>): User {
+    private fun updateUserWithAuthorities(user: <%= asEntity('User') %>, tuples: List<Tuple2<<%= asEntity('User') %>, Optional<String>>>): <%= asEntity('User') %> {
         user.authorities = tuples.filter { it.t2.isPresent }
             .map {
                 val authority = Authority()
@@ -397,20 +397,20 @@ class UserSqlHelper {
 @Repository
 class UserRepository(
     <%_ if (reactive) { _%>
-    private val cqlTemplate: ReactiveCassandraTemplate, 
+    private val cqlTemplate: ReactiveCassandraTemplate,
     <%_ } _%>
     private val session: <% if (reactive) { %>Reactive<% } else { %>Cql<% } %>Session,
     <%_ if (!reactive) { _%>
     private val validator: Validator<%_ } _%><%_ if (!reactive) { _%>,
     private val cassandraProperties: CassandraProperties<% } %>
 ) {
-    
+
     <%_ if(!reactive) { _%>
 
     private val userTokenMapper = UserTokenMapperBuilder(session).build()
     private val userDao = userTokenMapper.userTokenDao(CqlIdentifier.fromCql(cassandraProperties.keyspaceName))
     <%_ } else { _%>
-    
+
     private val findAllStmt = session.prepare("SELECT * FROM user")<% if(reactive) { %>.block()<% } %>
     <%_ } _%>
     private val findOneByActivationKeyStmt = session.prepare(
@@ -496,7 +496,7 @@ class UserRepository(
         <%_ if(!reactive) { _%>
         return userDao.get(id)
         <%_ } else { _%>
-        return cqlTemplate.selectOneById(id, User::class.java)
+        return cqlTemplate.selectOneById(id, <%= asEntity('User') %>::class.java)
             .map { user ->
                 if(user.authorities == null) {
                     user.authorities = mutableSetOf()
@@ -531,12 +531,12 @@ class UserRepository(
         val stmt = findOneByLoginStmt.bind().setString("login", login)
         return findOneFromIndex(stmt)
     }
-    
+
     fun findAll(): <%= listOrFlux %><<%= asEntity('User') %>> {
-    <%_ if(!reactive) { _%>    
+    <%_ if(!reactive) { _%>
         return userDao.findAll().all()
     <%_ } else { _%>
-        return cqlTemplate.select(findAllStmt.bind(), User::class.java)
+        return cqlTemplate.select(findAllStmt.bind(), <%= asEntity('User') %>::class.java)
             .map { user ->
                 if(user.authorities == null) {
                     user.authorities = mutableSetOf()
@@ -581,7 +581,7 @@ class UserRepository(
                     .setString("id", user.id)
             )
         }
-        batch.addStatement(insertByLoginStmt.bind() 
+        batch.addStatement(insertByLoginStmt.bind()
                 .setString("login", user.login)
                 .setString("id", user.id)
         )
@@ -633,7 +633,7 @@ class UserRepository(
             .thenReturn(user);
     }
 
-    private fun getInsertStatement(user: User): SimpleStatement {
+    private fun getInsertStatement(user: <%= asEntity('User') %>): SimpleStatement {
         val converter = cqlTemplate.getConverter()
         val persistentEntity = converter.getMappingContext().getRequiredPersistentEntity(user::class.java)
         val toInsert = mutableMapOf<CqlIdentifier, Any>()

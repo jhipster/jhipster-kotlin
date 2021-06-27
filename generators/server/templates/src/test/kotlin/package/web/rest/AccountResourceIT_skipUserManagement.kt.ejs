@@ -25,7 +25,6 @@ import <%= packageName %>.IntegrationTest
 <%_ if (reactive && searchEngine === 'elasticsearch') { _%>
 import <%= packageName %>.repository.search.UserSearchRepository
 <%_ } _%>
-import <%= packageName %>.security.AuthoritiesConstants
 import org.junit.jupiter.api.Test
 <%_ if (reactiveSqlTestContainers) { _%>
 import <%= packageName %>.ReactiveSqlTestContainerExtension
@@ -100,5 +99,47 @@ class AccountResourceIT <% if (databaseType === 'cassandra') { %>: AbstractCassa
                 .jsonPath("$.login").isEqualTo(TEST_USER_LOGIN)
                 .jsonPath("$.authorities").isEqualTo(ADMIN)
         <%_ } _%>
+    }
+
+    @Test
+    @WithUnauthenticatedMockUser
+    <% if (!reactive) { %>@Throws(Exception::class)<% } %>
+    <%_ if (!reactive) { _%>
+    fun testNonAuthenticatedUser(){
+        restAccountMockMvc.perform(get("/api/authenticate")
+            .accept(MediaType.APPLICATION_JSON))
+            .andExpect(status().isOk)
+            .andExpect(content().string(""))
+    <%_ } else { _%>
+    fun testNonAuthenticatedUser() {
+        webTestClient.get().uri("/api/authenticate")
+            .accept(MediaType.APPLICATION_JSON)
+            .exchange()
+            .expectStatus().isOk
+            .expectBody().isEmpty
+    <%_ } _%>
+    }
+
+    @Test
+    <% if (!reactive) { %>@Throws(Exception::class)<% } %>
+    <%_ if (!reactive) { _%>
+    fun testAuthenticatedUser() {
+        restAccountMockMvc.perform(get("/api/authenticate")
+            .with(request -> {
+                request.setRemoteUser(TEST_USER_LOGIN);
+                return request;
+            })
+            .accept(MediaType.APPLICATION_JSON))
+            .andExpect(status().isOk)
+            .andExpect(content().string(TEST_USER_LOGIN))
+    <%_ } else { _%>
+    fun testAuthenticatedUser() {
+        webTestClient
+            .get().uri("/api/authenticate")
+            .accept(MediaType.APPLICATION_JSON)
+            .exchange()
+            .expectStatus().isOk
+            .expectBody<String>().isEqualTo(TEST_USER_LOGIN)
+    <%_ } _%>
     }
 }

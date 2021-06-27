@@ -28,7 +28,7 @@ import <%= packageName %>.service.dto.<%= asDto('AdminUser') %>
 import <%= packageName %>.domain.<%= asEntity('User') %>
     <%_ if (databaseType === 'sql' || databaseType === 'mongodb' || databaseType === 'neo4j' || databaseType === 'couchbase') { _%>
 import <%= packageName %>.repository.AuthorityRepository
-        <%_ if (authenticationType === 'session' && !reactive) { _%>
+        <%_ if (authenticationTypeSession && !reactive) { _%>
 import <%= packageName %>.repository.PersistentTokenRepository
         <%_ } _%>
     <%_ } _%>
@@ -61,7 +61,7 @@ import org.springframework.data.domain.Pageable
 import org.springframework.scheduling.annotation.Scheduled
     <%_ } _%>
 <%_ } _%>
-<%_ if (authenticationType === 'oauth2') { _%>
+<%_ if (authenticationTypeOauth2) { _%>
 import org.springframework.security.authentication.AbstractAuthenticationToken
 import org.springframework.security.core.GrantedAuthority
 import org.springframework.security.oauth2.client.authentication.OAuth2AuthenticationToken
@@ -80,7 +80,7 @@ import reactor.core.publisher.Mono
 import reactor.core.scheduler.Schedulers
 <%_ } _%>
 
-<%_ if ((databaseType === 'sql' || databaseType === 'mongodb' || databaseType === 'neo4j' || databaseType === 'couchbase') && authenticationType === 'session' && !reactive) { _%>
+<%_ if ((databaseType === 'sql' || databaseType === 'mongodb' || databaseType === 'neo4j' || databaseType === 'couchbase') && authenticationTypeSession && !reactive) { _%>
 import java.time.LocalDate
 <%_ } _%>
 <%_ if (databaseType !== 'no') { _%>
@@ -93,7 +93,7 @@ import java.time.ZoneOffset
 <%_ if (authenticationType !== 'oauth2' && (databaseType === 'sql' || databaseType === 'mongodb' || databaseType === 'neo4j' || databaseType === 'couchbase')) { _%>
 import java.time.temporal.ChronoUnit
 <%_ } _%>
-<%_ if (authenticationType === 'oauth2') { _%>
+<%_ if (authenticationTypeOauth2) { _%>
 import java.util.Date
 <%_ } _%>
 import java.util.Optional
@@ -111,7 +111,7 @@ import java.util.UUID
 class UserService<% if (databaseType !== 'no') { %>(
     private val userRepository: UserRepository<%_ if (authenticationType !== 'oauth2') { _%>,
     private val passwordEncoder: PasswordEncoder<%_ } if (searchEngine === 'elasticsearch') { _%>,
-    private val userSearchRepository: UserSearchRepository<%_ } if (databaseType === 'sql' || databaseType === 'mongodb' || databaseType === 'neo4j' || databaseType === 'couchbase') { if (authenticationType === 'session' && !reactive) { _%>,
+    private val userSearchRepository: UserSearchRepository<%_ } if (databaseType === 'sql' || databaseType === 'mongodb' || databaseType === 'neo4j' || databaseType === 'couchbase') { if (authenticationTypeSession && !reactive) { _%>,
     private val persistentTokenRepository: PersistentTokenRepository<%_ } _%>,
     private val authorityRepository: AuthorityRepository<%_ } if (cacheManagerIsAvailable === true) { _%>,
     private val cacheManager: CacheManager
@@ -211,7 +211,7 @@ class UserService<% if (databaseType !== 'no') { %>(
             }
             <%_ } else { _%>
             .publishOn(Schedulers.boundedElastic())
-            .map { 
+            .map {
                 it.resetKey = RandomUtil.generateResetKey()
                 it.resetDate = Instant.now()
                 it
@@ -223,7 +223,7 @@ class UserService<% if (databaseType !== 'no') { %>(
 
     <%_ if (databaseType === 'sql' && reactive) { _%>
     @Transactional
-    <%_ } _%>   
+    <%_ } _%>
     fun registerUser(userDTO: <%= asDto('AdminUser') %>, password: String): <% if (reactive) { %>Mono<<%= asEntity('User') %>><% } else { %><%= asEntity('User') %><% } %> {
         val login = userDTO.login ?: throw IllegalArgumentException("Empty login not allowed")
         val email = userDTO.email
@@ -613,15 +613,15 @@ class UserService<% if (databaseType !== 'no') { %>(
     }
 
     <%_ if (reactive) { _%>
-        <%_ if (databaseType === 'sql' && authenticationType === 'oauth2') { _%>
+        <%_ if (databaseType === 'sql' && authenticationTypeOauth2) { _%>
        @Transactional
        fun saveUser(user: User) = saveUser(user, false)
-    
+
         <%_ } _%>
         <%_ if (databaseType === 'sql') { _%>
         @Transactional
         <%_ } _%>
-        <% if (databaseType !== 'sql') { %>private <% } %> fun saveUser(user: <%= asEntity('User') %><% if (databaseType === 'sql' && authenticationType === 'oauth2') { %>, forceCreate: Boolean<% } %>): Mono<<%= asEntity('User') %>> {
+        <% if (databaseType !== 'sql') { %>private <% } %> fun saveUser(user: <%= asEntity('User') %><% if (databaseType === 'sql' && authenticationTypeOauth2) { %>, forceCreate: Boolean<% } %>): Mono<<%= asEntity('User') %>> {
             <%_ if (databaseType === 'cassandra') { _%>
             return userRepository.save(user)
             <%_ } else { _%>
@@ -635,7 +635,7 @@ class UserService<% if (databaseType !== 'no') { %>(
                 <%_ if (databaseType === 'sql') { _%>
                     // Saving the relationship can be done in an entity callback
                     // once https://github.com/spring-projects/spring-data-r2dbc/issues/215 is done
-                    <%_ if (authenticationType === 'oauth2') { _%>
+                    <%_ if (authenticationTypeOauth2) { _%>
                     val persistedUser = if (forceCreate) { userRepository.create(user) } else { userRepository.save(user) }
                     persistedUser
                     <%_ } else { _%>
@@ -663,9 +663,9 @@ class UserService<% if (databaseType !== 'no') { %>(
             .flatMap(userRepository::findOneByLogin)
             <%_ if (reactive) { _%>
                 .publishOn(Schedulers.boundedElastic())
-                .map { user -> 
+                .map { user ->
             <%_ } else { _%>
-                .ifPresent { user -> 
+                .ifPresent { user ->
             <%_ } _%>
                     val currentEncryptedPassword = user.password
                     if (!passwordEncoder.matches(currentClearTextPassword, currentEncryptedPassword)) {
@@ -737,8 +737,8 @@ class UserService<% if (databaseType !== 'no') { %>(
         <%_ } _%>
     fun getUserWithAuthorities(): <% if (reactive) { %>Mono<% } else { %>Optional<% } %><<%= asEntity('User') %>> =
         getCurrentUserLogin().flatMap(userRepository::findOne<% if (databaseType === 'sql') { %>WithAuthorities<% } %>ByLogin)
-    <%_ } _%>   
-    <%_ if ((databaseType === 'sql' || databaseType === 'mongodb' || databaseType === 'neo4j' || databaseType === 'couchbase') && authenticationType === 'session' && !reactive) { _%>
+    <%_ } _%>
+    <%_ if ((databaseType === 'sql' || databaseType === 'mongodb' || databaseType === 'neo4j' || databaseType === 'couchbase') && authenticationTypeSession && !reactive) { _%>
 
     /**
      * Persistent Token are used for providing automatic authentication, they should be automatically deleted after
@@ -787,9 +787,9 @@ class UserService<% if (databaseType !== 'no') { %>(
     <%_ if (databaseType === 'sql') { _%>
     @Transactional
     <%_ } _%>
-    fun removeNotActivatedUsersReactively(): Flux<User> {
+    fun removeNotActivatedUsersReactively(): Flux<<%= asEntity('User') %>> {
         return userRepository
-            .findAllByActivatedIsFalseAndActivationKeyIsNotNullAndCreatedDateBefore(<%_ if (databaseType === 'sql') { _%>LocalDateTime.ofInstant(Instant.now().minus(3, ChronoUnit.DAYS), ZoneOffset.UTC)<%_ } else { _%>Instant.now().minus(3, ChronoUnit.DAYS)<%_ } _%>)            
+            .findAllByActivatedIsFalseAndActivationKeyIsNotNullAndCreatedDateBefore(<%_ if (databaseType === 'sql') { _%>LocalDateTime.ofInstant(Instant.now().minus(3, ChronoUnit.DAYS), ZoneOffset.UTC)<%_ } else { _%>Instant.now().minus(3, ChronoUnit.DAYS)<%_ } _%>)
             .flatMap { user -> userRepository.delete(user).thenReturn(user) }
             <%_ if (searchEngine === 'elasticsearch') { _%>
             .flatMap { user -> userSearchRepository.delete(user).thenReturn(user) }
@@ -812,7 +812,7 @@ class UserService<% if (databaseType !== 'no') { %>(
     fun getAuthorities() =
         authorityRepository.findAll()<% if (!reactive) { %>.asSequence().map { it.name }.filterNotNullTo(mutableListOf())<% } else { %>.map(Authority::name)<% } %>
     <%_ } _%>
-    <%_ if (authenticationType === 'oauth2') { _%>
+    <%_ if (authenticationTypeOauth2) { _%>
 
     private fun syncUserWithIdP(details: Map<String, Any>, user: <%= asEntity('User') %>): <% if (reactive) { %>Mono<<%= asEntity('User') %>><% } else { %><%= asEntity('User') %><% } %> {
         // save authorities in to sync user roles/groups between IdP and JHipster's local database
@@ -871,7 +871,7 @@ class UserService<% if (databaseType !== 'no') { %>(
             .doOnNext { authority: Authority? -> log.debug("Saving authority '$authority' in local database") }
             .flatMap<Authority> { authorityRepository.save(it) }
             .then(userRepository.findOneByLogin(user.login!!))
-            .switchIfEmpty(<% if (authenticationType === 'oauth2' && databaseType === 'sql') { %>saveUser(user, true)<% } else { %>userRepository.save(user)<% } %>)
+            .switchIfEmpty(<% if (authenticationTypeOauth2 && databaseType === 'sql') { %>saveUser(user, true)<% } else { %>userRepository.save(user)<% } %>)
             .flatMap<Any> { existingUser: User ->
                 // if IdP sends last updated information, use it to determine if an update should happen
                 if (details["updated_at"] != null) {
@@ -894,7 +894,7 @@ class UserService<% if (databaseType !== 'no') { %>(
     <%_ } _%>
 
 <%_ } // databaseType !== 'no' _%>
-    <%_ if (authenticationType === 'oauth2') { _%>
+    <%_ if (authenticationTypeOauth2) { _%>
     /**
      * Returns the user from an OAuth 2.0 login or resource server with JWT.
         <%_ if (databaseType !== 'no') { _%>
@@ -906,7 +906,7 @@ class UserService<% if (databaseType !== 'no') { %>(
      */
         <%_ if (databaseType === 'sql') { _%>
     @Transactional
-        <%_ } _%> 
+        <%_ } _%>
     fun getUserFromAuthentication(authToken: AbstractAuthenticationToken): <% if (!reactive) { %><%= asDto('AdminUser') %><% } else { %>Mono<<%= asDto('AdminUser') %>><% } %> {
         val attributes: Map<String, Any> =
             when (authToken) {
@@ -936,7 +936,7 @@ class UserService<% if (databaseType !== 'no') { %>(
         }
     }
     <%_ } _%>
-    <%_ if (authenticationType === 'oauth2') { _%>
+    <%_ if (authenticationTypeOauth2) { _%>
 
     companion object {
 
