@@ -28,7 +28,6 @@ module.exports = class extends BaseGenerator {
         this.option('skip-ktlint-format', {
             desc: 'Indicates to skip formatting using ktlint',
             type: Boolean,
-            defaults: false,
         });
     }
 
