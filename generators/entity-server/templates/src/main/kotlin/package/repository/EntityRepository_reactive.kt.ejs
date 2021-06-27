@@ -54,7 +54,7 @@ import reactor.core.publisher.Flux
 <%_ if (relationshipsContainEagerLoad || databaseTypeSql) { _%>
 import reactor.core.publisher.Mono
 <%_ } _%>
-<%_ if (databaseTypeCassandra) { _%>
+<%_ if (primaryKey.typeUUID) { _%>
 
 import java.util.UUID
 <%_ } _%>
@@ -137,7 +137,7 @@ interface <%= entityClass %>Repository: <% if (databaseTypeSql) { %>R2dbc<% } if
     // just to avoid having unambigous methods
     override fun findAll(): Flux<<%= persistClass %>>
 
-    override fun findById(id: Long?): Mono<<%= persistClass %>>
+    override fun findById(id: <%= primaryKey.type %>?): Mono<<%= persistClass %>>
 
     override fun <S:<%= persistClass %>> save(entity: S): Mono<S>
 
@@ -157,7 +157,7 @@ interface <%= entityClass %>RepositoryInternal {
 
     <%_ if (fieldsContainOwnerManyToMany) { _%>
 
-    fun findOneWithEagerRelationships(id: <%= primaryKey.type %>): Mono<<%= persistClass %>>
+    fun findOneWithEagerRelationships(id: <%= primaryKey.type %>?): Mono<<%= persistClass %>>
 
     fun findAllWithEagerRelationships(): Flux<<%= persistClass %>>
 
