@@ -17,7 +17,7 @@
  * limitations under the License.
  */
 
-const KOTLIN_VERSION = '1.4.32';
+const KOTLIN_VERSION = '1.5.20';
 const MOCKITO_KOTLIN_VERSION = '3.2.0';
 const KTLINT_MAVEN_VERSION = '1.9.0';
 const KTLINT_GRADLE_VERSION = '10.1.0';

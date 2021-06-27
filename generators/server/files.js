@@ -1772,7 +1772,7 @@ function writeFiles() {
                     '            <scope>test</scope>'
                 );
                 this.addMavenDependency(
-                    'com.nhaarman.mockitokotlin2',
+                    'org.mockito.kotlin',
                     'mockito-kotlin',
                     kotlinConstants.MOCKITO_KOTLIN_VERSION,
                     '            <scope>test</scope>'
