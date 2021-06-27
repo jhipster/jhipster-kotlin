@@ -126,7 +126,7 @@ class WebConfigurer(
             H2ConfigurationHelper.initH2Console()
         }
     }
-    <%_ } _%>  
+    <%_ } _%>
 
     private val log = LoggerFactory.getLogger(javaClass)
     <%_ if (!reactive) { _%>
@@ -191,7 +191,7 @@ class WebConfigurer(
     fun corsFilter(): Cors<% if (reactive) { %>Web<% } %>Filter {
         val source = UrlBasedCorsConfigurationSource()
         val config = jHipsterProperties.cors
-        if (!CollectionUtils.isEmpty(config.allowedOrigins)) {
+        if (!CollectionUtils.isEmpty(config.allowedOrigins) || ! CollectionUtils.isEmpty(config.allowedOriginPatterns)) {
             log.debug("Registering CORS filter")
             source.apply {
                 registerCorsConfiguration("/api/**", config)
@@ -200,7 +200,7 @@ class WebConfigurer(
                 registerCorsConfiguration("/v3/api-docs", config)
                 registerCorsConfiguration("/swagger-resources", config)
                 registerCorsConfiguration("/swagger-ui/**", config)
-                <%_ if (applicationType === 'gateway') { _%>
+                <%_ if (applicationTypeGateway) { _%>
                 registerCorsConfiguration("/*/api/**", config)
                 registerCorsConfiguration("/services/*/api/**", config)
                 registerCorsConfiguration("/*/management/**", config)

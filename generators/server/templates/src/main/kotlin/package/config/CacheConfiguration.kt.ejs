@@ -75,7 +75,7 @@ import org.springframework.beans.factory.annotation.Autowired
 import tech.jhipster.config.cache.PrefixedKeyGenerator
 <%_ } _%>
 <%_ if (cacheProvider === 'memcached') { _%>
-    <%_ if (!skipUserManagement || (authenticationType === 'oauth2' && databaseType !== 'no')) { _%>
+    <%_ if (!skipUserManagement || (authenticationTypeOauth2 && databaseType !== 'no')) { _%>
 import <%= packageName %>.repository.UserRepository
     <%_ } _%>
 
@@ -169,14 +169,14 @@ import tech.jhipster.config.JHipsterProperties
 @Configuration
 @EnableCaching
 class CacheConfiguration(<%_ if (cacheProvider !== 'no') { _%>
-    @Autowired val gitProperties: GitProperties?, 
-    @Autowired val buildProperties: BuildProperties?<% } %><% if (cacheProvider === 'ehcache' || cacheProvider === 'caffeine') { %>, 
-    jHipsterProperties: JHipsterProperties<% } else if (cacheProvider === 'hazelcast') { %>, 
-    private val env: Environment<% if (serviceDiscoveryType === 'eureka' || serviceDiscoveryType === 'consul') { %>, 
+    @Autowired val gitProperties: GitProperties?,
+    @Autowired val buildProperties: BuildProperties?<% } %><% if (cacheProvider === 'ehcache' || cacheProvider === 'caffeine') { %>,
+    jHipsterProperties: JHipsterProperties<% } else if (cacheProvider === 'hazelcast') { %>,
+    private val env: Environment<% if (serviceDiscoveryType === 'eureka' || serviceDiscoveryType === 'consul') { %>,
     private val serverProperties: ServerProperties,
     private val discoveryClient: DiscoveryClient,
-    @Autowired(required = false) val registration: Registration?<% } %><% } else if (cacheProvider === 'infinispan') { %><% if (serviceDiscoveryType === 'eureka' || serviceDiscoveryType === 'consul') { %>, 
-    @Autowired(required = false) val discoveryClient: DiscoveryClient?, 
+    @Autowired(required = false) val registration: Registration?<% } %><% } else if (cacheProvider === 'infinispan') { %><% if (serviceDiscoveryType === 'eureka' || serviceDiscoveryType === 'consul') { %>,
+    @Autowired(required = false) val discoveryClient: DiscoveryClient?,
     @Autowired(required = false) val registration: Registration?<% } %><% } %>
 ) {
     <%_ if (cacheProvider === 'ehcache' || cacheProvider === 'caffeine') { _%>
@@ -217,17 +217,17 @@ class CacheConfiguration(<%_ if (cacheProvider !== 'no') { _%>
     @Bean
     fun cacheManagerCustomizer(): JCacheManagerCustomizer {
         return JCacheManagerCustomizer { cm ->
-            <%_ if (authenticationType === 'oauth2' && applicationType === 'microservice') { _%>
+            <%_ if (authenticationTypeOauth2 && applicationTypeMicroservice) { _%>
             createCache(cm, "oAuth2Authentication")
             <%_ } _%>
-            <%_ if (!skipUserManagement || (authenticationType === 'oauth2' && databaseType !== 'no')) { _%>
+            <%_ if (!skipUserManagement || (authenticationTypeOauth2 && databaseType !== 'no')) { _%>
             createCache(cm, <%= packageName %>.repository.UserRepository.USERS_BY_LOGIN_CACHE)
             createCache(cm, <%= packageName %>.repository.UserRepository.USERS_BY_EMAIL_CACHE)
                 <%_ if (enableHibernateCache) { _%>
             createCache(cm, <%= packageName %>.domain.<%= asEntity('User') %>::class.java.name)
             createCache(cm, <%= packageName %>.domain.Authority::class.java.name)
             createCache(cm, <%= packageName %>.domain.<%= asEntity('User') %>::class.java.name + ".authorities")
-                    <%_ if (authenticationType === 'session') { _%>
+                    <%_ if (authenticationTypeSession) { _%>
             createCache(cm, <%= packageName %>.domain.PersistentToken::class.java.name)
             createCache(cm, <%= packageName %>.domain.<%= asEntity('User') %>::class.java.name + ".persistentTokens")
                     <%_ } _%>
@@ -499,7 +499,7 @@ class CacheConfiguration(<%_ if (cacheProvider !== 'no') { _%>
                 .statistics().enabled(cacheInfo.isStatsEnabled)
                 .simpleCache(true).transaction().transactionMode(TransactionMode.NON_TRANSACTIONAL).expiration().maxIdle(60000).template(true).build())
 
-            <%_ if (!skipUserManagement || (authenticationType === 'oauth2' && databaseType !== 'no')) { _%>
+            <%_ if (!skipUserManagement || (authenticationTypeOauth2 && databaseType !== 'no')) { _%>
             Stream.of(<%= packageName %>.repository.UserRepository.USERS_BY_LOGIN_CACHE, <%= packageName %>.repository.UserRepository.USERS_BY_EMAIL_CACHE)
                 .forEach { cacheName -> manager.defineConfiguration(cacheName, ConfigurationBuilder().clustering()
                     .cacheMode(CacheMode.INVALIDATION_SYNC)
@@ -510,7 +510,7 @@ class CacheConfiguration(<%_ if (cacheProvider !== 'no') { _%>
                     .lockAcquisitionTimeout(15000)
                     .build())}
             <%_ } _%>
-            <%_ if (authenticationType === 'oauth2' && applicationType === 'microservice') { _%>
+            <%_ if (authenticationTypeOauth2 && applicationTypeMicroservice) { _%>
             manager.defineConfiguration("oAuth2Authentication", ConfigurationBuilder()
                 .clustering().cacheMode(CacheMode.LOCAL)
                 .statistics().enabled(cacheInfo.isStatsEnabled())
@@ -639,7 +639,7 @@ class CacheConfiguration(<%_ if (cacheProvider !== 'no') { _%>
     fun defaultCacheFactory(jHipsterProperties: JHipsterProperties): CacheFactory? {
         return createCache("default", jHipsterProperties)
     }
-    <%_ if (!skipUserManagement || (authenticationType === 'oauth2' && databaseType !== 'no')) { _%>
+    <%_ if (!skipUserManagement || (authenticationTypeOauth2 && databaseType !== 'no')) { _%>
 
     @Bean
     fun usersByLoginCache(jHipsterProperties: JHipsterProperties): CacheFactory? =
@@ -666,7 +666,7 @@ class CacheConfiguration(<%_ if (cacheProvider !== 'no') { _%>
         }
 
         var authInfoMap = mutableMapOf<InetSocketAddress, AuthInfo>()
-        
+
         if (jHipsterProperties.cache.memcached.authentication.isEnabled) {
             val memcachedServers = AddrUtil.getOneAddress(jHipsterProperties.cache.memcached.servers)
             val authInfo = AuthInfo.plain(
@@ -729,14 +729,14 @@ class CacheConfiguration(<%_ if (cacheProvider !== 'no') { _%>
     @Bean
     fun cacheManagerCustomizer(jcacheConfiguration: javax.cache.configuration.Configuration<Any, Any> ): JCacheManagerCustomizer {
         return JCacheManagerCustomizer {
-            <%_ if (!skipUserManagement || (authenticationType === 'oauth2' && databaseType !== 'no')) { _%>
+            <%_ if (!skipUserManagement || (authenticationTypeOauth2 && databaseType !== 'no')) { _%>
             createCache(it, <%= packageName %>.repository.UserRepository.USERS_BY_LOGIN_CACHE, jcacheConfiguration)
             createCache(it, <%= packageName %>.repository.UserRepository.USERS_BY_EMAIL_CACHE, jcacheConfiguration)
                 <%_ if (enableHibernateCache) { _%>
             createCache(it, <%= packageName %>.domain.<%= asEntity('User') %>::class.java.name, jcacheConfiguration)
             createCache(it, <%= packageName %>.domain.Authority::class.java.name, jcacheConfiguration)
             createCache(it, <%= packageName %>.domain.<%= asEntity('User') %>::class.java.name + ".authorities", jcacheConfiguration)
-                    <%_ if (authenticationType === 'session') { _%>
+                    <%_ if (authenticationTypeSession) { _%>
             createCache(it, <%= packageName %>.domain.PersistentToken::class.java.name, jcacheConfiguration)
             createCache(it, <%= packageName %>.domain.<%= asEntity('User') %>::class.java.name + ".persistentTokens", jcacheConfiguration)
                     <%_ } _%>

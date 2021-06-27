@@ -22,27 +22,27 @@ const mapper = `${entityInstance}Mapper`;
 const dtoToEntity = `${mapper}.toEntity`;
 const entityToDto = `${mapper}.toDto`;
 const entityToDtoReference = `${mapper}::toDto`;
-const returnPrefix = (returnDirectly && searchEngine !== 'elasticsearch') ? 'return' : 'val result =';
+const returnPrefix = (returnDirectly && !searchEngine) ? 'return' : 'val result =';
 let resultEntity;
 let mapsIdEntityInstance;
 let mapsIdRepoInstance;
 let otherEntityName;
 
-if (isUsingMapsId === true) {
+if (isUsingMapsId) {
     mapsIdEntityInstance = mapsIdAssoc.otherEntityNameCapitalized.charAt(0).toLowerCase() + mapsIdAssoc.otherEntityNameCapitalized.slice(1);
     mapsIdRepoInstance = `${mapsIdEntityInstance}Repository`;
     otherEntityName = mapsIdAssoc.otherEntityName;
-    if (isController === true) { _%>
+    if (isController) { _%>
         if (Objects.isNull(<%= instanceName%>.<%= mapsIdAssoc.relationshipName %>)) {
             throw BadRequestAlertException("Invalid association value provided", ENTITY_NAME, "null")
         }
     <%_ } _%>
-<%_ }
-if (!viaService) {
-    if (dto === 'mapstruct') {
-        resultEntity = persistInstance %>
+<%_ } _%>
+    <%_  if (!viaService) { _%>
+      <%_ if (dtoMapstruct) { _%>
+        <%_ resultEntity = persistInstance _%>
         var <%= persistInstance %> = <%= dtoToEntity %>(<%= instanceName %>)
-        <%_ if (isUsingMapsId === true) { _%>
+        <%_ if (isUsingMapsId) { _%>
         val <%= otherEntityName %>Id = <%= instanceName %>.<%= mapsIdAssoc.relationshipName %>?.<%= primaryKey.name %>
         if (<%= otherEntityName %>Id != null) {
             <%= mapsIdRepoInstance %>.findById(<%= otherEntityName %>Id)
@@ -51,8 +51,9 @@ if (!viaService) {
         <%_ } _%>
         <%= persistInstance %> = <%= entityInstance %>Repository.save(<%= persistInstance %>)
         <%= returnPrefix %> <%= entityToDto %>(<%= persistInstance %>)
-    <%_ } else { resultEntity = 'result'; _%>
-        <%_ if (isUsingMapsId === true) { _%>
+    <%_ } else {
+            resultEntity = 'result'; _%>
+        <%_ if (isUsingMapsId) { _%>
         val <%= otherEntityName %>Id = <%= instanceName %>.<%= mapsIdAssoc.relationshipName %>?.<%= primaryKey.name %>
         if (<%= otherEntityName %>Id != null) {
             <%= mapsIdRepoInstance %>.findById(<%= otherEntityName %>Id)
@@ -61,14 +62,14 @@ if (!viaService) {
         <%_ } _%>
         <%= returnPrefix %> <%= entityInstance %>Repository.save(<%= persistInstance %>)
         <%_ }
-        if (searchEngine === 'elasticsearch') { _%>
+        if (searchEngine) { _%>
         <%= entityInstance %>SearchRepository.save(<%= resultEntity %>)
             <%_ if (returnDirectly) { _%>
         return result
         <%_ }
         }
     } else { _%>
-        <%_ if (isUsingMapsId === true && isController === false) { _%>
+        <%_ if (isUsingMapsId && !isController) { _%>
         val <%= otherEntityName %>Id = <%= entityInstance %>.<%= mapsIdAssoc.relationshipName %>?.<%= primaryKey.name %>
         if (<%= otherEntityName %>Id != null) {
             <%= mapsIdRepoInstance %>.findById(<%= otherEntityName %>Id)

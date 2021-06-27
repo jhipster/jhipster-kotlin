@@ -20,16 +20,16 @@ package <%= packageName %>.service
 <%_
 const instanceType = restClass;
 const instanceName = restInstance;
-const optionalOrMono = (reactive === true) ? 'Mono' : 'Optional';
-const listOrFlux = (reactive === true) ? 'Flux' : 'MutableList';
-const pageOrFlux = (reactive === true) ? 'Flux' : 'Page';
+const optionalOrMono = (reactive) ? 'Mono' : 'Optional';
+const listOrFlux = (reactive) ? 'Flux' : 'MutableList';
+const pageOrFlux = (reactive) ? 'Flux' : 'Page';
 _%>
-<%_ if (dto === 'mapstruct') { _%>
+<%_ if (dtoMapstruct) { _%>
 import <%= packageName %>.service.dto.<%= dtoClass %>
 <%_ } else { _%>
 import <%= packageName %>.domain.<%= persistClass %>
 <%_ } _%>
-<%_ if (pagination !== 'no' || relationshipsContainEagerLoad) { _%>
+<%_ if (!paginationNo || relationshipsContainEagerLoad) { _%>
     <%_ if (!reactive) { _%>
 import org.springframework.data.domain.Page
     <%_ } _%>
@@ -43,12 +43,12 @@ import reactor.core.publisher.Mono
 <%_ if (!reactive) { _%>
 import java.util.Optional
 <%_ } _%>
-<%_ if (primaryKey.type === 'UUID') { _%>
+<%_ if (primaryKey.typeUUID) { _%>
 import java.util.UUID
 <%_ } _%>
 
 /**
- * Service Interface for managing [<% if (dto === 'mapstruct') { %><%= packageName %>.domain.<% } %><%= persistClass %>].
+ * Service Interface for managing [<% if (dtoMapstruct) { %><%= packageName %>.domain.<% } %><%= persistClass %>].
  */
 interface <%= entityClass %>Service {
 
@@ -70,12 +70,12 @@ interface <%= entityClass %>Service {
 
     /**
      * Get all the <%= entityInstancePlural %>.
-     *<% if (pagination !== 'no') { %>
+     *<% if (!paginationNo) { %>
      * @param pageable the pagination information.<% } %>
      * @return the list of entities.
      */
-    fun findAll(<% if (pagination !== 'no') { %>pageable: Pageable<% } %>): <% if (pagination !== 'no') { %><%= pageOrFlux %><<%= instanceType %><% } else { %><%= listOrFlux %><<%= instanceType %><% } %>>
-<% for (const relationship of relationships) { if (relationship.relationshipType === 'one-to-one' && relationship.ownerSide !== true) { -%>
+    fun findAll(<% if (!paginationNo) { %>pageable: Pageable<% } %>): <% if (!paginationNo) { %><%= pageOrFlux %><<%= instanceType %><% } else { %><%= listOrFlux %><<%= instanceType %><% } %>>
+<% for (const relationship of relationships) { if (relationship.relationshipOneToOne && relationship.ownerSide !== true) { -%>
     /**
      * Get all the [<%= restClass %>] where <%= relationship.relationshipNameCapitalized %> is `null`.
      *
@@ -88,7 +88,7 @@ interface <%= entityClass %>Service {
     /**
      * Get all the <%= entityInstancePlural %> with eager load of many-to-many relationships.
      * @param pageable the pagination information.
-     * 
+     *
      * @return the list of entities.
      */
     fun findAllWithEagerRelationships(pageable: Pageable): <%= pageOrFlux %><<%= instanceType %>>
@@ -99,7 +99,7 @@ interface <%= entityClass %>Service {
          * @return the number of entities in the database.
          */
         fun countAll(): Mono<Long>
-        <%_ if (searchEngine === 'elasticsearch') { _%>
+        <%_ if (searchEngineElasticsearch) { _%>
 
         /**
         * Returns the number of <%= entityInstancePlural %> available in search repository.
@@ -122,20 +122,20 @@ interface <%= entityClass %>Service {
      * @param id the id of the entity.
 <%_ if (reactive) { _%>
      * @return a Mono to signal the deletion
-<%_ } _%>     
+<%_ } _%>
      */
     fun delete(id: <%= primaryKey.type %>)<% if (reactive) { %>: Mono<Void> <% } %>
-    
-    
-    <% if (searchEngine === 'elasticsearch') { %>
+
+
+    <% if (searchEngineElasticsearch) { %>
 
     /**
      * Search for the <%= entityInstance %> corresponding to the query.
      *
      * @param query the query of the search.
-     *<% if (pagination !== 'no') { %>
+     *<% if (!paginationNo) { %>
      * @param pageable the pagination information.<% } %>
      * @return the list of entities.
      */
-    fun search(query: String<% if (pagination !== 'no') { %>, pageable: Pageable<% } %>): <% if (pagination !== 'no') { %><%= pageOrFlux %><<%= instanceType %><% } else { %><%= listOrFlux %><<%= instanceType %><% } %>><% } %>
+    fun search(query: String<% if (!paginationNo) { %>, pageable: Pageable<% } %>): <% if (!paginationNo) { %><%= pageOrFlux %><<%= instanceType %><% } else { %><%= listOrFlux %><<%= instanceType %><% } %>><% } %>
 }
