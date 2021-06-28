@@ -385,13 +385,13 @@ class UserService<% if (databaseType !== 'no') { %>(
             resetDate = Instant.now(),
             activated = true,
             <%_ if (['sql', 'mongodb', 'neo4j'].includes(databaseType)) { _%>
-            authorities = userDTO.authorities?.let { authorities ->
+            authorities = userDTO.authorities.let { authorities ->
                 authorities.map { authorityRepository.findById(it) }
                         .filter { it.isPresent }
                         .mapTo(mutableSetOf()) { it.get() }
-            } ?: mutableSetOf()
+            }
             <%_ } else { _%>
-            authorities = userDTO.authorities?.toMutableSet() ?: mutableSetOf()
+            authorities = userDTO.authorities.toMutableSet()
             <%_ } _%>
         )
         userRepository.save(user)
@@ -411,7 +411,7 @@ class UserService<% if (databaseType !== 'no') { %>(
             .doOnNext { authority -> user.authorities.add(authority) }
             .then(Mono.just(user))
         <%_ } else { _%>
-        user.authorities = userDTO.authorities?.toMutableSet() ?: mutableSetOf()
+        user.authorities = userDTO.authorities.toMutableSet()
         return Mono.just(user)
         <%_ } _%>
             .publishOn(Schedulers.boundedElastic())
@@ -476,11 +476,11 @@ class UserService<% if (databaseType !== 'no') { %>(
                 val managedAuthorities = user.authorities
                 managedAuthorities.clear()
                 <%_ } else { // Cassandra & Couchbase _%>
-                user.authorities = userDTO.authorities?.toMutableSet() ?: mutableSetOf()
+                user.authorities = userDTO.authorities.toMutableSet()
                 <%_ } _%>
         <%_ if (!reactive) { _%>
                 <%_ if (['sql', 'mongodb'].includes(databaseType)) { _%>
-                userDTO.authorities?.apply {
+                userDTO.authorities.apply {
                     this.asSequence()
                         .map { authorityRepository.findById(it) }
                         .filter { it.isPresent }
@@ -682,7 +682,6 @@ class UserService<% if (databaseType !== 'no') { %>(
                 clearUserCaches(user)
                 <%_ } _%>
                 log.debug("Changed password for User: $user")
-                user
             }
             <%_ } else { _%>
                 user
