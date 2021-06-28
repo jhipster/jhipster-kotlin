@@ -224,11 +224,12 @@ class UserService<% if (databaseType !== 'no') { %>(
     <%_ if (databaseType === 'sql' && reactive) { _%>
     @Transactional
     <%_ } _%>
+    @Suppress("ThrowsCount")
     fun registerUser(userDTO: <%= asDto('AdminUser') %>, password: String): <% if (reactive) { %>Mono<<%= asEntity('User') %>><% } else { %><%= asEntity('User') %><% } %> {
         val login = userDTO.login ?: throw IllegalArgumentException("Empty login not allowed")
         val email = userDTO.email
     <%_ if (!reactive) { _%>
-        userRepository.findOneByLogin(login.toLowerCase()).ifPresent { existingUser ->
+        userRepository.findOneByLogin(login.lowercase()).ifPresent { existingUser ->
             val removed = removeNonActivatedUser(existingUser)
             if (!removed) {
                 throw UsernameAlreadyUsedException()
@@ -246,12 +247,12 @@ class UserService<% if (databaseType !== 'no') { %>(
         <%_ } _%>
         val encryptedPassword = passwordEncoder.encode(password)
         newUser.apply {
-            this.login = login.toLowerCase()
+            this.login = login.lowercase()
             // new user gets initially a generated password
             this.password = encryptedPassword
             firstName = userDTO.firstName
             lastName = userDTO.lastName
-            this.email = email?.toLowerCase()
+            this.email = email?.lowercase()
             <%_ if (['sql', 'mongodb', 'neo4j', 'couchbase'].includes(databaseType)) { _%>
             imageUrl = userDTO.imageUrl
             <%_ } _%>
@@ -277,7 +278,7 @@ class UserService<% if (databaseType !== 'no') { %>(
         log.debug("Created Information for User: $newUser")
         return newUser
     <%_ } else {// reactive _%>
-        return userRepository.findOneByLogin(login.toLowerCase())
+        return userRepository.findOneByLogin(login.lowercase())
             .flatMap { existingUser ->
                 if (existingUser.activated == false) {
                     <%_ if (cacheManagerIsAvailable === true) { _%>
@@ -306,12 +307,12 @@ class UserService<% if (databaseType !== 'no') { %>(
                     id  = UUID.randomUUID().toString()
                     <%_ } _%>
                     val encryptedPassword = passwordEncoder.encode(password)
-                    this.login = login.toLowerCase()
+                    this.login = login.lowercase()
                     // new user gets initially a generated password
                     this.password = encryptedPassword
                     firstName = userDTO.firstName
                     lastName = userDTO.lastName
-                    this.email = email?.toLowerCase()
+                    this.email = email?.lowercase()
                     <%_ if (['sql', 'mongodb', 'neo4j', 'couchbase'].includes(databaseType)) { _%>
                     imageUrl = userDTO.imageUrl
                     <%_ } _%>
@@ -370,10 +371,10 @@ class UserService<% if (databaseType !== 'no') { %>(
             <%_ if (databaseType === 'cassandra') { _%>
             id = UUID.randomUUID().toString(),
             <%_ } _%>
-            login = userDTO.login?.toLowerCase(),
+            login = userDTO.login?.lowercase(),
             firstName = userDTO.firstName,
             lastName = userDTO.lastName,
-            email = userDTO.email?.toLowerCase(),
+            email = userDTO.email?.lowercase(),
             <%_ if (['sql', 'couchbase', 'mongodb', 'neo4j'].includes(databaseType)) { _%>
             imageUrl = userDTO.imageUrl,
             <%_ } _%>
@@ -461,10 +462,10 @@ class UserService<% if (databaseType !== 'no') { %>(
                 clearUserCaches(user)
                 <%_ } _%>
                 user.apply {
-                    login = userDTO.login?.let{it.toLowerCase()}
+                    login = userDTO.login?.let{it.lowercase()}
                     firstName = userDTO.firstName
                     lastName = userDTO.lastName
-                    email = userDTO.email?.toLowerCase()
+                    email = userDTO.email?.lowercase()
                     <%_ if (['sql', 'mongodb', 'neo4j', 'couchbase'].includes(databaseType)) { _%>
                     imageUrl = userDTO.imageUrl
                     <%_ } _%>
@@ -581,7 +582,7 @@ class UserService<% if (databaseType !== 'no') { %>(
 
                 it.firstName = firstName
                 it.lastName = lastName
-                it.email = email?.toLowerCase()
+                it.email = email?.lowercase()
                 it.langKey = langKey
                 <%_ if (['sql', 'mongodb', 'couchbase', 'neo4j'].includes(databaseType)) { _%>
                 it.imageUrl = imageUrl
@@ -952,7 +953,7 @@ class UserService<% if (databaseType !== 'no') { %>(
                 user.id = details["sub"] as String
             }
             if (details["preferred_username"] != null) {
-                user.login = (details["preferred_username"] as String).toLowerCase()
+                user.login = (details["preferred_username"] as String).lowercase()
             } else if (user.login == null) {
                 user.login = user.id
             }
@@ -966,7 +967,7 @@ class UserService<% if (databaseType !== 'no') { %>(
                 activated = details["email_verified"] as Boolean
             }
             if (details["email"] != null) {
-                user.email = (details["email"] as String).toLowerCase()
+                user.email = (details["email"] as String).lowercase()
             } else {
                 user.email = details["sub"] as String
             }
@@ -980,7 +981,7 @@ class UserService<% if (databaseType !== 'no') { %>(
                 } else if (locale.contains("-")) {
                     locale = locale.substring(0, locale.indexOf("-"))
                 }
-                user.langKey = locale.toLowerCase()
+                user.langKey = locale.lowercase()
             } else {
                 // set langKey to default if not specified by IdP
                 user.langKey = DEFAULT_LANGUAGE

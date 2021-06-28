@@ -128,7 +128,19 @@ class UserResource(
 
     <%_ if (authenticationType !== 'oauth2') { _%>
     companion object {
-        private val ALLOWED_ORDERED_PROPERTIES = arrayOf("id", "login", "firstName", "lastName", "email", "activated", "langKey", "createdBy", "createdDate", "lastModifiedBy", "lastModifiedDate")
+        private val ALLOWED_ORDERED_PROPERTIES = arrayOf(
+            "id",
+            "login",
+            "firstName",
+            "lastName",
+            "email",
+            "activated",
+            "langKey",
+            "createdBy",
+            "createdDate",
+            "lastModifiedBy",
+            "lastModifiedDate"
+        )
     }
     <%_ } _%>
 
@@ -165,7 +177,7 @@ class UserResource(
             throw BadRequestAlertException("A new user cannot already have an ID", "userManagement", "idexists")
             // Lowercase the user login before comparing with database
         <%_ if (!reactive) { _%>
-        } else if (userRepository.findOneByLogin(userDTO.login!!.toLowerCase()).isPresent) {
+        } else if (userRepository.findOneByLogin(userDTO.login!!.lowercase()).isPresent) {
             throw LoginAlreadyUsedException()
         } else if (userRepository.findOneByEmailIgnoreCase(userDTO.email).isPresent) {
             throw EmailAlreadyUsedException()
@@ -178,7 +190,7 @@ class UserResource(
         }
         <%_ } else { _%>
         }
-        return userRepository.findOneByLogin(userDTO.login!!.toLowerCase())
+        return userRepository.findOneByLogin(userDTO.login!!.lowercase())
             .hasElement()
             .flatMap { loginExists ->
                 if (loginExists!!) {
@@ -217,13 +229,15 @@ class UserResource(
     @PutMapping("/users")
     @PreAuthorize("hasAuthority(\"$ADMIN\")")
     <%_ if (!reactive) { _%>
-    fun updateUser(@Valid @RequestBody userDTO: <%= asDto('AdminUser') %>): ResponseEntity<<%= asDto('AdminUser') %>> {
+    fun updateUser(
+        @Valid @RequestBody userDTO: <%= asDto('AdminUser') %>
+    ): ResponseEntity<<%= asDto('AdminUser') %>> {
         log.debug("REST request to update User : $userDTO")
         var existingUser = userRepository.findOneByEmailIgnoreCase(userDTO.email)
         if (existingUser.isPresent && existingUser.get().id != userDTO.id) {
             throw EmailAlreadyUsedException()
         }
-        existingUser = userRepository.findOneByLogin(userDTO.login!!.toLowerCase())
+        existingUser = userRepository.findOneByLogin(userDTO.login!!.lowercase())
         if (existingUser.isPresent && existingUser.get().id != userDTO.id) {
             throw LoginAlreadyUsedException()
         }
@@ -234,7 +248,9 @@ class UserResource(
             HeaderUtil.createAlert(applicationName, <% if (enableTranslation) { %>"userManagement.updated"<% } else { %>"A user is updated with identifier $userDTO.login"<% } %>, userDTO.login)
         )
     <%_ } else { _%>
-    fun updateUser(@Valid @RequestBody userDTO: <%= asDto('AdminUser') %>) : Mono<ResponseEntity<<%= asDto('AdminUser') %>>> {
+    fun updateUser(
+        @Valid @RequestBody userDTO: <%= asDto('AdminUser') %>
+    ) : Mono<ResponseEntity<<%= asDto('AdminUser') %>>> {
         log.debug("REST request to update User : $userDTO")
         return userRepository.findOneByEmailIgnoreCase(userDTO.email!!)
             .filter { user -> user.id != userDTO.id }
@@ -243,7 +259,7 @@ class UserResource(
                 if (emailExists!!) {
                     throw EmailAlreadyUsedException()
                 }
-                userRepository.findOneByLogin(userDTO.login!!.toLowerCase())
+                userRepository.findOneByLogin(userDTO.login!!.lowercase())
             }
             .filter { user -> user.id != userDTO.id }
             .hasElement()
@@ -284,7 +300,10 @@ class UserResource(
             }
         <%_ } _%>
         val page = userService.getAllManagedUsers(pageable)
-        val headers = PaginationUtil.generatePaginationHttpHeaders(ServletUriComponentsBuilder.fromCurrentRequest(), page)
+        val headers = PaginationUtil.generatePaginationHttpHeaders(
+            ServletUriComponentsBuilder.fromCurrentRequest(),
+            page
+        )
         return ResponseEntity(page.content, headers, HttpStatus.OK)
     }
         <%_ } else { _%>
@@ -357,7 +376,11 @@ class UserResource(
     fun deleteUser(@PathVariable @Pattern(regexp = LOGIN_REGEX) login: String): Mono<ResponseEntity<Void>> {
         log.debug("REST request to delete User: $login")
         return userService.deleteUser(login)
-            .map { ResponseEntity.noContent().headers(HeaderUtil.createAlert(applicationName, "userManagement.deleted", login)).build<Void>() }
+            .map {
+                ResponseEntity.noContent().headers(
+                    HeaderUtil.createAlert(applicationName, "userManagement.deleted", login)
+                ).build<Void>()
+            }
     <%_ } _%>
     }
 <%_ } _%>

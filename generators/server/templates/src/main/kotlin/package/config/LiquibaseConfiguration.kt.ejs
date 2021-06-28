@@ -67,10 +67,20 @@ class LiquibaseConfiguration(private val env: Environment) {
     ) =
         <%_ if (!reactive) { _%>
             // If you don't want Liquibase to start asynchronously, substitute by this:
-            // SpringLiquibase liquibase = SpringLiquibaseUtil.createSpringLiquibase(liquibaseDataSource.getIfAvailable(), liquibaseProperties, dataSource.getIfUnique(), dataSourceProperties);
+            // SpringLiquibase liquibase = SpringLiquibaseUtil.createSpringLiquibase(
+            //     liquibaseDataSource.getIfAvailable(),
+            //     liquibaseProperties,
+            //     dataSource.getIfUnique(),
+            //     dataSourceProperties
+            // );
             SpringLiquibaseUtil.createAsyncSpringLiquibase(this.env, executor, liquibaseDataSource.getIfAvailable(), liquibaseProperties, dataSource.getIfUnique(), dataSourceProperties)
             <%_ } else { _%>
-            createAsyncSpringLiquibase(this.env, executor, liquibaseProperties, dataSourceProperties)
+            createAsyncSpringLiquibase(
+                this.env,
+                executor,
+                liquibaseProperties,
+                dataSourceProperties
+            )
             <%_ } _%>
             .apply {
             changeLog = "classpath:config/liquibase/master.xml"
@@ -102,7 +112,10 @@ class LiquibaseConfiguration(private val env: Environment) {
             return liquibase
         }
 
-        fun createNewDataSource(liquibaseProperties: LiquibaseProperties, dataSourceProperties: R2dbcProperties): DataSource {
+        fun createNewDataSource(
+            liquibaseProperties: LiquibaseProperties,
+            dataSourceProperties: R2dbcProperties
+        ): DataSource {
             val user = getProperty(liquibaseProperties.user, dataSourceProperties.getUsername())
             val password = getProperty(liquibaseProperties.password, dataSourceProperties.getPassword())
             return DataSourceBuilder.create()

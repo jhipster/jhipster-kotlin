@@ -82,9 +82,18 @@ class PublicUserResource(
     private val userSearchRepository: UserSearchRepository<% } %>
 ) {
     <%_ if (authenticationType !== 'oauth2') { _%>
-    companion object { 
-        private val ALLOWED_ORDERED_PROPERTIES = arrayOf("id", "login", "firstName", "lastName", "email", "activated", "langKey")
+    companion object {
+        private val ALLOWED_ORDERED_PROPERTIES = arrayOf(
+            "id",
+            "login",
+            "firstName",
+            "lastName",
+            "email",
+            "activated",
+            "langKey"
+        )
     }
+
     <%_ } _%>
 
     private val log = LoggerFactory.getLogger(javaClass)
@@ -114,7 +123,10 @@ class PublicUserResource(
         return ResponseEntity(page.content, headers, HttpStatus.OK)
     }
         <%_ } else { _%>
-    fun getAllPublicUsers(request: ServerHttpRequest, pageable: Pageable): Mono<ResponseEntity<Flux<<%= asDto('User') %>>>> {
+    fun getAllPublicUsers(
+        request: ServerHttpRequest,
+        pageable: Pageable
+    ): Mono<ResponseEntity<Flux<<%= asDto('User') %>>>> {
         log.debug("REST request to get all public User names")
         <%_ if (authenticationType !== 'oauth2') { _%>
         if (!onlyContainsAllowedProperties(pageable)) {

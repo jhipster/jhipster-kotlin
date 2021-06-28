@@ -192,7 +192,9 @@ class CacheConfiguration(<%_ if (cacheProvider !== 'no') { _%>
                 Any::class.java, Any::class.java,
                 ResourcePoolsBuilder.heap(ehcache.maxEntries)
             )
-                .withExpiry(ExpiryPolicyBuilder.timeToLiveExpiration(Duration.ofSeconds(ehcache.timeToLiveSeconds.toLong())))
+                .withExpiry(
+                    ExpiryPolicyBuilder.timeToLiveExpiration(Duration.ofSeconds(ehcache.timeToLiveSeconds.toLong()))
+                )
                 .build()
         )
         <%_ } else { _%>
@@ -200,7 +202,9 @@ class CacheConfiguration(<%_ if (cacheProvider !== 'no') { _%>
 
         val caffeineConfiguration = CaffeineConfiguration<Any, Any>()
         caffeineConfiguration.maximumSize = OptionalLong.of(caffeine.maxEntries)
-        caffeineConfiguration.expireAfterWrite = OptionalLong.of(TimeUnit.SECONDS.toNanos(caffeine.timeToLiveSeconds.toLong()))
+        caffeineConfiguration.expireAfterWrite = OptionalLong.of(
+            TimeUnit.SECONDS.toNanos(caffeine.timeToLiveSeconds.toLong())
+        )
         caffeineConfiguration.isStatisticsEnabled = true
         jcacheConfiguration = caffeineConfiguration
 
@@ -288,8 +292,10 @@ class CacheConfiguration(<%_ if (cacheProvider !== 'no') { _%>
             log.debug("Configuring Hazelcast clustering for instanceId: $serviceId")
             // In development, everything goes through 127.0.0.1, with a different port
             if (env.acceptsProfiles(Profiles.of(JHipsterConstants.SPRING_PROFILE_DEVELOPMENT))) {
-                log.debug("Application is running with the \"dev\" profile, Hazelcast cluster will only work with localhost instances")
-
+                if (log.isDebugEnabled) {
+                    log.debug("Application is running with the \"dev\" profile, " + 
+                        "Hazelcast cluster will only work with localhost instances")
+                }
                 config.networkConfig.port = serverProperties.port!! + 5701
                 config.networkConfig.join.tcpIpConfig.isEnabled = true
                 for (instance in discoveryClient.getInstances(serviceId)) {
@@ -361,7 +367,9 @@ class CacheConfiguration(<%_ if (cacheProvider !== 'no') { _%>
     <%_ if (cacheProvider === 'hazelcast') { _%>
 
     private fun initializeDomainMapConfig(jHipsterProperties: JHipsterProperties): MapConfig =
-        MapConfig("<%= packageName %>.domain.*").apply { timeToLiveSeconds = jHipsterProperties.cache.hazelcast.timeToLiveSeconds }
+        MapConfig("<%= packageName %>.domain.*").apply {
+            timeToLiveSeconds = jHipsterProperties.cache.hazelcast.timeToLiveSeconds
+        }
     <%_ } _%>
     <%_ } _%>
     <%_ if (cacheProvider === 'infinispan') { _%>
@@ -442,8 +450,10 @@ class CacheConfiguration(<%_ if (cacheProvider !== 'no') { _%>
      *
      * Usage:
      *
-     * 1. jCache: `@CacheResult(cacheName = "dist-app-data")` - for creating a distributed cache. In a similar way other cache names and options can be used
-     * 2. Spring Cache: `@Cacheable(value = "repl-app-data")` - for creating a replicated cache. In a similar way other cache names and options can be used
+     * 1. jCache: `@CacheResult(cacheName = "dist-app-data")` - for creating a distributed cache.
+     * In a similar way other cache names and options can be used
+     * 2. Spring Cache: `@Cacheable(value = "repl-app-data")` - for creating a replicated cache.
+     * In a similar way other cache names and options can be used
      * 3. Cache manager can also be injected through DI/CDI and data can be manipulated using Infinispan APIs,
      * ```
      *      @Autowired (or) @Inject
@@ -480,35 +490,44 @@ class CacheConfiguration(<%_ if (cacheProvider !== 'no') { _%>
                 .lifespan(cacheInfo.replicated.timeToLiveSeconds, TimeUnit.SECONDS).build())
 
             // initialize Hibernate L2 cache configuration templates
-            manager.defineConfiguration("entity", ConfigurationBuilder().clustering().cacheMode(CacheMode.INVALIDATION_SYNC)
+            manager.defineConfiguration("entity", ConfigurationBuilder().clustering()
+                .cacheMode(CacheMode.INVALIDATION_SYNC)
                 .statistics().enabled(cacheInfo.isStatsEnabled)
                 .locking().concurrencyLevel(1000).lockAcquisitionTimeout(15000).template(true).build())
-            manager.defineConfiguration("replicated-entity", ConfigurationBuilder().clustering().cacheMode(CacheMode.REPL_SYNC)
+            manager.defineConfiguration("replicated-entity", ConfigurationBuilder().clustering()
+                .cacheMode(CacheMode.REPL_SYNC)
                 .statistics().enabled(cacheInfo.isStatsEnabled)
                 .locking().concurrencyLevel(1000).lockAcquisitionTimeout(15000).template(true).build())
-            manager.defineConfiguration("local-query", ConfigurationBuilder().clustering().cacheMode(CacheMode.LOCAL)
+            manager.defineConfiguration("local-query", ConfigurationBuilder().clustering()
+                .cacheMode(CacheMode.LOCAL)
                 .statistics().enabled(cacheInfo.isStatsEnabled)
                 .locking().concurrencyLevel(1000).lockAcquisitionTimeout(15000).template(true).build())
-            manager.defineConfiguration("replicated-query", ConfigurationBuilder().clustering().cacheMode(CacheMode.REPL_ASYNC)
+            manager.defineConfiguration("replicated-query", ConfigurationBuilder().clustering()
+                .cacheMode(CacheMode.REPL_ASYNC)
                 .statistics().enabled(cacheInfo.isStatsEnabled)
                 .locking().concurrencyLevel(1000).lockAcquisitionTimeout(15000).template(true).build())
-            manager.defineConfiguration("timestamps", ConfigurationBuilder().clustering().cacheMode(CacheMode.REPL_ASYNC)
+            manager.defineConfiguration("timestamps", ConfigurationBuilder().clustering()
+            .cacheMode(CacheMode.REPL_ASYNC)
                 .statistics().enabled(cacheInfo.isStatsEnabled)
                 .locking().concurrencyLevel(1000).lockAcquisitionTimeout(15000).template(true).build())
-            manager.defineConfiguration("pending-puts", ConfigurationBuilder().clustering().cacheMode(CacheMode.LOCAL)
+            manager.defineConfiguration("pending-puts", ConfigurationBuilder().clustering()
+                .cacheMode(CacheMode.LOCAL)
                 .statistics().enabled(cacheInfo.isStatsEnabled)
-                .simpleCache(true).transaction().transactionMode(TransactionMode.NON_TRANSACTIONAL).expiration().maxIdle(60000).template(true).build())
+                .simpleCache(true).transaction().transactionMode(TransactionMode.NON_TRANSACTIONAL)
+                .expiration().maxIdle(60000).template(true).build())
 
             <%_ if (!skipUserManagement || (authenticationTypeOauth2 && databaseType !== 'no')) { _%>
-            Stream.of(<%= packageName %>.repository.UserRepository.USERS_BY_LOGIN_CACHE, <%= packageName %>.repository.UserRepository.USERS_BY_EMAIL_CACHE)
-                .forEach { cacheName -> manager.defineConfiguration(cacheName, ConfigurationBuilder().clustering()
-                    .cacheMode(CacheMode.INVALIDATION_SYNC)
-                    .statistics()
-                    .enabled(cacheInfo.isStatsEnabled())
-                    .locking()
-                    .concurrencyLevel(1000)
-                    .lockAcquisitionTimeout(15000)
-                    .build())}
+            Stream.of(
+                <%= packageName %>.repository.UserRepository.USERS_BY_LOGIN_CACHE,
+                <%= packageName %>.repository.UserRepository.USERS_BY_EMAIL_CACHE
+            ).forEach { cacheName -> manager.defineConfiguration(cacheName, ConfigurationBuilder().clustering()
+                .cacheMode(CacheMode.INVALIDATION_SYNC)
+                .statistics()
+                .enabled(cacheInfo.isStatsEnabled())
+                .locking()
+                .concurrencyLevel(1000)
+                .lockAcquisitionTimeout(15000)
+                .build())}
             <%_ } _%>
             <%_ if (authenticationTypeOauth2 && applicationTypeMicroservice) { _%>
             manager.defineConfiguration("oAuth2Authentication", ConfigurationBuilder()
@@ -530,7 +549,9 @@ class CacheConfiguration(<%_ if (cacheProvider !== 'no') { _%>
     * @return hibernate properties with custom cache region factory
     */
     @Bean
-    fun hibernatePropertiesCustomizer(cacheFactoryConfiguration: CacheFactoryConfiguration) = HibernatePropertiesCustomizer {
+    fun hibernatePropertiesCustomizer(
+        cacheFactoryConfiguration: CacheFactoryConfiguration
+    ) = HibernatePropertiesCustomizer {
         props -> props[AvailableSettings.CACHE_REGION_FACTORY] = cacheFactoryConfiguration
     }
     <%_ } _%>
@@ -715,7 +736,9 @@ class CacheConfiguration(<%_ if (cacheProvider !== 'no') { _%>
             }
         }
         jcacheConfig.isStatisticsEnabled = true
-        jcacheConfig.setExpiryPolicyFactory(CreatedExpiryPolicy.factoryOf(Duration(TimeUnit.SECONDS, jHipsterProperties.cache.redis.expiration.toLong())))
+        jcacheConfig.setExpiryPolicyFactory(CreatedExpiryPolicy.factoryOf(
+            Duration(TimeUnit.SECONDS, jHipsterProperties.cache.redis.expiration.toLong())
+        ))
         return RedissonConfiguration.fromInstance(Redisson.create(config), jcacheConfig)
     }
 
@@ -727,18 +750,48 @@ class CacheConfiguration(<%_ if (cacheProvider !== 'no') { _%>
     <%_ } _%>
 
     @Bean
-    fun cacheManagerCustomizer(jcacheConfiguration: javax.cache.configuration.Configuration<Any, Any> ): JCacheManagerCustomizer {
+    fun cacheManagerCustomizer(
+        jcacheConfiguration: javax.cache.configuration.Configuration<Any, Any>
+    ): JCacheManagerCustomizer {
         return JCacheManagerCustomizer {
             <%_ if (!skipUserManagement || (authenticationTypeOauth2 && databaseType !== 'no')) { _%>
-            createCache(it, <%= packageName %>.repository.UserRepository.USERS_BY_LOGIN_CACHE, jcacheConfiguration)
-            createCache(it, <%= packageName %>.repository.UserRepository.USERS_BY_EMAIL_CACHE, jcacheConfiguration)
+            createCache(
+                it,
+                <%= packageName %>.repository.UserRepository.USERS_BY_LOGIN_CACHE,
+                jcacheConfiguration
+            )
+            createCache(
+                it,
+                <%= packageName %>.repository.UserRepository.USERS_BY_EMAIL_CACHE,
+                jcacheConfiguration
+            )
                 <%_ if (enableHibernateCache) { _%>
-            createCache(it, <%= packageName %>.domain.<%= asEntity('User') %>::class.java.name, jcacheConfiguration)
-            createCache(it, <%= packageName %>.domain.Authority::class.java.name, jcacheConfiguration)
-            createCache(it, <%= packageName %>.domain.<%= asEntity('User') %>::class.java.name + ".authorities", jcacheConfiguration)
+            createCache(
+                it,
+                <%= packageName %>.domain.<%= asEntity('User') %>::class.java.name,
+                jcacheConfiguration
+            )
+            createCache(
+                it,
+                <%= packageName %>.domain.Authority::class.java.name,
+                jcacheConfiguration
+            )
+            createCache(
+                it,
+                <%= packageName %>.domain.<%= asEntity('User') %>::class.java.name + ".authorities",
+                jcacheConfiguration
+            )
                     <%_ if (authenticationTypeSession) { _%>
-            createCache(it, <%= packageName %>.domain.PersistentToken::class.java.name, jcacheConfiguration)
-            createCache(it, <%= packageName %>.domain.<%= asEntity('User') %>::class.java.name + ".persistentTokens", jcacheConfiguration)
+            createCache(
+                it,
+                <%= packageName %>.domain.PersistentToken::class.java.name,
+                jcacheConfiguration
+            )
+            createCache(
+                it,
+                <%= packageName %>.domain.<%= asEntity('User') %>::class.java.name + ".persistentTokens",
+                jcacheConfiguration
+            )
                     <%_ } _%>
                 <%_ } _%>
             <%_ } _%>
@@ -746,7 +799,10 @@ class CacheConfiguration(<%_ if (cacheProvider !== 'no') { _%>
         }
     }
 
-    private fun createCache(cm: javax.cache.CacheManager, cacheName: String, jcacheConfiguration: javax.cache.configuration.Configuration<Any, Any>): Unit {
+    private fun createCache(
+        cm: javax.cache.CacheManager, cacheName: String,
+        jcacheConfiguration: javax.cache.configuration.Configuration<Any, Any>
+    ): Unit {
         val cache = cm.getCache<Any, Any>(cacheName)
         if (cache != null) {
             cache.clear()

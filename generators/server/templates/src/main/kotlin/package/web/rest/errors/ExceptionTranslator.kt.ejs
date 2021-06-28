@@ -96,6 +96,7 @@ _%>
     /**
      * Post-process the Problem payload to add the message key for the front-end if needed.
      */
+    @Suppress("ReturnCount", "ComplexMethod")
     override fun process(entity: ResponseEntity<Problem>?, request: <%= requestClass %>?): <%- returnType %> {
         if (entity == null) {
             <%_ if (!reactive) { _%>
@@ -146,7 +147,8 @@ _%>
 
     <%_ if (!reactive) { _%>
     override fun handleMethodArgumentNotValid(
-        ex: MethodArgumentNotValidException, request: <%= requestClass %>
+        ex: MethodArgumentNotValidException,
+        request: <%= requestClass %>
     ): <%- returnType %> {
     <%_ } else { _%>
     override fun handleBindingResult(
@@ -174,19 +176,48 @@ _%>
 
     <%_ if (!skipUserManagement) { _%>
     @ExceptionHandler
-    fun handleEmailAlreadyUsedException(ex: <%= packageName %>.service.EmailAlreadyUsedException, request: <%= requestClass %>): <%- returnType %> {
+    fun handleEmailAlreadyUsedException(
+        ex: <%= packageName %>.service.EmailAlreadyUsedException,
+        request: <%= requestClass %>
+    ): <%- returnType %> {
         val problem = EmailAlreadyUsedException()
-        return create(problem, request, HeaderUtil.createFailureAlert(applicationName,  <%= enableTranslation %>, problem.entityName, problem.errorKey, problem.message))
+        return create(
+            problem,
+            request,
+            HeaderUtil.createFailureAlert(
+                applicationName,
+                <%= enableTranslation %>,
+                problem.entityName,
+                problem.errorKey,
+                problem.message
+            )
+        )
     }
 
     @ExceptionHandler
-    fun handleUsernameAlreadyUsedException(ex: <%= packageName %>.service.UsernameAlreadyUsedException, request: <%= requestClass %>): <%- returnType %> {
+    fun handleUsernameAlreadyUsedException(
+        ex: <%= packageName %>.service.UsernameAlreadyUsedException,
+        request: <%= requestClass %>
+    ): <%- returnType %> {
         val problem = LoginAlreadyUsedException()
-        return create(problem, request, HeaderUtil.createFailureAlert(applicationName,  <%= enableTranslation %>, problem.entityName, problem.errorKey, problem.message))
+        return create(
+            problem,
+            request,
+            HeaderUtil.createFailureAlert(
+                applicationName,
+                <%= enableTranslation %>,
+                problem.entityName,
+                problem.errorKey,
+                problem.message
+            )
+        )
     }
 
     @ExceptionHandler
-    fun handleInvalidPasswordException(ex: <%= packageName %>.service.InvalidPasswordException, request: <%= requestClass %>): <%- returnType %> {
+    fun handleInvalidPasswordException(
+        ex: <%= packageName %>.service.InvalidPasswordException,
+        request: <%= requestClass %>
+    ): <%- returnType %> {
         return create(InvalidPasswordException(), request)
     }
     <%_ } _%>
@@ -203,7 +234,10 @@ _%>
     <%_ if (databaseType !== 'no' && databaseType !== 'cassandra') { _%>
 
     @ExceptionHandler
-    fun handleConcurrencyFailure(ex: ConcurrencyFailureException, request: <%= requestClass %>): <%- returnType %> {
+    fun handleConcurrencyFailure(
+        ex: ConcurrencyFailureException,
+        request: <%= requestClass %>
+    ): <%- returnType %> {
         val problem = Problem.builder()
             .withStatus(Status.CONFLICT)
             .with(MESSAGE_KEY, ERR_CONCURRENCY_FAILURE)
@@ -238,5 +272,14 @@ _%>
             .withCause(throwable.cause.takeIf { isCausalChainsEnabled }?.let { toProblem(it) })
     }
 
-    private fun containsPackageName(message: String?) = listOf("org.", "java.", "net.", "javax.", "com.", "io.", "de.", "<%= packageName %>").any { it == message }
+    private fun containsPackageName(message: String?) = listOf(
+        "org.",
+        "java.",
+        "net.",
+        "javax.",
+        "com.",
+        "io.",
+        "de.",
+        "com.test"
+    ).any { it == message }
 }
