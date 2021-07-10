@@ -191,7 +191,9 @@ class WebConfigurer(
     fun corsFilter(): Cors<% if (reactive) { %>Web<% } %>Filter {
         val source = UrlBasedCorsConfigurationSource()
         val config = jHipsterProperties.cors
-        if (!CollectionUtils.isEmpty(config.allowedOrigins) || ! CollectionUtils.isEmpty(config.allowedOriginPatterns)) {
+        if (!CollectionUtils.isEmpty(config.allowedOrigins) ||
+            !CollectionUtils.isEmpty(config.allowedOriginPatterns)
+        ) {
             log.debug("Registering CORS filter")
             source.apply {
                 registerCorsConfiguration("/api/**", config)
@@ -220,7 +222,9 @@ class WebConfigurer(
     fun reactiveSortHandlerMethodArgumentResolver() = ReactiveSortHandlerMethodArgumentResolver()
 
     @Bean
-    @Order(-2) // The handler must have precedence over WebFluxResponseStatusExceptionHandler and Spring Boot's ErrorWebExceptionHandler
+    // The handler must have precedence over WebFluxResponseStatusExceptionHandler 
+    // and Spring Boot's ErrorWebExceptionHandler
+    @Order(-2)
     fun problemExceptionHandler(mapper: ObjectMapper, problemHandling: ProblemHandling): WebExceptionHandler {
         return ProblemExceptionHandler(mapper, problemHandling)
     }
@@ -236,7 +240,9 @@ class WebConfigurer(
     @Profile(JHipsterConstants.SPRING_PROFILE_PRODUCTION)
     fun cachingHttpHeadersFilter() : CachingHttpHeadersFilter {
         // Use a cache filter that only match selected paths
-        return CachingHttpHeadersFilter(TimeUnit.DAYS.toMillis(jHipsterProperties.http.cache.timeToLiveInDays.toLong()))
+        return CachingHttpHeadersFilter(
+            TimeUnit.DAYS.toMillis(jHipsterProperties.http.cache.timeToLiveInDays.toLong())
+        )
     }
         <%_ } _%>
     <%_ } _%>

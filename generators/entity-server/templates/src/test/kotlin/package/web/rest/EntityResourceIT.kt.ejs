@@ -25,7 +25,7 @@ let mapsIdEntityInstance;
 let mapsIdRepoInstance;
 if (isUsingMapsId) {
     mapsIdEntity = mapsIdAssoc.otherEntityNameCapitalized;
-    mapsIdEntityInstance =  mapsIdEntity.charAt(0).toLowerCase() + mapsIdEntity.slice(1);
+    mapsIdEntityInstance =  mapsIdEntity.charAt(0).lowercase() + mapsIdEntity.slice(1);
     mapsIdRepoInstance = `${mapsIdEntityInstance}Repository`;
 }
 
@@ -459,7 +459,7 @@ class <%= entityClass %>ResourceIT <% if (databaseTypeCassandra) { %>: AbstractC
         <%_ } break; } _%>
 
         // Load the <%= entityInstance %>
-        val updated<%= persistClass %> = <%= entityInstance %>Repository.findById(<%= persistInstance %>.<%= primaryKey.name %>)<%= reactive ? '.block()' : '.get()' %>
+        val updated<%= persistClass %> = <%= entityInstance %>Repository.findById(<%= persistInstance %>.<%= primaryKey.name %>!!)<%= reactive ? '.block()' : '.get()' %>
         assertThat(updated<%= persistClass %>).isNotNull<% if (databaseTypeSql && !reactive) { %>
         // Disconnect from session so that the updates on updated<%= persistClass %> are not directly saved in db
         em.detach(updated<%= persistClass %>)<% } %>
@@ -1106,7 +1106,7 @@ class <%= entityClass %>ResourceIT <% if (databaseTypeCassandra) { %>: AbstractC
         val databaseSizeBeforeUpdate = <%= entityInstance %>Repository.findAll()<%= callListBlock %>.size
 
         // Update the <%= entityInstance %>
-        val updated<%= persistClass %> = <%= entityInstance %>Repository.findById(<%= persistInstance %>.<%= primaryKey.name %>)<%= reactive ? '.block()' : '.get()' %>
+        val updated<%= persistClass %> = <%= entityInstance %>Repository.findById(<%= persistInstance %>.<%= primaryKey.name %>!!)<%= reactive ? '.block()' : '.get()' %>
         <%_ if (databaseTypeSql && !reactive) { _%>
         // Disconnect from session so that the updates on updated<%= persistClass %> are not directly saved in db
         em.detach(updated<%= persistClass %>)
@@ -1733,6 +1733,10 @@ class <%= entityClass %>ResourceIT <% if (databaseTypeCassandra) { %>: AbstractC
          */
         @JvmStatic
         fun create<% if (fieldStatus === 'UPDATED_') { _%>Updated<%_ } %>Entity(<% if (databaseTypeSql) { %>em: EntityManager<% } %>): <%= persistClass %> {
+            <%_ if (databaseTypeSql) { _%>
+            em.hashCode() // Required to prevent unused warnings
+            <%_ } _%>
+
             <%_
                 const filteredFields = fields.filter(field => !field.id && !field.transient);
                 if (filteredFields.length === 0) {

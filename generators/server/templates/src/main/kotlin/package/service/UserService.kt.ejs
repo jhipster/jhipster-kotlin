@@ -104,6 +104,7 @@ import java.util.UUID
 /**
  * Service class for managing users.
  */
+/* ktlint-disable no-consecutive-blank-lines */
 @Service
 <%_ if (databaseType === 'sql' && !reactive) { _%>
 @Transactional
@@ -224,11 +225,12 @@ class UserService<% if (databaseType !== 'no') { %>(
     <%_ if (databaseType === 'sql' && reactive) { _%>
     @Transactional
     <%_ } _%>
+    @Suppress("ThrowsCount")
     fun registerUser(userDTO: <%= asDto('AdminUser') %>, password: String): <% if (reactive) { %>Mono<<%= asEntity('User') %>><% } else { %><%= asEntity('User') %><% } %> {
         val login = userDTO.login ?: throw IllegalArgumentException("Empty login not allowed")
         val email = userDTO.email
     <%_ if (!reactive) { _%>
-        userRepository.findOneByLogin(login.toLowerCase()).ifPresent { existingUser ->
+        userRepository.findOneByLogin(login.lowercase()).ifPresent { existingUser ->
             val removed = removeNonActivatedUser(existingUser)
             if (!removed) {
                 throw UsernameAlreadyUsedException()
@@ -246,12 +248,12 @@ class UserService<% if (databaseType !== 'no') { %>(
         <%_ } _%>
         val encryptedPassword = passwordEncoder.encode(password)
         newUser.apply {
-            this.login = login.toLowerCase()
+            this.login = login.lowercase()
             // new user gets initially a generated password
             this.password = encryptedPassword
             firstName = userDTO.firstName
             lastName = userDTO.lastName
-            this.email = email?.toLowerCase()
+            this.email = email?.lowercase()
             <%_ if (['sql', 'mongodb', 'neo4j', 'couchbase'].includes(databaseType)) { _%>
             imageUrl = userDTO.imageUrl
             <%_ } _%>
@@ -277,7 +279,7 @@ class UserService<% if (databaseType !== 'no') { %>(
         log.debug("Created Information for User: $newUser")
         return newUser
     <%_ } else {// reactive _%>
-        return userRepository.findOneByLogin(login.toLowerCase())
+        return userRepository.findOneByLogin(login.lowercase())
             .flatMap { existingUser ->
                 if (existingUser.activated == false) {
                     <%_ if (cacheManagerIsAvailable === true) { _%>
@@ -306,12 +308,12 @@ class UserService<% if (databaseType !== 'no') { %>(
                     id  = UUID.randomUUID().toString()
                     <%_ } _%>
                     val encryptedPassword = passwordEncoder.encode(password)
-                    this.login = login.toLowerCase()
+                    this.login = login.lowercase()
                     // new user gets initially a generated password
                     this.password = encryptedPassword
                     firstName = userDTO.firstName
                     lastName = userDTO.lastName
-                    this.email = email?.toLowerCase()
+                    this.email = email?.lowercase()
                     <%_ if (['sql', 'mongodb', 'neo4j', 'couchbase'].includes(databaseType)) { _%>
                     imageUrl = userDTO.imageUrl
                     <%_ } _%>
@@ -370,10 +372,10 @@ class UserService<% if (databaseType !== 'no') { %>(
             <%_ if (databaseType === 'cassandra') { _%>
             id = UUID.randomUUID().toString(),
             <%_ } _%>
-            login = userDTO.login?.toLowerCase(),
+            login = userDTO.login?.lowercase(),
             firstName = userDTO.firstName,
             lastName = userDTO.lastName,
-            email = userDTO.email?.toLowerCase(),
+            email = userDTO.email?.lowercase(),
             <%_ if (['sql', 'couchbase', 'mongodb', 'neo4j'].includes(databaseType)) { _%>
             imageUrl = userDTO.imageUrl,
             <%_ } _%>
@@ -384,13 +386,13 @@ class UserService<% if (databaseType !== 'no') { %>(
             resetDate = Instant.now(),
             activated = true,
             <%_ if (['sql', 'mongodb', 'neo4j'].includes(databaseType)) { _%>
-            authorities = userDTO.authorities?.let { authorities ->
+            authorities = userDTO.authorities.let { authorities ->
                 authorities.map { authorityRepository.findById(it) }
                         .filter { it.isPresent }
                         .mapTo(mutableSetOf()) { it.get() }
-            } ?: mutableSetOf()
+            }
             <%_ } else { _%>
-            authorities = userDTO.authorities?.toMutableSet() ?: mutableSetOf()
+            authorities = userDTO.authorities.toMutableSet()
             <%_ } _%>
         )
         userRepository.save(user)
@@ -410,7 +412,7 @@ class UserService<% if (databaseType !== 'no') { %>(
             .doOnNext { authority -> user.authorities.add(authority) }
             .then(Mono.just(user))
         <%_ } else { _%>
-        user.authorities = userDTO.authorities?.toMutableSet() ?: mutableSetOf()
+        user.authorities = userDTO.authorities.toMutableSet()
         return Mono.just(user)
         <%_ } _%>
             .publishOn(Schedulers.boundedElastic())
@@ -461,10 +463,10 @@ class UserService<% if (databaseType !== 'no') { %>(
                 clearUserCaches(user)
                 <%_ } _%>
                 user.apply {
-                    login = userDTO.login?.let{it.toLowerCase()}
+                    login = userDTO.login?.let{it.lowercase()}
                     firstName = userDTO.firstName
                     lastName = userDTO.lastName
-                    email = userDTO.email?.toLowerCase()
+                    email = userDTO.email?.lowercase()
                     <%_ if (['sql', 'mongodb', 'neo4j', 'couchbase'].includes(databaseType)) { _%>
                     imageUrl = userDTO.imageUrl
                     <%_ } _%>
@@ -475,11 +477,11 @@ class UserService<% if (databaseType !== 'no') { %>(
                 val managedAuthorities = user.authorities
                 managedAuthorities.clear()
                 <%_ } else { // Cassandra & Couchbase _%>
-                user.authorities = userDTO.authorities?.toMutableSet() ?: mutableSetOf()
+                user.authorities = userDTO.authorities.toMutableSet()
                 <%_ } _%>
         <%_ if (!reactive) { _%>
                 <%_ if (['sql', 'mongodb'].includes(databaseType)) { _%>
-                userDTO.authorities?.apply {
+                userDTO.authorities.apply {
                     this.asSequence()
                         .map { authorityRepository.findById(it) }
                         .filter { it.isPresent }
@@ -574,14 +576,14 @@ class UserService<% if (databaseType !== 'no') { %>(
     <%_ if (databaseType === 'sql' && reactive) { _%>
     @Transactional
     <%_ } _%>
-    fun updateUser(firstName: String?, lastName: String?, email: String?, langKey: String?<% if (['sql', 'mongodb', 'couchbase', 'neo4j'].includes(databaseType)) { %>, imageUrl: String?<% } %>) <% if (reactive) { %>: Mono<Void><% } %> {
+    fun updateUser(firstName: String?, lastName: String?, email: String?, langKey: String?<% if (['sql', 'mongodb', 'couchbase', 'neo4j'].includes(databaseType)) { %>, imageUrl: String?<% } %>)<% if (reactive) { %>: Mono<Void><% } %> {
         <% if (reactive) { %>return <% } %>getCurrentUserLogin()
             .flatMap(userRepository::findOneByLogin)
             .<% if (reactive) { %>flatMap<% } else { %>ifPresent<% } %>{
 
                 it.firstName = firstName
                 it.lastName = lastName
-                it.email = email?.toLowerCase()
+                it.email = email?.lowercase()
                 it.langKey = langKey
                 <%_ if (['sql', 'mongodb', 'couchbase', 'neo4j'].includes(databaseType)) { _%>
                 it.imageUrl = imageUrl
@@ -681,7 +683,6 @@ class UserService<% if (databaseType !== 'no') { %>(
                 clearUserCaches(user)
                 <%_ } _%>
                 log.debug("Changed password for User: $user")
-                user
             }
             <%_ } else { _%>
                 user
@@ -928,7 +929,7 @@ class UserService<% if (databaseType !== 'no') { %>(
     <%_ if (cacheManagerIsAvailable === true && databaseType !== 'no') { _%>
 
     private fun clearUserCaches(user: <%= asEntity('User') %>) {
-        user.login?.let{
+        user.login?.let {
             cacheManager.getCache(UserRepository.USERS_BY_LOGIN_CACHE)?.evict(it)
         }
         user.email?.let {
@@ -952,7 +953,7 @@ class UserService<% if (databaseType !== 'no') { %>(
                 user.id = details["sub"] as String
             }
             if (details["preferred_username"] != null) {
-                user.login = (details["preferred_username"] as String).toLowerCase()
+                user.login = (details["preferred_username"] as String).lowercase()
             } else if (user.login == null) {
                 user.login = user.id
             }
@@ -966,7 +967,7 @@ class UserService<% if (databaseType !== 'no') { %>(
                 activated = details["email_verified"] as Boolean
             }
             if (details["email"] != null) {
-                user.email = (details["email"] as String).toLowerCase()
+                user.email = (details["email"] as String).lowercase()
             } else {
                 user.email = details["sub"] as String
             }
@@ -980,7 +981,7 @@ class UserService<% if (databaseType !== 'no') { %>(
                 } else if (locale.contains("-")) {
                     locale = locale.substring(0, locale.indexOf("-"))
                 }
-                user.langKey = locale.toLowerCase()
+                user.langKey = locale.lowercase()
             } else {
                 // set langKey to default if not specified by IdP
                 user.langKey = DEFAULT_LANGUAGE
@@ -994,3 +995,4 @@ class UserService<% if (databaseType !== 'no') { %>(
     }
     <%_ } _%>
 }
+/* ktlint-enable no-consecutive-blank-lines */

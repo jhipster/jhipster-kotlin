@@ -24,6 +24,7 @@ import <%= packageName %>.AbstractCassandraTest<% } %>
 import <%= packageName %>.IntegrationTest
 import <%= packageName %>.domain.<%= asEntity('User') %>
 import tech.jhipster.config.JHipsterProperties
+import org.junit.jupiter.api.AfterEach
 import org.junit.jupiter.api.BeforeEach
 import org.junit.jupiter.api.Test
 import org.mockito.ArgumentCaptor
@@ -87,11 +88,18 @@ class MailServiceIT <% if (databaseType === 'cassandra') { %>: AbstractCassandra
 
     private lateinit var mailService: MailService
 
+    private lateinit var mockitoAnnotations: AutoCloseable
+
     @BeforeEach
     fun setup() {
-        MockitoAnnotations.initMocks(this)
+        mockitoAnnotations = MockitoAnnotations.openMocks(this)
         doNothing().`when`(javaMailSender).send(any(MimeMessage::class.java))
         mailService = MailService(jHipsterProperties, javaMailSender, messageSource, templateEngine)
+    }
+
+    @AfterEach
+    fun tearDown() {
+        mockitoAnnotations.close()
     }
 
     @Test
@@ -266,11 +274,11 @@ class MailServiceIT <% if (databaseType === 'cassandra') { %>: AbstractCassandra
         var javaLangKey = langKey
         val matcher2 = PATTERN_LOCALE_2.matcher(langKey)
         if (matcher2.matches()) {
-            javaLangKey = "${matcher2.group(1)}_${matcher2.group(2).toUpperCase()}"
+            javaLangKey = "${matcher2.group(1)}_${matcher2.group(2).uppercase()}"
         }
         val matcher3 = PATTERN_LOCALE_3.matcher(langKey)
         if (matcher3.matches()) {
-            javaLangKey = "${matcher3.group(1)}_${matcher3.group(2)}_${matcher3.group(3).toUpperCase()}"
+            javaLangKey = "${matcher3.group(1)}_${matcher3.group(2)}_${matcher3.group(3).uppercase()}"
         }
         return javaLangKey
     }

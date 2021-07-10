@@ -1730,12 +1730,13 @@ function writeFiles() {
                 this.addGradleProperty('kotlin_version', kotlinConstants.KOTLIN_VERSION);
                 this.addGradleProperty('mapstruct_version', kotlinConstants.MAPSTRUCT_VERSION);
                 this.addGradleProperty('detekt_version', kotlinConstants.DETEKT_VERSION);
+                this.addGradleProperty('ktlint_plugin_version', kotlinConstants.KTLINT_GRADLE_VERSION);
                 this.addGradlePlugin('org.jetbrains.kotlin', 'kotlin-gradle-plugin', '${kotlin_version}');
                 this.addGradlePlugin('org.jetbrains.kotlin', 'kotlin-allopen', '${kotlin_version}');
                 if (this.databaseType === 'sql') {
                     this.addGradlePlugin('org.jetbrains.kotlin', 'kotlin-noarg', '${kotlin_version}');
                 }
-                this.addGradlePlugin('org.jlleitschuh.gradle', 'ktlint-gradle', kotlinConstants.KTLINT_GRADLE_VERSION);
+                this.addGradlePlugin('org.jlleitschuh.gradle', 'ktlint-gradle', '${ktlint_plugin_version}');
                 this.addGradlePlugin('io.gitlab.arturbosch.detekt', 'detekt-gradle-plugin', '${detekt_version}');
 
                 this.applyFromGradleScript('gradle/kotlin');
@@ -1771,7 +1772,7 @@ function writeFiles() {
                     '            <scope>test</scope>'
                 );
                 this.addMavenDependency(
-                    'com.nhaarman.mockitokotlin2',
+                    'org.mockito.kotlin',
                     'mockito-kotlin',
                     kotlinConstants.MOCKITO_KOTLIN_VERSION,
                     '            <scope>test</scope>'
