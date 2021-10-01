@@ -1,0 +1,112 @@
+<%#
+ Copyright 2013-2021 the original author or authors from the JHipster project.
+
+ This file is part of the JHipster project, see https://www.jhipster.tech/
+ for more information.
+
+ Licensed under the Apache License, Version 2.0 (the "License")
+ you may not use this file except in compliance with the License.
+ You may obtain a copy of the License at
+
+      https://www.apache.org/licenses/LICENSE-2.0
+
+ Unless required by applicable law or agreed to in writing, software
+ distributed under the License is distributed on an "AS IS" BASIS,
+ WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
+ See the License for the specific language governing permissions and
+ limitations under the License.
+-%>
+package <%= packageName %>.repository
+
+import com.couchbase.client.java.query.QueryScanConsistency
+import org.springframework.data.couchbase.repository.<% if (reactive) { %>Reactive<% } %>CouchbaseRepository
+import org.springframework.data.couchbase.repository.ScanConsistency
+import org.springframework.data.domain.Pageable
+import org.springframework.data.domain.Sort
+import org.springframework.data.repository.NoRepositoryBean
+<%_ if (searchEngineCouchbase) { _%>
+import com.couchbase.client.java.search.SearchQuery
+import com.couchbase.client.java.search.queries.DocIdQuery
+import com.couchbase.client.java.search.queries.QueryStringQuery
+import java.util.LinkedList
+<%_ } _%>
+
+<%_ if (reactive) { _%>
+import reactor.core.publisher.Flux
+import reactor.core.publisher.Mono
+<%_ } else { _%>
+import org.springframework.data.domain.Page
+<%_ } _%>
+
+import java.util.List
+import java.util.stream.Collectors
+import org.springframework.data.couchbase.core.query.Query
+
+import java.lang.String.format
+
+/**
+ * Couchbase specific {@link org.springframework.data.repository.Repository} interface uses N1QL for all requests.
+ */
+<%_
+    let listOrFlux = reactive ? 'Flux' : 'List';
+    let pageOrFlux = reactive ? 'Flux' : 'Page';
+_%>
+@NoRepositoryBean
+interface JHipsterCouchbaseRepository<T,ID>:  <% if (reactive) { %>Reactive<% } %>CouchbaseRepository<T, ID>() {
+    @ScanConsistency(query = QueryScanConsistency.REQUEST_PLUS)
+    fun findAll(): <%= listOrFlux %><T>
+
+    @ScanConsistency(query = QueryScanConsistency.REQUEST_PLUS)
+    fun findAll(sort: Sort): <%= listOrFlux %><T> 
+
+    @ScanConsistency(query = QueryScanConsistency.REQUEST_PLUS)
+    fun findAll<% if (reactive) { %>By<% } %>(pageable: Pageable): <%= pageOrFlux %><T> 
+
+    @ScanConsistency(query = QueryScanConsistency.REQUEST_PLUS)
+    fun deleteAll()<% if (reactive) { %>: Mono<Void><% } %> 
+
+    companion object {
+        fun pageableStatement(pageable: Pageable) = pageableStatement(pageable, "")
+    
+        fun pageableStatement(pageable: Pageable, prefix: String) {
+            val sort = Sort.by(
+                pageable.sort
+                    .map { order -> 
+                        val property = order.property
+                        if ("id".equals(property)) {
+                            return@map order.withProperty("meta($prefix).id")
+                        }
+                        if (prefix.isEmpty) {
+                            return@map order
+                        }
+                        return@map order.withProperty("$prefix $property")
+                    }
+            return Query()
+                .limit(pageable.pageSize)
+                .skip(pageable.offset)
+                .with(sort)
+                .export()
+        }
+    
+    <%_ if (searchEngineCouchbase) { _%>
+        fun searchQuery(queryString: String): SearchQuery {
+            var ids = LinkedList<String>()
+            queryString.split(" ").map {
+                if (it.indexOf("id:") == 0) {
+                    ids.add(r.substring(3))
+                    queryString = queryString.replace(it, "").replaceAll("[ ]+", " ").trim()
+                }
+            }
+            val query = SearchQuery.queryString(queryString)
+            if (ids.size != 0) {
+                val docIdQuery = SearchQuery.docId(ids.toArray(arrayOf<String>()))
+                if (!queryString.isEmpty) {
+                    return SearchQuery.conjuncts(query, docIdQuery)
+                }
+                return docIdQuery
+            }
+            return query
+        }
+    <%_ } _%>
+    }
+}

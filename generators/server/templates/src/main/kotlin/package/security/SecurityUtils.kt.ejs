@@ -4,7 +4,7 @@
  This file is part of the JHipster project, see https://www.jhipster.tech/
  for more information.
 
- Licensed under the Apache License, Version 2.0 (the "License");
+ Licensed under the Apache License, Version 2.0 (the "License")
  you may not use this file except in compliance with the License.
  You may obtain a copy of the License at
 
@@ -37,16 +37,27 @@ import org.springframework.security.core.userdetails.UserDetails
 import org.springframework.security.oauth2.core.oidc.user.DefaultOidcUser
 import org.springframework.security.oauth2.server.resource.authentication.JwtAuthenticationToken
 <%_ } _%>
-<%_ if (reactive) { _%>
-import reactor.core.publisher.Mono
-<%_ } _%>
 <%_ if (authenticationTypeOauth2) { _%>
-import java.util.Optional
-<%_ } _%>
-<%_ if (!reactive) { _%>
-  <%_ if (authenticationType !== 'oauth2') { _%>
-import java.util.Optional
+import java.util.*
+import java.util.stream.Collectors
+  <%_ if (reactive) { _%>
+import reactor.core.publisher.Mono
+  <%_ } else { _%>
+import java.util.stream.Stream
   <%_ } _%>
+<%_ } else { _%>
+  <%_ if (reactive) { _%>
+import reactor.core.publisher.Mono
+import java.util.Arrays
+  <%_ } else { _%>
+import java.util.Arrays
+import java.util.Optional
+import java.util.stream.Stream
+  <%_ } _%>
+<%_ } _%>
+
+<%_ if (authenticationTypeOauth2) { _%>
+const val CLAIMS_NAMESPACE = "https://www.jhipster.tech/"
 <%_ } _%>
 
 /**
@@ -67,7 +78,7 @@ fun getCurrentUserLogin(): <% if (!reactive) { %>Optional<% } else { %>Mono<% } 
 fun extractPrincipal(authentication: Authentication?): String? {
 
     if(authentication == null) {
-        return null;
+        return null
     }
 
     return when (val principal = authentication.principal) {
@@ -134,35 +145,55 @@ fun isAuthenticated(): <% if (!reactive) { %>Boolean<% } else { %>Mono<Boolean><
     <%_ } _%>
 }
 
+
 /**
- * Checks if the current user has a specific authority.
- *
- * @param authority the authority to check.
- * @return true if the current user has the authority, false otherwise.
- */
-fun hasCurrentUserThisAuthority(authority: String): <% if (!reactive) { %>Boolean<% } else { %>Mono<Boolean><% } %> {
-  <%_ if (!reactive) { _%>
-    val authentication = SecurityContextHolder.getContext().authentication
-
-    if (authentication != null) {
-        val isUserPresent = getAuthorities(authentication)?.any { it == authority }
-        if(isUserPresent != null) {
-            return isUserPresent
+* Checks if the current user has any of the authorities.
+*
+* @param authorities the authorities to check.
+* @return true if the current user has any of the authorities, false otherwise.
+*/
+fun hasCurrentUserAnyOfAuthorities(vararg authorities: String): <% if (!reactive) { %>boolean<% } else { %>Mono<Boolean><% } %> {
+<%_ if (!reactive) { _%>
+   val authentication = SecurityContextHolder.getContext().getAuthentication()
+   return (
+       authentication != null && getAuthorities(authentication).anyMatch { listOf(it).contains(authority) }
+   );
+<%_ } else { _%>
+   return ReactiveSecurityContextHolder.getContext()
+       .map(SecurityContext::getAuthentication)
+       .map(Authentication::getAuthorities)
+       .map { 
+           it
+           .map(GrantedAuthority::getAuthority)
+           .anyMatch { it.contains(authority) }
         }
-    }
-
-    return false
-  <%_ } else { _%>
-    return ReactiveSecurityContextHolder.getContext()
-        .map(SecurityContext::getAuthentication)
-        .map(Authentication::getAuthorities)
-        .map {
-            it
-            .map(GrantedAuthority::getAuthority)
-            .any { it == authority }
-        }
-  <%_ } _%>
+<%_ } _%>
 }
+
+/**
+* Checks if the current user has none of the authorities.
+*
+* @param authorities the authorities to check.
+* @return true if the current user has none of the authorities, false otherwise.
+*/
+fun hasCurrentUserNoneOfAuthorities(vararg authorities: String):  <% if (!reactive) { %>boolean<% } else { %>Mono<Boolean><% } %> {
+<%_ if (!reactive) { _%>
+   return !hasCurrentUserAnyOfAuthorities(authorities)
+<%_ } else { _%>
+   return hasCurrentUserAnyOfAuthorities(authorities).map { !it } 
+<%_ } _%>
+}
+
+/**
+* Checks if the current user has a specific authority.
+*
+* @param authority the authority to check.
+* @return true if the current user has the authority, false otherwise.
+*/
+fun hasCurrentUserThisAuthority(authority: String): <% if (!reactive) { %>boolean<% } else { %>Mono<Boolean><% } %> {
+   return hasCurrentUserAnyOfAuthorities(authority)
+}
+
 
 <%_ if (!reactive) { _%>
 fun getAuthorities(authentication: Authentication): List<String>? {
@@ -187,7 +218,7 @@ fun getAuthorities(authentication: Authentication): List<String>? {
 
     @Suppress("UNCHECKED_CAST")
     fun getRolesFromClaims(claims: Map<String, Any>): Collection<String> {
-        return claims.getOrDefault("groups", claims.getOrDefault("roles", listOf<String>())) as Collection<String>
+        return claims.getOrDefault("groups", claims.getOrDefault("roles", claims.getOrDefault(CLAIMS_NAMESPACE + "roles", listOf<String>()))) as Collection<String>
     }
 
     fun mapRolesToGrantedAuthorities(roles: Collection<String>): List<GrantedAuthority> {

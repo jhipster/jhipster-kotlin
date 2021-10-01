@@ -136,6 +136,10 @@ class <%= serviceClassName %>(
     protected fun createSpecification(criteria: <%= criteria %>?): Specification<<%= persistClass %>?> {
         var specification: Specification<<%= persistClass %>?> = Specification.where(null)
         if (criteria != null) {
+            // This has to be called first, because the distinct method returns null
+            if (criteria.distinct != null) {
+                specification = specification.and(distinct(criteria.distinct));
+            }
             if (criteria.<%= primaryKey.name %> != null) {
                 specification = specification.and(<%= getSpecificationBuilder(primaryKey.type) %>(criteria.<%= primaryKey.name %>, <%= persistClass %>_.<%= primaryKey.name %>))
             }

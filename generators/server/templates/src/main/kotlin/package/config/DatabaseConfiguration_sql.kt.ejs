@@ -23,26 +23,26 @@ _%>
 package <%= packageName %>.config
 
 import tech.jhipster.config.JHipsterConstants
-<%_ if (devDatabaseType === 'h2Disk' || devDatabaseType === 'h2Memory') { _%>
+<%_ if (devDatabaseTypeH2Any) { _%>
 import tech.jhipster.config.h2.H2ConfigurationHelper
 <%_ } _%>
-<%_ if (databaseType === 'sql' && reactive) { _%>
+<%_ if (databaseTypeSql && reactive) { _%>
 import io.r2dbc.spi.ConnectionFactory
 <%_ } _%>
 import org.slf4j.Logger
 import org.slf4j.LoggerFactory
 import org.springframework.context.annotation.Bean
 import org.springframework.context.annotation.Configuration
-<%_ if (devDatabaseType === 'h2Disk' || devDatabaseType === 'h2Memory') { _%>
+<%_ if (devDatabaseTypeH2Any) { _%>
 import org.springframework.context.annotation.Profile
 <%_ } _%>
 <%_ if (reactive) { _%>
 import org.springframework.core.convert.converter.Converter
 <%_ } _%>
-<%_ if (searchEngine === 'elasticsearch') { _%>
+<%_ if (searchEngineElasticsearch) { _%>
 import org.springframework.data.elasticsearch.repository.config.Enable<% if (reactive) { %>Reactive<% } %>ElasticsearchRepositories
 <%_ } _%>
-<%_ if (devDatabaseType === 'h2Disk' || devDatabaseType === 'h2Memory') { _%>
+<%_ if (devDatabaseTypeH2Any) { _%>
 import org.springframework.core.env.Environment
 <%_ } _%>
 <%_ if (reactive) { _%>
@@ -63,7 +63,7 @@ import org.springframework.data.jpa.repository.config.EnableJpaRepositories
 <%_ } _%>
 import org.springframework.transaction.annotation.EnableTransactionManagement
 
-<%_ if (devDatabaseType === 'h2Disk' || devDatabaseType === 'h2Memory') { _%>
+<%_ if (devDatabaseTypeH2Any) { _%>
 import java.sql.SQLException
 <%_ } _%>
 <%_ if (reactive) { _%>
@@ -90,12 +90,12 @@ import java.util.UUID
 @EnableJpaAuditing(auditorAwareRef = "springSecurityAuditorAware")
 <%_ } _%>
 @EnableTransactionManagement
-<%_ if (searchEngine === 'elasticsearch') { _%>
+<%_ if (searchEngineElasticsearch) { _%>
 @Enable<% if (reactive) { %>Reactive<% } %>ElasticsearchRepositories("<%= packageName %>.repository.search")
 <%_ } _%>
-public class DatabaseConfiguration<% if (devDatabaseType === 'h2Disk' || devDatabaseType === 'h2Memory') { %>(val env: Environment)<% } %> {
+public class DatabaseConfiguration<% if (devDatabaseTypeH2Any) { %>(val env: Environment)<% } %> {
 
-<%_ if (devDatabaseType === 'h2Disk' || devDatabaseType === 'h2Memory') { _%>
+<%_ if (devDatabaseTypeH2Any) { _%>
     private val log = LoggerFactory.getLogger(javaClass)
 
     /**

@@ -16,39 +16,39 @@
  See the License for the specific language governing permissions and
  limitations under the License.
 -%>
+<%_ const reactivePrefix = reactive ? 'Reactive' : ''; _%>
 package <%= packageName %>.web.rest
 
-import <%= packageName %>.IntegrationTest;
-import <%= packageName %>.config.TestSecurityConfiguration
+import <%= packageName %>.test.util.OAuth2TestUtil.ID_TOKEN
+import <%= packageName %>.test.util.OAuth2TestUtil.authenticationToken
+import <%= packageName %>.test.util.OAuth2TestUtil.registerAuthenticationToken
+<%_ if (!reactive) { _%>
+import org.springframework.test.web.servlet.request.MockMvcRequestBuilders.post
+import org.springframework.test.web.servlet.result.MockMvcResultMatchers.*
+<%_ } else { _%>
+import org.springframework.security.test.web.reactive.server.SecurityMockServerConfigurers.*
+<%_ } _%>
+
+import <%= packageName %>.IntegrationTest
 import <%= packageName %>.security.USER
 import org.junit.jupiter.api.BeforeEach
 import org.junit.jupiter.api.Test
 import org.springframework.beans.factory.annotation.Autowired
-<%_ if (reactive) { _%>
-import org.springframework.context.ApplicationContext
-<%_ } _%>
+import org.springframework.http.HttpHeaders
 import org.springframework.http.MediaType
-import org.springframework.security.core.context.SecurityContextHolder
+import org.springframework.security.oauth2.client.<% if (reactive) { %>Reactive<% } %>OAuth2AuthorizedClientService
+import org.springframework.security.oauth2.client.registration.ClientRegistration
 import org.springframework.security.oauth2.client.registration.<% if (reactive) { %>Reactive<% } %>ClientRegistrationRepository
 import org.springframework.security.oauth2.core.oidc.OidcIdToken
 <%_ if (!reactive) { _%>
+import org.springframework.security.core.context.SecurityContextHolder
 import org.springframework.security.web.servletapi.SecurityContextHolderAwareRequestFilter
 import org.springframework.test.web.servlet.MockMvc
 import org.springframework.test.web.servlet.setup.MockMvcBuilders
 import org.springframework.web.context.WebApplicationContext
 <%_ } else { _%>
+import org.springframework.context.ApplicationContext
 import org.springframework.test.web.reactive.server.WebTestClient
-<%_ } _%>
-
-import java.time.Instant
-
-<%_ if (!reactive) { _%>
-import org.springframework.test.web.servlet.request.MockMvcRequestBuilders.post
-import org.springframework.test.web.servlet.result.MockMvcResultMatchers.content
-import org.springframework.test.web.servlet.result.MockMvcResultMatchers.jsonPath
-import org.springframework.test.web.servlet.result.MockMvcResultMatchers.status
-<%_ } else { _%>
-import org.springframework.security.test.web.reactive.server.SecurityMockServerConfigurers.*
 <%_ } _%>
 
 /**
@@ -63,13 +63,19 @@ class LogoutResourceIT {
     @Autowired
     private lateinit var context: <% if (!reactive) { %>Web<% } %>ApplicationContext
 
+    @Autowired
+    private lateinit var authorizedClientService: <%= reactivePrefix %>OAuth2AuthorizedClientService 
+
+    @Autowired
+    private lateinit var clientRegistration: ClientRegistration
+
     <%_ if (!reactive) { _%>
     private lateinit var restLogoutMockMvc: MockMvc
     <%_ } else { _%>
     private lateinit var webTestClient: WebTestClient
     <%_ } _%>
 
-    private lateinit var idToken: OidcIdToken
+    private lateinit var claims: Map<String, Any>
 
     @BeforeEach
     <% if (!reactive) { %>@Throws(Exception::class)<% } %>
@@ -78,9 +84,8 @@ class LogoutResourceIT {
             "groups" to listOf(USER),
             "sub" to 123
         )
-        val idToken = OidcIdToken(ID_TOKEN, Instant.now(), Instant.now().plusSeconds(60), claims)
         <%_ if (!reactive) { _%>
-        SecurityContextHolder.getContext().authentication = authenticationToken(idToken)
+        SecurityContextHolder.getContext().authentication = registerAuthenticationToken(authorizedClientService, clientRegistration, authenticationToken(claims)))
         val authInjector = SecurityContextHolderAwareRequestFilter()
         authInjector.afterPropertiesSet()
 
@@ -98,27 +103,27 @@ class LogoutResourceIT {
     @Test
     <% if (!reactive) { %>@Throws(Exception::class)<% } %>
     fun getLogoutInformation() {
+    val ORIGIN_URL = "http://localhost:8080"
     <%_ if (!reactive) { _%>
-        val logoutUrl = this.registrations.findByRegistrationId("oidc").providerDetails
+        var logoutUrl = this.registrations.findByRegistrationId("oidc").providerDetails
             .configurationMetadata["end_session_endpoint"].toString()
-        restLogoutMockMvc.perform(post("/api/logout"))
+        logoutUrl = logoutUrl + "?id_token_hint=" + ID_TOKEN + "&post_logout_redirect_uri=" + ORIGIN_URL
+        restLogoutMockMvc.perform(post("http://localhost:8080/api/logout").header(HttpHeaders.ORIGIN, ORIGIN_URL))
             .andExpect(status().isOk)
             .andExpect(content().contentType(MediaType.APPLICATION_JSON_VALUE))
             .andExpect(jsonPath("\$.logoutUrl").value(logoutUrl))
-            .andExpect(jsonPath("\$.idToken").value(ID_TOKEN))
     <%_ } else { _%>
-        val logoutUrl = this.registrations.findByRegistrationId("oidc")
+        var logoutUrl = this.registrations.findByRegistrationId("oidc")
             .map { it.providerDetails.configurationMetadata["end_session_endpoint"].toString() }
             .block()
-
+        logoutUrl = logoutUrl + "?id_token_hint=" + ID_TOKEN + "&post_logout_redirect_uri=" + ORIGIN_URL;
         this.webTestClient.mutateWith(csrf())
-            .mutateWith(mockAuthentication(authenticationToken(idToken)))
-            .post().uri("/api/logout").exchange()
+            .mutateWith(mockAuthentication(registerAuthenticationToken(authorizedClientService, clientRegistration, authenticationToken(claims))))
+            .post().uri("http://localhost:8080/api/logout").header(HttpHeaders.ORIGIN, ORIGIN_URL).exchange()
             .expectStatus().isOk
             .expectHeader().contentType(MediaType.APPLICATION_JSON_VALUE)
             .expectBody()
-            .jsonPath("$.logoutUrl").isEqualTo(logoutUrl.toString())
-            .jsonPath("$.idToken").isEqualTo(ID_TOKEN)
+            .jsonPath("$.logoutUrl").isEqualTo(logoutUrl)
     <%_ } _%>
     }
 <%_ } _%>

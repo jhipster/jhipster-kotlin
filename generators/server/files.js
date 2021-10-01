@@ -92,7 +92,7 @@ const serverFiles = {
             ],
         },
         {
-            condition: generator => generator.databaseType === 'sql',
+            condition: generator => generator.databaseTypeSql,
             path: SERVER_MAIN_RES_DIR,
             templates: [
                 {
@@ -140,22 +140,18 @@ const serverFiles = {
         },
         {
             condition: generator =>
-                generator.databaseType === 'neo4j' && (!generator.skipUserManagement || generator.authenticationTypeOauth2),
+                generator.databaseTypeNeo4j && (!generator.skipUserManagement || generator.authenticationTypeOauth2),
             path: SERVER_MAIN_SRC_DIR,
             templates: [
                 {
-                    file: 'package/config/neo4j/Neo4jMigrations.java',
-                    renameTo: generator => `${generator.javaDir}config/neo4j/Neo4jMigrations.java`,
-                },
-                {
-                    file: 'package/config/neo4j/package-info.java',
-                    renameTo: generator => `${generator.javaDir}config/neo4j/package-info.java`,
+                    file: 'package/config/neo4j/Neo4jMigrations.kt',
+                    renameTo: generator => `${generator.javaDir}config/neo4j/Neo4jMigrations.kt`,
                 },
             ],
         },
         {
             condition: generator =>
-                generator.databaseType === 'neo4j' && (!generator.skipUserManagement || generator.authenticationTypeOauth2),
+                generator.databaseTypeNeo4j && (!generator.skipUserManagement || generator.authenticationTypeOauth2),
             path: SERVER_MAIN_RES_DIR,
             templates: [
                 {
@@ -169,7 +165,7 @@ const serverFiles = {
             ],
         },
         {
-            condition: generator => generator.databaseType === 'cassandra',
+            condition: generator => generator.databaseTypeCassandra,
             path: SERVER_MAIN_RES_DIR,
             templates: [
                 'config/cql/create-keyspace-prod.cql',
@@ -180,7 +176,7 @@ const serverFiles = {
         },
         {
             condition: generator =>
-                generator.databaseType === 'cassandra' &&
+                generator.databaseTypeCassandra &&
                 generator.applicationType !== 'microservice' &&
                 (!generator.skipUserManagement || generator.authenticationTypeOauth2),
             path: SERVER_MAIN_RES_DIR,
@@ -197,7 +193,7 @@ const serverFiles = {
         {
             condition: generator =>
                 !generator.reactive &&
-                (generator.databaseType === 'sql' || generator.databaseType === 'mongodb' || generator.databaseType === 'couchbase'),
+                (generator.databaseTypeSql || generator.databaseType === 'mongodb' || generator.databaseType === 'couchbase'),
             path: SERVER_MAIN_KOTLIN_SRC_DIR,
             templates: [
                 {
@@ -732,7 +728,7 @@ const serverFiles = {
             ],
         },
         {
-            condition: generator => generator.cacheProvider === 'redis',
+            condition: generator => generator.cacheProviderRedis,
             path: SERVER_TEST_SRC_KOTLIN_DIR,
             templates: [
                 {
@@ -754,7 +750,7 @@ const serverFiles = {
             ],
         },
         {
-            condition: generator => generator.databaseType === 'sql',
+            condition: generator => generator.databaseTypeSql,
             path: SERVER_MAIN_KOTLIN_SRC_DIR,
             templates: [
                 {
@@ -765,7 +761,7 @@ const serverFiles = {
             ],
         },
         {
-            condition: generator => generator.databaseType === 'sql' && generator.reactive,
+            condition: generator => generator.databaseTypeSql && generator.reactive,
             path: SERVER_MAIN_KOTLIN_SRC_DIR,
             templates: [
                 {
@@ -782,7 +778,7 @@ const serverFiles = {
         },
         {
             condition: generator =>
-                generator.databaseType === 'sql' &&
+                generator.databaseTypeSql &&
                 generator.reactive &&
                 (!generator.skipUserManagement || generator.authenticationTypeOauth2),
             path: SERVER_MAIN_KOTLIN_SRC_DIR,
@@ -865,7 +861,7 @@ const serverFiles = {
             ],
         },
         {
-            condition: generator => generator.searchEngine === 'elasticsearch',
+            condition: generator => generator.searchEngineElasticsearch,
             path: SERVER_MAIN_KOTLIN_SRC_DIR,
             templates: [
                 {
@@ -1048,7 +1044,7 @@ const serverFiles = {
     ],
     serverTestFw: [
         {
-            condition: generator => generator.databaseType === 'cassandra',
+            condition: generator => generator.databaseTypeCassandra,
             path: SERVER_TEST_SRC_KOTLIN_DIR,
             templates: [
                 {
@@ -1075,7 +1071,7 @@ const serverFiles = {
             ],
         },
         {
-            condition: generator => generator.databaseType === 'neo4j',
+            condition: generator => generator.databaseTypeNeo4j,
             path: SERVER_TEST_SRC_KOTLIN_DIR,
             templates: [
                 {
@@ -1117,7 +1113,7 @@ const serverFiles = {
             ],
         },
         {
-            condition: generator => generator.databaseType === 'sql' && !generator.reactive,
+            condition: generator => generator.databaseTypeSql && !generator.reactive,
             path: SERVER_TEST_SRC_KOTLIN_DIR,
             templates: [
                 {
@@ -1142,12 +1138,12 @@ const serverFiles = {
             templates: ['config/application.yml', 'logback.xml'],
         },
         {
-            condition: generator => generator.databaseType === 'sql' && !generator.reactive,
+            condition: generator => generator.databaseTypeSql && !generator.reactive,
             path: SERVER_TEST_RES_DIR,
             templates: ['config/application-testcontainers.yml'],
         },
         {
-            condition: generator => generator.prodDatabaseType === 'mariadb' && !generator.reactive,
+            condition: generator => generator.prodDatabaseTypeMariadb && !generator.reactive,
             path: SERVER_TEST_RES_DIR,
             templates: [{ file: 'testcontainers/mariadb/my.cnf', method: 'copy', noEjs: true }],
         },
@@ -1301,14 +1297,14 @@ const serverFiles = {
         {
             condition: generator =>
                 (generator.authenticationTypeOauth2 && generator.applicationType !== 'microservice') ||
-                (!generator.skipUserManagement && generator.databaseType === 'sql'),
+                (!generator.skipUserManagement && generator.databaseTypeSql),
             path: SERVER_MAIN_RES_DIR,
             templates: ['config/liquibase/data/user.csv'],
         },
         {
             condition: generator =>
-                (generator.authenticationTypeOauth2 && generator.applicationType !== 'microservice' && generator.databaseType === 'sql') ||
-                (!generator.skipUserManagement && generator.databaseType === 'sql'),
+                (generator.authenticationTypeOauth2 && generator.applicationType !== 'microservice' && generator.databaseTypeSql) ||
+                (!generator.skipUserManagement && generator.databaseTypeSql),
             path: SERVER_MAIN_RES_DIR,
             templates: ['config/liquibase/data/authority.csv', 'config/liquibase/data/user_authority.csv'],
         },
@@ -1455,7 +1451,7 @@ const serverFiles = {
             ],
         },
         {
-            condition: generator => generator.authenticationTypeOauth2 && generator.searchEngine === 'elasticsearch',
+            condition: generator => generator.authenticationTypeOauth2 && generator.searchEngineElasticsearch,
             path: SERVER_MAIN_KOTLIN_SRC_DIR,
             templates: [
                 {
@@ -1466,7 +1462,7 @@ const serverFiles = {
             ],
         },
         {
-            condition: generator => generator.authenticationTypeOauth2 && generator.searchEngine === 'elasticsearch',
+            condition: generator => generator.authenticationTypeOauth2 && generator.searchEngineElasticsearch,
             path: SERVER_TEST_SRC_KOTLIN_DIR,
             templates: [
                 {
@@ -1557,7 +1553,7 @@ const serverFiles = {
             ],
         },
         {
-            condition: generator => !generator.skipUserManagement && generator.searchEngine === 'elasticsearch',
+            condition: generator => !generator.skipUserManagement && generator.searchEngineElasticsearch,
             path: SERVER_MAIN_KOTLIN_SRC_DIR,
             templates: [
                 {
@@ -1568,7 +1564,7 @@ const serverFiles = {
             ],
         },
         {
-            condition: generator => !generator.skipUserManagement && generator.searchEngine === 'elasticsearch',
+            condition: generator => !generator.skipUserManagement && generator.searchEngineElasticsearch,
             path: SERVER_TEST_SRC_KOTLIN_DIR,
             templates: [
                 {
@@ -1732,7 +1728,7 @@ function writeFiles() {
                 this.addGradleProperty('detekt_version', kotlinConstants.DETEKT_VERSION);
                 this.addGradlePlugin('org.jetbrains.kotlin', 'kotlin-gradle-plugin', '${kotlin_version}');
                 this.addGradlePlugin('org.jetbrains.kotlin', 'kotlin-allopen', '${kotlin_version}');
-                if (this.databaseType === 'sql') {
+                if (this.databaseTypeSql) {
                     this.addGradlePlugin('org.jetbrains.kotlin', 'kotlin-noarg', '${kotlin_version}');
                 }
                 this.addGradlePlugin('org.jlleitschuh.gradle', 'ktlint-gradle', kotlinConstants.KTLINT_GRADLE_VERSION);
@@ -1795,7 +1791,7 @@ function writeFiles() {
                                     <version>$\{mapstruct.version}</version>
                                 </annotationProcessorPath>
                                 ${
-                                    this.databaseType === 'sql'
+                                    this.databaseTypeSql
                                         ? `<!-- For JPA static metamodel generation -->
                                 <annotationProcessorPath>
                                     <groupId>org.hibernate</groupId>
@@ -1810,7 +1806,7 @@ function writeFiles() {
                                         : ''
                                 }
                                 ${
-                                    this.databaseType === 'cassandra'
+                                    this.databaseTypeCassandra
                                         ? `
                                 <annotationProcessorPath>
                                     <groupId>com.datastax.oss</groupId>
@@ -1857,14 +1853,14 @@ function writeFiles() {
                     </args>
                     <compilerPlugins>
                         <plugin>spring</plugin>${
-                            this.databaseType === 'sql'
+                            this.databaseTypeSql
                                 ? `
                         <plugin>jpa</plugin>
                         <plugin>all-open</plugin>`
                                 : ''
                         }
                     </compilerPlugins>${
-                        this.databaseType === 'sql'
+                        this.databaseTypeSql
                             ? `<pluginOptions>
                         <!-- Each annotation is placed on its own line -->
                         <option>all-open:annotation=javax.persistence.Entity</option>
@@ -1881,7 +1877,7 @@ function writeFiles() {
                         <version>$\{kotlin.version}</version>
                     </dependency>
                     ${
-                        this.databaseType === 'sql'
+                        this.databaseTypeSql
                             ? `<dependency>
                         <groupId>org.jetbrains.kotlin</groupId>
                         <artifactId>kotlin-maven-noarg</artifactId>

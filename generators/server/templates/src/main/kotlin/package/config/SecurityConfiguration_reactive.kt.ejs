@@ -38,7 +38,7 @@ import tech.jhipster.web.filter.reactive.CookieCsrfFilter
 import org.springframework.beans.factory.annotation.Value
 <%_ } _%>
 import tech.jhipster.config.JHipsterProperties
-<%_ if (skipUserManagement && authenticationType !== 'oauth2') { _%>
+<%_ if (skipUserManagement && !authenticationTypeOauth2) { _%>
 import org.springframework.boot.autoconfigure.security.SecurityProperties
 <%_ } _%>
 <%_ if (!skipClient) { _%>
@@ -53,7 +53,7 @@ import org.springframework.http.HttpMethod
 <%_ if (authenticationTypeSession) { _%>
 import org.springframework.http.HttpStatus
 <%_ } _%>
-<%_ if (authenticationType !== 'oauth2') { _%>
+<%_ if (!authenticationTypeOauth2) { _%>
 import org.springframework.security.authentication.ReactiveAuthenticationManager
 import org.springframework.security.authentication.UserDetailsRepositoryReactiveAuthenticationManager
 <%_ } _%>
@@ -69,8 +69,18 @@ import org.springframework.security.core.AuthenticationException
 import org.springframework.security.core.GrantedAuthority
 import org.springframework.security.oauth2.client.oidc.userinfo.OidcReactiveOAuth2UserService
 import org.springframework.security.oauth2.client.oidc.userinfo.OidcUserRequest
+<%_ if (applicationTypeGateway) { _%>
+import org.springframework.security.oauth2.client.registration.ReactiveClientRegistrationRepository
+<%_ } _%>
 import org.springframework.security.oauth2.client.userinfo.ReactiveOAuth2UserService
+<%_ if (applicationTypeGateway) { _%>
+import org.springframework.security.oauth2.client.web.server.DefaultServerOAuth2AuthorizationRequestResolver
+import org.springframework.security.oauth2.client.web.server.ServerOAuth2AuthorizationRequestResolver
+<%_ } _%>
 import org.springframework.security.oauth2.core.DelegatingOAuth2TokenValidator
+<%_ if (applicationTypeGateway) { _%>
+import org.springframework.security.oauth2.core.endpoint.OAuth2AuthorizationRequest
+<%_ } _%>
 import org.springframework.security.oauth2.core.OAuth2TokenValidator
 import org.springframework.security.oauth2.core.oidc.user.DefaultOidcUser
 import org.springframework.security.oauth2.core.oidc.user.OidcUser
@@ -80,7 +90,7 @@ import org.springframework.security.oauth2.server.resource.authentication.Reacti
 import org.springframework.security.web.server.csrf.CookieServerCsrfTokenRepository
 import org.springframework.security.web.server.header.ReferrerPolicyServerHttpHeadersWriter
 <%_ } _%>
-<%_ if (authenticationType !== 'oauth2') { _%>
+<%_ if (!authenticationTypeOauth2) { _%>
     <%_ if (skipUserManagement) { _%>
 import org.springframework.security.core.userdetails.MapReactiveUserDetailsService
     <%_ } _%>
@@ -109,7 +119,7 @@ import org.springframework.security.web.server.savedrequest.NoOpServerRequestCac
 <%_ } _%>
 import org.springframework.security.web.server.util.matcher.NegatedServerWebExchangeMatcher
 import org.springframework.security.web.server.util.matcher.OrServerWebExchangeMatcher
-<%_ if (skipUserManagement && authenticationType !== 'oauth2') { _%>
+<%_ if (skipUserManagement && !authenticationTypeOauth2) { _%>
 import org.springframework.util.StringUtils
 <%_ } _%>
 import org.zalando.problem.spring.webflux.advice.security.SecurityProblemSupport
@@ -120,6 +130,9 @@ import reactor.core.publisher.Mono
 
 import java.util.HashSet
 import java.util.Set
+<%_ if (applicationTypeGateway) { _%>
+import java.util.function.Consumer
+<%_ } _%>
 <%_ } _%>
 
 import org.springframework.security.web.server.util.matcher.ServerWebExchangeMatchers.pathMatchers
@@ -128,7 +141,7 @@ import org.springframework.security.web.server.util.matcher.ServerWebExchangeMat
 @EnableReactiveMethodSecurity
 @Import(SecurityProblemSupport::class)
 class SecurityConfiguration(
-<%_ if (!skipUserManagement && authenticationType !== 'oauth2') { _%>
+<%_ if (!skipUserManagement && !authenticationTypeOauth2) { _%>
     private val userDetailsService: ReactiveUserDetailsService,
 <%_ } _%>
 <%_ if (authenticationTypeJwt) { _%>
@@ -142,9 +155,13 @@ class SecurityConfiguration(
 
     @Value("\${spring.security.oauth2.client.provider.oidc.issuer-uri}")
     private lateinit var issuerUri: String
+    <%_ if (applicationTypeGateway) { _%>
+
+    private lateinit var clientRegistrationRepository: ReactiveClientRegistrationRepository
+    <%_ } _%>
     <%_ } _%>
 
-    <%_ if (!skipUserManagement && authenticationType !== 'oauth2') { _%>
+    <%_ if (!skipUserManagement && !authenticationTypeOauth2) { _%>
     @Bean
     fun passwordEncoder() = BCryptPasswordEncoder()
 
@@ -154,7 +171,7 @@ class SecurityConfiguration(
             setPasswordEncoder(passwordEncoder())
         }
 
-    <%_ } else if (authenticationType !== 'oauth2') { _%>
+    <%_ } else if (!authenticationTypeOauth2) { _%>
     @Bean
     fun userDetailsService(properties: SecurityProperties): MapReactiveUserDetailsService {
         val user = properties.user
@@ -185,7 +202,7 @@ class SecurityConfiguration(
                 )
             )
             .csrf()
-            <%_ if (['session','oauth2'].includes(authenticationType) && applicationType !== 'microservice') { _%>
+            <%_ if (['session','oauth2'].includes(authenticationType) && !applicationTypeMicroservice) { _%>
             .csrfTokenRepository(CookieServerCsrfTokenRepository.withHttpOnlyFalse())
         .and()
             // See https://github.com/spring-projects/spring-security/issues/5766
@@ -199,7 +216,7 @@ class SecurityConfiguration(
             <%_ if (authenticationTypeJwt) { _%>
             .addFilterAt(JWTFilter(tokenProvider), SecurityWebFiltersOrder.HTTP_BASIC)
             <%_ } _%>
-            <%_ if (!skipUserManagement && authenticationType !== 'oauth2') { _%>
+            <%_ if (!skipUserManagement && !authenticationTypeOauth2) { _%>
             .authenticationManager(reactiveAuthenticationManager())
             <%_ } _%>
             .exceptionHandling()
@@ -246,7 +263,7 @@ class SecurityConfiguration(
             <%_ } _%>
             .pathMatchers("/api/auth-info").permitAll()
             .pathMatchers("/api/**").authenticated()
-            <%_ if (applicationType === 'monolith' || applicationTypeGateway) { _%>
+            <%_ if (applicationTypeMonolith || applicationTypeGateway) { _%>
             .pathMatchers("/services/**").authenticated()
             <%_ } _%>
             .pathMatchers("/management/health").permitAll()
@@ -255,7 +272,7 @@ class SecurityConfiguration(
             .pathMatchers("/management/**").hasAuthority(ADMIN)
         <%_ if (authenticationTypeOauth2) { _%>
 
-        http<%_ if (['monolith', 'gateway'].includes(applicationType)) { _%>.oauth2Login()
+        http<%_ if (applicationTypeMonolith || applicationTypeGateway) { _%>.oauth2Login()
         .and()
             <%_ } _%>.oauth2ResourceServer()
             .jwt()
@@ -267,6 +284,25 @@ class SecurityConfiguration(
         return http.build()
     }
     <%_ if (authenticationTypeOauth2) { _%>
+
+        <%_ if (applicationTypeGateway) { _%>
+        private fun authorizationRequestResolver(clientRegistrationRepository: ReactiveClientRegistrationRepository): ServerOAuth2AuthorizationRequestResolver  {
+            val authorizationRequestResolver =
+                DefaultServerOAuth2AuthorizationRequestResolver(clientRegistrationRepository)
+            if (this.issuerUri.contains("auth0.com")) {
+                authorizationRequestResolver.setAuthorizationRequestCustomizer(authorizationRequestCustomizer())
+            }
+            return  authorizationRequestResolver
+        }
+    
+        // TODO change this.
+        private fun authorizationRequestCustomizer():  Consumer<OAuth2AuthorizationRequest.Builder> {
+            return customizer -> customizer
+                .authorizationRequestUri(uriBuilder ->
+                    uriBuilder.queryParam("audience", jHipsterProperties.security.oauth2.audience)
+                        .build())
+        }
+        <%_ } _%>
 
     fun jwtAuthenticationConverter(): Converter<Jwt, Mono<AbstractAuthenticationToken>>  {
         val jwtAuthenticationConverter = JwtAuthenticationConverter()

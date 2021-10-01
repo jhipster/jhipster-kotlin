@@ -30,6 +30,7 @@ const { COUCHBASE, MONGODB, NEO4J, SQL } = require('generator-jhipster/jdl/jhips
 const { ELASTICSEARCH } = require('generator-jhipster/jdl/jhipster/search-engine-types');
 const { MapperTypes, ServiceTypes } = require('generator-jhipster/jdl/jhipster/entity-options');
 const { EHCACHE, CAFFEINE, INFINISPAN, REDIS } = require('generator-jhipster/jdl/jhipster/cache-types');
+const { writeEntityCouchbaseFiles } = require('./files-couchbase');
 const NeedleServerChacheKt = require('./needle-server-cache-kt');
 
 const { MAPSTRUCT } = MapperTypes;
@@ -52,8 +53,90 @@ const serverFiles = {
             path: SERVER_MAIN_SRC_KOTLIN_DIR,
             templates: [
                 {
-                    file: 'package/domain/Entity.kt',
-                    renameTo: generator => `${generator.packageFolder}/domain/${generator.asEntity(generator.entityClass)}.kt`,
+                    file: 'package/domain/Entity.kt.jhi',
+                    renameTo: generator => `${generator.packageFolder}/domain/${generator.persistClass}.kt.jhi`,
+                    useBluePrint: true,
+                },
+                {
+                    file: 'package/domain/Entity.kt.jhi.javax_validation',
+                    renameTo: generator => `${generator.packageFolder}/domain/${generator.persistClass}.kt.jhi.javax_validation`,
+                    useBluePrint: true,
+                },
+            ],
+        },
+        {
+            condition: generator => generator.databaseType === 'sql' && generator.reactive,
+            path: SERVER_MAIN_SRC_KOTLIN_DIR,
+            templates: [
+                {
+                    file: 'package/domain/Entity.kt.jhi.spring_data_reactive',
+                    renameTo: generator => `${generator.packageFolder}/domain/${generator.persistClass}.kt.jhi.spring_data_reactive`,
+                    useBluePrint: true,
+                },
+            ],
+        },
+        {
+            condition: generator => generator.databaseType === 'cassandra',
+            path: SERVER_MAIN_SRC_KOTLIN_DIR,
+            templates: [
+                {
+                    file: 'package/domain/Entity.kt.jhi.spring_data_cassandra',
+                    renameTo: generator => `${generator.packageFolder}/domain/${generator.persistClass}.kt.jhi.spring_data_cassandra`,
+                    useBluePrint: true,
+                },
+            ],
+        },
+        {
+            condition: generator => generator.databaseType === 'neo4j',
+            path: SERVER_MAIN_SRC_KOTLIN_DIR,
+            templates: [
+                {
+                    file: 'package/domain/Entity.kt.jhi.spring_data_neo4j',
+                    renameTo: generator => `${generator.packageFolder}/domain/${generator.persistClass}.kt.jhi.spring_data_neo4j`,
+                    useBluePrint: true,
+                },
+            ],
+        },
+        {
+            condition: generator => generator.databaseType === 'sql' && !generator.reactive,
+            path: SERVER_MAIN_SRC_KOTLIN_DIR,
+            templates: [
+                {
+                    file: 'package/domain/Entity.kt.jhi.javax_persistence',
+                    renameTo: generator => `${generator.packageFolder}/domain/${generator.persistClass}.kt.jhi.javax_persistence`,
+                    useBluePrint: true,
+                },
+            ],
+        },
+        {
+            condition: generator => generator.databaseType === 'mongodb',
+            path: SERVER_MAIN_SRC_KOTLIN_DIR,
+            templates: [
+                {
+                    file: 'package/domain/Entity.kt.jhi.spring_data_mongodb',
+                    renameTo: generator => `${generator.packageFolder}/domain/${generator.persistClass}.kt.jhi.spring_data_mongodb`,
+                    useBluePrint: true,
+                },
+            ],
+        },
+        {
+            condition: generator => generator.databaseType === 'sql' && !generator.reactive && generator.enableHibernateCache,
+            path: SERVER_MAIN_SRC_KOTLIN_DIR,
+            templates: [
+                {
+                    file: 'package/domain/Entity.kt.jhi.hibernate_cache',
+                    renameTo: generator => `${generator.packageFolder}/domain/${generator.persistClass}.kt.jhi.hibernate_cache`,
+                    useBluePrint: true,
+                },
+            ],
+        },
+        {
+            condition: generator => generator.searchEngine === 'elasticsearch',
+            path: SERVER_MAIN_SRC_KOTLIN_DIR,
+            templates: [
+                {
+                    file: 'package/domain/Entity.kt.jhi.elastic_search',
+                    renameTo: generator => `${generator.packageFolder}/domain/${generator.persistClass}.kt.jhi.elastic_search`,
                     useBluePrint: true,
                 },
             ],
@@ -97,7 +180,7 @@ const serverFiles = {
             ],
         },
         {
-            condition: generator => !generator.reactive && !generator.embedded,
+            condition: generator => !generator.reactive && !generator.embedded && generator.databaseType !== COUCHBASE,
             path: SERVER_MAIN_SRC_KOTLIN_DIR,
             templates: [
                 {
@@ -108,7 +191,7 @@ const serverFiles = {
             ],
         },
         {
-            condition: generator => generator.reactive && !generator.embedded,
+            condition: generator => generator.reactive && !generator.embedded && generator.databaseType !== COUCHBASE,
             path: SERVER_MAIN_SRC_KOTLIN_DIR,
             templates: [
                 {
@@ -231,7 +314,7 @@ const serverFiles = {
             templates: [
                 {
                     file: 'package/domain/EntityTest.kt',
-                    renameTo: generator => `${generator.packageFolder}/domain/${generator.asEntity(generator.entityClass)}Test.kt`,
+                    renameTo: generator => `${generator.packageFolder}/domain/${generator.persistClass}Test.kt`,
                     useBluePrint: true,
                 },
             ],
@@ -310,6 +393,7 @@ function writeFiles() {
                 }
             });
         },
+        ...writeEntityCouchbaseFiles(),
     };
 }
 

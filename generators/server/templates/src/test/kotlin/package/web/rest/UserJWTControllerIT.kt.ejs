@@ -18,15 +18,15 @@
 -%>
 package <%= packageName %>.web.rest
 
-<%_ if (databaseType === 'cassandra') { _%>
+<%_ if (databaseTypeCassandra) { _%>
 import <%= packageName %>.AbstractCassandraTest
 <%_ } _%>
 import <%= packageName %>.IntegrationTest
-<%_ if (databaseType === 'sql' && reactive) { _%>
+<%_ if (databaseTypeSql && reactive) { _%>
 import <%= packageName %>.config.SYSTEM_ACCOUNT
 <%_ } _%>
 <%_ if (!skipUserManagement) { _%>
-    <%_ if (databaseType === 'sql' && reactive) { _%>
+    <%_ if (databaseTypeSql && reactive) { _%>
 import <%= packageName %>.config.Constants
     <%_ } _%>
 import <%= packageName %>.domain.<%= asEntity('User') %>
@@ -49,11 +49,11 @@ import org.springframework.test.web.reactive.server.WebTestClient
 <%_ } _%>
 <%_ if (!reactive) { _%>
 import org.springframework.test.web.servlet.MockMvc
-    <%_ if (databaseType === 'sql') { _%>
+    <%_ if (databaseTypeSql) { _%>
 import org.springframework.transaction.annotation.Transactional
     <%_ } _%>
 <%_ } _%>
-<%_ if (databaseType === 'cassandra') { _%>
+<%_ if (databaseTypeCassandra) { _%>
 
 import java.util.UUID
 <%_ } _%>
@@ -75,7 +75,7 @@ import org.hamcrest.Matchers.*
 @AutoConfigureWebTestClient
 <%_ } _%>
 @IntegrationTest
-class UserJWTControllerIT <% if (databaseType === 'cassandra') { %>: AbstractCassandraTest() <% } %>{
+class UserJWTControllerIT <% if (databaseTypeCassandra) { %>: AbstractCassandraTest() <% } %>{
 
 <%_ if (!skipUserManagement) { _%>
     @Autowired
@@ -94,25 +94,25 @@ class UserJWTControllerIT <% if (databaseType === 'cassandra') { %>: AbstractCas
 
     @Test
 <%_ if (!skipUserManagement) { _%>
-    <%_ if (databaseType === 'sql' && !reactive) { _%>
+    <%_ if (databaseTypeSql && !reactive) { _%>
     @Transactional
     <%_ } _%>
     @Throws(Exception::class)
     fun testAuthorize() {
         val user = <%= asEntity('User') %>(
-            <%_ if (databaseType === 'cassandra') { _%>
+            <%_ if (databaseTypeCassandra) { _%>
             id = UUID.randomUUID().toString(),
             <%_ } _%>
             login = "user-jwt-controller",
             email = "user-jwt-controller@example.com",
             activated = true,
-            <%_ if (databaseType === 'sql' && reactive) { _%>
+            <%_ if (databaseTypeSql && reactive) { _%>
             createdBy = SYSTEM_ACCOUNT,
             <%_ } _%>
             password = passwordEncoder.encode("test")
         )
 
-        userRepository.save<% if (databaseType === 'sql' && !reactive) { %>AndFlush<% } %>(user)<% if (reactive) { %>.block()<% } %>
+        userRepository.save<% if (databaseTypeSql && !reactive) { %>AndFlush<% } %>(user)<% if (reactive) { %>.block()<% } %>
 
         val login = LoginVM(username = "user-jwt-controller", password = "test")
 <%_ } else { _%>
@@ -145,25 +145,25 @@ class UserJWTControllerIT <% if (databaseType === 'cassandra') { %>: AbstractCas
 
     @Test
     <%_ if (!skipUserManagement) { _%>
-    <%_ if (databaseType === 'sql' && !reactive) { _%>  
+    <%_ if (databaseTypeSql && !reactive) { _%>  
     @Transactional
     <%_ } _%>
     @Throws(Exception::class)
     fun testAuthorizeWithRememberMe() {
         val user = <%= asEntity('User') %>(
-            <%_ if (databaseType === 'cassandra') { _%>
+            <%_ if (databaseTypeCassandra) { _%>
             id = UUID.randomUUID().toString(),
             <%_ } _%>
             login = "user-jwt-controller-remember-me",
             email = "user-jwt-controller-remember-me@example.com",
             activated = true,
-            <%_ if (databaseType === 'sql' && reactive) { _%>
+            <%_ if (databaseTypeSql && reactive) { _%>
             createdBy = SYSTEM_ACCOUNT,
             <%_ } _%>   
             password = passwordEncoder.encode("test")
         )
 
-        userRepository.save<% if (databaseType === 'sql' && !reactive) { %>AndFlush<% } %>(user)<% if (reactive) { %>.block()<% } %>
+        userRepository.save<% if (databaseTypeSql && !reactive) { %>AndFlush<% } %>(user)<% if (reactive) { %>.block()<% } %>
 
         val login = LoginVM(
             username = "user-jwt-controller-remember-me",

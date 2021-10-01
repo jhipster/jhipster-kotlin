@@ -16,37 +16,49 @@
  See the License for the specific language governing permissions and
  limitations under the License.
 -%>
+<%_ const reactivePrefix = reactive ? 'Reactive' : ''; _%>
 package <%= packageName %>.config
+
+import org.mockito.Mockito.mock
 
 import org.springframework.boot.test.context.TestConfiguration
 import org.springframework.context.annotation.Bean
-import org.springframework.security.oauth2.client.InMemory<% if (reactive) { %>Reactive<% } %>OAuth2AuthorizedClientService
-import org.springframework.security.oauth2.client.OAuth2AuthorizedClientService
+import org.springframework.security.oauth2.client.InMemory<%= reactivePrefix %>OAuth2AuthorizedClientService
+import org.springframework.security.oauth2.client.<%= reactivePrefix %>OAuth2AuthorizedClientService
 import org.springframework.security.oauth2.client.registration.ClientRegistration
-import org.springframework.security.oauth2.client.registration.<% if (reactive) { %>Reactive<% } %>ClientRegistrationRepository
-import org.springframework.security.oauth2.client.registration.InMemory<% if (reactive) { %>Reactive<% } %>ClientRegistrationRepository
-import org.springframework.security.oauth2.client.web.AuthenticatedPrincipalOAuth2AuthorizedClientRepository
+import org.springframework.security.oauth2.client.registration.<%= reactivePrefix %>ClientRegistrationRepository
+import org.springframework.security.oauth2.client.registration.InMemory<%= reactivePrefix %>ClientRegistrationRepository
 import org.springframework.security.oauth2.core.AuthorizationGrantType
 import org.springframework.security.oauth2.core.ClientAuthenticationMethod
-import org.springframework.security.oauth2.jwt.<% if (reactive) { %>Reactive<% } %>JwtDecoder
-
-import org.mockito.Mockito.mock
+import org.springframework.security.oauth2.jwt.<%= reactivePrefix %>JwtDecoder
+<%_ if (applicationTypeMonolith) { _%>
+import org.springframework.context.annotation.Import
+<%_ } _%>
 
 /**
  * This class allows you to run unit and integration tests without an IdP.
  */
 @TestConfiguration
+<%_ if (applicationTypeMonolith) { _%>
+@Import(OAuth2Configuration::class)
+<%_ } _%>
 class TestSecurityConfiguration {
-    private val clientRegistration: ClientRegistration = clientRegistration().build()
+    @Bean
+    fun clientRegistration(): ClientRegistration {
+        return clientRegistrationBuilder().build()
+    }
 
     @Bean
-    fun clientRegistrationRepository() = InMemory<% if (reactive) { %>Reactive<% } %>ClientRegistrationRepository(clientRegistration)
+    fun clientRegistrationRepository(clientRegistration: ClientRegistration): <%= reactivePrefix %>ClientRegistrationRepository  {
+        return InMemory<%= reactivePrefix %>ClientRegistrationRepository(clientRegistration)
+    }
 
-    private fun clientRegistration(): ClientRegistration.Builder {
+    private fun clientRegistrationBuilder(): ClientRegistration.Builder {
         val metadata = mutableMapOf<String, Any>()
         metadata["end_session_endpoint"] = "https://jhipster.org/logout"
 
         return ClientRegistration.withRegistrationId("oidc")
+            .issuerUri("{baseUrl}")
             .redirectUri("{baseUrl}/{action}/oauth2/code/{registrationId}")
             .clientAuthenticationMethod(ClientAuthenticationMethod.BASIC)
             .authorizationGrantType(AuthorizationGrantType.AUTHORIZATION_CODE)
@@ -63,13 +75,12 @@ class TestSecurityConfiguration {
     }
 
     @Bean
-    fun jwtDecoder() = mock(<% if (reactive) { %>Reactive<% } %>JwtDecoder::class.java)
+    fun jwtDecoder(): <%= reactivePrefix %>JwtDecoder{
+        return mock(<%= reactivePrefix %>JwtDecoder::class);
+    }
 
     @Bean
-    fun authorizedClientService(clientRegistrationRepository: <% if (reactive) { %>Reactive<% } %>ClientRegistrationRepository) =
-        InMemory<% if (reactive) { %>Reactive<% } %>OAuth2AuthorizedClientService(clientRegistrationRepository)
-
-    @Bean
-    fun authorizedClientRepository(authorizedClientService: OAuth2AuthorizedClientService) =
-        AuthenticatedPrincipalOAuth2AuthorizedClientRepository(authorizedClientService)
+    fun authorizedClientService(clientRegistrationRepository: <%= reactivePrefix %>ClientRegistrationRepository): <%= reactivePrefix %>OAuth2AuthorizedClientService  {
+        return InMemory<%= reactivePrefix %>OAuth2AuthorizedClientService(clientRegistrationRepository)
+    }
 }

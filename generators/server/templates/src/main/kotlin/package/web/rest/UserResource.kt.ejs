@@ -19,27 +19,27 @@
 package <%= packageName %>.web.rest
 
 import <%= packageName %>.config.LOGIN_REGEX
-<%_ if (authenticationType !== 'oauth2') { _%>
+<%_ if (!authenticationTypeOauth2) { _%>
 import <%= packageName %>.domain.<%= asEntity('User') %>
 <%_ } _%>
-<%_ if (authenticationType !== 'oauth2') { _%>
+<%_ if (!authenticationTypeOauth2) { _%>
 import <%= packageName %>.repository.UserRepository
 <%_ } _%>
 import <%= packageName %>.security.ADMIN
-<%_ if (authenticationType !== 'oauth2') { _%>
+<%_ if (!authenticationTypeOauth2) { _%>
 import <%= packageName %>.service.MailService
 import org.springframework.data.domain.Sort
 <%_ } _%>
 import <%= packageName %>.service.UserService
 import <%= packageName %>.service.dto.<%= asDto('AdminUser') %>
-<%_ if (authenticationType !== 'oauth2') { _%>
+<%_ if (!authenticationTypeOauth2) { _%>
 import <%= packageName %>.web.rest.errors.BadRequestAlertException
 import <%= packageName %>.web.rest.errors.EmailAlreadyUsedException
 import <%= packageName %>.web.rest.errors.LoginAlreadyUsedException
 <%_ } _%>
 
 import tech.jhipster.web.util.HeaderUtil
-<%_ if (databaseType === 'sql' || databaseType === 'mongodb' || databaseType === 'neo4j' || databaseType === 'couchbase') { _%>
+<%_ if (databaseTypeSql || databaseTypeMongodb || databaseTypeNeo4j || databaseTypeCouchbase) { _%>
 import tech.jhipster.web.util.PaginationUtil
 <%_ } _%>
 <%_ if (!reactive) { _%>
@@ -48,7 +48,7 @@ import tech.jhipster.web.util.ResponseUtil
 
 import org.slf4j.LoggerFactory
 import org.springframework.beans.factory.annotation.Value
-<%_ if (databaseType === 'sql' || databaseType === 'mongodb' || databaseType === 'neo4j' || databaseType === 'couchbase') { _%>
+<%_ if (databaseTypeSql || databaseTypeMongodb || databaseTypeNeo4j || databaseTypeCouchbase) { _%>
     <%_ if (reactive) { _%>
 import org.springframework.data.domain.PageImpl
     <%_ } _%>
@@ -83,12 +83,12 @@ import reactor.core.publisher.Mono
 <%_ } _%>
 
 import javax.validation.constraints.Pattern
-<%_ if (authenticationType !== 'oauth2') { _%>
+<%_ if (!authenticationTypeOauth2) { _%>
 import javax.validation.Valid
 import java.net.URI
 import java.net.URISyntaxException
 <%_ } _%>
-<%_ if (searchEngine === 'elasticsearch' && !reactive) { _%>
+<%_ if (searchEngineElasticsearch && !reactive) { _%>
 import java.util.stream.Collectors
 import java.util.stream.StreamSupport
 
@@ -98,7 +98,7 @@ import org.elasticsearch.index.query.QueryBuilders.queryStringQuery
 /**
  * REST controller for managing users.
  *
- * This class accesses the [<% if (!(authenticationType !== 'oauth2' || searchEngine === 'elasticsearch')) { %><%= packageName %>.domain.<% } %><%= asEntity('User') %>] entity, and needs to fetch its collection of authorities.
+ * This class accesses the [<% if (!(!authenticationTypeOauth2 || searchEngineElasticsearch)) { %><%= packageName %>.domain.<% } %><%= asEntity('User') %>] entity, and needs to fetch its collection of authorities.
  *
  * For a normal use-case, it would be better to have an eager relationship between User and Authority,
  * and send everything to the client side: there would be no View Model and DTO, a lot less code, and an outer-join
@@ -121,12 +121,12 @@ import org.elasticsearch.index.query.QueryBuilders.queryStringQuery
 @RestController
 @RequestMapping("/api/admin")
 class UserResource(
-    private val userService: UserService<%_ if (authenticationType !== 'oauth2') { _%>,
+    private val userService: UserService<%_ if (!authenticationTypeOauth2) { _%>,
     private val userRepository: UserRepository,
     private val mailService: MailService<% } %>
 ) {
 
-    <%_ if (authenticationType !== 'oauth2') { _%>
+    <%_ if (!authenticationTypeOauth2) { _%>
     companion object {
         private val ALLOWED_ORDERED_PROPERTIES = arrayOf("id", "login", "firstName", "lastName", "email", "activated", "langKey", "createdBy", "createdDate", "lastModifiedBy", "lastModifiedDate")
     }
@@ -138,7 +138,7 @@ class UserResource(
     @Value("\${jhipster.clientApp.name}")
     private val applicationName: String? = null
 
-<%_ if (authenticationType !== 'oauth2') { _%>
+<%_ if (!authenticationTypeOauth2) { _%>
     /**
      * `POST  /admin/users`  : Creates a new user.
      *
@@ -265,7 +265,7 @@ class UserResource(
 <%_ } _%>
     /**
      * `GET /admin/users` : get all users with all the details - calling this are only allowed for the administrators.
-     *<% if (databaseType === 'sql' || databaseType === 'mongodb' || databaseType === 'neo4j' || databaseType === 'couchbase') { %>
+     *<% if (databaseTypeSql || databaseTypeMongodb || databaseTypeNeo4j || databaseTypeCouchbase) { %>
      <%_ if (reactive) { _%>
      * @param request a [ServerHttpRequest] request.
      <%_ } _%>
@@ -274,11 +274,11 @@ class UserResource(
      */
     @GetMapping("/users")
     @PreAuthorize("hasAuthority(\"$ADMIN\")")
-    <%_ if (databaseType === 'sql' || databaseType === 'mongodb' || databaseType === 'neo4j' || databaseType === 'couchbase') { _%>
+    <%_ if (databaseTypeSql || databaseTypeMongodb || databaseTypeNeo4j || databaseTypeCouchbase) { _%>
         <%_ if (!reactive) { _%>
     fun getAllUsers(pageable: Pageable): ResponseEntity<List<<%= asDto('AdminUser') %>>> {
         log.debug("REST request to get all User for an admin");
-        <%_ if (authenticationType !== 'oauth2') { _%>
+        <%_ if (!authenticationTypeOauth2) { _%>
             if (!onlyContainsAllowedProperties(pageable)) {
                 return ResponseEntity.badRequest().build()
             }
@@ -293,7 +293,7 @@ class UserResource(
         pageable: Pageable
     ): Mono<ResponseEntity<Flux<<%= asDto('AdminUser') %>>>> {
             log.debug("REST request to get all User for an admin");
-            <%_ if (authenticationType !== 'oauth2') { _%>
+            <%_ if (!authenticationTypeOauth2) { _%>
             if (!onlyContainsAllowedProperties(pageable)) {
                 return Mono.just(ResponseEntity.badRequest().build())
             }
@@ -305,7 +305,7 @@ class UserResource(
             .map { headers -> ResponseEntity.ok().headers(headers).body(userService.getAllManagedUsers(pageable)) }
     }
         <%_ } _%>
-    <%_ if (authenticationType !== 'oauth2') { _%>
+    <%_ if (!authenticationTypeOauth2) { _%>
     private fun onlyContainsAllowedProperties(pageable: Pageable) =
         pageable.sort.map(Sort.Order::getProperty).all { ALLOWED_ORDERED_PROPERTIES.contains(it) }
     <%_ } _%>
@@ -336,7 +336,7 @@ class UserResource(
             .switchIfEmpty(Mono.error(ResponseStatusException(HttpStatus.NOT_FOUND)))
     <%_ } _%>
     }
-<%_ if (authenticationType !== 'oauth2') { _%>
+<%_ if (!authenticationTypeOauth2) { _%>
 
     /**
      * `DELETE /admin/users/:login` : delete the "login" User.

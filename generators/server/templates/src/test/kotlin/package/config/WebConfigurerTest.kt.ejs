@@ -20,7 +20,7 @@ package <%= packageName %>.config
 
 import tech.jhipster.config.JHipsterConstants
 import tech.jhipster.config.JHipsterProperties
-<%_ if (devDatabaseType === 'h2Disk' || devDatabaseType === 'h2Memory') { _%>
+<%_ if (devDatabaseTypeH2Any) { _%>
 import org.h2.server.web.WebServlet
 <%_ } _%>
 import org.junit.jupiter.api.BeforeEach
@@ -93,7 +93,7 @@ class WebConfigurerTest {
         assertThatCode { 
             webConfigurer.onStartup(servletContext)
         }.doesNotThrowAnyException()
-        <%_ if (devDatabaseType === 'h2Disk' || devDatabaseType === 'h2Memory') { _%>
+        <%_ if (devDatabaseTypeH2Any) { _%>
         verify(servletContext, never())
             .addServlet(ArgumentMatchers.eq("H2Console"), any(WebServlet::class.java))
         <%_ } _%>
@@ -107,7 +107,7 @@ class WebConfigurerTest {
         assertThatCode { 
             webConfigurer.onStartup(servletContext)
         }.doesNotThrowAnyException()
-        <%_ if (devDatabaseType === 'h2Disk' || devDatabaseType === 'h2Memory') { _%>
+        <%_ if (devDatabaseTypeH2Any) { _%>
         verify(servletContext)
             .addServlet(ArgumentMatchers.eq("H2Console"), any(WebServlet::class.java))
         <%_ } _%>
@@ -122,11 +122,9 @@ class WebConfigurerTest {
         assertThat(container.mimeMappings.get("abs")).isEqualTo("audio/x-mpeg")
         assertThat(container.mimeMappings.get("html")).isEqualTo("text/html")
         assertThat(container.mimeMappings.get("json")).isEqualTo("application/json")
-        <%_ if (!skipClient) { _%>
         if (container.documentRoot != null) {
             assertThat(container.documentRoot).isEqualTo(File("<%= CLIENT_DIST_DIR %>"))
         }
-        <%_ } _%>
     }
     <%_ } _%>
 

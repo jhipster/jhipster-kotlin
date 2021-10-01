@@ -19,7 +19,7 @@
 package <%= packageName %>.config
 
 import <%= packageName %>.security.ADMIN
-    <%_ if (authenticationTypeOauth2 && applicationType !== 'microservice') { _%>
+    <%_ if (authenticationTypeOauth2 && !applicationTypeMicroservice) { _%>
 import <%= packageName %>.security.extractAuthorityFromClaims
     <%_ } _%>
     <%_ if (authenticationTypeJwt) { _%>
@@ -38,15 +38,15 @@ import org.springframework.context.annotation.Import
     <%_ if (authenticationTypeOauth2) { _%>
 import org.springframework.core.convert.converter.Converter
     <%_ } _%>
-    <%_ if (applicationType !== 'microservice' || authenticationType !== 'oauth2') { _%>
+    <%_ if (!applicationTypeMicroservice || !authenticationTypeOauth2) { _%>
 import org.springframework.http.HttpMethod
     <%_ } _%>
 import org.springframework.security.config.annotation.method.configuration.EnableGlobalMethodSecurity
 import org.springframework.security.config.annotation.web.builders.HttpSecurity
-<%_ if (applicationType !== 'microservice' || authenticationType !== 'oauth2') { _%>
+<%_ if (!applicationTypeMicroservice || !authenticationTypeOauth2) { _%>
 import org.springframework.security.config.annotation.web.builders.WebSecurity
         <%_ } else { _%>
-            <%_ if (devDatabaseType === 'h2Disk' || devDatabaseType === 'h2Memory') { _%>
+            <%_ if (devDatabaseTypeH2Any) { _%>
 import org.springframework.security.config.annotation.web.builders.WebSecurity
             <%_ } _%>
         <%_ } _%>
@@ -55,7 +55,7 @@ import org.springframework.security.config.annotation.web.configuration.WebSecur
     <%_ if (authenticationTypeJwt || (authenticationTypeOauth2 && applicationTypeMicroservice)) { _%>
 import org.springframework.security.config.http.SessionCreationPolicy
     <%_ } _%>
-    <%_ if (authenticationType !== 'oauth2' && !skipUserManagement) { _%>
+    <%_ if (!authenticationTypeOauth2 && !skipUserManagement) { _%>
 import org.springframework.security.crypto.bcrypt.BCryptPasswordEncoder
     <%_ } _%>
     <%_ if (authenticationTypeOauth2) { _%>
@@ -70,7 +70,7 @@ import org.springframework.security.oauth2.jwt.NimbusJwtDecoder
 import org.springframework.security.oauth2.server.resource.authentication.JwtAuthenticationConverter
 import org.springframework.beans.factory.annotation.Value
 import org.springframework.security.core.GrantedAuthority
-        <%_ if (applicationType !== 'microservice') { _%>
+        <%_ if (!applicationTypeMicroservice) { _%>
 import org.springframework.security.core.authority.mapping.GrantedAuthoritiesMapper
 import org.springframework.security.oauth2.core.oidc.user.OidcUserAuthority
         <%_ } _%>
@@ -82,23 +82,23 @@ import org.springframework.security.web.authentication.RememberMeServices
 import org.springframework.security.web.csrf.CookieCsrfTokenRepository
 import org.springframework.security.web.csrf.CsrfFilter
     <%_ } _%>
-    <%_ if (authenticationTypeOauth2 && applicationType !== 'microservice') { _%>
+    <%_ if (authenticationTypeOauth2 && !applicationTypeMicroservice) { _%>
 import org.springframework.security.web.csrf.CookieCsrfTokenRepository
 import org.springframework.security.web.csrf.CsrfFilter
     <%_ } _%>
     <%_ if (authenticationTypeOauth2) { _%>
 import <%= packageName %>.security.oauth2.JwtGrantedAuthorityConverter
     <%_ } _%>
-    <%_ if (authenticationTypeJwt && applicationType !== 'microservice') { _%>
+    <%_ if (authenticationTypeJwt && !applicationTypeMicroservice) { _%>
 import org.springframework.security.web.authentication.UsernamePasswordAuthenticationFilter
     <%_ } _%>
-    <%_ if (authenticationTypeOauth2 && applicationType === 'monolith') { _%>
+    <%_ if (authenticationTypeOauth2 && applicationTypeMonolith) { _%>
 import org.springframework.security.oauth2.client.registration.ClientRegistrationRepository
 import org.springframework.boot.web.client.RestTemplateBuilder
 import <%= packageName %>.security.oauth2.CustomClaimConverter
     <%_ } _%>
 import org.springframework.security.web.header.writers.ReferrerPolicyHeaderWriter
-    <%_ if (applicationType !== 'microservice') { _%>
+    <%_ if (!applicationTypeMicroservice) { _%>
 import org.springframework.web.filter.CorsFilter
     <%_ } _%>
 import org.zalando.problem.spring.web.advice.security.SecurityProblemSupport
@@ -114,7 +114,7 @@ class SecurityConfiguration(
     <%_ if (authenticationTypeJwt) { _%>
     private val tokenProvider: TokenProvider,
     <%_ } _%>
-    <%_ if (applicationType !== 'microservice') { _%>
+    <%_ if (!applicationTypeMicroservice) { _%>
     private val corsFilter: CorsFilter,
     <%_ } _%>
     private val problemSupport: SecurityProblemSupport
@@ -135,12 +135,12 @@ class SecurityConfiguration(
     @Bean
     fun ajaxLogoutSuccessHandler() = AjaxLogoutSuccessHandler()
     <%_ } _%>
-    <%_ if (authenticationType !== 'oauth2' && !skipUserManagement) { _%>
+    <%_ if (!authenticationTypeOauth2 && !skipUserManagement) { _%>
 
     @Bean
     fun passwordEncoder() = BCryptPasswordEncoder()
     <%_ } _%>
-    <%_ if (applicationType !== 'microservice') { _%>
+    <%_ if (!applicationTypeMicroservice) { _%>
 
     override fun configure(web: WebSecurity?) {
         web!!.ignoring()
@@ -150,14 +150,14 @@ class SecurityConfiguration(
             .antMatchers("/i18n/**")
             .antMatchers("/content/**")
             <%_ } _%>
-            <%_ if (devDatabaseType === 'h2Disk' || devDatabaseType === 'h2Memory') { _%>
+            <%_ if (devDatabaseTypeH2Any) { _%>
             .antMatchers("/h2-console/**")
             <%_ } _%>
             .antMatchers("/swagger-ui/**")
             .antMatchers("/test/**")
     }
     <%_ } else { _%>
-        <%_ if (devDatabaseType === 'h2Disk' || devDatabaseType === 'h2Memory') { _%>
+        <%_ if (devDatabaseTypeH2Any) { _%>
 
     override fun configure(web: WebSecurity?) {
         web!!.ignoring()
@@ -170,13 +170,13 @@ class SecurityConfiguration(
     public override fun configure(http: HttpSecurity) {
         http
             .csrf()
-            <%_ if (['session','oauth2'].includes(authenticationType) && applicationType !== 'microservice') { _%>
+            <%_ if (['session','oauth2'].includes(authenticationType) && !applicationTypeMicroservice) { _%>
             .csrfTokenRepository(CookieCsrfTokenRepository.withHttpOnlyFalse())
         .and()
             <%_ } else { _%>
             .disable()
             <%_ } _%>
-            <%_ if (applicationType !== 'microservice') { _%>
+            <%_ if (!applicationTypeMicroservice) { _%>
                 <%_ if (authenticationTypeJwt) { _%>
             .addFilterBefore(corsFilter, UsernamePasswordAuthenticationFilter::class.java)
                 <%_ } else if (authenticationTypeSession || authenticationTypeOauth2) { _%>
@@ -224,7 +224,7 @@ class SecurityConfiguration(
         <%_ } _%>
             .authorizeRequests()
             .antMatchers("/api/authenticate").permitAll()
-            <%_ if (authenticationType !== 'oauth2' && !skipUserManagement) { _%>
+            <%_ if (!authenticationTypeOauth2 && !skipUserManagement) { _%>
             .antMatchers("/api/register").permitAll()
             .antMatchers("/api/activate").permitAll()
             .antMatchers("/api/account/reset-password/init").permitAll()
@@ -236,7 +236,7 @@ class SecurityConfiguration(
             <%_ } _%>
             .antMatchers("/api/admin/**").hasAuthority(ADMIN)
             .antMatchers("/api/**").authenticated()
-            <%_ if (websocket === 'spring-websocket') { _%>
+            <%_ if (communicationSpringWebsocket) { _%>
             .antMatchers("/websocket/**").authenticated()
             <%_ } _%>
             <%_ if (applicationTypeGateway) { _%>
@@ -248,14 +248,14 @@ class SecurityConfiguration(
             .antMatchers("/management/prometheus").permitAll()
             .antMatchers("/management/**").hasAuthority(ADMIN)
         <%_ if (authenticationTypeJwt) { _%>
-            <%_ if (applicationType === 'monolith') { _%>
+            <%_ if (applicationTypeMonolith) { _%>
         .and()
             .httpBasic()
             <%_ } _%>
         .and()
             .apply(securityConfigurerAdapter())
         <%_ } else if (authenticationTypeOauth2) { _%>
-            <%_ if (['monolith', 'gateway'].includes(applicationType)) { _%>
+            <%_ if (applicationTypeMonolith || applicationTypeGateway) { _%>
         .and()
             .oauth2Login()
             <%_ } _%>
@@ -280,7 +280,7 @@ class SecurityConfiguration(
         return jwtAuthenticationConverter
     }
 
-    <%_ if (applicationType !== 'microservice') { _%>
+    <%_ if (!applicationTypeMicroservice) { _%>
     /**
      * Map authorities from "groups" or "roles" claim in ID Token.
      *
@@ -304,7 +304,7 @@ class SecurityConfiguration(
     <%_ } _%>
 
     @Bean
-    fun jwtDecoder(<%_ if (authenticationTypeOauth2 && applicationType === 'monolith') { _%>clientRegistrationRepository: ClientRegistrationRepository, restTemplateBuilder: RestTemplateBuilder<%_ } _%>): JwtDecoder {
+    fun jwtDecoder(<%_ if (authenticationTypeOauth2 && applicationTypeMonolith) { _%>clientRegistrationRepository: ClientRegistrationRepository, restTemplateBuilder: RestTemplateBuilder<%_ } _%>): JwtDecoder {
         val jwtDecoder = JwtDecoders.fromOidcIssuerLocation(issuerUri) as NimbusJwtDecoder
 
         val audienceValidator = AudienceValidator(jHipsterProperties.security.oauth2.audience)
@@ -312,7 +312,7 @@ class SecurityConfiguration(
         val withAudience = DelegatingOAuth2TokenValidator(withIssuer, audienceValidator)
 
         jwtDecoder.setJwtValidator(withAudience)
-        <%_ if (authenticationTypeOauth2 && applicationType === 'monolith') { _%>
+        <%_ if (authenticationTypeOauth2 && applicationTypeMonolith) { _%>
         jwtDecoder.setClaimSetConverter(CustomClaimConverter(clientRegistrationRepository.findByRegistrationId("oidc"), restTemplateBuilder.build()))
         <%_ } _%>
 

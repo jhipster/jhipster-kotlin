@@ -18,7 +18,7 @@
 -%>
 package <%= packageName %>.service.mapper
 
-<%_ if (databaseType === 'sql' || databaseType === 'mongodb' || databaseType === 'neo4j') { _%>
+<%_ if (databaseTypeSql || databaseTypeMongodb || databaseTypeNeo4j) { _%>
 import <%= packageName %>.domain.Authority
 <%_ } _%>
 import <%= packageName %>.domain.<%= asEntity('User') %>
@@ -69,26 +69,26 @@ class UserMapper {
                     firstName = userDTO.firstName,
                     lastName = userDTO.lastName,
                     email = userDTO.email,
-                    <%_ if (databaseType !== 'cassandra') { _%>
+                    <%_ if (!databaseTypeCassandra) { _%>
                     imageUrl = userDTO.imageUrl,
                     <%_ } _%>
                     activated = userDTO.activated,
                     langKey = userDTO.langKey,
-                    <%_ if (databaseType === 'sql' || databaseType === 'mongodb' || databaseType === 'neo4j') { _%>
+                    <%_ if (databaseTypeSql || databaseTypeMongodb || databaseTypeNeo4j) { _%>
                     authorities = authoritiesFromStrings(userDTO.authorities)
                     <%_ } _%>
-                    <%_ if (databaseType === 'cassandra' || databaseType === 'couchbase') { _%>
+                    <%_ if (databaseTypeCassandra || databaseTypeCouchbase) { _%>
                     authorities = cleanNullStringAuthorities(userDTO.authorities)
                     <%_ } _%>
                 )
             }
         }
-    <%_ if (databaseType === 'sql' || databaseType === 'mongodb' || databaseType === 'neo4j') { _%>
+    <%_ if (databaseTypeSql || databaseTypeMongodb || databaseTypeNeo4j) { _%>
 
     private fun authoritiesFromStrings(authoritiesAsString: Set<String>?): MutableSet<Authority> =
         authoritiesAsString?.mapTo(mutableSetOf()) { Authority(name = it) } ?: mutableSetOf()
     <%_ } _%>
-    <%_ if (databaseType === 'cassandra' || databaseType === 'couchbase') { _%>
+    <%_ if (databaseTypeCassandra || databaseTypeCouchbase) { _%>
 
     private fun cleanNullStringAuthorities(authoritiesAsString: Set<String?>?): MutableSet<String> =
         authoritiesAsString?.filterNotNullTo(mutableSetOf()) ?: mutableSetOf()

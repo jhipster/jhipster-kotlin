@@ -24,7 +24,6 @@ import <%= packageName %>.security.getCurrentUserLogin
     <%_ } _%>
 import <%= packageName %>.service.UserService
 import <%= packageName %>.service.dto.<%= asDto('AdminUser') %>
-import <%= packageName %>.service.dto.<%= asDto('User') %>
 
 import org.slf4j.LoggerFactory
 import org.springframework.security.authentication.AbstractAuthenticationToken
@@ -34,6 +33,7 @@ import org.springframework.web.bind.annotation.RestController
 <%_ if (reactive) { _%>
 import org.springframework.web.server.ServerWebExchange
 import reactor.core.publisher.Mono
+import java.security.Principal
 <%_ } else { _%>
 import javax.servlet.http.HttpServletRequest
 <%_ } _%>
@@ -191,7 +191,6 @@ import <%= packageName %>.service.MailService
 import <%= packageName %>.service.UserService
 import <%= packageName %>.service.dto.PasswordChangeDTO
 import <%= packageName %>.service.dto.<%= asDto('AdminUser') %>
-import <%= packageName %>.service.dto.<%= asDto('User') %>
 import <%= packageName %>.web.rest.errors.EmailAlreadyUsedException
 import <%= packageName %>.web.rest.errors.InvalidPasswordException
 import <%= packageName %>.web.rest.errors.LoginAlreadyUsedException
@@ -224,7 +223,7 @@ import javax.servlet.http.HttpServletRequest
 <%_ } _%>
 import javax.validation.Valid
 <%_ if (authenticationTypeSession && !reactive) { _%>
-import java.io.UnsupportedEncodingException
+import java.nio.charset.StandardCharsets;
 import java.net.URLDecoder
 <%_ } _%>
 <%_ if (reactive) { _%>
@@ -415,20 +414,19 @@ class AccountResource(
      *   cookie.
      *
      * @param series the series of an existing session.
-     * @throws UnsupportedEncodingException if the series couldn't be URL decoded.
+     * @throws IllegalArgumentException if the series couldn't be URL decoded.
      */
     @DeleteMapping("/account/sessions/{series}")
-    @Throws(UnsupportedEncodingException::class)
     fun invalidateSession(@PathVariable series: String) {
-        val decodedSeries = URLDecoder.decode(series, "UTF-8")
+        val decodedSeries = URLDecoder.decode(series, StandardCharsets.UTF_8)
         getCurrentUserLogin()
             .flatMap(userRepository::findOneByLogin)
             .ifPresent { u ->
                 persistentTokenRepository.findByUser(u).stream()
                     .filter { persistentToken -> StringUtils.equals(persistentToken.series, decodedSeries) }
-                    <%_ if (databaseType === 'sql' || databaseType === 'mongodb') { _%>
+                    <%_ if (databaseTypeSql || databaseTypeMongodb) { _%>
                     .findAny().ifPresent { persistentTokenRepository.deleteById(decodedSeries) }
-                    <%_ } else if (databaseType === 'couchbase'){ _%>
+                    <%_ } else if (databaseTypeCouchbase){ _%>
                 .findAny().ifPresent { persistentTokenRepository.deleteBySeries(decodedSeries) }
                 <%_ } else { _%>
                     .findAny().ifPresent(persistentTokenRepository::delete)

@@ -18,11 +18,11 @@ This file is part of the JHipster project, see https://jhipster.github.io/
 -%>
 package <%= packageName %>.web.rest
 
-<%_ if (databaseType === 'cassandra') { _%>
+<%_ if (databaseTypeCassandra) { _%>
 import <%= packageName %>.AbstractCassandraTest
 <%_ } _%>
 import <%= packageName %>.IntegrationTest
-<%_ if (reactive && searchEngine === 'elasticsearch') { _%>
+<%_ if (reactive && searchEngineElasticsearch) { _%>
 import <%= packageName %>.repository.search.UserSearchRepository
 <%_ } _%>
 import org.junit.jupiter.api.Test
@@ -45,7 +45,7 @@ import org.springframework.test.web.servlet.result.MockMvcResultMatchers.*
 <%_ } else { _%>
 import org.springframework.test.web.reactive.server.WebTestClient
 <%_ } _%>
-<%_ if (reactive && searchEngine === 'elasticsearch') { _%>
+<%_ if (reactive && searchEngineElasticsearch) { _%>
 import reactor.core.publisher.Mono
 
 import org.mockito.Mockito.*
@@ -62,7 +62,7 @@ import <%= packageName %>.web.rest.TEST_USER_LOGIN
 <%_ } _%>
 @WithMockUser(value = TEST_USER_LOGIN)
 @IntegrationTest
-class AccountResourceIT <% if (databaseType === 'cassandra') { %>: AbstractCassandraTest() <% } %>{
+class AccountResourceIT <% if (databaseTypeCassandra) { %>: AbstractCassandraTest() <% } %>{
 
     @Autowired
     <%_ if (!reactive) { _%>
@@ -70,7 +70,7 @@ class AccountResourceIT <% if (databaseType === 'cassandra') { %>: AbstractCassa
     <%_ } else { _%>
     private lateinit var accountWebTestClient: WebTestClient
     <%_ } _%>
-    <%_ if (searchEngine === 'elasticsearch' && reactive) { _%>
+    <%_ if (searchEngineElasticsearch && reactive) { _%>
 
     @Autowired
     private lateinit var mockUserSearchRepository: UserSearchRepository
@@ -112,7 +112,7 @@ class AccountResourceIT <% if (databaseType === 'cassandra') { %>: AbstractCassa
             .andExpect(content().string(""))
     <%_ } else { _%>
     fun testNonAuthenticatedUser() {
-        webTestClient.get().uri("/api/authenticate")
+        accountWebTestClient.get().uri("/api/authenticate")
             .accept(MediaType.APPLICATION_JSON)
             .exchange()
             .expectStatus().isOk
@@ -134,7 +134,7 @@ class AccountResourceIT <% if (databaseType === 'cassandra') { %>: AbstractCassa
             .andExpect(content().string(TEST_USER_LOGIN))
     <%_ } else { _%>
     fun testAuthenticatedUser() {
-        webTestClient
+        accountWebTestClient
             .get().uri("/api/authenticate")
             .accept(MediaType.APPLICATION_JSON)
             .exchange()

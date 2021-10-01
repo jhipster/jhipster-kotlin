@@ -21,7 +21,7 @@ package <%= packageName %>.security
 import <%= packageName %>.domain.PersistentToken
 import <%= packageName %>.repository.PersistentTokenRepository
 import <%= packageName %>.repository.UserRepository
-<%_ if (databaseType === 'cassandra') { _%>
+<%_ if (databaseTypeCassandra) { _%>
 import com.datastax.oss.driver.api.core.DriverException
 <%_ } _%>
 
@@ -47,7 +47,7 @@ import javax.servlet.http.HttpServletResponse
 import java.io.Serializable
 <%_ if (['sql', 'mongodb', 'neo4j', 'couchbase'].includes(databaseType)) { _%>
 import java.time.LocalDate
-<%_ } else if (databaseType === 'cassandra') { _%>
+<%_ } else if (databaseTypeCassandra) { _%>
 import java.time.Instant
 import java.time.temporal.ChronoUnit
 <%_ } _%>
@@ -121,7 +121,7 @@ class PersistentTokenRememberMeServices(
 
             if (login == null) {
                 val token = getPersistentToken(cookieTokens)
-                <%_ if (databaseType === 'sql' || databaseType === 'mongodb') { _%>
+                <%_ if (databaseTypeSql || databaseTypeMongodb) { _%>
                 login = token.user?.login
                 <%_ } else { _%>
                 login = token.login
@@ -132,7 +132,7 @@ class PersistentTokenRememberMeServices(
                 token.apply {
                     <%_ if (['sql', 'mongodb', 'neo4j', 'couchbase'].includes(databaseType)) { _%>
                     tokenDate = LocalDate.now()
-                    <%_ } else if (databaseType === 'cassandra') { _%>
+                    <%_ } else if (databaseTypeCassandra) { _%>
                     tokenDate = Instant.now()
                     <%_ } _%>
                     tokenValue = RandomUtil.generateRandomAlphanumericString()
@@ -140,10 +140,10 @@ class PersistentTokenRememberMeServices(
                     userAgent = request.getHeader("User-Agent")
                 }
                 try {
-                    persistentTokenRepository.save<% if (databaseType === 'sql') { %>AndFlush<% } %>(token)
+                    persistentTokenRepository.save<% if (databaseTypeSql) { %>AndFlush<% } %>(token)
                     <%_ if (['sql', 'mongodb', 'neo4j', 'couchbase'].includes(databaseType)) { _%>
                 } catch (e: DataAccessException) {
-                    <%_ } else if (databaseType === 'cassandra') { _%>
+                    <%_ } else if (databaseTypeCassandra) { _%>
                 } catch (e: DriverException) {
                     <%_ } _%>
                     log.error("Failed to update token: $e")
@@ -169,26 +169,26 @@ class PersistentTokenRememberMeServices(
         val token = userRepository.findOneByLogin(login).map { u ->
             PersistentToken(
                 series = RandomUtil.generateRandomAlphanumericString(),
-                <%_ if (databaseType === 'sql' || databaseType === 'mongodb') { _%>
+                <%_ if (databaseTypeSql || databaseTypeMongodb) { _%>
                 user = u,
                 <%_ } else { _%>
                 login = login,
                 <%_ } _%>
-                <%_ if (databaseType === 'cassandra') { _%>
+                <%_ if (databaseTypeCassandra) { _%>
                 userId = u.id,
                 <%_ } _%>
                 tokenValue = RandomUtil.generateRandomAlphanumericString(),
-                tokenDate = <% if (databaseType === 'cassandra') { %>Instant.now()<% } else { %>LocalDate.now()<% } %>,
+                tokenDate = <% if (databaseTypeCassandra) { %>Instant.now()<% } else { %>LocalDate.now()<% } %>,
                 ipAddress = request.remoteAddr,
                 userAgent = request.getHeader("User-Agent")
             )
         }.orElseThrow { UsernameNotFoundException("User $login was not found in the database") }
         try {
-            <% if (databaseType === 'sql') { %>persistentTokenRepository.saveAndFlush(token)<% } else { %>persistentTokenRepository.save(token)<% } %>
+            <% if (databaseTypeSql) { %>persistentTokenRepository.saveAndFlush(token)<% } else { %>persistentTokenRepository.save(token)<% } %>
             addCookie(token, request, response)
             <%_ if (['sql', 'mongodb', 'neo4j', 'couchbase'].includes(databaseType)) { _%>
         } catch (e: DataAccessException) {
-            <%_ } else if (databaseType === 'cassandra') { _%>
+            <%_ } else if (databaseTypeCassandra) { _%>
         } catch (e: DriverException) {<% } %>
             log.error("Failed to save persistent token $e")
         }
@@ -209,14 +209,14 @@ class PersistentTokenRememberMeServices(
         if (rememberMeCookie != null && rememberMeCookie.isNotEmpty()) {
             try {
                 val cookieTokens = decodeCookie(rememberMeCookie)
-                <%_ if (databaseType === 'cassandra') { _%>
+                <%_ if (databaseTypeCassandra) { _%>
                 getPersistentToken(cookieTokens)
                 <%_ } else { _%>
                 val token = getPersistentToken(cookieTokens)
-                    <%_ if (databaseType === 'sql') { _%>
+                    <%_ if (databaseTypeSql) { _%>
                 persistentTokenRepository.deleteById(token.series!!)
                     <%_ } _%>
-                    <%_ if (databaseType === 'mongodb' || databaseType === 'couchbase') { _%>
+                    <%_ if (databaseTypeMongodb || databaseTypeCouchbase) { _%>
                 persistentTokenRepository.delete(token)
                     <%_ } _%>
                 <%_ } _%>
@@ -240,7 +240,7 @@ class PersistentTokenRememberMeServices(
         }
         val presentedSeries = cookieTokens[0]
         val presentedToken = cookieTokens[1]
-        <%_ if (databaseType === 'couchbase') { _%>
+        <%_ if (databaseTypeCouchbase) { _%>
         val optionalToken = Optional.of(persistentTokenRepository.findBySeries(presentedSeries))
         <%_ } else { _%>
         val optionalToken = persistentTokenRepository.findById(presentedSeries)
@@ -254,29 +254,29 @@ class PersistentTokenRememberMeServices(
         log.info("presentedToken=$presentedToken / tokenValue=${token.tokenValue}")
         if (presentedToken != token.tokenValue) {
             // Token doesn't match series value. Delete this session and throw an exception.
-            <%_ if (databaseType === 'sql') { _%>
+            <%_ if (databaseTypeSql) { _%>
             persistentTokenRepository.deleteById(token.series!!)
             <%_ } _%>
-            <%_ if (databaseType === 'mongodb' || databaseType === 'couchbase') { _%>
+            <%_ if (databaseTypeMongodb || databaseTypeCouchbase) { _%>
             persistentTokenRepository.delete(token)
             <%_ } _%>
             throw CookieTheftException(
                 "Invalid remember-me token (Series/token) mismatch. Implies previous cookie theft attack."
             )
         }
-        <%_ if (databaseType === 'sql' || databaseType === 'mongodb' || databaseType === 'neo4j' || databaseType === 'couchbase') { _%>
+        <%_ if (databaseTypeSql || databaseTypeMongodb || databaseTypeNeo4j || databaseTypeCouchbase) { _%>
         if (token.tokenDate!!.plusDays(TOKEN_VALIDITY_DAYS.toLong()).isBefore(LocalDate.now())) {
         <%_ } _%>
-        <%_ if (databaseType === 'cassandra') { _%>
+        <%_ if (databaseTypeCassandra) { _%>
         if (token.tokenDate!!
             .plus(TOKEN_VALIDITY_DAYS.toLong(), ChronoUnit.DAYS)
             .isBefore(Instant.now())
         ) {
         <%_ } _%>
-            <%_ if (databaseType === 'sql') { _%>
+            <%_ if (databaseTypeSql) { _%>
             persistentTokenRepository.deleteById(token.series!!)
             <%_ } _%>
-            <%_ if (databaseType === 'mongodb' || databaseType === 'couchbase') { _%>
+            <%_ if (databaseTypeMongodb || databaseTypeCouchbase) { _%>
             persistentTokenRepository.delete(token)
             <%_ } _%>
             throw RememberMeAuthenticationException("Remember-me login has expired")

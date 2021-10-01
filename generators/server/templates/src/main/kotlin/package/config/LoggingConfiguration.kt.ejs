@@ -23,13 +23,13 @@ import com.fasterxml.jackson.databind.ObjectMapper
 import tech.jhipster.config.JHipsterProperties
 import org.slf4j.LoggerFactory
 import org.springframework.beans.factory.annotation.Value
-<%_ if (serviceDiscoveryType && ['microservice', 'gateway'].includes(applicationType)) { _%>
+<%_ if (serviceDiscoveryType && (applicationTypeMicroservice || applicationTypeGateway)) { _%>
 import org.springframework.boot.info.BuildProperties
 <%_ } _%>
-<%_ if (serviceDiscoveryType === "consul") { _%>
+<%_ if (serviceDiscoveryConsul) { _%>
 import org.springframework.cloud.consul.serviceregistry.ConsulRegistration
 <%_ } _%>
-<%_ if (["eureka", "consul"].includes(serviceDiscoveryType)) { _%>
+<%_ if (serviceDiscoveryAny) { _%>
 import org.springframework.cloud.context.config.annotation.RefreshScope
 <%_ } _%>
 import org.springframework.context.annotation.Configuration
@@ -42,17 +42,17 @@ import tech.jhipster.config.logging.LoggingUtils.addLogstashTcpSocketAppender
  * Configures the console and Logstash log appenders from the app properties.
  */
 @Configuration
-<%_ if (["eureka", "consul"].includes(serviceDiscoveryType)) { _%>
+<%_ if (serviceDiscoveryAny) { _%>
 @RefreshScope
 <%_ } _%>
 class LoggingConfiguration(
     @Value("\${spring.application.name}") appName: String,
     @Value("\${server.port}") serverPort: String,
     jHipsterProperties: JHipsterProperties,
-    <%_ if (serviceDiscoveryType === "consul") { _%>
+    <%_ if (serviceDiscoveryConsul) { _%>
     consulRegistration: ConsulRegistration?,
     <%_ } _%>
-    <%_ if (serviceDiscoveryType && ['microservice', 'gateway'].includes(applicationType)) { _%>
+    <%_ if (serviceDiscoveryType && (applicationTypeMicroservice || applicationTypeGateway)) { _%>
     buildProperties: BuildProperties?,
     <%_ } _%>
     mapper: ObjectMapper
@@ -63,10 +63,10 @@ class LoggingConfiguration(
         val map = mutableMapOf<String, String?>()
         map["app_name"] = appName
         map["app_port"] = serverPort
-        <%_ if (serviceDiscoveryType && ['microservice', 'gateway'].includes(applicationType)) { _%>
+        <%_ if (serviceDiscoveryType && (applicationTypeMicroservice || applicationTypeGateway)) { _%>
         buildProperties?.apply { map["version"] = this.version }
         <%_ } _%>
-        <%_ if (serviceDiscoveryType === 'consul') { _%>
+        <%_ if (serviceDiscoveryConsul) { _%>
         consulRegistration?.apply { map["instance_id"] = this.instanceId }
         <%_ } _%>
         val customFields = mapper.writeValueAsString(map)

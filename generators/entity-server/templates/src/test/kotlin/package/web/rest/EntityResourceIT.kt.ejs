@@ -189,9 +189,6 @@ import java.util.concurrent.atomic.AtomicLong
 <%_ } _%>
 
 import org.assertj.core.api.Assertions.assertThat
-<%_ if (searchEngineElasticsearch && !reactive) { _%>
-import org.elasticsearch.index.query.QueryBuilders.queryStringQuery
-<%_ } _%>
 import org.hamcrest.Matchers.hasItem
 <%_ if (reactive) { _%>
 import org.hamcrest.Matchers.`is`
@@ -635,7 +632,7 @@ class <%= entityClass %>ResourceIT <% if (databaseTypeCassandra) { %>: AbstractC
                                                 if (field.fieldTypeZonedDateTime) { %>)<% } else
                                                     if (!field.fieldTypeString) { %>.toString()<% } %>))<%= !reactive ? ')' : '' %><%_ } _%>
     }
-    <% if (fieldsContainOwnerManyToMany&& databaseType !== 'neo4j') { %>
+    <% if (fieldsContainOwnerManyToMany && !databaseTypeNeo4j && !databaseTypeCouchbase) { %>
     @Suppress("unchecked")
     <% if (!reactive) { %>@Throws(Exception::class)<% } %>
     fun getAll<%= entityClassPlural %>WithEagerRelationshipsIsEnabled() {
@@ -927,6 +924,18 @@ class <%= entityClass %>ResourceIT <% if (databaseTypeCassandra) { %>: AbstractC
         <%_ } else { _%>
         // Initialize the database
         <%= entityInstance %>Repository.saveAndFlush(<%= persistInstance %>)
+        <%_ if (databaseTypeSql && !reactive) { _%>
+        <%= asEntity(relationship.otherEntityNameCapitalized) %> <%= relationship.relationshipFieldName %>
+        if (TestUtil.findAll(em, <%= asEntity(relationship.otherEntityNameCapitalized) %>::class).isEmpty()) {
+            <%= relationship.relationshipFieldName %> = <%= createEntityPrefix %><%= relationship.otherEntityNameCapitalized %>ResourceIT.createEntity(em)
+            em.persist(<%= relationship.relationshipFieldName %>)
+            em.flush()
+        } else {
+            <%= relationship.relationshipFieldName %> = TestUtil.findAll(em, <%= asEntity(relationship.otherEntityNameCapitalized) %>::class).get(0)
+        }
+        <%_ } else { _%>
+           val <%= relationship.relationshipFieldName %> = <%= relationship.otherEntityNameCapitalized %>ResourceIT.createEntity(em)
+        <%_ } _%>
         val <%= relationship.relationshipFieldName %> = <%= relationship.otherEntityNameCapitalized %>ResourceIT.createEntity(em)
         em.persist(<%= relationship.relationshipFieldName %>)
         em.flush()
@@ -1466,10 +1475,11 @@ class <%= entityClass %>ResourceIT <% if (databaseTypeCassandra) { %>: AbstractC
     }
 <%_ } _%>
 
-<%_ if (searchEngine !== false) { _%>
+<%_ if (searchEngine) { _%>
     @Test<%= transactionalAnnotation %>
     <% if (!reactive) { %>@Throws(Exception::class)<% } %>
     fun search<%= entityClass %>() {
+    <%_ if (searchEngineElasticsearch) { _%>
         // Configure the mock search repository
     <%_ if (reactive) { _%>
         `when`(mock<%= entityClass %>SearchRepository.save(any(<%= entityClass %>::class.java)))
@@ -1477,6 +1487,7 @@ class <%= entityClass %>ResourceIT <% if (databaseTypeCassandra) { %>: AbstractC
         <%_ if (!paginationNo) { _%>
         `when`(mock<%= entityClass %>SearchRepository.count()).thenReturn(Mono.just(1L))
         <%_ } _%>
+    <%_ } _%>
     <%_ } _%>
         // Initialize the database
         <%_ if (!primaryKey.derived) { _%>
@@ -1491,17 +1502,17 @@ class <%= entityClass %>ResourceIT <% if (databaseTypeCassandra) { %>: AbstractC
             .thenReturn(Flux.just(<%= persistInstance %>))
         <%_ } else { _%>
             <%_ if (!paginationNo) { _%>
-        `when`(mock<%= entityClass %>SearchRepository.search(queryStringQuery("id:" + <%= persistInstance %>.<%= primaryKey.name %>), PageRequest.of(0, 20)))
+        `when`(mock<%= entityClass %>SearchRepository.search("id:" + <%= persistInstance %>.<%= primaryKey.name %>, PageRequest.of(0, 20)))
             .thenReturn(PageImpl(listOf(<%= persistInstance %>), PageRequest.of(0, 1), 1))
             <%_ } else { _%>
-        `when`(mock<%= entityClass %>SearchRepository.search(queryStringQuery("id:" + <%= persistInstance %>.<%= primaryKey.name %>)))
+        `when`(mock<%= entityClass %>SearchRepository.search("id:" + <%= persistInstance %>.<%= primaryKey.name %>))
             .thenReturn(listOf(<%= persistInstance %>))
             <%_ } _%>
         <%_ } _%>
     <%_ } else if (searchEngineCouchbase) { _%>
 
         // Wait for the <%= entityInstance %> to be indexed
-        retryUntilNotEmpty(() -> <%= entityInstance %>Repository.search(<%= entityClass %>.PREFIX, "id:" + <%= entityInstance %>.<%= primaryKey.name %>)<% if (reactive) { %>.collectList().block()<% } %>)
+        retryUntilNotEmpty(() -> <%= entityInstance %>Repository.search("id:" + <%= entityInstance %>.<%= primaryKey.name %>)<% if (reactive) { %>.collectList().block()<% } %>)
     <%_ } _%>
         // Search the <%= entityInstance %>
     <%_ if (!reactive) { _%>

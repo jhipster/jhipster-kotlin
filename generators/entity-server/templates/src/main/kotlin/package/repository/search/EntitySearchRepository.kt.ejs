@@ -20,34 +20,38 @@ package <%= packageName %>.repository.search
 
 
 import <%= packageName %>.domain.<%= persistClass %>
-<%_ if (reactive) { _%>
-     <%_ if (!paginationNo) { _%>
-import org.springframework.data.domain.Pageable
+<%_ if (!paginationNo) { _%>
+     <%_ if (reactive) { _%>
+import org.springframework.data.domain.Page
+import org.springframework.data.domain.PageImpl
      <%_ } _%>
-import org.springframework.data.elasticsearch.core.ReactiveElasticsearchTemplate
-import org.springframework.data.elasticsearch.core.SearchHit
-import org.springframework.data.elasticsearch.core.query.NativeSearchQuery
+import org.springframework.data.domain.Pageable
 <%_ } _%>
+<%_ if (reactive) { _%>
+import org.springframework.data.elasticsearch.core.ReactiveElasticsearchTemplate
+<%_ } else { _%>
+import org.springframework.data.elasticsearch.core.ElasticsearchRestTemplate
+<%_ } _%>
+import org.springframework.data.elasticsearch.core.query.NativeSearchQuery
+import org.springframework.data.elasticsearch.core.SearchHit
 import org.springframework.data.elasticsearch.repository.<% if (reactive) {%>Reactive<% } %>ElasticsearchRepository
+
 <%_ if (reactive) { _%>
 import reactor.core.publisher.Flux
+<%_ } else { _%>
+import java.util.stream.Stream
 <%_ } _%>
 <%_ if (primaryKey.typeUUID) { _%>
 
 import java.util.UUID
-<%_ } _%>
-<%_ if (reactive) { _%>
+<% } %>
 
 import org.elasticsearch.index.query.QueryBuilders.queryStringQuery
-     <%_ if (!paginationNo) { _%>
-import org.springframework.data.elasticsearch.core.query.Query
-     <%_ } _%>
-<%_ } _%>
-
+     
 /**
  * Spring Data Elasticsearch repository for the [<%= persistClass %>] entity.
  */
-interface <%=entityClass%>SearchRepository :  <% if (reactive) {%>Reactive<% } %>ElasticsearchRepository<<%= persistClass %>, <%=primaryKey.type%>><% if (reactive) {%>, <%= entityClass %>SearchRepositoryInternal<% } %>{}
+interface <%=entityClass%>SearchRepository :  <% if (reactive) {%>Reactive<% } %>ElasticsearchRepository<<%= persistClass %>, <%=primaryKey.type%>>, <%= entityClass %>SearchRepositoryInternal{}
 <%_ if (reactive) { _%>
 interface <%= entityClass %>SearchRepositoryInternal {
      fun search(query: String<% if (!paginationNo) { %>, pageable: Pageable<% } %>): Flux<<%= entityClass %>>
@@ -65,5 +69,33 @@ class <%= entityClass %>SearchRepositoryInternalImpl(private val reactiveElastic
           .search(nativeSearchQuery, <%= entityClass %>::class.java)
           .map(SearchHit<<%= entityClass %>>::getContent)
     }
+}
+<%_ } else { _%>
+
+interface <%= entityClass %>SearchRepositoryInternal {
+  <%_ if (paginationNo) { _%>
+     fun search(query: String): Stream<<%= entityClass %>> 
+  <%_ } else { _%>
+     fun search(query: String, pageable: Pageable): Page<<%= entityClass %>> 
+  <%_ } _%>
+}
+
+class <%= entityClass %>SearchRepositoryInternalImpl(elasticsearchTemplate: ElasticsearchRestTemplate): <%= entityClass %>SearchRepositoryInternal {
+
+  <%_ if (paginationNo) { _%>
+    override fun search(query: String): Stream<<%= entityClass %>>  {
+        val nativeSearchQuery = NativeSearchQuery(queryStringQuery(query))
+        return elasticsearchTemplate
+            .search(nativeSearchQuery, <%= entityClass %>::class)
+            .map(SearchHit::getContent)
+    }
+  <%_ } else { _%>
+    override fun search(query: String, pageable: Pageable): Page<<%= entityClass %>>  {
+        val nativeSearchQuery = new NativeSearchQuery(queryStringQuery(query))
+        nativeSearchQuery.pageable = pageable
+        val hits = elasticsearchTemplate.search(nativeSearchQuery, <%= entityClass %>::class).map(SearchHit::getContent)
+        return PageImpl<<%= entityClass %>>(hits, pageable, hits.size())
+    }
+  <%_ } _%>
 }
 <%_ } _%>

@@ -20,39 +20,39 @@ This file is part of the JHipster project, see https://jhipster.github.io/
 package <%= packageName %>.config
 
 import tech.jhipster.config.JHipsterConstants
+import tech.jhipster.config.JHipsterProperties
 
 import com.couchbase.client.java.Bucket
+import com.couchbase.client.java.Cluster
+import com.fasterxml.jackson.databind.ObjectMapper
 import com.github.couchmove.Couchmove
-import <%= packageName %>.repository.Custom<% if (reactive) { %>Reactive<% } %>N1qlCouchbaseRepository
-<%_ if (searchEngine === 'elasticsearch') { _%>
-import <%= packageName %>.repository.<% if (reactive) { %>Reactive<% } %>N1qlCouchbaseRepository
-<%_ } _%>
-import org.apache.commons.codec.binary.Base64
+import <%= packageName %>.config.couchbase.CustomCouchbaseRepositoryFactoryBean
 import org.slf4j.Logger
 import org.slf4j.LoggerFactory
-import org.springframework.boot.autoconfigure.couchbase.CouchbaseAutoConfiguration
 import org.springframework.boot.autoconfigure.couchbase.CouchbaseProperties
-import org.springframework.context.annotation.Bean
-import org.springframework.context.annotation.Configuration
-import org.springframework.context.annotation.Import
-<%_ if (searchEngine === 'elasticsearch') { _%>
-import org.springframework.context.annotation.ComponentScan.Filter
-import org.springframework.context.annotation.FilterType
-<%_ } _%>
-import org.springframework.context.annotation.Profile
+import org.springframework.boot.autoconfigure.couchbase.CouchbaseProperties
+import org.springframework.boot.context.properties.EnableConfigurationProperties
+import org.springframework.context.annotation.*
+import org.springframework.core.convert.TypeDescriptor
 import org.springframework.core.convert.converter.Converter
-<%_ if (searchEngine === 'elasticsearch') { _%>
+import org.springframework.core.convert.converter.GenericConverter
+import org.springframework.core.convert.support.GenericConversionService
+<%_ if (searchEngineElasticsearch) { _%>
 import org.springframework.data.elasticsearch.repository.config.Enable<% if (reactive) { %>Reactive<% } %>ElasticsearchRepositories
 <%_ } _%>
 import org.springframework.data.convert.ReadingConverter
 import org.springframework.data.convert.WritingConverter
+import org.springframework.data.couchbase.config.AbstractCouchbaseConfiguration
 import org.springframework.data.couchbase.config.BeanNames
 import org.springframework.data.couchbase.core.convert.CouchbaseCustomConversions
+import org.springframework.data.couchbase.core.convert.MappingCouchbaseConverter
+import org.springframework.data.couchbase.core.mapping.CouchbaseMappingContext
 import org.springframework.data.couchbase.core.mapping.event.ValidatingCouchbaseEventListener
 <%_ if (!reactive) { _%>
 import org.springframework.data.couchbase.repository.auditing.EnableCouchbaseAuditing
 <%_ } _%>
 import org.springframework.data.couchbase.repository.config.Enable<%_ if (reactive) { _%>Reactive<% } %>CouchbaseRepositories
+import org.springframework.http.converter.json.Jackson2ObjectMapperBuilder
 import org.springframework.util.StringUtils
 import org.springframework.validation.beanvalidation.LocalValidatorFactoryBean
 
@@ -60,31 +60,72 @@ import java.math.BigDecimal
 import java.math.BigInteger
 import java.time.ZoneId
 import java.time.ZonedDateTime
-import java.util.ArrayList
-import java.util.Date
-import java.util.List
-import java.util.UUID
+import java.util.*;
+<%_ if (reactive) { _%>
+import java.lang.reflect.Field;
+import org.springframework.data.repository.util.QueryExecutionConverters;
+import reactor.core.publisher.Flux;
+<%_ } _%>
 
 @Configuration
-<%_ if (searchEngine === 'elasticsearch') { _%>
+@EnableConfigurationProperties(CouchbaseProperties::class)
+<%_ if (searchEngineElasticsearch) { _%>
 @Enable<% if (reactive) { %>Reactive<% } %>ElasticsearchRepositories("<%= packageName %>.repository.search")
 <%_ } _%>
 @Profile("!" + JHipsterConstants.SPRING_PROFILE_CLOUD)
-@Enable<% if (reactive) { %>Reactive<% } %>CouchbaseRepositories(repositoryBaseClass = Custom<% if (reactive) { %>Reactive<% } %>N1qlCouchbaseRepository::class, basePackages = ["<%= packageName %>.repository"]<%_ if (searchEngine === 'elasticsearch') { %>,
-    includeFilters = [Filter(type = FilterType.ASSIGNABLE_TYPE, value =[<% if (reactive) { %>Reactive<% } %>N1qlCouchbaseRepository::class])<%_ } _%>)
+@Enable<% if (reactive) { %>Reactive<% } %>CouchbaseRepositories(basePackages = ["<%= packageName %>.repository"], repositoryFactoryBeanClass = CustomCouchbaseRepositoryFactoryBean::class<%_ if (searchEngineElasticsearch) { %>,
+    includeFilters = [Filter(type = FilterType.ASSIGNABLE_TYPE, value = [<% if (reactive) { %>Reactive<% } %>CouchbaseRepository::class])]<%_ } _%>)
 <%_ if (!reactive) { _%>
-@EnableCouchbaseAuditing(auditorAwareRef = "springSecurityAuditorAware")
+@EnableCouchbaseAuditing(auditorAwareRef = "springSecurityAuditorAware", dateTimeProviderRef = "")
 <%_ } _%>
-@Import(value = [CouchbaseAutoConfiguration::class])
-public class DatabaseConfiguration {
+public class DatabaseConfiguration(
+    jHipsterProperties: JHipsterProperties,
+    couchbaseProperties: CouchbaseProperties 
+): AbstractCouchbaseConfiguration() {
 
     private val log = LoggerFactory.getLogger(javaClass)
+    
+    <%_ if (reactive) { _%>
+    init {
+        allowPageable()
+    }
+
+    // Temporary Hack to fix pageable
+    @SuppressWarnings("unchecked")
+    private fun allowPageable() {
+        try {
+            val allowed_pageable_types = QueryExecutionConverters::class.java.getDeclaredField("ALLOWED_PAGEABLE_TYPES")
+            allowed_pageable_types.setAccessible(true)
+            val ALLOWED_PAGEABLE_TYPES = allowed_pageable_types.get(QueryExecutionConverters::class) as Set<Class<*>>
+            ALLOWED_PAGEABLE_TYPES.add(Flux::class)
+        } catch (e: Exception) {
+            e.printStackTrace();
+        }
+    }
+
+    <%_ } _%>
 
     @Bean
     fun validatingCouchbaseEventListener() = ValidatingCouchbaseEventListener(validator())
 
     @Bean
     fun validator() = LocalValidatorFactoryBean()
+
+    override fun getConnectionString() =
+        couchbaseProperties.connectionString
+
+    override fun getUserName() =
+        couchbaseProperties.username
+    
+    override fun getPassword() =
+        couchbaseProperties.password()
+
+    override fun  getBucketName() =
+        jHipsterProperties.database.couchbase.bucketName
+
+    @Bean
+    fun bucket(cluster: Cluster) =
+        cluster.bucket(jHipsterProperties.database.couchbase.bucketName)
 
     @Bean(name = [BeanNames.COUCHBASE_CUSTOM_CONVERSIONS])
     fun customConversions() =
@@ -102,10 +143,29 @@ public class DatabaseConfiguration {
             )
         )
     
+    override fun mappingCouchbaseConverter(couchbaseMappingContext: CouchbaseMappingContext, couchbaseCustomConversions: CouchbaseCustomConversions): MappingCouchbaseConverter {
+        val mappingCouchbaseConverter = super.mappingCouchbaseConverter(couchbaseMappingContext, couchbaseCustomConversions)
+        (mappingCouchbaseConverter.getConversionService() as (GenericConversionService)).addConverter(StringToObjectConverter.INSTANCE)
+        return mappingCouchbaseConverter
+    }
+
+    /**
+    * Workaround for Couchbase overriding SB default jackson mapper: https://github.com/spring-projects/spring-data-couchbase/issues/1209
+    */
     @Bean
-    fun couchmove(couchbaseBucket: Bucket, properties: CouchbaseProperties): Couchmove {
+    @Primary
+    fun jacksonObjectMapper(builder: Jackson2ObjectMapperBuilder): ObjectMapper {
+        return builder.createXmlMapper(false).build()
+    }
+
+    @Bean
+    fun couchmove(cluster: Cluster): CouchMove {
         log.debug("Configuring Couchmove")
-        return Couchmove(couchbaseBucket, properties.bucket.name, properties.bucket.password, "config/couchmove/changelog").apply { migrate() }
+        val bucket = cluster.bucket(getBucketName())
+        val couchmove = Couchmove(bucket, cluster, "config/couchmove/changelog")
+        couchmove.migrate()
+        couchmove.buildN1qlDeferredIndexes()
+        return couchmove
     }
 
     /**
@@ -164,7 +224,7 @@ public class DatabaseConfiguration {
      */
     @ReadingConverter
     object StringToByteConverter : Converter<String, ByteArray> {
-        override fun convert(source: String): ByteArray = Base64.decodeBase64(source)
+        override fun convert(source: String): ByteArray = Base64.decoder.decode(source)
     }
 
     /**
@@ -182,6 +242,14 @@ public class DatabaseConfiguration {
     object StringToUUIDConverter : Converter<String, UUID> {
         override fun convert(source: String) =
             if (StringUtils.hasText(source)) UUID.fromString(source) else null
+    }
+
+    object StringToObjectConverter: GenericConverter {
+        override fun getConvertibleTypes(): Set<ConvertiblePair> = 
+            Collections.singleton(ConvertiblePair(String::class, Any::class))
+        
+
+        override fun convert(source: Object, sourceType: TypeDescriptor, targetType: TypeDescriptor) = null
     }
 
 }

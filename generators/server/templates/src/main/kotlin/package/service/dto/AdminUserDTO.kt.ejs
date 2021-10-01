@@ -19,18 +19,18 @@ This file is part of the JHipster project, see https://jhipster.github.io/
 package <%= packageName %>.service.dto
 
 import <%= packageName %>.config.LOGIN_REGEX
-<%_ if (databaseType === 'sql' || databaseType === 'mongodb' || databaseType === 'neo4j') { _%>
+<%_ if (databaseTypeSql || databaseTypeMongodb || databaseTypeNeo4j) { _%>
 import <%= packageName %>.domain.Authority
 <%_ } _%>
-<%_ if (databaseType !== 'no') { _%>
+<%_ if (!databaseTypeNo) { _%>
 import <%= packageName %>.domain.<%= asEntity('User') %>
 <%_ } _%>
 
 import javax.validation.constraints.*
-<%_ if (databaseType === 'mongodb' || databaseType === 'neo4j' || databaseType === 'couchbase' || databaseType === 'sql') { _%>
+<%_ if (databaseTypeMongodb || databaseTypeNeo4j || databaseTypeCouchbase || databaseTypeSql) { _%>
 import java.time.Instant
 <%_ } _%>
-<%_ if (user.primaryKey.type === 'UUID') { _%>
+<%_ if (user.primaryKey.hasUUID) { _%>
 import java.util.UUID
 <%_ } _%>
 
@@ -54,7 +54,7 @@ open class <%= asDto('AdminUser') %>(
     @field:Email
     @field:Size(min = 5, max = 254)
     var email: String? = null,
-    <%_ if (databaseType !== 'cassandra') { _%>
+    <%_ if (!databaseTypeCassandra) { _%>
 
     @field:Size(max = 256)
     var imageUrl: String? = null,
@@ -64,7 +64,7 @@ open class <%= asDto('AdminUser') %>(
 
     @field:Size(min = 2, max = 10)
     var langKey: String? = null,
-    <%_ if (databaseType === 'mongodb' || databaseType === 'neo4j' || databaseType === 'couchbase' || databaseType === 'sql') { _%>
+    <%_ if (databaseTypeMongodb || databaseTypeNeo4j || databaseTypeCouchbase || databaseTypeSql) { _%>
 
     var createdBy: String? = null,
 
@@ -78,19 +78,19 @@ open class <%= asDto('AdminUser') %>(
     var authorities: MutableSet<String> = mutableSetOf()
 ) {
 
-    <%_ if (databaseType !== 'no') { _%>
+    <%_ if (!databaseTypeNo) { _%>
     constructor(user: <%= asEntity('User') %>?) : this(
         user?.id,
         user?.login,
         user?.firstName,
         user?.lastName,
         user?.email,
-        <%_ if (databaseType !== 'cassandra') { _%>
+        <%_ if (!databaseTypeCassandra) { _%>
         user?.imageUrl,
         <%_ } _%>
         user?.activated,
         user?.langKey,
-        <%_ if (databaseType === 'mongodb' || databaseType === 'neo4j' || databaseType === 'couchbase' || databaseType === 'sql') { _%>
+        <%_ if (databaseTypeMongodb || databaseTypeNeo4j || databaseTypeCouchbase || databaseTypeSql) { _%>
         user?.createdBy,
         user?.createdDate,
         user?.lastModifiedBy,
@@ -106,10 +106,10 @@ open class <%= asDto('AdminUser') %>(
             "login='" + login + '\'' +
             ", firstName='" + firstName + '\'' +
             ", lastName='" + lastName + '\'' +
-            ", email='" + email + '\'' +<% if (databaseType !== 'cassandra') { %>
+            ", email='" + email + '\'' +<% if (!databaseTypeCassandra) { %>
             ", imageUrl='" + imageUrl + '\'' +<% } %>
             ", activated=" + activated +
-            ", langKey='" + langKey + '\'' +<% if (databaseType === 'mongodb' || databaseType === 'couchbase' || databaseType === 'sql') { %>
+            ", langKey='" + langKey + '\'' +<% if (databaseTypeMongodb || databaseTypeCouchbase || databaseTypeSql) { %>
             ", createdBy=" + createdBy +
             ", createdDate=" + createdDate +
             ", lastModifiedBy='" + lastModifiedBy + '\'' +

@@ -1,22 +1,45 @@
 const path = require('path');
+const expect = require('expect');
 const assert = require('yeoman-assert');
 
+const { GATEWAY, MICROSERVICE, MONOLITH } = require('generator-jhipster/jdl/jhipster/application-types');
+const {
+  CASSANDRA,
+  COUCHBASE,
+  H2_DISK,
+  H2_MEMORY,
+  MARIADB,
+  MSSQL,
+  MONGODB,
+  MYSQL,
+  NEO4J,
+  POSTGRESQL,
+  SQL,
+} = require('generator-jhipster/jdl/jhipster/database-types');
+const { SESSION } = require('generator-jhipster/jdl/jhipster/authentication-types');
+const { EHCACHE, HAZELCAST } = require('generator-jhipster/jdl/jhipster/cache-types');
+const cacheProviders = require('generator-jhipster/jdl/jhipster/cache-types');
+const { CONSUL, EUREKA } = require('generator-jhipster/jdl/jhipster/service-discovery-types');
+const { JWT } = require('generator-jhipster/jdl/jhipster/authentication-types');
+const { CUCUMBER, PROTRACTOR } = require('generator-jhipster/jdl/jhipster/test-framework-types');
+const { ANGULAR_X, REACT } = require('generator-jhipster/jdl/jhipster/client-framework-types');
+const { GRADLE, MAVEN } = require('generator-jhipster/jdl/jhipster/build-tool-types');
+
+const { skipPrettierHelpers: helpers, shouldBeV3DockerfileCompatible } = require('./utils/utils');
+
 const constants = require('generator-jhipster/generators/generator-constants');
-const angularFiles = require('generator-jhipster/generators/client/files-angular').files;
-const reactFiles = require('generator-jhipster/generators/client/files-react').files;
 const expectedFiles = require('./utils/expected-files');
 
-const { skipPrettierHelpers: helpers, getFilesForOptions, shouldBeV3DockerfileCompatible } = require('./utils/utils');
-
-const { ANGULAR, REACT } = constants.SUPPORTED_CLIENT_FRAMEWORKS;
-const { CLIENT_MAIN_SRC_DIR, MAIN_DIR, SERVER_MAIN_RES_DIR, TEST_DIR } = constants;
+const { CLIENT_MAIN_SRC_DIR, MAIN_DIR, SERVER_MAIN_RES_DIR } = constants;
+const NO_CACHE_PROVIDER = cacheProviders.NO;
 const SERVER_MAIN_KOTLIN_SRC_DIR = `${MAIN_DIR}kotlin/`;
 
 describe('JHipster generator', () => {
     context('Default configuration with', () => {
-        describe(ANGULAR, () => {
+        describe(ANGULAR_X, () => {
+            let runResult;
             before(async () => {
-                await helpers
+               runResult = await helpers
                     .create(path.join(__dirname, '../generators/app'))
                     .withOptions({
                         withGeneratedFlag: true,
@@ -26,20 +49,20 @@ describe('JHipster generator', () => {
                     })
                     .withPrompts({
                         baseName: 'jhipster',
-                        clientFramework: ANGULAR,
+                        clientFramework: ANGULAR_X,
                         packageName: 'com.mycompany.myapp',
                         packageFolder: 'com/mycompany/myapp',
                         serviceDiscoveryType: false,
-                        authenticationType: 'jwt',
-                        cacheProvider: 'ehcache',
+                        authenticationType: JWT,
+                        cacheProvider: EHCACHE,
                         enableHibernateCache: true,
-                        databaseType: 'sql',
-                        devDatabaseType: 'h2Memory',
-                        prodDatabaseType: 'postgresql',
+                        databaseType: SQL,
+                        devDatabaseType: H2_MEMORY,
+                        prodDatabaseType: POSTGRESQL,
                         enableTranslation: true,
                         nativeLanguage: 'en',
                         languages: ['fr', 'en'],
-                        buildTool: 'maven',
+                        buildTool: MAVEN,
                         rememberMeKey: '5c37379956bd1242f5636c8cb322c2966ad81277',
                         skipClient: false,
                         skipUserManagement: false,
@@ -49,22 +72,7 @@ describe('JHipster generator', () => {
             });
 
             it('creates expected default files for angularX', () => {
-                assert.file(expectedFiles.common);
-                assert.file(expectedFiles.server);
-                assert.file(expectedFiles.userManagementServer);
-                assert.file(expectedFiles.jwtServer);
-                assert.file(expectedFiles.maven);
-                assert.file(expectedFiles.dockerServices);
-                assert.file(expectedFiles.postgresql);
-                assert.file(expectedFiles.hibernateTimeZoneConfig);
-                assert.file(
-                    getFilesForOptions(angularFiles, {
-                        enableTranslation: true,
-                        serviceDiscoveryType: false,
-                        authenticationType: 'jwt',
-                        testFrameworks: [],
-                    })
-                );
+                expect(runResult.getStateSnapshot()).toMatchSnapshot();
             });
             it('contains clientFramework with angularX value', () => {
                 assert.fileContent('.yo-rc.json', /"clientFramework": "angularX"/);
@@ -78,8 +86,9 @@ describe('JHipster generator', () => {
         });
 
         describe(REACT, () => {
+            let runResult;
             before(async () => {
-                await helpers
+                runResult = await helpers
                     .create(path.join(__dirname, '../generators/app'))
                     .withOptions({
                         jhiPrefix: 'test',
@@ -93,16 +102,16 @@ describe('JHipster generator', () => {
                         packageName: 'com.mycompany.myapp',
                         packageFolder: 'com/mycompany/myapp',
                         serviceDiscoveryType: false,
-                        authenticationType: 'jwt',
-                        cacheProvider: 'ehcache',
+                        authenticationType: JWT,
+                        cacheProvider: EHCACHE,
                         enableHibernateCache: true,
-                        databaseType: 'sql',
-                        devDatabaseType: 'h2Memory',
-                        prodDatabaseType: 'postgresql',
+                        databaseType: SQL,
+                        devDatabaseType: H2_MEMORY,
+                        prodDatabaseType: POSTGRESQL,
                         enableTranslation: true,
                         nativeLanguage: 'en',
                         languages: ['fr'],
-                        buildTool: 'maven',
+                        buildTool: MAVEN,
                         rememberMeKey: '5c37379956bd1242f5636c8cb322c2966ad81277',
                         skipClient: false,
                         skipUserManagement: false,
@@ -112,22 +121,7 @@ describe('JHipster generator', () => {
             });
 
             it('creates expected default files for react', () => {
-                assert.file(expectedFiles.common);
-                assert.file(expectedFiles.server);
-                assert.file(expectedFiles.userManagementServer);
-                assert.file(expectedFiles.jwtServer);
-                assert.file(expectedFiles.maven);
-                assert.file(expectedFiles.dockerServices);
-                assert.file(expectedFiles.postgresql);
-                assert.file(expectedFiles.hibernateTimeZoneConfig);
-                assert.file(
-                    getFilesForOptions(reactFiles, {
-                        enableTranslation: true,
-                        serviceDiscoveryType: false,
-                        authenticationType: 'jwt',
-                        testFrameworks: [],
-                    })
-                );
+                expect(runResult.getStateSnapshot()).toMatchSnapshot();
             });
             it('contains clientFramework with react value', () => {
                 assert.fileContent('.yo-rc.json', /"clientFramework": "react"/);
@@ -135,8 +129,9 @@ describe('JHipster generator', () => {
         });
 
         describe('using npm flag', () => {
+            let runResult;
             before(async () => {
-                await helpers
+                runResult = await helpers
                     .create(path.join(__dirname, '../generators/app'))
                     .withOptions({
                         blueprints: 'kotlin',
@@ -145,18 +140,18 @@ describe('JHipster generator', () => {
                         baseName: 'jhipster',
                         packageName: 'com.mycompany.myapp',
                         packageFolder: 'com/mycompany/myapp',
-                        clientFramework: ANGULAR,
+                        clientFramework: ANGULAR_X,
                         serviceDiscoveryType: false,
-                        authenticationType: 'jwt',
-                        cacheProvider: 'ehcache',
+                        authenticationType: JWT,
+                        cacheProvider: EHCACHE,
                         enableHibernateCache: true,
-                        databaseType: 'sql',
-                        devDatabaseType: 'h2Memory',
-                        prodDatabaseType: 'postgresql',
+                        databaseType: SQL,
+                        devDatabaseType: H2_MEMORY,
+                        prodDatabaseType: POSTGRESQL,
                         enableTranslation: true,
                         nativeLanguage: 'en',
                         languages: ['fr'],
-                        buildTool: 'maven',
+                        buildTool: MAVEN,
                         rememberMeKey: '5c37379956bd1242f5636c8cb322c2966ad81277',
                         skipClient: false,
                         skipUserManagement: false,
@@ -166,22 +161,7 @@ describe('JHipster generator', () => {
             });
 
             it('creates expected default files', () => {
-                assert.file(expectedFiles.common);
-                assert.file(expectedFiles.server);
-                assert.file(expectedFiles.userManagementServer);
-                assert.file(expectedFiles.jwtServer);
-                assert.file(expectedFiles.maven);
-                assert.file(expectedFiles.dockerServices);
-                assert.file(expectedFiles.postgresql);
-                assert.file(expectedFiles.hibernateTimeZoneConfig);
-                assert.file(
-                    getFilesForOptions(angularFiles, {
-                        enableTranslation: true,
-                        serviceDiscoveryType: false,
-                        authenticationType: 'jwt',
-                        testFrameworks: [],
-                    })
-                );
+                expect(runResult.getStateSnapshot()).toMatchSnapshot();
             });
             it('contains clientPackageManager with npm value', () => {
                 assert.fileContent('.yo-rc.json', /"clientPackageManager": "npm"/);
@@ -192,8 +172,9 @@ describe('JHipster generator', () => {
         });
 
         describe('Gradle', () => {
+            let runResult;
             before(async () => {
-                await helpers
+                runResult = await helpers
                     .create(path.join(__dirname, '../generators/app'))
                     .withOptions({
                         jhiprefix: 'test',
@@ -205,18 +186,18 @@ describe('JHipster generator', () => {
                         baseName: 'jhipster',
                         packageName: 'com.mycompany.myapp',
                         packageFolder: 'com/mycompany/myapp',
-                        clientFramework: ANGULAR,
+                        clientFramework: ANGULAR_X,
                         serviceDiscoveryType: false,
-                        authenticationType: 'jwt',
-                        cacheProvider: 'ehcache',
+                        authenticationType: JWT,
+                        cacheProvider: EHCACHE,
                         enableHibernateCache: true,
-                        databaseType: 'sql',
-                        devDatabaseType: 'h2Memory',
-                        prodDatabaseType: 'postgresql',
+                        databaseType: SQL,
+                        devDatabaseType: H2_MEMORY,
+                        prodDatabaseType: POSTGRESQL,
                         enableTranslation: true,
                         nativeLanguage: 'en',
                         languages: ['fr'],
-                        buildTool: 'gradle',
+                        buildTool: GRADLE,
                         rememberMeKey: '5c37379956bd1242f5636c8cb322c2966ad81277',
                         serverSideOptions: [],
                     })
@@ -224,28 +205,14 @@ describe('JHipster generator', () => {
             });
 
             it('creates expected default files for gradle', () => {
-                assert.file(expectedFiles.common);
-                assert.file(expectedFiles.server);
-                assert.file(expectedFiles.userManagementServer);
-                assert.file(expectedFiles.jwtServer);
-                assert.file(expectedFiles.gradle);
-                assert.file(expectedFiles.dockerServices);
-                assert.file(expectedFiles.postgresql);
-                assert.file(expectedFiles.hibernateTimeZoneConfig);
-                assert.file(
-                    getFilesForOptions(angularFiles, {
-                        enableTranslation: true,
-                        serviceDiscoveryType: false,
-                        authenticationType: 'jwt',
-                        testFrameworks: [],
-                    })
-                );
+                expect(runResult.getStateSnapshot()).toMatchSnapshot();
             });
         });
 
         describe('Maven with ktlint-format', () => {
+            let runResult;
             before(async () => {
-                await helpers
+                runResult = await helpers
                     .create(path.join(__dirname, '../generators/app'))
                     .withOptions({
                         jhiPrefix: 'test',
@@ -255,21 +222,21 @@ describe('JHipster generator', () => {
                     })
                     .withPrompts({
                         baseName: 'jhipster',
-                        clientFramework: ANGULAR,
+                        clientFramework: ANGULAR_X,
                         packageName: 'com.mycompany.myapp',
                         packageFolder: 'com/mycompany/myapp',
                         serviceDiscoveryType: false,
-                        authenticationType: 'jwt',
-                        cacheProvider: 'ehcache',
+                        authenticationType: JWT,
+                        cacheProvider: EHCACHE,
                         enableHibernateCache: true,
-                        databaseType: 'sql',
-                        devDatabaseType: 'h2Memory',
-                        prodDatabaseType: 'mysql',
+                        databaseType: SQL,
+                        devDatabaseType: H2_MEMORY,
+                        prodDatabaseType: MYSQL,
                         useSass: false,
                         enableTranslation: true,
                         nativeLanguage: 'en',
                         languages: ['fr'],
-                        buildTool: 'maven',
+                        buildTool: MAVEN,
                         rememberMeKey: '5c37379956bd1242f5636c8cb322c2966ad81277',
                         skipClient: false,
                         skipUserManagement: false,
@@ -279,23 +246,7 @@ describe('JHipster generator', () => {
             });
 
             it('creates expected default files for angularX', () => {
-                assert.file(expectedFiles.common);
-                assert.file(expectedFiles.server);
-                assert.file(expectedFiles.userManagementServer);
-                assert.file(expectedFiles.jwtServer);
-                assert.file(expectedFiles.maven);
-                assert.file(expectedFiles.dockerServices);
-                assert.file(expectedFiles.mysql);
-                assert.file(expectedFiles.hibernateTimeZoneConfig);
-                assert.file(
-                    getFilesForOptions(angularFiles, {
-                        useSass: false,
-                        enableTranslation: true,
-                        serviceDiscoveryType: false,
-                        authenticationType: 'jwt',
-                        testFrameworks: [],
-                    })
-                );
+                expect(runResult.getStateSnapshot()).toMatchSnapshot();
             });
             it('contains clientFramework with angularX value', () => {
                 assert.fileContent('.yo-rc.json', /"clientFramework": "angularX"/);
@@ -309,8 +260,9 @@ describe('JHipster generator', () => {
         });
 
         describe('Gradle with ktlint-format', () => {
+            let runResult;
             before(async () => {
-                await helpers
+                runResult = await helpers
                     .create(path.join(__dirname, '../generators/app'))
                     .withOptions({
                         jhiPrefix: 'test',
@@ -322,18 +274,18 @@ describe('JHipster generator', () => {
                         baseName: 'jhipster',
                         packageName: 'com.mycompany.myapp',
                         packageFolder: 'com/mycompany/myapp',
-                        clientFramework: ANGULAR,
+                        clientFramework: ANGULAR_X,
                         serviceDiscoveryType: false,
-                        authenticationType: 'jwt',
-                        cacheProvider: 'ehcache',
+                        authenticationType: JWT,
+                        cacheProvider: EHCACHE,
                         enableHibernateCache: true,
-                        databaseType: 'sql',
-                        devDatabaseType: 'h2Memory',
-                        prodDatabaseType: 'mysql',
+                        databaseType: SQL,
+                        devDatabaseType: H2_MEMORY,
+                        prodDatabaseType: MYSQL,
                         enableTranslation: true,
                         nativeLanguage: 'en',
                         languages: ['fr'],
-                        buildTool: 'gradle',
+                        buildTool: GRADLE,
                         rememberMeKey: '5c37379956bd1242f5636c8cb322c2966ad81277',
                         serverSideOptions: [],
                     })
@@ -341,30 +293,16 @@ describe('JHipster generator', () => {
             });
 
             it('creates expected default files for gradle', () => {
-                assert.file(expectedFiles.common);
-                assert.file(expectedFiles.server);
-                assert.file(expectedFiles.userManagementServer);
-                assert.file(expectedFiles.jwtServer);
-                assert.file(expectedFiles.gradle);
-                assert.file(expectedFiles.dockerServices);
-                assert.file(expectedFiles.mysql);
-                assert.file(expectedFiles.hibernateTimeZoneConfig);
-                assert.file(
-                    getFilesForOptions(angularFiles, {
-                        enableTranslation: true,
-                        serviceDiscoveryType: false,
-                        authenticationType: 'jwt',
-                        testFrameworks: [],
-                    })
-                );
+                expect(runResult.getStateSnapshot()).toMatchSnapshot();
             });
         });
     });
 
     context('Application with DB option', () => {
         describe('mariadb', () => {
+            let runResult;
             before(async () => {
-                await helpers
+                runResult = await helpers
                     .create(path.join(__dirname, '../generators/app'))
                     .withOptions({
                         jhiprefix: 'test',
@@ -376,18 +314,18 @@ describe('JHipster generator', () => {
                         baseName: 'jhipster',
                         packageName: 'com.mycompany.myapp',
                         packageFolder: 'com/mycompany/myapp',
-                        clientFramework: ANGULAR,
+                        clientFramework: ANGULAR_X,
                         serviceDiscoveryType: false,
-                        authenticationType: 'jwt',
-                        cacheProvider: 'ehcache',
+                        authenticationType: JWT,
+                        cacheProvider: EHCACHE,
                         enableHibernateCache: true,
-                        databaseType: 'sql',
-                        devDatabaseType: 'h2Disk',
-                        prodDatabaseType: 'mariadb',
+                        databaseType: SQL,
+                        devDatabaseType: H2_DISK,
+                        prodDatabaseType: MARIADB,
                         enableTranslation: true,
                         nativeLanguage: 'en',
                         languages: ['fr'],
-                        buildTool: 'maven',
+                        buildTool: MAVEN,
                         rememberMeKey: '5c37379956bd1242f5636c8cb322c2966ad81277',
                         skipClient: false,
                         skipUserManagement: false,
@@ -397,29 +335,15 @@ describe('JHipster generator', () => {
             });
 
             it('creates expected default files', () => {
-                assert.file(expectedFiles.common);
-                assert.file(expectedFiles.server);
-                assert.file(expectedFiles.userManagementServer);
-                assert.file(expectedFiles.jwtServer);
-                assert.file(expectedFiles.maven);
-                assert.file(expectedFiles.dockerServices);
-                assert.file(expectedFiles.mariadb);
-                assert.file(expectedFiles.hibernateTimeZoneConfig);
-                assert.file(
-                    getFilesForOptions(angularFiles, {
-                        enableTranslation: true,
-                        serviceDiscoveryType: false,
-                        authenticationType: 'jwt',
-                        testFrameworks: [],
-                    })
-                );
+                expect(runResult.getStateSnapshot()).toMatchSnapshot();
             });
             shouldBeV3DockerfileCompatible('mariadb');
         });
 
-        describe('mongodb', () => {
+        describe(MONGODB, () => {
+            let runResult;
             before(async () => {
-                await helpers
+                runResult = await helpers
                     .create(path.join(__dirname, '../generators/app'))
                     .withOptions({
                         jhiprefix: 'test',
@@ -431,18 +355,18 @@ describe('JHipster generator', () => {
                         baseName: 'jhipster',
                         packageName: 'com.mycompany.myapp',
                         packageFolder: 'com/mycompany/myapp',
-                        clientFramework: ANGULAR,
+                        clientFramework: ANGULAR_X,
                         serviceDiscoveryType: false,
-                        authenticationType: 'jwt',
-                        cacheProvider: 'no',
+                        authenticationType: JWT,
+                        cacheProvider: NO_CACHE_PROVIDER,
                         enableHibernateCache: false,
-                        databaseType: 'mongodb',
-                        devDatabaseType: 'mongodb',
-                        prodDatabaseType: 'mongodb',
+                        databaseType: MONGODB,
+                        devDatabaseType: MONGODB,
+                        prodDatabaseType: MONGODB,
                         enableTranslation: true,
                         nativeLanguage: 'en',
                         languages: ['fr'],
-                        buildTool: 'maven',
+                        buildTool: MAVEN,
                         rememberMeKey: '5c37379956bd1242f5636c8cb322c2966ad81277',
                         skipClient: false,
                         skipUserManagement: false,
@@ -452,16 +376,16 @@ describe('JHipster generator', () => {
             });
 
             it('creates expected files with "MongoDB"', () => {
-                assert.file(expectedFiles.mongodb);
+                expect(runResult.getStateSnapshot()).toMatchSnapshot();
             });
             it("doesn't setup liquibase", () => {
                 assert.noFileContent('pom.xml', 'liquibase');
                 assert.noFile(expectedFiles.liquibase);
             });
-            shouldBeV3DockerfileCompatible('mongodb');
+            shouldBeV3DockerfileCompatible(MONGODB);
         });
 
-        describe('couchbase', () => {
+        describe(COUCHBASE, () => {
             before(async () => {
                 await helpers
                     .create(path.join(__dirname, '../generators/app'))
@@ -475,18 +399,18 @@ describe('JHipster generator', () => {
                         baseName: 'jhipster',
                         packageName: 'com.mycompany.myapp',
                         packageFolder: 'com/mycompany/myapp',
-                        clientFramework: ANGULAR,
+                        clientFramework: ANGULAR_X,
                         serviceDiscoveryType: false,
-                        authenticationType: 'jwt',
-                        cacheProvider: 'no',
+                        authenticationType: JWT,
+                        cacheProvider: NO_CACHE_PROVIDER,
                         enableHibernateCache: false,
-                        databaseType: 'couchbase',
-                        devDatabaseType: 'couchbase',
-                        prodDatabaseType: 'couchbase',
+                        databaseType: COUCHBASE,
+                        devDatabaseType: COUCHBASE,
+                        prodDatabaseType: COUCHBASE,
                         enableTranslation: true,
                         nativeLanguage: 'en',
                         languages: ['fr'],
-                        buildTool: 'maven',
+                        buildTool: MAVEN,
                         rememberMeKey: '5c37379956bd1242f5636c8cb322c2966ad81277',
                         skipClient: false,
                         skipUserManagement: false,
@@ -502,10 +426,10 @@ describe('JHipster generator', () => {
                 assert.noFileContent('pom.xml', 'liquibase');
                 assert.noFile(expectedFiles.liquibase);
             });
-            shouldBeV3DockerfileCompatible('couchbase');
+            shouldBeV3DockerfileCompatible(COUCHBASE);
         });
 
-        describe('neo4j', () => {
+        describe(NEO4J, () => {
             before(async () => {
                 await helpers
                     .create(path.join(__dirname, '../generators/app'))
@@ -519,18 +443,18 @@ describe('JHipster generator', () => {
                         baseName: 'jhipster',
                         packageName: 'com.mycompany.myapp',
                         packageFolder: 'com/mycompany/myapp',
-                        clientFramework: ANGULAR,
+                        clientFramework: ANGULAR_X,
                         serviceDiscoveryType: false,
-                        authenticationType: 'jwt',
-                        cacheProvider: 'no',
+                        authenticationType: JWT,
+                        cacheProvider: NO_CACHE_PROVIDER,
                         enableHibernateCache: false,
-                        databaseType: 'neo4j',
-                        devDatabaseType: 'neo4j',
-                        prodDatabaseType: 'neo4j',
+                        databaseType: NEO4J,
+                        devDatabaseType: NEO4J,
+                        prodDatabaseType: NEO4J,
                         enableTranslation: true,
                         nativeLanguage: 'en',
                         languages: ['fr'],
-                        buildTool: 'maven',
+                        buildTool: MAVEN,
                         rememberMeKey: '5c37379956bd1242f5636c8cb322c2966ad81277',
                         skipClient: false,
                         skipUserManagement: false,
@@ -546,10 +470,10 @@ describe('JHipster generator', () => {
                 assert.noFileContent('pom.xml', 'liquibase');
                 assert.noFile(expectedFiles.liquibase);
             });
-            shouldBeV3DockerfileCompatible('neo4j');
+            shouldBeV3DockerfileCompatible(NEO4J);
         });
 
-        describe('mssql', () => {
+        describe(MSSQL, () => {
             before(async () => {
                 await helpers
                     .create(path.join(__dirname, '../generators/app'))
@@ -563,18 +487,18 @@ describe('JHipster generator', () => {
                         baseName: 'jhipster',
                         packageName: 'com.mycompany.myapp',
                         packageFolder: 'com/mycompany/myapp',
-                        clientFramework: ANGULAR,
+                        clientFramework: ANGULAR_X,
                         serviceDiscoveryType: false,
-                        authenticationType: 'jwt',
-                        cacheProvider: 'no',
+                        authenticationType: JWT,
+                        cacheProvider: NO_CACHE_PROVIDER,
                         enableHibernateCache: false,
-                        databaseType: 'sql',
-                        devDatabaseType: 'mssql',
-                        prodDatabaseType: 'mssql',
+                        databaseType: SQL,
+                        devDatabaseType: MSSQL,
+                        prodDatabaseType: MSSQL,
                         enableTranslation: true,
                         nativeLanguage: 'en',
                         languages: ['fr'],
-                        buildTool: 'maven',
+                        buildTool: MAVEN,
                         rememberMeKey: '5c37379956bd1242f5636c8cb322c2966ad81277',
                         skipClient: false,
                         skipUserManagement: false,
@@ -587,19 +511,11 @@ describe('JHipster generator', () => {
                 assert.file(expectedFiles.mssql);
                 assert.file(expectedFiles.hibernateTimeZoneConfig);
                 assert.fileContent('pom.xml', /mssql-jdbc/);
-                assert.fileContent(
-                    `${SERVER_MAIN_RES_DIR}config/liquibase/changelog/00000000000000_initial_schema.xml`,
-                    /SET IDENTITY_INSERT jhi_user ON;/
-                );
-                assert.fileContent(
-                    `${SERVER_MAIN_RES_DIR}config/liquibase/changelog/00000000000000_initial_schema.xml`,
-                    /SET IDENTITY_INSERT jhi_user OFF;/
-                );
             });
-            shouldBeV3DockerfileCompatible('mssql');
+            shouldBeV3DockerfileCompatible(MSSQL);
         });
 
-        describe('cassandra', () => {
+        describe(CASSANDRA, () => {
             before(async () => {
                 await helpers
                     .create(path.join(__dirname, '../generators/app'))
@@ -613,18 +529,18 @@ describe('JHipster generator', () => {
                         baseName: 'jhipster',
                         packageName: 'com.mycompany.myapp',
                         packageFolder: 'com/mycompany/myapp',
-                        clientFramework: ANGULAR,
+                        clientFramework: ANGULAR_X,
                         serviceDiscoveryType: false,
-                        authenticationType: 'jwt',
-                        cacheProvider: 'no',
+                        authenticationType: JWT,
+                        cacheProvider: NO_CACHE_PROVIDER,
                         enableHibernateCache: false,
-                        databaseType: 'cassandra',
-                        devDatabaseType: 'cassandra',
-                        prodDatabaseType: 'cassandra',
+                        databaseType: CASSANDRA,
+                        devDatabaseType: CASSANDRA,
+                        prodDatabaseType: CASSANDRA,
                         enableTranslation: true,
                         nativeLanguage: 'en',
                         languages: ['fr'],
-                        buildTool: 'maven',
+                        buildTool: MAVEN,
                         rememberMeKey: '5c37379956bd1242f5636c8cb322c2966ad81277',
                         skipClient: false,
                         skipUserManagement: false,
@@ -640,7 +556,7 @@ describe('JHipster generator', () => {
                 assert.noFileContent('pom.xml', 'liquibase');
                 assert.noFile(expectedFiles.liquibase);
             });
-            shouldBeV3DockerfileCompatible('cassandra');
+            shouldBeV3DockerfileCompatible(CASSANDRA);
         });
 
         describe('cassandra no i18n', () => {
@@ -657,16 +573,16 @@ describe('JHipster generator', () => {
                         baseName: 'jhipster',
                         packageName: 'com.mycompany.myapp',
                         packageFolder: 'com/mycompany/myapp',
-                        clientFramework: ANGULAR,
+                        clientFramework: ANGULAR_X,
                         serviceDiscoveryType: false,
-                        authenticationType: 'jwt',
-                        cacheProvider: 'no',
+                        authenticationType: JWT,
+                        cacheProvider: NO_CACHE_PROVIDER,
                         enableHibernateCache: false,
-                        databaseType: 'cassandra',
-                        devDatabaseType: 'cassandra',
-                        prodDatabaseType: 'cassandra',
+                        databaseType: CASSANDRA,
+                        devDatabaseType: CASSANDRA,
+                        prodDatabaseType: CASSANDRA,
                         enableTranslation: false,
-                        buildTool: 'maven',
+                        buildTool: MAVEN,
                         rememberMeKey: '5c37379956bd1242f5636c8cb322c2966ad81277',
                         skipClient: false,
                         skipUserManagement: false,
@@ -696,18 +612,18 @@ describe('JHipster generator', () => {
                         baseName: 'jhipster',
                         packageName: 'com.mycompany.myapp',
                         packageFolder: 'com/mycompany/myapp',
-                        clientFramework: ANGULAR,
+                        clientFramework: ANGULAR_X,
                         serviceDiscoveryType: false,
-                        authenticationType: 'jwt',
-                        cacheProvider: 'no',
+                        authenticationType: JWT,
+                        cacheProvider: NO_CACHE_PROVIDER,
                         enableHibernateCache: false,
-                        databaseType: 'sql',
+                        databaseType: SQL,
                         devDatabaseType: 'mysql',
-                        prodDatabaseType: 'mysql',
+                        prodDatabaseType: MYSQL,
                         enableTranslation: true,
                         nativeLanguage: 'en',
                         languages: ['fr'],
-                        buildTool: 'maven',
+                        buildTool: MAVEN,
                         rememberMeKey: '5c37379956bd1242f5636c8cb322c2966ad81277',
                         skipClient: false,
                         skipUserManagement: false,
@@ -740,16 +656,16 @@ describe('JHipster generator', () => {
                         packageFolder: 'com/mycompany/myapp',
                         clientFramework: 'angularX',
                         serviceDiscoveryType: false,
-                        authenticationType: 'jwt',
-                        cacheProvider: 'no',
+                        authenticationType: JWT,
+                        cacheProvider: NO_CACHE_PROVIDER,
                         enableHibernateCache: false,
-                        databaseType: 'couchbase',
-                        devDatabaseType: 'couchbase',
-                        prodDatabaseType: 'couchbase',
+                        databaseType: COUCHBASE,
+                        devDatabaseType: COUCHBASE,
+                        prodDatabaseType: COUCHBASE,
                         enableTranslation: true,
                         nativeLanguage: 'en',
                         languages: ['fr'],
-                        buildTool: 'maven',
+                        buildTool: MAVEN,
                         rememberMeKey: '5c37379956bd1242f5636c8cb322c2966ad81277',
                         skipClient: false,
                         skipUserManagement: false,
@@ -762,7 +678,7 @@ describe('JHipster generator', () => {
                 assert.file(expectedFiles.couchbase);
                 assert.file(expectedFiles.couchbaseSearch);
             });
-            shouldBeV3DockerfileCompatible('couchbase');
+            shouldBeV3DockerfileCompatible(COUCHBASE);
         });
 
         describe('no database', () => {
@@ -776,13 +692,13 @@ describe('JHipster generator', () => {
                         blueprints: 'kotlin',
                     })
                     .withPrompts({
-                        applicationType: 'microservice',
+                        applicationType: MICROSERVICE,
                         baseName: 'jhipster',
                         packageName: 'com.mycompany.myapp',
                         packageFolder: 'com/mycompany/myapp',
                         serviceDiscoveryType: false,
-                        authenticationType: 'jwt',
-                        cacheProvider: 'hazelcast',
+                        authenticationType: JWT,
+                        cacheProvider: HAZELCAST,
                         enableHibernateCache: true,
                         databaseType: 'no',
                         devDatabaseType: 'no',
@@ -790,7 +706,7 @@ describe('JHipster generator', () => {
                         enableTranslation: true,
                         nativeLanguage: 'en',
                         languages: ['fr'],
-                        buildTool: 'maven',
+                        buildTool: MAVEN,
                         rememberMeKey: '5c37379956bd1242f5636c8cb322c2966ad81277',
                         serverSideOptions: [],
                     })
@@ -826,18 +742,18 @@ describe('JHipster generator', () => {
                         baseName: 'jhipster',
                         packageName: 'com.mycompany.myapp',
                         packageFolder: 'com/mycompany/myapp',
-                        clientFramework: ANGULAR,
+                        clientFramework: ANGULAR_X,
                         serviceDiscoveryType: false,
                         authenticationType: 'oauth2',
-                        cacheProvider: 'ehcache',
+                        cacheProvider: EHCACHE,
                         enableHibernateCache: true,
-                        databaseType: 'sql',
-                        devDatabaseType: 'h2Memory',
-                        prodDatabaseType: 'postgresql',
+                        databaseType: SQL,
+                        devDatabaseType: H2_MEMORY,
+                        prodDatabaseType: POSTGRESQL,
                         enableTranslation: true,
                         nativeLanguage: 'en',
                         languages: ['fr'],
-                        buildTool: 'maven',
+                        buildTool: MAVEN,
                         rememberMeKey: '5c37379956bd1242f5636c8cb322c2966ad81277',
                         serverSideOptions: [],
                     })
@@ -869,18 +785,18 @@ describe('JHipster generator', () => {
                         baseName: 'jhipster',
                         packageName: 'com.mycompany.myapp',
                         packageFolder: 'com/mycompany/myapp',
-                        clientFramework: ANGULAR,
+                        clientFramework: ANGULAR_X,
                         serviceDiscoveryType: false,
                         authenticationType: 'oauth2',
-                        cacheProvider: 'ehcache',
+                        cacheProvider: EHCACHE,
                         enableHibernateCache: true,
-                        databaseType: 'sql',
-                        devDatabaseType: 'h2Memory',
-                        prodDatabaseType: 'postgresql',
+                        databaseType: SQL,
+                        devDatabaseType: H2_MEMORY,
+                        prodDatabaseType: POSTGRESQL,
                         enableTranslation: true,
                         nativeLanguage: 'en',
                         languages: ['fr'],
-                        buildTool: 'maven',
+                        buildTool: MAVEN,
                         rememberMeKey: '5c37379956bd1242f5636c8cb322c2966ad81277',
                         serverSideOptions: ['searchEngine:elasticsearch'],
                     })
@@ -910,18 +826,18 @@ describe('JHipster generator', () => {
                         baseName: 'jhipster',
                         packageName: 'com.mycompany.myapp',
                         packageFolder: 'com/mycompany/myapp',
-                        clientFramework: ANGULAR,
+                        clientFramework: ANGULAR_X,
                         serviceDiscoveryType: false,
                         authenticationType: 'oauth2',
-                        cacheProvider: 'ehcache',
+                        cacheProvider: EHCACHE,
                         enableHibernateCache: true,
-                        databaseType: 'mongodb',
-                        devDatabaseType: 'mongodb',
-                        prodDatabaseType: 'mongodb',
+                        databaseType: MONGODB,
+                        devDatabaseType: MONGODB,
+                        prodDatabaseType: MONGODB,
                         enableTranslation: true,
                         nativeLanguage: 'en',
                         languages: ['fr'],
-                        buildTool: 'maven',
+                        buildTool: MAVEN,
                         rememberMeKey: '5c37379956bd1242f5636c8cb322c2966ad81277',
                         serverSideOptions: [],
                     })
@@ -949,18 +865,18 @@ describe('JHipster generator', () => {
                         baseName: 'jhipster',
                         packageName: 'com.mycompany.myapp',
                         packageFolder: 'com/mycompany/myapp',
-                        clientFramework: ANGULAR,
+                        clientFramework: ANGULAR_X,
                         serviceDiscoveryType: false,
-                        authenticationType: 'jwt',
-                        cacheProvider: 'hazelcast',
+                        authenticationType: JWT,
+                        cacheProvider: HAZELCAST,
                         enableHibernateCache: true,
-                        databaseType: 'sql',
-                        devDatabaseType: 'h2Memory',
-                        prodDatabaseType: 'postgresql',
+                        databaseType: SQL,
+                        devDatabaseType: H2_MEMORY,
+                        prodDatabaseType: POSTGRESQL,
                         enableTranslation: true,
                         nativeLanguage: 'en',
                         languages: ['fr'],
-                        buildTool: 'maven',
+                        buildTool: MAVEN,
                         rememberMeKey: '5c37379956bd1242f5636c8cb322c2966ad81277',
                         serverSideOptions: [],
                     })
@@ -990,18 +906,18 @@ describe('JHipster generator', () => {
                         baseName: 'jhipster',
                         packageName: 'com.mycompany.myapp',
                         packageFolder: 'com/mycompany/myapp',
-                        clientFramework: ANGULAR,
+                        clientFramework: ANGULAR_X,
                         serviceDiscoveryType: false,
-                        authenticationType: 'jwt',
+                        authenticationType: JWT,
                         cacheProvider: 'infinispan',
                         enableHibernateCache: true,
-                        databaseType: 'sql',
-                        devDatabaseType: 'h2Memory',
-                        prodDatabaseType: 'postgresql',
+                        databaseType: SQL,
+                        devDatabaseType: H2_MEMORY,
+                        prodDatabaseType: POSTGRESQL,
                         enableTranslation: true,
                         nativeLanguage: 'en',
                         languages: ['fr'],
-                        buildTool: 'maven',
+                        buildTool: MAVEN,
                         rememberMeKey: '5c37379956bd1242f5636c8cb322c2966ad81277',
                         serverSideOptions: [],
                     })
@@ -1032,18 +948,18 @@ describe('JHipster generator', () => {
                         baseName: 'jhipster',
                         packageName: 'com.mycompany.myapp',
                         packageFolder: 'com/mycompany/myapp',
-                        serviceDiscoveryType: 'eureka',
-                        clientFramework: ANGULAR,
-                        authenticationType: 'jwt',
+                        serviceDiscoveryType: EUREKA,
+                        clientFramework: ANGULAR_X,
+                        authenticationType: JWT,
                         cacheProvider: 'infinispan',
                         enableHibernateCache: true,
-                        databaseType: 'sql',
-                        devDatabaseType: 'h2Memory',
-                        prodDatabaseType: 'postgresql',
+                        databaseType: SQL,
+                        devDatabaseType: H2_MEMORY,
+                        prodDatabaseType: POSTGRESQL,
                         enableTranslation: true,
                         nativeLanguage: 'en',
                         languages: ['fr'],
-                        buildTool: 'maven',
+                        buildTool: MAVEN,
                         rememberMeKey: '5c37379956bd1242f5636c8cb322c2966ad81277',
                         serverSideOptions: [],
                     })
@@ -1075,18 +991,18 @@ describe('JHipster generator', () => {
                         baseName: 'jhipster',
                         packageName: 'com.mycompany.myapp',
                         packageFolder: 'com/mycompany/myapp',
-                        clientFramework: ANGULAR,
+                        clientFramework: ANGULAR_X,
                         serviceDiscoveryType: false,
-                        authenticationType: 'jwt',
+                        authenticationType: JWT,
                         cacheProvider: 'memcached',
                         enableHibernateCache: true,
-                        databaseType: 'sql',
-                        devDatabaseType: 'h2Memory',
-                        prodDatabaseType: 'postgresql',
+                        databaseType: SQL,
+                        devDatabaseType: H2_MEMORY,
+                        prodDatabaseType: POSTGRESQL,
                         enableTranslation: true,
                         nativeLanguage: 'en',
                         languages: ['fr'],
-                        buildTool: 'maven',
+                        buildTool: MAVEN,
                         rememberMeKey: '5c37379956bd1242f5636c8cb322c2966ad81277',
                         serverSideOptions: [],
                     })
@@ -1117,18 +1033,18 @@ describe('JHipster generator', () => {
                         baseName: 'jhipster',
                         packageName: 'com.mycompany.myapp',
                         packageFolder: 'com/mycompany/myapp',
-                        clientFramework: ANGULAR,
+                        clientFramework: ANGULAR_X,
                         serviceDiscoveryType: false,
-                        authenticationType: 'jwt',
+                        authenticationType: JWT,
                         cacheProvider: 'redis',
                         enableHibernateCache: true,
-                        databaseType: 'sql',
-                        devDatabaseType: 'h2Memory',
-                        prodDatabaseType: 'postgresql',
+                        databaseType: SQL,
+                        devDatabaseType: H2_MEMORY,
+                        prodDatabaseType: POSTGRESQL,
                         enableTranslation: true,
                         nativeLanguage: 'en',
                         languages: ['fr'],
-                        buildTool: 'maven',
+                        buildTool: MAVEN,
                         rememberMeKey: '5c37379956bd1242f5636c8cb322c2966ad81277',
                         serverSideOptions: [],
                     })
@@ -1159,20 +1075,20 @@ describe('JHipster generator', () => {
                         baseName: 'jhipster',
                         packageName: 'com.mycompany.myapp',
                         packageFolder: 'com/mycompany/myapp',
-                        clientFramework: ANGULAR,
+                        clientFramework: ANGULAR_X,
                         serverPort: '8080',
                         serviceDiscoveryType: false,
-                        authenticationType: 'jwt',
-                        cacheProvider: 'ehcache',
+                        authenticationType: JWT,
+                        cacheProvider: EHCACHE,
                         enableHibernateCache: true,
                         websocket: false,
-                        databaseType: 'sql',
-                        devDatabaseType: 'h2Disk',
-                        prodDatabaseType: 'postgresql',
+                        databaseType: SQL,
+                        devDatabaseType: H2_DISK,
+                        prodDatabaseType: POSTGRESQL,
                         searchEngine: false,
-                        buildTool: 'maven',
+                        buildTool: MAVEN,
                         rememberMeKey: '5c37379956bd1242f5636c8cb322c2966ad81277',
-                        applicationType: 'monolith',
+                        applicationType: MONOLITH,
                         testFrameworks: ['gatling'],
                         jhiPrefix: 'jhi',
                         enableTranslation: true,
@@ -1209,20 +1125,20 @@ describe('JHipster generator', () => {
                         baseName: 'jhipster',
                         packageName: 'com.mycompany.myapp',
                         packageFolder: 'com/mycompany/myapp',
-                        clientFramework: ANGULAR,
+                        clientFramework: ANGULAR_X,
                         serverPort: '8080',
                         serviceDiscoveryType: false,
-                        authenticationType: 'jwt',
-                        cacheProvider: 'ehcache',
+                        authenticationType: JWT,
+                        cacheProvider: EHCACHE,
                         enableHibernateCache: true,
                         websocket: false,
-                        databaseType: 'sql',
-                        devDatabaseType: 'h2Disk',
-                        prodDatabaseType: 'postgresql',
+                        databaseType: SQL,
+                        devDatabaseType: H2_DISK,
+                        prodDatabaseType: POSTGRESQL,
                         searchEngine: false,
-                        buildTool: 'maven',
+                        buildTool: MAVEN,
                         rememberMeKey: '5c37379956bd1242f5636c8cb322c2966ad81277',
-                        applicationType: 'monolith',
+                        applicationType: MONOLITH,
                         testFrameworks: ['gatling'],
                         jhiPrefix: 'jhi',
                         enableTranslation: true,
@@ -1262,20 +1178,20 @@ describe('JHipster generator', () => {
                         baseName: 'jhipster',
                         packageName: 'com.mycompany.myapp',
                         packageFolder: 'com/mycompany/myapp',
-                        clientFramework: ANGULAR,
+                        clientFramework: ANGULAR_X,
                         serverPort: '8080',
                         serviceDiscoveryType: false,
-                        authenticationType: 'jwt',
-                        cacheProvider: 'ehcache',
+                        authenticationType: JWT,
+                        cacheProvider: EHCACHE,
                         enableHibernateCache: true,
                         websocket: false,
-                        databaseType: 'sql',
-                        devDatabaseType: 'h2Disk',
-                        prodDatabaseType: 'postgresql',
+                        databaseType: SQL,
+                        devDatabaseType: H2_DISK,
+                        prodDatabaseType: POSTGRESQL,
                         searchEngine: false,
-                        buildTool: 'gradle',
+                        buildTool: GRADLE,
                         rememberMeKey: '5c37379956bd1242f5636c8cb322c2966ad81277',
-                        applicationType: 'monolith',
+                        applicationType: MONOLITH,
                         testFrameworks: ['gatling'],
                         jhiPrefix: 'jhi',
                         enableTranslation: true,
@@ -1316,18 +1232,18 @@ describe('JHipster generator', () => {
                         baseName: 'jhipster',
                         packageName: 'com.otherpackage',
                         packageFolder: 'com/otherpackage',
-                        clientFramework: ANGULAR,
+                        clientFramework: ANGULAR_X,
                         serviceDiscoveryType: false,
-                        authenticationType: 'jwt',
-                        cacheProvider: 'ehcache',
+                        authenticationType: JWT,
+                        cacheProvider: EHCACHE,
                         enableHibernateCache: true,
-                        databaseType: 'sql',
-                        devDatabaseType: 'h2Memory',
-                        prodDatabaseType: 'postgresql',
+                        databaseType: SQL,
+                        devDatabaseType: H2_MEMORY,
+                        prodDatabaseType: POSTGRESQL,
                         enableTranslation: true,
                         nativeLanguage: 'en',
                         languages: ['fr'],
-                        buildTool: 'maven',
+                        buildTool: MAVEN,
                         rememberMeKey: '5c37379956bd1242f5636c8cb322c2966ad81277',
                         serverSideOptions: [],
                     })
@@ -1355,18 +1271,18 @@ describe('JHipster generator', () => {
                         baseName: '21Points',
                         packageName: 'com.otherpackage',
                         packageFolder: 'com/otherpackage',
-                        clientFramework: ANGULAR,
+                        clientFramework: ANGULAR_X,
                         serviceDiscoveryType: false,
-                        authenticationType: 'jwt',
-                        cacheProvider: 'ehcache',
+                        authenticationType: JWT,
+                        cacheProvider: EHCACHE,
                         enableHibernateCache: true,
-                        databaseType: 'sql',
-                        devDatabaseType: 'h2Memory',
-                        prodDatabaseType: 'postgresql',
+                        databaseType: SQL,
+                        devDatabaseType: H2_MEMORY,
+                        prodDatabaseType: POSTGRESQL,
                         enableTranslation: true,
                         nativeLanguage: 'en',
                         languages: ['fr'],
-                        buildTool: 'maven',
+                        buildTool: MAVEN,
                         rememberMeKey: '5c37379956bd1242f5636c8cb322c2966ad81277',
                         serverSideOptions: [],
                     })
@@ -1396,18 +1312,18 @@ describe('JHipster generator', () => {
                         baseName: 'myapplication',
                         packageName: 'com.mycompany.myapp',
                         packageFolder: 'com/mycompany/myapp',
-                        clientFramework: ANGULAR,
+                        clientFramework: ANGULAR_X,
                         serviceDiscoveryType: false,
-                        authenticationType: 'jwt',
-                        cacheProvider: 'ehcache',
+                        authenticationType: JWT,
+                        cacheProvider: EHCACHE,
                         enableHibernateCache: true,
-                        databaseType: 'sql',
-                        devDatabaseType: 'h2Memory',
-                        prodDatabaseType: 'postgresql',
+                        databaseType: SQL,
+                        devDatabaseType: H2_MEMORY,
+                        prodDatabaseType: POSTGRESQL,
                         enableTranslation: true,
                         nativeLanguage: 'en',
                         languages: ['fr'],
-                        buildTool: 'maven',
+                        buildTool: MAVEN,
                         rememberMeKey: '5c37379956bd1242f5636c8cb322c2966ad81277',
                         serverSideOptions: [],
                     })
@@ -1436,16 +1352,16 @@ describe('JHipster generator', () => {
                         baseName: 'jhipster',
                         packageName: 'com.mycompany.myapp',
                         packageFolder: 'com/mycompany/myapp',
-                        clientFramework: ANGULAR,
+                        clientFramework: ANGULAR_X,
                         serviceDiscoveryType: false,
-                        authenticationType: 'jwt',
-                        cacheProvider: 'hazelcast',
+                        authenticationType: JWT,
+                        cacheProvider: HAZELCAST,
                         enableHibernateCache: true,
-                        databaseType: 'sql',
-                        devDatabaseType: 'h2Memory',
-                        prodDatabaseType: 'postgresql',
+                        databaseType: SQL,
+                        devDatabaseType: H2_MEMORY,
+                        prodDatabaseType: POSTGRESQL,
                         enableTranslation: false,
-                        buildTool: 'maven',
+                        buildTool: MAVEN,
                         rememberMeKey: '5c37379956bd1242f5636c8cb322c2966ad81277',
                         serverSideOptions: [],
                     })
@@ -1459,8 +1375,9 @@ describe('JHipster generator', () => {
         });
 
         describe('with RTL support', () => {
+            let runResult;
             before(async () => {
-                await helpers
+                runResult = await helpers
                     .create(path.join(__dirname, '../generators/app'))
                     .withOptions({
                         jhiprefix: 'test',
@@ -1470,20 +1387,20 @@ describe('JHipster generator', () => {
                     })
                     .withPrompts({
                         baseName: 'jhipster',
-                        clientFramework: ANGULAR,
+                        clientFramework: ANGULAR_X,
                         packageName: 'com.mycompany.myapp',
                         packageFolder: 'com/mycompany/myapp',
                         serviceDiscoveryType: false,
-                        authenticationType: 'jwt',
-                        cacheProvider: 'ehcache',
+                        authenticationType: JWT,
+                        cacheProvider: EHCACHE,
                         enableHibernateCache: true,
-                        databaseType: 'sql',
-                        devDatabaseType: 'h2Memory',
-                        prodDatabaseType: 'postgresql',
+                        databaseType: SQL,
+                        devDatabaseType: H2_MEMORY,
+                        prodDatabaseType: POSTGRESQL,
                         enableTranslation: true,
                         nativeLanguage: 'en',
                         languages: ['ar-ly', 'en'],
-                        buildTool: 'maven',
+                        buildTool: MAVEN,
                         rememberMeKey: '5c37379956bd1242f5636c8cb322c2966ad81277',
                         skipClient: false,
                         skipUserManagement: false,
@@ -1493,15 +1410,7 @@ describe('JHipster generator', () => {
             });
 
             it('creates expected default files for i18n with RTL support', () => {
-                assert.file(expectedFiles.i18nRtl);
-                assert.file(
-                    getFilesForOptions(angularFiles, {
-                        enableTranslation: true,
-                        serviceDiscoveryType: false,
-                        authenticationType: 'jwt',
-                        testFrameworks: [],
-                    })
-                );
+                expect(runResult.getStateSnapshot()).toMatchSnapshot();
             });
             it('contains updatePageDirection in main component', () => {
                 assert.fileContent(`${CLIENT_MAIN_SRC_DIR}app/layouts/main/main.component.ts`, /private updatePageDirection/);
@@ -1511,8 +1420,9 @@ describe('JHipster generator', () => {
 
     context('Auth options', () => {
         describe('JWT authentication', () => {
+            let runResult;
             before(async () => {
-                await helpers
+                runResult = await helpers
                     .create(path.join(__dirname, '../generators/app'))
                     .withOptions({
                         jhiprefix: 'test',
@@ -1524,18 +1434,18 @@ describe('JHipster generator', () => {
                         baseName: 'jhipster',
                         packageName: 'com.mycompany.myapp',
                         packageFolder: 'com/mycompany/myapp',
-                        clientFramework: ANGULAR,
+                        clientFramework: ANGULAR_X,
                         serviceDiscoveryType: false,
-                        authenticationType: 'jwt',
-                        cacheProvider: 'ehcache',
+                        authenticationType: JWT,
+                        cacheProvider: EHCACHE,
                         enableHibernateCache: true,
-                        databaseType: 'sql',
-                        devDatabaseType: 'h2Memory',
-                        prodDatabaseType: 'postgresql',
+                        databaseType: SQL,
+                        devDatabaseType: H2_MEMORY,
+                        prodDatabaseType: POSTGRESQL,
                         enableTranslation: true,
                         nativeLanguage: 'en',
                         languages: ['fr', 'en'],
-                        buildTool: 'maven',
+                        buildTool: MAVEN,
                         rememberMeKey: '5c37379956bd1242f5636c8cb322c2966ad81277',
                         serverSideOptions: [],
                     })
@@ -1543,21 +1453,14 @@ describe('JHipster generator', () => {
             });
 
             it('creates expected files with JWT authentication', () => {
-                assert.file(expectedFiles.jwtServer);
-                assert.file(
-                    getFilesForOptions(angularFiles, {
-                        enableTranslation: true,
-                        serviceDiscoveryType: false,
-                        authenticationType: 'jwt',
-                        testFrameworks: [],
-                    })
-                );
+                expect(runResult.getStateSnapshot()).toMatchSnapshot();
             });
         });
 
         describe('HTTP session authentication', () => {
+            let runResult;
             before(async () => {
-                await helpers
+                runResult = await helpers
                     .create(path.join(__dirname, '../generators/app'))
                     .withOptions({
                         jhiprefix: 'test',
@@ -1569,18 +1472,18 @@ describe('JHipster generator', () => {
                         baseName: 'jhipster',
                         packageName: 'com.mycompany.myapp',
                         packageFolder: 'com/mycompany/myapp',
-                        clientFramework: ANGULAR,
+                        clientFramework: ANGULAR_X,
                         serviceDiscoveryType: false,
-                        authenticationType: 'session',
-                        cacheProvider: 'ehcache',
+                        authenticationType: SESSION,
+                        cacheProvider: EHCACHE,
                         enableHibernateCache: true,
-                        databaseType: 'sql',
-                        devDatabaseType: 'h2Memory',
-                        prodDatabaseType: 'postgresql',
+                        databaseType: SQL,
+                        devDatabaseType: H2_MEMORY,
+                        prodDatabaseType: POSTGRESQL,
                         enableTranslation: true,
                         nativeLanguage: 'en',
                         languages: ['fr', 'en'],
-                        buildTool: 'maven',
+                        buildTool: MAVEN,
                         rememberMeKey: '5c37379956bd1242f5636c8cb322c2966ad81277',
                         serverSideOptions: [],
                     })
@@ -1588,23 +1491,16 @@ describe('JHipster generator', () => {
             });
 
             it('creates expected files with HTTP session authentication', () => {
-                assert.file(expectedFiles.session);
-                assert.file(
-                    getFilesForOptions(angularFiles, {
-                        enableTranslation: true,
-                        serviceDiscoveryType: false,
-                        authenticationType: 'session',
-                        testFrameworks: [],
-                    })
-                );
+                expect(runResult.getStateSnapshot()).toMatchSnapshot();
             });
         });
     });
 
     context('Testing options', () => {
         describe('Protractor tests', () => {
+            let runResult;
             before(async () => {
-                await helpers
+            runResult = await helpers
                     .create(path.join(__dirname, '../generators/app'))
                     .withOptions({
                         jhiprefix: 'test',
@@ -1616,21 +1512,21 @@ describe('JHipster generator', () => {
                         baseName: 'jhipster',
                         packageName: 'com.mycompany.myapp',
                         packageFolder: 'com/mycompany/myapp',
-                        clientFramework: ANGULAR,
+                        clientFramework: ANGULAR_X,
                         serverPort: '8080',
-                        authenticationType: 'jwt',
+                        authenticationType: JWT,
                         serviceDiscoveryType: false,
-                        cacheProvider: 'ehcache',
+                        cacheProvider: EHCACHE,
                         enableHibernateCache: true,
                         websocket: false,
-                        databaseType: 'sql',
-                        devDatabaseType: 'h2Disk',
-                        prodDatabaseType: 'postgresql',
+                        databaseType: SQL,
+                        devDatabaseType: H2_DISK,
+                        prodDatabaseType: POSTGRESQL,
                         searchEngine: false,
-                        buildTool: 'maven',
+                        buildTool: MAVEN,
                         rememberMeKey: '5c37379956bd1242f5636c8cb322c2966ad81277',
-                        applicationType: 'monolith',
-                        testFrameworks: ['protractor'],
+                        applicationType: MONOLITH,
+                        testFrameworks: [PROTRACTOR],
                         jhiPrefix: 'jhi',
                         enableTranslation: true,
                         nativeLanguage: 'en',
@@ -1640,26 +1536,14 @@ describe('JHipster generator', () => {
             });
 
             it('creates expected files with Protractor enabled', () => {
-                assert.file(expectedFiles.common);
-                assert.file(expectedFiles.server);
-                assert.file(expectedFiles.userManagementServer);
-                assert.file(expectedFiles.postgresql);
-                assert.file(expectedFiles.hibernateTimeZoneConfig);
-                assert.file(
-                    getFilesForOptions(angularFiles, {
-                        enableTranslation: true,
-                        serviceDiscoveryType: false,
-                        authenticationType: 'jwt',
-                        testFrameworks: ['protractor'],
-                    })
-                );
-                assert.noFile([`${TEST_DIR}gatling/conf/gatling.conf`, `${TEST_DIR}gatling/conf/logback.xml`]);
+                expect(runResult.getStateSnapshot()).toMatchSnapshot();
             });
         });
 
         describe('Cucumber tests', () => {
+            let runResult;
             before(async () => {
-                await helpers
+            runResult = await helpers
                     .create(path.join(__dirname, '../generators/app'))
                     .withOptions({
                         jhiprefix: 'test',
@@ -1671,21 +1555,21 @@ describe('JHipster generator', () => {
                         baseName: 'jhipster',
                         packageName: 'com.mycompany.myapp',
                         packageFolder: 'com/mycompany/myapp',
-                        clientFramework: ANGULAR,
+                        clientFramework: ANGULAR_X,
                         serverPort: '8080',
                         serviceDiscoveryType: false,
-                        authenticationType: 'jwt',
-                        cacheProvider: 'ehcache',
+                        authenticationType: JWT,
+                        cacheProvider: EHCACHE,
                         enableHibernateCache: true,
                         websocket: false,
-                        databaseType: 'sql',
-                        devDatabaseType: 'h2Disk',
-                        prodDatabaseType: 'postgresql',
+                        databaseType: SQL,
+                        devDatabaseType: H2_DISK,
+                        prodDatabaseType: POSTGRESQL,
                         searchEngine: false,
-                        buildTool: 'maven',
+                        buildTool: MAVEN,
                         rememberMeKey: '5c37379956bd1242f5636c8cb322c2966ad81277',
-                        applicationType: 'monolith',
-                        testFrameworks: ['cucumber'],
+                        applicationType: MONOLITH,
+                        testFrameworks: [CUCUMBER],
                         jhiPrefix: 'jhi',
                         enableTranslation: true,
                         nativeLanguage: 'en',
@@ -1695,20 +1579,15 @@ describe('JHipster generator', () => {
             });
 
             it('creates expected files with Cucumber enabled', () => {
-                assert.file(expectedFiles.common);
-                assert.file(expectedFiles.server);
-                assert.file(expectedFiles.userManagementServer);
-                assert.file(expectedFiles.postgresql);
-                assert.file(expectedFiles.hibernateTimeZoneConfig);
-                assert.file(expectedFiles.cucumber);
-                assert.noFile([`${TEST_DIR}gatling/conf/gatling.conf`, `${TEST_DIR}gatling/conf/logback.xml`]);
+                expect(runResult.getStateSnapshot()).toMatchSnapshot();
             });
         });
     });
 
     context('App with skip server', () => {
+        let runResult;
         before(async () => {
-            await helpers
+        runResult = await helpers
                 .create(path.join(__dirname, '../generators/app'))
                 .withOptions({
                     fromCli: true,
@@ -1721,11 +1600,11 @@ describe('JHipster generator', () => {
                 })
                 .withPrompts({
                     baseName: 'jhipster',
-                    clientFramework: ANGULAR,
+                    clientFramework: ANGULAR_X,
                     packageName: 'com.mycompany.myapp',
                     packageFolder: 'com/mycompany/myapp',
                     serviceDiscoveryType: false,
-                    authenticationType: 'jwt',
+                    authenticationType: JWT,
                     enableTranslation: true,
                     nativeLanguage: 'en',
                     languages: ['fr', 'en'],
@@ -1735,20 +1614,7 @@ describe('JHipster generator', () => {
         });
 
         it('creates expected files for default configuration with skip server option enabled', () => {
-            assert.file(expectedFiles.common);
-            assert.noFile(expectedFiles.server);
-            assert.noFile(expectedFiles.userManagementServer);
-            assert.noFile(expectedFiles.maven);
-            assert.noFile(expectedFiles.postgresql);
-            assert.noFile(expectedFiles.hibernateTimeZoneConfig);
-            assert.file(
-                getFilesForOptions(angularFiles, {
-                    enableTranslation: true,
-                    serviceDiscoveryType: false,
-                    authenticationType: 'jwt',
-                    testFrameworks: [],
-                })
-            );
+            expect(runResult.getStateSnapshot()).toMatchSnapshot();
         });
         it('generates a README with no undefined value', () => {
             assert.noFileContent('README.md', /undefined/);
@@ -1760,8 +1626,9 @@ describe('JHipster generator', () => {
 
     context('App with skip client', () => {
         describe('Maven', () => {
+            let runResult;
             before(async () => {
-                await helpers
+                runResult = await helpers
                     .create(path.join(__dirname, '../generators/app'))
                     .withOptions({
                         jhiPrefix: 'test',
@@ -1775,13 +1642,13 @@ describe('JHipster generator', () => {
                         packageName: 'com.mycompany.myapp',
                         packageFolder: 'com/mycompany/myapp',
                         serviceDiscoveryType: false,
-                        authenticationType: 'jwt',
-                        cacheProvider: 'ehcache',
+                        authenticationType: JWT,
+                        cacheProvider: EHCACHE,
                         enableHibernateCache: true,
-                        databaseType: 'sql',
-                        devDatabaseType: 'h2Memory',
-                        prodDatabaseType: 'postgresql',
-                        buildTool: 'maven',
+                        databaseType: SQL,
+                        devDatabaseType: H2_MEMORY,
+                        prodDatabaseType: POSTGRESQL,
+                        buildTool: MAVEN,
                         enableTranslation: true,
                         nativeLanguage: 'en',
                         languages: ['fr', 'en'],
@@ -1792,25 +1659,7 @@ describe('JHipster generator', () => {
             });
 
             it('creates expected files for default configuration with skip client option enabled', () => {
-                assert.file(expectedFiles.common);
-                assert.file(expectedFiles.server);
-                assert.file(expectedFiles.userManagementServer);
-                assert.file(expectedFiles.maven);
-                assert.file(expectedFiles.postgresql);
-                assert.file(expectedFiles.hibernateTimeZoneConfig);
-                assert.noFile(
-                    getFilesForOptions(
-                        angularFiles,
-                        {
-                            enableTranslation: true,
-                            serviceDiscoveryType: false,
-                            authenticationType: 'session',
-                            testFrameworks: [],
-                        },
-                        '',
-                        ['package.json']
-                    )
-                );
+                expect(runResult.getStateSnapshot()).toMatchSnapshot();
             });
             it('generates a README with no undefined value', () => {
                 assert.noFileContent('README.md', /undefined/);
@@ -1833,8 +1682,9 @@ describe('JHipster generator', () => {
         });
 
         describe('Gradle', () => {
+            let runResult;
             before(async () => {
-                await helpers
+                runResult = await helpers
                     .create(path.join(__dirname, '../generators/app'))
                     .withOptions({
                         jhiPrefix: 'test',
@@ -1848,13 +1698,13 @@ describe('JHipster generator', () => {
                         packageName: 'com.mycompany.myapp',
                         packageFolder: 'com/mycompany/myapp',
                         serviceDiscoveryType: false,
-                        authenticationType: 'jwt',
-                        cacheProvider: 'ehcache',
+                        authenticationType: JWT,
+                        cacheProvider: EHCACHE,
                         enableHibernateCache: true,
-                        databaseType: 'sql',
-                        devDatabaseType: 'h2Memory',
-                        prodDatabaseType: 'postgresql',
-                        buildTool: 'gradle',
+                        databaseType: SQL,
+                        devDatabaseType: H2_MEMORY,
+                        prodDatabaseType: POSTGRESQL,
+                        buildTool: GRADLE,
                         enableTranslation: true,
                         nativeLanguage: 'en',
                         languages: ['fr', 'en'],
@@ -1865,25 +1715,7 @@ describe('JHipster generator', () => {
             });
 
             it('creates expected files for default configuration with skip client option enabled', () => {
-                assert.file(expectedFiles.common);
-                assert.file(expectedFiles.server);
-                assert.file(expectedFiles.userManagementServer);
-                assert.file(expectedFiles.gradle);
-                assert.file(expectedFiles.postgresql);
-                assert.file(expectedFiles.hibernateTimeZoneConfig);
-                assert.noFile(
-                    getFilesForOptions(
-                        angularFiles,
-                        {
-                            enableTranslation: true,
-                            serviceDiscoveryType: false,
-                            authenticationType: 'jwt',
-                            testFrameworks: [],
-                        },
-                        '',
-                        ['package.json']
-                    )
-                );
+                expect(runResult.getStateSnapshot()).toMatchSnapshot();
             });
             it('generates README with instructions for Gradle', () => {
                 assert.fileContent('README.md', './gradlew');
@@ -1893,8 +1725,9 @@ describe('JHipster generator', () => {
 
     context('App with skip client and skip user management', () => {
         describe('Maven', () => {
+            let runResult;
             before(async () => {
-                await helpers
+                runResult = await helpers
                     .create(path.join(__dirname, '../generators/app'))
                     .withOptions({
                         jhiPrefix: 'test',
@@ -1906,17 +1739,17 @@ describe('JHipster generator', () => {
                     })
                     .withPrompts({
                         baseName: 'jhipster',
-                        applicationType: 'monolith',
+                        applicationType: MONOLITH,
                         packageName: 'com.mycompany.myapp',
                         packageFolder: 'com/mycompany/myapp',
                         serviceDiscoveryType: false,
-                        authenticationType: 'jwt',
-                        cacheProvider: 'ehcache',
+                        authenticationType: JWT,
+                        cacheProvider: EHCACHE,
                         enableHibernateCache: true,
-                        databaseType: 'sql',
-                        devDatabaseType: 'h2Memory',
-                        prodDatabaseType: 'postgresql',
-                        buildTool: 'maven',
+                        databaseType: SQL,
+                        devDatabaseType: H2_MEMORY,
+                        prodDatabaseType: POSTGRESQL,
+                        buildTool: MAVEN,
                         enableTranslation: true,
                         nativeLanguage: 'en',
                         languages: ['fr', 'en'],
@@ -1948,22 +1781,22 @@ describe('JHipster generator', () => {
                         blueprints: 'kotlin',
                     })
                     .withPrompts({
-                        applicationType: 'gateway',
+                        applicationType: GATEWAY,
                         baseName: 'jhipster',
                         packageName: 'com.mycompany.myapp',
                         packageFolder: 'com/mycompany/myapp',
-                        clientFramework: ANGULAR,
-                        serviceDiscoveryType: 'eureka',
-                        authenticationType: 'jwt',
-                        cacheProvider: 'ehcache',
+                        clientFramework: ANGULAR_X,
+                        serviceDiscoveryType: EUREKA,
+                        authenticationType: JWT,
+                        cacheProvider: EHCACHE,
                         enableHibernateCache: true,
-                        databaseType: 'sql',
-                        devDatabaseType: 'h2Memory',
-                        prodDatabaseType: 'postgresql',
+                        databaseType: SQL,
+                        devDatabaseType: H2_MEMORY,
+                        prodDatabaseType: POSTGRESQL,
                         enableTranslation: true,
                         nativeLanguage: 'en',
                         languages: ['fr', 'en'],
-                        buildTool: 'maven',
+                        buildTool: MAVEN,
                         rememberMeKey: '5c37379956bd1242f5636c8cb322c2966ad81277',
                         serverSideOptions: [],
                     })
@@ -1989,22 +1822,22 @@ describe('JHipster generator', () => {
                         blueprints: 'kotlin',
                     })
                     .withPrompts({
-                        applicationType: 'gateway',
+                        applicationType: GATEWAY,
                         baseName: 'jhipster',
                         packageName: 'com.mycompany.myapp',
                         packageFolder: 'com/mycompany/myapp',
-                        clientFramework: ANGULAR,
-                        serviceDiscoveryType: 'eureka',
-                        authenticationType: 'jwt',
-                        cacheProvider: 'hazelcast',
+                        clientFramework: ANGULAR_X,
+                        serviceDiscoveryType: EUREKA,
+                        authenticationType: JWT,
+                        cacheProvider: HAZELCAST,
                         enableHibernateCache: true,
-                        databaseType: 'sql',
-                        devDatabaseType: 'h2Memory',
-                        prodDatabaseType: 'postgresql',
+                        databaseType: SQL,
+                        devDatabaseType: H2_MEMORY,
+                        prodDatabaseType: POSTGRESQL,
                         enableTranslation: true,
                         nativeLanguage: 'en',
                         languages: ['fr', 'en'],
-                        buildTool: 'maven',
+                        buildTool: MAVEN,
                         rememberMeKey: '5c37379956bd1242f5636c8cb322c2966ad81277',
                         serverSideOptions: [],
                     })
@@ -2030,21 +1863,21 @@ describe('JHipster generator', () => {
                         blueprints: 'kotlin',
                     })
                     .withPrompts({
-                        applicationType: 'microservice',
+                        applicationType: MICROSERVICE,
                         baseName: 'jhipster',
                         packageName: 'com.mycompany.myapp',
                         packageFolder: 'com/mycompany/myapp',
-                        serviceDiscoveryType: 'eureka',
-                        authenticationType: 'jwt',
-                        cacheProvider: 'ehcache',
+                        serviceDiscoveryType: EUREKA,
+                        authenticationType: JWT,
+                        cacheProvider: EHCACHE,
                         enableHibernateCache: true,
-                        databaseType: 'sql',
-                        devDatabaseType: 'postgresql',
-                        prodDatabaseType: 'postgresql',
+                        databaseType: SQL,
+                        devDatabaseType: POSTGRESQL,
+                        prodDatabaseType: POSTGRESQL,
                         enableTranslation: true,
                         nativeLanguage: 'en',
                         languages: ['fr', 'en'],
-                        buildTool: 'maven',
+                        buildTool: MAVEN,
                         rememberMeKey: '5c37379956bd1242f5636c8cb322c2966ad81277',
                         serverSideOptions: [],
                     })
@@ -2072,21 +1905,21 @@ describe('JHipster generator', () => {
                         blueprints: 'kotlin',
                     })
                     .withPrompts({
-                        applicationType: 'monolith',
+                        applicationType: MONOLITH,
                         baseName: 'jhipster',
                         packageName: 'com.mycompany.myapp',
                         packageFolder: 'com/mycompany/myapp',
-                        clientFramework: ANGULAR,
-                        authenticationType: 'jwt',
-                        cacheProvider: 'ehcache',
+                        clientFramework: ANGULAR_X,
+                        authenticationType: JWT,
+                        cacheProvider: EHCACHE,
                         enableHibernateCache: true,
-                        databaseType: 'sql',
-                        devDatabaseType: 'h2Memory',
-                        prodDatabaseType: 'postgresql',
+                        databaseType: SQL,
+                        devDatabaseType: H2_MEMORY,
+                        prodDatabaseType: POSTGRESQL,
                         enableTranslation: true,
                         nativeLanguage: 'en',
                         languages: ['fr', 'en'],
-                        buildTool: 'maven',
+                        buildTool: MAVEN,
                         rememberMeKey: '5c37379956bd1242f5636c8cb322c2966ad81277',
                         serverSideOptions: ['serviceDiscoveryType:eureka'],
                     })
@@ -2116,21 +1949,21 @@ describe('JHipster generator', () => {
                         blueprints: 'kotlin',
                     })
                     .withPrompts({
-                        applicationType: 'microservice',
+                        applicationType: MICROSERVICE,
                         baseName: 'jhipster',
                         packageName: 'com.mycompany.myapp',
                         packageFolder: 'com/mycompany/myapp',
-                        serviceDiscoveryType: 'eureka',
-                        authenticationType: 'jwt',
-                        cacheProvider: 'ehcache',
+                        serviceDiscoveryType: EUREKA,
+                        authenticationType: JWT,
+                        cacheProvider: EHCACHE,
                         enableHibernateCache: true,
-                        databaseType: 'sql',
-                        devDatabaseType: 'h2Memory',
-                        prodDatabaseType: 'postgresql',
+                        databaseType: SQL,
+                        devDatabaseType: H2_MEMORY,
+                        prodDatabaseType: POSTGRESQL,
                         enableTranslation: true,
                         nativeLanguage: 'en',
                         languages: ['fr', 'en'],
-                        buildTool: 'gradle',
+                        buildTool: GRADLE,
                         rememberMeKey: '5c37379956bd1242f5636c8cb322c2966ad81277',
                         serverSideOptions: [],
                         skipClient: true,
@@ -2163,22 +1996,22 @@ describe('JHipster generator', () => {
                         blueprints: 'kotlin',
                     })
                     .withPrompts({
-                        applicationType: 'gateway',
+                        applicationType: GATEWAY,
                         baseName: 'jhipster',
                         packageName: 'com.mycompany.myapp',
                         packageFolder: 'com/mycompany/myapp',
-                        clientFramework: ANGULAR,
-                        serviceDiscoveryType: 'consul',
-                        authenticationType: 'jwt',
-                        cacheProvider: 'hazelcast',
+                        clientFramework: ANGULAR_X,
+                        serviceDiscoveryType: CONSUL,
+                        authenticationType: JWT,
+                        cacheProvider: HAZELCAST,
                         enableHibernateCache: true,
-                        databaseType: 'sql',
-                        devDatabaseType: 'h2Memory',
-                        prodDatabaseType: 'postgresql',
+                        databaseType: SQL,
+                        devDatabaseType: H2_MEMORY,
+                        prodDatabaseType: POSTGRESQL,
                         enableTranslation: true,
                         nativeLanguage: 'en',
                         languages: ['fr', 'en'],
-                        buildTool: 'maven',
+                        buildTool: MAVEN,
                         rememberMeKey: '5c37379956bd1242f5636c8cb322c2966ad81277',
                         serverSideOptions: [],
                     })
@@ -2204,22 +2037,22 @@ describe('JHipster generator', () => {
                         blueprints: 'kotlin',
                     })
                     .withPrompts({
-                        applicationType: 'gateway',
+                        applicationType: GATEWAY,
                         baseName: 'jhipster',
                         packageName: 'com.mycompany.myapp',
                         packageFolder: 'com/mycompany/myapp',
-                        clientFramework: ANGULAR,
-                        serviceDiscoveryType: 'consul',
-                        authenticationType: 'jwt',
-                        cacheProvider: 'hazelcast',
+                        clientFramework: ANGULAR_X,
+                        serviceDiscoveryType: CONSUL,
+                        authenticationType: JWT,
+                        cacheProvider: HAZELCAST,
                         enableHibernateCache: true,
-                        databaseType: 'sql',
-                        devDatabaseType: 'h2Memory',
-                        prodDatabaseType: 'postgresql',
+                        databaseType: SQL,
+                        devDatabaseType: H2_MEMORY,
+                        prodDatabaseType: POSTGRESQL,
                         enableTranslation: true,
                         nativeLanguage: 'en',
                         languages: ['fr', 'en'],
-                        buildTool: 'maven',
+                        buildTool: MAVEN,
                         rememberMeKey: '5c37379956bd1242f5636c8cb322c2966ad81277',
                         serverSideOptions: [],
                     })
@@ -2245,21 +2078,21 @@ describe('JHipster generator', () => {
                         blueprints: 'kotlin',
                     })
                     .withPrompts({
-                        applicationType: 'microservice',
+                        applicationType: MICROSERVICE,
                         baseName: 'jhipster',
                         packageName: 'com.mycompany.myapp',
                         packageFolder: 'com/mycompany/myapp',
-                        serviceDiscoveryType: 'consul',
-                        authenticationType: 'jwt',
-                        cacheProvider: 'ehcache',
+                        serviceDiscoveryType: CONSUL,
+                        authenticationType: JWT,
+                        cacheProvider: EHCACHE,
                         enableHibernateCache: true,
-                        databaseType: 'sql',
-                        devDatabaseType: 'postgresql',
-                        prodDatabaseType: 'postgresql',
+                        databaseType: SQL,
+                        devDatabaseType: POSTGRESQL,
+                        prodDatabaseType: POSTGRESQL,
                         enableTranslation: true,
                         nativeLanguage: 'en',
                         languages: ['fr', 'en'],
-                        buildTool: 'maven',
+                        buildTool: MAVEN,
                         rememberMeKey: '5c37379956bd1242f5636c8cb322c2966ad81277',
                         serverSideOptions: [],
                     })
@@ -2288,22 +2121,22 @@ describe('JHipster generator', () => {
                         blueprints: 'kotlin',
                     })
                     .withPrompts({
-                        applicationType: 'gateway',
+                        applicationType: GATEWAY,
                         baseName: 'jhipster',
                         packageName: 'com.mycompany.myapp',
                         packageFolder: 'com/mycompany/myapp',
-                        clientFramework: ANGULAR,
+                        clientFramework: ANGULAR_X,
                         serviceDiscoveryType: false,
-                        authenticationType: 'jwt',
-                        cacheProvider: 'ehcache',
+                        authenticationType: JWT,
+                        cacheProvider: EHCACHE,
                         enableHibernateCache: true,
-                        databaseType: 'sql',
-                        devDatabaseType: 'h2Memory',
-                        prodDatabaseType: 'postgresql',
+                        databaseType: SQL,
+                        devDatabaseType: H2_MEMORY,
+                        prodDatabaseType: POSTGRESQL,
                         enableTranslation: true,
                         nativeLanguage: 'en',
                         languages: ['fr', 'en'],
-                        buildTool: 'maven',
+                        buildTool: MAVEN,
                         rememberMeKey: '5c37379956bd1242f5636c8cb322c2966ad81277',
                         serverSideOptions: [],
                     })
@@ -2329,20 +2162,20 @@ describe('JHipster generator', () => {
                         blueprints: 'kotlin',
                     })
                     .withPrompts({
-                        applicationType: 'microservice',
+                        applicationType: MICROSERVICE,
                         baseName: 'jhipster',
                         packageName: 'com.mycompany.myapp',
                         packageFolder: 'com/mycompany/myapp',
                         serviceDiscoveryType: false,
-                        authenticationType: 'jwt',
-                        cacheProvider: 'ehcache',
+                        authenticationType: JWT,
+                        cacheProvider: EHCACHE,
                         enableHibernateCache: true,
-                        devDatabaseType: 'postgresql',
-                        prodDatabaseType: 'postgresql',
+                        devDatabaseType: POSTGRESQL,
+                        prodDatabaseType: POSTGRESQL,
                         enableTranslation: true,
                         nativeLanguage: 'en',
                         languages: ['fr', 'en'],
-                        buildTool: 'maven',
+                        buildTool: MAVEN,
                         rememberMeKey: '5c37379956bd1242f5636c8cb322c2966ad81277',
                         serverSideOptions: [],
                     })

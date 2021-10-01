@@ -18,11 +18,11 @@
 -%>
 package <%= packageName %>.security
 
-<%_ if (databaseType === 'cassandra') { _%>
+<%_ if (databaseTypeCassandra) { _%>
 import <%= packageName %>.AbstractCassandraTest
 <%_ } _%>
 import <%= packageName %>.IntegrationTest
-<%_ if (databaseType === 'sql' && reactive) { _%>
+<%_ if (databaseTypeSql && reactive) { _%>
 import <%= packageName %>.config.SYSTEM_ACCOUNT
 <%_ } _%>
 import <%= packageName %>.domain.<%= asEntity('User') %>
@@ -38,14 +38,14 @@ import org.springframework.security.core.userdetails.ReactiveUserDetailsService
 <%_ if (!reactive) { _%>
 import org.springframework.security.core.userdetails.UserDetailsService
 <%_ } _%>
-<%_ if (databaseType === 'couchbase') { _%>
+<%_ if (databaseTypeCouchbase) { _%>
 import org.springframework.security.test.context.support.WithMockUser
 <%_ } _%>
-<%_ if (databaseType === 'sql' && !reactive) { _%>
+<%_ if (databaseTypeSql && !reactive) { _%>
 import org.springframework.transaction.annotation.Transactional
 <%_ } _%>
 
-<%_ if (databaseType === 'cassandra') { _%>
+<%_ if (databaseTypeCassandra) { _%>
 import java.util.UUID
 <%_ } _%>
 import java.util.Locale
@@ -63,14 +63,14 @@ private const val USER_THREE_EMAIL = "test-user-three@localhost"
 /**
  * Integration tests for [DomainUserDetailsService].
  */
-<%_ if (databaseType === 'sql' && !reactive) { _%>
+<%_ if (databaseTypeSql && !reactive) { _%>
 @Transactional
 <%_ } _%>
-<%_ if (databaseType === 'couchbase') { _%>
+<%_ if (databaseTypeCouchbase) { _%>
 @WithMockUser("test-user-one")
 <%_ } _%>
 @IntegrationTest
-class DomainUserDetailsServiceIT <% if (databaseType === 'cassandra') { %>: AbstractCassandraTest() <% } %>{
+class DomainUserDetailsServiceIT <% if (databaseTypeCassandra) { %>: AbstractCassandraTest() <% } %>{
 
     @Autowired
     private lateinit var userRepository: UserRepository
@@ -80,15 +80,15 @@ class DomainUserDetailsServiceIT <% if (databaseType === 'cassandra') { %>: Abst
 
     @BeforeEach
     fun init() {
-        <%_ if (databaseType === 'sql' && reactive) { _%>
+        <%_ if (databaseTypeSql && reactive) { _%>
         userRepository.deleteAllUserAuthorities().block()
         <%_ } _%>
-        <%_ if (databaseType !== 'sql' || reactive) { _%>
+        <%_ if (!databaseTypeSql || reactive) { _%>
         userRepository.deleteAll()<% if (reactive) { %>.block()<% } %>
     
         <%_ } _%>
         val userOne = <%= asEntity('User') %>(
-            <%_ if (databaseType === 'cassandra') { _%>
+            <%_ if (databaseTypeCassandra) { _%>
             id = UUID.randomUUID().toString(),
             <%_ } _%>
             login = USER_ONE_LOGIN,
@@ -97,7 +97,7 @@ class DomainUserDetailsServiceIT <% if (databaseType === 'cassandra') { %>: Abst
             email = USER_ONE_EMAIL,
             firstName = "userOne",
             lastName = "doe",
-            <%_ if (databaseType === 'sql' && reactive) { _%>
+            <%_ if (databaseTypeSql && reactive) { _%>
             createdBy = SYSTEM_ACCOUNT,
             <%_ } _%>
             langKey = "en"
@@ -105,7 +105,7 @@ class DomainUserDetailsServiceIT <% if (databaseType === 'cassandra') { %>: Abst
         userRepository.save(userOne)<% if (reactive) { %>.block()<% } %>
 
         val userTwo = <%= asEntity('User') %>(
-            <%_ if (databaseType === 'cassandra') { _%>
+            <%_ if (databaseTypeCassandra) { _%>
             id = UUID.randomUUID().toString(),
             <%_ } _%>
             login = USER_TWO_LOGIN,
@@ -114,7 +114,7 @@ class DomainUserDetailsServiceIT <% if (databaseType === 'cassandra') { %>: Abst
             email = USER_TWO_EMAIL,
             firstName = "userTwo",
             lastName = "doe",
-            <%_ if (databaseType === 'sql' && reactive) { _%>
+            <%_ if (databaseTypeSql && reactive) { _%>
             createdBy = SYSTEM_ACCOUNT,
             <%_ } _%>
             langKey = "en"
@@ -122,7 +122,7 @@ class DomainUserDetailsServiceIT <% if (databaseType === 'cassandra') { %>: Abst
         userRepository.save(userTwo)<% if (reactive) { %>.block()<% } %>
 
         val userThree = <%= asEntity('User') %>(
-            <%_ if (databaseType === 'cassandra') { _%>
+            <%_ if (databaseTypeCassandra) { _%>
             id = UUID.randomUUID().toString(),
             <%_ } _%>
             login = USER_THREE_LOGIN,
@@ -131,7 +131,7 @@ class DomainUserDetailsServiceIT <% if (databaseType === 'cassandra') { %>: Abst
             email = USER_THREE_EMAIL,
             firstName = "userThree",
             lastName = "doe",
-            <%_ if (databaseType === 'sql' && reactive) { _%>
+            <%_ if (databaseTypeSql && reactive) { _%>
             createdBy = SYSTEM_ACCOUNT,
             <%_ } _%>
             langKey = "en"

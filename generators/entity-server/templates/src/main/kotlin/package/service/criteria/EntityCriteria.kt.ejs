@@ -93,22 +93,20 @@ _%>
  * fix type specific filters.
  */
 data class <%= entityClass %>Criteria(
-<%_ filterVariables.forEach((filterVariable, index) => {
-        const comma = (index===filterVariables.length-1) ? '' : ',';
-_%>
-
-    var <%= filterVariable.name %>: <%- filterVariable.filterType %>? = null<%= comma %>
+<%_ filterVariables.forEach((filterVariable, index) => { _%>
+    var <%= filterVariable.name %>: <%- filterVariable.filterType %>? = null,
 <%_ }) _%>
+    var distinct: Boolean? = null
 ) : Serializable, Criteria {
 
     constructor(other: <%= entityClass %>Criteria) :
         this(
 <%_
     filterVariables.forEach((filterVariable, index) => {
-        const comma = (index===filterVariables.length-1) ? '' : ',';
 _%>
-            other.<%= filterVariable.name %>?.copy()<%= comma %>
+            other.<%= filterVariable.name %>?.copy(),
 <%_ }); _%>
+           other.distinct
         )
 <%_ Object.keys(extraFilters).forEach((key) => {
         extraFilter = extraFilters[key]; _%>
