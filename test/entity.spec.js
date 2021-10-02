@@ -120,7 +120,7 @@ describe('JHipster generator for entity', () => {
                 it('correctly writes the repository', () => {
                     assert.fileContent(
                         `${SERVER_MAIN_KOTLIN_SRC_DIR}com/mycompany/myapp/repository/FooRepository.kt`,
-                        'interface FooRepository '
+                        'interface FooRepository'
                     );
                 });
 
@@ -169,7 +169,7 @@ describe('JHipster generator for entity', () => {
 
                     assert.fileContent(
                         `${SERVER_MAIN_KOTLIN_SRC_DIR}com/mycompany/myapp/repository/FooRepository.kt`,
-                        'interface FooRepository '
+                        'interface FooRepository'
                     );
 
                     assert.fileContent(`${SERVER_MAIN_KOTLIN_SRC_DIR}com/mycompany/myapp/domain/FooXXX.kt`, 'data class FooXXX');

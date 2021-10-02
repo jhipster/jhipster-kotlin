@@ -4,17 +4,17 @@ const assert = require('yeoman-assert');
 
 const { GATEWAY, MICROSERVICE, MONOLITH } = require('generator-jhipster/jdl/jhipster/application-types');
 const {
-  CASSANDRA,
-  COUCHBASE,
-  H2_DISK,
-  H2_MEMORY,
-  MARIADB,
-  MSSQL,
-  MONGODB,
-  MYSQL,
-  NEO4J,
-  POSTGRESQL,
-  SQL,
+    CASSANDRA,
+    COUCHBASE,
+    H2_DISK,
+    H2_MEMORY,
+    MARIADB,
+    MSSQL,
+    MONGODB,
+    MYSQL,
+    NEO4J,
+    POSTGRESQL,
+    SQL,
 } = require('generator-jhipster/jdl/jhipster/database-types');
 const { SESSION } = require('generator-jhipster/jdl/jhipster/authentication-types');
 const { EHCACHE, HAZELCAST } = require('generator-jhipster/jdl/jhipster/cache-types');
@@ -25,9 +25,9 @@ const { CUCUMBER, PROTRACTOR } = require('generator-jhipster/jdl/jhipster/test-f
 const { ANGULAR_X, REACT } = require('generator-jhipster/jdl/jhipster/client-framework-types');
 const { GRADLE, MAVEN } = require('generator-jhipster/jdl/jhipster/build-tool-types');
 
+const constants = require('generator-jhipster/generators/generator-constants');
 const { skipPrettierHelpers: helpers, shouldBeV3DockerfileCompatible } = require('./utils/utils');
 
-const constants = require('generator-jhipster/generators/generator-constants');
 const expectedFiles = require('./utils/expected-files');
 
 const { CLIENT_MAIN_SRC_DIR, MAIN_DIR, SERVER_MAIN_RES_DIR } = constants;
@@ -39,7 +39,7 @@ describe('JHipster generator', () => {
         describe(ANGULAR_X, () => {
             let runResult;
             before(async () => {
-               runResult = await helpers
+                runResult = await helpers
                     .create(path.join(__dirname, '../generators/app'))
                     .withOptions({
                         withGeneratedFlag: true,
@@ -297,7 +297,6 @@ describe('JHipster generator', () => {
             });
         });
     });
-
     context('Application with DB option', () => {
         describe('mariadb', () => {
             let runResult;
@@ -1500,7 +1499,7 @@ describe('JHipster generator', () => {
         describe('Protractor tests', () => {
             let runResult;
             before(async () => {
-            runResult = await helpers
+                runResult = await helpers
                     .create(path.join(__dirname, '../generators/app'))
                     .withOptions({
                         jhiprefix: 'test',
@@ -1543,7 +1542,7 @@ describe('JHipster generator', () => {
         describe('Cucumber tests', () => {
             let runResult;
             before(async () => {
-            runResult = await helpers
+                runResult = await helpers
                     .create(path.join(__dirname, '../generators/app'))
                     .withOptions({
                         jhiprefix: 'test',
@@ -1587,7 +1586,7 @@ describe('JHipster generator', () => {
     context('App with skip server', () => {
         let runResult;
         before(async () => {
-        runResult = await helpers
+            runResult = await helpers
                 .create(path.join(__dirname, '../generators/app'))
                 .withOptions({
                     fromCli: true,
@@ -1725,9 +1724,9 @@ describe('JHipster generator', () => {
 
     context('App with skip client and skip user management', () => {
         describe('Maven', () => {
-            let runResult;
+            // let runResult;
             before(async () => {
-                runResult = await helpers
+                await helpers
                     .create(path.join(__dirname, '../generators/app'))
                     .withOptions({
                         jhiPrefix: 'test',

@@ -36,6 +36,9 @@ module.exports = class extends ServerGenerator {
         this.loadDerivedAppConfig();
         this.loadServerConfig();
         this.loadDerivedServerConfig();
+
+        this.loadStoredAppOptions();
+        this.loadRuntimeOptions();
     }
 
     get initializing() {

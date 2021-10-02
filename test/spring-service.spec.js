@@ -6,7 +6,7 @@ const constants = require('generator-jhipster/generators/generator-constants');
 
 const SERVER_MAIN_SRC_DIR = `${constants.MAIN_DIR}kotlin/`;
 
-describe('JHipster generator service', () => {
+describe.skip('JHipster generator service', () => {
     describe('creates service without interface', () => {
         before(done => {
             helpers

@@ -16,63 +16,63 @@
  * See the License for the specific language governing permissions and
  * limitations under the License.
  */
- const constants = require('generator-jhipster/generators/generator-constants');
+const constants = require('generator-jhipster/generators/generator-constants');
 
 const SERVER_MAIN_SRC_DIR = `${constants.MAIN_DIR}kotlin/`;
 
- const entityCouchbaseFiles = {
-   dbChangelog: [
-     {
-       condition: generator => generator.searchEngineCouchbase && !generator.skipDbChangelog,
-       path: constants.SERVER_MAIN_RES_DIR,
-       templates: [
-         {
-           file: 'config/couchmove/changelog/entity.fts',
-           renameTo: generator => `config/couchmove/changelog/V${generator.changelogDate}__${generator.entityInstance.toLowerCase()}.fts`,
-         },
-       ],
-     },
-   ],
-   server: [
-     {
-       path: SERVER_MAIN_SRC_DIR,
-       templates: [
-         {
-           file: 'package/domain/Entity.java.jhi.spring_data_couchbase',
-           renameTo: generator => `${generator.packageFolder}/domain/${generator.persistClass}.java.jhi.spring_data_couchbase`,
-           useBluePrint: true,
-         },
-       ],
-     },
-     {
-       condition: generator => !generator.embedded,
-       path: SERVER_MAIN_SRC_DIR,
-       templates: [
-         {
-           file: 'package/repository/EntityRepository.java',
-           renameTo: generator => `${generator.packageFolder}/repository/${generator.entityClass}Repository.java`,
-           useBluePrint: true,
-         },
-       ],
-     },
-   ],
- };
- 
- function writeEntityCouchbaseFiles() {
-   return {
-     async writeEntityCouchbaseFiles() {
-       if (this.skipServer || !this.databaseType === 'couchbase') return;
- 
-       await this.writeFiles({
-         sections: entityCouchbaseFiles,
-         rootTemplatesPath: 'couchbase',
-       });
-     },
-   };
- }
- 
- module.exports = {
-   writeEntityCouchbaseFiles,
-   entityCouchbaseFiles,
- };
- 
+const entityCouchbaseFiles = {
+    dbChangelog: [
+        {
+            condition: generator => generator.searchEngineCouchbase && !generator.skipDbChangelog,
+            path: constants.SERVER_MAIN_RES_DIR,
+            templates: [
+                {
+                    file: 'config/couchmove/changelog/entity.fts',
+                    renameTo: generator =>
+                        `config/couchmove/changelog/V${generator.changelogDate}__${generator.entityInstance.toLowerCase()}.fts`,
+                },
+            ],
+        },
+    ],
+    server: [
+        {
+            path: SERVER_MAIN_SRC_DIR,
+            templates: [
+                {
+                    file: 'package/domain/Entity.kt.jhi.spring_data_couchbase',
+                    renameTo: generator => `${generator.packageFolder}/domain/${generator.persistClass}.kt.jhi.spring_data_couchbase`,
+                    useBluePrint: true,
+                },
+            ],
+        },
+        {
+            condition: generator => !generator.embedded,
+            path: SERVER_MAIN_SRC_DIR,
+            templates: [
+                {
+                    file: 'package/repository/EntityRepository.kt',
+                    renameTo: generator => `${generator.packageFolder}/repository/${generator.entityClass}Repository.kt`,
+                    useBluePrint: true,
+                },
+            ],
+        },
+    ],
+};
+
+function writeEntityCouchbaseFiles() {
+    return {
+        async writeEntityCouchbaseFiles() {
+            if (this.skipServer || !this.databaseTypeCouchbase) return;
+
+            await this.writeFiles({
+                sections: entityCouchbaseFiles,
+                rootTemplatesPath: 'couchbase',
+            });
+        },
+    };
+}
+
+module.exports = {
+    writeEntityCouchbaseFiles,
+    entityCouchbaseFiles,
+};

@@ -353,7 +353,7 @@ module.exports = {
 function writeFiles() {
     return {
         writeServerFiles() {
-            if (this.skipServer) return;
+            if (this.skipServer) return undefined;
 
             // write server side files
             // writeFilesToDisk(serverFiles, this, false, this.fetchFromInstalledJHipster('entity-server/templates'));

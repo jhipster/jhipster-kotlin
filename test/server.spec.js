@@ -1,14 +1,14 @@
+const expect = require('expect');
 const path = require('path');
 const assert = require('yeoman-assert');
 const helpers = require('yeoman-test');
 const angularfiles = require('generator-jhipster/generators/client/files-angular').files;
-const getFilesForOptions = require('./utils/utils').getFilesForOptions;
-const expectedFiles = require('./utils/expected-files');
-
 const { JWT, OAUTH2 } = require('generator-jhipster/jdl/jhipster/authentication-types');
 const { CAFFEINE, EHCACHE } = require('generator-jhipster/jdl/jhipster/cache-types');
 const { SQL, H2_MEMORY, POSTGRESQL } = require('generator-jhipster/jdl/jhipster/database-types');
 const { MAVEN } = require('generator-jhipster/jdl/jhipster/build-tool-types');
+const getFilesForOptions = require('./utils/utils').getFilesForOptions;
+const expectedFiles = require('./utils/expected-files');
 
 describe('JHipster server generator', () => {
     describe('generate server with ehcache', () => {
@@ -129,21 +129,31 @@ describe('JHipster server generator', () => {
     describe('microfrontend', () => {
         let runResult;
         before(async () => {
-          runResult = await helpers
-            .create(path.join(__dirname, '../generators/server'))
-            .withOptions({
-              baseName: 'jhipster',
-              skipInstall: true,
-              auth: OAUTH2,
-              microfrontend: true,
-              enableTranslation: true,
-              nativeLanguage: 'en',
-              languages: ['fr', 'en'],
-            })
-            .run();
+            runResult = await helpers
+                .create(path.join(__dirname, '../generators/app'))
+                .withOptions({
+                    withGeneratedFlag: true,
+                    blueprints: 'kotlin',
+                    'from-cli': true,
+                    skipInstall: true,
+                    skipChecks: true,
+                    'skip-ktlint-format': true,
+                    skipClient: true,
+                })
+                .withPrompts({
+                    baseName: 'jhipster',
+                    skipInstall: true,
+                    auth: OAUTH2,
+                    microfrontend: true,
+                    enableTranslation: true,
+                    nativeLanguage: 'en',
+                    languages: ['fr', 'en'],
+                    withGeneratedFlag: true,
+                })
+                .run();
         });
         it('should match generated files snapshot', () => {
-          expect(runResult.getStateSnapshot()).toMatchSnapshot();
+            expect(runResult.getStateSnapshot()).toMatchSnapshot();
         });
-      });
+    });
 });
