@@ -18,12 +18,12 @@ class OAuth2Configuration {
         clientRegistrationRepository: <%= reactivePrefix %>ClientRegistrationRepository,
         authorizedClientRepository: <%= reactive ? 'Server' : '' %>OAuth2AuthorizedClientRepository
     ): <%= reactivePrefix %>OAuth2AuthorizedClientManager  {
-        val authorizedClientManager = Default<%= reactivePrefix %>OAuth2AuthorizedClientManager(
+        var authorizedClientManager = Default<%= reactivePrefix %>OAuth2AuthorizedClientManager(
             clientRegistrationRepository,
             authorizedClientRepository
         )
 
-        authorizedClientManager.setAuthorizedClientProvider(
+        authorizedClientManager.authorizedClientProvider = 
             <%= reactivePrefix %>OAuth2AuthorizedClientProviderBuilder
                 .builder()
                 .authorizationCode()
@@ -31,7 +31,6 @@ class OAuth2Configuration {
                 .clientCredentials()
                 .password()
                 .build()
-        )
 
         return authorizedClientManager
     }

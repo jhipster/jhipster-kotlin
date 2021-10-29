@@ -152,11 +152,11 @@ fun isAuthenticated(): <% if (!reactive) { %>Boolean<% } else { %>Mono<Boolean><
 * @param authorities the authorities to check.
 * @return true if the current user has any of the authorities, false otherwise.
 */
-fun hasCurrentUserAnyOfAuthorities(vararg authorities: String): <% if (!reactive) { %>boolean<% } else { %>Mono<Boolean><% } %> {
+fun hasCurrentUserAnyOfAuthorities(vararg authorities: String): <% if (!reactive) { %>Boolean<% } else { %>Mono<Boolean><% } %> {
 <%_ if (!reactive) { _%>
    val authentication = SecurityContextHolder.getContext().getAuthentication()
    return (
-       authentication != null && getAuthorities(authentication).anyMatch { listOf(it).contains(authority) }
+       authentication != null && getAuthorities(authentication).any { listOf(authorities).contains(it) }
    );
 <%_ } else { _%>
    return ReactiveSecurityContextHolder.getContext()
@@ -165,7 +165,7 @@ fun hasCurrentUserAnyOfAuthorities(vararg authorities: String): <% if (!reactive
        .map { 
            it
            .map(GrantedAuthority::getAuthority)
-           .anyMatch { it.contains(authority) }
+           .any { authorities.contains(it) }
         }
 <%_ } _%>
 }
@@ -176,7 +176,7 @@ fun hasCurrentUserAnyOfAuthorities(vararg authorities: String): <% if (!reactive
 * @param authorities the authorities to check.
 * @return true if the current user has none of the authorities, false otherwise.
 */
-fun hasCurrentUserNoneOfAuthorities(vararg authorities: String):  <% if (!reactive) { %>boolean<% } else { %>Mono<Boolean><% } %> {
+fun hasCurrentUserNoneOfAuthorities(vararg authorities: String):  <% if (!reactive) { %>Boolean<% } else { %>Mono<Boolean><% } %> {
 <%_ if (!reactive) { _%>
    return !hasCurrentUserAnyOfAuthorities(authorities)
 <%_ } else { _%>
@@ -190,7 +190,7 @@ fun hasCurrentUserNoneOfAuthorities(vararg authorities: String):  <% if (!reacti
 * @param authority the authority to check.
 * @return true if the current user has the authority, false otherwise.
 */
-fun hasCurrentUserThisAuthority(authority: String): <% if (!reactive) { %>boolean<% } else { %>Mono<Boolean><% } %> {
+fun hasCurrentUserThisAuthority(authority: String): <% if (!reactive) { %>Boolean<% } else { %>Mono<Boolean><% } %> {
    return hasCurrentUserAnyOfAuthorities(authority)
 }
 
