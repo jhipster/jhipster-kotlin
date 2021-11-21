@@ -187,6 +187,7 @@ import java.util.UUID
 import java.util.Random
 import java.util.concurrent.atomic.AtomicLong
 <%_ } _%>
+import java.util.stream.Stream
 
 import org.assertj.core.api.Assertions.assertThat
 import org.hamcrest.Matchers.hasItem
@@ -925,18 +926,17 @@ class <%= entityClass %>ResourceIT <% if (databaseTypeCassandra) { %>: AbstractC
         // Initialize the database
         <%= entityInstance %>Repository.saveAndFlush(<%= persistInstance %>)
         <%_ if (databaseTypeSql && !reactive) { _%>
-        <%= asEntity(relationship.otherEntityNameCapitalized) %> <%= relationship.relationshipFieldName %>
-        if (TestUtil.findAll(em, <%= asEntity(relationship.otherEntityNameCapitalized) %>::class).isEmpty()) {
+        var <%= relationship.relationshipFieldName %>: <%= asEntity(relationship.otherEntityNameCapitalized) %>
+        if (findAll(em, <%= asEntity(relationship.otherEntityNameCapitalized) %>::class).isEmpty()) {
             <%= relationship.relationshipFieldName %> = <%= createEntityPrefix %><%= relationship.otherEntityNameCapitalized %>ResourceIT.createEntity(em)
             em.persist(<%= relationship.relationshipFieldName %>)
             em.flush()
         } else {
-            <%= relationship.relationshipFieldName %> = TestUtil.findAll(em, <%= asEntity(relationship.otherEntityNameCapitalized) %>::class).get(0)
+            <%= relationship.relationshipFieldName %> = findAll(em, <%= asEntity(relationship.otherEntityNameCapitalized) %>::class).get(0)
         }
         <%_ } else { _%>
            val <%= relationship.relationshipFieldName %> = <%= relationship.otherEntityNameCapitalized %>ResourceIT.createEntity(em)
         <%_ } _%>
-        val <%= relationship.relationshipFieldName %> = <%= relationship.otherEntityNameCapitalized %>ResourceIT.createEntity(em)
         em.persist(<%= relationship.relationshipFieldName %>)
         em.flush()
             <%_ if (relationship.relationshipManyToMany || relationship.relationshipType === 'one-to-many') { _%>
@@ -1506,7 +1506,7 @@ class <%= entityClass %>ResourceIT <% if (databaseTypeCassandra) { %>: AbstractC
             .thenReturn(PageImpl(listOf(<%= persistInstance %>), PageRequest.of(0, 1), 1))
             <%_ } else { _%>
         `when`(mock<%= entityClass %>SearchRepository.search("id:" + <%= persistInstance %>.<%= primaryKey.name %>))
-            .thenReturn(listOf(<%= persistInstance %>))
+            .thenReturn(Stream.of(<%= persistInstance %>))
             <%_ } _%>
         <%_ } _%>
     <%_ } else if (searchEngineCouchbase) { _%>

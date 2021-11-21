@@ -21,7 +21,7 @@ package <%= packageName %>.repository.search
 
 import <%= packageName %>.domain.<%= persistClass %>
 <%_ if (!paginationNo) { _%>
-     <%_ if (reactive) { _%>
+     <%_ if (!reactive) { _%>
 import org.springframework.data.domain.Page
 import org.springframework.data.domain.PageImpl
      <%_ } _%>
@@ -80,21 +80,23 @@ interface <%= entityClass %>SearchRepositoryInternal {
   <%_ } _%>
 }
 
-class <%= entityClass %>SearchRepositoryInternalImpl(elasticsearchTemplate: ElasticsearchRestTemplate): <%= entityClass %>SearchRepositoryInternal {
+class <%= entityClass %>SearchRepositoryInternalImpl(val elasticsearchTemplate: ElasticsearchRestTemplate): <%= entityClass %>SearchRepositoryInternal {
 
   <%_ if (paginationNo) { _%>
     override fun search(query: String): Stream<<%= entityClass %>>  {
         val nativeSearchQuery = NativeSearchQuery(queryStringQuery(query))
         return elasticsearchTemplate
-            .search(nativeSearchQuery, <%= entityClass %>::class)
-            .map(SearchHit::getContent)
+            .search(nativeSearchQuery, <%= entityClass %>::class.java)
+            .map(SearchHit<<%= entityClass %>>::getContent)
+            .stream()
     }
   <%_ } else { _%>
     override fun search(query: String, pageable: Pageable): Page<<%= entityClass %>>  {
-        val nativeSearchQuery = new NativeSearchQuery(queryStringQuery(query))
-        nativeSearchQuery.pageable = pageable
-        val hits = elasticsearchTemplate.search(nativeSearchQuery, <%= entityClass %>::class).map(SearchHit::getContent)
-        return PageImpl<<%= entityClass %>>(hits, pageable, hits.size())
+        val nativeSearchQuery = NativeSearchQuery(queryStringQuery(query))
+        nativeSearchQuery.setPageable<NativeSearchQuery>(pageable)
+        val hits = elasticsearchTemplate.search(nativeSearchQuery, <%= entityClass %>::class.java).map(SearchHit<<%= entityClass %>>::getContent)
+          .stream().toList()
+        return PageImpl<<%= entityClass %>>(hits, pageable, hits.size.toLong())
     }
   <%_ } _%>
 }
