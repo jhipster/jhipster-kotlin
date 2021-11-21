@@ -34,9 +34,9 @@ import org.springframework.http.HttpMethod
 import org.springframework.http.ResponseEntity
 import org.springframework.security.oauth2.client.registration.ClientRegistrationRepository
 import org.springframework.web.client.RestTemplate
-import <%= packageName %>.security.SecurityUtils
 import <%= packageName %>.security.ADMIN
 import <%= packageName %>.security.USER
+import <%= packageName %>.security.CLAIMS_NAMESPACE
 import <%= packageName %>.IntegrationTest
 
 private const val USERNAME = "admin"
@@ -124,7 +124,7 @@ class CustomClaimConverterIT {
         user.put("preferred_username", USERNAME);
         user.put("given_name", NAME);
         user.put("family_name", FAMILY_NAME);
-        user.putArray(SecurityUtils.CLAIMS_NAMESPACE + "roles").add(ADMIN).add(USER);
+        user.putArray(CLAIMS_NAMESPACE + "roles").add(ADMIN).add(USER);
         mockHttpGetUserInfo(user);
 
         // WHEN
@@ -136,7 +136,7 @@ class CustomClaimConverterIT {
             .containsEntry("preferred_username", USERNAME)
             .containsEntry("given_name", NAME)
             .containsEntry("family_name", FAMILY_NAME)
-            .containsEntry("roles", Arrays.asList(ADMIN, USER))
+            .containsEntry("roles", listOf(ADMIN, USER))
     }
 
     @Test
@@ -149,11 +149,10 @@ class CustomClaimConverterIT {
         user.put("preferred_username", USERNAME);
         mockHttpGetUserInfo(user);
 
-        assertThatCode(() ->  {
-            val convertedClaims = customClaimConverter.convert(claims)
-            assertThat(convertedClaims)
+        assertThatCode {
+            assertThat(customClaimConverter.convert(claims))
                 .containsEntry("preferred_username", USERNAME)
-                .doesNotContainKeys("given_name", "family_name");
-        }).doesNotThrowAnyException()
+                .doesNotContainKeys("given_name", "family_name")
+        }.doesNotThrowAnyException()
     }
 }

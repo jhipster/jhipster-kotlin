@@ -96,7 +96,7 @@ class SecurityUtilsUnitTest {
         )
         val expectedAuthorities = listOf(SimpleGrantedAuthority(ADMIN), SimpleGrantedAuthority(USER));
 
-        val authorities = SecurityUtils.extractAuthorityFromClaims(claims);
+        val authorities = extractAuthorityFromClaims(claims);
 
         assertThat(authorities).isNotNull().isNotEmpty().hasSize(2)
             .containsAll(expectedAuthorities);
@@ -105,11 +105,11 @@ class SecurityUtilsUnitTest {
     @Test
     fun testExtractAuthorityFromClaims_NamespacedRoles() {
         val claims = mapOf(
-            SecurityUtils.CLAIMS_NAMESPACE + "roles" to listOf(ADMIN, USER)
+            CLAIMS_NAMESPACE + "roles" to listOf(ADMIN, USER)
         )
         val expectedAuthorities = listOf(SimpleGrantedAuthority(ADMIN), SimpleGrantedAuthority(USER));
 
-        val authorities = SecurityUtils.extractAuthorityFromClaims(claims)
+        val authorities = extractAuthorityFromClaims(claims)
 
         assertThat(authorities).isNotNull().isNotEmpty().hasSize(2)
             .containsAll(expectedAuthorities)
@@ -165,8 +165,8 @@ class SecurityUtilsUnitTest {
         securityContext.setAuthentication(UsernamePasswordAuthenticationToken("user", "user", authorities))
         SecurityContextHolder.setContext(securityContext)
 
-        assertThat(SecurityUtils.hasCurrentUserAnyOfAuthorities(USER, ADMIN)).isTrue()
-        assertThat(SecurityUtils.hasCurrentUserAnyOfAuthorities(ANONYMOUS, ADMIN)).isFalse()
+        assertThat(hasCurrentUserAnyOfAuthorities(USER, ADMIN)).isTrue()
+        assertThat(hasCurrentUserAnyOfAuthorities(ANONYMOUS, ADMIN)).isFalse()
     }
 
     @Test
@@ -176,8 +176,8 @@ class SecurityUtilsUnitTest {
         securityContext.setAuthentication(UsernamePasswordAuthenticationToken("user", "user", authorities))
         SecurityContextHolder.setContext(securityContext)
 
-        assertThat(SecurityUtils.hasCurrentUserNoneOfAuthorities(USER, ADMIN)).isFalse()
-        assertThat(SecurityUtils.hasCurrentUserNoneOfAuthorities(ANONYMOUS, ADMIN)).isTrue()
+        assertThat(hasCurrentUserNoneOfAuthorities(USER, ADMIN)).isFalse()
+        assertThat(hasCurrentUserNoneOfAuthorities(ANONYMOUS, ADMIN)).isTrue()
     }
 <%_ } _%>
 <%_ if (reactive) { _%>
@@ -238,12 +238,12 @@ class SecurityUtilsUnitTest {
         val context = ReactiveSecurityContextHolder.withAuthentication(
             UsernamePasswordAuthenticationToken("admin", "admin", authorities)
         )
-        var hasCurrentUserThisAuthority = SecurityUtils.hasCurrentUserAnyOfAuthorities(USER, ADMIN)
+        var hasCurrentUserThisAuthority = hasCurrentUserAnyOfAuthorities(USER, ADMIN)
             .subscriberContext(context)
             .block()
         assertThat(hasCurrentUserThisAuthority).isTrue()
 
-        hasCurrentUserThisAuthority = SecurityUtils.hasCurrentUserAnyOfAuthorities(ANONYMOUS, ADMIN)
+        hasCurrentUserThisAuthority = hasCurrentUserAnyOfAuthorities(ANONYMOUS, ADMIN)
             .subscriberContext(context)
             .block()
         assertThat(hasCurrentUserThisAuthority).isFalse()
@@ -255,12 +255,12 @@ class SecurityUtilsUnitTest {
         val context = ReactiveSecurityContextHolder.withAuthentication(
             new UsernamePasswordAuthenticationToken("admin", "admin", authorities)
         );
-        var hasCurrentUserThisAuthority = SecurityUtils.hasCurrentUserNoneOfAuthorities(USER, ADMIN)
+        var hasCurrentUserThisAuthority = hasCurrentUserNoneOfAuthorities(USER, ADMIN)
             .subscriberContext(context)
             .block()
         assertThat(hasCurrentUserThisAuthority).isFalse()
 
-        hasCurrentUserThisAuthority = SecurityUtils.hasCurrentUserNoneOfAuthorities(ANONYMOUS, ADMIN)
+        hasCurrentUserThisAuthority = hasCurrentUserNoneOfAuthorities(ANONYMOUS, ADMIN)
             .subscriberContext(context)
             .block()
         assertThat(hasCurrentUserThisAuthority).isTrue()

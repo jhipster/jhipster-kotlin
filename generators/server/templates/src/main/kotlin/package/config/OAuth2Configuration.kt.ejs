@@ -23,14 +23,16 @@ class OAuth2Configuration {
             authorizedClientRepository
         )
 
-        authorizedClientManager.authorizedClientProvider = 
+        authorizedClientManager.setAuthorizedClientProvider(
             <%= reactivePrefix %>OAuth2AuthorizedClientProviderBuilder
                 .builder()
                 .authorizationCode()
-                .refreshToken(builder -> builder.clockSkew(Duration.ofMinutes(1)))
-                .clientCredentials()
+                .refreshToken {
+                    it.clockSkew(Duration.ofMinutes(1))
+                }
                 .password()
                 .build()
+        )
 
         return authorizedClientManager
     }

@@ -154,10 +154,10 @@ fun isAuthenticated(): <% if (!reactive) { %>Boolean<% } else { %>Mono<Boolean><
 */
 fun hasCurrentUserAnyOfAuthorities(vararg authorities: String): <% if (!reactive) { %>Boolean<% } else { %>Mono<Boolean><% } %> {
 <%_ if (!reactive) { _%>
-   val authentication = SecurityContextHolder.getContext().getAuthentication()
-   return (
-       authentication != null && getAuthorities(authentication)?.any { listOf(authorities).contains(it) }
-   );
+    val authentication = SecurityContextHolder.getContext().authentication
+    return (
+       authentication != null && getAuthorities(authentication)!!.any { listOf(authorities).contains(it) }
+    )
 <%_ } else { _%>
    return ReactiveSecurityContextHolder.getContext()
        .map(SecurityContext::getAuthentication)

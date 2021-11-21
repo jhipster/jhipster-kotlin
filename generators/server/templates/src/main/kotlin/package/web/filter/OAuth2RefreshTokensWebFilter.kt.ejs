@@ -46,20 +46,17 @@ import org.springframework.web.filter.OncePerRequestFilter
  */
 @Component
 class OAuth2RefreshTokensWebFilter(
-    clientManager: OAuth2AuthorizedClientManager,
-    authorizedClientRepository: OAuth2AuthorizedClientRepository,
-    authorizationRequestResolver: OAuth2AuthorizationRequestResolver
+    val clientManager: OAuth2AuthorizedClientManager,
+    val authorizedClientRepository: OAuth2AuthorizedClientRepository,
+    val clientRegistrationRepository: ClientRegistrationRepository
 ): OncePerRequestFilter() {
 
     private val authorizationRedirectStrategy = DefaultRedirectStrategy()
-
-    init {
-        authorizationRequestResolver =
+    private val authorizationRequestResolver =
             DefaultOAuth2AuthorizationRequestResolver(
                 clientRegistrationRepository,
                 OAuth2AuthorizationRequestRedirectFilter.DEFAULT_AUTHORIZATION_REQUEST_BASE_URI
             )
-    }
 
     @Throws(IOException::class, ServletException::class)
     override fun doFilterInternal(request: HttpServletRequest, response: HttpServletResponse, filterChain: FilterChain) {
