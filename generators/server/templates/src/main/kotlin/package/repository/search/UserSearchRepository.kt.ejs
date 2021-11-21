@@ -58,17 +58,17 @@ class UserSearchRepositoryInternalImpl(val reactiveElasticsearchTemplate: Reacti
 <%_ } else { _%>
 
 interface UserSearchRepositoryInternal {
-     fun search(query: String): Stream<User>
+     fun search(query: String): List<User>
 }
 
-class UserSearchRepositoryInternalImpl(elasticsearchTemplate: ElasticsearchRestTemplate): UserSearchRepositoryInternal {
+class UserSearchRepositoryInternalImpl(private val elasticsearchTemplate: ElasticsearchRestTemplate): UserSearchRepositoryInternal {
 
-     override fun search(query: String): Stream<User> {
+     override fun search(query: String): List<User> {
           val nativeSearchQuery = NativeSearchQuery(queryStringQuery(query))
           return elasticsearchTemplate
-               .search(nativeSearchQuery, User::class)
-               .map(SearchHit::getContent)
-               .stream()
+               .search(nativeSearchQuery, User::class.java)
+               .map(SearchHit<User>::getContent)
+               .toList()
      }
 }
 <%_ } _%>
