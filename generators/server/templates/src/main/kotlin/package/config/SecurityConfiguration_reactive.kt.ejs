@@ -88,7 +88,6 @@ import org.springframework.security.oauth2.core.oidc.user.OidcUserAuthority
 import org.springframework.security.oauth2.jwt.*
 import org.springframework.security.oauth2.server.resource.authentication.ReactiveJwtAuthenticationConverterAdapter
 import org.springframework.security.web.server.csrf.CookieServerCsrfTokenRepository
-import org.springframework.security.web.server.header.ReferrerPolicyServerHttpHeadersWriter
 <%_ } _%>
 <%_ if (!authenticationTypeOauth2) { _%>
     <%_ if (skipUserManagement) { _%>
@@ -286,21 +285,21 @@ class SecurityConfiguration(
     <%_ if (authenticationTypeOauth2) { _%>
 
         <%_ if (applicationTypeGateway) { _%>
-        private fun authorizationRequestResolver(clientRegistrationRepository: ReactiveClientRegistrationRepository): ServerOAuth2AuthorizationRequestResolver  {
-            val authorizationRequestResolver =
-                DefaultServerOAuth2AuthorizationRequestResolver(clientRegistrationRepository)
-            if (this.issuerUri.contains("auth0.com")) {
-                authorizationRequestResolver.setAuthorizationRequestCustomizer(authorizationRequestCustomizer())
-            }
-            return  authorizationRequestResolver
+    private fun authorizationRequestResolver(clientRegistrationRepository: ReactiveClientRegistrationRepository): ServerOAuth2AuthorizationRequestResolver  {
+        val authorizationRequestResolver =
+            DefaultServerOAuth2AuthorizationRequestResolver(clientRegistrationRepository)
+        if (this.issuerUri.contains("auth0.com")) {
+            authorizationRequestResolver.setAuthorizationRequestCustomizer(authorizationRequestCustomizer())
         }
-    
-        // TODO change this.
-        private fun authorizationRequestCustomizer():  Consumer<OAuth2AuthorizationRequest.Builder> {
-            return customizer -> customizer
-                .authorizationRequestUri(uriBuilder ->
-                    uriBuilder.queryParam("audience", jHipsterProperties.security.oauth2.audience)
-                        .build())
+        return  authorizationRequestResolver
+    }
+
+    private fun authorizationRequestCustomizer() = 
+        Consumer<OAuth2AuthorizationRequest.Builder> {  
+            it.authorizationRequestUri { uriBuilder -> 
+                uriBuilder.queryParam("audience", jHipsterProperties.security.oauth2.audience)
+                    .build()
+            }
         }
         <%_ } _%>
 
