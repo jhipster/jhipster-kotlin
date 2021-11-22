@@ -172,8 +172,8 @@ class UserResource(
         } else {
             val newUser = userService.createUser(userDTO)
             mailService.sendCreationEmail(newUser)
-            return ResponseEntity.created(URI("/api/admin/users/" + newUser.login))
-                .headers(HeaderUtil.createAlert(applicationName, <% if (enableTranslation) {%>"userManagement.created"<% } else { %> "A user is created with identifier $newUser.login"<% } %>, newUser.login))
+            return ResponseEntity.created(URI("/api/admin/users/${newUser.login}"))
+                .headers(HeaderUtil.createAlert(applicationName, <% if (enableTranslation) {%>"userManagement.created"<% } else { %> "A user is created with identifier ${newUser.login}"<% } %>, newUser.login))
                 .body(newUser)
         }
         <%_ } else { _%>
@@ -196,7 +196,7 @@ class UserResource(
             .doOnSuccess(mailService::sendCreationEmail)
             .map { user ->
                 try {
-                    ResponseEntity.created(URI("/api/admin/users/" + user.login))
+                    ResponseEntity.created(URI("/api/admin/users/${user.login}"))
                         .headers(HeaderUtil.createAlert(applicationName, "userManagement.created", user.login))
                         .body(user)
                 } catch (e: URISyntaxException) {
