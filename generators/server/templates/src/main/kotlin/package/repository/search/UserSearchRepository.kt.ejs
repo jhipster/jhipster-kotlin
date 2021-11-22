@@ -41,18 +41,17 @@ import org.elasticsearch.index.query.QueryBuilders.queryStringQuery
 /**
  * Spring Data Elasticsearch repository for the User entity.
  */
-interface UserSearchRepository : <% if (reactive) {%>Reactive<% } %>ElasticsearchRepository<<%= asEntity('User') %>, <% if (databaseTypeSql && !authenticationTypeOauth2) { %>Long<% } %><% if (['cassandra', 'mongodb', 'neo4j'].includes(databaseType) || authenticationTypeOauth2) { %>String<% } %>>, UserSearchRepositoryInternal
+interface UserSearchRepository : <% if (reactive) {%>Reactive<% } %>ElasticsearchRepository<<%= asEntity('User') %>, <% if (databaseTypeSql && !authenticationTypeOauth2) { %>Long<% } %><% if ((databaseTypeCassandra || databaseTypeMongodb || databaseTypeNeo4j) || authenticationTypeOauth2) { %>String<% } %>>, UserSearchRepositoryInternal
 
 <%_ if (reactive) { _%>
 interface UserSearchRepositoryInternal {
      fun search(query: String): Flux<User>
 }
 
-class UserSearchRepositoryInternalImpl(val reactiveElasticsearchTemplate: ReactiveElasticsearchTemplate) : UserSearchRepositoryInternal {
-
+class UserSearchRepositoryInternalImpl(private val reactiveElasticsearchTemplate: ReactiveElasticsearchTemplate) : UserSearchRepositoryInternal {
      override fun search(query: String): Flux<User> {
           val nativeSearchQuery = NativeSearchQuery(queryStringQuery(query))
-          return reactiveElasticsearchTemplate.find(nativeSearchQuery, User::class.java)
+          return reactiveElasticsearchTemplate.search(nativeSearchQuery, User::class.java)
                .map(SearchHit<User>::getContent)
      }
 }
