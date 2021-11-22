@@ -932,20 +932,21 @@ class <%= entityClass %>ResourceIT <% if (databaseTypeCassandra) { %>: AbstractC
             em.persist(<%= relationship.relationshipFieldName %>)
             em.flush()
         } else {
-            <%= relationship.relationshipFieldName %> = findAll(em, <%= asEntity(relationship.otherEntityNameCapitalized) %>::class).get(0)
+            <%= relationship.relationshipFieldName %> = findAll(em, <%= asEntity(relationship.otherEntityNameCapitalized) %>::class)[0]
         }
         <%_ } else { _%>
-           val <%= relationship.relationshipFieldName %> = <%= relationship.otherEntityNameCapitalized %>ResourceIT.createEntity(em)
+        var <%= relationship.relationshipFieldName %> = <%= relationship.otherEntityNameCapitalized %>ResourceIT.createEntity(em)
         <%_ } _%>
         em.persist(<%= relationship.relationshipFieldName %>)
         em.flush()
-            <%_ if (relationship.relationshipManyToMany || relationship.relationshipType === 'one-to-many') { _%>
+            <%_ if (relationship.relationshipManyToMany || relationship.relationshipOneToMany) { _%>
         <%= persistInstance %>.add<%= relationship.relationshipNameCapitalized %>(<%= relationship.relationshipFieldName %>)
             <%_ } else { _%>
         <%= persistInstance %>.<%= relationship.relationshipName %> = <%= relationship.relationshipFieldName %>
-            <%_     if (relationship.ownerSide === false) { _%>
+                <%_ if (!relationship.ownerSide) { _%>
         <%= relationship.relationshipFieldName %>.<%= relationship.otherEntityRelationshipName %> = <%= persistInstance %>
-            <%_     } _%>
+                <%_ } _%>
+            <%_ } _%>
         <%_ } _%>
         <%= entityInstance %>Repository.saveAndFlush(<%= persistInstance %>)
         val <%= relationship.relationshipFieldName %>Id = <%= relationship.relationshipFieldName %>.<%= relationship.otherEntity.primaryKey.name %>
@@ -962,7 +963,7 @@ class <%= entityClass %>ResourceIT <% if (databaseTypeCassandra) { %>: AbstractC
 
         // Get all the <%= entityInstance %>List where <%= relationship.relationshipFieldName %> equals to <%- initInvalidPrimaryKey %>
         default<%= entityClass %>ShouldNotBeFound("<%= relationship.relationshipFieldName %>Id.equals=${<%- initInvalidPrimaryKey %>}")
-    <%_ } _%>
+
     }
 <%_ }); _%>
 
@@ -1791,12 +1792,12 @@ class <%= entityClass %>ResourceIT <% if (databaseTypeCassandra) { %>: AbstractC
         <%_ } else { _%>
             val <%= otherEntityName %>: <%= asEntity(otherEntityNameCapitalized) %>
             <%_ if (databaseTypeSql && !reactive) { _%>
-            if (em.findAll(<%= asEntity(otherEntityNameCapitalized) %>::class).isEmpty()) {
+            if (findAll(em, <%= asEntity(otherEntityNameCapitalized) %>::class).isEmpty()) {
                 <%= otherEntityName %> = <%= createEntityPrefix %><%= otherEntityNameCapitalized %>ResourceIT.create<% if (fieldStatus === 'UPDATED_') { %>Updated<% } %>Entity(<% if (databaseTypeSql) { %>em<% } %>)<%= createEntityPostfix %>
                 em.persist(<%= otherEntityName %>)
                 em.flush()
             } else {
-                <%= otherEntityName %> = em.findAll(<%= asEntity(otherEntityNameCapitalized) %>::class).get(0)
+                <%= otherEntityName %> = findAll(em, <%= asEntity(otherEntityNameCapitalized) %>::class)[0]
             }
             <%_ } else { _%>
             <%= otherEntityName %> = <%= createEntityPrefix %><%= otherEntityNameCapitalized %>ResourceIT.create<% if (fieldStatus === 'UPDATED_') { %>Updated<% } %>Entity(<% if (databaseTypeSql) { %>em<% } %>)<%= createEntityPostfix %>
