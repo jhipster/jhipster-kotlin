@@ -584,16 +584,11 @@ for (const field of filteredFields) {
         }
         this.<%= relationshipFieldNamePlural %>?.add(<%= otherEntityName %>)
         <%_ if (!otherEntityIsEmbedded || embedded && ownerSide) { _%>
-            <%_ if (databaseTypeCouchbase && !otherEntityIsEmbedded) { _%>
-        <%= otherEntityName %>.<%= primaryKey.name %>?.let { this.<%= relationshipFieldName %>Ids.add(it) }
-            <%_ } _%>
-            <%_ if (relationship.otherRelationship) {
-                    if (relationshipType === 'one-to-many') {
-                        if (databaseTypeNeo4j) { _%>
+            <%_ if (relationship.otherRelationship) { _%>
+                <%_ if (!relationship.otherRelationship.collection) { _%>
         <%= otherEntityName %>.<%= otherEntityRelationshipName %> = this
                 <%_ } _%>
-            <%_ } else if (otherEntityRelationshipNameCapitalizedPlural && asEntity(otherEntityNameCapitalized)!=='User' && relationship.relationshipManyToMany) {
-                // JHipster version < 3.6.0 didn't ask for this relationship name _%>
+            <%_ } else if (otherEntityRelationshipNameCapitalizedPlural && !relationship.otherEntityUser && relationship.otherRelationship.collection) { _%>
         <%= otherEntityName %>.<%= otherEntityRelationshipNamePlural %>?.add(this)
                 <%_ } _%>
             <%_ } _%>
@@ -603,19 +598,12 @@ for (const field of filteredFields) {
 
     fun remove<%= relationshipNameCapitalized %>(<%= otherEntityName %>: <%= asEntity(otherEntityNameCapitalized) %>): <%= persistClass %> {
         this.<%= relationshipFieldNamePlural %>?.remove(<%= otherEntityName %>)
-        <%_ if (!otherEntityIsEmbedded || (embedded && ownerSide)) { _%>
-            <%_ if (databaseTypeCouchbase && !otherEntityIsEmbedded) { _%>
-        <%= otherEntityName %>.<%= primaryKey.name %>?.let { this.<%= relationshipFieldName %>Ids.remove(it) }
-            <%_ } _%>
-            <%_ if (relationship.otherRelationship) {
-                    if (relationshipType === 'one-to-many') {
-                        if (databaseTypeNeo4j) { _%>
-        <%= otherEntityName %>.<%= otherEntityRelationshipName %> = null
-                <%_ } _%>
-            <%_ } else if (otherEntityRelationshipNamePlural !== '' && ownerSide === false &&
-                 otherEntityNameCapitalized !== 'User' && relationship.relationshipManyToMany) {
-                // JHipster version < 3.6.0 didn't ask for this relationship name _%>
-        <%= otherEntityName %>.<%= otherEntityRelationshipNamePlural %>?.remove(this)
+        <%_ if (!relationship.otherEntity.embedded || (embedded && relationship.ownerSide)) { _%>
+            <%_ if (relationship.otherRelationship) { _%>
+                <%_ if (!relationship.otherRelationship.collection) { _%>
+        <%= relationship.otherEntityName %>.<%= relationship.otherRelationship.relationshipName %> = null
+                <%_ } else if (!relationship.otherEntityUser && relationship.otherRelationship.collection) { _%>
+        <%= relationship.otherEntityName %>.<%= relationship.otherRelationship.otherEntityRelationshipNamePlural %>?.remove(this)
                 <%_ } _%>
             <%_ } _%>
         <%_ } _%>
@@ -623,52 +611,6 @@ for (const field of filteredFields) {
     }
         <%_ } _%>
     <%_ } _%>
-<%_ } _%>
-    // jhipster-needle-entity-add-getters-setters - JHipster will add getters and setters here
-
-    override fun equals(other: Any?): Boolean {
-        if (this === other) return true
-        if (other !is <%= persistClass %>) return false
-
-        <%_ if (!embedded) { _%>
-        return <%= primaryKey.name %> != null && other.<%= primaryKey.name %> != null && <%= primaryKey.name %> == other.<%= primaryKey.name %>
-        <%_ } else { _%>
-        return false;
-        <%_ } _%>
-    }
-
-    override fun hashCode() = 31
-
-    override fun toString() = "<%= persistClass %>{" +
-        <%_ if (!embedded) { _%>
-            "<%= primaryKey.name %>=$<%= primaryKey.name %>" +
-        <%_ } _%>
-            <%_ for (field of fields.filter(field => !field.id && !field.transient)) {
-                const fieldType = field.fieldType;
-                const fieldTypeBlobContent = field.fieldTypeBlobContent;
-                const fieldName = field.fieldName;
-                const fieldInJavaBeanMethod = field.fieldInJavaBeanMethod;
-                const isNumeric = ['integer', 'long', 'float', 'double', 'bigdecimal'].includes(fieldType.toLowerCase()); _%>
-            ", <%= fieldName %>=<% if (! isNumeric) { %>'<% } %>$<%= fieldName %><% if (! isNumeric) { %>'<% } %>" +
-                <%_ if (field.fieldWithContentType) { _%>
-            ", <%= fieldName %>ContentType='$<%= fieldName %>ContentType'" +
-                <%_ } _%>
-            <%_ } _%>
-            <%_ for (relationship of relationships) {
-                const relationshipType = relationship.relationshipType;
-                const otherEntityIsEmbedded = relationship.otherEntityIsEmbedded;
-                const relationshipFieldName = relationship.relationshipFieldName;
-                const relationshipNameCapitalized = relationship.relationshipNameCapitalized;
-                const relationshipFieldNamePlural = relationship.relationshipFieldNamePlural;
-                const relationshipNameCapitalizedPlural = relationship.relationshipNameCapitalizedPlural;
-                const ownerSide = relationship.ownerSide; _%>
-            <%_ if (otherEntityIsEmbedded) {
-                    if (relationship.relationshipManyToOne) { _%>
-            ", <%= relationshipFieldNamePlural %>='$<%= relationshipFieldNamePlural %>'" +
-            <%_ } else if (relationship.relationshipOneToOne && ownerSide) { _%>
-            ", <%= relationshipFieldName %>='$<%= relationshipFieldName %>'" +
-            <%_ } } } _%>
-            "}"
 
     companion object {
         private const val serialVersionUID = 1L
