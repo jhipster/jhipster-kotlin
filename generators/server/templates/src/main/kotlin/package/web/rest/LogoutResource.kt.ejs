@@ -94,29 +94,29 @@ class LogoutResource(registrations: <% if (reactive) { %>Reactive<% } %>ClientRe
         return ResponseEntity.ok().body(logoutDetails)
     }
 <%_ } else { _%>
-    fun logout(@AuthenticationPrincipal(expression = "idToken") idToken: OidcIdToken, request: ServerHttpRequest, session: WebSession): Mono<HashMap<String, String>>  {
+    fun logout(@AuthenticationPrincipal(expression = "idToken") idToken: OidcIdToken, request: ServerHttpRequest, session: WebSession): Mono<Map<String, String>>  {
         return session.invalidate().then(
             registration.map { 
-                prepareLogoutUri(request, oidc, idToken)
+                prepareLogoutUri(request, it, idToken)
             }
         )
     }
 
     private fun prepareLogoutUri(request: ServerHttpRequest, clientRegistration: ClientRegistration, idToken: OidcIdToken): Map<String, String> {
         val logoutUrl = StringBuilder()
-        val issuerUri = registration.providerDetails.issuerUri
+        val issuerUri = clientRegistration.providerDetails.issuerUri
         if (issuerUri.contains("auth0.com")) {
             val iUrl = if (issuerUri.endsWith("/")) { 
                 issuerUri + "v2/logout"
             } else { 
-                issuerUri + "/v2/logout"
+                "$issuerUri/v2/logout"
             }
             logoutUrl.append(iUrl)
         } else {
-            logoutUrl.append(registration.providerDetails.configurationMetadata["end_session_endpoint"].toString())
+            logoutUrl.append(clientRegistration.providerDetails.configurationMetadata["end_session_endpoint"].toString())
         }
 
-        val originUrl = request.getHeaders().getOrigin()
+        val originUrl = request.headers.origin
         if (logoutUrl.indexOf("/protocol") > -1) {
             logoutUrl.append("?redirect_uri=").append(originUrl)
         } else if (logoutUrl.indexOf("auth0.com") > -1) {
@@ -124,9 +124,9 @@ class LogoutResource(registrations: <% if (reactive) { %>Reactive<% } %>ClientRe
             logoutUrl.append("?client_id=").append(clientRegistration.clientId).append("&returnTo=").append(originUrl)
         } else {
             // Okta
-            logoutUrl.append("?id_token_hint=").append(idToken?.tokenValue).append("&post_logout_redirect_uri=").append(originUrl)
+            logoutUrl.append("?id_token_hint=").append(idToken.tokenValue).append("&post_logout_redirect_uri=").append(originUrl)
         }
-        return MapOf("logoutUrl", logoutUrl.toString())
+        mapOf("logoutUrl" to logoutUrl.toString())
     }
 <%_ } _%>
 }
