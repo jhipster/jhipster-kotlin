@@ -33,21 +33,19 @@ import reactor.core.publisher.Mono
  * Refresh oauth2 tokens based on TokenRelayGatewayFilterFactory.
  */
 @Component
-class OAuth2ReactiveRefreshTokensWebFilter(clientManager: ReactiveOAuth2AuthorizedClientManager): WebFilter {
+class OAuth2ReactiveRefreshTokensWebFilter(val clientManager: ReactiveOAuth2AuthorizedClientManager) : WebFilter {
 
-
-    fun filter(exchange: ServerWebExchange, chain: WebFilterChain) =
+    override fun filter(exchange: ServerWebExchange, chain: WebFilterChain): Mono<Void> =
         exchange
-            .principal
-            .filter { principal -> principal instanceof OAuth2AuthenticationToken }
-            .cast(OAuth2AuthenticationToken::class)
-            .flatMap { authentication -> authorizedClient(exchange, authentication) }
-            .onErrorResume { e -> Mono.empty() }
+            .getPrincipal<OAuth2AuthenticationToken>()
+            .cast(OAuth2AuthenticationToken::class.java)
+            .flatMap { authorizedClient(exchange, it) }
+            .onErrorResume { Mono.empty() }
             .thenReturn(exchange)
             .flatMap(chain::filter)
 
-    fun authorizedClient(exchange: ServerWebExchange, oauth2Authentication: OAuth2AuthenticationToken): Mono<OAuth2AuthorizedClient>  {
-        val clientRegistrationId = oauth2Authentication.getAuthorizedClientRegistrationId()
+    fun authorizedClient(exchange: ServerWebExchange, oauth2Authentication: OAuth2AuthenticationToken): Mono<OAuth2AuthorizedClient> {
+        val clientRegistrationId = oauth2Authentication.authorizedClientRegistrationId
         val request = OAuth2AuthorizeRequest
             .withClientRegistrationId(clientRegistrationId)
             .principal(oauth2Authentication)
@@ -57,7 +55,7 @@ class OAuth2ReactiveRefreshTokensWebFilter(clientManager: ReactiveOAuth2Authoriz
             return Mono.error(
                 IllegalStateException(
                     "No ReactiveOAuth2AuthorizedClientManager bean was found. Did you include the " +
-                    "org.springframework.boot:spring-boot-starter-oauth2-client dependency?"
+                        "org.springframework.boot:spring-boot-starter-oauth2-client dependency?"
                 )
             )
         }
