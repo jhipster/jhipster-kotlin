@@ -60,16 +60,25 @@ class OAuth2RefreshTokensWebFilter(
 
     @Throws(IOException::class, ServletException::class)
     override fun doFilterInternal(request: HttpServletRequest, response: HttpServletResponse, filterChain: FilterChain) {
-        val authentication = SecurityContextHolder.getContext().getAuthentication()
-        if ((authentication instanceof OAuth2AuthenticationToken)) {
-            try {
-                val authorizedClient = authorizedClient(authentication as (OAuth2AuthenticationToken))
-                authorizedClientRepository.saveAuthorizedClient(authorizedClient, authentication, request, response)
-            } catch (e: Exception) {
-                OAuth2AuthorizationRequest authorizationRequest = this.authorizationRequestResolver.resolve(request)
-                if (authorizationRequest != null) {
-                    this.authorizationRedirectStrategy.sendRedirect(request, response, authorizationRequest.getAuthorizationRequestUri())
-                    return
+        when (val authentication = SecurityContextHolder.getContext().authentication) {
+            is OAuth2AuthenticationToken -> {
+                try {
+                    val authorizedClient = authorizedClient(authentication)
+                    authorizedClientRepository.saveAuthorizedClient(
+                        authorizedClient,
+                        authentication,
+                        request,
+                        response
+                    )
+                } catch (e: Exception) {
+                    val authorizedRequest = authorizationRequestResolver.resolve(request)
+                    if (authorizedRequest != null) {
+                        authorizationRedirectStrategy.sendRedirect(
+                            request,
+                            response,
+                            authorizedRequest.authorizationRequestUri
+                        )
+                    }
                 }
             }
         }
