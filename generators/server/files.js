@@ -1712,8 +1712,6 @@ function writeFiles() {
             }
 
             if (this.buildTool === MAVEN) {
-                this.addMavenPluginRepository('jcenter', 'https://jcenter.bintray.com/');
-
                 this.addMavenProperty('kotlin.version', kotlinConstants.KOTLIN_VERSION);
                 this.addMavenProperty('mapstruct.version', kotlinConstants.MAPSTRUCT_VERSION);
                 this.addMavenProperty('ktlint-maven-plugin.version', kotlinConstants.KTLINT_MAVEN_VERSION);
