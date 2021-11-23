@@ -17,7 +17,7 @@
  * limitations under the License.
  */
 
-const DETEKT_VERSION = '1.1.0';
+const DETEKT_VERSION = '1.18.1';
 const KOTLIN_VERSION = '1.6.0';
 const KTLINT_MAVEN_VERSION = '1.11.1';
 const KTLINT_GRADLE_VERSION = '10.2.0';
