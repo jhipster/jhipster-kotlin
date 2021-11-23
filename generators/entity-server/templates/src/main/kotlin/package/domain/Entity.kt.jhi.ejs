@@ -225,6 +225,31 @@ data class <%= persistClass %>(
       <%_ } _%>
     }
 
+    @Override
+    override fun toString(): String {
+        return "<%= persistClass %>{" +
+<%_ if (!embedded) { _%>
+            "<%= primaryKey.name %>=" + <%= primaryKey.name %> +
+<%_ } _%>
+<%_ for (const field of fields.filter(field => !field.id && !field.transient)) {
+  const isNumeric = field.fieldTypeNumeric; _%>
+            ", <%= field.fieldName %>=<% if (! isNumeric) { %>'<% } %>" + <%= field.fieldName %> <% if (! isNumeric) { %>+ "'" <% } %>+
+  <%_ if (field.fieldWithContentType) { _%>
+            ", <%= field.fieldName %>ContentType='" + <%= field.fieldName %>ContentType + "'" +
+  <%_ } _%>
+<%_ } _%>
+<%_ for (const relationship of relationships) { _%>
+  <%_ if (relationship.otherEntity.embedded) {
+    if (relationship.relationshipManyToOne) { _%>
+            ", <%= relationship.relationshipFieldNamePlural %>='" + <%= relationship.relationshipNamePlural %> + "'" +
+    <%_ } else if (relationship.relationshipOneToOne && relationship.ownerSide) { _%>
+            ", <%= relationship.relationshipFieldName %>='" + <%= relationship.relationshipName %> + "'" +
+    <%_ } _%>
+  <%_ } _%>
+<%_ } _%>
+            "}";
+    }
+
     companion object {
         private const val serialVersionUID = 1L        
         <&- fragments.classStaticFieldsSection() -&>
