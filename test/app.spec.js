@@ -128,7 +128,7 @@ describe('JHipster generator', () => {
             });
         });
 
-        describe('using npm flag', () => {
+        describe.skip('using npm flag', () => {
             let runResult;
             before(async () => {
                 runResult = await helpers
