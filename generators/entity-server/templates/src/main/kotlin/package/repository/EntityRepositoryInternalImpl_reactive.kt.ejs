@@ -16,7 +16,7 @@
  See the License for the specific language governing permissions and
  limitations under the License.
 -%>
-package <%= packageName %>.repository
+package <%= entityAbsolutePackage %>.repository
 
 import java.util.function.BiFunction
 <%_ if (fieldsContainBigDecimal) { _%>
@@ -57,19 +57,22 @@ import org.springframework.r2dbc.core.DatabaseClient
 import org.springframework.r2dbc.core.RowsFetchSpec
 <%_ } _%>
 
-import <%= packageName %>.domain.<%= persistClass %>
+import <%= entityAbsolutePackage %>.domain.<%= persistClass %>
 <% relationships.forEach(function(rel) {
     if (rel.relationshipManyToMany  && rel.ownerSide) { _%>
-import <%= packageName %>.domain.<%= asEntity(rel.otherEntityNameCapitalized) %>
+import <%= rel.otherEntity.entityAbsolutePackage %>.domain.<%= rel.otherEntity.persistClass %>
     <%_ } _%>
 <%_ } ); _%>
 <%_ Object.keys(uniqueEnums).forEach(function(element) { _%>
 
-import <%= packageName %>.domain.enumeration.<%= element %>
+import <%= entityAbsolutePackage %>.domain.enumeration.<%= element %>
 <%_ }); _%>
 
-<%_ reactiveUniqueEntityTypes.forEach(function(element) { _%>
-import <%= packageName %>.repository.rowmapper.<%= element %>RowMapper
+<%_ [...reactiveOtherEntities, entity].forEach(otherEntity => { _%>
+import <%= otherEntity.entityAbsolutePackage %>.repository.rowmapper.<%= otherEntity.entityClass %>RowMapper
+  <%_ if (otherEntity.entityPackage !== entityPackage) { _%>
+import <%= otherEntity.entityAbsolutePackage %>.repository.<%= otherEntity.entityClass %>SqlHelper
+  <%_ } _%>
 <%_ }); _%>
 import <%= packageName %>.service.EntityManager
 <%_ if (fieldsContainOwnerManyToMany) { _%>
@@ -140,12 +143,12 @@ class <%= entityClass %>RepositoryInternalImpl(
     }
 
     override fun findById(id: <%= primaryKey.type %>?): Mono<<%= persistClass %>> {
-        return createQuery(null, Criteria.where("id").`is`(id)).one()
+        return createQuery(null, Criteria.where("<%= primaryKey.name %>").`is`(id)).one()
     }
 
     <%_ if (fieldsContainOwnerManyToMany) { _%>
 
-    override fun findOneWithEagerRelationships(id: Long): Mono<<%= persistClass %>> {
+    override fun findOneWithEagerRelationships(id: <%= primaryKey.name %>): Mono<<%= persistClass %>> {
         return findById(id)
     }
 
@@ -187,11 +190,15 @@ class <%= entityClass %>RepositoryInternalImpl(
     }
 
     override fun update(entity: <%= persistClass %>): Mono<Integer> {
-        <%_ if (fields.length + reactiveEagerRelations.length > 0) { _%>
+        <%_ if (fields.some(field => !field.id) || relationships.some(relationship => !relationship.id && relationship.ownerSide)) { _%>
         //fixme is this the proper way?
-        return r2dbcEntityTemplate.update(entity).thenReturn(Integer.valueOf(1) as Integer)
+        return r2dbcEntityTemplate.update(entity).thenReturn(Integer.valueOf(1) as Integer))
         <%_ } else { _%>
-        // What can we update on this field?
+        /*
+         * Entity doesn't contain any updatable data, ignore update for compatibility.
+         * Otherwise it fails with `IllegalArgumentException: UPDATE contains no assignments`
+         * https://github.com/spring-projects/spring-data-r2dbc/issues/250#issuecomment-563122844
+         */
         return Mono.just(1).map{ it as Integer }
         <%_ } _%>
     }
@@ -230,25 +237,4 @@ class <%= entityClass %>RepositoryInternalImpl(
     }
 
     <%_ } _%>
-}
-
-class <%= entityClass %>SqlHelper {
-    fun getColumns(table: Table, columnPrefix: String): MutableList<Expression> {
-        val columns = mutableListOf<Expression>();
-        columns.add(Column.aliased("id", table, columnPrefix + "_id"));
-<%_ fields.forEach(function(field) {
-    let col = field.fieldNameAsDatabaseColumn;
-    _%>
-        columns.add(Column.aliased("<%= col %>", table, columnPrefix + "_<%= col %>"));
-   <%_  if ((field.fieldTypeBinary) && !field.blobContentTypeText) { _%>
-        columns.add(Column.aliased("<%= col %>_content_type", table, columnPrefix + "_<%= col %>_content_type"));
-   <%_  } _%>
-<%_ }); _%>
-
-<%_ reactiveRegularEagerRelations.forEach(function(rel) { _%>
-        columns.add(Column.aliased("<%= getColumnName(rel.relationshipName) %>_id", table, columnPrefix + "_<%= getColumnName(rel.relationshipName) %>_id"));
-<%_ }); _%>
-        return columns
-    }
-
 }

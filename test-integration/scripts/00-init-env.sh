@@ -26,6 +26,15 @@ if [[ "$JHI_HOME" == "" ]]; then
     JHI_HOME="$JHI_DETECTED_DIR"
 fi
 
+# folder for executable package (blueprints or generator-jhipster)
+if [[ "$JHI_CLI_PACKAGE_PATH" == "" ]]; then
+    if [[ "$JHI_CLI_PACKAGE" != "" && "$JHI_WORKSPACE" != "" ]]; then
+        JHI_CLI_PACKAGE_PATH="$JHI_WORKSPACE/$JHI_CLI_PACKAGE"
+    else
+        JHI_CLI_PACKAGE_PATH="$JHI_HOME"
+    fi
+fi
+
 # folder where the repo is cloned
 if [[ "$JHI_HOME" == "" ]]; then
     JHI_HOME=$(init_var "$BUILD_REPOSITORY_LOCALPATH" "$GITHUB_WORKSPACE" "$JHI_DETECTED_DIR")
@@ -101,6 +110,10 @@ fi
 # set correct OpenJDK version
 if [[ "$JHI_JDK" == "11" && "$JHI_GITHUB_CI" != "true" ]]; then
     JAVA_HOME=$(readlink -f /usr/bin/java | sed "s:bin/java::")
+fi
+
+if [[ "$JHI_CLI" == "" ]]; then
+    JHI_CLI=khipster
 fi
 
 # node version

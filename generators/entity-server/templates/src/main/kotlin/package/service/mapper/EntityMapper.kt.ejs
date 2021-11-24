@@ -16,7 +16,7 @@
  See the License for the specific language governing permissions and
  limitations under the License.
 -%>
-package <%= packageName %>.service.mapper
+package <%= entityAbsolutePackage %>.service.mapper
 
 <%_
 let existingMappings = [];
@@ -30,8 +30,12 @@ for (reference of dtoReferences) {
  }
 _%>
 
-import <%= packageName %>.domain.<%= persistClass %>
-import <%= packageName %>.service.dto.<%= dtoClass %>
+import <%= entityAbsoluteClass %>
+import <%= entityAbsolutePackage %>.service.dto.<%= dtoClass %>
+
+<%_ for (const otherEntity of _.uniq(dtoReferences.filter(ref => ref.relationship).map(ref => ref.relationship.otherEntity).filter(otherEntity => otherEntity.entityPackage !== entityPackage))) { _%>
+import <%= `${otherEntity.entityAbsolutePackage}.service.mapper.${otherEntity.entityClass}Mapper` %>
+<%_ } _%>
 
 import org.mapstruct.*
 <%_ if (uuidMapMethod) { _%>

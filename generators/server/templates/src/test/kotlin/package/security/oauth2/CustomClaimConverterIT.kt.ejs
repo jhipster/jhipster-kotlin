@@ -42,6 +42,9 @@ import <%= packageName %>.IntegrationTest
 private const val USERNAME = "admin"
 private const val NAME = "John"
 private const val FAMILY_NAME = "Doe"
+private const val FULL_NAME = NAME + " " + FAMILY_NAME
+private const val NAME_SUFFIX = "Sr."
+private const val EMAIL = "john.doe@gmail.com"
 
 @IntegrationTest
 class CustomClaimConverterIT {
@@ -154,5 +157,61 @@ class CustomClaimConverterIT {
                 .containsEntry("preferred_username", USERNAME)
                 .doesNotContainKeys("given_name", "family_name")
         }.doesNotThrowAnyException()
+    }
+
+    @Test
+    fun testConvert_withName() {
+        // GIVEN
+        val claims: MutableMap<String, Any> = HashMap()
+        claims["sub"] = "123"
+        // AND
+        val user = mapper.createObjectNode()
+        user.put("preferred_username", USERNAME)
+        user.put("name", FULL_NAME)
+        mockHttpGetUserInfo(user)
+
+        assertThatCode {
+            assertThat(customClaimConverter.convert(claims))
+                .containsEntry("preferred_username", USERNAME)
+                .containsEntry("given_name", NAME)
+                .containsEntry("family_name", FAMILY_NAME);
+        }.doesNotThrowAnyException()
+    }
+
+    @Test
+    fun testConvert_withLastNameMultipleWords() {
+        // GIVEN
+        val claims: MutableMap<String, Any> = HashMap()
+        claims["sub"] = "123"
+        // AND
+        val user = mapper.createObjectNode()
+        user.put("preferred_username", USERNAME)
+        user.put("name", FULL_NAME + " " + NAME_SUFFIX)
+        mockHttpGetUserInfo(user)
+
+        assertThatCode {
+            assertThat(customClaimConverter.convert(claims))
+                .containsEntry("preferred_username", USERNAME)
+                .containsEntry("given_name", NAME)
+                .containsEntry("family_name", FAMILY_NAME + " " + NAME_SUFFIX);
+        }.doesNotThrowAnyException()
+    }
+
+    @Test
+    fun testConvert_withEmail() {
+        // GIVEN
+        val claims: MutableMap<String, Any> = HashMap()
+        claims["sub"] = "123"
+        // AND
+        val user = mapper.createObjectNode()
+        user.put("preferred_username", USERNAME)
+        user.put("email", EMAIL)
+        mockHttpGetUserInfo(user)
+
+        assertThatCode {
+            assertThat(customClaimConverter.convert(claims))
+                .containsEntry("preferred_username", USERNAME)
+                .containsEntry("email", EMAIL);
+        }.doesNotThrowAnyException();
     }
 }

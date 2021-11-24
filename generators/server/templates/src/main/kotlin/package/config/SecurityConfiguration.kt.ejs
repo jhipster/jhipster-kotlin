@@ -212,7 +212,7 @@ class SecurityConfiguration(
         .and()
             .referrerPolicy(ReferrerPolicyHeaderWriter.ReferrerPolicy.STRICT_ORIGIN_WHEN_CROSS_ORIGIN)
         .and()
-            .featurePolicy("geolocation 'none'; midi 'none'; sync-xhr 'none'; microphone 'none'; camera 'none'; magnetometer 'none'; gyroscope 'none'; fullscreen 'self'; payment 'none'")
+            .permissionsPolicy().policy("camera=(), fullscreen=(self), geolocation=(), gyroscope=(), magnetometer=(), microphone=(), midi=(), payment=(), sync-xhr=()")
         .and()
             .frameOptions()
             .deny()
@@ -239,9 +239,6 @@ class SecurityConfiguration(
             <%_ if (communicationSpringWebsocket) { _%>
             .antMatchers("/websocket/**").authenticated()
             <%_ } _%>
-            <%_ if (applicationTypeGateway) { _%>
-            .antMatchers("/services/*/v3/api-docs").hasAuthority(ADMIN)
-            <%_ } _%>
             .antMatchers("/management/health").permitAll()
             .antMatchers("/management/health/**").permitAll()
             .antMatchers("/management/info").permitAll()
@@ -255,7 +252,7 @@ class SecurityConfiguration(
         .and()
             .apply(securityConfigurerAdapter())
         <%_ } else if (authenticationTypeOauth2) { _%>
-            <%_ if (applicationTypeMonolith || applicationTypeGateway) { _%>
+            <%_ if (applicationTypeMonolith) { _%>
         .and()
             .oauth2Login()
             <%_ } _%>

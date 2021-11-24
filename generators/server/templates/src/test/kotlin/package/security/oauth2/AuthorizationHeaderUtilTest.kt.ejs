@@ -48,6 +48,7 @@ import java.time.Duration
 import java.time.Instant
 import java.util.Optional
 
+import static org.junit.jupiter.api.Assertions.fail
 import org.mockito.ArgumentMatchers.*
 import org.mockito.Mockito.*
 
@@ -176,7 +177,20 @@ class AuthorizationHeaderUtilTest {
     private fun getTestOAuth2AuthorizedClient() = getTestOAuth2AuthorizedClient(false)
 
     private fun getTestOAuth2AuthorizedClient(accessTokenExpired: Boolean):OAuth2AuthorizedClient {
-        val end = if (accessTokenExpired) Instant.now() else  Instant.now().plus(Duration.ofMinutes(3))
+        val issuedAt = Instant.now()
+        var expiresAt: Instant? = null
+        if (accessTokenExpired) {
+            expiresAt = issuedAt.plus(Duration.ofNanos(1))
+            try {
+                Thread.sleep(1)
+            } catch (e: Exception) {
+                fail("Error in Thread.sleep(1) : " + e.getMessage())
+            }
+        } else {
+            expiresAt = issuedAt.plus(Duration.ofMinutes(3))
+        }
+        val token = OAuth2AccessToken(OAuth2AccessToken.TokenType.BEARER, "tokenVal", issuedAt, expiresAt)
+
         return OAuth2AuthorizedClient(
             ClientRegistration.withRegistrationId(VALID_REGISTRATION_ID)
                 .authorizationGrantType(AuthorizationGrantType.AUTHORIZATION_CODE)
@@ -187,7 +201,7 @@ class AuthorizationHeaderUtilTest {
                 .tokenUri("https://localhost:8080/auth/realms/master/protocol/openid-connect/token")
                 .build(),
             "sub",
-            OAuth2AccessToken(OAuth2AccessToken.TokenType.BEARER, "tokenVal", Instant.now(), end),
+            token,
             OAuth2RefreshToken("refreshVal", Instant.now()))
     }
 

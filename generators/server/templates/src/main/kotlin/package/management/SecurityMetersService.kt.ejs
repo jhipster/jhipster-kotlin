@@ -1,0 +1,61 @@
+<%#
+ Copyright 2013-2021 the original author or authors from the JHipster project.
+
+ This file is part of the JHipster project, see https://www.jhipster.tech/
+ for more information.
+
+ Licensed under the Apache License, Version 2.0 (the "License");
+ you may not use this file except in compliance with the License.
+ You may obtain a copy of the License at
+
+      https://www.apache.org/licenses/LICENSE-2.0
+
+ Unless required by applicable law or agreed to in writing, software
+ distributed under the License is distributed on an "AS IS" BASIS,
+ WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
+ See the License for the specific language governing permissions and
+ limitations under the License.
+-%>
+package <%= packageName %>.management
+
+import org.springframework.stereotype.Service
+
+import io.micrometer.core.instrument.Counter
+import io.micrometer.core.instrument.MeterRegistry
+
+private const val INVALID_TOKENS_METER_NAME = "security.authentication.invalid-tokens"
+private const val INVALID_TOKENS_METER_DESCRIPTION = "Indicates validation error count of the tokens presented by the clients."
+private const val INVALID_TOKENS_METER_BASE_UNIT = "errors"
+private const val INVALID_TOKENS_METER_CAUSE_DIMENSION = "cause"
+
+@Service
+class SecurityMetersService(private val registry: MeterRegistry) {
+
+    val tokenInvalidSignatureCounter = invalidTokensCounterForCauseBuilder("invalid-signature").register(registry)
+    val tokenExpiredCounter = invalidTokensCounterForCauseBuilder("expired").register(registry)
+    val tokenUnsupportedCounter = invalidTokensCounterForCauseBuilder("unsupported").register(registry)
+    val tokenMalformedCounter = invalidTokensCounterForCauseBuilder("malformed").register(registry)
+
+    private fun invalidTokensCounterForCauseBuilder(cause: String): Counter.Builder {
+        return Counter.builder(INVALID_TOKENS_METER_NAME)
+            .baseUnit(INVALID_TOKENS_METER_BASE_UNIT)
+            .description(INVALID_TOKENS_METER_DESCRIPTION)
+            .tag(INVALID_TOKENS_METER_CAUSE_DIMENSION, cause)
+    }
+
+    fun trackTokenInvalidSignature() {
+        tokenInvalidSignatureCounter.increment()
+    }
+
+    fun trackTokenExpired() {
+        tokenExpiredCounter.increment()
+    }
+
+    fun trackTokenUnsupported() {
+        tokenUnsupportedCounter.increment()
+    }
+
+    fun trackTokenMalformed() {
+        tokenMalformedCounter.increment()
+    }
+}

@@ -239,7 +239,7 @@ class SecurityConfiguration(
         .and()
             .referrerPolicy(ReferrerPolicyServerHttpHeadersWriter.ReferrerPolicy.STRICT_ORIGIN_WHEN_CROSS_ORIGIN)
         .and()
-            .featurePolicy("geolocation 'none'; midi 'none'; sync-xhr 'none'; microphone 'none'; camera 'none'; magnetometer 'none'; gyroscope 'none'; speaker 'none'; fullscreen 'self'; payment 'none'")
+            .permissionsPolicy().policy("camera=(), fullscreen=(self), geolocation=(), gyroscope=(), magnetometer=(), microphone=(), midi=(), payment=(), sync-xhr=()")
         .and()
             .frameOptions().disable()
         <%_ if (applicationTypeMicroservice) { _%>
@@ -262,6 +262,14 @@ class SecurityConfiguration(
             <%_ } _%>
             .pathMatchers("/api/auth-info").permitAll()
             .pathMatchers("/api/**").authenticated()
+<%_ if (applicationTypeGateway) { _%>
+    <%_ if (microfrontend && (authenticationTypeJwt || clientFrameworkVue)) { _%>
+            // microfrontend resources are loaded by webpack without authentication, they need to be public
+            .pathMatchers("/services/*/*.js").permitAll()
+            .pathMatchers("/services/*/*.js.map").permitAll()
+    <%_ } _%>
+            .pathMatchers("/services/*/v3/api-docs").hasAuthority(ADMIN)
+<%_ } _%>
             <%_ if (applicationTypeMonolith || applicationTypeGateway) { _%>
             .pathMatchers("/services/**").authenticated()
             <%_ } _%>

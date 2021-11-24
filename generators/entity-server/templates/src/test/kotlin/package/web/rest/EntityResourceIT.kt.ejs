@@ -16,7 +16,7 @@
  See the License for the specific language governing permissions and
  limitations under the License.
 -%>
-package <%= packageName %>.web.rest
+package <%= entityAbsolutePackage %>.web.rest
 
 <%_
 
@@ -58,11 +58,14 @@ if (databaseTypeSql && !reactive) {
     transactionalAnnotation = '\n    @Transactional';
 }
 _%>
+<%_ if (entityAbsolutePackage !== packageName) { _%>
+import <%= packageName %>.web.rest.*
+<% } %>
 <%_ if (databaseTypeCassandra) { _%>
 import <%= packageName %>.AbstractCassandraTest
 <%_ } _%>
 import <%= packageName %>.IntegrationTest
-import <%= packageName %>.domain.<%= persistClass %>
+import <%= entityAbsolutePackage %>.domain.<%= persistClass %>
 <%_
     var imported = [];
     for (relationship of relationships) { // import entities in required relationships
@@ -72,32 +75,31 @@ import <%= packageName %>.domain.<%= persistClass %>
         if(imported.indexOf(otherEntityNameCapitalized) === -1 && persistClass !== asEntity(otherEntityNameCapitalized)) {
             if ((relationshipValidate !== null && relationshipValidate) || jpaMetamodelFiltering || (isUsingMapsIdL1)) { 
 _%>
-import <%= packageName %>.domain.<%= asEntity(otherEntityNameCapitalized) %>
+import <%= entityAbsolutePackage %>.domain.<%= asEntity(otherEntityNameCapitalized) %>
 <%_         imported.push(otherEntityNameCapitalized);
         } } } _%>
 <%_ if (saveUserSnapshot) { _%>
-import <%= packageName %>.repository.UserRepository
+import <%= entityAbsolutePackage %>.repository.UserRepository
 <%_ } _%>
-import <%= packageName %>.repository.<%= entityClass %>Repository
+import <%= entityAbsolutePackage %>.repository.<%= entityClass %>Repository
 <%_ if (databaseTypeSql && reactive) { _%>
 import <%= packageName %>.service.EntityManager
 <%_ } _%>
 <%_ if (isUsingMapsId&& ( !dtoMapstruct && serviceNo)) { _%>
-import <%= packageName %>.repository.<%= mapsIdAssoc.otherEntityNameCapitalized %>Repository
+import <%= entityAbsolutePackage %>.repository.<%= mapsIdAssoc.otherEntityNameCapitalized %>Repository
 <%_ } _%>
 <%_ if (searchEngineElasticsearch) { _%>
-import <%= packageName %>.repository.search.<%= entityClass %>SearchRepository
+import <%= entityAbsolutePackage %>.repository.search.<%= entityClass %>SearchRepository
 <%_ } _%>
-<%_ if (!serviceNo) { _%>
-import <%= packageName %>.service.<%= entityClass %>Service
+<%_ if (!serviceNo && fieldsContainOwnerManyToMany) { _%>
+import <%= entityAbsolutePackage %>.service.<%= entityClass %>Service
 <%_ } _%>
 <%_ if (dtoMapstruct) { _%>
-import <%= packageName %>.service.dto.<%= dtoClass %>
-import <%= packageName %>.service.mapper.<%= entityClass %>Mapper
+import <%= entityAbsolutePackage %>.service.dto.<%= dtoClass %>
+import <%= entityAbsolutePackage %>.service.mapper.<%= entityClass %>Mapper
 <%_ } _%>
-import <%= packageName %>.web.rest.errors.ExceptionTranslator
 <%_ if (jpaMetamodelFiltering) { _%>
-import <%= packageName %>.service.criteria.<%= entityClass %>Criteria
+import <%= entityAbsolutePackage %>.service.criteria.<%= entityClass %>Criteria
 <%_ } _%>
 
 import kotlin.test.assertNotNull
@@ -259,9 +261,9 @@ class <%= entityClass %>ResourceIT <% if (databaseTypeCassandra) { %>: AbstractC
     <%_ } if (searchEngineElasticsearch) { _%>
 
     /**
-     * This repository is mocked in the <%= packageName %>.repository.search test package.
+     * This repository is mocked in the <%= entityAbsolutePackage %>.repository.search test package.
      *
-     * @see <%= packageName %>.repository.search.<%=entityClass%>SearchRepositoryMockConfiguration
+     * @see <%= entityAbsolutePackage %>.repository.search.<%=entityClass%>SearchRepositoryMockConfiguration
      */
     @Autowired
     private lateinit var mock<%= entityClass %>SearchRepository: <%= entityClass %>SearchRepository
@@ -273,9 +275,6 @@ class <%= entityClass %>ResourceIT <% if (databaseTypeCassandra) { %>: AbstractC
 
     @Autowired
     private lateinit var pageableArgumentResolver: PageableHandlerMethodArgumentResolver
-
-    @Autowired
-    private lateinit var exceptionTranslator: ExceptionTranslator
 
     @Autowired
     private lateinit var validator: Validator

@@ -40,7 +40,7 @@ const entityCouchbaseFiles = {
             templates: [
                 {
                     file: 'package/domain/Entity.kt.jhi.spring_data_couchbase',
-                    renameTo: generator => `${generator.packageFolder}/domain/${generator.persistClass}.kt.jhi.spring_data_couchbase`,
+                    renameTo: generator => `${generator.entityAbsoluteFolder}/domain/${generator.persistClass}.kt.jhi.spring_data_couchbase`,
                     useBluePrint: true,
                 },
             ],
@@ -51,7 +51,7 @@ const entityCouchbaseFiles = {
             templates: [
                 {
                     file: 'package/repository/EntityRepository.kt',
-                    renameTo: generator => `${generator.packageFolder}/repository/${generator.entityClass}Repository.kt`,
+                    renameTo: generator => `${generator.entityAbsoluteFolder}/repository/${generator.entityClass}Repository.kt`,
                     useBluePrint: true,
                 },
             ],

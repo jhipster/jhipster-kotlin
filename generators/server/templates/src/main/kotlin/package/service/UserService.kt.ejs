@@ -954,16 +954,18 @@ class UserService<% if (!databaseTypeNo) { %>(
         @JvmStatic
         private fun getUser(details: Map<String, Any>): <%= databaseTypeNo ? asDto('AdminUser') : asEntity('User') %> {
             var activated = true
+            val sub = details["sub"] as String 
+            val username = details["preferred_username"]?.let { it as String } ?: null
             val user = <%= databaseTypeNo ? asDto('AdminUser') : asEntity('User') %>()
             // handle resource server JWT, where sub claim is email and uid is ID
             if (details["uid"] != null) {
                 user.id = details["uid"] as String
-                user.login = details["sub"] as String
+                user.login = sub
             } else {
-                user.id = details["sub"] as String
+                user.id = sub
             }
-            if (details["preferred_username"] != null) {
-                user.login = (details["preferred_username"] as String).toLowerCase()
+            if (username != null) {
+                user.login = username.toLowerCase()
             } else if (user.login == null) {
                 user.login = user.id
             }
@@ -980,8 +982,11 @@ class UserService<% if (!databaseTypeNo) { %>(
             }
             if (details["email"] != null) {
                 user.email = (details["email"] as String).toLowerCase()
+            }else if (sub.contains("|") && (username != null && username.contains("@"))) {
+                // special handling for Auth0
+                user.email = username
             } else {
-                user.email = details["sub"] as String
+                user.email = sub
             }
             if (details["langKey"] != null) {
                 user.langKey = details["langKey"] as String
