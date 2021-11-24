@@ -34,6 +34,7 @@ const { KAFKA } = require('generator-jhipster/jdl/jhipster/message-broker-types'
 // const { addSectionsCondition, mergeSections } = require('generator-jhipster/generators/utils');
 const kotlinConstants = require('../generator-kotlin-constants');
 const { writeCouchbaseFiles } = require('./files-couchbase');
+const { writeSqlFiles } = require('./files-sql');
 
 /* Constants use throughout */
 const NO_DATABASE = databaseTypes.NO;
@@ -227,6 +228,11 @@ const serverFiles = {
                 {
                     file: 'package/security/jwt/JWTFilter.kt',
                     renameTo: generator => `${generator.javaDir}security/jwt/JWTFilter.kt`,
+                    useBluePrint: true,
+                },
+                {
+                    file: 'package/management/SecurityMetersService.kt',
+                    renameTo: generator => `${generator.javaDir}management/SecurityMetersService.kt`,
                     useBluePrint: true,
                 },
             ],
@@ -1546,8 +1552,18 @@ const serverFiles = {
             path: SERVER_TEST_SRC_KOTLIN_DIR,
             templates: [
                 {
+                    file: 'package/management/SecurityMetersServiceTests.kt',
+                    renameTo: generator => `${generator.testDir}management/SecurityMetersServiceTests.kt`,
+                    useBluePrint: true,
+                },
+                {
                     file: 'package/security/jwt/TokenProviderTest.kt',
                     renameTo: generator => `${generator.testDir}security/jwt/TokenProviderTest.kt`,
+                    useBluePrint: true,
+                },
+                {
+                    file: 'package/security/jwt/TokenProviderSecurityMetersTests.kt',
+                    renameTo: generator => `${generator.testDir}security/jwt/TokenProviderSecurityMetersTests.kt`,
                     useBluePrint: true,
                 },
                 {
@@ -1694,6 +1710,8 @@ function writeFiles() {
         },
 
         ...writeCouchbaseFiles(),
+
+        ...writeSqlFiles(),
 
         modifyFiles() {
             if (this.buildTool === GRADLE) {

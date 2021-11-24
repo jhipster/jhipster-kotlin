@@ -16,44 +16,37 @@
  See the License for the specific language governing permissions and
  limitations under the License.
 -%>
-package <%= packageName %>.web.rest
+package <%= entityAbsolutePackage %>.web.rest
 
 <%_
-    const viaService = !serviceNo;
-    let manyToManyWithUser = false;
-    for (const relationship in relationships) {
-        if (relationship.otherEntityUser && relationship.relationshipManyToMany) {
-            manyToManyWithUser = true;
-            break;
-        }
-    }
+const viaService = !serviceNo;
 _%>
 <%_ if (!dtoMapstruct || serviceNo) { _%>
-import <%= packageName %>.domain.<%= persistClass %>
+import <%= entityAbsolutePackage %>.domain.<%= persistClass %>
 <%_ } _%>
-import <%= packageName %>.repository.<%= entityClass %>Repository
+import <%= entityAbsolutePackage %>.repository.<%= entityClass %>Repository
 <%_ if (!serviceNo) { _%>
-import <%= packageName %>.service.<%= entityClass %>Service
+import <%= entityAbsolutePackage %>.service.<%= entityClass %>Service
 <%_ } else { _%>
     <%_ if (isUsingMapsId) { _%>
-import <%= packageName %>.repository.<%= mapsIdAssoc.otherEntityNameCapitalized %>Repository
+import <%= entityAbsolutePackage %>.repository.<%= mapsIdAssoc.otherEntityNameCapitalized %>Repository
     <%_ } _%>
     <%_ if (searchEngineElasticsearch) { _%>
-import <%= packageName %>.repository.search.<%= entityClass %>SearchRepository
+import <%= entityAbsolutePackage %>.repository.search.<%= entityClass %>SearchRepository
     <%_ } _%>
 <%_ } _%>
 <%_ if (saveUserSnapshot) { _%>
-import <%= packageName %>.repository.UserRepository
+import <%= entityAbsolutePackage %>.repository.UserRepository
 <%_ } _%>
-import <%= packageName %>.web.rest.errors.BadRequestAlertException
+import <%= entityAbsolutePackage %>.web.rest.errors.BadRequestAlertException
 <%_ if (dtoMapstruct) { _%>
-import <%= packageName %>.service.dto.<%= dtoClass %>
+import <%= entityAbsolutePackage %>.service.dto.<%= dtoClass %>
 <%_ if (serviceNo) { _%>
-import <%= packageName %>.service.mapper.<%= entityClass %>Mapper
+import <%= entityAbsolutePackage %>.service.mapper.<%= entityClass %>Mapper
 <%_ } } _%>
 <%_ if (jpaMetamodelFiltering) {  _%>
-import <%= packageName %>.service.criteria.<%= entityClass %>Criteria
-import <%= packageName %>.service.<%= entityClass %>QueryService
+import <%= entityAbsolutePackage %>.service.criteria.<%= entityClass %>Criteria
+import <%= entityAbsolutePackage %>.service.<%= entityClass %>QueryService
 <%_ } _%>
 
 import tech.jhipster.web.util.HeaderUtil
@@ -127,7 +120,7 @@ _%>
 private const val ENTITY_NAME = "<%= entityName %>"
 <%_ } _%>
 /**
- * REST controller for managing [<%= packageName %>.domain.<%= persistClass %>].
+ * REST controller for managing [<%= entityAbsolutePackage %>.domain.<%= persistClass %>].
  */
 @RestController
 @RequestMapping("/api")
@@ -174,17 +167,19 @@ _%><%- include('../../common/inject_template', {viaService: viaService, construc
             )
         }
         <%_ if (saveUserSnapshot) { %>
-            <%_ if (manyToManyWithUser) { _%>
-            if (<%= instanceName %>.users != null) {
-                // Save users in case they are new and only exists in gateway
-                userRepository.saveAll(<%= instanceName %>.users);
-            }
-            <%_ } else { _%>
-            if (<%= instanceName %>.user != null) {
-                // Save user in case it's new and only exists in gateway
-                userRepository.save(<%= instanceName %>.user)
-            }
-            <%_ } _%>
+            <% for (const userRelationship of relationships.filter(rel => rel.otherEntity.builtInUser)) { %>
+                <%_ if (userRelationship.collection) { _%> 
+                  if (<%= instanceName %>.<%= userRelationship.relationshipNamePlural %> != null) { 
+                      // Save users in case they are new and only exist in gateway 
+                      userRepository.saveAll(<%= instanceName %>.<%= userRelationship.relationshipNamePlural %>)
+                  } 
+                <%_ } else { _%> 
+                  if (<%= instanceName %>.<%= userRelationship.relationshipName %> != null) { 
+                      // Save user in case it's new and only exists in gateway 
+                      userRepository.save(<%= instanceName %>.<%= userRelationship.relationshipName %>)
+                  } 
+                <%_ } _%>
+            <% } %>
         <%_ } _%>
         <%_ for (field of primaryKey.fields.filter(f => f.autoGenerateByService)) { _%>
         <%= instanceName %>.<%= field.fieldName %> = UUID.randomUUID()
@@ -244,17 +239,19 @@ _%><%- include('../../common/inject_template', {viaService: viaService, construc
     <%_ } _%>
 
         <%_ if (saveUserSnapshot) { %>
-            <%_ if (manyToManyWithUser) { _%>
-                if (<%= instanceName %>.users != null) {
-                    // Save users in case they are new and only exists in gateway
-                    userRepository.saveAll(<%= instanceName %>.users);
-                }
-                <%_ } else { _%>
-                if (<%= instanceName %>.user != null) {
-                    // Save user in case it's new and only exists in gateway
-                    userRepository.save(<%= instanceName %>.user)
-                }
+            <% for (const userRelationship of relationships.filter(rel => rel.otherEntity.builtInUser)) { %>
+                <%_ if (userRelationship.collection) { _%> 
+                  if (<%= instanceName %>.<%= userRelationship.relationshipNamePlural %> != null) { 
+                      // Save users in case they are new and only exist in gateway 
+                      userRepository.saveAll(<%= instanceName %>.<%= userRelationship.relationshipNamePlural %>)
+                  } 
+                <%_ } else { _%> 
+                  if (<%= instanceName %>.<%= userRelationship.relationshipName %> != null) { 
+                      // Save user in case it's new and only exists in gateway 
+                      userRepository.save(<%= instanceName %>.<%= userRelationship.relationshipName %>)
+                  } 
                 <%_ } _%>
+            <% } %>
         <%_ } _%>
 <%- include('/partials/save_template', {asEntity, asDto, viaService: viaService, returnDirectly: false, isUsingMapsId: false, mapsIdAssoc: mapsIdAssoc, noReturn: true}); -%>
         <%_ if (!reactive) { _%>
@@ -314,17 +311,19 @@ _%><%- include('../../common/inject_template', {viaService: viaService, construc
     <%_ } _%>
 
         <%_ if (saveUserSnapshot) { _%>
-            <%_ if (manyToManyWithUser) { _%>
-        if (<%= instanceName %>.users != null) {
-            // Save users in case they are new and only exists in gateway
-            userRepository.saveAll(<%= instanceName %>.users)
-        }
-            <%_ } else { _%>
-        if (<%= instanceName %>.user != null) {
-            // Save user in case it's new and only exists in gateway
-            userRepository.save(<%= instanceName %>.user)
-        }
-            <%_ } _%>
+            <% for (const userRelationship of relationships.filter(rel => rel.otherEntity.builtInUser)) { %>
+                <%_ if (userRelationship.collection) { _%> 
+                  if (<%= instanceName %>.<%= userRelationship.relationshipNamePlural %> != null) { 
+                      // Save users in case they are new and only exist in gateway 
+                      userRepository.saveAll(<%= instanceName %>.<%= userRelationship.relationshipNamePlural %>)
+                  } 
+                <%_ } else { _%> 
+                  if (<%= instanceName %>.<%= userRelationship.relationshipName %> != null) { 
+                      // Save user in case it's new and only exists in gateway 
+                      userRepository.save(<%= instanceName %>.<%= userRelationship.relationshipName %>)
+                  } 
+                <%_ } _%>
+            <% } %>
         <%_ } _%>
 <%- include('../../common/patch_template', {asEntity, asDto, isService: false, viaService: viaService}); -%>
             <%_ if (!reactive) { _%>

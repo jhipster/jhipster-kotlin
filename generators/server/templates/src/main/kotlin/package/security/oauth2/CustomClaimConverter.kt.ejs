@@ -43,7 +43,7 @@ class CustomClaimConverter(private val registration: ClientRegistration, private
 
     override fun convert(claims: Map<String, Any>): Map<String, Any>? {
         val convertedClaims = delegate.convert(claims)
-        if (RequestContextHolder.getRequestAttributes() != null) {
+        if (RequestContextHolder.getRequestAttributes() != null && RequestContextHolder.getRequestAttributes() != null) {
             // Retrieve and set the token
             val token = bearerTokenResolver.resolve((RequestContextHolder.getRequestAttributes() as ServletRequestAttributes).request)
             val headers = HttpHeaders()
@@ -70,15 +70,27 @@ class CustomClaimConverter(private val registration: ClientRegistration, private
                 if (user.has("family_name")) {
                     convertedClaims["family_name"] = user.get("family_name").asText()
                 }
+                if (user.has("email")) {
+                    convertedClaims["email"] = user.get("email").asText()
+                }
+                // Allow full name in a name claim - happens with Auth0
+                if (user.has("name")) {
+                    val name = user.get("name").asText().split("\\s+").toTypedArray()
+                    if (name.length > 0) {
+                        convertedClaims["given_name"] = name[0]
+                        convertedClaims["family_name"] = " ${name.copyOfRange(1, name.size)}"
+                    }
+                }
+
                 if (user.has("groups")) {
                    val groups = user.get("groups").map(JsonNode::asText)
                     convertedClaims["groups"] = groups
                 }
-            }
 
-            if (user.has(CLAIMS_NAMESPACE + "roles")) {
-                val roles = user.get(CLAIMS_NAMESPACE + "roles").map(JsonNode::asText)
-                convertedClaims["roles"] = roles
+                if (user.has(CLAIMS_NAMESPACE + "roles")) {
+                    val roles = user.get(CLAIMS_NAMESPACE + "roles").map(JsonNode::asText)
+                    convertedClaims["roles"] = roles
+                }   
             }
         }
 

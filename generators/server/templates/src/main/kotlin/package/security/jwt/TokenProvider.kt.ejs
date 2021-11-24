@@ -31,20 +31,24 @@ import org.springframework.stereotype.Component
 import org.springframework.util.ObjectUtils
 
 import tech.jhipster.config.JHipsterProperties
+
 import io.jsonwebtoken.JwtException
 import io.jsonwebtoken.JwtParser
 import io.jsonwebtoken.Jwts
 import io.jsonwebtoken.SignatureAlgorithm
 import io.jsonwebtoken.io.Decoders
+import io.jsonwebtoken.security.SignatureException
 <%_ if (reactive) { _%>
 import io.jsonwebtoken.jackson.io.JacksonSerializer
 <%_ } _%>
 import io.jsonwebtoken.security.Keys
 
+import <%= packageName %>.management.SecurityMetersService
+
 private const val AUTHORITIES_KEY = "auth"
 
 @Component
-class TokenProvider(private val jHipsterProperties: JHipsterProperties) {
+class TokenProvider(private val jHipsterProperties: JHipsterProperties, private val securityMetersService: SecurityMetersService) {
 
     private val log = LoggerFactory.getLogger(javaClass)
 
@@ -113,14 +117,25 @@ class TokenProvider(private val jHipsterProperties: JHipsterProperties) {
         try {
             jwtParser?.parseClaimsJws(authToken)
             return true
-        } catch (e: JwtException) {
-            log.info("Invalid JWT token.")
-            log.trace("Invalid JWT token trace. $e")
-        } catch (e: IllegalArgumentException) {
-            log.info("Invalid JWT token.")
-            log.trace("Invalid JWT token trace. $e")
-        }
+        } catch (e: ExpiredJwtException) {
+            this.securityMetersService.trackTokenExpired()
 
+            log.trace("Invalid JWT token.", e)
+        } catch (e: UnsupportedJwtException) {
+            this.securityMetersService.trackTokenUnsupported()
+
+            log.trace("Invalid JWT token.", e)
+        } catch (e: MalformedJwtException) {
+            this.securityMetersService.trackTokenMalformed()
+
+            log.trace("Invalid JWT token.", e)
+        } catch (e: SignatureException) {
+            this.securityMetersService.trackTokenInvalidSignature()
+
+            log.trace("Invalid JWT token.", e);
+        } catch (e: IllegalArgumentException) { // TODO: should we let it bubble (no catch), to avoid defensive programming and follow the fail-fast principle?
+            log.error("Token validation error {}", e.message)
+        }
 
         return false
     }

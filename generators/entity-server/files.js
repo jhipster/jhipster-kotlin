@@ -54,12 +54,12 @@ const serverFiles = {
             templates: [
                 {
                     file: 'package/domain/Entity.kt.jhi',
-                    renameTo: generator => `${generator.packageFolder}/domain/${generator.persistClass}.kt.jhi`,
+                    renameTo: generator => `${generator.entityAbsoluteFolder}/domain/${generator.persistClass}.kt.jhi`,
                     useBluePrint: true,
                 },
                 {
                     file: 'package/domain/Entity.kt.jhi.javax_validation',
-                    renameTo: generator => `${generator.packageFolder}/domain/${generator.persistClass}.kt.jhi.javax_validation`,
+                    renameTo: generator => `${generator.entityAbsoluteFolder}/domain/${generator.persistClass}.kt.jhi.javax_validation`,
                     useBluePrint: true,
                 },
             ],
@@ -70,7 +70,7 @@ const serverFiles = {
             templates: [
                 {
                     file: 'package/domain/Entity.kt.jhi.spring_data_reactive',
-                    renameTo: generator => `${generator.packageFolder}/domain/${generator.persistClass}.kt.jhi.spring_data_reactive`,
+                    renameTo: generator => `${generator.entityAbsoluteFolder}/domain/${generator.persistClass}.kt.jhi.spring_data_reactive`,
                     useBluePrint: true,
                 },
             ],
@@ -81,7 +81,8 @@ const serverFiles = {
             templates: [
                 {
                     file: 'package/domain/Entity.kt.jhi.spring_data_cassandra',
-                    renameTo: generator => `${generator.packageFolder}/domain/${generator.persistClass}.kt.jhi.spring_data_cassandra`,
+                    renameTo: generator =>
+                        `${generator.entityAbsoluteFolder}/domain/${generator.persistClass}.kt.jhi.spring_data_cassandra`,
                     useBluePrint: true,
                 },
             ],
@@ -92,7 +93,7 @@ const serverFiles = {
             templates: [
                 {
                     file: 'package/domain/Entity.kt.jhi.spring_data_neo4j',
-                    renameTo: generator => `${generator.packageFolder}/domain/${generator.persistClass}.kt.jhi.spring_data_neo4j`,
+                    renameTo: generator => `${generator.entityAbsoluteFolder}/domain/${generator.persistClass}.kt.jhi.spring_data_neo4j`,
                     useBluePrint: true,
                 },
             ],
@@ -103,7 +104,7 @@ const serverFiles = {
             templates: [
                 {
                     file: 'package/domain/Entity.kt.jhi.javax_persistence',
-                    renameTo: generator => `${generator.packageFolder}/domain/${generator.persistClass}.kt.jhi.javax_persistence`,
+                    renameTo: generator => `${generator.entityAbsoluteFolder}/domain/${generator.persistClass}.kt.jhi.javax_persistence`,
                     useBluePrint: true,
                 },
             ],
@@ -114,7 +115,7 @@ const serverFiles = {
             templates: [
                 {
                     file: 'package/domain/Entity.kt.jhi.spring_data_mongodb',
-                    renameTo: generator => `${generator.packageFolder}/domain/${generator.persistClass}.kt.jhi.spring_data_mongodb`,
+                    renameTo: generator => `${generator.entityAbsoluteFolder}/domain/${generator.persistClass}.kt.jhi.spring_data_mongodb`,
                     useBluePrint: true,
                 },
             ],
@@ -125,7 +126,7 @@ const serverFiles = {
             templates: [
                 {
                     file: 'package/domain/Entity.kt.jhi.hibernate_cache',
-                    renameTo: generator => `${generator.packageFolder}/domain/${generator.persistClass}.kt.jhi.hibernate_cache`,
+                    renameTo: generator => `${generator.entityAbsoluteFolder}/domain/${generator.persistClass}.kt.jhi.hibernate_cache`,
                     useBluePrint: true,
                 },
             ],
@@ -136,7 +137,7 @@ const serverFiles = {
             templates: [
                 {
                     file: 'package/domain/Entity.kt.jhi.elastic_search',
-                    renameTo: generator => `${generator.packageFolder}/domain/${generator.persistClass}.kt.jhi.elastic_search`,
+                    renameTo: generator => `${generator.entityAbsoluteFolder}/domain/${generator.persistClass}.kt.jhi.elastic_search`,
                     useBluePrint: true,
                 },
             ],
@@ -147,7 +148,7 @@ const serverFiles = {
             templates: [
                 {
                     file: 'package/web/rest/EntityResource.kt',
-                    renameTo: generator => `${generator.packageFolder}/web/rest/${generator.entityClass}Resource.kt`,
+                    renameTo: generator => `${generator.entityAbsoluteFolder}/web/rest/${generator.entityClass}Resource.kt`,
                     useBluePrint: true,
                 },
             ],
@@ -158,12 +159,12 @@ const serverFiles = {
             templates: [
                 {
                     file: 'package/service/criteria/EntityCriteria.kt',
-                    renameTo: generator => `${generator.packageFolder}/service/criteria/${generator.entityClass}Criteria.kt`,
+                    renameTo: generator => `${generator.entityAbsoluteFolder}/service/criteria/${generator.entityClass}Criteria.kt`,
                     useBluePrint: true,
                 },
                 {
                     file: 'package/service/EntityQueryService.kt',
-                    renameTo: generator => `${generator.packageFolder}/service/${generator.entityClass}QueryService.kt`,
+                    renameTo: generator => `${generator.entityAbsoluteFolder}/service/${generator.entityClass}QueryService.kt`,
                     useBluePrint: true,
                 },
             ],
@@ -174,7 +175,7 @@ const serverFiles = {
             templates: [
                 {
                     file: 'package/repository/search/EntitySearchRepository.kt',
-                    renameTo: generator => `${generator.packageFolder}/repository/search/${generator.entityClass}SearchRepository.kt`,
+                    renameTo: generator => `${generator.entityAbsoluteFolder}/repository/search/${generator.entityClass}SearchRepository.kt`,
                     useBluePrint: true,
                 },
             ],
@@ -185,7 +186,7 @@ const serverFiles = {
             templates: [
                 {
                     file: 'package/repository/EntityRepository.kt',
-                    renameTo: generator => `${generator.packageFolder}/repository/${generator.entityClass}Repository.kt`,
+                    renameTo: generator => `${generator.entityAbsoluteFolder}/repository/${generator.entityClass}Repository.kt`,
                     useBluePrint: true,
                 },
             ],
@@ -196,7 +197,7 @@ const serverFiles = {
             templates: [
                 {
                     file: 'package/repository/EntityRepository_reactive.kt',
-                    renameTo: generator => `${generator.packageFolder}/repository/${generator.entityClass}ReactiveRepository.kt`,
+                    renameTo: generator => `${generator.entityAbsoluteFolder}/repository/${generator.entityClass}ReactiveRepository.kt`,
                     useBluePrint: true,
                 },
             ],
@@ -207,12 +208,17 @@ const serverFiles = {
             templates: [
                 {
                     file: 'package/repository/EntityRepositoryInternalImpl_reactive.kt',
-                    renameTo: generator => `${generator.packageFolder}/repository/${generator.entityClass}RepositoryInternalImpl.kt`,
+                    renameTo: generator => `${generator.entityAbsoluteFolder}/repository/${generator.entityClass}RepositoryInternalImpl.kt`,
+                    useBluePrint: true,
+                },
+                {
+                    file: 'package/repository/EntitySqlHelper_reactive.kt',
+                    renameTo: generator => `${generator.entityAbsoluteFolder}/repository/${generator.entityClass}SqlHelper.kt`,
                     useBluePrint: true,
                 },
                 {
                     file: 'package/repository/rowmapper/EntityRowMapper.kt',
-                    renameTo: generator => `${generator.packageFolder}/repository/rowmapper/${generator.entityClass}RowMapper.kt`,
+                    renameTo: generator => `${generator.entityAbsoluteFolder}/repository/rowmapper/${generator.entityClass}RowMapper.kt`,
                     useBluePrint: true,
                 },
             ],
@@ -223,12 +229,12 @@ const serverFiles = {
             templates: [
                 {
                     file: 'package/service/EntityService.kt',
-                    renameTo: generator => `${generator.packageFolder}/service/${generator.entityClass}Service.kt`,
+                    renameTo: generator => `${generator.entityAbsoluteFolder}/service/${generator.entityClass}Service.kt`,
                     useBluePrint: true,
                 },
                 {
                     file: 'package/service/impl/EntityServiceImpl.kt',
-                    renameTo: generator => `${generator.packageFolder}/service/impl/${generator.entityClass}ServiceImpl.kt`,
+                    renameTo: generator => `${generator.entityAbsoluteFolder}/service/impl/${generator.entityClass}ServiceImpl.kt`,
                     useBluePrint: true,
                 },
             ],
@@ -239,7 +245,7 @@ const serverFiles = {
             templates: [
                 {
                     file: 'package/service/impl/EntityServiceImpl.kt',
-                    renameTo: generator => `${generator.packageFolder}/service/${generator.entityClass}Service.kt`,
+                    renameTo: generator => `${generator.entityAbsoluteFolder}/service/${generator.entityClass}Service.kt`,
                     useBluePrint: true,
                 },
             ],
@@ -250,17 +256,17 @@ const serverFiles = {
             templates: [
                 {
                     file: 'package/service/dto/EntityDTO.kt',
-                    renameTo: generator => `${generator.packageFolder}/service/dto/${generator.asDto(generator.entityClass)}.kt`,
+                    renameTo: generator => `${generator.entityAbsoluteFolder}/service/dto/${generator.asDto(generator.entityClass)}.kt`,
                     useBluePrint: true,
                 },
                 {
                     file: 'package/service/mapper/BaseEntityMapper.kt',
-                    renameTo: generator => `${generator.packageFolder}/service/mapper/EntityMapper.kt`,
+                    renameTo: generator => `${generator.entityAbsoluteFolder}/service/mapper/EntityMapper.kt`,
                     useBluePrint: true,
                 },
                 {
                     file: 'package/service/mapper/EntityMapper.kt',
-                    renameTo: generator => `${generator.packageFolder}/service/mapper/${generator.entityClass}Mapper.kt`,
+                    renameTo: generator => `${generator.entityAbsoluteFolder}/service/mapper/${generator.entityClass}Mapper.kt`,
                     useBluePrint: true,
                 },
             ],
@@ -281,7 +287,7 @@ const serverFiles = {
                             SERVER_TEST_SRC_KOTLIN_DIR,
                         },
                     },
-                    renameTo: generator => `${generator.packageFolder}/web/rest/${generator.entityClass}ResourceIT.kt`,
+                    renameTo: generator => `${generator.entityAbsoluteFolder}/web/rest/${generator.entityClass}ResourceIT.kt`,
                     useBluePrint: true,
                 },
             ],
@@ -293,7 +299,7 @@ const serverFiles = {
                 {
                     file: 'package/repository/search/EntitySearchRepositoryMockConfiguration.kt',
                     renameTo: generator =>
-                        `${generator.packageFolder}/repository/search/${generator.entityClass}SearchRepositoryMockConfiguration.kt`,
+                        `${generator.entityAbsoluteFolder}/repository/search/${generator.entityClass}SearchRepositoryMockConfiguration.kt`,
                     useBluePrint: true,
                 },
             ],
@@ -314,7 +320,7 @@ const serverFiles = {
             templates: [
                 {
                     file: 'package/domain/EntityTest.kt',
-                    renameTo: generator => `${generator.packageFolder}/domain/${generator.persistClass}Test.kt`,
+                    renameTo: generator => `${generator.entityAbsoluteFolder}/domain/${generator.persistClass}Test.kt`,
                     useBluePrint: true,
                 },
             ],
@@ -325,7 +331,7 @@ const serverFiles = {
             templates: [
                 {
                     file: 'package/service/dto/EntityDTOTest.kt',
-                    renameTo: generator => `${generator.packageFolder}/service/dto/${generator.asDto(generator.entityClass)}Test.kt`,
+                    renameTo: generator => `${generator.entityAbsoluteFolder}/service/dto/${generator.asDto(generator.entityClass)}Test.kt`,
                     useBluePrint: true,
                 },
             ],
@@ -336,7 +342,7 @@ const serverFiles = {
             templates: [
                 {
                     file: 'package/service/mapper/EntityMapperTest.kt',
-                    renameTo: generator => `${generator.packageFolder}/service/mapper/${generator.entityClass}MapperTest.kt`,
+                    renameTo: generator => `${generator.entityAbsoluteFolder}/service/mapper/${generator.entityClass}MapperTest.kt`,
                     useBluePrint: true,
                 },
             ],
@@ -377,6 +383,7 @@ function writeFiles() {
                     ...utils.getEnumInfo(field, this.clientRootFolder),
                     frontendAppName: this.frontendAppName,
                     packageName: this.packageName,
+                    entityAbsolutePackage: this.entityAbsolutePackage || this.packageName,
                 };
                 // eslint-disable-next-line no-console
                 if (!this.skipServer) {
@@ -385,7 +392,7 @@ function writeFiles() {
                     )}/${SERVER_MAIN_SRC_KOTLIN_DIR}package/domain/enumeration/Enum.kt.ejs`;
                     this.template(
                         pathToTemplateFile,
-                        `${SERVER_MAIN_SRC_KOTLIN_DIR}${this.packageFolder}/domain/enumeration/${fieldType}.kt`,
+                        `${SERVER_MAIN_SRC_KOTLIN_DIR}${this.entityAbsoluteFolder}/domain/enumeration/${fieldType}.kt`,
                         this,
                         {},
                         enumInfo
