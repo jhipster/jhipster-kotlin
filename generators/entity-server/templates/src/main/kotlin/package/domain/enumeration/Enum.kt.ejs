@@ -4,7 +4,7 @@
  This file is part of the JHipster project, see https://www.jhipster.tech/
  for more information.
 
- Licensed under the Apache License, Version 2.0 (the "License");
+ Licensed under the Apache License, Version 2.0 (the "
  you may not use this file except in compliance with the License.
  You may obtain a copy of the License at
 
@@ -18,14 +18,21 @@
 -%>
 package <%= packageName %>.domain.enumeration
 
+<%_ if (typeof javadoc === 'undefined') { _%>
 /**
  * The <%= enumName %> enumeration.
  */
+<%_ } else { _%>
+<%= javadoc %>
+<%_ } _%>
 enum class <%= enumName %><%if (!withoutCustomValues) { %>(val <%= enumName %>: String) <% } %>{
     <%_ if (withoutCustomValues) { _%>
-        <%= enumValues.map(enumValue => enumValue.name).join(', ') %>
+        <%= enumValues.map(enumValue => `${enumValue.comment && `\n${enumValue.comment}\n` || ''}    ${enumValue.name}`).join(', ') %>
     <%_ } else {
         enumValues.forEach((enumWithCustomValue, index) => { _%>
-        <%= enumWithCustomValue.name %>("<%= enumWithCustomValue.value %>")<% if (index < enumValues.length - 1) { %>,<% } else { %><% } %>
+        <%_ if (enumWithCustomValue.comment){  _%>
+        <%= enumWithCustomValue.comment %>
+        <%_ } _%>
+        <%= enumWithCustomValue.name %>("<%= enumWithCustomValue.value %>")<% if (index < enumValues.length - 1) { %>,<% } %>
     <%_ }); }_%>
 }

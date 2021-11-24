@@ -1,5 +1,5 @@
 <%#
- Copyright 2013-2020 the original author or authors from the JHipster project.
+ Copyright 2013-2021 the original author or authors from the JHipster project.
 
  This file is part of the JHipster project, see https://www.jhipster.tech/
  for more information.
@@ -8,7 +8,7 @@
  you may not use this file except in compliance with the License.
  You may obtain a copy of the License at
 
-      http://www.apache.org/licenses/LICENSE-2.0
+      https://www.apache.org/licenses/LICENSE-2.0
 
  Unless required by applicable law or agreed to in writing, software
  distributed under the License is distributed on an "AS IS" BASIS,
@@ -19,7 +19,6 @@
 package <%= packageName %>.repository
 
 import com.couchbase.client.java.search.SearchQuery
-import com.couchbase.client.java.search.queries.AbstractFtsQuery
 import org.junit.jupiter.params.ParameterizedTest
 import org.junit.jupiter.params.provider.Arguments
 import org.junit.jupiter.params.provider.MethodSource
@@ -28,22 +27,23 @@ import java.util.stream.Stream
 
 import org.assertj.core.api.Assertions.assertThat
 
-class CustomN1qlCouchbaseRepositoryTest {
+class JHipsterCouchbaseRepositoryTest {
 
     @MethodSource
     @ParameterizedTest
-    fun queryString(query: String?, ftsQuery: AbstractFtsQuery) {
-        assertThat(Custom<% if (reactive) { %>Reactive<% } %>N1qlCouchbaseRepository.queryString(query).toString()).isEqualTo(ftsQuery.toString())
+    fun queryString(query: String, ftsQuery: SearchQuery) {
+        assertThat(JHipsterCouchbaseRepository.searchQuery(query).toString()).isEqualTo(ftsQuery.toString())
     }
 
-    private fun queryString() = Stream.of(
+    @SuppressWarnings("unused")
+    @JvmStatic
+    private fun queryString():  Stream<Arguments>{
+        return Stream.of(
             Arguments.of("id:A", SearchQuery.docId("A")),
             Arguments.of("id:A id:B", SearchQuery.docId("A", "B")),
             Arguments.of("hello id:A", SearchQuery.conjuncts(SearchQuery.queryString("hello"), SearchQuery.docId("A"))),
-            Arguments.of(
-                "hello id:A kitty id:B",
-                SearchQuery.conjuncts(SearchQuery.queryString("hello kitty"), SearchQuery.docId("A", "B"))
-            ),
+            Arguments.of("hello id:A kitty id:B", SearchQuery.conjuncts(SearchQuery.queryString("hello kitty"), SearchQuery.docId("A", "B"))),
             Arguments.of("hello kitty", SearchQuery.queryString("hello kitty"))
         )
+    }
 }

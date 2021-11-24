@@ -21,14 +21,12 @@ package <%= packageName %>.config
 import com.datastax.oss.driver.api.core.data.TupleValue
 import com.datastax.oss.driver.api.core.type.DataTypes
 import com.datastax.oss.driver.api.core.type.TupleType
-import tech.jhipster.config.JHipsterConstants
 import org.slf4j.LoggerFactory
-<%_ if (applicationTypeGateway && databaseType !== 'cassandra') { _%>
+<%_ if (applicationTypeGateway && !databaseTypeCassandra) { _%>
 import org.springframework.boot.autoconfigure.condition.ConditionalOnProperty
 <%_ } _%>
 import org.springframework.context.annotation.Bean
 import org.springframework.context.annotation.Configuration
-import org.springframework.context.annotation.Profile
 import org.springframework.core.convert.converter.Converter
 import org.springframework.data.cassandra.core.convert.CassandraCustomConversions
 import org.springframework.data.convert.ReadingConverter
@@ -41,14 +39,16 @@ import java.time.ZonedDateTime
 import java.util.ArrayList
 import java.util.List
 
-@Configuration<% if (applicationTypeGateway && databaseType !== 'cassandra') { %>
-@ConditionalOnProperty("jhipster.gateway.rate-limiting.enabled")<% } %>
-public class DatabaseConfiguration {
+@Configuration
+<%_ if (applicationTypeGateway && !databaseTypeCassandra) { _%>
+@ConditionalOnProperty("jhipster.gateway.rate-limiting.enabled")
+<%_ } _%>
+class DatabaseConfiguration {
 
     private val log = LoggerFactory.getLogger(javaClass)
 
     @Bean
-    fun customConversions() =
+    fun cassandraCustomConversions() =
         CassandraCustomConversions(
             mutableListOf<Converter<*, *>>(
                 TupleToZonedDateTimeConverter,
@@ -67,12 +67,12 @@ public class DatabaseConfiguration {
 
     @WritingConverter
     object ZonedDateTimeToTupleConverter: Converter<ZonedDateTime, TupleValue> {
-        private val type = DataTypes.tupleOf(DataTypes.TIMESTAMP, DataTypes.ASCII)
+        private val type = DataTypes.tupleOf(DataTypes.TIMESTAMP, DataTypes.TEXT)
 
         override fun convert(@Nonnull source: ZonedDateTime): TupleValue {
             val tupleValue = type.newValue()
             tupleValue.setInstant(0, source.toInstant())
-            tupleValue.setString(1, source.getZone().toString())
+            tupleValue.setString(1, source.zone.toString())
             return tupleValue
         }
     }

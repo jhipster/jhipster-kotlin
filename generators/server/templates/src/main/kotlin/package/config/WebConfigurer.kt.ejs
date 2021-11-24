@@ -4,7 +4,7 @@
  This file is part of the JHipster project, see https://www.jhipster.tech/
  for more information.
 
- Licensed under the Apache License, Version 2.0 (the "License");
+ Licensed under the Apache License, Version 2.0 (the "
  you may not use this file except in compliance with the License.
  You may obtain a copy of the License at
 
@@ -21,11 +21,11 @@ package <%= packageName %>.config
 <%_ if (reactive) { _%>
 import com.fasterxml.jackson.databind.ObjectMapper
 <%_ } _%>
-<%_ if (!skipClient || ['h2Disk', 'h2Memory'].includes(devDatabaseType)) { _%>
+<%_ if (!skipClient || devDatabaseTypeH2Any) { _%>
 import tech.jhipster.config.JHipsterConstants
 <%_ } _%>
 import tech.jhipster.config.JHipsterProperties
-<%_ if (['h2Disk', 'h2Memory'].includes(devDatabaseType)) { _%>
+<%_ if (devDatabaseTypeH2Any) { _%>
 import tech.jhipster.config.h2.H2ConfigurationHelper
 <%_ } _%>
 <%_ if (!skipClient && reactive) { _%>
@@ -50,11 +50,11 @@ import org.springframework.context.annotation.Profile
     <%_ } _%>
 import org.springframework.core.annotation.Order
 <%_ } _%>
-<%_ if (reactive) { _%>
+<%_ if (reactive && !databaseTypeNo) { _%>
 import org.springframework.data.web.ReactivePageableHandlerMethodArgumentResolver
 import org.springframework.data.web.ReactiveSortHandlerMethodArgumentResolver
 <%_ } _%>
-<%_ if (!reactive || (['h2Disk', 'h2Memory'].includes(devDatabaseType) && reactive)) { _%>
+<%_ if (!reactive || (devDatabaseTypeH2Any && reactive)) { _%>
 import org.springframework.core.env.Environment
 import org.springframework.core.env.Profiles
 <%_ } _%>
@@ -96,7 +96,6 @@ import javax.servlet.ServletContext
 import javax.servlet.ServletException
     <%_ if (!skipClient) { _%>
 import java.io.File
-import java.io.UnsupportedEncodingException
 import java.nio.charset.StandardCharsets
 import java.nio.file.Paths
 import java.util.EnumSet
@@ -123,7 +122,12 @@ class WebConfigurer(
     <%_ if (devDatabaseTypeH2Any && reactive) { _%>
     init {
         if (env.acceptsProfiles(Profiles.of(JHipsterConstants.SPRING_PROFILE_DEVELOPMENT))) {
-            H2ConfigurationHelper.initH2Console()
+            try {
+                H2ConfigurationHelper.initH2Console()
+            } catch (e: Exception) {
+                // Console may already be running on another app or after a refresh.
+                e.printStackTrace()
+            }
         }
     }
     <%_ } _%>
@@ -150,7 +154,7 @@ class WebConfigurer(
      * Customize the Servlet engine: Mime types, the document root, the cache.
      */
     override fun customize(server: WebServerFactory) {
-        // When running in an IDE or with <% if (buildTool === 'gradle') { %>./gradlew bootRun<% } else { %>./mvnw spring-boot:run<% } %>, set location of the static web assets.
+        // When running in an IDE or with <% if (buildToolGradle) { %>./gradlew bootRun<% } else { %>./mvnw spring-boot:run<% } %>, set location of the static web assets.
         setLocationForStaticAssets(server)
     }
 
@@ -168,13 +172,7 @@ class WebConfigurer(
      * Resolve path prefix to static resources.
      */
     private fun resolvePathPrefix(): String {
-        val fullExecutablePath = try {
-            decode(this.javaClass.getResource("").path, StandardCharsets.UTF_8.name())
-        } catch (e: UnsupportedEncodingException) {
-            /* try without decoding if this ever happens */
-            this.javaClass.getResource("").path
-        }
-
+        val fullExecutablePath = decode(this.javaClass.getResource("").path, StandardCharsets.UTF_8)
         val rootPath = Paths.get(".").toUri().normalize().path
         val extractedPath = fullExecutablePath.replace(rootPath, "")
         val extractionEndIndex = extractedPath.indexOf("<%= BUILD_DIR %>")
@@ -211,6 +209,7 @@ class WebConfigurer(
     }
     <%_ if (reactive) { _%>
 
+        <%_ if (!databaseTypeNo) { _%>
     // TODO: remove when this is supported in spring-data / spring-boot
     @Bean
     fun reactivePageableHandlerMethodArgumentResolver() = ReactivePageableHandlerMethodArgumentResolver()
@@ -218,6 +217,7 @@ class WebConfigurer(
     // TODO: remove when this is supported in spring-boot
     @Bean
     fun reactiveSortHandlerMethodArgumentResolver() = ReactiveSortHandlerMethodArgumentResolver()
+        <%_ } _%>
 
     @Bean
     @Order(-2) // The handler must have precedence over WebFluxResponseStatusExceptionHandler and Spring Boot's ErrorWebExceptionHandler
@@ -240,7 +240,7 @@ class WebConfigurer(
     }
         <%_ } _%>
     <%_ } _%>
-    <%_ if (['h2Disk', 'h2Memory'].includes(devDatabaseType) && !reactive) { _%>
+    <%_ if (devDatabaseTypeH2Any && !reactive) { _%>
 
     /**
      * Initializes H2 console.

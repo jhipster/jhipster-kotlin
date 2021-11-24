@@ -4,7 +4,7 @@
  This file is part of the JHipster project, see https://www.jhipster.tech/
  for more information.
 
- Licensed under the Apache License, Version 2.0 (the "License");
+ Licensed under the Apache License, Version 2.0 (the "
  you may not use this file except in compliance with the License.
  You may obtain a copy of the License at
 
@@ -22,15 +22,15 @@ package <%= packageName %>.domain
 import org.hibernate.annotations.Cache
 import org.hibernate.annotations.CacheConcurrencyStrategy
 <%_ } _%>
-<%_ if (databaseType === 'mongodb' || databaseType === 'couchbase') { _%>
+<%_ if (databaseTypeMongodb || databaseTypeCouchbase) { _%>
 import org.springframework.data.annotation.Id
 import org.springframework.data.<%= databaseType %>.core.mapping.Document
 <%_ } _%>
-<%_ if (databaseType === 'neo4j') { _%>
+<%_ if (databaseTypeNeo4j) { _%>
 import org.springframework.data.neo4j.core.schema.Id
 import org.springframework.data.neo4j.core.schema.Node
 <%_ } _%>
-<%_ if (databaseType === 'sql') { _%>
+<%_ if (databaseTypeSql) { _%>
     <%_ if (!reactive) { _%>
 import javax.persistence.Entity
 import javax.persistence.Id
@@ -49,27 +49,27 @@ import java.io.Serializable
 /**
  * An authority (a security role) used by Spring Security.
  */
-<%_ if (databaseType === 'sql' && !reactive) { _%>
+<%_ if (databaseTypeSql && !reactive) { _%>
 @Entity
 @Table(name = "<%= jhiTablePrefix %>_authority")
     <%_ if (enableHibernateCache) { _%>
-        <%_ if (cacheProvider === 'infinispan') { _%>
+        <%_ if (cacheProviderInfinispan) { _%>
 @Cache(usage = CacheConcurrencyStrategy.READ_WRITE)
         <%_ } else { _%>
 @Cache(usage = CacheConcurrencyStrategy.NONSTRICT_READ_WRITE)
         <%_ } _%>
     <%_ } _%>
 <%_ } _%>
-<%_ if (databaseType === 'sql' && reactive) { _%>
+<%_ if (databaseTypeSql && reactive) { _%>
 @Table("<%= jhiTablePrefix %>_authority")
 <%_ } _%>
-<%_ if (databaseType === 'mongodb') { _%>
+<%_ if (databaseTypeMongodb) { _%>
 @Document(collection = "<%= jhiTablePrefix %>_authority")
 <%_ } _%>
-<%_ if (databaseType === 'couchbase') { _%>
+<%_ if (databaseTypeCouchbase) { _%>
 @Document
 <%_ } _%>
-<%_ if (databaseType === 'neo4j') { _%>
+<%_ if (databaseTypeNeo4j) { _%>
 @Node("<%= jhiTablePrefix %>_authority")
 <%_ } _%>
 data class Authority(
@@ -77,12 +77,12 @@ data class Authority(
     @field:NotNull
     @field:Size(max = 50)
     @Id
-    <%_ if (databaseType === 'sql' && !reactive) { _%>
+    <%_ if (databaseTypeSql && !reactive) { _%>
     @Column(length = 50)
     <%_ } _%>
     var name: String? = null
 
-) : Serializable<% if (databaseType === 'sql' && reactive) { %>, Persistable<String><% } %> {
+) : Serializable<% if (databaseTypeSql && reactive) { %>, Persistable<String><% } %> {
 
     override fun equals(other: Any?): Boolean {
         if (this === other) return true
@@ -94,7 +94,7 @@ data class Authority(
 
     override fun hashCode() = 31
 
-    <%_ if (databaseType === 'sql' && reactive) { _%>
+    <%_ if (databaseTypeSql && reactive) { _%>
     override fun getId() = name
     
     override fun isNew() = true

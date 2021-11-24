@@ -4,7 +4,7 @@
  This file is part of the JHipster project, see https://www.jhipster.tech/
  for more information.
 
- Licensed under the Apache License, Version 2.0 (the "License");
+ Licensed under the Apache License, Version 2.0 (the "
  you may not use this file except in compliance with the License.
  You may obtain a copy of the License at
 
@@ -18,33 +18,33 @@
 -%>
 package <%= packageName %>.web.rest
 
-<%_ if (databaseType === 'cassandra') { _%>
+<%_ if (databaseTypeCassandra) { _%>
 import <%= packageName %>.AbstractCassandraTest
 <%_ } _%>
 import <%= packageName %>.IntegrationTest
-<%_ if (databaseType === 'sql' && reactive) { _%>
+<%_ if (databaseTypeSql && reactive) { _%>
 import <%= packageName %>.config.SYSTEM_ACCOUNT
 <%_ } _%>
-<%_ if (databaseType !== 'cassandra' && databaseType !== 'couchbase') { _%>
+<%_ if (!databaseTypeCassandra && !databaseTypeCouchbase) { _%>
 import <%= packageName %>.domain.Authority
 <%_ } _%>
 import <%= packageName %>.domain.<%= asEntity('User') %>
-<%_ if (databaseType === 'sql' && reactive) { _%>
+<%_ if (databaseTypeSql && reactive) { _%>
 import <%= packageName %>.repository.AuthorityRepository
 <%_ } _%>
 import <%= packageName %>.repository.UserRepository
-<%_ if (searchEngine === 'elasticsearch') { _%>
+<%_ if (searchEngineElasticsearch) { _%>
 import <%= packageName %>.repository.search.UserSearchRepository
 <%_ } _%>
 import <%= packageName %>.security.ADMIN
 import <%= packageName %>.security.USER
 import <%= packageName %>.service.dto.<%= asDto('AdminUser') %>
 import <%= packageName %>.service.dto.<%= asDto('User') %>
-<%_ if (databaseType === 'sql' && reactive) { _%>
+<%_ if (databaseTypeSql && reactive) { _%>
 import <%= packageName %>.service.EntityManager
 <%_ } _%>
 import <%= packageName %>.service.mapper.UserMapper
-<%_ if (authenticationType !== 'oauth2') { _%>
+<%_ if (!authenticationTypeOauth2) { _%>
 import <%= packageName %>.web.rest.vm.ManagedUserVM
 <%_ } _%>
 import org.apache.commons.lang3.RandomStringUtils
@@ -56,14 +56,14 @@ import org.springframework.boot.test.autoconfigure.web.servlet.AutoConfigureMock
 <%_ } else { _%>
 import org.springframework.boot.test.autoconfigure.web.reactive.AutoConfigureWebTestClient
 <%_ } _%>
-<%_ if (cacheManagerIsAvailable === true) { _%>
+<%_ if (cacheManagerIsAvailable) { _%>
 import org.springframework.cache.CacheManager
 <%_ } _%>
-<%_ if (cacheProvider === 'memcached' ) { _%>
+<%_ if (cacheProviderMemcached ) { _%>
 import org.springframework.cache.support.NoOpCacheManager
 <%_ } _%>
 import org.springframework.http.MediaType
-<%_ if (databaseType === 'couchbase') { _%>
+<%_ if (databaseTypeCouchbase) { _%>
 import org.springframework.security.core.context.SecurityContextHolder
 import org.springframework.security.test.context.TestSecurityContextHolder
 <%_ } _%>
@@ -74,28 +74,28 @@ import org.springframework.test.web.reactive.server.WebTestClient
 <%_ if (!reactive) { _%>
 import org.springframework.test.web.servlet.MockMvc
 <%_ } _%>
-<%_ if (databaseType === 'sql' && !reactive) { _%>
+<%_ if (databaseTypeSql && !reactive) { _%>
 import org.springframework.transaction.annotation.Transactional
 <%_ } _%>
-<%_ if (reactive && searchEngine === 'elasticsearch') { _%>
+<%_ if (reactive && searchEngineElasticsearch) { _%>
 import reactor.core.publisher.Mono
 <%_ } _%>
 
-<%_ if (databaseType === 'sql' && !reactive) { _%>
+<%_ if (databaseTypeSql && !reactive) { _%>
 import javax.persistence.EntityManager
 <%_ } _%>
-<%_ if (databaseType !== 'cassandra') { _%>
+<%_ if (!databaseTypeCassandra) { _%>
 import java.time.Instant
 <%_ } _%>
 import java.util.UUID
 import java.util.function.Consumer
 
 import org.assertj.core.api.Assertions.assertThat
-<%_ if (reactive && searchEngine === 'elasticsearch') { _%>
+<%_ if (reactive && searchEngineElasticsearch) { _%>
 import org.mockito.Mockito.*
 <%_ } _%>
 <%_ if (!reactive) { _%>
-    <%_ if (databaseType === 'sql' || databaseType === 'mongodb' || databaseType === 'neo4j' || databaseType === 'couchbase') { _%>
+    <%_ if (databaseTypeSql || databaseTypeMongodb || databaseTypeNeo4j || databaseTypeCouchbase) { _%>
 import org.hamcrest.Matchers.hasItems
     <%_ } _%>
 import org.hamcrest.Matchers.hasItem
@@ -113,7 +113,7 @@ import org.springframework.test.web.servlet.result.MockMvcResultMatchers.status
 import org.springframework.security.test.web.reactive.server.SecurityMockServerConfigurers.csrf
 <%_ } _%>
 import kotlin.test.assertNotNull
-<%_ if (cacheManagerIsAvailable === true) { _%>
+<%_ if (cacheManagerIsAvailable) { _%>
 import kotlin.test.assertNull
 <%_ } _%>
 
@@ -127,18 +127,18 @@ import kotlin.test.assertNull
 <%_ } _%>
 @WithMockUser(authorities = [ADMIN])
 @IntegrationTest
-class UserResourceIT<% if (databaseType === 'cassandra') { %>: AbstractCassandraTest() <% } %>{
+class UserResourceIT<% if (databaseTypeCassandra) { %>: AbstractCassandraTest() <% } %>{
 
     @Autowired
     private lateinit var userRepository: UserRepository
 
-    <%_ if (databaseType === 'sql' && reactive) { _%>
+    <%_ if (databaseTypeSql && reactive) { _%>
 
     @Autowired
     private lateinit var authorityRepository: AuthorityRepository
     <%_ } _%>
 
-    <%_ if (searchEngine === 'elasticsearch') { _%>
+    <%_ if (searchEngineElasticsearch) { _%>
 
     /**
      * This repository is mocked in the <%= packageName %>.repository.search test package.
@@ -152,12 +152,12 @@ class UserResourceIT<% if (databaseType === 'cassandra') { %>: AbstractCassandra
     @Autowired
     private lateinit var userMapper: UserMapper
 
-    <%_ if (databaseType === 'sql') { _%>
+    <%_ if (databaseTypeSql) { _%>
 
     @Autowired
     private lateinit var em: EntityManager
     <%_ } _%>
-    <%_ if (cacheManagerIsAvailable === true) { _%>
+    <%_ if (cacheManagerIsAvailable) { _%>
 
     @Autowired
     private lateinit var cacheManager: CacheManager
@@ -172,7 +172,7 @@ class UserResourceIT<% if (databaseType === 'cassandra') { %>: AbstractCassandra
 
     private lateinit var user: <%= asEntity('User') %>
 
-    <%_ if (cacheManagerIsAvailable === true) { _%>
+    <%_ if (cacheManagerIsAvailable) { _%>
     @BeforeEach
     fun setup() {
         cacheManager.getCache(UserRepository.USERS_BY_LOGIN_CACHE)!!.clear()
@@ -189,19 +189,19 @@ class UserResourceIT<% if (databaseType === 'cassandra') { %>: AbstractCassandra
 
     @BeforeEach
     fun initTest() {
-        user = initTestUser(userRepository<% if (databaseType === 'sql' ) { %>, em<% } _%>)
+        user = initTestUser(userRepository<% if (databaseTypeSql ) { %>, em<% } _%>)
     }
-<%_ if (authenticationType !== 'oauth2') { _%>
+<%_ if (!authenticationTypeOauth2) { _%>
 
     @Test
-    <%_ if (databaseType === 'sql' && !reactive) { _%>
+    <%_ if (databaseTypeSql && !reactive) { _%>
     @Transactional
     <%_ } _%>
     @Throws(Exception::class)
     fun createUser() {
         val databaseSizeBeforeCreate = userRepository.findAll()<% if (reactive) { %>
             .collectList().block()!!<% } %>.size
-        <%_ if (searchEngine === 'elasticsearch' && reactive) { _%>
+        <%_ if (searchEngineElasticsearch && reactive) { _%>
         // Configure the mock search repository
         `when`(mockUserSearchRepository.save(any(User::class.java)))
             .thenAnswer { Mono.just(it.arguments[0] as User) }
@@ -215,7 +215,7 @@ class UserResourceIT<% if (databaseType === 'cassandra') { %>: AbstractCassandra
             lastName = DEFAULT_LASTNAME
             email = DEFAULT_EMAIL
             activated = true
-            <%_ if (databaseType !== 'cassandra') { _%>
+            <%_ if (!databaseTypeCassandra) { _%>
             imageUrl = DEFAULT_IMAGEURL
             <%_ } _%>
             langKey = DEFAULT_LANGKEY
@@ -246,7 +246,7 @@ class UserResourceIT<% if (databaseType === 'cassandra') { %>: AbstractCassandra
             assertThat(testUser.firstName).isEqualTo(DEFAULT_FIRSTNAME)
             assertThat(testUser.lastName).isEqualTo(DEFAULT_LASTNAME)
             assertThat(testUser.email).isEqualTo(DEFAULT_EMAIL)
-            <%_ if (databaseType !== 'cassandra') { _%>
+            <%_ if (!databaseTypeCassandra) { _%>
             assertThat(testUser.imageUrl).isEqualTo(DEFAULT_IMAGEURL)
             <%_ } _%>
             assertThat(testUser.langKey).isEqualTo(DEFAULT_LANGKEY)
@@ -254,7 +254,7 @@ class UserResourceIT<% if (databaseType === 'cassandra') { %>: AbstractCassandra
     }
 
     @Test
-    <%_ if (databaseType === 'sql' && !reactive) { _%>
+    <%_ if (databaseTypeSql && !reactive) { _%>
     @Transactional
     <%_ } _%>
     @Throws(Exception::class)
@@ -263,9 +263,9 @@ class UserResourceIT<% if (databaseType === 'cassandra') { %>: AbstractCassandra
             .collectList().block()!!<% } %>.size
 
         val managedUserVM = ManagedUserVM().apply {
-            <%_ if (databaseType === 'cassandra') { _%>
+            <%_ if (databaseTypeCassandra) { _%>
             id = UUID.randomUUID().toString()
-            <%_ } else if (databaseType === 'mongodb' || databaseType === 'neo4j' || databaseType === 'couchbase') { _%>
+            <%_ } else if (databaseTypeMongodb || databaseTypeNeo4j || databaseTypeCouchbase) { _%>
             id = "1L"
             <%_ } else { _%>
             id = DEFAULT_ID
@@ -276,7 +276,7 @@ class UserResourceIT<% if (databaseType === 'cassandra') { %>: AbstractCassandra
             lastName = DEFAULT_LASTNAME
             email = DEFAULT_EMAIL
             activated = true
-            <%_ if (databaseType !== 'cassandra') { _%>
+            <%_ if (!databaseTypeCassandra) { _%>
             imageUrl = DEFAULT_IMAGEURL
             <%_ } _%>
             langKey = DEFAULT_LANGKEY
@@ -307,14 +307,14 @@ class UserResourceIT<% if (databaseType === 'cassandra') { %>: AbstractCassandra
     }
 
     @Test
-    <%_ if (databaseType === 'sql' && !reactive) { _%>
+    <%_ if (databaseTypeSql && !reactive) { _%>
     @Transactional
     <%_ } _%>
     @Throws(Exception::class)
     fun createUserWithExistingLogin() {
         // Initialize the database
-        userRepository.save<% if (databaseType === 'sql' && !reactive) { %>AndFlush<% } %>(user)<% if (reactive) { %>.block()<% } %>
-        <%_ if (searchEngine === 'elasticsearch') { _%>
+        userRepository.save<% if (databaseTypeSql && !reactive) { %>AndFlush<% } %>(user)<% if (reactive) { %>.block()<% } %>
+        <%_ if (searchEngineElasticsearch) { _%>
         mockUserSearchRepository.save(user)
         <%_ } _%>
         val databaseSizeBeforeCreate = userRepository.findAll()<% if (reactive) { %>
@@ -327,7 +327,7 @@ class UserResourceIT<% if (databaseType === 'cassandra') { %>: AbstractCassandra
             lastName = DEFAULT_LASTNAME
             email = "anothermail@localhost"
             activated = true
-            <%_ if (databaseType !== 'cassandra') { _%>
+            <%_ if (!databaseTypeCassandra) { _%>
             imageUrl = DEFAULT_IMAGEURL
             <%_ } _%>
             langKey = DEFAULT_LANGKEY
@@ -355,14 +355,14 @@ class UserResourceIT<% if (databaseType === 'cassandra') { %>: AbstractCassandra
     }
 
     @Test
-    <%_ if (databaseType === 'sql' && !reactive) { _%>
+    <%_ if (databaseTypeSql && !reactive) { _%>
     @Transactional
     <%_ } _%>
     @Throws(Exception::class)
     fun createUserWithExistingEmail() {
         // Initialize the database
-        userRepository.save<% if (databaseType === 'sql' && !reactive) { %>AndFlush<% } %>(user)<% if (reactive) { %>.block()<% } %>
-        <%_ if (searchEngine === 'elasticsearch') { _%>
+        userRepository.save<% if (databaseTypeSql && !reactive) { %>AndFlush<% } %>(user)<% if (reactive) { %>.block()<% } %>
+        <%_ if (searchEngineElasticsearch) { _%>
         mockUserSearchRepository.save(user)
         <%_ } _%>
         val databaseSizeBeforeCreate = userRepository.findAll()<% if (reactive) { %>
@@ -375,7 +375,7 @@ class UserResourceIT<% if (databaseType === 'cassandra') { %>: AbstractCassandra
             lastName = DEFAULT_LASTNAME
             email = DEFAULT_EMAIL // this email should already be used
             activated = true
-            <%_ if (databaseType !== 'cassandra') { _%>
+            <%_ if (!databaseTypeCassandra) { _%>
             imageUrl = DEFAULT_IMAGEURL
             <%_ } _%>
             langKey = DEFAULT_LANGKEY
@@ -404,7 +404,7 @@ class UserResourceIT<% if (databaseType === 'cassandra') { %>: AbstractCassandra
 <%_ } _%>
 
     @Test
-    <%_ if (databaseType === 'sql' && !reactive) { _%>
+    <%_ if (databaseTypeSql && !reactive) { _%>
     @Transactional
     <%_ } _%>
     <%_ if (!reactive) { _%>
@@ -412,8 +412,8 @@ class UserResourceIT<% if (databaseType === 'cassandra') { %>: AbstractCassandra
     <%_ } _%>
     fun getAllUsers() {
         // Initialize the database
-        userRepository.<% if (databaseType === 'sql' && reactive && authenticationTypeOauth2) { %>create<% } else { %>save<% } %><% if (databaseType === 'sql' && !reactive) { %>AndFlush<% } %>(user)<% if (reactive) { %>.block()<% } %>
-        <%_ if (databaseType === 'sql' && reactive) { _%>
+        userRepository.<% if (databaseTypeSql && reactive && authenticationTypeOauth2) { %>create<% } else { %>save<% } %><% if (databaseTypeSql && !reactive) { %>AndFlush<% } %>(user)<% if (reactive) { %>.block()<% } %>
+        <%_ if (databaseTypeSql && reactive && !applicationTypeMicroservice) { _%>
         authorityRepository
             .findById(USER)
             .flatMap { authority -> authority.name?.let { user.id?.let { it1 -> userRepository.saveUserAuthority(it1, it) } } }
@@ -422,7 +422,7 @@ class UserResourceIT<% if (databaseType === 'cassandra') { %>: AbstractCassandra
         // Get all the users
         <%_ if (!reactive) { _%>
         restUserMockMvc.perform(
-            get("/api/admin/users<% if (databaseType === 'sql') { %>?sort=id,desc<% } %>")
+            get("/api/admin/users<% if (databaseTypeSql) { %>?sort=id,desc<% } %>")
                 .accept(MediaType.APPLICATION_JSON)
         )
             .andExpect(status().isOk)
@@ -431,7 +431,7 @@ class UserResourceIT<% if (databaseType === 'cassandra') { %>: AbstractCassandra
             .andExpect(jsonPath("\$.[*].firstName").value(hasItem(DEFAULT_FIRSTNAME)))
             .andExpect(jsonPath("\$.[*].lastName").value(hasItem(DEFAULT_LASTNAME)))
             .andExpect(jsonPath("\$.[*].email").value(hasItem(DEFAULT_EMAIL)))
-            <%_ if (databaseType !== 'cassandra') { _%>
+            <%_ if (!databaseTypeCassandra) { _%>
             .andExpect(jsonPath("\$.[*].imageUrl").value(hasItem(DEFAULT_IMAGEURL)))
             <%_ } _%>
             .andExpect(jsonPath("\$.[*].langKey").value(hasItem(DEFAULT_LANGKEY)))
@@ -448,18 +448,18 @@ class UserResourceIT<% if (databaseType === 'cassandra') { %>: AbstractCassandra
         assertThat(foundUser.firstName).isEqualTo(DEFAULT_FIRSTNAME)
         assertThat(foundUser.lastName).isEqualTo(DEFAULT_LASTNAME)
         assertThat(foundUser.email).isEqualTo(DEFAULT_EMAIL)
-        <%_ if (databaseType !== 'cassandra') { _%>
+        <%_ if (!databaseTypeCassandra) { _%>
         assertThat(foundUser.imageUrl).isEqualTo(DEFAULT_IMAGEURL)
         <%_ } _%>
         assertThat(foundUser.langKey).isEqualTo(DEFAULT_LANGKEY)
-        <%_ if (databaseType === 'sql') { _%>
+        <%_ if (databaseTypeSql && !applicationTypeMicroservice) { _%>
         assertThat(foundUser.authorities).containsExactly(USER)
         <%_ } _%>
         <%_ } _%>
     }
 
     @Test
-    <%_ if (databaseType === 'sql' && !reactive) { _%>
+    <%_ if (databaseTypeSql && !reactive) { _%>
     @Transactional
     <%_ } _%>
     <%_ if (!reactive) { _%>
@@ -467,18 +467,18 @@ class UserResourceIT<% if (databaseType === 'cassandra') { %>: AbstractCassandra
     <%_ } _%>
     fun getUser() {
         // Initialize the database
-        userRepository.<% if (databaseType === 'sql' && reactive && authenticationTypeOauth2) { %>create<% } else { %>save<% } %><% if (databaseType === 'sql' && !reactive) { %>AndFlush<% } %>(user)<% if (reactive) { %>.block()<% } %>
-        <%_ if (databaseType === 'sql' && reactive) { _%>
+        userRepository.<% if (databaseTypeSql && reactive && authenticationTypeOauth2) { %>create<% } else { %>save<% } %><% if (databaseTypeSql && !reactive) { %>AndFlush<% } %>(user)<% if (reactive) { %>.block()<% } %>
+        <%_ if (databaseTypeSql && reactive) { _%>
         authorityRepository
             .findById(USER)
             .flatMap { authority -> authority.name?.let { user.id?.let { it1 -> userRepository.saveUserAuthority(it1, it) } } }
             .block()
         <%_ } _%>
 
-        <%_ if (searchEngine === 'elasticsearch') { _%>
+        <%_ if (searchEngineElasticsearch) { _%>
         mockUserSearchRepository.save(user)
         <%_ } _%>
-        <%_ if (cacheManagerIsAvailable === true) { _%>
+        <%_ if (cacheManagerIsAvailable) { _%>
 
         assertNull(cacheManager.getCache(UserRepository.USERS_BY_LOGIN_CACHE)!!.get(user.login!!))
         <%_ } _%>
@@ -492,7 +492,7 @@ class UserResourceIT<% if (databaseType === 'cassandra') { %>: AbstractCassandra
             .andExpect(jsonPath("\$.firstName").value(DEFAULT_FIRSTNAME))
             .andExpect(jsonPath("\$.lastName").value(DEFAULT_LASTNAME))
             .andExpect(jsonPath("\$.email").value(DEFAULT_EMAIL))
-            <%_ if (databaseType !== 'cassandra') { _%>
+            <%_ if (!databaseTypeCassandra) { _%>
             .andExpect(jsonPath("\$.imageUrl").value(DEFAULT_IMAGEURL))
             <%_ } _%>
             .andExpect(jsonPath("\$.langKey").value(DEFAULT_LANGKEY))
@@ -506,25 +506,25 @@ class UserResourceIT<% if (databaseType === 'cassandra') { %>: AbstractCassandra
             .jsonPath("\$.firstName").isEqualTo(DEFAULT_FIRSTNAME)
             .jsonPath("\$.lastName").isEqualTo(DEFAULT_LASTNAME)
             .jsonPath("\$.email").isEqualTo(DEFAULT_EMAIL)
-            <%_ if (databaseType !== 'cassandra') { _%>
+            <%_ if (!databaseTypeCassandra) { _%>
             .jsonPath("\$.imageUrl").isEqualTo(DEFAULT_IMAGEURL)
             <%_ } _%>
-            .jsonPath("\$.langKey").isEqualTo(DEFAULT_LANGKEY)<% if (databaseType !== 'sql') { %>;<% } else { %>
-            .jsonPath("\$.authorities").isEqualTo(USER);
+            .jsonPath("\$.langKey").isEqualTo(DEFAULT_LANGKEY)<% if (!databaseTypeSql && !applicationTypeMicroservice) { %><% } else { %>
+            .jsonPath("\$.authorities").isEqualTo(USER)
             <% } %>
         <%_ } _%>
-        <%_ if (cacheProvider === 'memcached') { _%>
+        <%_ if (cacheProviderMemcached) { _%>
         if (cacheManager !is NoOpCacheManager) {
             assertThat(cacheManager.getCache(UserRepository.USERS_BY_LOGIN_CACHE)!!.get(user.login!!)).isNotNull
         }
-        <%_ } else if (cacheManagerIsAvailable === true) { _%>
+        <%_ } else if (cacheManagerIsAvailable) { _%>
 
         assertNotNull(cacheManager.getCache(UserRepository.USERS_BY_LOGIN_CACHE)!!.get(user.login!!))
         <%_ } _%>
     }
 
     @Test
-    <%_ if (databaseType === 'sql' && !reactive) { _%>
+    <%_ if (databaseTypeSql && !reactive) { _%>
     @Transactional
     <%_ } _%>
     <%_ if (!reactive) { _%>
@@ -540,17 +540,17 @@ class UserResourceIT<% if (databaseType === 'cassandra') { %>: AbstractCassandra
             .expectStatus().isNotFound
         <%_ } _%>
     }
-<%_ if (authenticationType !== 'oauth2') { _%>
+<%_ if (!authenticationTypeOauth2) { _%>
 
     @Test
-    <%_ if (databaseType === 'sql' && !reactive) { _%>
+    <%_ if (databaseTypeSql && !reactive) { _%>
     @Transactional
     <%_ } _%>
     @Throws(Exception::class)
     fun updateUser() {
         // Initialize the database
-        userRepository.save<% if (databaseType === 'sql' && !reactive) { %>AndFlush<% } %>(user)<% if (reactive) { %>.block()<% } %>
-        <%_ if (searchEngine === 'elasticsearch' && reactive) { _%>
+        userRepository.save<% if (databaseTypeSql && !reactive) { %>AndFlush<% } %>(user)<% if (reactive) { %>.block()<% } %>
+        <%_ if (searchEngineElasticsearch && reactive) { _%>
         // Configure the mock search repository
         `when`(mockUserSearchRepository.save(any(User::class.java)))
             .thenAnswer { Mono.just(it.arguments[0] as User) }
@@ -570,11 +570,11 @@ class UserResourceIT<% if (databaseType === 'cassandra') { %>: AbstractCassandra
             lastName = UPDATED_LASTNAME
             email = UPDATED_EMAIL
             activated = updatedUser.activated
-            <%_ if (databaseType !== 'cassandra') { _%>
+            <%_ if (!databaseTypeCassandra) { _%>
             imageUrl = UPDATED_IMAGEURL
             <%_ } _%>
             langKey = UPDATED_LANGKEY
-            <%_ if (databaseType !== 'cassandra') { _%>
+            <%_ if (!databaseTypeCassandra) { _%>
             createdBy = updatedUser.createdBy
             createdDate = updatedUser.createdDate
             lastModifiedBy = updatedUser.lastModifiedBy
@@ -605,7 +605,7 @@ class UserResourceIT<% if (databaseType === 'cassandra') { %>: AbstractCassandra
             assertThat(testUser.firstName).isEqualTo(UPDATED_FIRSTNAME)
             assertThat(testUser.lastName).isEqualTo(UPDATED_LASTNAME)
             assertThat(testUser.email).isEqualTo(UPDATED_EMAIL)
-            <%_ if (databaseType !== 'cassandra') { _%>
+            <%_ if (!databaseTypeCassandra) { _%>
             assertThat(testUser.imageUrl).isEqualTo(UPDATED_IMAGEURL)
             <%_ } _%>
             assertThat(testUser.langKey).isEqualTo(UPDATED_LANGKEY)
@@ -613,14 +613,14 @@ class UserResourceIT<% if (databaseType === 'cassandra') { %>: AbstractCassandra
     }
 
     @Test
-    <%_ if (databaseType === 'sql' && !reactive) { _%>
+    <%_ if (databaseTypeSql && !reactive) { _%>
     @Transactional
     <%_ } _%>
     @Throws(Exception::class)
     fun updateUserLogin() {
         // Initialize the database
-        userRepository.save<% if (databaseType === 'sql' && !reactive) { %>AndFlush<% } %>(user)<% if (reactive) { %>.block()<% } %>
-        <%_ if (searchEngine === 'elasticsearch' && reactive) { _%>
+        userRepository.save<% if (databaseTypeSql && !reactive) { %>AndFlush<% } %>(user)<% if (reactive) { %>.block()<% } %>
+        <%_ if (searchEngineElasticsearch && reactive) { _%>
         // Configure the mock search repository
         `when`(mockUserSearchRepository.save(any(User::class.java)))
             .thenAnswer { Mono.just(it.arguments[0] as User) }
@@ -640,11 +640,11 @@ class UserResourceIT<% if (databaseType === 'cassandra') { %>: AbstractCassandra
             lastName = UPDATED_LASTNAME
             email = UPDATED_EMAIL
             activated = updatedUser.activated
-            <%_ if (databaseType !== 'cassandra') { _%>
+            <%_ if (!databaseTypeCassandra) { _%>
             imageUrl = UPDATED_IMAGEURL
             <%_ } _%>
             langKey = UPDATED_LANGKEY
-            <%_ if (databaseType !== 'cassandra') { _%>
+            <%_ if (!databaseTypeCassandra) { _%>
             createdBy = updatedUser.createdBy
             createdDate = updatedUser.createdDate
             lastModifiedBy = updatedUser.lastModifiedBy
@@ -676,7 +676,7 @@ class UserResourceIT<% if (databaseType === 'cassandra') { %>: AbstractCassandra
             assertThat(testUser.firstName).isEqualTo(UPDATED_FIRSTNAME)
             assertThat(testUser.lastName).isEqualTo(UPDATED_LASTNAME)
             assertThat(testUser.email).isEqualTo(UPDATED_EMAIL)
-            <%_ if (databaseType !== 'cassandra') { _%>
+            <%_ if (!databaseTypeCassandra) { _%>
             assertThat(testUser.imageUrl).isEqualTo(UPDATED_IMAGEURL)
             <%_ } _%>
             assertThat(testUser.langKey).isEqualTo(UPDATED_LANGKEY)
@@ -684,19 +684,19 @@ class UserResourceIT<% if (databaseType === 'cassandra') { %>: AbstractCassandra
     }
 
     @Test
-    <%_ if (databaseType === 'sql' && !reactive) { _%>
+    <%_ if (databaseTypeSql && !reactive) { _%>
     @Transactional
     <%_ } _%>
     @Throws(Exception::class)
     fun updateUserExistingEmail() {
         // Initialize the database with 2 users
-        userRepository.save<% if (databaseType === 'sql' && !reactive) { %>AndFlush<% } %>(user)<% if (reactive) { %>.block()<% } %>
-        <%_ if (searchEngine === 'elasticsearch') { _%>
+        userRepository.save<% if (databaseTypeSql && !reactive) { %>AndFlush<% } %>(user)<% if (reactive) { %>.block()<% } %>
+        <%_ if (searchEngineElasticsearch) { _%>
         mockUserSearchRepository.save(user)
         <%_ } _%>
 
         val anotherUser = <%= asEntity('User') %>(
-            <%_ if (databaseType === 'cassandra') { _%>
+            <%_ if (databaseTypeCassandra) { _%>
             id = UUID.randomUUID().toString(),
             <%_ } _%>
             login = "jhipster",
@@ -705,16 +705,16 @@ class UserResourceIT<% if (databaseType === 'cassandra') { %>: AbstractCassandra
             email = "jhipster@localhost",
             firstName = "java",
             lastName = "hipster",
-            <%_ if (databaseType !== 'cassandra') { _%>
+            <%_ if (!databaseTypeCassandra) { _%>
             imageUrl = "",
             <%_ } _%>
-            <%_ if (databaseType === 'sql' && reactive) { _%>
+            <%_ if (databaseTypeSql && reactive) { _%>
             createdBy = SYSTEM_ACCOUNT,
             <%_ } _%>
             langKey = "en"
         )
-        userRepository.save<% if (databaseType === 'sql' && !reactive) { %>AndFlush<% } %>(anotherUser)<% if (reactive) { %>.block()<% } %>
-        <%_ if (searchEngine === 'elasticsearch') { _%>
+        userRepository.save<% if (databaseTypeSql && !reactive) { %>AndFlush<% } %>(anotherUser)<% if (reactive) { %>.block()<% } %>
+        <%_ if (searchEngineElasticsearch) { _%>
         mockUserSearchRepository.save(anotherUser)
         <%_ } _%>
 
@@ -730,11 +730,11 @@ class UserResourceIT<% if (databaseType === 'cassandra') { %>: AbstractCassandra
             lastName = updatedUser.lastName
             email = "jhipster@localhost" // this email should already be used by anotherUser
             activated = updatedUser.activated
-            <%_ if (databaseType !== 'cassandra') { _%>
+            <%_ if (!databaseTypeCassandra) { _%>
             imageUrl = updatedUser.imageUrl
             <%_ } _%>
             langKey = updatedUser.langKey
-            <%_ if (databaseType !== 'cassandra') { _%>
+            <%_ if (!databaseTypeCassandra) { _%>
             createdBy = updatedUser.createdBy
             createdDate = updatedUser.createdDate
             lastModifiedBy = updatedUser.lastModifiedBy
@@ -761,19 +761,19 @@ class UserResourceIT<% if (databaseType === 'cassandra') { %>: AbstractCassandra
     }
 
     @Test
-    <%_ if (databaseType === 'sql' && !reactive) { _%>
+    <%_ if (databaseTypeSql && !reactive) { _%>
     @Transactional
     <%_ } _%>
     @Throws(Exception::class)
     fun updateUserExistingLogin() {
         // Initialize the database
-        userRepository.save<% if (databaseType === 'sql' && !reactive) { %>AndFlush<% } %>(user)<% if (reactive) { %>.block()<% } %>
-        <%_ if (searchEngine === 'elasticsearch') { _%>
+        userRepository.save<% if (databaseTypeSql && !reactive) { %>AndFlush<% } %>(user)<% if (reactive) { %>.block()<% } %>
+        <%_ if (searchEngineElasticsearch) { _%>
         mockUserSearchRepository.save(user)
         <%_ } _%>
 
         val anotherUser = <%= asEntity('User') %>(
-            <%_ if (databaseType === 'cassandra') { _%>
+            <%_ if (databaseTypeCassandra) { _%>
             id = UUID.randomUUID().toString(),
             <%_ } _%>
             login = "jhipster",
@@ -782,16 +782,16 @@ class UserResourceIT<% if (databaseType === 'cassandra') { %>: AbstractCassandra
             email = "jhipster@localhost",
             firstName = "java",
             lastName = "hipster",
-            <%_ if (databaseType !== 'cassandra') { _%>
+            <%_ if (!databaseTypeCassandra) { _%>
             imageUrl = "",
             <%_ } _%>
-            <%_ if (databaseType === 'sql' && reactive) { _%>
+            <%_ if (databaseTypeSql && reactive) { _%>
             createdBy = SYSTEM_ACCOUNT,
             <%_ } _%>
             langKey = "en"
         )
-        userRepository.save<% if (databaseType === 'sql' && !reactive) { %>AndFlush<% } %>(anotherUser)<% if (reactive) { %>.block()<% } %>
-        <%_ if (searchEngine === 'elasticsearch') { _%>
+        userRepository.save<% if (databaseTypeSql && !reactive) { %>AndFlush<% } %>(anotherUser)<% if (reactive) { %>.block()<% } %>
+        <%_ if (searchEngineElasticsearch) { _%>
         mockUserSearchRepository.save(anotherUser)
         <%_ } _%>
 
@@ -807,11 +807,11 @@ class UserResourceIT<% if (databaseType === 'cassandra') { %>: AbstractCassandra
             lastName = updatedUser.lastName
             email = updatedUser.email
             activated = updatedUser.activated
-            <%_ if (databaseType !== 'cassandra') { _%>
+            <%_ if (!databaseTypeCassandra) { _%>
             imageUrl = updatedUser.imageUrl
             <%_ } _%>
             langKey = updatedUser.langKey
-            <%_ if (databaseType !== 'cassandra') { _%>
+            <%_ if (!databaseTypeCassandra) { _%>
             createdBy = updatedUser.createdBy
             createdDate = updatedUser.createdDate
             lastModifiedBy = updatedUser.lastModifiedBy
@@ -838,7 +838,7 @@ class UserResourceIT<% if (databaseType === 'cassandra') { %>: AbstractCassandra
     }
 
     @Test
-    <%_ if (databaseType === 'sql' && !reactive) { _%>
+    <%_ if (databaseTypeSql && !reactive) { _%>
     @Transactional
     <%_ } _%>
     <%_ if (!reactive) { _%>
@@ -846,12 +846,12 @@ class UserResourceIT<% if (databaseType === 'cassandra') { %>: AbstractCassandra
     <%_ } _%>
     fun deleteUser() {
         // Initialize the database
-        userRepository.save<% if (databaseType === 'sql' && !reactive) { %>AndFlush<% } %>(user)<% if (reactive) { %>.block()<% } %>
-        <%_ if (searchEngine === 'elasticsearch' && reactive) { _%>
+        userRepository.save<% if (databaseTypeSql && !reactive) { %>AndFlush<% } %>(user)<% if (reactive) { %>.block()<% } %>
+        <%_ if (searchEngineElasticsearch && reactive) { _%>
         // Configure the mock search repository
         `when`(mockUserSearchRepository.delete(any(User::class.java))).thenReturn(Mono.empty())
         <%_ } _%>
-        <%_ if (searchEngine === 'elasticsearch') { _%>
+        <%_ if (searchEngineElasticsearch) { _%>
         mockUserSearchRepository.save(user)
         <%_ } _%>
         val databaseSizeBeforeDelete = userRepository.findAll()<% if (reactive) { %>
@@ -871,7 +871,7 @@ class UserResourceIT<% if (databaseType === 'cassandra') { %>: AbstractCassandra
             .exchange()
             .expectStatus().isNoContent
         <%_ } _%>
-        <%_ if (cacheManagerIsAvailable === true) { _%>
+        <%_ if (cacheManagerIsAvailable) { _%>
 
         assertNull(cacheManager.getCache(UserRepository.USERS_BY_LOGIN_CACHE)!!.get(user.login!!))
         <%_ } _%>
@@ -903,11 +903,11 @@ class UserResourceIT<% if (databaseType === 'cassandra') { %>: AbstractCassandra
             lastName = DEFAULT_LASTNAME,
             email = DEFAULT_EMAIL,
             activated = true,
-            <%_ if (databaseType !== 'cassandra') { _%>
+            <%_ if (!databaseTypeCassandra) { _%>
             imageUrl = DEFAULT_IMAGEURL,
             <%_ } _%>
             langKey = DEFAULT_LANGKEY,
-            <%_ if (databaseType !== 'cassandra') { _%>
+            <%_ if (!databaseTypeCassandra) { _%>
             createdBy = DEFAULT_LOGIN,
             lastModifiedBy = DEFAULT_LOGIN,
             <%_ } _%>
@@ -921,30 +921,30 @@ class UserResourceIT<% if (databaseType === 'cassandra') { %>: AbstractCassandra
         assertThat(user.firstName).isEqualTo(DEFAULT_FIRSTNAME)
         assertThat(user.lastName).isEqualTo(DEFAULT_LASTNAME)
         assertThat(user.email).isEqualTo(DEFAULT_EMAIL)
-        assertThat(user.activated).isTrue()
-        <%_ if (databaseType !== 'cassandra') { _%>
+        assertThat(user.activated).isTrue
+        <%_ if (!databaseTypeCassandra) { _%>
         assertThat(user.imageUrl).isEqualTo(DEFAULT_IMAGEURL)
         <%_ } _%>
         assertThat(user.langKey).isEqualTo(DEFAULT_LANGKEY)
-        <%_ if (databaseType !== 'cassandra') { _%>
+        <%_ if (!databaseTypeCassandra) { _%>
         assertThat(user.createdBy).isNull()
         assertThat(user.createdDate).isNotNull()
         assertThat(user.lastModifiedBy).isNull()
         assertThat(user.lastModifiedDate).isNotNull()
         <%_ } _%>
-        assertThat(user.authorities)<% if (databaseType !== 'cassandra' && databaseType !== 'couchbase') { %>.extracting("name")<%_ } _%>.containsExactly(USER)
+        assertThat(user.authorities)<% if (!databaseTypeCassandra && !databaseTypeCouchbase) { %>.extracting("name")<%_ } _%>.containsExactly(USER)
     }
 
     @Test
     fun testUserToUserDTO() {
         user.id = DEFAULT_ID
-        <%_ if (databaseType !== 'cassandra') { _%>
+        <%_ if (!databaseTypeCassandra) { _%>
         user.createdBy = DEFAULT_LOGIN
         user.createdDate = Instant.now()
         user.lastModifiedBy = DEFAULT_LOGIN
         user.lastModifiedDate = Instant.now()
         <%_ } _%>
-        <%_ if (databaseType !== 'cassandra' && databaseType !== 'couchbase') { _%>
+        <%_ if (!databaseTypeCassandra && !databaseTypeCouchbase) { _%>
         user.authorities = mutableSetOf(Authority(name = USER))
         <%_ } else { _%>
         user.authorities = mutableSetOf(USER)
@@ -957,12 +957,12 @@ class UserResourceIT<% if (databaseType === 'cassandra') { %>: AbstractCassandra
         assertThat(userDTO.firstName).isEqualTo(DEFAULT_FIRSTNAME)
         assertThat(userDTO.lastName).isEqualTo(DEFAULT_LASTNAME)
         assertThat(userDTO.email).isEqualTo(DEFAULT_EMAIL)
-        assertThat(userDTO.activated).isTrue()
-        <%_ if (databaseType !== 'cassandra') { _%>
+        assertThat(userDTO.activated).isTrue
+        <%_ if (!databaseTypeCassandra) { _%>
         assertThat(userDTO.imageUrl).isEqualTo(DEFAULT_IMAGEURL)
         <%_ } _%>
         assertThat(userDTO.langKey).isEqualTo(DEFAULT_LANGKEY)
-        <%_ if (databaseType !== 'cassandra') { _%>
+        <%_ if (!databaseTypeCassandra) { _%>
         assertThat(userDTO.createdBy).isEqualTo(DEFAULT_LOGIN)
         assertThat(userDTO.createdDate).isEqualTo(user.createdDate)
         assertThat(userDTO.lastModifiedBy).isEqualTo(DEFAULT_LOGIN)
@@ -971,7 +971,7 @@ class UserResourceIT<% if (databaseType === 'cassandra') { %>: AbstractCassandra
         assertThat(userDTO.authorities).containsExactly(USER)
         assertThat(userDTO.toString()).isNotNull()
     }
-    <%_ if (databaseType === 'sql' || databaseType === 'mongodb' || databaseType === 'neo4j') { _%>
+    <%_ if (databaseTypeSql || databaseTypeMongodb || databaseTypeNeo4j) { _%>
 
     @Test
     fun testAuthorityEquals() {
@@ -1001,45 +1001,45 @@ class UserResourceIT<% if (databaseType === 'cassandra') { %>: AbstractCassandra
     companion object {
 
         private const val DEFAULT_LOGIN = "johndoe"
-        <%_ if (authenticationType !== 'oauth2') { _%>
+        <%_ if (!authenticationTypeOauth2) { _%>
         private const val UPDATED_LOGIN = "jhipster"
         <%_ } _%>
 
-        <%_ if (databaseType === 'couchbase'){ _%>
+        <%_ if (databaseTypeCouchbase){ _%>
         private const val DEFAULT_ID = <%= asEntity('User') %>.PREFIX + DEFAULT_LOGIN
         <%_ } else { _%>
         private const val DEFAULT_ID = <%- getPrimaryKeyValue(user.primaryKey.type) %>
         <%_ } _%>
 
-        <%_ if (authenticationType !== 'oauth2') { _%>
+        <%_ if (!authenticationTypeOauth2) { _%>
         private const val DEFAULT_PASSWORD = "passjohndoe"
         private const val UPDATED_PASSWORD = "passjhipster"
         <%_ } _%>
 
         private const val DEFAULT_EMAIL = "johndoe@localhost"
-        <%_ if (authenticationType !== 'oauth2') { _%>
+        <%_ if (!authenticationTypeOauth2) { _%>
         private const val UPDATED_EMAIL = "jhipster@localhost"
         <%_ } _%>
 
         private const val DEFAULT_FIRSTNAME = "john"
-        <%_ if (authenticationType !== 'oauth2') { _%>
+        <%_ if (!authenticationTypeOauth2) { _%>
         private const val UPDATED_FIRSTNAME = "jhipsterFirstName"
         <%_ } _%>
 
         private const val DEFAULT_LASTNAME = "doe"
-        <%_ if (authenticationType !== 'oauth2') { _%>
+        <%_ if (!authenticationTypeOauth2) { _%>
         private const val UPDATED_LASTNAME = "jhipsterLastName"
         <%_ } _%>
 
-        <%_ if (databaseType !== 'cassandra') { _%>
+        <%_ if (!databaseTypeCassandra) { _%>
         private const val DEFAULT_IMAGEURL = "http://placehold.it/50x50"
-        <%_ if (authenticationType !== 'oauth2') { _%>
+        <%_ if (!authenticationTypeOauth2) { _%>
         private const val UPDATED_IMAGEURL = "http://placehold.it/40x40"
         <%_ } _%>
 
         <%_ } _%>
         private const val DEFAULT_LANGKEY = "en"
-        <%_ if (authenticationType !== 'oauth2') { _%>
+        <%_ if (!authenticationTypeOauth2) { _%>
         private const val UPDATED_LANGKEY = "fr"
         <%_ } _%>
 
@@ -1050,30 +1050,30 @@ class UserResourceIT<% if (databaseType === 'cassandra') { %>: AbstractCassandra
          * if they test an entity which has a required relationship to the User entity.
          */
         @JvmStatic
-        fun createEntity(<% if (databaseType === 'sql') { %>em: EntityManager?<% } %>): <%= asEntity('User') %> {
+        fun createEntity(<% if (databaseTypeSql) { %>em: EntityManager?<% } %>): <%= asEntity('User') %> {
             return <%= asEntity('User') %>(
-                <%_ if (databaseType === 'cassandra' || (authenticationTypeOauth2 && databaseType !== 'couchbase')) { _%>
+                <%_ if (databaseTypeCassandra || (authenticationTypeOauth2 && !databaseTypeCouchbase)) { _%>
                 id = UUID.randomUUID().toString(),
                 <%_ } _%>
-                login = DEFAULT_LOGIN<% if (databaseType === 'sql') { %> + RandomStringUtils.randomAlphabetic(5)<% } %>,
-                <%_ if (authenticationType !== 'oauth2') { _%>
+                login = DEFAULT_LOGIN<% if (databaseTypeSql) { %> + RandomStringUtils.randomAlphabetic(5)<% } %>,
+                <%_ if (!authenticationTypeOauth2) { _%>
                 password = RandomStringUtils.random(60),
                 <%_ } _%>
                 activated = true,
-                email = <% if (databaseType === 'sql') { %>RandomStringUtils.randomAlphabetic(5) + <% } %>DEFAULT_EMAIL,
+                email = <% if (databaseTypeSql) { %>RandomStringUtils.randomAlphabetic(5) + <% } %>DEFAULT_EMAIL,
                 firstName = DEFAULT_FIRSTNAME,
                 lastName = DEFAULT_LASTNAME,
-                <%_ if (databaseType !== 'cassandra') { _%>
+                <%_ if (!databaseTypeCassandra) { _%>
                 imageUrl = DEFAULT_IMAGEURL,
                 <%_ } _%>
-                <%_ if (databaseType === 'sql' && reactive) { _%>
+                <%_ if (databaseTypeSql && reactive) { _%>
                 createdBy = SYSTEM_ACCOUNT,
                 <%_ } _%>
                 langKey = DEFAULT_LANGKEY
             )
         }
 
-        <%_ if (databaseType === 'sql' && reactive) { _%>
+        <%_ if (databaseTypeSql && reactive) { _%>
 
         /**
          * Delete all the users from the database.
@@ -1093,15 +1093,15 @@ class UserResourceIT<% if (databaseType === 'cassandra') { %>: AbstractCassandra
          * Setups the database with one user.
          */
         @JvmStatic
-        fun initTestUser(userRepository: UserRepository<% if (databaseType === 'sql' ) { %>, em: EntityManager<% } _%>): <%= asEntity('User') %> {
-            <%_ if (databaseType === 'sql' && reactive) { _%>
+        fun initTestUser(userRepository: UserRepository<% if (databaseTypeSql ) { %>, em: EntityManager<% } _%>): <%= asEntity('User') %> {
+            <%_ if (databaseTypeSql && reactive) { _%>
             userRepository.deleteAllUserAuthorities().block()
             <%_ } _%>
-            <%_ if (databaseType !== 'sql' || reactive) { _%>
+            <%_ if (!databaseTypeSql || reactive) { _%>
             userRepository.deleteAll()<% if (reactive) { %>.block()<% } %>
             <%_ } _%>
-            val user = createEntity(<% if (databaseType === 'sql' ) { %>em<% } _%>);
-            <%_ if (databaseType === 'sql') { _%>
+            val user = createEntity(<% if (databaseTypeSql ) { %>em<% } _%>)
+            <%_ if (databaseTypeSql) { _%>
             user.login = DEFAULT_LOGIN
             user.email = DEFAULT_EMAIL
             <%_ } _%>
@@ -1110,7 +1110,7 @@ class UserResourceIT<% if (databaseType === 'cassandra') { %>: AbstractCassandra
     }
 
     fun assertPersistedUsers(userAssertion: (List<<%= asEntity('User') %>>) -> Unit) {
-        <%_ if (databaseType === 'couchbase') { _%>
+        <%_ if (databaseTypeCouchbase) { _%>
         // The security filter chain clears the security context after remote calls
         SecurityContextHolder.setContext(TestSecurityContextHolder.getContext())
         <%_ } _%>

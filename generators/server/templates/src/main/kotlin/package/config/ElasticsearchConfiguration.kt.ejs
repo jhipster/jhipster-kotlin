@@ -4,7 +4,7 @@
  This file is part of the JHipster project, see https://www.jhipster.tech/
  for more information.
 
- Licensed under the Apache License, Version 2.0 (the "License");
+ Licensed under the Apache License, Version 2.0 (the "
  you may not use this file except in compliance with the License.
  You may obtain a copy of the License at
 
@@ -25,13 +25,14 @@ import org.springframework.data.convert.ReadingConverter
 import org.springframework.data.convert.WritingConverter
 import org.springframework.data.elasticsearch.config.ElasticsearchConfigurationSupport
 import org.springframework.data.elasticsearch.core.convert.ElasticsearchCustomConversions
-<%_ if (databaseType === 'mongodb') { _%>
+<%_ if (databaseTypeMongodb) { _%>
 import org.springframework.data.elasticsearch.core.mapping.SimpleElasticsearchMappingContext
 import org.springframework.data.elasticsearch.core.mapping.ElasticsearchPersistentProperty
 import org.springframework.data.elasticsearch.core.mapping.SimpleElasticsearchPersistentProperty
 import org.springframework.data.mapping.PersistentEntity
 import org.springframework.data.mapping.model.Property
 import org.springframework.data.mapping.model.SimpleTypeHolder
+import org.springframework.data.mapping.model.PropertyNameFieldNamingStrategy
 import org.springframework.data.elasticsearch.core.mapping.SimpleElasticsearchPersistentEntity
 <%_ } _%>
 
@@ -60,7 +61,7 @@ class ElasticsearchConfiguration: ElasticsearchConfigurationSupport() {
     class ZonedDateTimeWritingConverter: Converter<ZonedDateTime, String> {
         override fun convert(source: ZonedDateTime?): String? {
             if (source == null) {
-                return null;
+                return null
             }
             return source.toInstant().toString()
         }
@@ -115,7 +116,7 @@ class ElasticsearchConfiguration: ElasticsearchConfigurationSupport() {
             return LocalDate.parse(source)
         }
     }
-<%_ if (databaseType === 'mongodb') { _%>
+<%_ if (databaseTypeMongodb) { _%>
 
     @Bean
     override fun elasticsearchMappingContext(elasticsearchCustomConversions: ElasticsearchCustomConversions?): SimpleElasticsearchMappingContext? {
@@ -126,7 +127,7 @@ class ElasticsearchConfiguration: ElasticsearchConfigurationSupport() {
     }
 <%_ } _%>
 }
-<%_ if (databaseType === 'mongodb') { _%>
+<%_ if (databaseTypeMongodb) { _%>
 
 /**
 * Custom mapping context in order to use the same entities for both MongoDB and Elasticsearch datasources
@@ -140,7 +141,7 @@ class CustomElasticsearchMappingContext : SimpleElasticsearchMappingContext() {
 
 internal class CustomElasticsearchPersistentProperty(property: Property, owner: PersistentEntity<*, ElasticsearchPersistentProperty>,
                                                      simpleTypeHolder: SimpleTypeHolder
-) : SimpleElasticsearchPersistentProperty(property, owner, simpleTypeHolder) {
+) : SimpleElasticsearchPersistentProperty(property, owner, simpleTypeHolder, PropertyNameFieldNamingStrategy.INSTANCE) {
 
     override fun isAssociation() = false
 }

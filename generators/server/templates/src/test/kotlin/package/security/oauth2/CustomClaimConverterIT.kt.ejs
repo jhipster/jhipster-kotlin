@@ -34,10 +34,9 @@ import org.springframework.http.HttpMethod
 import org.springframework.http.ResponseEntity
 import org.springframework.security.oauth2.client.registration.ClientRegistrationRepository
 import org.springframework.web.client.RestTemplate
-import <%= packageName %>.<%= mainClass %>
-import <%= packageName %>.config.TestSecurityConfiguration
 import <%= packageName %>.security.ADMIN
 import <%= packageName %>.security.USER
+import <%= packageName %>.security.CLAIMS_NAMESPACE
 import <%= packageName %>.IntegrationTest
 
 private const val USERNAME = "admin"
@@ -113,5 +112,47 @@ class CustomClaimConverterIT {
 
         // THEN
         assertThatCode { customClaimConverter.convert(claims) }.doesNotThrowAnyException()
+    }
+
+    @Test
+    fun testConvert_withNamespacedRoles() {
+        // GIVEN
+        val claims: MutableMap<String, Any> = HashMap()
+        claims["sub"] = "123"
+        // AND
+        val user = mapper.createObjectNode()
+        user.put("preferred_username", USERNAME)
+        user.put("given_name", NAME)
+        user.put("family_name", FAMILY_NAME)
+        user.putArray(CLAIMS_NAMESPACE + "roles").add(ADMIN).add(USER)
+        mockHttpGetUserInfo(user)
+
+        // WHEN
+        val convertedClaims = customClaimConverter.convert(claims)
+
+        // THEN
+        assertThat(convertedClaims)
+            .containsEntry("sub", "123")
+            .containsEntry("preferred_username", USERNAME)
+            .containsEntry("given_name", NAME)
+            .containsEntry("family_name", FAMILY_NAME)
+            .containsEntry("roles", listOf(ADMIN, USER))
+    }
+
+    @Test
+    fun testConvert_withoutFirstAndLastName() {
+        // GIVEN
+        val claims: MutableMap<String, Any> = HashMap()
+        claims["sub"] = "123"
+        // AND
+        val user = mapper.createObjectNode()
+        user.put("preferred_username", USERNAME)
+        mockHttpGetUserInfo(user)
+
+        assertThatCode {
+            assertThat(customClaimConverter.convert(claims))
+                .containsEntry("preferred_username", USERNAME)
+                .doesNotContainKeys("given_name", "family_name")
+        }.doesNotThrowAnyException()
     }
 }

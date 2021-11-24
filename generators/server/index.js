@@ -25,8 +25,8 @@ const writeFiles = require('./files').writeFiles;
 const kotlinConstants = require('../generator-kotlin-constants');
 
 module.exports = class extends ServerGenerator {
-    constructor(args, opts) {
-        super(args, { fromBlueprint: true, ...opts }); // fromBlueprint variable is important
+    constructor(args, opts, features) {
+        super(args, { fromBlueprint: true, ...opts }, features); // fromBlueprint variable is important
 
         const jhContext = (this.jhipsterContext = this.options.jhipsterContext);
         if (!jhContext) {
@@ -36,6 +36,9 @@ module.exports = class extends ServerGenerator {
         this.loadDerivedAppConfig();
         this.loadServerConfig();
         this.loadDerivedServerConfig();
+
+        this.loadStoredAppOptions();
+        this.loadRuntimeOptions();
     }
 
     get initializing() {

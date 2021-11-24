@@ -22,16 +22,16 @@ const entityToDtoReference = `${mapper}.toDto`; %>
 <%_ if (!viaService) { _%>
     <%_ if (!reactive) { _%>
         <%_ if (searchEngineElasticsearch) { _%>
-            return <%= entityInstance %>SearchRepository.search(queryStringQuery(query))
+            return <%= entityInstance %>SearchRepository.search(query)
         <%_ } else { _%>
-            return <%= entityInstance %>Repository.search(<%= entityClass %>.PREFIX, query)
+            return <%= entityInstance %>Repository.search(query)
         <%_ } _%>
         <%_ if (dtoMapstruct) { _%>
                 .map { <%= entityToDtoReference %>(it) }
         <%_ } _%>
-                .toMutableList()
+                .collect(Collectors.toList())
     <%_ } else { _%>
-        return <%= entityInstance %><% if (searchEngineElasticsearch) { %>Search<% } %>Repository.search(<% if (searchEngineCouchbase) { %><%= entityClass %>.PREFIX, <% } %>query)<%_ if (dtoMapstruct) { %>
+        return <%= entityInstance %><% if (searchEngineElasticsearch) { %>Search<% } %>Repository.search(query)<%_ if (dtoMapstruct) { %>
             .map { <%= entityToDtoReference %>(it) }<%_ } %><%_ if (fromResource) { _%>.collectList()<%_ } _%>
 
     <%_ } _%>

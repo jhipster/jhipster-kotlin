@@ -4,7 +4,7 @@
  This file is part of the JHipster project, see https://www.jhipster.tech/
  for more information.
 
- Licensed under the Apache License, Version 2.0 (the "License");
+ Licensed under the Apache License, Version 2.0 (the "
  you may not use this file except in compliance with the License.
  You may obtain a copy of the License at
 
@@ -28,8 +28,10 @@ import org.springframework.web.bind.annotation.RestController
 
 <%_ if (!reactive) { _%>
 import javax.servlet.http.HttpServletRequest
+import org.springframework.http.HttpHeaders
 <%_ } else { _%>
 import org.springframework.web.server.WebSession
+import org.springframework.http.server.reactive.ServerHttpRequest
 import reactor.core.publisher.Mono
 <%_ } _%>
 
@@ -48,9 +50,10 @@ class LogoutResource(registrations: <% if (reactive) { %>Reactive<% } %>ClientRe
      <%_ } _%>
      * @param idToken the ID token.
      <%_ if (reactive) { _%>
-    * @param session the current {@link WebSession}.
-    <%_ } _%>
-     * @return the [ResponseEntity] with status `200 (OK)` and a body with a global logout URL and ID token.
+     * @param request a {@link ServerHttpRequest} request.
+     * @param session the current {@link WebSession}.
+     <%_ } _%>
+      * @return the [ResponseEntity] with status `200 (OK)` and a body with a global logout URL.
      */
     @PostMapping("/api/logout")
 <%_ if (!reactive) { _%>
@@ -58,26 +61,72 @@ class LogoutResource(registrations: <% if (reactive) { %>Reactive<% } %>ClientRe
         request: HttpServletRequest,
         @AuthenticationPrincipal(expression = "idToken") idToken: OidcIdToken?
     ): ResponseEntity<*> {
-        val logoutUrl = registration?.providerDetails?.configurationMetadata?.get("end_session_endpoint").toString()
+        val logoutUrl = StringBuilder()
+
+        val issuerUri = registration.providerDetails.issuerUri
+        if (issuerUri.contains("auth0.com")) {
+            val iUrl = if (issuerUri.endsWith("/")) { 
+                        issuerUri + "v2/logout"
+                      } else { 
+                          issuerUri + "/v2/logout"
+                      }
+            logoutUrl.append(iUrl)
+        } else {
+            logoutUrl.append(registration.providerDetails.configurationMetadata["end_session_endpoint"].toString())
+        }
+
+        val originUrl = request.getHeader(HttpHeaders.ORIGIN)
+
+        if (logoutUrl.indexOf("/protocol") > -1) {
+            logoutUrl.append("?redirect_uri=").append(originUrl)
+        } else if (logoutUrl.indexOf("auth0.com") > -1) {
+            // Auth0
+            logoutUrl.append("?client_id=").append(registration.clientId).append("&returnTo=").append(originUrl)
+        } else {
+            // Okta
+            logoutUrl.append("?id_token_hint=").append(idToken?.tokenValue).append("&post_logout_redirect_uri=").append(originUrl)
+        }
 
         val logoutDetails = mutableMapOf(
-            "logoutUrl" to logoutUrl,
-            "idToken" to idToken?.tokenValue
+            "logoutUrl" to logoutUrl.toString()
         )
         request.session.invalidate()
         return ResponseEntity.ok().body(logoutDetails)
     }
 <%_ } else { _%>
-    fun logout(@AuthenticationPrincipal(expression = "idToken") idToken: OidcIdToken, session: WebSession): Mono<HashMap<String, String>>  {
+    fun logout(@AuthenticationPrincipal(expression = "idToken") idToken: OidcIdToken, request: ServerHttpRequest, session: WebSession): Mono<Map<String, String>>  {
         return session.invalidate().then(
-            registration.map { it.providerDetails.configurationMetadata["end_session_endpoint"].toString() }
-                .map {
-                    val logoutDetails = hashMapOf<String, String>()
-                    logoutDetails["logoutUrl"] = it
-                    logoutDetails["idToken"] = idToken.tokenValue
-                    logoutDetails
-                }
+            registration.map { 
+                prepareLogoutUri(request, it, idToken)
+            }
         )
+    }
+
+    private fun prepareLogoutUri(request: ServerHttpRequest, clientRegistration: ClientRegistration, idToken: OidcIdToken): Map<String, String> {
+        val logoutUrl = StringBuilder()
+        val issuerUri = clientRegistration.providerDetails.issuerUri
+        if (issuerUri.contains("auth0.com")) {
+            val iUrl = if (issuerUri.endsWith("/")) { 
+                issuerUri + "v2/logout"
+            } else { 
+                "$issuerUri/v2/logout"
+            }
+            logoutUrl.append(iUrl)
+        } else {
+            logoutUrl.append(clientRegistration.providerDetails.configurationMetadata["end_session_endpoint"].toString())
+        }
+
+        val originUrl = request.headers.origin
+        if (logoutUrl.indexOf("/protocol") > -1) {
+            logoutUrl.append("?redirect_uri=").append(originUrl)
+        } else if (logoutUrl.indexOf("auth0.com") > -1) {
+            // Auth0
+            logoutUrl.append("?client_id=").append(clientRegistration.clientId).append("&returnTo=").append(originUrl)
+        } else {
+            // Okta
+            logoutUrl.append("?id_token_hint=").append(idToken.tokenValue).append("&post_logout_redirect_uri=").append(originUrl)
+        }
+        return mapOf("logoutUrl" to logoutUrl.toString())
     }
 <%_ } _%>
 }

@@ -4,7 +4,7 @@
  This file is part of the JHipster project, see https://www.jhipster.tech/
  for more information.
 
- Licensed under the Apache License, Version 2.0 (the "License");
+ Licensed under the Apache License, Version 2.0 (the "
  you may not use this file except in compliance with the License.
  You may obtain a copy of the License at
 
@@ -88,6 +88,33 @@ class SecurityUtilsUnitTest {
 
         assertThat(login).contains("admin")
     }
+
+    @Test
+    fun testExtractAuthorityFromClaims() {
+        val claims = mapOf(
+            "groups" to listOf(ADMIN, USER)
+        )
+        val expectedAuthorities = listOf(SimpleGrantedAuthority(ADMIN), SimpleGrantedAuthority(USER))
+
+        val authorities = extractAuthorityFromClaims(claims)
+
+        assertThat(authorities).isNotNull().isNotEmpty().hasSize(2)
+            .containsAll(expectedAuthorities)
+    }
+
+    @Test
+    fun testExtractAuthorityFromClaims_NamespacedRoles() {
+        val claims = mapOf(
+            CLAIMS_NAMESPACE + "roles" to listOf(ADMIN, USER)
+        )
+        val expectedAuthorities = listOf(SimpleGrantedAuthority(ADMIN), SimpleGrantedAuthority(USER))
+
+        val authorities = extractAuthorityFromClaims(claims)
+
+        assertThat(authorities).isNotNull().isNotEmpty().hasSize(2)
+            .containsAll(expectedAuthorities)
+    }
+
     <%_ } _%>
     <%_ if (authenticationTypeJwt) { _%>
 
@@ -107,7 +134,7 @@ class SecurityUtilsUnitTest {
         securityContext.authentication = UsernamePasswordAuthenticationToken("admin", "admin")
         SecurityContextHolder.setContext(securityContext)
         val isAuthenticated = isAuthenticated()
-        assertThat(isAuthenticated).isTrue()
+        assertThat(isAuthenticated).isTrue
     }
 
     @Test
@@ -117,7 +144,7 @@ class SecurityUtilsUnitTest {
         securityContext.authentication = UsernamePasswordAuthenticationToken("anonymous", "anonymous", authorities)
         SecurityContextHolder.setContext(securityContext)
         val isAuthenticated = isAuthenticated()
-        assertThat(isAuthenticated).isFalse()
+        assertThat(isAuthenticated).isFalse
     }
 
     @Test
@@ -127,8 +154,30 @@ class SecurityUtilsUnitTest {
         securityContext.authentication = UsernamePasswordAuthenticationToken("user", "user", authorities)
         SecurityContextHolder.setContext(securityContext)
 
-        assertThat(hasCurrentUserThisAuthority(USER)).isTrue()
-        assertThat(hasCurrentUserThisAuthority(ADMIN)).isFalse()
+        assertThat(hasCurrentUserThisAuthority(USER)).isTrue
+        assertThat(hasCurrentUserThisAuthority(ADMIN)).isFalse
+    }
+
+    @Test
+    fun testHasCurrentUserAnyOfAuthorities() {
+        val securityContext = SecurityContextHolder.createEmptyContext()
+        val authorities = listOf(SimpleGrantedAuthority(USER))
+        securityContext.setAuthentication(UsernamePasswordAuthenticationToken("user", "user", authorities))
+        SecurityContextHolder.setContext(securityContext)
+
+        assertThat(hasCurrentUserAnyOfAuthorities(USER, ADMIN)).isTrue
+        assertThat(hasCurrentUserAnyOfAuthorities(ANONYMOUS, ADMIN)).isFalse
+    }
+
+    @Test
+    fun testHasCurrentUserNoneOfAuthorities() {
+        val securityContext = SecurityContextHolder.createEmptyContext()
+        val authorities = listOf(SimpleGrantedAuthority(USER))
+        securityContext.setAuthentication(UsernamePasswordAuthenticationToken("user", "user", authorities))
+        SecurityContextHolder.setContext(securityContext)
+
+        assertThat(hasCurrentUserNoneOfAuthorities(USER, ADMIN)).isFalse
+        assertThat(hasCurrentUserNoneOfAuthorities(ANONYMOUS, ADMIN)).isTrue
     }
 <%_ } _%>
 <%_ if (reactive) { _%>
@@ -167,7 +216,7 @@ class SecurityUtilsUnitTest {
                 )
             )
             .block()
-        assertThat(isAuthenticated!!).isTrue()
+        assertThat(isAuthenticated!!).isTrue
     }
 
     @Test
@@ -180,7 +229,41 @@ class SecurityUtilsUnitTest {
                 )
             )
             .block()
-        assertThat(isAuthenticated!!).isFalse()
+        assertThat(isAuthenticated!!).isFalse
+    }
+
+    @Test
+    fun testHasCurrentUserAnyOfAuthorities() {
+        val authorities = listOf(SimpleGrantedAuthority(USER))
+        val context = ReactiveSecurityContextHolder.withAuthentication(
+            UsernamePasswordAuthenticationToken("admin", "admin", authorities)
+        )
+        var hasCurrentUserThisAuthority = hasCurrentUserAnyOfAuthorities(USER, ADMIN)
+            .subscriberContext(context)
+            .block()
+        assertThat(hasCurrentUserThisAuthority).isTrue
+
+        hasCurrentUserThisAuthority = hasCurrentUserAnyOfAuthorities(ANONYMOUS, ADMIN)
+            .subscriberContext(context)
+            .block()
+        assertThat(hasCurrentUserThisAuthority).isFalse
+    }
+
+    @Test
+    fun testHasCurrentUserNoneOfAuthorities() {
+        val authorities = listOf(SimpleGrantedAuthority(USER))
+        val context = ReactiveSecurityContextHolder.withAuthentication(
+            UsernamePasswordAuthenticationToken("admin", "admin", authorities)
+        )
+        var hasCurrentUserThisAuthority = hasCurrentUserNoneOfAuthorities(USER, ADMIN)
+            .subscriberContext(context)
+            .block()
+        assertThat(hasCurrentUserThisAuthority).isFalse
+
+        hasCurrentUserThisAuthority = hasCurrentUserNoneOfAuthorities(ANONYMOUS, ADMIN)
+            .subscriberContext(context)
+            .block()
+        assertThat(hasCurrentUserThisAuthority).isTrue
     }
 
     @Test
@@ -192,12 +275,12 @@ class SecurityUtilsUnitTest {
         var hasCurrentUserThisAuthority = hasCurrentUserThisAuthority(USER)
             .subscriberContext(context)
             .block()
-        assertThat(hasCurrentUserThisAuthority!!).isTrue()
+        assertThat(hasCurrentUserThisAuthority!!).isTrue
 
         hasCurrentUserThisAuthority = hasCurrentUserThisAuthority(ADMIN)
             .subscriberContext(context)
             .block()
-        assertThat(hasCurrentUserThisAuthority!!).isFalse()
+        assertThat(hasCurrentUserThisAuthority!!).isFalse
     }
 <%_ } _%>
 }

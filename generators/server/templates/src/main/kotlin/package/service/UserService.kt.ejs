@@ -4,7 +4,7 @@
  This file is part of the JHipster project, see https://www.jhipster.tech/
  for more information.
 
- Licensed under the Apache License, Version 2.0 (the "License");
+ Licensed under the Apache License, Version 2.0 (the "
  you may not use this file except in compliance with the License.
  You may obtain a copy of the License at
 
@@ -20,44 +20,47 @@ package <%= packageName %>.service
 
 import <%= packageName %>.config.DEFAULT_LANGUAGE
 import <%= packageName %>.config.SYSTEM_ACCOUNT
-<%_ if (databaseType === 'sql' || databaseType === 'mongodb' || databaseType === 'neo4j' || databaseType === 'couchbase') { _%>
+<%_ if (databaseTypeSql || databaseTypeMongodb || databaseTypeNeo4j || databaseTypeCouchbase) { _%>
 import <%= packageName %>.domain.Authority
 <%_ } _%>
-<%_ if (databaseType !== 'no') { _%>
+<%_ if (!databaseTypeNo) { _%>
 import <%= packageName %>.service.dto.<%= asDto('AdminUser') %>
 import <%= packageName %>.domain.<%= asEntity('User') %>
-    <%_ if (databaseType === 'sql' || databaseType === 'mongodb' || databaseType === 'neo4j' || databaseType === 'couchbase') { _%>
+    <%_ if (databaseTypeSql || databaseTypeMongodb || databaseTypeNeo4j || databaseTypeCouchbase) { _%>
 import <%= packageName %>.repository.AuthorityRepository
         <%_ if (authenticationTypeSession && !reactive) { _%>
 import <%= packageName %>.repository.PersistentTokenRepository
         <%_ } _%>
     <%_ } _%>
 import <%= packageName %>.repository.UserRepository
-    <%_ if (searchEngine === 'elasticsearch') { _%>
+    <%_ if (searchEngineElasticsearch) { _%>
 import <%= packageName %>.repository.search.UserSearchRepository
     <%_ } _%>
-    <%_ if (authenticationType !== 'oauth2') { _%>
+    <%_ if (!authenticationTypeOauth2) { _%>
 import <%= packageName %>.security.USER
     <%_ } _%>
 import <%= packageName %>.security.getCurrentUserLogin
 <%_ } _%>
 import <%= packageName %>.service.dto.<%= asDto('User') %>
-<%_ if (authenticationType !== 'oauth2') { _%>
+<%_ if (!authenticationTypeOauth2) { _%>
 import tech.jhipster.security.RandomUtil
 <%_ } _%>
 
-<%_ if (databaseType !== 'no') { _%>
+<%_ if (!databaseTypeNo) { _%>
 import org.slf4j.LoggerFactory
 <%_ } _%>
-<%_ if (cacheManagerIsAvailable === true) { _%>
+<%_ if (cacheManagerIsAvailable) { _%>
 import org.springframework.cache.CacheManager
 <%_ } _%>
-<%_ if (databaseType === 'sql' || databaseType === 'mongodb' || databaseType === 'neo4j' || databaseType === 'couchbase') { _%>
+<%_ if (databaseTypeSql || databaseTypeMongodb || databaseTypeNeo4j || databaseTypeCouchbase) { _%>
     <%_ if (!reactive) { _%>
 import org.springframework.data.domain.Page
+        <%_ if (databaseType === 'couchbase') { _%>
+import org.springframework.data.domain.PageImpl
+        <%_ } _%>
     <%_ } _%>
 import org.springframework.data.domain.Pageable
-    <%_ if (authenticationType !== 'oauth2') { _%>
+    <%_ if (!authenticationTypeOauth2) { _%>
 import org.springframework.scheduling.annotation.Scheduled
     <%_ } _%>
 <%_ } _%>
@@ -67,11 +70,11 @@ import org.springframework.security.core.GrantedAuthority
 import org.springframework.security.oauth2.client.authentication.OAuth2AuthenticationToken
 import org.springframework.security.oauth2.server.resource.authentication.JwtAuthenticationToken
 <%_ } _%>
-<%_ if (authenticationType !== 'oauth2') { _%>
+<%_ if (!authenticationTypeOauth2) { _%>
 import org.springframework.security.crypto.password.PasswordEncoder
 <%_ } _%>
 import org.springframework.stereotype.Service
-<%_ if (databaseType === 'sql') { _%>
+<%_ if (databaseTypeSql) { _%>
 import org.springframework.transaction.annotation.Transactional
 <%_ } _%>
 <%_ if (reactive) { _%>
@@ -80,24 +83,24 @@ import reactor.core.publisher.Mono
 import reactor.core.scheduler.Schedulers
 <%_ } _%>
 
-<%_ if ((databaseType === 'sql' || databaseType === 'mongodb' || databaseType === 'neo4j' || databaseType === 'couchbase') && authenticationTypeSession && !reactive) { _%>
+<%_ if ((databaseTypeSql || databaseTypeMongodb || databaseTypeNeo4j || databaseTypeCouchbase) && authenticationTypeSession && !reactive) { _%>
 import java.time.LocalDate
 <%_ } _%>
-<%_ if (databaseType !== 'no') { _%>
+<%_ if (!databaseTypeNo) { _%>
 import java.time.Instant
 <%_ } _%>
-<%_ if (databaseType === 'sql' && reactive && authenticationType !== 'oauth2') { _%>
+<%_ if (databaseTypeSql && reactive && !authenticationTypeOauth2) { _%>
 import java.time.LocalDateTime
 import java.time.ZoneOffset
 <%_ } _%>
-<%_ if (authenticationType !== 'oauth2' && (databaseType === 'sql' || databaseType === 'mongodb' || databaseType === 'neo4j' || databaseType === 'couchbase')) { _%>
+<%_ if (!authenticationTypeOauth2) { _%>
 import java.time.temporal.ChronoUnit
 <%_ } _%>
 <%_ if (authenticationTypeOauth2) { _%>
 import java.util.Date
 <%_ } _%>
 import java.util.Optional
-<%_ if (databaseType === 'cassandra') { _%>
+<%_ if (databaseTypeCassandra) { _%>
 import java.util.UUID
 <%_ } _%>
 
@@ -105,24 +108,24 @@ import java.util.UUID
  * Service class for managing users.
  */
 @Service
-<%_ if (databaseType === 'sql' && !reactive) { _%>
+<%_ if (databaseTypeSql && !reactive) { _%>
 @Transactional
 <%_ } _%>
-class UserService<% if (databaseType !== 'no') { %>(
-    private val userRepository: UserRepository<%_ if (authenticationType !== 'oauth2') { _%>,
-    private val passwordEncoder: PasswordEncoder<%_ } if (searchEngine === 'elasticsearch') { _%>,
-    private val userSearchRepository: UserSearchRepository<%_ } if (databaseType === 'sql' || databaseType === 'mongodb' || databaseType === 'neo4j' || databaseType === 'couchbase') { if (authenticationTypeSession && !reactive) { _%>,
+class UserService<% if (!databaseTypeNo) { %>(
+    private val userRepository: UserRepository<%_ if (!authenticationTypeOauth2) { _%>,
+    private val passwordEncoder: PasswordEncoder<%_ } if (searchEngineElasticsearch) { _%>,
+    private val userSearchRepository: UserSearchRepository<%_ } if (databaseTypeSql || databaseTypeMongodb || databaseTypeNeo4j || databaseTypeCouchbase) { if (authenticationTypeSession && !reactive) { _%>,
     private val persistentTokenRepository: PersistentTokenRepository<%_ } _%>,
-    private val authorityRepository: AuthorityRepository<%_ } if (cacheManagerIsAvailable === true) { _%>,
+    private val authorityRepository: AuthorityRepository<%_ } if (cacheManagerIsAvailable) { _%>,
     private val cacheManager: CacheManager
     <%_ } _%>
 )<%_ } %> {
-<%_ if (databaseType !== 'no') { _%>
+<%_ if (!databaseTypeNo) { _%>
 
     private val log = LoggerFactory.getLogger(javaClass)
-<%_ if (authenticationType !== 'oauth2') { _%>
+<%_ if (!authenticationTypeOauth2) { _%>
 
-    <%_ if (databaseType === 'sql' && reactive) { _%>
+    <%_ if (databaseTypeSql && reactive) { _%>
     @Transactional
     <%_ } _%>
     fun activateRegistration(key: String): <% if (reactive) { %>Mono<% } else { %>Optional<% } %><<%= asEntity('User') %>> {
@@ -136,10 +139,10 @@ class UserService<% if (databaseType !== 'no') { %>(
                 <%_ if (['mongodb', 'neo4j', 'couchbase', 'cassandra'].includes(databaseType)) { _%>
                 userRepository.save(user)
                 <%_ } _%>
-                <%_ if (searchEngine === 'elasticsearch') { _%>
+                <%_ if (searchEngineElasticsearch) { _%>
                 userSearchRepository.save(user)
                 <%_ } _%>
-                <%_ if (cacheManagerIsAvailable === true) { _%>
+                <%_ if (cacheManagerIsAvailable) { _%>
                 clearUserCaches(user)
                 <%_ } _%>
                 log.debug("Activated user: $user")
@@ -148,23 +151,23 @@ class UserService<% if (databaseType !== 'no') { %>(
             <%_ } else { _%>
                 saveUser(user)
             }
-                <%_ if (searchEngine === 'elasticsearch') { _%>
+                <%_ if (searchEngineElasticsearch) { _%>
             .flatMap { userSearchRepository.save(it).thenReturn(it) }
                 <%_ } _%>
-                <%_ if (cacheManagerIsAvailable === true) { _%>
+                <%_ if (cacheManagerIsAvailable) { _%>
             .doOnNext(this::clearUserCaches)
                 <%_ } _%>
             .doOnNext { user -> log.debug("Activated user: $user") }
             <%_ } _%>
     }
 
-    <%_ if (databaseType === 'sql' && reactive) { _%>
+    <%_ if (databaseTypeSql && reactive) { _%>
     @Transactional
     <%_ } _%>
     fun completePasswordReset(newPassword: String, key: String): <% if (reactive) { %>Mono<% } else { %>Optional<% } %><<%= asEntity('User') %>> {
         log.debug("Reset user password for reset key $key")
         return userRepository.findOneByResetKey(key)
-            .filter { user -> user.resetDate?.isAfter(Instant.now().minusSeconds(86400)) ?: false }
+            .filter { user -> user.resetDate?.isAfter(Instant.now().minus(1, ChronoUnit.DAYS)) ?: false }
             <%_ if (!reactive) { _%>
             .map {
                 it.password = passwordEncoder.encode(newPassword)
@@ -173,7 +176,7 @@ class UserService<% if (databaseType !== 'no') { %>(
                 <%_ if (['mongodb', 'neo4j', 'couchbase', 'cassandra'].includes(databaseType)) { _%>
                 userRepository.save(it)
                 <%_ } _%>
-                <%_ if (cacheManagerIsAvailable === true) { _%>
+                <%_ if (cacheManagerIsAvailable) { _%>
                 clearUserCaches(it)
                 <%_ } _%>
                 it
@@ -186,12 +189,12 @@ class UserService<% if (databaseType !== 'no') { %>(
                 it.resetDate = null
                 it
             }
-            .flatMap(this::saveUser)<% if (cacheManagerIsAvailable === true) { %>
+            .flatMap(this::saveUser)<% if (cacheManagerIsAvailable) { %>
             .doOnNext(this::clearUserCaches)<% } %>
             <%_ } _%>
     }
 
-    <%_ if (databaseType === 'sql' && reactive) { _%>
+    <%_ if (databaseTypeSql && reactive) { _%>
     @Transactional
     <%_ } _%>
     fun requestPasswordReset(mail: String): <% if (reactive) { %>Mono<% } else { %>Optional<% } %><<%= asEntity('User') %>> {
@@ -204,7 +207,7 @@ class UserService<% if (databaseType !== 'no') { %>(
                 <%_ if (['mongodb', 'neo4j', 'couchbase', 'cassandra'].includes(databaseType)) { _%>
                 userRepository.save(it)
                 <%_ } _%>
-                <%_ if (cacheManagerIsAvailable === true) { _%>
+                <%_ if (cacheManagerIsAvailable) { _%>
                 clearUserCaches(it)
                 <%_ } _%>
                 it
@@ -216,12 +219,12 @@ class UserService<% if (databaseType !== 'no') { %>(
                 it.resetDate = Instant.now()
                 it
             }
-            .flatMap(this::saveUser)<% if (cacheManagerIsAvailable === true) { %>
+            .flatMap(this::saveUser)<% if (cacheManagerIsAvailable) { %>
             .doOnNext(this::clearUserCaches)<% } %>
             <%_ } _%>
     }
 
-    <%_ if (databaseType === 'sql' && reactive) { _%>
+    <%_ if (databaseTypeSql && reactive) { _%>
     @Transactional
     <%_ } _%>
     fun registerUser(userDTO: <%= asDto('AdminUser') %>, password: String): <% if (reactive) { %>Mono<<%= asEntity('User') %>><% } else { %><%= asEntity('User') %><% } %> {
@@ -241,7 +244,7 @@ class UserService<% if (databaseType !== 'no') { %>(
             }
         }
         val newUser = <%= asEntity('User') %>()
-        <%_ if (databaseType === 'cassandra') { _%>
+        <%_ if (databaseTypeCassandra) { _%>
         newUser.id = UUID.randomUUID().toString()
         <%_ } _%>
         val encryptedPassword = passwordEncoder.encode(password)
@@ -268,19 +271,19 @@ class UserService<% if (databaseType !== 'no') { %>(
             <%_ } _%>
         }
         userRepository.save(newUser)
-        <%_ if (searchEngine === 'elasticsearch') { _%>
+        <%_ if (searchEngineElasticsearch) { _%>
         userSearchRepository.save(newUser)
         <%_ } _%>
-        <%_ if (cacheManagerIsAvailable === true) { _%>
+        <%_ if (cacheManagerIsAvailable) { _%>
         clearUserCaches(newUser)
         <%_ } _%>
         log.debug("Created Information for User: $newUser")
         return newUser
-    <%_ } else {// reactive _%>
+    <%_ } else {/* reactive */ _%>
         return userRepository.findOneByLogin(login.toLowerCase())
             .flatMap { existingUser ->
                 if (existingUser.activated == false) {
-                    <%_ if (cacheManagerIsAvailable === true) { _%>
+                    <%_ if (cacheManagerIsAvailable) { _%>
                     clearUserCaches(existingUser)
                     <%_ } _%>
                     userRepository.delete(existingUser)
@@ -291,7 +294,7 @@ class UserService<% if (databaseType !== 'no') { %>(
             .then(userRepository.findOneByEmailIgnoreCase(email!!))
             .flatMap { existingUser ->
                 if (existingUser.activated == false) {
-                    <%_ if (cacheManagerIsAvailable === true) { _%>
+                    <%_ if (cacheManagerIsAvailable) { _%>
                     clearUserCaches(existingUser)
                     <%_ } _%>
                     userRepository.delete(existingUser)
@@ -302,7 +305,7 @@ class UserService<% if (databaseType !== 'no') { %>(
             .publishOn(Schedulers.boundedElastic())
             .then(Mono.fromCallable {
                 <%= asEntity('User') %>().apply {
-                    <%_ if (databaseType === 'cassandra') { _%>
+                    <%_ if (databaseTypeCassandra) { _%>
                     id  = UUID.randomUUID().toString()
                     <%_ } _%>
                     val encryptedPassword = passwordEncoder.encode(password)
@@ -335,10 +338,10 @@ class UserService<% if (databaseType !== 'no') { %>(
                 newUser.authorities = authorities
                 saveUser(newUser)
                 <%_ } _%>
-                <%_ if (searchEngine === 'elasticsearch') { _%>
+                <%_ if (searchEngineElasticsearch) { _%>
                     .flatMap { user -> userSearchRepository.save(user).thenReturn(user) }
                 <%_ } _%>
-                <%_ if (cacheManagerIsAvailable === true) { _%>
+                <%_ if (cacheManagerIsAvailable) { _%>
                     .doOnNext(this::clearUserCaches)
                 <%_ } _%>
                     .doOnNext { user -> log.debug("Created Information for User: $user") }
@@ -352,22 +355,22 @@ class UserService<% if (databaseType !== 'no') { %>(
             return false
         }
         userRepository.delete(existingUser)
-        <%_ if (databaseType === 'sql') { _%>
+        <%_ if (databaseTypeSql) { _%>
         userRepository.flush()
         <%_ } _%>
-        <%_ if (cacheManagerIsAvailable === true) { _%>
+        <%_ if (cacheManagerIsAvailable) { _%>
         clearUserCaches(existingUser)
         <%_ } _%>
         return true
     }
 
     <%_ } _%>
-    <%_ if (databaseType === 'sql' && reactive) { _%>
+    <%_ if (databaseTypeSql && reactive) { _%>
     @Transactional
     <%_ } _%>
     fun createUser(userDTO: <%= asDto('AdminUser') %>): <% if (reactive) { %>Mono<<%= asEntity('User') %>><% } else { %><%= asEntity('User') %><% } %> {
         val user = <%= asEntity('User') %>(
-            <%_ if (databaseType === 'cassandra') { _%>
+            <%_ if (databaseTypeCassandra) { _%>
             id = UUID.randomUUID().toString(),
             <%_ } _%>
             login = userDTO.login?.toLowerCase(),
@@ -394,10 +397,10 @@ class UserService<% if (databaseType !== 'no') { %>(
             <%_ } _%>
         )
         userRepository.save(user)
-        <%_ if (searchEngine === 'elasticsearch') { _%>
+        <%_ if (searchEngineElasticsearch) { _%>
         userSearchRepository.save(user)
         <%_ } _%>
-        <%_ if (cacheManagerIsAvailable === true) { _%>
+        <%_ if (cacheManagerIsAvailable) { _%>
         clearUserCaches(user)
         <%_ } _%>
         log.debug("Created Information for User: $user")
@@ -423,10 +426,10 @@ class UserService<% if (databaseType !== 'no') { %>(
                 it
             }
             .flatMap(this::saveUser)
-            <%_ if (searchEngine === 'elasticsearch') { _%>
+            <%_ if (searchEngineElasticsearch) { _%>
             .flatMap { userSearchRepository.save(it).thenReturn(it) }
             <%_ } _%>
-            <%_ if (cacheManagerIsAvailable === true) { _%>
+            <%_ if (cacheManagerIsAvailable) { _%>
             .doOnNext(this::clearUserCaches)
             <%_ } _%>
             .doOnNext { user -> log.debug("Changed Information for User: $user") }
@@ -439,7 +442,7 @@ class UserService<% if (databaseType !== 'no') { %>(
      * @param userDTO user to update.
      * @return updated user.
      */
-    <%_ if (databaseType === 'sql' && reactive) { _%>
+    <%_ if (databaseTypeSql && reactive) { _%>
     @Transactional
     <%_ } _%>
     fun updateUser(userDTO: <%= asDto('AdminUser') %>): <% if (reactive) { %>Mono<% } else { %>Optional<% } %><<%= asDto('AdminUser') %>> {
@@ -452,12 +455,12 @@ class UserService<% if (databaseType !== 'no') { %>(
         return userRepository.findById(userDTO.id!!)
             .<%_ if (['sql', 'mongodb', 'neo4j'].includes(databaseType)) { _%>flatMap<% } else { %>map<% } %> { user ->
         <%_ } _%>
-                <%_ if (databaseType === 'couchbase') { _%>
+                <%_ if (databaseTypeCouchbase) { _%>
                 if (user.login != userDTO.login) {
                     userRepository.deleteById(userDTO.id!!)
                 }
                 <%_ } _%>
-                <%_ if (cacheManagerIsAvailable === true) { _%>
+                <%_ if (cacheManagerIsAvailable) { _%>
                 clearUserCaches(user)
                 <%_ } _%>
                 user.apply {
@@ -474,7 +477,7 @@ class UserService<% if (databaseType !== 'no') { %>(
                 <%_ if (['sql', 'mongodb', 'neo4j'].includes(databaseType)) { _%>
                 val managedAuthorities = user.authorities
                 managedAuthorities.clear()
-                <%_ } else { // Cassandra & Couchbase _%>
+                <%_ } else { /* Cassandra & Couchbase */ _%>
                 user.authorities = userDTO.authorities?.toMutableSet() ?: mutableSetOf()
                 <%_ } _%>
         <%_ if (!reactive) { _%>
@@ -489,18 +492,18 @@ class UserService<% if (databaseType !== 'no') { %>(
                 <%_ if (['mongodb', 'neo4j', 'couchbase', 'cassandra'].includes(databaseType)) { _%>
                 userRepository.save(user)
                 <%_ } _%>
-                <%_ if (searchEngine === 'elasticsearch') { _%>
+                <%_ if (searchEngineElasticsearch) { _%>
                 userSearchRepository.save(user)
                 <%_ } _%>
-                <%_ if (cacheManagerIsAvailable === true) { _%>
+                <%_ if (cacheManagerIsAvailable) { _%>
                 clearUserCaches(user)
                 <%_ } _%>
                 log.debug("Changed Information for User: $user")
                 user
             }
-        <%_ } else { // reactive _%>
+        <%_ } else { /* reactive */ _%>
                 <%_ if (['sql', 'mongodb'].includes(databaseType)) { _%>
-                    <%_ if (databaseType === 'sql') { _%>
+                    <%_ if (databaseTypeSql) { _%>
                 userRepository
                     .deleteUserAuthorities(user.id!!)
                     .thenMany(Flux.fromIterable(userDTO.authorities!!))
@@ -515,10 +518,10 @@ class UserService<% if (databaseType !== 'no') { %>(
                 <%_ } _%>
             }
             .flatMap(this::saveUser)
-            <%_ if (searchEngine === 'elasticsearch') { _%>
+            <%_ if (searchEngineElasticsearch) { _%>
             .flatMap { userSearchRepository.save(it).thenReturn(it) }
             <%_ } _%>
-            <%_ if (cacheManagerIsAvailable === true) { _%>
+            <%_ if (cacheManagerIsAvailable) { _%>
             .doOnNext(this::clearUserCaches)
             <%_ } _%>
             .doOnNext { log.debug("Changed Information for User: $it") }
@@ -530,33 +533,33 @@ class UserService<% if (databaseType !== 'no') { %>(
     fun deleteUser(login: String) {
         userRepository.findOneByLogin(login).ifPresent { user ->
             userRepository.delete(user)
-            <%_ if (searchEngine === 'elasticsearch') { _%>
+            <%_ if (searchEngineElasticsearch) { _%>
             userSearchRepository.delete(user)
             <%_ } _%>
-            <%_ if (cacheManagerIsAvailable === true) { _%>
+            <%_ if (cacheManagerIsAvailable) { _%>
             clearUserCaches(user)
             <%_ } _%>
             log.debug("Deleted User: $user")
         }
     }
     <%_ } else { _%>
-        <%_ if (databaseType === 'sql') { _%>
+        <%_ if (databaseTypeSql) { _%>
     @Transactional
         <%_ } _%>
     fun deleteUser(login: String): Mono<Void> {
         return userRepository.findOneByLogin(login)
             .flatMap { userRepository.delete(it).thenReturn(it) }
-            <%_ if (searchEngine === 'elasticsearch') { _%>
+            <%_ if (searchEngineElasticsearch) { _%>
             .flatMap { userSearchRepository.delete(it).thenReturn(it) }
             <%_ } _%>
-            <%_ if (cacheManagerIsAvailable === true) { _%>
+            <%_ if (cacheManagerIsAvailable) { _%>
             .doOnNext(this::clearUserCaches)
             <%_ } _%>
             .doOnNext { log.debug("Changed Information for User: $it") }
             .then()
     }
     <%_ } _%>
-<%_ } // authenticationType !== 'oauth2' _%>
+<%_ } /* !authenticationTypeOauth2 */ _%>
     /**
      * Update basic information (first name, last name, email, language) for the current user.
      *
@@ -571,7 +574,7 @@ class UserService<% if (databaseType !== 'no') { %>(
     * @return a completed {@link Mono}.
     <%_ } _%>
      */
-    <%_ if (databaseType === 'sql' && reactive) { _%>
+    <%_ if (databaseTypeSql && reactive) { _%>
     @Transactional
     <%_ } _%>
     fun updateUser(firstName: String?, lastName: String?, email: String?, langKey: String?<% if (['sql', 'mongodb', 'couchbase', 'neo4j'].includes(databaseType)) { %>, imageUrl: String?<% } %>) <% if (reactive) { %>: Mono<Void><% } %> {
@@ -590,10 +593,10 @@ class UserService<% if (databaseType !== 'no') { %>(
                 <%_ if (['mongodb', 'neo4j', 'couchbase', 'cassandra'].includes(databaseType)) { _%>
                 userRepository.save(it)
                 <%_ } _%>
-                <%_ if (searchEngine === 'elasticsearch') { _%>
+                <%_ if (searchEngineElasticsearch) { _%>
                 userSearchRepository.save(it)
                 <%_ } _%>
-                <%_ if (cacheManagerIsAvailable === true) { _%>
+                <%_ if (cacheManagerIsAvailable) { _%>
                 clearUserCaches(it)
                 <%_ } _%>
                 log.debug("Changed Information for User: $it")
@@ -601,10 +604,10 @@ class UserService<% if (databaseType !== 'no') { %>(
             <%_ } else { _%>
                 saveUser(it)
             }
-                <%_ if (searchEngine === 'elasticsearch') { _%>
+                <%_ if (searchEngineElasticsearch) { _%>
                 .flatMap { userSearchRepository.save(it).thenReturn(it) }
                 <%_ } _%>
-                <%_ if (cacheManagerIsAvailable === true) { _%>
+                <%_ if (cacheManagerIsAvailable) { _%>
                 .doOnNext(this::clearUserCaches)
                 <%_ } _%>
                 .doOnNext { log.debug("Changed Information for User: $it") }
@@ -613,16 +616,16 @@ class UserService<% if (databaseType !== 'no') { %>(
     }
 
     <%_ if (reactive) { _%>
-        <%_ if (databaseType === 'sql' && authenticationTypeOauth2) { _%>
+        <%_ if (databaseTypeSql && authenticationTypeOauth2) { _%>
        @Transactional
        fun saveUser(user: User) = saveUser(user, false)
 
         <%_ } _%>
-        <%_ if (databaseType === 'sql') { _%>
+        <%_ if (databaseTypeSql) { _%>
         @Transactional
         <%_ } _%>
-        <% if (databaseType !== 'sql') { %>private <% } %> fun saveUser(user: <%= asEntity('User') %><% if (databaseType === 'sql' && authenticationTypeOauth2) { %>, forceCreate: Boolean<% } %>): Mono<<%= asEntity('User') %>> {
-            <%_ if (databaseType === 'cassandra') { _%>
+        <% if (!databaseTypeSql) { %>private <% } %> fun saveUser(user: <%= asEntity('User') %><% if (databaseTypeSql && authenticationTypeOauth2) { %>, forceCreate: Boolean<% } %>): Mono<<%= asEntity('User') %>> {
+            <%_ if (databaseTypeCassandra) { _%>
             return userRepository.save(user)
             <%_ } else { _%>
             return getCurrentUserLogin()
@@ -632,7 +635,7 @@ class UserService<% if (databaseType !== 'no') { %>(
                         user.createdBy = login
                     }
                     user.lastModifiedBy = login
-                <%_ if (databaseType === 'sql') { _%>
+                <%_ if (databaseTypeSql) { _%>
                     // Saving the relationship can be done in an entity callback
                     // once https://github.com/spring-projects/spring-data-r2dbc/issues/215 is done
                     <%_ if (authenticationTypeOauth2) { _%>
@@ -654,8 +657,8 @@ class UserService<% if (databaseType !== 'no') { %>(
         }
 
 <%_ } _%>
-<%_ if (authenticationType !== 'oauth2') { _%>
-    <%_ if (databaseType === 'sql') { _%>
+<%_ if (!authenticationTypeOauth2) { _%>
+    <%_ if (databaseTypeSql) { _%>
     @Transactional
     <%_ } _%>
     fun changePassword(currentClearTextPassword: String, newPassword: String)<% if (reactive) { %>: Mono<Void><% } %> {
@@ -677,7 +680,7 @@ class UserService<% if (databaseType !== 'no') { %>(
                 <%_ if (['mongodb', 'neo4j', 'couchbase', 'cassandra'].includes(databaseType)) { _%>
                 userRepository.save(user)
                 <%_ } _%>
-                <%_ if (cacheManagerIsAvailable === true) { _%>
+                <%_ if (cacheManagerIsAvailable) { _%>
                 clearUserCaches(user)
                 <%_ } _%>
                 log.debug("Changed password for User: $user")
@@ -686,7 +689,7 @@ class UserService<% if (databaseType !== 'no') { %>(
             <%_ } else { _%>
                 user
             }.flatMap { saveUser(it) }
-            <%_ if (cacheManagerIsAvailable === true) { _%>
+            <%_ if (cacheManagerIsAvailable) { _%>
             .doOnNext(this::clearUserCaches)
             <%_ } _%>
             .doOnNext { user -> log.debug("Changed password for User: $user") }
@@ -695,28 +698,28 @@ class UserService<% if (databaseType !== 'no') { %>(
     }
 <%_ } _%>
 
-    <%_ if (databaseType === 'sql') { _%>
+    <%_ if (databaseTypeSql) { _%>
     @Transactional(readOnly = true)
     <%_ } _%>
     <%_ if (['sql', 'mongodb', 'neo4j', 'couchbase'].includes(databaseType)) { _%>
     fun getAllManagedUsers(pageable: Pageable): <% if (reactive) { %>Flux<% } else { %>Page<% } %><<%= asDto('AdminUser') %>> {
-        return userRepository.findAll<% if (reactive) { %><% if (databaseType === 'sql') { %>WithAuthorities<% } else { %>ByIdNotNull<% }} %>(pageable).map { <%= asDto('AdminUser') %>(it) }
+        return userRepository.findAll<% if (reactive) { %><% if (databaseTypeSql) { %>WithAuthorities<% } else { %>ByIdNotNull<% }} %>(pageable).map { <%= asDto('AdminUser') %>(it) }
     }
 
-    <%_ if (databaseType === 'sql') { _%>
+    <%_ if (databaseTypeSql) { _%>
     @Transactional(readOnly = true)
     <%_ } _%>
     fun getAllPublicUsers(pageable: Pageable): <% if (reactive) { %>Flux<% } else { %>Page<% } %><<%= asDto('User') %>> {
-        return userRepository.findAllByIdNotNullAndActivatedIsTrue(pageable).map { <%= asDto('User') %>(it) }
+        return userRepository.findAllBy<% if (!databaseTypeCouchbase) { %>IdNotNullAnd<% } %>ActivatedIsTrue(pageable).map { <%= asDto('User') %>(it) }
     }
 
         <%_ if (reactive) { _%>
-    <%_ if (databaseType === 'sql') { _%>
+    <%_ if (databaseTypeSql) { _%>
     @Transactional(readOnly = true)
     <%_ } _%>
     fun countManagedUsers() = userRepository.count()
         <%_ } _%>
-    <%_ } else { // Cassandra _%>
+    <%_ } else { /* Cassandra */ _%>
 
     fun getAllManagedUsers() = userRepository.findAll().map { <%= asDto('AdminUser') %>(it) }
 
@@ -725,20 +728,20 @@ class UserService<% if (databaseType !== 'no') { %>(
         .map { <%= asDto('User') %>(it) }
     <%_ } _%>
 
-    <%_ if (databaseType === 'sql') { _%>
+    <%_ if (databaseTypeSql) { _%>
     @Transactional(readOnly = true)
     <%_ } _%>
     fun getUserWithAuthoritiesByLogin(login: String): <% if (reactive) { %>Mono<% } else { %>Optional<% } %><<%= asEntity('User') %>> =
-        userRepository.<% if (databaseType === 'sql') { %>findOneWithAuthoritiesByLogin(login)<% } else { %>findOneByLogin(login)<% } %>
+        userRepository.<% if (databaseTypeSql) { %>findOneWithAuthoritiesByLogin(login)<% } else { %>findOneByLogin(login)<% } %>
 
-    <%_ if (authenticationType !== 'oauth2') { _%>
-        <%_ if (databaseType === 'sql') { _%>
+    <%_ if (!authenticationTypeOauth2) { _%>
+        <%_ if (databaseTypeSql) { _%>
     @Transactional(readOnly = true)
         <%_ } _%>
     fun getUserWithAuthorities(): <% if (reactive) { %>Mono<% } else { %>Optional<% } %><<%= asEntity('User') %>> =
-        getCurrentUserLogin().flatMap(userRepository::findOne<% if (databaseType === 'sql') { %>WithAuthorities<% } %>ByLogin)
+        getCurrentUserLogin().flatMap(userRepository::findOne<% if (databaseTypeSql) { %>WithAuthorities<% } %>ByLogin)
     <%_ } _%>
-    <%_ if ((databaseType === 'sql' || databaseType === 'mongodb' || databaseType === 'neo4j' || databaseType === 'couchbase') && authenticationTypeSession && !reactive) { _%>
+    <%_ if ((databaseTypeSql || databaseTypeMongodb || databaseTypeNeo4j || databaseTypeCouchbase) && authenticationTypeSession && !reactive) { _%>
 
     /**
      * Persistent Token are used for providing automatic authentication, they should be automatically deleted after
@@ -750,14 +753,14 @@ class UserService<% if (databaseType !== 'no') { %>(
     fun removeOldPersistentTokens() {
         val now = LocalDate.now()
         persistentTokenRepository.findByTokenDateBefore(now.minusMonths(1)).forEach { token ->
-            log.debug("Deleting token ${token.series}")<% if (databaseType === 'sql') { %>
+            log.debug("Deleting token ${token.series}")<% if (databaseTypeSql) { %>
             val user = token.user
             user?.persistentTokens?.remove(token)<% } %>
             persistentTokenRepository.delete(token)
         }
     }
     <%_ } _%>
-    <%_ if (authenticationType !== 'oauth2' && (databaseType === 'sql' || databaseType === 'mongodb' || databaseType === 'neo4j' || databaseType === 'couchbase')) { _%>
+    <%_ if (!authenticationTypeOauth2 && (databaseTypeSql || databaseTypeMongodb || databaseTypeNeo4j || databaseTypeCouchbase)) { _%>
 
     /**
      * Not activated users should be automatically deleted after 3 days.
@@ -774,39 +777,39 @@ class UserService<% if (databaseType !== 'no') { %>(
             .forEach { user ->
                 log.debug("Deleting not activated user ${user.login}")
                 userRepository.delete(user)
-                <%_ if (searchEngine === 'elasticsearch') { _%>
+                <%_ if (searchEngineElasticsearch) { _%>
                 userSearchRepository.delete(user)
                 <%_ } _%>
-                <%_ if (cacheManagerIsAvailable === true) { _%>
+                <%_ if (cacheManagerIsAvailable) { _%>
                 clearUserCaches(user)
                 <%_ } _%>
             }
             <%_ } else { _%>
         removeNotActivatedUsersReactively().blockLast()
     }
-    <%_ if (databaseType === 'sql') { _%>
+    <%_ if (databaseTypeSql) { _%>
     @Transactional
     <%_ } _%>
     fun removeNotActivatedUsersReactively(): Flux<<%= asEntity('User') %>> {
         return userRepository
-            .findAllByActivatedIsFalseAndActivationKeyIsNotNullAndCreatedDateBefore(<%_ if (databaseType === 'sql') { _%>LocalDateTime.ofInstant(Instant.now().minus(3, ChronoUnit.DAYS), ZoneOffset.UTC)<%_ } else { _%>Instant.now().minus(3, ChronoUnit.DAYS)<%_ } _%>)
+            .findAllByActivatedIsFalseAndActivationKeyIsNotNullAndCreatedDateBefore(<%_ if (databaseTypeSql) { _%>LocalDateTime.ofInstant(Instant.now().minus(3, ChronoUnit.DAYS), ZoneOffset.UTC)<%_ } else { _%>Instant.now().minus(3, ChronoUnit.DAYS)<%_ } _%>)
             .flatMap { user -> userRepository.delete(user).thenReturn(user) }
-            <%_ if (searchEngine === 'elasticsearch') { _%>
+            <%_ if (searchEngineElasticsearch) { _%>
             .flatMap { user -> userSearchRepository.delete(user).thenReturn(user) }
             <%_ } _%>
-            <%_ if (cacheManagerIsAvailable === true) { _%>
+            <%_ if (cacheManagerIsAvailable) { _%>
             .doOnNext(this::clearUserCaches)
             <%_ } _%>
             .doOnNext { user -> log.debug("Deleted User: $user") }
             <%_ } _%>
     }
     <%_ } _%>
-    <%_ if (databaseType === 'sql' || databaseType === 'mongodb' || databaseType === 'neo4j' || databaseType === 'couchbase') { _%>
+    <%_ if (databaseTypeSql || databaseTypeMongodb || databaseTypeNeo4j || databaseTypeCouchbase) { _%>
 
     /**
      * @return a list of all the authorities
      */
-    <%_ if (databaseType === 'sql') { _%>
+    <%_ if (databaseTypeSql) { _%>
     @Transactional(readOnly = true)
     <%_ } _%>
     fun getAuthorities() =
@@ -818,7 +821,7 @@ class UserService<% if (databaseType !== 'no') { %>(
         // save authorities in to sync user roles/groups between IdP and JHipster's local database
         <%_ if (!reactive) { _%>
         val dbAuthorities = getAuthorities()
-        <%_ if (databaseType !== 'couchbase') { _%>
+        <%_ if (!databaseTypeCouchbase) { _%>
         val userAuthorities = user.authorities.asSequence().mapTo(mutableListOf(), Authority::name)
         <%_ } else { _%>
         val userAuthorities = user.authorities
@@ -849,14 +852,14 @@ class UserService<% if (databaseType !== 'no') { %>(
         } else {
             log.debug("Saving user '${user.login}' in local database")
             userRepository.save(user)
-            <%_ if (cacheManagerIsAvailable === true) { _%>
+            <%_ if (cacheManagerIsAvailable) { _%>
             clearUserCaches(user)
             <%_ } _%>
         }
         return user
         <%_ } else { _%>
         val userAuthorities =
-            user.authorities<% if (databaseType !== 'couchbase') { %>.map { it.name }<% } %>.toList()
+            user.authorities<% if (!databaseTypeCouchbase) { %>.map { it.name }<% } %>.toList()
 
         return getAuthorities().collectList()
             .flatMapMany { dbAuthorities: List<String?> ->
@@ -871,7 +874,7 @@ class UserService<% if (databaseType !== 'no') { %>(
             .doOnNext { authority: Authority? -> log.debug("Saving authority '$authority' in local database") }
             .flatMap<Authority> { authorityRepository.save(it) }
             .then(userRepository.findOneByLogin(user.login!!))
-            .switchIfEmpty(<% if (authenticationTypeOauth2 && databaseType === 'sql') { %>saveUser(user, true)<% } else { %>userRepository.save(user)<% } %>)
+            .switchIfEmpty(<% if (authenticationTypeOauth2 && databaseTypeSql) { %>saveUser(user, true)<% } else { %>userRepository.save(user)<% } %>)
             .flatMap<Any> { existingUser: User ->
                 // if IdP sends last updated information, use it to determine if an update should happen
                 if (details["updated_at"] != null) {
@@ -893,18 +896,18 @@ class UserService<% if (databaseType !== 'no') { %>(
     }
     <%_ } _%>
 
-<%_ } // databaseType !== 'no' _%>
+<%_ } /* !databaseTypeNo */ _%>
     <%_ if (authenticationTypeOauth2) { _%>
     /**
      * Returns the user from an OAuth 2.0 login or resource server with JWT.
-        <%_ if (databaseType !== 'no') { _%>
+        <%_ if (!databaseTypeNo) { _%>
      * Synchronizes the user in the local repository.
         <%_ } _%>
      *
      * @param authToken the authentication token.
      * @return the user from the authentication.
      */
-        <%_ if (databaseType === 'sql') { _%>
+        <%_ if (databaseTypeSql) { _%>
     @Transactional
         <%_ } _%>
     fun getUserFromAuthentication(authToken: AbstractAuthenticationToken): <% if (!reactive) { %><%= asDto('AdminUser') %><% } else { %>Mono<<%= asDto('AdminUser') %>><% } %> {
@@ -922,10 +925,18 @@ class UserService<% if (databaseType !== 'no') { %>(
             .map { Authority(name = it) }
             <%_ } _%>
             .toMutableSet()
-        return <% if (databaseType !== 'no' && !reactive) { %><%= asDto('AdminUser') %>(syncUserWithIdP(attributes, user))<% } else if (!reactive) { %>user<% } %><% if (databaseType === 'no' && reactive) { %>Mono.just(user)<% } else if (reactive) { %>syncUserWithIdP(attributes, user).flatMap { Mono.just(<%= asDto('AdminUser') %>(it)) }<% } %>
+        <%_ if (databaseTypeNo) { _%>
+            return <% if (reactive) { %>Mono.just(user)<% } else { %>user<% } %>
+        <%_ } else { _%>
+        <%_ if (!reactive) { _%>
+            return <%= asDto('AdminUser') %>(syncUserWithIdP(attributes, user))
+        <%_ } else { _%>
+            return syncUserWithIdP(attributes, user).flatMap{Mono.just(<%= asDto('AdminUser') %>(it))}
+        <%_ } _%>
+        <%_ } _%>
     }
     <%_ } _%>
-    <%_ if (cacheManagerIsAvailable === true && databaseType !== 'no') { _%>
+    <%_ if (cacheManagerIsAvailable && !databaseTypeNo) { _%>
 
     private fun clearUserCaches(user: <%= asEntity('User') %>) {
         user.login?.let{
@@ -941,9 +952,9 @@ class UserService<% if (databaseType !== 'no') { %>(
     companion object {
 
         @JvmStatic
-        private fun getUser(details: Map<String, Any>): <%= databaseType === 'no' ? asDto('AdminUser') : asEntity('User') %> {
+        private fun getUser(details: Map<String, Any>): <%= databaseTypeNo ? asDto('AdminUser') : asEntity('User') %> {
             var activated = true
-            val user = <%= databaseType === 'no' ? asDto('AdminUser') : asEntity('User') %>()
+            val user = <%= databaseTypeNo ? asDto('AdminUser') : asEntity('User') %>()
             // handle resource server JWT, where sub claim is email and uid is ID
             if (details["uid"] != null) {
                 user.id = details["uid"] as String
@@ -958,6 +969,8 @@ class UserService<% if (databaseType !== 'no') { %>(
             }
             if (details["given_name"] != null) {
                 user.firstName = details["given_name"] as String
+            } else if (details.get("name") != null) {
+                user.firstName = details.get("name") as String
             }
             if (details["family_name"] != null) {
                 user.lastName = details["family_name"] as String

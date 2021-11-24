@@ -22,8 +22,8 @@ const EntityServerGenerator = require('generator-jhipster/generators/entity-serv
 const writeFiles = require('./files').writeFiles;
 
 module.exports = class extends EntityServerGenerator {
-    constructor(args, opts) {
-        super(args, { fromBlueprint: true, ...opts }); // fromBlueprint variable is important
+    constructor(args, options, features) {
+        super(args, { ...options, fromBlueprint: true }, features); // fromBlueprint variable is important
         const jhContext = (this.jhipsterContext = this.options.jhipsterContext);
         if (!jhContext) {
             this.error(`This is a JHipster blueprint and should be used only like ${chalk.yellow('jhipster --blueprint kotlin')}`);

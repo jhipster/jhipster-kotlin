@@ -87,6 +87,6 @@ function requireCLI(preferLocal) {
     }
     // load global version
     logger.info('Using JHipster version installed globally');
-    require('generator-jhipster/cli/cli.js');
+    require('generator-jhipster/cli/cli');
     /* eslint-enable  */
 }

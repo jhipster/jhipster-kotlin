@@ -4,7 +4,7 @@
  This file is part of the JHipster project, see https://www.jhipster.tech/
  for more information.
 
- Licensed under the Apache License, Version 2.0 (the "License");
+ Licensed under the Apache License, Version 2.0 (the "
  you may not use this file except in compliance with the License.
  You may obtain a copy of the License at
 
@@ -20,17 +20,10 @@
 
 package <%= packageName %>.web.rest
 
-<%_ if (searchEngine === 'couchbase') { _%>
-import com.couchbase.client.core.time.Delay
-import com.couchbase.client.java.util.retry.Retry
-<%_ } _%>
 import com.fasterxml.jackson.annotation.JsonInclude
 import com.fasterxml.jackson.databind.ObjectMapper
 import com.fasterxml.jackson.databind.SerializationFeature
 import com.fasterxml.jackson.datatype.jsr310.JavaTimeModule
-<%_ if (authenticationTypeOauth2) { _%>
-import <%= packageName %>.security.extractAuthorityFromClaims
-<%_ } _%>
 import org.hamcrest.Description
 import org.hamcrest.TypeSafeDiagnosingMatcher
 import org.hamcrest.TypeSafeMatcher
@@ -39,27 +32,16 @@ import org.springframework.format.datetime.standard.DateTimeFormatterRegistrar
 import org.springframework.format.support.DefaultFormattingConversionService
 import org.springframework.format.support.FormattingConversionService
 <%_ } _%>
-<%_ if (databaseType === 'couchbase') { _%>
+<%_ if (databaseTypeCouchbase) { _%>
 import org.springframework.security.authentication.TestingAuthenticationToken
 import org.springframework.security.test.context.TestSecurityContextHolder
-<%_ } _%>
-<%_ if (searchEngine === 'couchbase') { _%>
-import rx.Observable
-import rx.internal.util.UtilityFunctions
-<%_ } _%>
-<%_ if (authenticationTypeOauth2) { _%>
-import org.springframework.security.core.GrantedAuthority
-import org.springframework.security.oauth2.client.authentication.OAuth2AuthenticationToken
-import org.springframework.security.oauth2.core.oidc.OidcIdToken
-import org.springframework.security.oauth2.core.oidc.user.DefaultOidcUser
-import org.springframework.security.oauth2.core.oidc.user.OidcUser
-<%_ } _%>
+<%_ } _%>   
 
-<%_ if (databaseType === 'sql') { _%>
+<%_ if (databaseTypeSql) { _%>
 import javax.persistence.EntityManager
 <%_ } _%>
 
-<%_ if (searchEngine === 'couchbase') { _%>
+<%_ if (searchEngineCouchbase) { _%>
 import java.util.NoSuchElementException
 import java.util.concurrent.Callable
 import java.util.concurrent.TimeUnit
@@ -72,6 +54,15 @@ import java.time.format.DateTimeParseException
 
 import kotlin.reflect.KClass
 import kotlin.reflect.full.createInstance
+
+<%_ if (searchEngineCouchbase) { _%>
+import java.util.NoSuchElementException
+import java.util.concurrent.Callable
+import java.util.concurrent.TimeUnit
+import java.util.function.Function
+import java.time.Duration
+import reactor.core.publisher.Mono
+<%_ } _%>
 
 import org.assertj.core.api.Assertions.assertThat
 
@@ -102,10 +93,10 @@ fun convertObjectToJsonBytes(`object`: Any): ByteArray = mapper.writeValueAsByte
  * @return the JSON byte array.
  */
 fun createByteArray(size: Int, data: String) = ByteArray(size) { java.lang.Byte.parseByte(data, 2) }
-<%_ if (databaseType === 'couchbase') { _%>
+<%_ if (databaseTypeCouchbase) { _%>
 
 /**
- * Mock user authentication for Spring SpEL expression used in [<%= packageName %>.repository.N1qlCouchbaseRepository].
+ * Mock user authentication
  */
 fun mockAuthentication() {
     TestSecurityContextHolder.getContext().authentication = TestingAuthenticationToken("user", null)
@@ -193,7 +184,7 @@ fun <T : Any> equalsVerifier(clazz: KClass<T>) {
     // Test with an instance of the same class
     val domainObject2 = clazz.createInstance()
     assertThat(domainObject1).isNotEqualTo(domainObject2)
-    <%_ if (databaseType === 'sql' || databaseType === 'mongodb' || databaseType === 'couchbase') { _%>
+    <%_ if (databaseTypeSql || databaseTypeMongodb || databaseTypeCouchbase) { _%>
     // HashCodes are equals because the objects are not persisted yet
     assertThat(domainObject1).hasSameHashCodeAs(domainObject2)
     <%_ } _%>
@@ -212,52 +203,35 @@ fun createFormattingConversionService(): FormattingConversionService {
     return dfcs
 }
 <%_ } _%>
-<%_ if (databaseType === 'sql') { _%>
+<%_ if (databaseTypeSql) { _%>
 /**
  * Finds stored objects of the specified type.
  * @param clazz the class type to be searched.
  * @return a list of all found objects.
  * @param <T> the type of objects to be searched.
  */
-fun <T : Any> EntityManager.findAll(clazz: KClass<T>): List<T> {
-    val cb = this.criteriaBuilder
+fun <T : Any> findAll(em: EntityManager, clazz: KClass<T>): List<T> {
+    val cb = em.criteriaBuilder
     val cq = cb.createQuery(clazz.java)
     val rootEntry = cq.from(clazz.java)
     val all = cq.select(rootEntry)
-    return this.createQuery(all).resultList
+    return em.createQuery(all).resultList
 }
 <%_ } _%>
 
-<%_ if (authenticationTypeOauth2) { _%>
-@JvmField
-val ID_TOKEN = "eyJ0eXAiOiJKV1QiLCJhbGciOiJIUzI1NiJ9" +
-    ".eyJzdWIiOiIxMjM0NTY3ODkwIiwibmFtZSI6IkpvaG4gRG9lIiwiYWRtaW4iOnRydWUsIm" +
-    "p0aSI6ImQzNWRmMTRkLTA5ZjYtNDhmZi04YTkzLTdjNmYwMzM5MzE1OSIsImlhdCI6MTU0M" +
-    "Tk3MTU4MywiZXhwIjoxNTQxOTc1MTgzfQ.QaQOarmV8xEUYV7yvWzX3cUE_4W1luMcWCwpr" +
-    "oqqUrg"
-
-fun authenticationToken(idToken: OidcIdToken): OAuth2AuthenticationToken {
-    val authorities = extractAuthorityFromClaims(idToken.claims)
-    val user = DefaultOidcUser(authorities, idToken)
-    return OAuth2AuthenticationToken(user, authorities, "oidc")
-}
-<%_ } _%>
-
-<%_ if (searchEngine === 'couchbase') { _%>
+<%_ if (searchEngineCouchbase) { _%>
 const val MAX_ATTEMPTS = 3
-const val DEFAULT_DELAY = Delay.exponential(TimeUnit.SECONDS)
+// const val DEFAULT_DELAY = Delay.exponential(TimeUnit.SECONDS)
 
 fun <T> retryUntilNotEmpty(iterableCallable: Callable<Iterable<T>>) {
-    Retry.wrapOrRetry(
-        Observable.fromCallable(iterableCallable)
+    Mono.defer(
+        Mono.fromCallable(iterableCallable)
             .flatMapIterable(UtilityFunctions.identity())
-            .switchIfEmpty(
-                Observable.error(NoSuchElementException())),
-                MAX_ATTEMPTS,
-                DEFAULT_DELAY
-            )
-            .toBlocking()
-            .subscribe()
+            .next()
+            .switchIfEmpty(Mono.error(NoSuchElementException()))
+    ).retry()
+    .timeout(Duration.ofSeconds(5))
+    .block()
 }
 <%_ } _%>
 

@@ -4,7 +4,7 @@
  This file is part of the JHipster project, see https://www.jhipster.tech/
  for more information.
 
- Licensed under the Apache License, Version 2.0 (the "License");
+ Licensed under the Apache License, Version 2.0 (the "
  you may not use this file except in compliance with the License.
  You may obtain a copy of the License at
 
@@ -136,6 +136,11 @@ class <%= serviceClassName %>(
     protected fun createSpecification(criteria: <%= criteria %>?): Specification<<%= persistClass %>?> {
         var specification: Specification<<%= persistClass %>?> = Specification.where(null)
         if (criteria != null) {
+            // This has to be called first, because the distinct method returns null
+            val distinctCriteria = criteria.distinct
+            if (distinctCriteria != null) {
+                specification = specification.and(distinct(distinctCriteria));
+            }
             if (criteria.<%= primaryKey.name %> != null) {
                 specification = specification.and(<%= getSpecificationBuilder(primaryKey.type) %>(criteria.<%= primaryKey.name %>, <%= persistClass %>_.<%= primaryKey.name %>))
             }

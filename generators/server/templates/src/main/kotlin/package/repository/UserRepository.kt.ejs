@@ -4,7 +4,7 @@
  This file is part of the JHipster project, see https://www.jhipster.tech/
  for more information.
 
- Licensed under the Apache License, Version 2.0 (the "License");
+ Licensed under the Apache License, Version 2.0 (the "
  you may not use this file except in compliance with the License.
  You may obtain a copy of the License at
 
@@ -18,12 +18,12 @@
 -%>
 package <%= packageName %>.repository
 
-<%_ if (databaseType === 'sql' && reactive) { _%>
+<%_ if (databaseTypeSql && reactive) { _%>
 import <%= packageName %>.domain.Authority
 <%_ } _%>
 import <%= packageName %>.domain.<%= asEntity('User') %>
 
-<%_ if (databaseType === 'cassandra') { _%>
+<%_ if (databaseTypeCassandra) { _%>
 import com.datastax.oss.driver.api.core.CqlIdentifier
     <%_ if (!reactive) { _%>
 import com.datastax.oss.driver.api.core.CqlSession
@@ -55,13 +55,10 @@ import com.datastax.oss.driver.api.querybuilder.QueryBuilder
 import com.datastax.oss.driver.api.querybuilder.insert.RegularInsert
     <%_ } _%>
 <%_ } _%>
-<%_ if (searchEngine === 'couchbase') { _%>
-import <%= packageName %>.repository.search.SearchCouchbaseRepository
-<%_ } _%>
-<%_ if (databaseType === 'sql' && reactive) { _%>
+<%_ if (databaseTypeSql && reactive) { _%>
 import org.apache.commons.beanutils.BeanComparator
 <%_ } _%>
-<%_ if (cacheManagerIsAvailable === true) { _%>
+<%_ if (cacheManagerIsAvailable) { _%>
 import org.springframework.cache.annotation.Cacheable
 <%_ } _%>
 <%_ if (['sql', 'couchbase', 'mongodb', 'neo4j'].includes(databaseType)) { _%>
@@ -70,7 +67,7 @@ import org.springframework.data.domain.Page
     <%_ } _%>
 import org.springframework.data.domain.Pageable
 <%_ } _%>
-<%_ if (databaseType === 'sql') { _%>
+<%_ if (databaseTypeSql) { _%>
     <%_ if (!reactive) { _%>
 import org.springframework.data.jpa.repository.EntityGraph
 import org.springframework.data.jpa.repository.JpaRepository
@@ -89,13 +86,21 @@ import org.springframework.data.relational.core.query.Criteria.where
 import org.springframework.data.relational.core.query.Query.query
         <%_ } _%>
 <%_ } _%>
-<%_ if (databaseType === 'mongodb') { _%>
+<%_ if (databaseTypeMongodb) { _%>
 import org.springframework.data.mongodb.repository.<% if (reactive) { %>Reactive<% } %>MongoRepository
 <%_ } _%>
-<%_ if (databaseType === 'neo4j') { _%>
+<%_ if (databaseTypeNeo4j) { _%>
 import org.springframework.data.neo4j.repository.<% if (reactive) { %>Reactive<% } %>Neo4jRepository
 <%_ } _%>
-<%_ if (reactive && databaseType === 'cassandra') { _%>
+<%_ if (databaseTypeCouchbase) { _%>
+import com.couchbase.client.java.query.QueryScanConsistency
+import org.springframework.data.couchbase.repository.Query
+import org.springframework.data.couchbase.repository.ScanConsistency
+    <%_ if (!reactive) { _%>
+import org.springframework.data.domain.PageImpl
+    <%_ } _%>
+<%_ } _%>
+<%_ if (reactive && databaseTypeCassandra) { _%>
 import org.springframework.data.cassandra.ReactiveResultSet
 import org.springframework.data.cassandra.ReactiveSession
 import org.springframework.data.cassandra.core.ReactiveCassandraTemplate
@@ -103,7 +108,7 @@ import org.springframework.data.cassandra.core.convert.CassandraConverter
 import org.springframework.data.cassandra.core.mapping.CassandraPersistentEntity
 <%_ } _%>
 import org.springframework.stereotype.Repository
-<%_ if (databaseType === 'cassandra') { _%>
+<%_ if (databaseTypeCassandra) { _%>
     <%_ if (!reactive) { _%>
 import org.springframework.boot.autoconfigure.cassandra.CassandraProperties
     <%_ } _%>
@@ -113,13 +118,13 @@ import org.springframework.util.StringUtils
 <%_ if (reactive) { _%>
 import reactor.core.publisher.Flux
 import reactor.core.publisher.Mono
-    <%_ if (databaseType === 'sql') { _%>
+    <%_ if (databaseTypeSql) { _%>
 import reactor.util.function.Tuple2
 import reactor.util.function.Tuples
     <%_ } _%>
 <%_ } _%>
 
-<%_ if (databaseType === 'cassandra') { _%>
+<%_ if (databaseTypeCassandra) { _%>
 import javax.validation.ConstraintViolation
 import javax.validation.ConstraintViolationException
 import javax.validation.Validator
@@ -127,65 +132,90 @@ import javax.validation.Validator
 <%_ if (!reactive) { _%>
 import java.util.Optional
 <%_ } _%>
-<%_ if (databaseType === 'sql' && reactive) { _%>
-    <%_ if (authenticationType !== 'oauth2') { _%>
+<%_ if (databaseTypeSql && reactive) { _%>
+    <%_ if (!authenticationTypeOauth2) { _%>
 import java.time.LocalDateTime
     <%_ } _%>
 import java.util.Optional
 import java.util.stream.Collectors
 <%_ } _%>
-<%_ if (user.primaryKey.type === 'UUID') { _%>
+<%_ if (user.primaryKey.hasUUID) { _%>
 import java.util.UUID
 <%_ } _%>
-<%_ if (databaseType !== 'cassandra' && !(databaseType === 'sql' && reactive) && authenticationType !== 'oauth2') { _%>
+<%_ if (!databaseTypeCassandra && !(databaseTypeSql && reactive) && !authenticationTypeOauth2) { _%>
 import java.time.Instant
 <%_ } _%>
-<% if (databaseType === 'couchbase') { %>
+<% if (databaseTypeCouchbase) { %>
 import <%= packageName %>.config.ID_DELIMITER
 <% } %>
+<%_ if (searchEngineCouchbase) { _%>
+import <%= packageName %>.repository.JHipsterCouchbaseRepository.pageableStatement
+import <%= packageName %>.repository.JHipsterCouchbaseRepository.searchQuery
+<%_ } _%>
+
 /**
- * Spring Data <% if (databaseType === 'sql' && !reactive) { %>JPA<% } else if (databaseType === 'sql' && reactive) { %>R2DBC<% } else if (databaseType === 'mongodb') { %>MongoDB<% } else if (databaseType === 'couchbase') { %>Couchbase<% } else if (databaseType === 'cassandra') { %>Cassandra<% } else if (databaseType === 'neo4j') { %>Neo4j<% } %> repository for the {@link <%= asEntity('User') %>} entity.
+ * Spring Data <% if (databaseTypeSql && !reactive) { %>JPA<% } else if (databaseTypeSql && reactive) { %>R2DBC<% } else if (databaseTypeMongodb) { %>MongoDB<% } else if (databaseTypeCouchbase) { %>Couchbase<% } else if (databaseTypeCassandra) { %>Cassandra<% } else if (databaseTypeNeo4j) { %>Neo4j<% } %> repository for the {@link <%= asEntity('User') %>} entity.
  */
 <%_
     let optionalOrMono = reactive ? 'Mono' : 'Optional';
     let listOrFlux = reactive ? 'Flux' : 'List';
+    let pageOrFlux = (reactive) ? 'Flux' : 'Page';
 _%>
-<%_ if ((databaseType === 'sql' && !reactive) || databaseType === 'mongodb' || databaseType === 'neo4j' || databaseType === 'couchbase') { _%>
+<%_ if ((databaseTypeSql && !reactive) || databaseTypeMongodb || databaseTypeNeo4j || databaseTypeCouchbase) { _%>
 @Repository
-interface UserRepository : <% if (databaseType === 'sql') { %>JpaRepository<<%= asEntity('User') %>, <%= user.primaryKey.type %>><% } %><% if (reactive) { %>Reactive<% } %><% if (databaseType === 'mongodb') { %>MongoRepository<<%= asEntity('User') %>, String><% } %><% if (databaseType === 'neo4j') { %>Neo4jRepository<<%= asEntity('User') %>, String><% } %><% if (databaseType === 'couchbase') { %>N1qlCouchbaseRepository<<%= asEntity('User') %>, String><%if (searchEngine === 'couchbase') { %>, SearchCouchbaseRepository<<%= asEntity('User') %>, String><% } } %> {
-    <%_ if (authenticationType !== 'oauth2') { _%>
-
+interface UserRepository : <% if (databaseTypeSql) { %>JpaRepository<<%= asEntity('User') %>, <%= user.primaryKey.type %>><% } %><% if (reactive) { %>Reactive<% } %><% if (databaseTypeMongodb) { %>MongoRepository<<%= asEntity('User') %>, String><% } %><% if (databaseTypeNeo4j) { %>Neo4jRepository<<%= asEntity('User') %>, String><% } %><% if (databaseTypeCouchbase) { %>N1qlCouchbaseRepository<<%= asEntity('User') %>, String><%if (searchEngineCouchbase) { %>, SearchCouchbaseRepository<<%= asEntity('User') %>, String><% } } %> {
+    
+    <%_ if (databaseTypeCouchbase) { _%>
+    // @ScanConsistency is to fix index issues with Spring Data Couchbase
+    // https://github.com/spring-projects/spring-data-couchbase/issues/897
+    <%_ } _%>
+    <%_ if (!authenticationTypeOauth2) { _%>
+        <%_ if (databaseType === 'couchbase') { _%>
+    @ScanConsistency(query = QueryScanConsistency.REQUEST_PLUS)
+        <%_ } _%>
     fun findOneByActivationKey(activationKey: String): <%= optionalOrMono %><<%= asEntity('User') %>>
     <%_ } _%>
-    <%_ if (authenticationType !== 'oauth2') { _%>
+    <%_ if (!authenticationTypeOauth2) { _%>
 
+        <%_ if (databaseType === 'couchbase') { _%>
+    @ScanConsistency(query = QueryScanConsistency.REQUEST_PLUS)
+        <%_ } _%>
     fun findAllByActivatedIsFalseAndActivationKeyIsNotNullAndCreatedDateBefore(dateTime: Instant): <%= listOrFlux %><<%= asEntity('User') %>>
     <%_ } _%>
 
-    <%_ if (authenticationType !== 'oauth2') { _%>
-
+    <%_ if (!authenticationTypeOauth2) { _%>
+        <%_ if (databaseType === 'couchbase') { _%>
+    @ScanConsistency(query = QueryScanConsistency.REQUEST_PLUS)
+        <%_ } _%>
     fun findOneByResetKey(resetKey: String): <%= optionalOrMono %><<%= asEntity('User') %>>
     <%_ } _%>
 
-    <%_ if (authenticationType !== 'oauth2') { _%>
+    <%_ if (!authenticationTypeOauth2) { _%>
         <%_ if (['couchbase', 'mongodb', 'neo4j'].includes(databaseType)) { _%>
-            <%_ if (cacheManagerIsAvailable === true) { _%>
+            <%_ if (cacheManagerIsAvailable) { _%>
     @Cacheable(cacheNames = [USERS_BY_EMAIL_CACHE])
             <%_ } _%>
+        <%_ } _%>
+        <%_ if (databaseType === 'couchbase') { _%>
+    @ScanConsistency(query = QueryScanConsistency.REQUEST_PLUS)
+    @Query("#{#n1ql.selectEntity} WHERE LOWER(email) = LOWER($1) AND #{#n1ql.filter}")
         <%_ } _%>
     fun findOneByEmailIgnoreCase(email: String?): <%= optionalOrMono %><<%= asEntity('User') %>>
     <%_ } _%>
 
-    <%_ if (databaseType === 'couchbase') { _%>
-        <%_ if (cacheManagerIsAvailable === true) { _%>
+    <%_ if (databaseTypeCouchbase) { _%>
+        <%_ if (cacheManagerIsAvailable) { _%>
     @Cacheable(cacheNames = [USERS_BY_LOGIN_CACHE])
+        <%_ } _%>
+        <%_ if (databaseType === 'couchbase') { _%>
+    @ScanConsistency(query = QueryScanConsistency.REQUEST_PLUS)
         <%_ } _%>
     @JvmDefault
     fun findOneByLogin(login: String): <%= optionalOrMono %><<%= asEntity('User') %>> {
         return findById(<%= asEntity('User') %>.PREFIX + ID_DELIMITER + login)
     }
-    <%_ } else if (databaseType === 'mongodb' || databaseType === 'neo4j') { _%>
-        <%_ if (cacheManagerIsAvailable === true) { _%>
+    <%_ } else if (databaseTypeMongodb || databaseTypeNeo4j) { _%>
+        <%_ if (cacheManagerIsAvailable) { _%>
     @Cacheable(cacheNames = [USERS_BY_LOGIN_CACHE])
         <%_ } _%>
     fun findOneByLogin(login: String): <%= optionalOrMono %><<%= asEntity('User') %>>
@@ -193,21 +223,21 @@ interface UserRepository : <% if (databaseType === 'sql') { %>JpaRepository<<%= 
     fun findOneByLogin(login: String): <%= optionalOrMono %><<%= asEntity('User') %>>
     <%_ } _%>
 
-    <%_ if (databaseType === 'neo4j') { _%>
+    <%_ if (databaseTypeNeo4j) { _%>
     <% if (!reactive) { %>// See https://github.com/neo4j/sdn-rx/issues/51<% } %>
     override fun findAll(): <%= listOrFlux %><<%= asEntity('User') %>>
     <%_ } _%>
-    <%_ if (databaseType === 'sql') { _%>
+    <%_ if (databaseTypeSql) { _%>
 
     @EntityGraph(attributePaths = ["authorities"])
-    <%_ if (cacheManagerIsAvailable === true) { _%>
+    <%_ if (cacheManagerIsAvailable) { _%>
     @Cacheable(cacheNames = [USERS_BY_LOGIN_CACHE])
     <%_ } _%>
     fun findOneWithAuthoritiesByLogin(login: String): Optional<<%= asEntity('User') %>>
 
-        <%_ if (authenticationType !== 'oauth2') { _%>
+        <%_ if (!authenticationTypeOauth2) { _%>
     @EntityGraph(attributePaths = ["authorities"])
-            <%_ if (cacheManagerIsAvailable === true) { _%>
+            <%_ if (cacheManagerIsAvailable) { _%>
     @Cacheable(cacheNames = [USERS_BY_EMAIL_CACHE])
             <%_ } _%>
     fun findOneWithAuthoritiesByEmailIgnoreCase(email: String): Optional<<%= asEntity('User') %>>
@@ -221,11 +251,46 @@ interface UserRepository : <% if (databaseType === 'sql') { %>JpaRepository<<%= 
 
     override fun count(): Mono<Long>
     <% } else { %>
+        <%_ if (databaseType === 'couchbase') { _%>
+    @JvmDefault
+    fun findAllByActivatedIsTrue(pageable: Pageable): Page<<%= asEntity('User') %>> {
+        return PageImpl<<%= asEntity('User') %>>(findAllByActivatedIsTrue(JHipsterCouchbaseRepository.pageableStatement(pageable)), pageable, countAllByActivatedIsTrue())
+    }
+        <%_ } else { _%>
 
     fun findAllByIdNotNullAndActivatedIsTrue(pageable: Pageable): Page<<%= asEntity('User') %>>
+        <%_ } _%>
     <% } %>
 
-    <%_ if (cacheManagerIsAvailable === true) { _%>
+    <%_ if (databaseType === 'couchbase' && !reactive) { _%>
+    @Query("#{#n1ql.selectEntity} WHERE #{#n1ql.filter} AND activated = true #{[0]}")
+    @ScanConsistency(query = QueryScanConsistency.REQUEST_PLUS)
+    fun findAllByActivatedIsTrue(pageableStatement: String): List<<%= asEntity('User') %>> 
+
+    @Query("SELECT COUNT(*) as count FROM #{#n1ql.bucket} WHERE #{#n1ql.filter} AND activated = true")
+    @ScanConsistency(query = QueryScanConsistency.REQUEST_PLUS)
+    fun countAllByActivatedIsTrue(): Long
+      <%_ } _%>
+    
+      <%_ if (searchEngineCouchbase) { _%>
+    @Query("#{#n1ql.selectEntity} WHERE #{#n1ql.filter} AND SEARCH(#{n1ql.bucket}, #{[0]) #{[1]}")
+    fun search(queryString: String, pageableStatement: String): <%= listOrFlux %><User> 
+
+    @JvmDefault
+    fun search(queryString: String): <%= listOrFlux %><User>{
+        return search(searchQuery(queryString).toString(), "")
+    }
+
+    @JvmDefault
+    fun search(queryString: String, pageable: Pageable): <%= pageOrFlux %><User> {
+        return
+            <% if (!reactive) { %>PageImpl<User>(<% } %>
+                search(searchQuery(queryString).toString(), pageableStatement(pageable))
+            <% if (!reactive) { %>)<% } %>
+    }
+      <%_ } _%>
+
+    <%_ if (cacheManagerIsAvailable) { _%>
 
     companion object {
 
@@ -235,11 +300,11 @@ interface UserRepository : <% if (databaseType === 'sql') { %>JpaRepository<<%= 
     }
     <%_ } _%>
 }
-<%_ } else if (databaseType === 'sql' && reactive) { _%>
+<%_ } else if (databaseTypeSql && reactive) { _%>
 @Repository
 interface UserRepository: R2dbcRepository<<%= asEntity('User') %>, <% if (authenticationTypeOauth2) { %>String<% } else { %>Long<% } %>>, UserRepositoryInternal {
 
-    <%_ if (authenticationType !== 'oauth2') { _%>
+    <%_ if (!authenticationTypeOauth2) { _%>
     fun findOneByActivationKey(activationKey: String): Mono<<%= asEntity('User') %>>
 
     fun findAllByActivatedIsFalseAndActivationKeyIsNotNullAndCreatedDateBefore(dateTime: LocalDateTime): Flux<<%= asEntity('User') %>>
@@ -252,10 +317,18 @@ interface UserRepository: R2dbcRepository<<%= asEntity('User') %>, <% if (authen
 
     fun findOneByLogin(login: String): Mono<<%= asEntity('User') %>>
 
+    <%_ if (databaseType === 'couchbase') { _%>
+    @ScanConsistency(query = QueryScanConsistency.REQUEST_PLUS)
+    <%_ } _%>
     fun findAllByIdNotNull(pageable: Pageable): Flux<<%= asEntity('User') %>>
+    <%_ if (databaseType === 'couchbase') { _%>
+    @ScanConsistency(query = QueryScanConsistency.REQUEST_PLUS)
+    <%_ } _%>
+    fun findAllBy<% if (databaseType !== 'couchbase') { %>IdNotNullAnd<% } %>ActivatedIsTrue(pageable: Pageable): Flux<<%= asEntity('User') %>>
 
-    fun findAllByIdNotNullAndActivatedIsTrue(pageable: Pageable): Flux<<%= asEntity('User') %>>
-
+    <%_ if (databaseType === 'couchbase') { _%>
+    @ScanConsistency(query = QueryScanConsistency.REQUEST_PLUS)
+    <%_ } _%>
     override fun count(): Mono<Long>
 
     @Query("INSERT INTO <%= jhiTablePrefix %>_user_authority VALUES(:userId, :authority)")
@@ -268,21 +341,21 @@ interface UserRepository: R2dbcRepository<<%= asEntity('User') %>, <% if (authen
     fun deleteUserAuthorities(userId: Long): Mono<Void>
 }
 
-    <%_ if (authenticationType !== 'oauth2') { _%>
+    <%_ if (!authenticationTypeOauth2) { _%>
 interface DeleteExtended<T> {
     fun delete(user: T): Mono<Void>
 }
 
     <%_ } _%>
-interface UserRepositoryInternal<% if (authenticationType !== 'oauth2') { %> : DeleteExtended<<%= asEntity('User') %>><% } %> {
+interface UserRepositoryInternal<% if (!authenticationTypeOauth2) { %> : DeleteExtended<<%= asEntity('User') %>><% } %> {
 
     fun findOneWithAuthoritiesByLogin(login: String): Mono<<%= asEntity('User') %>>
 
-    <%_ if (authenticationType !== 'oauth2') { _%>
+    <%_ if (!authenticationTypeOauth2) { _%>
     fun findOneWithAuthoritiesByEmailIgnoreCase(email: String): Mono<<%= asEntity('User') %>>
 
     <%_ } _%>
-    <%_ if (authenticationType == 'oauth2') { _%>
+    <%_ if (authenticationTypeOauth2) { _%>
 
     fun create(user: User): Mono<<%= asEntity('User') %>>
     <%_ } _%>
@@ -292,19 +365,19 @@ interface UserRepositoryInternal<% if (authenticationType !== 'oauth2') { %> : D
 class UserRepositoryInternalImpl(val db: DatabaseClient, val r2dbcEntityTemplate: R2dbcEntityTemplate, val r2dbcConverter: R2dbcConverter): UserRepositoryInternal {
 
     override fun findOneWithAuthoritiesByLogin(login: String): Mono<<%= asEntity('User') %>> {
-        return findOneWithAuthoritiesBy("login", login);
+        return findOneWithAuthoritiesBy("login", login)
     }
 
-    <%_ if (authenticationType !== 'oauth2') { _%>
+    <%_ if (!authenticationTypeOauth2) { _%>
     override fun findOneWithAuthoritiesByEmailIgnoreCase(email: String): Mono<<%= asEntity('User') %>> {
-        return findOneWithAuthoritiesBy("email", email.toLowerCase());
+        return findOneWithAuthoritiesBy("email", email.toLowerCase())
     }
 
     <%_ } _%>
 
     override fun findAllWithAuthorities(pageable: Pageable): Flux<<%= asEntity('User') %>> {
-        val property = pageable.sort.map(Sort.Order::getProperty).first()
-        val direction = pageable.sort.map(Sort.Order::getDirection).first()
+        val property = pageable.sort.map(Sort.Order::getProperty).first() ?: "id"
+        val direction = pageable.sort.map(Sort.Order::getDirection).first() ?: Sort.DEFAULT_DIRECTION
         val comparator = if (direction == Sort.DEFAULT_DIRECTION) { BeanComparator(property) } else { BeanComparator<Any>(property).reversed() }
         val page = pageable.pageNumber
         val size = pageable.pageSize
@@ -324,7 +397,7 @@ class UserRepositoryInternalImpl(val db: DatabaseClient, val r2dbcEntityTemplate
             .take(size.toLong())
     }
 
-    <%_ if (authenticationType !== 'oauth2') { _%>
+    <%_ if (!authenticationTypeOauth2) { _%>
     override fun delete(user: <%= asEntity('User') %>): Mono<Void> {
         return db.sql("DELETE FROM <%= jhiTablePrefix %>_user_authority WHERE user_id = :userId")
             .bind("userId", user.id)
@@ -332,11 +405,10 @@ class UserRepositoryInternalImpl(val db: DatabaseClient, val r2dbcEntityTemplate
             .then(r2dbcEntityTemplate.delete(<%= asEntity('User') %>::class.java)
                 .matching(query(where("id").`is`(user.id))).all()
                 .then()
-            );
+            )
     }
 
-    <%_ } _%>
-    <%_ if (authenticationTypeOauth2) { _%>
+    <%_ } else { _%>
     override fun create(user: <%= asEntity('User') %>): Mono<<%= asEntity('User') %>> {
         return r2dbcEntityTemplate.insert(<%= asEntity('User') %>::class.java).using(user)
             .defaultIfEmpty(user)
@@ -374,7 +446,7 @@ class UserSqlHelper {
         val columns = mutableListOf<Expression>()
         columns.add(Column.aliased("id", table, columnPrefix + "_id"))
         columns.add(Column.aliased("login", table, columnPrefix + "_login"))
-        <%_ if (authenticationType !== 'oauth2') { _%>
+        <%_ if (!authenticationTypeOauth2) { _%>
         columns.add(Column.aliased("password_hash", table, columnPrefix + "_password"))
         <%_ } _%>
         columns.add(Column.aliased("first_name", table, columnPrefix + "_first_name"))
@@ -383,7 +455,7 @@ class UserSqlHelper {
         columns.add(Column.aliased("activated", table, columnPrefix + "_activated"))
         columns.add(Column.aliased("lang_key", table, columnPrefix + "_lang_key"))
         columns.add(Column.aliased("image_url", table, columnPrefix + "_image_url"))
-        <%_ if (authenticationType !== 'oauth2') { _%>
+        <%_ if (!authenticationTypeOauth2) { _%>
         columns.add(Column.aliased("activation_key", table, columnPrefix + "_activation_key"))
         columns.add(Column.aliased("reset_key", table, columnPrefix + "_reset_key"))
         columns.add(Column.aliased("reset_date", table, columnPrefix + "_reset_date"))
@@ -393,7 +465,7 @@ class UserSqlHelper {
 }
 
 
-<%_ } else if (databaseType === 'cassandra') { _%>
+<%_ } else if (databaseTypeCassandra) { _%>
 @Repository
 class UserRepository(
     <%_ if (reactive) { _%>
@@ -516,7 +588,7 @@ class UserRepository(
         return findOneFromIndex(stmt)
     }
 
-    <%_ if (cacheManagerIsAvailable === true) { _%>
+    <%_ if (cacheManagerIsAvailable) { _%>
     @Cacheable(cacheNames = [USERS_BY_EMAIL_CACHE])
     <%_ } _%>
     fun findOneByEmailIgnoreCase(email: String?): <%= optionalOrMono %><<%= asEntity('User') %>> {
@@ -524,7 +596,7 @@ class UserRepository(
         return findOneFromIndex(stmt)
     }
 
-    <%_ if (cacheManagerIsAvailable === true) { _%>
+    <%_ if (cacheManagerIsAvailable) { _%>
     @Cacheable(cacheNames = [USERS_BY_LOGIN_CACHE])
     <%_ } _%>
     fun findOneByLogin(login: String): <%= optionalOrMono %><<%= asEntity('User') %>> {
@@ -591,7 +663,7 @@ class UserRepository(
         )
         session.execute(batch.build())
         return user
-        <%_ } else { // reactive _%>
+        <%_ } else { /* reactive */ _%>
         return this.findById(user.id!!)
             .flatMapMany  {oldUser ->
                 val deleteOps: Flux<ReactiveResultSet> = Flux.empty()
@@ -630,7 +702,7 @@ class UserRepository(
                     .setString("id", user.id))
                 session.execute(batch.build())
             })
-            .thenReturn(user);
+            .thenReturn(user)
     }
 
     private fun getInsertStatement(user: <%= asEntity('User') %>): SimpleStatement {

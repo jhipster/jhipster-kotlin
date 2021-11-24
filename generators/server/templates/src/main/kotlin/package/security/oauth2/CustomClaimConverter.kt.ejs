@@ -32,6 +32,7 @@ import org.springframework.security.oauth2.server.resource.web.DefaultBearerToke
 import org.springframework.web.client.RestTemplate
 import org.springframework.web.context.request.RequestContextHolder
 import org.springframework.web.context.request.ServletRequestAttributes
+import <%= packageName %>.security.CLAIMS_NAMESPACE
 
 class CustomClaimConverter(private val registration: ClientRegistration, private val restTemplate: RestTemplate): Converter<Map<String, Any>, Map<String, Any>> {
 
@@ -63,12 +64,21 @@ class CustomClaimConverter(private val registration: ClientRegistration, private
             // Add custom claims
             if (user != null) {
                 convertedClaims["preferred_username"] = user.get("preferred_username").asText()
-                convertedClaims["given_name"] = user.get("given_name").asText()
-                convertedClaims["family_name"] = user.get("family_name").asText()
+                if (user.has("given_name")) {
+                    convertedClaims["given_name"] = user.get("given_name").asText()
+                }
+                if (user.has("family_name")) {
+                    convertedClaims["family_name"] = user.get("family_name").asText()
+                }
                 if (user.has("groups")) {
                    val groups = user.get("groups").map(JsonNode::asText)
                     convertedClaims["groups"] = groups
                 }
+            }
+
+            if (user.has(CLAIMS_NAMESPACE + "roles")) {
+                val roles = user.get(CLAIMS_NAMESPACE + "roles").map(JsonNode::asText)
+                convertedClaims["roles"] = roles
             }
         }
 

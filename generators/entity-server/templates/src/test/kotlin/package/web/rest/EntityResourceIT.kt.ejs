@@ -4,7 +4,7 @@
  This file is part of the JHipster project, see https://www.jhipster.tech/
  for more information.
 
- Licensed under the Apache License, Version 2.0 (the "License");
+ Licensed under the Apache License, Version 2.0 (the "
  you may not use this file except in compliance with the License.
  You may obtain a copy of the License at
 
@@ -187,11 +187,9 @@ import java.util.UUID
 import java.util.Random
 import java.util.concurrent.atomic.AtomicLong
 <%_ } _%>
+import java.util.stream.Stream
 
 import org.assertj.core.api.Assertions.assertThat
-<%_ if (searchEngineElasticsearch && !reactive) { _%>
-import org.elasticsearch.index.query.QueryBuilders.queryStringQuery
-<%_ } _%>
 import org.hamcrest.Matchers.hasItem
 <%_ if (reactive) { _%>
 import org.hamcrest.Matchers.`is`
@@ -635,7 +633,7 @@ class <%= entityClass %>ResourceIT <% if (databaseTypeCassandra) { %>: AbstractC
                                                 if (field.fieldTypeZonedDateTime) { %>)<% } else
                                                     if (!field.fieldTypeString) { %>.toString()<% } %>))<%= !reactive ? ')' : '' %><%_ } _%>
     }
-    <% if (fieldsContainOwnerManyToMany&& databaseType !== 'neo4j') { %>
+    <% if (fieldsContainOwnerManyToMany && !databaseTypeNeo4j && !databaseTypeCouchbase) { %>
     @Suppress("unchecked")
     <% if (!reactive) { %>@Throws(Exception::class)<% } %>
     fun getAll<%= entityClassPlural %>WithEagerRelationshipsIsEnabled() {
@@ -743,14 +741,14 @@ class <%= entityClass %>ResourceIT <% if (databaseTypeCassandra) { %>: AbstractC
       <%= entityInstance %>Repository.<%= saveMethod %>(<%= persistInstance %>)<%= callBlock %>
       val id = <%= persistInstance %>.<%= primaryKey.name %>
 
-      default<%= entityClass %>ShouldBeFound("<%= primaryKey.name %>.equals=" + id)
-      default<%= entityClass %>ShouldNotBeFound("<%= primaryKey.name %>.notEquals=" + id)
+      default<%= entityClass %>ShouldBeFound("<%= primaryKey.name %>.equals=$id")
+      default<%= entityClass %>ShouldNotBeFound("<%= primaryKey.name %>.notEquals=$id")
       <%_ if (primaryKey.typeLong) { _%>
-      default<%= entityClass %>ShouldBeFound("<%= primaryKey.name %>.greaterThanOrEqual=" + id)
-      default<%= entityClass %>ShouldNotBeFound("<%= primaryKey.name %>.greaterThan=" + id)
+      default<%= entityClass %>ShouldBeFound("<%= primaryKey.name %>.greaterThanOrEqual=$id")
+      default<%= entityClass %>ShouldNotBeFound("<%= primaryKey.name %>.greaterThan=$id")
 
-      default<%= entityClass %>ShouldBeFound("<%= primaryKey.name %>.lessThanOrEqual=" + id)
-      default<%= entityClass %>ShouldNotBeFound("<%= primaryKey.name %>.lessThan=" + id)
+      default<%= entityClass %>ShouldBeFound("<%= primaryKey.name %>.lessThanOrEqual=$id")
+      default<%= entityClass %>ShouldNotBeFound("<%= primaryKey.name %>.lessThan=$id")
       <%_ } _%>
     }
 <%_
@@ -779,10 +777,10 @@ class <%= entityClass %>ResourceIT <% if (databaseTypeCassandra) { %>: AbstractC
         <%= entityInstance %>Repository.<%= saveMethod %>(<%= persistInstance %>)<%= callBlock %>
 
         // Get all the <%= entityInstance %>List where <%= searchBy.fieldName %> not equals to <%='DEFAULT_' + searchBy.fieldNameUnderscored.toUpperCase()%>
-        default<%= entityClass %>ShouldNotBeFound("<%= searchBy.fieldName %>.notEquals=" + <%='DEFAULT_' + searchBy.fieldNameUnderscored.toUpperCase()%>)
+        default<%= entityClass %>ShouldNotBeFound("<%= searchBy.fieldName %>.notEquals=$<%='DEFAULT_' + searchBy.fieldNameUnderscored.toUpperCase()%>")
 
         // Get all the <%= entityInstance %>List where <%= searchBy.fieldName %> not equals to <%='UPDATED_' + searchBy.fieldNameUnderscored.toUpperCase()%>
-        default<%= entityClass %>ShouldBeFound("<%= searchBy.fieldName %>.notEquals=" + <%='UPDATED_' + searchBy.fieldNameUnderscored.toUpperCase()%>)
+        default<%= entityClass %>ShouldBeFound("<%= searchBy.fieldName %>.notEquals=$<%='UPDATED_' + searchBy.fieldNameUnderscored.toUpperCase()%>")
     }
 
     @Test<%= transactionalAnnotation %>
@@ -821,10 +819,10 @@ class <%= entityClass %>ResourceIT <% if (databaseTypeCassandra) { %>: AbstractC
         <%= entityInstance %>Repository.<%= saveMethod %>(<%= persistInstance %>)<%= callBlock %>
 
         // Get all the <%= entityInstance %>List where <%= searchBy.fieldName %> contains <%='DEFAULT_' + searchBy.fieldNameUnderscored.toUpperCase()%>
-        default<%= entityClass %>ShouldBeFound("<%= searchBy.fieldName %>.contains=" + <%='DEFAULT_' + searchBy.fieldNameUnderscored.toUpperCase()%>)
+        default<%= entityClass %>ShouldBeFound("<%= searchBy.fieldName %>.contains=$<%='DEFAULT_' + searchBy.fieldNameUnderscored.toUpperCase()%>")
 
         // Get all the <%= entityInstance %>List where <%= searchBy.fieldName %> contains <%='UPDATED_' + searchBy.fieldNameUnderscored.toUpperCase()%>
-        default<%= entityClass %>ShouldNotBeFound("<%= searchBy.fieldName %>.contains=" + <%='UPDATED_' + searchBy.fieldNameUnderscored.toUpperCase()%>)
+        default<%= entityClass %>ShouldNotBeFound("<%= searchBy.fieldName %>.contains=$<%='UPDATED_' + searchBy.fieldNameUnderscored.toUpperCase()%>")
     }
 
     @Test<%= transactionalAnnotation %>
@@ -834,10 +832,10 @@ class <%= entityClass %>ResourceIT <% if (databaseTypeCassandra) { %>: AbstractC
         <%= entityInstance %>Repository.<%= saveMethod %>(<%= persistInstance %>)<%= callBlock %>
 
         // Get all the <%= entityInstance %>List where <%= searchBy.fieldName %> does not contain <%='DEFAULT_' + searchBy.fieldNameUnderscored.toUpperCase()%>
-        default<%= entityClass %>ShouldNotBeFound("<%= searchBy.fieldName %>.doesNotContain=" + <%='DEFAULT_' + searchBy.fieldNameUnderscored.toUpperCase()%>)
+        default<%= entityClass %>ShouldNotBeFound("<%= searchBy.fieldName %>.doesNotContain=$<%='DEFAULT_' + searchBy.fieldNameUnderscored.toUpperCase()%>")
 
         // Get all the <%= entityInstance %>List where <%= searchBy.fieldName %> does not contain <%='UPDATED_' + searchBy.fieldNameUnderscored.toUpperCase()%>
-        default<%= entityClass %>ShouldBeFound("<%= searchBy.fieldName %>.doesNotContain=" + <%='UPDATED_' + searchBy.fieldNameUnderscored.toUpperCase()%>)
+        default<%= entityClass %>ShouldBeFound("<%= searchBy.fieldName %>.doesNotContain=$<%='UPDATED_' + searchBy.fieldNameUnderscored.toUpperCase()%>")
     }
 
 <%_
@@ -921,25 +919,37 @@ class <%= entityClass %>ResourceIT <% if (databaseTypeCassandra) { %>: AbstractC
     @Test<%= transactionalAnnotation %>
     <% if (!reactive) { %>@Throws(Exception::class)<% } %>
     fun getAll<%= entityClassPlural %>By<%= relationship.relationshipNameCapitalized %>IsEqualToSomething() {
-        <%_ if ((relationship.relationshipValidate&& relationship.relationshipOneToOne) || relationship.id) { _%>
+        <%_ if ((relationship.relationshipValidate && relationship.relationshipOneToOne) || relationship.id) { _%>
         // Get already existing entity
         val <%= relationship.relationshipFieldName %> = <%= persistInstance %>.<%= relationship.relationshipName %>
         <%_ } else { _%>
         // Initialize the database
         <%= entityInstance %>Repository.saveAndFlush(<%= persistInstance %>)
-        val <%= relationship.relationshipFieldName %> = <%= relationship.otherEntityNameCapitalized %>ResourceIT.createEntity(em)
+        <%_ if (databaseTypeSql && !reactive) { _%>
+        var <%= relationship.relationshipFieldName %>: <%= asEntity(relationship.otherEntityNameCapitalized) %>
+        if (findAll(em, <%= asEntity(relationship.otherEntityNameCapitalized) %>::class).isEmpty()) {
+            <%= relationship.relationshipFieldName %> = <%= createEntityPrefix %><%= relationship.otherEntityNameCapitalized %>ResourceIT.createEntity(em)
+            em.persist(<%= relationship.relationshipFieldName %>)
+            em.flush()
+        } else {
+            <%= relationship.relationshipFieldName %> = findAll(em, <%= asEntity(relationship.otherEntityNameCapitalized) %>::class)[0]
+        }
+        <%_ } else { _%>
+        var <%= relationship.relationshipFieldName %> = <%= relationship.otherEntityNameCapitalized %>ResourceIT.createEntity(em)
+        <%_ } _%>
         em.persist(<%= relationship.relationshipFieldName %>)
         em.flush()
-            <%_ if (relationship.relationshipManyToMany || relationship.relationshipType === 'one-to-many') { _%>
+            <%_ if (relationship.relationshipManyToMany || relationship.relationshipOneToMany) { _%>
         <%= persistInstance %>.add<%= relationship.relationshipNameCapitalized %>(<%= relationship.relationshipFieldName %>)
             <%_ } else { _%>
         <%= persistInstance %>.<%= relationship.relationshipName %> = <%= relationship.relationshipFieldName %>
-            <%_     if (relationship.ownerSide === false) { _%>
+                <%_ if (!relationship.ownerSide) { _%>
         <%= relationship.relationshipFieldName %>.<%= relationship.otherEntityRelationshipName %> = <%= persistInstance %>
-            <%_     } _%>
+                <%_ } _%>
+            <%_ } _%>
         <%_ } _%>
         <%= entityInstance %>Repository.saveAndFlush(<%= persistInstance %>)
-        val <%= relationship.relationshipFieldName %>Id = <%= relationship.relationshipFieldName %>.<%= relationship.otherEntity.primaryKey.name %>
+        val <%= relationship.relationshipFieldName %>Id = <%= relationship.relationshipFieldName %>?.<%= relationship.otherEntity.primaryKey.name %>
 
         // Get all the <%= entityInstance %>List where <%= relationship.relationshipFieldName %> equals to <%= relationship.relationshipFieldName %>Id
         default<%= entityClass %>ShouldBeFound("<%= relationship.relationshipFieldName %>Id.equals=$<%= relationship.relationshipFieldName %>Id")
@@ -953,7 +963,7 @@ class <%= entityClass %>ResourceIT <% if (databaseTypeCassandra) { %>: AbstractC
 
         // Get all the <%= entityInstance %>List where <%= relationship.relationshipFieldName %> equals to <%- initInvalidPrimaryKey %>
         default<%= entityClass %>ShouldNotBeFound("<%= relationship.relationshipFieldName %>Id.equals=${<%- initInvalidPrimaryKey %>}")
-    <%_ } _%>
+
     }
 <%_ }); _%>
 
@@ -962,7 +972,7 @@ class <%= entityClass %>ResourceIT <% if (databaseTypeCassandra) { %>: AbstractC
      */
     <% if (reactive) { %>
     private fun default<%= entityClass %>ShouldBeFound(filter: String) {
-        webTestClient.get().uri(ENTITY_API_URL + "?sort=<%= primaryKey.name %>,desc&" + filter)
+        webTestClient.get().uri(ENTITY_API_URL + "?sort=<%= primaryKey.name %>,desc&$filter")
             .accept(MediaType.APPLICATION_JSON)
             .exchange()
             .expectStatus().isOk
@@ -987,7 +997,7 @@ class <%= entityClass %>ResourceIT <% if (databaseTypeCassandra) { %>: AbstractC
                                                         if (!field.fieldTypeString) { %>.toString()<% } %>)))<% }; %>
 
         // Check, that the count call also returns 1
-        webTestClient.get().uri(ENTITY_API_URL + "/count?sort=<%= primaryKey.name %>,desc&" + filter)
+        webTestClient.get().uri(ENTITY_API_URL + "/count?sort=<%= primaryKey.name %>,desc&$filter")
                 .accept(MediaType.APPLICATION_JSON)
                 .exchange()
                 .expectStatus().isOk
@@ -1039,7 +1049,7 @@ class <%= entityClass %>ResourceIT <% if (databaseTypeCassandra) { %>: AbstractC
      */
 <% if (reactive) { %>
     private fun default<%= entityClass %>ShouldNotBeFound(filter: String) {
-        webTestClient.get().uri(ENTITY_API_URL + "?sort=<%= primaryKey.name %>,desc&" + filter)
+        webTestClient.get().uri(ENTITY_API_URL + "?sort=<%= primaryKey.name %>,desc&$filter")
             .accept(MediaType.APPLICATION_JSON)
             .exchange()
             .expectStatus().isOk
@@ -1049,7 +1059,7 @@ class <%= entityClass %>ResourceIT <% if (databaseTypeCassandra) { %>: AbstractC
             .jsonPath("$").isEmpty
 
         // Check, that the count call also returns 0
-        webTestClient.get().uri(ENTITY_API_URL + "/count?sort=<%= primaryKey.name %>,desc&" + filter)
+        webTestClient.get().uri(ENTITY_API_URL + "/count?sort=<%= primaryKey.name %>,desc&$filter")
             .accept(MediaType.APPLICATION_JSON)
             .exchange()
             .expectStatus().isOk
@@ -1427,7 +1437,7 @@ class <%= entityClass %>ResourceIT <% if (databaseTypeCassandra) { %>: AbstractC
         `when`(mock<%= entityClass %>SearchRepository.save(any(<%= entityClass %>::class.java)))
             .thenAnswer { Mono.just(it.arguments[0] as <%= entityClass %>) }
     <%_ } _%>
-        `when`(mock<%= entityClass %>SearchRepository.deleteById(any<%= primaryKey.type %>())).thenReturn(Mono.empty())
+        `when`(mock<%= entityClass %>SearchRepository.deleteById(any(<%= primaryKey.type %>::class.java))).thenReturn(Mono.empty())
 <%_ } _%>
         // Initialize the database
         <%_ if (!primaryKey.derived) { _%>
@@ -1466,10 +1476,11 @@ class <%= entityClass %>ResourceIT <% if (databaseTypeCassandra) { %>: AbstractC
     }
 <%_ } _%>
 
-<%_ if (searchEngine !== false) { _%>
+<%_ if (searchEngine) { _%>
     @Test<%= transactionalAnnotation %>
     <% if (!reactive) { %>@Throws(Exception::class)<% } %>
     fun search<%= entityClass %>() {
+    <%_ if (searchEngineElasticsearch) { _%>
         // Configure the mock search repository
     <%_ if (reactive) { _%>
         `when`(mock<%= entityClass %>SearchRepository.save(any(<%= entityClass %>::class.java)))
@@ -1477,6 +1488,7 @@ class <%= entityClass %>ResourceIT <% if (databaseTypeCassandra) { %>: AbstractC
         <%_ if (!paginationNo) { _%>
         `when`(mock<%= entityClass %>SearchRepository.count()).thenReturn(Mono.just(1L))
         <%_ } _%>
+    <%_ } _%>
     <%_ } _%>
         // Initialize the database
         <%_ if (!primaryKey.derived) { _%>
@@ -1487,29 +1499,29 @@ class <%= entityClass %>ResourceIT <% if (databaseTypeCassandra) { %>: AbstractC
         <%= entityInstance %>Repository.<%= saveMethod %>(<%= persistInstance %>)<%= callBlock %>
     <%_ if (searchEngineElasticsearch) { _%>
         <%_ if (reactive) { _%>
-        `when`(mock<%= entityClass %>SearchRepository.search("id:" + <%= persistInstance %>.<%= primaryKey.name %><%_ if (!paginationNo) { _%>, PageRequest.of(0, 20)<% }%>))
+        `when`(mock<%= entityClass %>SearchRepository.search("id:${<%= persistInstance %>.<%= primaryKey.name %>}"<%_ if (!paginationNo) { _%>, PageRequest.of(0, 20)<% }%>))
             .thenReturn(Flux.just(<%= persistInstance %>))
         <%_ } else { _%>
             <%_ if (!paginationNo) { _%>
-        `when`(mock<%= entityClass %>SearchRepository.search(queryStringQuery("id:" + <%= persistInstance %>.<%= primaryKey.name %>), PageRequest.of(0, 20)))
+        `when`(mock<%= entityClass %>SearchRepository.search("id:${<%= persistInstance %>.<%= primaryKey.name %>}", PageRequest.of(0, 20)))
             .thenReturn(PageImpl(listOf(<%= persistInstance %>), PageRequest.of(0, 1), 1))
             <%_ } else { _%>
-        `when`(mock<%= entityClass %>SearchRepository.search(queryStringQuery("id:" + <%= persistInstance %>.<%= primaryKey.name %>)))
-            .thenReturn(listOf(<%= persistInstance %>))
+        `when`(mock<%= entityClass %>SearchRepository.search("id:${<%= persistInstance %>.<%= primaryKey.name %>}"))
+            .thenReturn(Stream.of(<%= persistInstance %>))
             <%_ } _%>
         <%_ } _%>
     <%_ } else if (searchEngineCouchbase) { _%>
 
         // Wait for the <%= entityInstance %> to be indexed
-        retryUntilNotEmpty(() -> <%= entityInstance %>Repository.search(<%= entityClass %>.PREFIX, "id:" + <%= entityInstance %>.<%= primaryKey.name %>)<% if (reactive) { %>.collectList().block()<% } %>)
+        retryUntilNotEmpty(() -> <%= entityInstance %>Repository.search("id:${<%= entityInstance %>.<%= primaryKey.name %>}")<% if (reactive) { %>.collectList().block()<% } %>)
     <%_ } _%>
         // Search the <%= entityInstance %>
     <%_ if (!reactive) { _%>
-        rest<%= entityClass %>MockMvc.perform(get(ENTITY_SEARCH_API_URL + "?query=id:" + <%= persistInstance %>.<%= primaryKey.name %>))
+        rest<%= entityClass %>MockMvc.perform(get("$ENTITY_SEARCH_API_URL?query=id:${<%= persistInstance %>.<%= primaryKey.name %>}"))
             .andExpect(status().isOk)
             .andExpect(content().contentType(MediaType.APPLICATION_JSON_VALUE))
     <%_ } else { _%>
-        webTestClient.get().uri(ENTITY_SEARCH_API_URL + "?query=id:" + <%= persistInstance %>.<%= primaryKey.name %>)
+        webTestClient.get().uri("$ENTITY_SEARCH_API_URL?query=id:${<%= persistInstance %>.<%= primaryKey.name %>}")
             .exchange()
             .expectStatus().isOk
             .expectHeader().contentType(MediaType.APPLICATION_JSON)
@@ -1780,12 +1792,12 @@ class <%= entityClass %>ResourceIT <% if (databaseTypeCassandra) { %>: AbstractC
         <%_ } else { _%>
             val <%= otherEntityName %>: <%= asEntity(otherEntityNameCapitalized) %>
             <%_ if (databaseTypeSql && !reactive) { _%>
-            if (em.findAll(<%= asEntity(otherEntityNameCapitalized) %>::class).isEmpty()) {
+            if (findAll(em, <%= asEntity(otherEntityNameCapitalized) %>::class).isEmpty()) {
                 <%= otherEntityName %> = <%= createEntityPrefix %><%= otherEntityNameCapitalized %>ResourceIT.create<% if (fieldStatus === 'UPDATED_') { %>Updated<% } %>Entity(<% if (databaseTypeSql) { %>em<% } %>)<%= createEntityPostfix %>
                 em.persist(<%= otherEntityName %>)
                 em.flush()
             } else {
-                <%= otherEntityName %> = em.findAll(<%= asEntity(otherEntityNameCapitalized) %>::class).get(0)
+                <%= otherEntityName %> = findAll(em, <%= asEntity(otherEntityNameCapitalized) %>::class)[0]
             }
             <%_ } else { _%>
             <%= otherEntityName %> = <%= createEntityPrefix %><%= otherEntityNameCapitalized %>ResourceIT.create<% if (fieldStatus === 'UPDATED_') { %>Updated<% } %>Entity(<% if (databaseTypeSql) { %>em<% } %>)<%= createEntityPostfix %>
