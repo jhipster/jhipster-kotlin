@@ -32,7 +32,10 @@ import org.springframework.data.repository.query.QueryLookupStrategy
 import org.springframework.data.repository.query.QueryMethodEvaluationContextProvider
 import org.springframework.data.repository.query.RepositoryQuery
 
-class CustomCouchbaseRepositoryFactory(val mappingContext: MappingContext, val couchbaseOperationsMapping: RepositoryOperationsMapping): CouchbaseRepositoryFactory(couchbaseOperationsMapping) {
+class CustomCouchbaseRepositoryFactory(
+    private val mappingContext: MappingContext,
+    private val couchbaseOperationsMapping: RepositoryOperationsMapping
+): CouchbaseRepositoryFactory(couchbaseOperationsMapping) {
 
     override protected fun getQueryLookupStrategy(
         key: QueryLookupStrategy.Key,
@@ -41,7 +44,9 @@ class CustomCouchbaseRepositoryFactory(val mappingContext: MappingContext, val c
         return Optional.of(CustomCouchbaseQueryLookupStrategy(contextProvider))
     }
 
-    private class CustomCouchbaseQueryLookupStrategy(val evaluationContextProvider: QueryMethodEvaluationContextProvider): QueryLookupStrategy {
+    private class CustomCouchbaseQueryLookupStrategy(
+        private val evaluationContextProvider: QueryMethodEvaluationContextProvider
+    ): QueryLookupStrategy {
 
         override fun resolveQuery(
             val method: Method,
