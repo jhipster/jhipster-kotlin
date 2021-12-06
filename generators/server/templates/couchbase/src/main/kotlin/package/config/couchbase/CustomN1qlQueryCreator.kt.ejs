@@ -18,9 +18,7 @@
 -%>
 package <%= packageName %>.config.couchbase
 
-import static org.springframework.data.couchbase.core.query.N1QLExpression.*
 
-import java.util.Iterator
 import org.springframework.core.convert.converter.Converter
 import org.springframework.data.couchbase.core.CouchbaseOperations
 import org.springframework.data.couchbase.core.convert.CouchbaseConverter
@@ -29,31 +27,36 @@ import org.springframework.data.couchbase.core.query.Query
 import org.springframework.data.couchbase.core.query.QueryCriteria
 import org.springframework.data.domain.Sort
 import org.springframework.data.mapping.PersistentPropertyPath
-import org.springframework.data.mapping.context.MappingContext
 import org.springframework.data.repository.query.ParameterAccessor
 import org.springframework.data.repository.query.QueryMethod
 import org.springframework.data.repository.query.parser.AbstractQueryCreator
 import org.springframework.data.repository.query.parser.Part
 import org.springframework.data.repository.query.parser.PartTree
 
-class CustomN1qlQueryCreator(
+open class CustomN1qlQueryCreator(
     private val operations: CouchbaseOperations,
-    private val tree: PartTree,
-    private val accessor: ParameterAccessor,
+    tree: PartTree,
+    accessor: ParameterAccessor,
     private val queryMethod: QueryMethod,
-    private val converter: CouchbaseConverter
-): AbstractQueryCreator<Query, QueryCriteria>(tree, accessor) {
+    converter: CouchbaseConverter
+) : AbstractQueryCreator<Query, QueryCriteria>(tree, accessor) {
 
-    static Converter<? super CouchbasePersistentProperty, String> cvtr = source ->
-        StringBuilder(source.getFieldName().length() + 2).append('`').append(source.getFieldName()).append('`').toString()
+    val context = converter.mappingContext
 
-    override protected fun create(val part: Part, val iterator: Iterator<Any>): QueryCriteria  {
+    var cvtr: Converter<in CouchbasePersistentProperty, String> =
+        Converter { source: CouchbasePersistentProperty ->
+            StringBuilder(
+                source.fieldName.length + 2
+            ).append('`').append(source.fieldName).append('`').toString()
+        }
+
+    override fun create(part: Part, iterator: Iterator<Any>): QueryCriteria {
         val path = context.getPersistentPropertyPath(part.property)
         val property = path.leafProperty
         return from(part, property, QueryCriteria.where(addMetaIfIdProperty(path, property)), iterator)
     }
 
-    override protected fun and(part: Part, base: QueryCriteria?, iterator: Iterator<Any>): QueryCriteria {
+    override fun and(part: Part, base: QueryCriteria?, iterator: Iterator<Any>): QueryCriteria {
         if (base == null) {
             return create(part, iterator)
         }
@@ -63,77 +66,47 @@ class CustomN1qlQueryCreator(
     }
 
     private fun addMetaIfIdProperty(
-        val path: PersistentPropertyPath<CouchbasePersistentProperty>,
-        val property: CouchbasePersistentProperty
+        path: PersistentPropertyPath<CouchbasePersistentProperty>,
+        property: CouchbasePersistentProperty
     ) = path.toDotPath(cvtr)
 
-    override protected fun or(base: QueryCriteria, criteria: QueryCriteria) = base.or(criteria)
+    override fun or(base: QueryCriteria, criteria: QueryCriteria) = base.or(criteria)
 
-    override protected fun complete(criteria: QueryCriteria, sort: Sort) {
-        return (criteria == null ? Query() : Query().addCriteria(criteria)).with(sort)
-    }
+    override fun complete(criteria: QueryCriteria?, sort: Sort) =
+        (if (criteria == null) Query() else Query().addCriteria(criteria)).with(sort)
 
-    private QueryCriteria from(
-        val  part: Part
-        val  property: CouchbasePersistentProperty
-        val  criteria: QueryCriteria
-        val  parameters: Iterator<Any>
-    ) {
-        val type = part.type
-
-        switch (type) {
-            case GREATER_THAN:
-            case AFTER:
-                return criteria.gt(parameters.next())
-            case GREATER_THAN_EQUAL:
-                return criteria.gte(parameters.next())
-            case LESS_THAN:
-            case BEFORE:
-                return criteria.lt(parameters.next())
-            case LESS_THAN_EQUAL:
-                return criteria.lte(parameters.next())
-            case SIMPLE_PROPERTY:
-                return criteria.eq(parameters.next())
-            case NEGATING_SIMPLE_PROPERTY:
-                return criteria.ne(parameters.next())
-            case CONTAINING:
-                return criteria.containing(parameters.next())
-            case NOT_CONTAINING:
-                return criteria.notContaining(parameters.next())
-            case STARTING_WITH:
-                return criteria.startingWith(parameters.next())
-            case ENDING_WITH:
-                return criteria.endingWith(parameters.next())
-            case LIKE:
-                return criteria.like(parameters.next())
-            case NOT_LIKE:
-                return criteria.notLike(parameters.next())
-            case WITHIN:
-                return criteria.within(parameters.next())
-            case IS_NULL:
-                return criteria.isNull()
-            case IS_NOT_NULL:
-                return criteria.isNotNull()
-            case IS_EMPTY:
-                return criteria.isNotValued()
-            case IS_NOT_EMPTY:
-                return criteria.isValued()
-            case EXISTS:
-                return criteria.isNotMissing()
-            case REGEX:
-                return criteria.regex(parameters.next())
-            case BETWEEN:
-                return criteria.between(parameters.next(), parameters.next())
-            case IN:
-                return criteria.in(parameters.next())
-            case NOT_IN:
-                return criteria.notIn(parameters.next())
-            case TRUE:
-                return criteria.TRUE()
-            case FALSE:
-                return criteria.FALSE()
-            default:
-                throw IllegalArgumentException("Unsupported keyword!")
+    private fun from(
+        part: Part,
+        property: CouchbasePersistentProperty,
+        criteria: QueryCriteria,
+        parameters: Iterator<Any>
+    ): QueryCriteria {
+        return when (part.type) {
+            Part.Type.GREATER_THAN, Part.Type.AFTER -> criteria.gt(parameters.next())
+            Part.Type.GREATER_THAN_EQUAL -> criteria.gte(parameters.next())
+            Part.Type.LESS_THAN, Part.Type.BEFORE -> criteria.lt(parameters.next())
+            Part.Type.LESS_THAN_EQUAL -> criteria.lte(parameters.next())
+            Part.Type.SIMPLE_PROPERTY -> criteria.eq(parameters.next())
+            Part.Type.NEGATING_SIMPLE_PROPERTY -> criteria.ne(parameters.next())
+            Part.Type.CONTAINING -> criteria.containing(parameters.next())
+            Part.Type.NOT_CONTAINING -> criteria.notContaining(parameters.next())
+            Part.Type.STARTING_WITH -> criteria.startingWith(parameters.next())
+            Part.Type.ENDING_WITH -> criteria.endingWith(parameters.next())
+            Part.Type.LIKE -> criteria.like(parameters.next())
+            Part.Type.NOT_LIKE -> criteria.notLike(parameters.next())
+            Part.Type.WITHIN -> criteria.within(parameters.next())
+            Part.Type.IS_NULL -> criteria.isNull
+            Part.Type.IS_NOT_NULL -> criteria.isNotNull
+            Part.Type.IS_EMPTY -> criteria.isNotValued
+            Part.Type.IS_NOT_EMPTY -> criteria.isValued
+            Part.Type.EXISTS -> criteria.isNotMissing
+            Part.Type.REGEX -> criteria.regex(parameters.next())
+            Part.Type.BETWEEN -> criteria.between(parameters.next(), parameters.next())
+            Part.Type.IN -> criteria.`in`(parameters.next())
+            Part.Type.NOT_IN -> criteria.notIn(parameters.next())
+            Part.Type.TRUE -> criteria.TRUE()
+            Part.Type.FALSE -> criteria.FALSE()
+            else -> throw IllegalArgumentException("Unsupported keyword!")
         }
     }
 }

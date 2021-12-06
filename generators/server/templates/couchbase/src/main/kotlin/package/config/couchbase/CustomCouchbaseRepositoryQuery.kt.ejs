@@ -22,14 +22,13 @@ import org.springframework.data.couchbase.core.CouchbaseOperations
 import org.springframework.data.couchbase.repository.query.CouchbaseQueryMethod
 import org.springframework.data.couchbase.repository.query.CouchbaseRepositoryQuery
 import org.springframework.data.repository.core.NamedQueries
-import <%= packageName %>.config.couchbase.CustomN1qlRepositoryQueryExecutor
 
 class CustomCouchbaseRepositoryQuery(
-    private val operations: CouchbaseOperations, 
-    private val queryMethod: CouchbaseQueryMethod, 
+    private val operations: CouchbaseOperations,
+    private val queryMethod: CouchbaseQueryMethod,
     private val namedQueries: NamedQueries
-): CouchbaseRepositoryQuery(operations, queryMethod, namedQueries) {
-    override fun execute(val parameters: Any[]) = 
-        CustomN1qlRepositoryQueryExecutor(couchbaseOperations, queryMethod, namedQueries)
+) : CouchbaseRepositoryQuery(operations, queryMethod, namedQueries) {
+    override fun execute(parameters: Array<out Any>): Any? =
+        CustomN1qlRepositoryQueryExecutor(operations, queryMethod, namedQueries)
             .execute(parameters)
 }

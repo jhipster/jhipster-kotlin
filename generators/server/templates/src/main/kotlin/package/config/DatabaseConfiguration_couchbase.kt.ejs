@@ -19,17 +19,10 @@ This file is part of the JHipster project, see https://jhipster.github.io/
 
 package <%= packageName %>.config
 
-import tech.jhipster.config.JHipsterConstants
-import tech.jhipster.config.JHipsterProperties
-
-import com.couchbase.client.java.Bucket
 import com.couchbase.client.java.Cluster
 import com.fasterxml.jackson.databind.ObjectMapper
 import com.github.couchmove.Couchmove
-import <%= packageName %>.config.couchbase.CustomCouchbaseRepositoryFactoryBean
-import org.slf4j.Logger
 import org.slf4j.LoggerFactory
-import org.springframework.boot.autoconfigure.couchbase.CouchbaseProperties
 import org.springframework.boot.autoconfigure.couchbase.CouchbaseProperties
 import org.springframework.boot.context.properties.EnableConfigurationProperties
 import org.springframework.context.annotation.*
@@ -52,20 +45,19 @@ import org.springframework.data.couchbase.core.mapping.event.ValidatingCouchbase
 import org.springframework.data.couchbase.repository.auditing.EnableCouchbaseAuditing
 <%_ } _%>
 import org.springframework.data.couchbase.repository.config.Enable<%_ if (reactive) { _%>Reactive<% } %>CouchbaseRepositories
+import org.springframework.data.repository.util.QueryExecutionConverters
 import org.springframework.http.converter.json.Jackson2ObjectMapperBuilder
 import org.springframework.util.StringUtils
 import org.springframework.validation.beanvalidation.LocalValidatorFactoryBean
-
+import reactor.core.publisher.Flux
+import tech.jhipster.config.JHipsterConstants
+import tech.jhipster.config.JHipsterProperties
+import tech.jhipster.sample.config.couchbase.CustomCouchbaseRepositoryFactoryBean
 import java.math.BigDecimal
 import java.math.BigInteger
 import java.time.ZoneId
 import java.time.ZonedDateTime
 import java.util.*
-<%_ if (reactive) { _%>
-import java.lang.reflect.Field
-import org.springframework.data.repository.util.QueryExecutionConverters
-import reactor.core.publisher.Flux
-<%_ } _%>
 
 @Configuration
 @EnableConfigurationProperties(CouchbaseProperties::class)
@@ -80,8 +72,8 @@ import reactor.core.publisher.Flux
 <%_ } _%>
 class DatabaseConfiguration(
     private val jHipsterProperties: JHipsterProperties,
-    private val couchbaseProperties: CouchbaseProperties 
-): AbstractCouchbaseConfiguration() {
+    private val couchbaseProperties: CouchbaseProperties
+) : AbstractCouchbaseConfiguration() {
 
     private val log = LoggerFactory.getLogger(javaClass)
     
@@ -94,10 +86,10 @@ class DatabaseConfiguration(
     @SuppressWarnings("unchecked")
     private fun allowPageable() {
         try {
-            val allowed_pageable_types = QueryExecutionConverters::class.java.getDeclaredField("ALLOWED_PAGEABLE_TYPES")
-            allowed_pageable_types.setAccessible(true)
-            val ALLOWED_PAGEABLE_TYPES = allowed_pageable_types.get(QueryExecutionConverters::class) as Set<Class<*>>
-            ALLOWED_PAGEABLE_TYPES.add(Flux::class)
+            val allowedPageableTypes = QueryExecutionConverters::class.java.getDeclaredField("ALLOWED_PAGEABLE_TYPES")
+            allowedPageableTypes.isAccessible = true
+            val apt = allowedPageableTypes.get(QueryExecutionConverters::class) as Set<*>
+            apt.plus(Flux::class)
         } catch (e: Exception) {
             e.printStackTrace()
         }
@@ -118,7 +110,7 @@ class DatabaseConfiguration(
         couchbaseProperties.username
     
     override fun getPassword() =
-        couchbaseProperties.password()
+        couchbaseProperties.password
 
     override fun  getBucketName() =
         jHipsterProperties.database.couchbase.bucketName
@@ -128,7 +120,7 @@ class DatabaseConfiguration(
         cluster.bucket(jHipsterProperties.database.couchbase.bucketName)
 
     @Bean(name = [BeanNames.COUCHBASE_CUSTOM_CONVERSIONS])
-    fun customConversions() =
+    override fun customConversions() =
         CouchbaseCustomConversions(
             mutableListOf<Converter<*, *>>(
                 ZonedDateTimeToLongConverter,
@@ -145,7 +137,7 @@ class DatabaseConfiguration(
     
     override fun mappingCouchbaseConverter(couchbaseMappingContext: CouchbaseMappingContext, couchbaseCustomConversions: CouchbaseCustomConversions): MappingCouchbaseConverter {
         val mappingCouchbaseConverter = super.mappingCouchbaseConverter(couchbaseMappingContext, couchbaseCustomConversions)
-        (mappingCouchbaseConverter.getConversionService() as (GenericConversionService)).addConverter(StringToObjectConverter.INSTANCE)
+        (mappingCouchbaseConverter.conversionService as (GenericConversionService)).addConverter(StringToObjectConverter)
         return mappingCouchbaseConverter
     }
 
@@ -159,9 +151,9 @@ class DatabaseConfiguration(
     }
 
     @Bean
-    fun couchmove(cluster: Cluster): CouchMove {
+    fun couchmove(cluster: Cluster): Couchmove {
         log.debug("Configuring Couchmove")
-        val bucket = cluster.bucket(getBucketName())
+        val bucket = cluster.bucket(bucketName)
         val couchmove = Couchmove(bucket, cluster, "config/couchmove/changelog")
         couchmove.migrate()
         couchmove.buildN1qlDeferredIndexes()
@@ -224,7 +216,7 @@ class DatabaseConfiguration(
      */
     @ReadingConverter
     object StringToByteConverter : Converter<String, ByteArray> {
-        override fun convert(source: String): ByteArray = Base64.decoder.decode(source)
+        override fun convert(source: String): ByteArray = Base64.getDecoder().decode(source)
     }
 
     /**
@@ -244,12 +236,13 @@ class DatabaseConfiguration(
             if (StringUtils.hasText(source)) UUID.fromString(source) else null
     }
 
-    object StringToObjectConverter: GenericConverter {
-        override fun getConvertibleTypes(): Set<ConvertiblePair> = 
-            Collections.singleton(ConvertiblePair(String::class, Any::class))
-        
+    object StringToObjectConverter : GenericConverter {
+        override fun getConvertibleTypes(): Set<GenericConverter.ConvertiblePair> =
+            Collections.singleton(GenericConverter.ConvertiblePair(String::class.java, Any::class.java))
 
-        override fun convert(source: Object, sourceType: TypeDescriptor, targetType: TypeDescriptor) = null
+        override fun convert(source: Any?, sourceType: TypeDescriptor, targetType: TypeDescriptor): Any? {
+            return null
+        }
     }
 
 }
