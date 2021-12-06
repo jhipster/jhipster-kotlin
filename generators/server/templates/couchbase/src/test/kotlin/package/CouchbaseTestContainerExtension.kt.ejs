@@ -26,29 +26,28 @@ import org.testcontainers.utility.DockerImageName
 
 import java.util.concurrent.atomic.AtomicBoolean
 
-class CouchbaseTestContainerExtension: BeforeAllCallback {
-
-    private val started = AtomicBoolean(false)
-
+class CouchbaseTestContainerExtension : BeforeAllCallback {
     companion object {
-        @JvmStatic
-        val couchbase = KGenericContainer("<%= DOCKER_COUCHBASE %>")
-                            .asCompatibleSubstituteFor("couchbase/server")
-                            .withBucket(BucketDefinition(getBucketName()).withQuota(100))
-                            .withCredentials("user", "secret")                
+        private val started = AtomicBoolean(false)
+        private var couchbase: CouchbaseContainer? = null
     }
 
+    private val bucketName: String
+        get() = "testBucket"
 
-    private fun getBucketName() = "testBucket"
-
-    @Override
-    public void beforeAll(ExtensionContext extensionContext) throws Exception {
+    @Throws(Exception::class)
+    override fun beforeAll(extensionContext: ExtensionContext) {
         if (!started.get()) {
-            couchbase.start()
-            System.setProperty("spring.couchbase.connection-string", couchbase.getConnectionString())
-            System.setProperty("spring.couchbase.username", couchbase.getUsername())
-            System.setProperty("spring.couchbase.password", couchbase.getPassword())
-            System.setProperty("jhipster.database.couchbase.bucket-name", getBucketName())
+            val dockerImage = DockerImageName.parse("<%= DOCKER_COUCHBASE %>")
+                .asCompatibleSubstituteFor("couchbase/server")
+            couchbase = CouchbaseContainer(dockerImage)
+                .withBucket(BucketDefinition(bucketName).withQuota(100))
+                .withCredentials("user", "secret")
+            couchbase!!.start()
+            System.setProperty("spring.couchbase.connection-string", couchbase!!.connectionString)
+            System.setProperty("spring.couchbase.username", couchbase!!.username)
+            System.setProperty("spring.couchbase.password", couchbase!!.password)
+            System.setProperty("jhipster.database.couchbase.bucket-name", bucketName)
             started.set(true)
         }
     }

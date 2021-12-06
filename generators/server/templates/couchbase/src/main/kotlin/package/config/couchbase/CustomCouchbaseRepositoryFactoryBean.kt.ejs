@@ -21,11 +21,16 @@ package <%= packageName %>.config.couchbase
 import org.springframework.data.couchbase.repository.config.RepositoryOperationsMapping
 import org.springframework.data.couchbase.repository.support.CouchbaseRepositoryFactory
 import org.springframework.data.couchbase.repository.support.CouchbaseRepositoryFactoryBean
+import org.springframework.data.repository.Repository
+import java.io.Serializable
 
-class CustomCouchbaseRepositoryFactoryBean(
-    private val repositoryInterface: KClass
-): CouchbaseRepositoryFactoryBean(repositoryInterface) {
-    override protected fun getFactoryInstance(
+open class CustomCouchbaseRepositoryFactoryBean(
+    repositoryInterface: Class<out Repository<Any?, Serializable?>?>?
+) : CouchbaseRepositoryFactoryBean<Repository<Any?, Serializable?>?, Any?, Serializable?>(repositoryInterface) {
+
+    override fun getFactoryInstance(
         operationsMapping: RepositoryOperationsMapping
-    ) = CustomCouchbaseRepositoryFactory(operationsMapping)
+    ) : CouchbaseRepositoryFactory {
+        return CustomCouchbaseRepositoryFactory(operationsMapping)
+    }
 }

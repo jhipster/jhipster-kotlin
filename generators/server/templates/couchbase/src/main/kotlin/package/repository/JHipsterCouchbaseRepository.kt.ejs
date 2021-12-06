@@ -54,33 +54,34 @@ _%>
 @NoRepositoryBean
 interface JHipsterCouchbaseRepository<T,ID>:  <% if (reactive) { %>Reactive<% } %>CouchbaseRepository<T, ID>() {
     @ScanConsistency(query = QueryScanConsistency.REQUEST_PLUS)
-    fun findAll(): <%= listOrFlux %><T>
+    override fun findAll(): <%= listOrFlux %><T>
 
     @ScanConsistency(query = QueryScanConsistency.REQUEST_PLUS)
-    fun findAll(sort: Sort): <%= listOrFlux %><T> 
+    override fun findAll(sort: Sort): <%= listOrFlux %><T> 
 
     @ScanConsistency(query = QueryScanConsistency.REQUEST_PLUS)
     fun findAll<% if (reactive) { %>By<% } %>(pageable: Pageable): <%= pageOrFlux %><T> 
 
     @ScanConsistency(query = QueryScanConsistency.REQUEST_PLUS)
-    fun deleteAll()<% if (reactive) { %>: Mono<Void><% } %> 
+    override fun deleteAll()<% if (reactive) { %>: Mono<Void><% } %> 
 
     companion object {
         fun pageableStatement(pageable: Pageable) = pageableStatement(pageable, "")
     
-        fun pageableStatement(pageable: Pageable, prefix: String) {
+        fun pageableStatement(pageable: Pageable, prefix: String): String? {
             val sort = Sort.by(
                 pageable.sort
-                    .map { order -> 
+                    .map { order ->
                         val property = order.property
-                        if ("id".equals(property)) {
-                            return@map order.withProperty("meta($prefix).id")
+                        if ("id" == property) {
+                            order.withProperty("meta($prefix).id")
                         }
-                        if (prefix.isEmpty) {
-                            return@map order
+                        if (prefix.isEmpty()) {
+                            order
                         }
-                        return@map order.withProperty("$prefix $property")
-                    }
+                        order.withProperty("$prefix $property")
+                    } as Sort.Order
+            )
             return Query()
                 .limit(pageable.pageSize)
                 .skip(pageable.offset)
