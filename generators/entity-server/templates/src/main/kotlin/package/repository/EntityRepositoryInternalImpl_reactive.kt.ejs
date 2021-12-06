@@ -68,8 +68,10 @@ import <%= rel.otherEntity.entityAbsolutePackage %>.domain.<%= rel.otherEntity.p
 import <%= entityAbsolutePackage %>.domain.enumeration.<%= element %>
 <%_ }); _%>
 
-<%_ [...reactiveOtherEntities, entity].forEach(otherEntity => { _%>
+<%_ [...reactiveOtherEntities, entity].forEach(otherEntity => { 
+    if (otherEntity.entityAbsolutePackage) { _%>
 import <%= otherEntity.entityAbsolutePackage %>.repository.rowmapper.<%= otherEntity.entityClass %>RowMapper
+  <%_ } _%> 
   <%_ if (otherEntity.entityPackage !== entityPackage) { _%>
 import <%= otherEntity.entityAbsolutePackage %>.repository.<%= otherEntity.entityClass %>SqlHelper
   <%_ } _%>
@@ -192,7 +194,7 @@ class <%= entityClass %>RepositoryInternalImpl(
     override fun update(entity: <%= persistClass %>): Mono<Integer> {
         <%_ if (fields.some(field => !field.id) || relationships.some(relationship => !relationship.id && relationship.ownerSide)) { _%>
         //fixme is this the proper way?
-        return r2dbcEntityTemplate.update(entity).thenReturn(Integer.valueOf(1) as Integer))
+        return r2dbcEntityTemplate.update(entity).thenReturn(Integer.valueOf(1) as Integer)
         <%_ } else { _%>
         /*
          * Entity doesn't contain any updatable data, ignore update for compatibility.
