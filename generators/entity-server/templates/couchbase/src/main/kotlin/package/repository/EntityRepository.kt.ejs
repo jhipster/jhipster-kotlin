@@ -81,17 +81,12 @@ interface <%= entityClass %>Repository: JHipsterCouchbaseRepository<<%= persistC
         } %>
           " FROM #{#n1ql.bucket} b"
 
-      const val JOIN = <%
-          relationships.forEach(function (relationship, index) {
+      const val JOIN = <% relationships.forEach(function (relationship, index) {
             if (!relationship.collection) { %>
               " LEFT JOIN #{#n1ql.bucket} `<%= relationship.relationshipFieldName %>` ON KEYS b.`<%= relationship.relationshipFieldName %>`"<%
             } else { %>
               " LEFT NEST #{#n1ql.bucket} `<%= relationship.relationshipFieldNamePlural %>` ON KEYS b.`<%= relationship.relationshipFieldNamePlural %>`"<%
-            }
-            if (index < relationships.length - 1) { %>
-              + <%
-            }
-          }) %>
+            } if (index < relationships.length - 1) { %> + <% } }) %>
     }
 
     override fun findAll<% if (reactive) {%>By<% } %>(pageable: Pageable): <%= pageOrFlux %><<%= persistClass %>> {

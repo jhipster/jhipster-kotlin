@@ -104,7 +104,7 @@
             <%_ if (relationship.collection) { _%>
         @JsonIgnore
         @Field("<%= relationship.relationshipFieldNamePlural %>")
-        private var <%= relationship.relationshipFieldName %>Ids = mutableHashSetOf<String>(),
+        private var <%= relationship.relationshipFieldName %>Ids: MutableSet<String> = mutableSetOf(),
             <%_ } else if (relationship.ownerSide) { _%>
         @JsonIgnore
         @Field("<%= relationship.relationshipFieldName %>")
@@ -120,13 +120,13 @@
             this.<%= relationship.relationshipFieldNamePlural %>?.add(<%= relationship.otherEntityName %>)
           <%_ if (!relationship.otherEntity.embedded || embedded && relationship.ownerSide) { _%>
             <%_ if (!relationship.otherEntity.embedded) { _%>
-            this.<%= relationship.relationshipFieldName %>Ids.add(<%= relationship.otherEntityName %>.get<%= relationship.otherEntity.primaryKey.nameCapitalized %>())
+            this.<%= relationship.relationshipFieldName %>Ids.add(<%= relationship.otherEntityName %>.<%= relationship.otherEntity.primaryKey.name %>!!)
             <%_ } _%>
             <%_ if (relationship.otherRelationship) { _%>
               <%_ if (!relationship.otherRelationship.collection) { _%>
             <%= relationship.otherEntityName %>.<%= relationship.otherRelationship.relationshipName %> = this
               <%_ } else if (relationship.otherRelationship.relationshipNamePlural && !relationship.otherEntityUser && relationship.otherRelationship.collection) { _%>
-            <%= relationship.otherEntityName %>.<%= relationship.otherRelationship.relationshipNamePlural %>.add(this)
+            <%= relationship.otherEntityName %>.<%= relationship.otherRelationship.relationshipNamePlural %>?.add(this)
               <%_ } _%>
             <%_ } _%>
           <%_ } _%>
@@ -141,13 +141,13 @@
             this.<%= relationship.relationshipFieldNamePlural %>?.remove(<%= relationship.otherEntityName %>)
           <%_ if (!relationship.otherEntity.embedded || (embedded && relationship.ownerSide)) { _%>
             <%_ if (!relationship.otherEntity.embedded) { _%>
-            this.<%= relationship.relationshipFieldName %>Ids.remove(<%= relationship.otherEntityName %>.get<%= relationship.otherEntity.primaryKey.nameCapitalized %>())
+            this.<%= relationship.relationshipFieldName %>Ids.remove(<%= relationship.otherEntityName %>.<%= relationship.otherEntity.primaryKey.name %>!!)
             <%_ } _%>
             <%_ if (relationship.otherRelationship) { _%>
               <%_ if (!relationship.otherRelationship.collection) { _%>
             <%= relationship.otherEntityName %>.<%= relationship.otherRelationship.relationshipName %> = null
               <%_ } else if (!relationship.otherEntityUser && relationship.otherRelationship.collection) { _%>
-            <%= relationship.otherEntityName %>.<%= relationship.otherRelationship.relationshipNamePlural %>.remove(this)
+            <%= relationship.otherEntityName %>.<%= relationship.otherRelationship.relationshipNamePlural %>?.remove(this)
               <%_ } _%>
             <%_ } _%>
           <%_ } _%>
