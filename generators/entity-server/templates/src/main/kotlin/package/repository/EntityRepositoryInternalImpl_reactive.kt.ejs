@@ -150,7 +150,7 @@ class <%= entityClass %>RepositoryInternalImpl(
 
     <%_ if (fieldsContainOwnerManyToMany) { _%>
 
-    override fun findOneWithEagerRelationships(id: <%= primaryKey.name %>): Mono<<%= persistClass %>> {
+    override fun findOneWithEagerRelationships(id: <%= primaryKey.type %>?): Mono<<%= persistClass %>> {
         return findById(id)
     }
 
@@ -207,7 +207,7 @@ class <%= entityClass %>RepositoryInternalImpl(
 
     <%_ if (fieldsContainOwnerManyToMany) { _%>
 
-    override fun deleteById(entityId: Long): Mono<Void> {
+    override fun deleteById(entityId: Long?): Mono<Void> {
         return deleteRelations(entityId).then(
             r2dbcEntityTemplate.delete(<%= asEntity(entityClass) %>::class.java).matching(query(Criteria.where("id").`is`(entityId))).all().then()
         )
@@ -227,7 +227,7 @@ class <%= entityClass %>RepositoryInternalImpl(
         return result.thenReturn(entity)
     }
 
-    protected fun deleteRelations(entityId: Long): Mono<Void> {
+    protected fun deleteRelations(entityId: Long?): Mono<Void> {
         <%_ relationships.filter(function(rel) {
                 return (rel.relationshipManyToMany  && rel.ownerSide);
             }).forEach(function(rel, idx) {
