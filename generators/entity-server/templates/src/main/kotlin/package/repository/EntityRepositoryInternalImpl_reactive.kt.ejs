@@ -68,8 +68,10 @@ import <%= rel.otherEntity.entityAbsolutePackage %>.domain.<%= rel.otherEntity.p
 import <%= entityAbsolutePackage %>.domain.enumeration.<%= element %>
 <%_ }); _%>
 
-<%_ [...reactiveOtherEntities, entity].forEach(otherEntity => { _%>
+<%_ [...reactiveOtherEntities, entity].forEach(otherEntity => { 
+    if (otherEntity.entityAbsolutePackage) { _%>
 import <%= otherEntity.entityAbsolutePackage %>.repository.rowmapper.<%= otherEntity.entityClass %>RowMapper
+  <%_ } _%> 
   <%_ if (otherEntity.entityPackage !== entityPackage) { _%>
 import <%= otherEntity.entityAbsolutePackage %>.repository.<%= otherEntity.entityClass %>SqlHelper
   <%_ } _%>
@@ -148,7 +150,7 @@ class <%= entityClass %>RepositoryInternalImpl(
 
     <%_ if (fieldsContainOwnerManyToMany) { _%>
 
-    override fun findOneWithEagerRelationships(id: <%= primaryKey.name %>): Mono<<%= persistClass %>> {
+    override fun findOneWithEagerRelationships(id: <%= primaryKey.type %>?): Mono<<%= persistClass %>> {
         return findById(id)
     }
 
@@ -192,7 +194,7 @@ class <%= entityClass %>RepositoryInternalImpl(
     override fun update(entity: <%= persistClass %>): Mono<Integer> {
         <%_ if (fields.some(field => !field.id) || relationships.some(relationship => !relationship.id && relationship.ownerSide)) { _%>
         //fixme is this the proper way?
-        return r2dbcEntityTemplate.update(entity).thenReturn(Integer.valueOf(1) as Integer))
+        return r2dbcEntityTemplate.update(entity).thenReturn(Integer.valueOf(1) as Integer)
         <%_ } else { _%>
         /*
          * Entity doesn't contain any updatable data, ignore update for compatibility.
@@ -205,7 +207,7 @@ class <%= entityClass %>RepositoryInternalImpl(
 
     <%_ if (fieldsContainOwnerManyToMany) { _%>
 
-    override fun deleteById(entityId: Long): Mono<Void> {
+    override fun deleteById(entityId: Long?): Mono<Void> {
         return deleteRelations(entityId).then(
             r2dbcEntityTemplate.delete(<%= asEntity(entityClass) %>::class.java).matching(query(Criteria.where("id").`is`(entityId))).all().then()
         )
@@ -225,7 +227,7 @@ class <%= entityClass %>RepositoryInternalImpl(
         return result.thenReturn(entity)
     }
 
-    protected fun deleteRelations(entityId: Long): Mono<Void> {
+    protected fun deleteRelations(entityId: Long?): Mono<Void> {
         <%_ relationships.filter(function(rel) {
                 return (rel.relationshipManyToMany  && rel.ownerSide);
             }).forEach(function(rel, idx) {

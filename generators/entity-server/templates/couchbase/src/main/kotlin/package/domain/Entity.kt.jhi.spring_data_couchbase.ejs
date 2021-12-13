@@ -20,14 +20,11 @@
  This is a fragment file, it will be merged into to root template if available.
  EJS fragments will process % delimiter tags in template and & delimiter tags in the merge process.
 -%>
-<&_ if (fragment.staticImportSection) { -&>
-    <%_ if (!embedded) { _%>
-    import <%= packageName %>.config.Constants.ID_DELIMITER
-    import org.springframework.data.couchbase.core.mapping.id.GenerationStrategy.UNIQUE
-    <%_ } _%>
-    <&_ } -&>
-    
+
     <&_ if (fragment.importSection) { -&>
+    import <%= packageName %>.config.ID_DELIMITER
+    import org.springframework.data.couchbase.core.mapping.id.GenerationStrategy
+    
       <%_ if (!embedded) { _%>
     import org.springframework.data.annotation.Id
     import org.springframework.data.couchbase.core.mapping.id.GeneratedValue
@@ -55,7 +52,7 @@
     <%_ if (!embedded) { _%>
         @SuppressWarnings("unused")
         @IdPrefix
-        private String prefix = PREFIX
+        private var prefix: String = PREFIX,
     <%_ } _%>
     <&_ } -&>
     
@@ -64,7 +61,7 @@
       <%_ if (field.id && !embedded) { _%>
         @Id
         <%_ if (field.id && !embedded) { _%>
-        @GeneratedValue(strategy = UNIQUE, delimiter = ID_DELIMITER)
+        @GeneratedValue(strategy = GenerationStrategy.UNIQUE, delimiter = ID_DELIMITER)
         <%_ } _%>
       <%_ } else { _%>
         @Field
@@ -107,81 +104,29 @@
             <%_ if (relationship.collection) { _%>
         @JsonIgnore
         @Field("<%= relationship.relationshipFieldNamePlural %>")
-        private Set<String> <%= relationship.relationshipFieldName %>Ids = new HashSet<>()
+        private var <%= relationship.relationshipFieldName %>Ids: MutableSet<String> = mutableSetOf(),
             <%_ } else if (relationship.ownerSide) { _%>
         @JsonIgnore
         @Field("<%= relationship.relationshipFieldName %>")
-        private <%= relationship.otherEntity.primaryKey.type %> <%= relationship.relationshipFieldName %>Id
+        private var <%= relationship.relationshipFieldName %>Id: <%= relationship.otherEntity.primaryKey.type %>? = null,
             <%_ } _%>
           <%_ } _%>
         <%_ } _%>
     <&_ } -&>
-    
-    <%_ for (const relationship of relationships) { _%>
-    <&_ if (fragment.relationship<%- relationship.relationshipNameCapitalized %>CustomSetSection) { -&>
-      <%_ if (relationship.collection) { _%>
-        public void set<%= relationship.relationshipNameCapitalizedPlural %>(Set<<%= relationship.otherEntity.persistClass %>> <%= relationship.otherEntityNamePlural %>) {
-        <%_ if (relationship.otherRelationship && !relationship.reference.owned) { _%>
-            if (this.<%= relationship.relationshipFieldNamePlural %> != null) {
-          <%_ if (relationship.otherRelationship.reference.collection) { _%>
-                this.<%= relationship.relationshipFieldNamePlural %>.forEach(i -> i.remove<%= relationship.otherRelationship.relationshipNameCapitalized %>(this))
-          <%_ } else { _%>
-                this.<%= relationship.relationshipFieldNamePlural %>.forEach(i -> i.set<%= relationship.otherRelationship.relationshipNameCapitalized %>(null))
-          <%_ } _%>
-            }
-            if (<%= relationship.otherEntityNamePlural %> != null) {
-          <%_ if (relationship.otherRelationship.reference.collection) { _%>
-                <%= relationship.otherEntityNamePlural %>.forEach(i -> i.add<%= relationship.otherRelationship.relationshipNameCapitalized %>(this))
-          <%_ } else { _%>
-                <%= relationship.otherEntityNamePlural %>.forEach(i -> i.set<%= relationship.otherRelationship.relationshipNameCapitalized %>(this))
-          <%_ } _%>
-            }
-        <%_ } _%>
-            this.<%= relationship.relationshipFieldNamePlural %> = <%= relationship.otherEntityNamePlural %>
-        <%_ if (!relationship.otherEntity.embedded) { _%>
-            this.<%= relationship.relationshipFieldName %>Ids = <%= relationship.otherEntityNamePlural %>.stream()
-                .map(<%= relationship.otherEntity.persistClass %>::getId)
-                .collect(Collectors.toSet())
-        <%_ } _%>
-        }
-      <%_ } else if (!relationship.otherEntity.embedded) { _%>
-        public void set<%= relationship.relationshipNameCapitalized %>(<%= relationship.otherEntity.persistClass %> <%= relationship.otherEntityName %>) {
-        <%_ if (relationship.otherRelationship && !relationship.reference.owned) { _%>
-            if (this.<%= relationship.relationshipFieldName %> != null) {
-          <%_ if (relationship.otherRelationship.reference.collection) { _%>
-                this.<%= relationship.relationshipFieldName %>.remove<%= relationship.otherRelationship.relationshipNameCapitalized %>(this)
-          <%_ } else { _%>
-                this.<%= relationship.relationshipFieldName %>.set<%= relationship.otherRelationship.relationshipNameCapitalized %>(null)
-          <%_ } _%>
-            }
-            if (<%= relationship.otherEntityName %> != null) {
-          <%_ if (relationship.otherRelationship.reference.collection) { _%>
-                <%= relationship.otherEntityName %>.add<%= relationship.otherRelationship.relationshipNameCapitalized %>(this)
-          <%_ } else { _%>
-                <%= relationship.otherEntityName %>.set<%= relationship.otherRelationship.relationshipNameCapitalized %>(this)
-          <%_ } _%>
-            }
-        <%_ } _%>
-            this.<%= relationship.relationshipFieldName %> = <%= relationship.otherEntityName %>
-            this.<%= relationship.relationshipFieldName %>Id = <%= relationship.otherEntityName %> != null ? <%= relationship.otherEntityName %>.get<%= relationship.otherEntity.primaryKey.nameCapitalized %>() : null
-        }
-      <%_ } _%>
-    <&_ } -&>
-    <%_ } _%>
     
     <%_ for (const relationship of relationships) { _%>
     <&_ if (fragment.relationship<%- relationship.relationshipNameCapitalized %>CustomAddSection) { -&>
-        public <%= persistClass %> add<%= relationship.relationshipNameCapitalized %>(<%= relationship.otherEntity.persistClass %> <%= relationship.otherEntityName %>) {
-            this.<%= relationship.relationshipFieldNamePlural %>.add(<%= relationship.otherEntityName %>)
+        fun add<%= relationship.relationshipNameCapitalized %>(<%= relationship.otherEntityName %>: <%= relationship.otherEntity.persistClass %>) : <%= persistClass %>{
+            this.<%= relationship.relationshipFieldNamePlural %>?.add(<%= relationship.otherEntityName %>)
           <%_ if (!relationship.otherEntity.embedded || embedded && relationship.ownerSide) { _%>
             <%_ if (!relationship.otherEntity.embedded) { _%>
-            this.<%= relationship.relationshipFieldName %>Ids.add(<%= relationship.otherEntityName %>.get<%= relationship.otherEntity.primaryKey.nameCapitalized %>())
+            this.<%= relationship.relationshipFieldName %>Ids.add(<%= relationship.otherEntityName %>.<%= relationship.otherEntity.primaryKey.name %>!!)
             <%_ } _%>
             <%_ if (relationship.otherRelationship) { _%>
               <%_ if (!relationship.otherRelationship.collection) { _%>
-            <%= relationship.otherEntityName %>.set<%= relationship.otherRelationship.relationshipNameCapitalized %>(this)
+            <%= relationship.otherEntityName %>.<%= relationship.otherRelationship.relationshipName %> = this
               <%_ } else if (relationship.otherRelationship.relationshipNamePlural && !relationship.otherEntityUser && relationship.otherRelationship.collection) { _%>
-            <%= relationship.otherEntityName %>.get<%= relationship.otherRelationship.relationshipNameCapitalizedPlural %>().add(this)
+            <%= relationship.otherEntityName %>.<%= relationship.otherRelationship.relationshipNamePlural %>?.add(this)
               <%_ } _%>
             <%_ } _%>
           <%_ } _%>
@@ -192,17 +137,17 @@
     
     <%_ for (const relationship of relationships) { _%>
     <&_ if (fragment.relationship<%- relationship.relationshipNameCapitalized %>CustomRemoveSection) { -&>
-        public <%= persistClass %> remove<%= relationship.relationshipNameCapitalized %>(<%= relationship.otherEntity.persistClass %> <%= relationship.otherEntityName %>) {
-            this.<%= relationship.relationshipFieldNamePlural %>.remove(<%= relationship.otherEntityName %>)
+        fun remove<%= relationship.relationshipNameCapitalized %>(<%= relationship.otherEntityName %>: <%= relationship.otherEntity.persistClass %>): <%= persistClass %>  {
+            this.<%= relationship.relationshipFieldNamePlural %>?.remove(<%= relationship.otherEntityName %>)
           <%_ if (!relationship.otherEntity.embedded || (embedded && relationship.ownerSide)) { _%>
             <%_ if (!relationship.otherEntity.embedded) { _%>
-            this.<%= relationship.relationshipFieldName %>Ids.remove(<%= relationship.otherEntityName %>.get<%= relationship.otherEntity.primaryKey.nameCapitalized %>())
+            this.<%= relationship.relationshipFieldName %>Ids.remove(<%= relationship.otherEntityName %>.<%= relationship.otherEntity.primaryKey.name %>!!)
             <%_ } _%>
             <%_ if (relationship.otherRelationship) { _%>
               <%_ if (!relationship.otherRelationship.collection) { _%>
-            <%= relationship.otherEntityName %>.set<%= relationship.otherRelationship.relationshipNameCapitalized %>(null)
+            <%= relationship.otherEntityName %>.<%= relationship.otherRelationship.relationshipName %> = null
               <%_ } else if (!relationship.otherEntityUser && relationship.otherRelationship.collection) { _%>
-            <%= relationship.otherEntityName %>.get<%= relationship.otherRelationship.relationshipNameCapitalizedPlural %>().remove(this)
+            <%= relationship.otherEntityName %>.<%= relationship.otherRelationship.relationshipNamePlural %>?.remove(this)
               <%_ } _%>
             <%_ } _%>
           <%_ } _%>

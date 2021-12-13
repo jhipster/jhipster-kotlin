@@ -20,13 +20,11 @@ package <%= packageName %>.config.couchbase
 
 import com.couchbase.client.java.query.QueryScanConsistency
 import org.springframework.data.couchbase.core.CouchbaseOperations
-import org.springframework.data.couchbase.core.ExecutableFindByQueryOperation
+import org.springframework.data.couchbase.core.ExecutableFindByQueryOperation.ExecutableFindByQuery
 import org.springframework.data.couchbase.core.query.Query
 import org.springframework.data.couchbase.repository.query.CouchbaseQueryMethod
-import org.springframework.data.couchbase.repository.query.ReactiveN1qlRepositoryQueryExecutor
 import org.springframework.data.couchbase.repository.query.StringN1qlQueryCreator
 import org.springframework.data.repository.core.NamedQueries
-import org.springframework.data.repository.query.ParameterAccessor
 import org.springframework.data.repository.query.ParametersParameterAccessor
 import org.springframework.data.repository.query.QueryMethodEvaluationContextProvider
 import org.springframework.data.repository.query.parser.PartTree
@@ -36,7 +34,7 @@ class CustomN1qlRepositoryQueryExecutor(
     private val operations: CouchbaseOperations,
     private val queryMethod: CouchbaseQueryMethod,
     private val namedQueries: NamedQueries
-){
+) {
 
     /**
      * see also {@link ReactiveN1qlRepositoryQueryExecutor#execute(Object[] parameters) execute }
@@ -44,50 +42,56 @@ class CustomN1qlRepositoryQueryExecutor(
      * @param parameters substitute values
      * @return with data
      */
-    fun execute(val parameters: Any[]): Any {
-        val domainClass = queryMethod.getResultProcessor().getReturnedType().getDomainType()
-        val accessor = ParametersParameterAccessor(queryMethod.getParameters(), parameters)
+    fun execute(parameters: Array<out Any>): Any {
+        val domainClass = queryMethod.resultProcessor.returnedType.domainType
+        val accessor = ParametersParameterAccessor(queryMethod.parameters, parameters)
 
         // this is identical to ReactiveN1qlRespositoryQueryExecutor,
         // except for the type of 'q', and the call to oneValue() vs one()
-        var query: StringN1qlQueryCreator?
-        var q: ExecutableFindByQueryOperation.ExecutableFindByQuery?
+        var query: Query?
+        var q: ExecutableFindByQuery<*>?
+
         if (queryMethod.hasN1qlAnnotation()) {
             query =
                 StringN1qlQueryCreator(
                     accessor,
                     queryMethod,
-                    operations.getConverter(),
-                    operations.getBucketName(),
+                    operations.converter,
+                    operations.bucketName,
                     SpelExpressionParser(),
                     QueryMethodEvaluationContextProvider.DEFAULT,
                     namedQueries
                 )
                     .createQuery()
         } else {
-            val tree = PartTree(queryMethod.getName(), domainClass)
-            query = CustomN1qlQueryCreator(operations, tree, accessor, queryMethod, operations.getConverter()).createQuery()
+            val tree = PartTree(queryMethod.name, domainClass)
+            query = CustomN1qlQueryCreator(
+                operations,
+                tree,
+                accessor,
+                queryMethod,
+                operations.converter
+            ).createQuery()
         }
-        q =
-            operations
-                .findByQuery(domainClass)
-                .consistentWith(buildQueryScanConsistency())
-                .matching(query) as (ExecutableFindByQueryOperation.ExecutableFindByQuery) 
-        if (queryMethod.isCountQuery()) {
-            return q.count()
-        } else if (queryMethod.isCollectionQuery()) {
-            return q.all()
+        q = operations
+            .findByQuery(domainClass)
+            .consistentWith(buildQueryScanConsistency())
+            .matching(query) as (ExecutableFindByQuery)
+        return if (queryMethod.isCountQuery) {
+            q.count()
+        } else if (queryMethod.isCollectionQuery) {
+            q.all()
         } else {
-            return q.oneValue()
+            q.oneValue()
         }
     }
 
     private fun buildQueryScanConsistency(): QueryScanConsistency {
         var scanConsistency = QueryScanConsistency.NOT_BOUNDED
         if (queryMethod.hasConsistencyAnnotation()) {
-            scanConsistency = queryMethod.getConsistencyAnnotation().value()
+            scanConsistency = queryMethod.consistencyAnnotation.value
         } else if (queryMethod.hasScanConsistencyAnnotation()) {
-            scanConsistency = queryMethod.getScanConsistencyAnnotation().query()
+            scanConsistency = queryMethod.scanConsistencyAnnotation.query
         }
         return scanConsistency
     }
