@@ -19,10 +19,8 @@
 package <%= entityAbsolutePackage %>.service.dto
 
 import java.util.Objects
-<%_ if (typeof javadoc !== 'undefined') { _%>
-import io.swagger.annotations.ApiModel
-<%_ } if (importApiModelProperty) { _%>
-import io.swagger.annotations.ApiModelProperty
+<%_ if (typeof javadoc !== 'undefined' || importApiModelProperty) { _%>
+import io.swagger.v3.oas.annotations.media.Schema
 <%_ } _%>
 <%_ if (fieldsContainInstant) { _%>
 import java.time.Instant
@@ -64,7 +62,7 @@ import <%= `${otherEntity.entityAbsolutePackage}.service.dto.${otherEntity.dtoCl
  * A DTO for the [<%= entityAbsolutePackage %>.domain.<%= persistClass %>] entity.
  */
 <%_ if (typeof javadoc !== 'undefined') { _%>
-@ApiModel(description = "<%- formatAsApiDescription(javadoc) %>")
+@Schema(description = "<%- formatAsApiDescription(javadoc) %>")
 <%_ } _%>
 data class <%= dtoClass %>(
     <%_
@@ -82,7 +80,7 @@ data class <%= dtoClass %>(
                 }
             }
             if (reference.doc) {
-                classProperty.push(`@ApiModelProperty(value="${formatAsApiDescription(reference.doc)}"${required ? ', required = true': ''})`);
+                classProperty.push(`@Schema(description="${formatAsApiDescription(reference.doc)}"${required ? ', required = true': ''})`);
             }
             if (field && field.fieldTypeBytes && databaseTypeSql) {
                 classProperty.push('@Lob');

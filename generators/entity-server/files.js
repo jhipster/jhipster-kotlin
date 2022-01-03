@@ -175,7 +175,19 @@ const serverFiles = {
             templates: [
                 {
                     file: 'package/repository/search/EntitySearchRepository.kt',
-                    renameTo: generator => `${generator.entityAbsoluteFolder}/repository/search/${generator.entityClass}SearchRepository.kt`,
+                    renameTo: generator =>
+                        `${generator.entityAbsoluteFolder}/repository/search/${generator.entityClass}SearchRepository.kt`,
+                    useBluePrint: true,
+                },
+            ],
+        },
+        {
+            condition: generator => generator.searchEngine === ELASTICSEARCH && !generator.embedded && !generator.paginationNo,
+            path: SERVER_MAIN_SRC_KOTLIN_DIR,
+            templates: [
+                {
+                    file: 'package/repository/search/SortToFieldSortBuilderConverter.kt',
+                    renameTo: generator => `${generator.entityAbsoluteFolder}/repository/search/SortToFieldSortBuilderConverter.kt`,
                     useBluePrint: true,
                 },
             ],

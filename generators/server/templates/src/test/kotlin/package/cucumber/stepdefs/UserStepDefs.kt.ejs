@@ -22,33 +22,66 @@ import io.cucumber.java.Before
 import io.cucumber.java.en.Then
 import io.cucumber.java.en.When
 
-import <%= packageName %>.web.rest.UserResource
-
 import org.springframework.beans.factory.annotation.Autowired
 import org.springframework.http.MediaType
-import org.springframework.test.web.servlet.MockMvc
-import org.springframework.test.web.servlet.request.MockMvcRequestBuilders.get
-import org.springframework.test.web.servlet.result.MockMvcResultMatchers.content
-import org.springframework.test.web.servlet.result.MockMvcResultMatchers.jsonPath
-import org.springframework.test.web.servlet.result.MockMvcResultMatchers.status
+import org.springframework.security.authentication.UsernamePasswordAuthenticationToken
+import org.springframework.security.core.Authentication
+import org.springframework.security.core.GrantedAuthority
+import org.springframework.security.core.authority.SimpleGrantedAuthority
+import org.springframework.security.core.context.SecurityContext
+import org.springframework.security.core.context.SecurityContextHolder
+import org.springframework.security.core.userdetails.User
+
+import <%= packageName %>.web.rest.UserResource
+import <%= packageName %>.security.AuthoritiesConstants
+
+<%_ if (reactive) { _%>
+import org.springframework.test.web.reactive.server.WebTestClient
+<%_ } else { _%>
 import org.springframework.test.web.servlet.setup.MockMvcBuilders
+import org.springframework.test.web.servlet.MockMvc
+
+import org.springframework.test.web.servlet.request.MockMvcRequestBuilders.get
+import org.springframework.test.web.servlet.result.MockMvcResultMatchers.*
+<%_ } _%>
 
 class UserStepDefs: StepDefs() {
 
     @Autowired
     private lateinit var userResource: UserResource
 
-    private lateinit var restUserMockMvc: MockMvc
+    
+
+    <%_ if (reactive) { _%>
+    private lateinit var userResourceMock: WebTestClient
+    <%_ } else { _%>
+    private lateinit var userResourceMock: MockMvc
+    <%_ } _%>
 
     @Before
     fun setup() {
-        restUserMockMvc = MockMvcBuilders.standaloneSetup(userResource).build()
+        val grantedAuthorities = mutableListOf<GrantedAuthority>()
+        grantedAuthorities.add(SimpleGrantedAuthority(ADMIN))
+        val principal = User("username", "", true, true, true, true, grantedAuthorities)
+        val authentication = UsernamePasswordAuthenticationToken(
+            principal,
+            principal.password,
+            principal.authorities
+        )
+        val context = SecurityContextHolder.createEmptyContext()
+        context.setAuthentication(authentication)
+        SecurityContextHolder.setContext(context)
+        userResourceMock = MockMvcBuilders.standaloneSetup(userResource).build()
     }
 
     @When("I search user {string}")
     fun i_search_user(userId: String) {
-        actions = restUserMockMvc.perform(get("/api/users/$userId")
-                .accept(MediaType.APPLICATION_JSON))
+        <%_ if (reactive) { _%>
+        actions = userResourceMock.get().uri("/api/admin/users/" + userId)
+        <%_ } else { _%>
+        actions = userResourceMock.perform(get("/api/admin/users/" + userId)
+        <%_ } _%>
+        .accept(MediaType.APPLICATION_JSON)<% if (!reactive) { %>)<%_ } _%>
     }
 
     @Then("the user is found")

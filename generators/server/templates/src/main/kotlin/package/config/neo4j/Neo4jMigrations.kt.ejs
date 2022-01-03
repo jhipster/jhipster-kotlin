@@ -20,6 +20,7 @@ package <%= packageName %>.config.neo4j
 
 import ac.simons.neo4j.migrations.core.JavaBasedMigration
 import ac.simons.neo4j.migrations.core.MigrationContext
+import ac.simons.neo4j.migrations.core.MigrationsException
 
 import java.io.IOExceptiom
 import java.util.List
@@ -45,12 +46,16 @@ class Neo4jMigrations {
      */
     class V0001__CreateUsers: JavaBasedMigration {
 
-        @Throws(IOException::class)
         override fun apply(context: MigrationContext) {
 
             val om = ObjectMapper()
             val resourcePatternResolver = PathMatchingResourcePatternResolver()
-            val resources = resourcePatternResolver.getResources("classpath:config/neo4j/migrations/user__*.json")
+            var resources = arrayOf<Resource>()
+            try {
+                resources = resourcePatternResolver.getResources("classpath:config/neo4j/migrations/user__*.json");
+            } catch (e: IOException) {
+                throw MigrationsException("Could not load user definition resources.", e);
+            }
 
             val type = om.getTypeFactory().
                 constructMapType(Map::class, String::class, Object::class)
@@ -67,15 +72,18 @@ class Neo4jMigrations {
             )
 
              try (val session = context.getSession()) {
+                try {
+                    for (val resource : resources) {
+                        val user = om.readValue(resource.getInputStream(), type)
+                        user["user_id", UUID.randomUUID().toString()]
+                        val authorities = user.remove("authorities") as (List<String>)
+                        user.remove("_class")
 
-                 for (val resource : resources) {
-                    val user = om.readValue(resource.getInputStream(), type)
-                    user["user_id", UUID.randomUUID().toString()]
-                    val authorities = user.remove("authorities") as (List<String>)
-                    user.remove("_class")
-
-                    session.writeTransaction(
-                        t -> t.run(query, Values.parameters("user", user, "authorities", authorities)).consume())
+                        session.writeTransaction(
+                            t -> t.run(query, Values.parameters("user", user, "authorities", authorities)).consume())
+                    }
+                } catch (e: IOException) {
+                    throw MigrationsException("Could not load resource " + resource.getDescription() + ".", e);
                 }
             }
         }

@@ -27,12 +27,14 @@ import org.springframework.web.server.ServerWebExchange
 import reactor.core.publisher.Flux
 import reactor.core.publisher.Mono
 
+private const OPEN_API_PATH = "/v3/api-docs"
+
 @Component
 class ModifyServersOpenApiFilter: GlobalFilter, Ordered {
 
     override fun filter(exchange: ServerWebExchange, chain: GatewayFilterChain): Mono<Void> {
         val path = exchange.request.uri.path
-        return if (path.startsWith("/services") && path.contains("/v3/api-docs")) {
+        return if (path.startsWith("/services") && path.contains(OPEN_API_PATH)) {
             val originalResponse = exchange.response
             val bufferFactory = originalResponse.bufferFactory()
             val decoratedResponse = createModifyServersOpenApiInterceptor(path, originalResponse, bufferFactory)
@@ -92,7 +94,7 @@ class ModifyServersOpenApiFilter: GlobalFilter, Ordered {
                 val mapper = ObjectMapper()
                 val jsonBody: JsonNode = mapper.readTree(strBody)
                 val serversToJson = mapper.createObjectNode()
-                serversToJson.set<JsonNode>("url", mapper.valueToTree(path.replace("/v3/api-docs", "")))
+                serversToJson.set<JsonNode>("url", mapper.valueToTree(path.replace(OPEN_API_PATH, "")))
                 serversToJson.set<JsonNode>("description", mapper.valueToTree("added by global filter"))
 
                 // add custom server

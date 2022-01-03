@@ -1,0 +1,20 @@
+package <%= entityAbsolutePackage %>.repository.search
+
+import org.elasticsearch.search.sort.FieldSortBuilder
+import org.elasticsearch.search.sort.SortOrder
+import org.springframework.core.convert.converter.Converter
+import org.springframework.data.domain.Sort
+
+
+class SortToFieldSortBuilderConverter: Converter<Sort, List<FieldSortBuilder>> {
+
+    override fun convert(sort: Sort): List<FieldSortBuilder> {
+        var builders = listOf<FieldSortBuilder>()
+        sort.forEach {
+            val property = order.property + ".keyword"
+            val sortOrder = SortOrder.fromString(order.direction.name())
+            builders.add(FieldSortBuilder(property).order(sortOrder))
+        }
+        return builders
+    }
+}

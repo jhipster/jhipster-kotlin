@@ -49,11 +49,8 @@ package <%= entityAbsolutePackage %>.domain
 <%_ if (relationshipsContainOtherSideIgnore) { _%>
 import com.fasterxml.jackson.annotation.JsonIgnoreProperties
 <%_ } _%>
-<%_ if (!dtoMapstruct && typeof javadoc != 'undefined') { _%>
-import io.swagger.annotations.ApiModel
-<%_ } _%>
-<%_ if (!dtoMapstruct && importApiModelProperty) { _%>
-import io.swagger.annotations.ApiModelProperty
+<%_ if (!dtoMapstruct && (typeof javadoc !== 'undefined' || importApiModelProperty)) { _%>
+import io.swagger.v3.oas.annotations.media.Schema
 <%_ } _%>
 
 import java.io.Serializable
@@ -87,7 +84,7 @@ import <%= otherEntity.entityAbsoluteClass %>
 <%_ } else { _%>
 <%- formatAsClassJavadoc(javadoc) %>
     <%_ if (!dtoMapstruct) { _%>
-@ApiModel(description = "<%- formatAsApiDescription(javadoc) %>")
+@Schema(description = "<%- formatAsApiDescription(javadoc) %>")
     <%_ } _%>
 <%_ } _%>
 <&- fragments.annotationSection() -&>
@@ -104,7 +101,7 @@ data class <%= persistClass %>(
     <%- formatAsFieldJavadoc(field.javadoc) %>
         <%_ } _%>
         <%_ if (!dtoMapstruct && typeof field.javadoc !== 'undefined') { _%>
-        @ApiModelProperty(value = "<%- formatAsApiDescription(field.javadoc) %>"<% if (field.fieldValidationRequired) { %>, required = true<% } %>)
+        @Schema(description = "<%- formatAsApiDescription(field.javadoc) %>"<% if (field.fieldValidationRequired) { %>, required = true<% } %>)
         <%_ } _%>
     <&- fragments.field<%- field.fieldNameCapitalized %>AnnotationSection() -&>
         var <%= field.fieldName %>: <% if(field.fieldTypeBlobContent === 'text') { _%>String<% } else if(field.fieldType === 'byte[]' && field.fieldTypeBlobContent !== 'text') { _%>ByteArray<%_ } else if(field.fieldType==='Integer'){ _%>Int<%_ } else { _%><%= field.fieldType %><% } %>? = null,
@@ -120,7 +117,7 @@ data class <%= persistClass %>(
         if (typeof relationship.javadoc !== 'undefined') { _%>
     <%- formatAsFieldJavadoc(relationship.javadoc) %>
         <%_ if (!dtoMapstruct) { _%>
-        @ApiModelProperty(value = "<%- formatAsApiDescription(relationship.javadoc) %>")
+        @Schema(description = "<%- formatAsApiDescription(relationship.javadoc) %>")
         <%_ } _%>
     <%_ } _%>
     <&- fragments.relationship<%- relationship.relationshipNameCapitalized %>AnnotationSection() -&>

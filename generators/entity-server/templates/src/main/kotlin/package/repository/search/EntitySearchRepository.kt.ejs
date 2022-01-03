@@ -26,6 +26,9 @@ import org.springframework.data.domain.Page
 import org.springframework.data.domain.PageImpl
      <%_ } _%>
 import org.springframework.data.domain.Pageable
+import org.springframework.data.elasticsearch.core.query.NativeSearchQueryBuilder
+import org.elasticsearch.search.sort.FieldSortBuilder
+import org.springframework.data.domain.PageRequest
 <%_ } _%>
 <%_ if (reactive) { _%>
 import org.springframework.data.elasticsearch.core.ReactiveElasticsearchTemplate
@@ -61,9 +64,19 @@ class <%= entityClass %>SearchRepositoryInternalImpl(private val reactiveElastic
 
 
      override fun search(query: String<% if (!paginationNo) { %>, pageable: Pageable<% } %>): Flux<<%= entityClass %>> {
-        val nativeSearchQuery = NativeSearchQuery(queryStringQuery(query))
         <%_ if (!paginationNo) { _%>
-        nativeSearchQuery.setPageable<NativeSearchQuery>(pageable)
+        val builders = SortToFieldSortBuilderConverter().convert(pageable.sort)
+
+        val queryBuilder = NativeSearchQueryBuilder().withQuery(queryStringQuery(query))
+            .withPageable(PageRequest.of(pageable.pageNumber, pageable.pageSize))
+
+        builders.forEach {
+            queryBuilder.withSort(it)
+        }
+
+        val nativeSearchQuery = queryBuilder.build()
+        <%_ } else { _%>
+        val nativeSearchQuery = NativeSearchQuery(queryStringQuery(query))
         <%_ } _%>
         return reactiveElasticsearchTemplate
           .search(nativeSearchQuery, <%= entityClass %>::class.java)
