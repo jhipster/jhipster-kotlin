@@ -1589,7 +1589,7 @@ const serverFiles = {
         },
         {
             condition: generator => !generator.skipUserManagement && generator.cucumberTests,
-            path: SERVER_TEST_SRC_DIR,
+            path: SERVER_TEST_RES_DIR,
             templates: [
                 {
                     file: 'package/features/user/user.feature',
