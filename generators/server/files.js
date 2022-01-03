@@ -1196,7 +1196,7 @@ const serverFiles = {
                     renameTo: generator => `${generator.testDir}cucumber/CucumberTestContextConfiguration.kt`,
                     useBluePrint: true,
                 },
-                { file: '../features/gitkeep', noEjs: true },
+                { file: 'package/features/gitkeep', noEjs: true },
             ],
         },
         {

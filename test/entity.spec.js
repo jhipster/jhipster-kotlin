@@ -1005,7 +1005,7 @@ describe('JHipster generator for entity', () => {
             describe('entity not enabled for search', () => {
                 before(async () => {
                     await helpers
-                        .run(require.resolve('../generators/entity'))
+                        .run(require.resolve('generator-jhipster/generators/entity'))
                         .doInDir(dir => {
                             fse.copySync(path.join(__dirname, '../test/templates/elasticsearch-microservice'), dir);
                             fse.copySync(path.join(__dirname, 'templates/.jhipster/Simple.json'), path.join(dir, '.jhipster/Foo.json'));
@@ -1025,7 +1025,7 @@ describe('JHipster generator for entity', () => {
             describe('entity enabled for search', () => {
                 before(async () => {
                     await helpers
-                        .run(require.resolve('../generators/entity'))
+                        .run(require.resolve('generator-jhipster/generators/entity'))
                         .doInDir(dir => {
                             fse.copySync(path.join(__dirname, '../test/templates/elasticsearch-microservice'), dir);
                             fse.copySync(
