@@ -18,7 +18,7 @@
  */
 const path = require('path');
 // const fs = require('fs');
-const cleanup = require('generator-jhipster/generators/cleanup');
+const serverCleanup = require('generator-jhipster/generators/cleanup');
 const constants = require('generator-jhipster/generators/generator-constants');
 const baseServerFiles = require('generator-jhipster/generators/server/files').serverFiles;
 const cheerio = require('cheerio');
@@ -468,11 +468,6 @@ const serverFiles = {
             path: SERVER_MAIN_KOTLIN_SRC_DIR,
             templates: [
                 {
-                    file: 'package/config/apidocs/GatewaySwaggerResourcesProvider.kt',
-                    renameTo: generator => `${generator.javaDir}config/apidocs/GatewaySwaggerResourcesProvider.kt`,
-                    useBluePrint: true,
-                },
-                {
                     file: 'package/web/filter/ModifyServersOpenApiFilter.kt',
                     renameTo: generator => `${generator.javaDir}web/filter/ModifyServersOpenApiFilter.kt`,
                     useBluePrint: true,
@@ -486,11 +481,6 @@ const serverFiles = {
                 {
                     file: 'package/web/filter/ModifyServersOpenApiFilterTest.kt',
                     renameTo: generator => `${generator.testDir}web/filter/ModifyServersOpenApiFilterTest.kt`,
-                    useBluePrint: true,
-                },
-                {
-                    file: 'package/config/apidocs/GatewaySwaggerResourcesProviderTest.kt',
-                    renameTo: generator => `${generator.testDir}config/apidocs/GatewaySwaggerResourcesProviderTest.kt`,
                     useBluePrint: true,
                 },
             ],
@@ -1206,13 +1196,15 @@ const serverFiles = {
                     renameTo: generator => `${generator.testDir}cucumber/CucumberTestContextConfiguration.kt`,
                     useBluePrint: true,
                 },
-                { file: '../features/gitkeep', noEjs: true },
             ],
         },
         {
             condition: generator => generator.cucumberTests,
             path: SERVER_TEST_RES_DIR,
-            templates: ['cucumber.properties'],
+            templates: [
+                'junit-platform.properties',
+                { file: 'package/features/gitkeep', renameTo: generator => `${generator.testDir}cucumber/gitkeep`, noEjs: true },
+            ],
         },
         {
             condition: generator => !shouldSkipUserManagement(generator) && generator.authenticationType !== OAUTH2,
@@ -1597,8 +1589,13 @@ const serverFiles = {
         },
         {
             condition: generator => !generator.skipUserManagement && generator.cucumberTests,
-            path: SERVER_TEST_SRC_DIR,
-            templates: ['../features/user/user.feature'],
+            path: SERVER_TEST_RES_DIR,
+            templates: [
+                {
+                    file: 'package/features/user/user.feature',
+                    renameTo: generator => `${generator.testDir}cucumber/user.feature`,
+                },
+            ],
         },
         {
             condition: generator => !generator.skipUserManagement,
@@ -1696,7 +1693,7 @@ function writeFiles() {
         },
 
         cleanupOldServerFiles() {
-            cleanup.cleanupOldServerFiles(
+            serverCleanup.cleanupOldServerFiles(
                 this,
                 `${SERVER_MAIN_SRC_DIR}/${this.javaDir}`,
                 `${SERVER_TEST_SRC_DIR}/${this.testDir}`,
