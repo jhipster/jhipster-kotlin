@@ -1,3 +1,6 @@
+
+Refer [releases](https://github.com/jhipster/jhipster-kotlin/releases).
+
 <a name="1.8.1"></a>
 
 # [1.8.1](https://github.com/jhipster/jhipster-kotlin/compare/1.8.0...1.8.1) (2020-06-21)
