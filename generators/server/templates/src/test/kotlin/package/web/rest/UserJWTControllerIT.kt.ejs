@@ -35,10 +35,10 @@ import <%= packageName %>.repository.UserRepository
 import <%= packageName %>.web.rest.vm.LoginVM
 import org.junit.jupiter.api.Test
 import org.springframework.beans.factory.annotation.Autowired
-<%_ if (!reactive) { _%>
-import org.springframework.boot.test.autoconfigure.web.servlet.AutoConfigureMockMvc
-<%_ } else { _%>
+<%_ if (reactive) { _%>
 import org.springframework.boot.test.autoconfigure.web.reactive.AutoConfigureWebTestClient
+<%_ } else { _%>
+import org.springframework.boot.test.autoconfigure.web.servlet.AutoConfigureMockMvc
 <%_ } _%>
 import org.springframework.http.MediaType
 <%_ if (!skipUserManagement) { _%>
@@ -46,8 +46,7 @@ import org.springframework.security.crypto.password.PasswordEncoder
 <%_ } _%>
 <%_ if (reactive) { _%>
 import org.springframework.test.web.reactive.server.WebTestClient
-<%_ } _%>
-<%_ if (!reactive) { _%>
+<%_ } else { _%>
 import org.springframework.test.web.servlet.MockMvc
     <%_ if (databaseTypeSql) { _%>
 import org.springframework.transaction.annotation.Transactional
@@ -69,10 +68,10 @@ import org.hamcrest.Matchers.*
 /**
  * Integration tests for the [UserJWTController] REST controller.
  */
- <%_ if (!reactive) { _%>
-@AutoConfigureMockMvc
-<%_ } else { _%>
+ <%_ if (reactive) { _%>
 @AutoConfigureWebTestClient
+<%_ } else { _%>
+@AutoConfigureMockMvc
 <%_ } _%>
 @IntegrationTest
 class UserJWTControllerIT <% if (databaseTypeCassandra) { %>: AbstractCassandraTest() <% } %>{
@@ -120,7 +119,16 @@ class UserJWTControllerIT <% if (databaseTypeCassandra) { %>: AbstractCassandraT
     fun testAuthorize() {
         val login = LoginVM(username ="test", password = "test")
 <%_ } _%>
-        <%_ if (!reactive) { _%>
+        <%_ if (reactive) { _%>
+        webTestClient.post().uri("/api/authenticate")
+            .contentType(MediaType.APPLICATION_JSON)
+            .bodyValue(convertObjectToJsonBytes(login))
+            .exchange()
+            .expectStatus().isOk
+            .expectHeader().valueMatches("Authorization", "Bearer .+")
+            .expectBody()
+            .jsonPath("\$.id_token").isNotEmpty
+        <%_ } else { _%>
         mockMvc.perform(
             post("/api/authenticate")
                 .contentType(MediaType.APPLICATION_JSON)
@@ -131,15 +139,6 @@ class UserJWTControllerIT <% if (databaseTypeCassandra) { %>: AbstractCassandraT
             .andExpect(jsonPath("\$.id_token").isNotEmpty)
             .andExpect(header().string("Authorization", not(nullValue())))
             .andExpect(header().string("Authorization", not(`is`(emptyString()))))
-        <%_ } else { _%>
-        webTestClient.post().uri("/api/authenticate")
-            .contentType(MediaType.APPLICATION_JSON)
-            .bodyValue(convertObjectToJsonBytes(login))
-            .exchange()
-            .expectStatus().isOk
-            .expectHeader().valueMatches("Authorization", "Bearer .+")
-            .expectBody()
-            .jsonPath("\$.id_token").isNotEmpty
         <%_ } _%>
     }
 
@@ -179,7 +178,16 @@ class UserJWTControllerIT <% if (databaseTypeCassandra) { %>: AbstractCassandraT
             isRememberMe = true
         )
 <%_ } _%>
-        <%_ if (!reactive) { _%>
+        <%_ if (reactive) { _%>
+        webTestClient.post().uri("/api/authenticate")
+            .contentType(MediaType.APPLICATION_JSON)
+            .bodyValue(convertObjectToJsonBytes(login))
+            .exchange()
+            .expectStatus().isOk
+            .expectHeader().valueMatches("Authorization", "Bearer .+")
+            .expectBody()
+            .jsonPath("\$.id_token").isNotEmpty
+        <%_ } else { _%>
         mockMvc.perform(
             post("/api/authenticate")
                 .contentType(MediaType.APPLICATION_JSON)
@@ -190,15 +198,6 @@ class UserJWTControllerIT <% if (databaseTypeCassandra) { %>: AbstractCassandraT
             .andExpect(jsonPath("\$.id_token").isNotEmpty)
             .andExpect(header().string("Authorization", not(nullValue())))
             .andExpect(header().string("Authorization", not(`is`(emptyString()))))
-        <%_ } else { _%>
-        webTestClient.post().uri("/api/authenticate")
-            .contentType(MediaType.APPLICATION_JSON)
-            .bodyValue(convertObjectToJsonBytes(login))
-            .exchange()
-            .expectStatus().isOk
-            .expectHeader().valueMatches("Authorization", "Bearer .+")
-            .expectBody()
-            .jsonPath("\$.id_token").isNotEmpty
         <%_ } _%>
     }
 
@@ -206,16 +205,7 @@ class UserJWTControllerIT <% if (databaseTypeCassandra) { %>: AbstractCassandraT
     @Throws(Exception::class)
     fun testAuthorizeFails() {
         val login = LoginVM(username = "wrong-user", password = "wrong password")
-        <%_ if (!reactive) { _%>
-        mockMvc.perform(
-            post("/api/authenticate")
-                .contentType(MediaType.APPLICATION_JSON)
-                .content(convertObjectToJsonBytes(login))
-        )
-            .andExpect(status().isUnauthorized)
-            .andExpect(jsonPath("\$.id_token").doesNotExist())
-            .andExpect(header().doesNotExist("Authorization"))
-        <%_ } else { _%>
+        <%_ if (reactive) { _%>
         webTestClient.post().uri("/api/authenticate")
             .contentType(MediaType.APPLICATION_JSON)
             .bodyValue(convertObjectToJsonBytes(login))
@@ -224,6 +214,15 @@ class UserJWTControllerIT <% if (databaseTypeCassandra) { %>: AbstractCassandraT
             .expectHeader().doesNotExist("Authorization")
             .expectBody()
             .jsonPath("\$.id_token").doesNotExist()
+        <%_ } else { _%>
+        mockMvc.perform(
+            post("/api/authenticate")
+                .contentType(MediaType.APPLICATION_JSON)
+                .content(convertObjectToJsonBytes(login))
+        )
+            .andExpect(status().isUnauthorized)
+            .andExpect(jsonPath("\$.id_token").doesNotExist())
+            .andExpect(header().doesNotExist("Authorization"))
         <%_ } _%>
     }
 }

@@ -112,7 +112,7 @@ class <%= serviceClassName %>(
         * @return the persisted entity.
         */
     <%_ } _%>
-    <% if (serviceImpl) { %>override <% } %>fun partialUpdate(<%= instanceName %>: <%= instanceType %>): <% if (!reactive) { %>Optional<<% } %><% if (reactive) { %>Mono<<% } %><%= instanceType %>> {
+    <% if (serviceImpl) { %>override <% } %>fun partialUpdate(<%= instanceName %>: <%= instanceType %>): <% if (reactive) { %>Mono<<% } else { %>Optional<<% } %><%= instanceType %>> {
         log.debug("Request to partially update <%= entityClass %> : {}", <%= instanceName %>)
 <%- include('../../common/patch_template', {asEntity, asDto, isService: true, viaService: false}); -%>
     }
@@ -128,7 +128,7 @@ class <%= serviceClassName %>(
     <%_ if (databaseTypeSql) { _%>
     @Transactional(readOnly = true)
     <%_ } _%>
-    <% if (serviceImpl) { %>override <% } %>fun findAll(<% if (!paginationNo) { %>pageable: Pageable<% } %>): <% if (!paginationNo) { %><%= pageOrFlux %><<%= instanceType %><% } else { %><%= listOrFlux %><<%= instanceType %><% } %>> {
+    <% if (serviceImpl) { %>override <% } %>fun findAll(<% if (!paginationNo) { %>pageable: Pageable<% } %>): <% if (paginationNo) { %><%= listOrFlux %><<%= instanceType %><% } else { %><%= pageOrFlux %><<%= instanceType %><% } %>> {
         log.debug("Request to get all <%= entityClassPlural %>")
         <%_ if (paginationNo) { _%>
         return <%= entityInstance %>Repository.<% if (relationshipsContainEagerLoad) { %>findAllWithEagerRelationships<% } else { %>findAll<% } %>()<% if (dtoMapstruct) { %><% if (reactive !== true) { %>

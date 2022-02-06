@@ -68,10 +68,7 @@ import org.springframework.data.domain.Page
 import org.springframework.data.domain.Pageable
 <%_ } _%>
 <%_ if (databaseTypeSql) { _%>
-    <%_ if (!reactive) { _%>
-import org.springframework.data.jpa.repository.EntityGraph
-import org.springframework.data.jpa.repository.JpaRepository
-    <%_ } else { _%>
+    <%_ if (reactive) { _%>
 import org.springframework.data.domain.Sort
 import org.springframework.r2dbc.core.DatabaseClient
 import org.springframework.data.r2dbc.convert.R2dbcConverter
@@ -84,6 +81,9 @@ import org.springframework.data.relational.core.sql.Table
 
 import org.springframework.data.relational.core.query.Criteria.where
 import org.springframework.data.relational.core.query.Query.query
+    <%_ } else { _%>
+import org.springframework.data.jpa.repository.EntityGraph
+import org.springframework.data.jpa.repository.JpaRepository
         <%_ } _%>
 <%_ } _%>
 <%_ if (databaseTypeMongodb) { _%>
@@ -446,18 +446,15 @@ class UserRepository(
     private val cqlTemplate: ReactiveCassandraTemplate,
     <%_ } _%>
     private val session: <% if (reactive) { %>Reactive<% } else { %>Cql<% } %>Session,
-    <%_ if (!reactive) { _%>
-    private val validator: Validator<%_ } _%><%_ if (!reactive) { _%>,
+    private val validator: Validator<%_ if (!reactive) { _%>,
     private val cassandraProperties: CassandraProperties<% } %>
 ) {
 
-    <%_ if(!reactive) { _%>
-
+    <%_ if(reactive) { _%>
+    private val findAllStmt = session.prepare("SELECT * FROM user")<% if(reactive) { %>.block()<% } %>    
+    <%_ } else { _%>
     private val userTokenMapper = UserTokenMapperBuilder(session).build()
     private val userDao = userTokenMapper.userTokenDao(CqlIdentifier.fromCql(cassandraProperties.keyspaceName))
-    <%_ } else { _%>
-
-    private val findAllStmt = session.prepare("SELECT * FROM user")<% if(reactive) { %>.block()<% } %>
     <%_ } _%>
     private val findOneByActivationKeyStmt = session.prepare(
         "SELECT id " +
@@ -539,9 +536,7 @@ class UserRepository(
     private val truncateByEmailStmt = session.prepare("TRUNCATE user_by_email")<% if(reactive) { %>.block()<% } %>
 
     fun findById(id: String): <%= optionalOrMono %><<%= asEntity('User') %>> {
-        <%_ if(!reactive) { _%>
-        return userDao.get(id)
-        <%_ } else { _%>
+        <%_ if(reactive) { _%>
         return cqlTemplate.selectOneById(id, <%= asEntity('User') %>::class.java)
             .map { user ->
                 if(user.authorities == null) {
@@ -549,6 +544,8 @@ class UserRepository(
                 }
                 user
             }
+        <%_ } else { _%>
+        return userDao.get(id)
         <%_ } _%>
     }
 
@@ -579,9 +576,7 @@ class UserRepository(
     }
 
     fun findAll(): <%= listOrFlux %><<%= asEntity('User') %>> {
-    <%_ if(!reactive) { _%>
-        return userDao.findAll().all()
-    <%_ } else { _%>
+    <%_ if(reactive) { _%>
         return cqlTemplate.select(findAllStmt.bind(), <%= asEntity('User') %>::class.java)
             .map { user ->
                 if(user.authorities == null) {
@@ -589,6 +584,8 @@ class UserRepository(
                 }
                 user
             }
+    <%_ } else { _%>
+        return userDao.findAll().all()
     <%_ } _%>
     }
 
@@ -597,47 +594,7 @@ class UserRepository(
         if (violations != null && violations.isNotEmpty()) {
             throw ConstraintViolationException(violations)
         }
-        <%_ if(!reactive) { _%>
-        val oldUser = user.id?.let { userDao.get(it) }?.orElse(null)
-        if (oldUser != null) {
-            if (!StringUtils.isEmpty(oldUser.activationKey) && oldUser.activationKey != user.activationKey) {
-                session.execute(deleteByActivationKeyStmt.bind().setString("activation_key", oldUser.activationKey))
-            }
-            if (!StringUtils.isEmpty(oldUser.resetKey) && oldUser.resetKey != user.resetKey) {
-                session.execute(deleteByResetKeyStmt.bind().setString("reset_key", oldUser.resetKey))
-            }
-            if (!StringUtils.isEmpty(oldUser.login) && oldUser.login != user.login) {
-                session.execute(deleteByLoginStmt.bind().setString("login", oldUser.login))
-            }
-            if (!StringUtils.isEmpty(oldUser.email) && !oldUser.email.equals(user.email, ignoreCase = true)) {
-                session.execute(deleteByEmailStmt.bind().setString("email", oldUser.email!!.toLowerCase()))
-            }
-        }
-        val batch = BatchStatement.builder(DefaultBatchType.LOGGED)
-        batch.addStatement(userDao.saveQuery(user))
-        if (!StringUtils.isEmpty(user.activationKey)) {
-            batch.addStatement(insertByActivationKeyStmt.bind()
-                    .setString("activation_key", user.activationKey)
-                    .setString("id", user.id)
-            )
-        }
-        if (!StringUtils.isEmpty(user.resetKey)) {
-            batch.addStatement(insertByResetKeyStmt.bind()
-                    .setString("reset_key", user.resetKey)
-                    .setString("id", user.id)
-            )
-        }
-        batch.addStatement(insertByLoginStmt.bind()
-                .setString("login", user.login)
-                .setString("id", user.id)
-        )
-        batch.addStatement(insertByEmailStmt.bind()
-                .setString("email", user.email!!.toLowerCase())
-                .setString("id", user.id)
-        )
-        session.execute(batch.build())
-        return user
-        <%_ } else { /* reactive */ _%>
+        <%_ if(reactive) { _%>
         return this.findById(user.id!!)
             .flatMapMany  {oldUser ->
                 val deleteOps: Flux<ReactiveResultSet> = Flux.empty()
@@ -678,7 +635,7 @@ class UserRepository(
             })
             .thenReturn(user)
     }
-
+    
     private fun getInsertStatement(user: <%= asEntity('User') %>): SimpleStatement {
         val converter = cqlTemplate.getConverter()
         val persistentEntity = converter.getMappingContext().getRequiredPersistentEntity(user::class.java)
@@ -688,12 +645,52 @@ class UserRepository(
             .value("id", QueryBuilder.literal(user.getId()))
         toInsert.forEach { (key, value) -> insert.value(key, QueryBuilder.literal(value)) }
         return insert.build()
+        <%_ } else { /* reactive */ _%>
+        val oldUser = user.id?.let { userDao.get(it) }?.orElse(null)
+        if (oldUser != null) {
+            if (!StringUtils.isEmpty(oldUser.activationKey) && oldUser.activationKey != user.activationKey) {
+                session.execute(deleteByActivationKeyStmt.bind().setString("activation_key", oldUser.activationKey))
+            }
+            if (!StringUtils.isEmpty(oldUser.resetKey) && oldUser.resetKey != user.resetKey) {
+                session.execute(deleteByResetKeyStmt.bind().setString("reset_key", oldUser.resetKey))
+            }
+            if (!StringUtils.isEmpty(oldUser.login) && oldUser.login != user.login) {
+                session.execute(deleteByLoginStmt.bind().setString("login", oldUser.login))
+            }
+            if (!StringUtils.isEmpty(oldUser.email) && !oldUser.email.equals(user.email, ignoreCase = true)) {
+                session.execute(deleteByEmailStmt.bind().setString("email", oldUser.email!!.toLowerCase()))
+            }
+        }
+        val batch = BatchStatement.builder(DefaultBatchType.LOGGED)
+        batch.addStatement(userDao.saveQuery(user))
+        if (!StringUtils.isEmpty(user.activationKey)) {
+            batch.addStatement(insertByActivationKeyStmt.bind()
+                    .setString("activation_key", user.activationKey)
+                    .setString("id", user.id)
+            )
+        }
+        if (!StringUtils.isEmpty(user.resetKey)) {
+            batch.addStatement(insertByResetKeyStmt.bind()
+                    .setString("reset_key", user.resetKey)
+                    .setString("id", user.id)
+            )
+        }
+        batch.addStatement(insertByLoginStmt.bind()
+                .setString("login", user.login)
+                .setString("id", user.id)
+        )
+        batch.addStatement(insertByEmailStmt.bind()
+                .setString("email", user.email!!.toLowerCase())
+                .setString("id", user.id)
+        )
+        session.execute(batch.build())
+        return user
         <%_ } _%>
     }
 
     fun delete(user: <%= asEntity('User') %>)<% if(reactive) { %>: Mono<Void><% } %> {
         val batch = BatchStatement.builder(DefaultBatchType.LOGGED)
-        batch.addStatement(<% if(!reactive) { %>userDao.deleteQuery(user)<% } else { %>deleteByIdStmt.bind().setString("id", user.id)<% } %>)
+        batch.addStatement(<% if(reactive) { %>deleteByIdStmt.bind().setString("id", user.id)<% } else { %>userDao.deleteQuery(user)<% } %>)
         if (!StringUtils.isEmpty(user.activationKey)) {
             batch.addStatement(deleteByActivationKeyStmt.bind().setString("activation_key", user.activationKey))
         }
@@ -702,14 +699,27 @@ class UserRepository(
         }
         batch.addStatement(deleteByLoginStmt.bind().setString("login", user.login))
         batch.addStatement(deleteByEmailStmt.bind().setString("email", user.email!!.toLowerCase()))
-        <%_ if(!reactive) { _%>
-        session.execute(batch.build())
-        <%_ } else { _%>
+        <%_ if(reactive) { _%>
         return session.execute(batch.build()).then()
+        <%_ } else { _%>
+        session.execute(batch.build())
         <%_ } _%>
     }
 
-    <%_ if(!reactive) { _%>
+    <%_ if(reactive) { _%>
+    private fun findOneFromIndex(stmt: BoundStatement): Mono<<%= asEntity('User') %>> {
+        return session.execute(stmt).flatMap { rs -> rs.rows().next() }
+            .map { row -> row.getString("id") }
+            .flatMap(this::findById)
+    }
+
+    public fun deleteAll(): Mono<Void> {
+        return Flux.just(truncateStmt, truncateByEmailStmt, truncateByLoginStmt, truncateByResetKeyStmt)
+            .map(PreparedStatement::bind)
+            .flatMap(session::execute)
+            .then()
+    }
+    <%_ } else { _%>
     private fun findOneFromIndex(stmt: BoundStatement): Optional<<%= asEntity('User') %>> {
         val rs = session.execute(stmt)
         return Optional.ofNullable(rs.one())
@@ -729,19 +739,6 @@ class UserRepository(
 
         val truncateByResetKey = truncateByResetKeyStmt.bind()
         session.execute(truncateByResetKey)
-    }
-    <%_ } else { _%>
-    private fun findOneFromIndex(stmt: BoundStatement): Mono<<%= asEntity('User') %>> {
-        return session.execute(stmt).flatMap { rs -> rs.rows().next() }
-            .map { row -> row.getString("id") }
-            .flatMap(this::findById)
-    }
-
-    public fun deleteAll(): Mono<Void> {
-        return Flux.just(truncateStmt, truncateByEmailStmt, truncateByLoginStmt, truncateByResetKeyStmt)
-            .map(PreparedStatement::bind)
-            .flatMap(session::execute)
-            .then()
     }
     <%_ } _%>
 

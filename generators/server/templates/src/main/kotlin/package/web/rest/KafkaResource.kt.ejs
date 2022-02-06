@@ -67,30 +67,27 @@ class <%= upperFirstCamelCase(baseName) %>KafkaResource(
 ) {
 
     private val log = LoggerFactory.getLogger(javaClass)
-    <%_ if (!reactive) { _%>
+    <%_ if (reactive) { _%>
+    private lateinit var sender: KafkaSender<String, String>
+    <%_ } else { _%>
     private lateinit var producer: KafkaProducer<String, String>
     private lateinit var sseExecutorService: ExecutorService
-    <%_ } else { _%>
-    private lateinit var sender: KafkaSender<String, String>
     <%_ }  _%>
 
     init {
-        <%_ if (!reactive) { _%>
+        <%_ if (reactive) { _%>
+        sender = KafkaSender.create(SenderOptions.create(kafkaProperties.getProducerProps()))
+        <%_ } else { _%>
         producer = KafkaProducer<String, String>(kafkaProperties.getProducerProps())
         sseExecutorService = Executors.newCachedThreadPool()
-        <%_ } else { _%>
-        sender = KafkaSender.create(SenderOptions.create(kafkaProperties.getProducerProps()))
         <%_ }  _%>
     }
 
     @PostMapping("/publish/{topic}")
     @Throws(*[ExecutionException::class, InterruptedException::class])
-    fun publish(@PathVariable topic: String, @RequestParam message: String, @RequestParam(required = false) key: String?): <% if (!reactive) { %>PublishResult<% } else { %>Mono<PublishResult><% }  %> {
+    fun publish(@PathVariable topic: String, @RequestParam message: String, @RequestParam(required = false) key: String?): <% if (reactive) { %>Mono<PublishResult><% } else { %>PublishResult<% }  %> {
         log.debug("REST request to send to Kafka topic $topic with key $key the message : $message")
-        <%_ if (!reactive) { _%>
-        val metadata = producer.send(ProducerRecord(topic, key, message)).get()
-        return PublishResult(metadata.topic(), metadata.partition(), metadata.offset(), Instant.ofEpochMilli(metadata.timestamp()))
-        <%_ } else { _%>
+        <%_ if (reactive) { _%>
         return Mono.just(SenderRecord.create(topic, null, null, key, message, null))
             .as(sender::send)
             .next()
@@ -98,6 +95,10 @@ class <%= upperFirstCamelCase(baseName) %>KafkaResource(
             .map { metadata ->
                 PublishResult(metadata.topic(), metadata.partition(), metadata.offset(), Instant.ofEpochMilli(metadata.timestamp()))
             }
+
+        <%_ } else { _%>
+        val metadata = producer.send(ProducerRecord(topic, key, message)).get()
+        return PublishResult(metadata.topic(), metadata.partition(), metadata.offset(), Instant.ofEpochMilli(metadata.timestamp()))
         <%_ }  _%>
     }
 
@@ -108,7 +109,12 @@ class <%= upperFirstCamelCase(baseName) %>KafkaResource(
         consumerProps.putAll(consumerParams)
         consumerProps.remove("topic")
 
-        <%_ if (!reactive) { _%>
+        <%_ if (reactive) { _%>
+        return emitterval receiverOptions = ReceiverOptions.<String, String>create(consumerProps).subscription(topics)
+            return KafkaReceiver.create(receiverOptions)
+                    .receive()
+                    .map(ConsumerRecord::value)
+        <%_ } else { _%>
         val emitter = SseEmitter(0L)
         sseExecutorService.execute {
             val consumer = KafkaConsumer<String, String>(consumerProps)
@@ -130,12 +136,6 @@ class <%= upperFirstCamelCase(baseName) %>KafkaResource(
             consumer.close()
             emitter.complete()
         }
-        return emitter
-        <%_ } else { _%>
-        val receiverOptions = ReceiverOptions.<String, String>create(consumerProps).subscription(topics)
-        return KafkaReceiver.create(receiverOptions)
-                .receive()
-                .map(ConsumerRecord::value)
         <%_ }  _%>
     }
 

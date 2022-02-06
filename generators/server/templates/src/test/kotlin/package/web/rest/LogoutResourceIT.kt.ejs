@@ -22,11 +22,11 @@ package <%= packageName %>.web.rest
 import <%= packageName %>.test.util.ID_TOKEN
 import <%= packageName %>.test.util.authenticationToken
 import <%= packageName %>.test.util.registerAuthenticationToken
-<%_ if (!reactive) { _%>
+<%_ if (reactive) { _%>
+import org.springframework.security.test.web.reactive.server.SecurityMockServerConfigurers.*
+<%_ } else { _%>
 import org.springframework.test.web.servlet.request.MockMvcRequestBuilders.post
 import org.springframework.test.web.servlet.result.MockMvcResultMatchers.*
-<%_ } else { _%>
-import org.springframework.security.test.web.reactive.server.SecurityMockServerConfigurers.*
 <%_ } _%>
 
 import <%= packageName %>.IntegrationTest
@@ -40,15 +40,15 @@ import org.springframework.security.oauth2.client.<% if (reactive) { %>Reactive<
 import org.springframework.security.oauth2.client.registration.ClientRegistration
 import org.springframework.security.oauth2.client.registration.<% if (reactive) { %>Reactive<% } %>ClientRegistrationRepository
 import org.springframework.security.oauth2.core.oidc.OidcIdToken
-<%_ if (!reactive) { _%>
+<%_ if (reactive) { _%>
+import org.springframework.context.ApplicationContext
+import org.springframework.test.web.reactive.server.WebTestClient
+<%_ } else { _%>
 import org.springframework.security.core.context.SecurityContextHolder
 import org.springframework.security.web.servletapi.SecurityContextHolderAwareRequestFilter
 import org.springframework.test.web.servlet.MockMvc
 import org.springframework.test.web.servlet.setup.MockMvcBuilders
 import org.springframework.web.context.WebApplicationContext
-<%_ } else { _%>
-import org.springframework.context.ApplicationContext
-import org.springframework.test.web.reactive.server.WebTestClient
 <%_ } _%>
 
 /**
@@ -69,10 +69,10 @@ class LogoutResourceIT {
     @Autowired
     private lateinit var clientRegistration: ClientRegistration
 
-    <%_ if (!reactive) { _%>
-    private lateinit var restLogoutMockMvc: MockMvc
-    <%_ } else { _%>
+    <%_ if (reactive) { _%>
     private lateinit var webTestClient: WebTestClient
+    <%_ } else { _%>
+    private lateinit var restLogoutMockMvc: MockMvc
     <%_ } _%>
 
     private lateinit var claims: Map<String, Any>
@@ -84,17 +84,17 @@ class LogoutResourceIT {
             "groups" to listOf(USER),
             "sub" to 123
         )
-        <%_ if (!reactive) { _%>
+        <%_ if (reactive) { _%>
+        val springSecurity = springSecurity()
+        val webTestClient: WebTestClient.MockServerSpec<*> = WebTestClient
+            .bindToApplicationContext(context!!)
+            .apply(springSecurity!!)
+        <%_ } else { _%>
         SecurityContextHolder.getContext().authentication = registerAuthenticationToken(authorizedClientService, clientRegistration, authenticationToken(claims.toMutableMap()))
         val authInjector = SecurityContextHolderAwareRequestFilter()
         authInjector.afterPropertiesSet()
 
         restLogoutMockMvc = MockMvcBuilders.webAppContextSetup(this.context).build()
-        <%_ } else { _%>
-        val springSecurity = springSecurity()
-        val webTestClient: WebTestClient.MockServerSpec<*> = WebTestClient
-            .bindToApplicationContext(context!!)
-            .apply(springSecurity!!)
         <%_ } _%>
     }
 
@@ -104,15 +104,7 @@ class LogoutResourceIT {
     <% if (!reactive) { %>@Throws(Exception::class)<% } %>
     fun getLogoutInformation() {
     val ORIGIN_URL = "http://localhost:8080"
-    <%_ if (!reactive) { _%>
-        var logoutUrl = this.registrations.findByRegistrationId("oidc").providerDetails
-            .configurationMetadata["end_session_endpoint"].toString()
-        logoutUrl = "$logoutUrl?id_token_hint=$ID_TOKEN&post_logout_redirect_uri=$ORIGIN_URL"
-        restLogoutMockMvc.perform(post("http://localhost:8080/api/logout").header(HttpHeaders.ORIGIN, ORIGIN_URL))
-            .andExpect(status().isOk)
-            .andExpect(content().contentType(MediaType.APPLICATION_JSON_VALUE))
-            .andExpect(jsonPath("\$.logoutUrl").value(logoutUrl))
-    <%_ } else { _%>
+    <%_ if (reactive) { _%>
         var logoutUrl = this.registrations.findByRegistrationId("oidc")
             .map { it.providerDetails.configurationMetadata["end_session_endpoint"].toString() }
             .block()
@@ -124,6 +116,14 @@ class LogoutResourceIT {
             .expectHeader().contentType(MediaType.APPLICATION_JSON_VALUE)
             .expectBody()
             .jsonPath("$.logoutUrl").isEqualTo(logoutUrl)
+    <%_ } else { _%>
+        var logoutUrl = this.registrations.findByRegistrationId("oidc").providerDetails
+            .configurationMetadata["end_session_endpoint"].toString()
+        logoutUrl = "$logoutUrl?id_token_hint=$ID_TOKEN&post_logout_redirect_uri=$ORIGIN_URL"
+        restLogoutMockMvc.perform(post("http://localhost:8080/api/logout").header(HttpHeaders.ORIGIN, ORIGIN_URL))
+            .andExpect(status().isOk)
+            .andExpect(content().contentType(MediaType.APPLICATION_JSON_VALUE))
+            .andExpect(jsonPath("\$.logoutUrl").value(logoutUrl))
     <%_ } _%>
     }
 <%_ } _%>

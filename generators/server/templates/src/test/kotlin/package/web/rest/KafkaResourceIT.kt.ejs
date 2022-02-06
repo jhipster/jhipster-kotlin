@@ -32,12 +32,12 @@ import org.junit.jupiter.api.Test
 import org.junit.jupiter.api.TestInstance
 import org.springframework.http.MediaType
 
-<%_ if (!reactive) { _%>
+<%_ if (reactive) { _%>
+import org.springframework.test.web.reactive.server.WebTestClient
+<%_ } else { _%>
 import org.springframework.test.web.servlet.MockMvc
 import org.springframework.test.web.servlet.MvcResult
 import org.springframework.test.web.servlet.setup.MockMvcBuilders
-<%_ } else { _%>
-import org.springframework.test.web.reactive.server.WebTestClient
 <%_ } _%>
 
 import org.testcontainers.containers.KafkaContainer
@@ -57,10 +57,10 @@ import org.springframework.test.web.servlet.result.MockMvcResultMatchers.status
 @TestInstance(TestInstance.Lifecycle.PER_CLASS)
 class <%= upperFirstCamelCase(baseName) %>KafkaResourceIT {
 
-    <%_ if (!reactive) { _%>
-    private lateinit var restMockMvc: MockMvc
-    <%_ } else { _%>
+    <%_ if (reactive) { _%>
     private lateinit var client: WebTestClient
+    <%_ } else { _%>
+    private lateinit var restMockMvc: MockMvc
     <%_ } _%>
 
     private var started = false
@@ -95,10 +95,10 @@ class <%= upperFirstCamelCase(baseName) %>KafkaResourceIT {
 
         val kafkaResource = <%= upperFirstCamelCase(baseName) %>KafkaResource(kafkaProperties)
 
-        <%_ if (!reactive) { _%>
-        restMockMvc = MockMvcBuilders.standaloneSetup(kafkaResource).build()
-        <%_ } else { _%>
+        <%_ if (reactive) { _%>
         client = WebTestClient.bindToController(kafkaResource).build()
+        <%_ } else { _%>
+        restMockMvc = MockMvcBuilders.standaloneSetup(kafkaResource).build()
         <%_ } _%>
     }
 
@@ -107,15 +107,15 @@ class <%= upperFirstCamelCase(baseName) %>KafkaResourceIT {
     @Throws(Exception::class)
     <%_ } _%>
     fun producesMessages() {
-        <%_ if (!reactive) { _%>
-        restMockMvc.perform(post("/api/<%= dasherizedBaseName %>-kafka/publish/topic-produce?message=value-produce"))
-            .andExpect(status().isOk)
-            .andExpect(content().contentType(MediaType.APPLICATION_JSON))
-        <%_ } else { _%>
+        <%_ if (reactive) { _%>
         client.post().uri("/api/<%= dasherizedBaseName %>-kafka/publish/topic-produce?message=value-produce")
             .exchange()
             .expectStatus().isOk
             .expectHeader().contentType(MediaType.APPLICATION_JSON)
+        <%_ } else { _%>
+        restMockMvc.perform(post("/api/<%= dasherizedBaseName %>-kafka/publish/topic-produce?message=value-produce"))
+            .andExpect(status().isOk)
+            .andExpect(content().contentType(MediaType.APPLICATION_JSON))
         <%_ } _%>
 
         val consumerProps = getConsumerProps("group-produce")
@@ -138,7 +138,17 @@ class <%= upperFirstCamelCase(baseName) %>KafkaResourceIT {
 
         producer.send(ProducerRecord<String, String>("topic-consume", "value-consume"))
 
-        <%_ if (!reactive) { _%>
+        <%_ if (reactive) { _%>
+        val value = client.get().uri("/api/<%= dasherizedBaseName %>-kafka/consume?topic=topic-consume")
+            .accept(MediaType.TEXT_EVENT_STREAM)
+            .exchange()
+            .expectStatus().isOk
+            .expectHeader().contentTypeCompatibleWith(MediaType.TEXT_EVENT_STREAM)
+            .returnResult(String::class)
+            .getResponseBody().blockFirst(Duration.ofSeconds(10))
+
+        assertThat(value).isEqualTo("value-consume")
+        <%_ } else { _%>
         val mvcResult = restMockMvc.perform(get("/api/<%= dasherizedBaseName %>-kafka/consume?topic=topic-consume"))
             .andExpect(status().isOk)
             .andExpect(request().asyncStarted())
@@ -152,16 +162,6 @@ class <%= upperFirstCamelCase(baseName) %>KafkaResourceIT {
             }
         }
         fail<String>("Expected content data:value-consume not received")
-        <%_ } else { _%>
-        val value = client.get().uri("/api/<%= dasherizedBaseName %>-kafka/consume?topic=topic-consume")
-            .accept(MediaType.TEXT_EVENT_STREAM)
-            .exchange()
-            .expectStatus().isOk
-            .expectHeader().contentTypeCompatibleWith(MediaType.TEXT_EVENT_STREAM)
-            .returnResult(String::class)
-            .getResponseBody().blockFirst(Duration.ofSeconds(10))
-
-        assertThat(value).isEqualTo("value-consume")
         <%_ } _%>
     }
 

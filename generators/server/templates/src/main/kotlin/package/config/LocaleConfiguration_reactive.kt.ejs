@@ -1,0 +1,162 @@
+import org.apache.commons.logging.LogFactory
+import org.springframework.context.annotation.Bean
+import org.springframework.context.annotation.Configuration
+import org.springframework.context.annotation.Import
+import org.springframework.context.i18n.LocaleContext
+import org.springframework.context.i18n.LocaleContextHolder
+import org.springframework.context.i18n.SimpleLocaleContext
+import org.springframework.context.i18n.TimeZoneAwareLocaleContext
+import org.springframework.http.ResponseCookie
+import org.springframework.http.server.reactive.ServerHttpResponse
+import org.springframework.util.Assert
+import org.springframework.util.StringUtils
+import org.springframework.web.server.ServerWebExchange
+import org.springframework.web.server.WebFilter
+import org.springframework.web.server.i18n.LocaleContextResolver
+
+import java.time.Duration
+import java.util.Locale
+import java.util.TimeZone
+
+@Configuration
+class LocaleConfiguration {
+
+    @Bean(name = ["localeContextResolver"])
+    fun localeContextResolver(): LocaleContextResolver = AngularCookieLocaleContextResolver()
+
+    @Bean
+    fun localeChangeFilter(localeContextResolver: LocaleContextResolver) =
+        WebFilter { exchange, chain ->
+            // Find locale change in query param. Must also look form params ?
+            val newLocale = exchange.request.queryParams.getFirst("language")
+            if (newLocale != null) {
+                localeContextResolver.setLocaleContext(
+                    exchange,
+                    SimpleLocaleContext(StringUtils.parseLocaleString(newLocale))
+                )
+            }
+            // Proceed in any case.
+            chain.filter(exchange)
+        }
+
+    internal class AngularCookieLocaleContextResolver : LocaleContextResolver {
+
+        private val logger = LogFactory.getLog(javaClass)
+
+        override fun resolveLocaleContext(exchange: ServerWebExchange): LocaleContext {
+            parseLocaleCookieIfNecessary(exchange)
+            return object : TimeZoneAwareLocaleContext {
+                override fun getLocale(): Locale? =
+                    exchange.getAttribute<Any>(LOCALE_REQUEST_ATTRIBUTE_NAME) as? Locale
+
+                override fun getTimeZone(): TimeZone? =
+                    exchange.getAttribute<Any>(TIME_ZONE_REQUEST_ATTRIBUTE_NAME) as? TimeZone
+            }
+        }
+
+        override fun setLocaleContext(exchange: ServerWebExchange, localeContext: LocaleContext?) {
+            Assert.notNull(exchange.response, "ServerHttpResponse is required for AngularCookieLocaleContextResolver")
+
+            var locale: Locale? = null
+            var timeZone: TimeZone? = null
+            if (localeContext != null) {
+                locale = localeContext.locale
+                if (localeContext is TimeZoneAwareLocaleContext) {
+                    timeZone = localeContext.timeZone
+                }
+                addCookie(
+                    exchange.response,
+                    QUOTE + (locale?.toString() ?: "-") + (if (timeZone != null) ' ' + timeZone.id else "") + QUOTE
+                )
+            } else {
+                removeCookie(exchange.response)
+            }
+            exchange.attributes[LOCALE_REQUEST_ATTRIBUTE_NAME] = locale
+                ?: LocaleContextHolder.getLocale(exchange.localeContext)
+            if (timeZone != null) {
+                exchange.attributes[TIME_ZONE_REQUEST_ATTRIBUTE_NAME] = timeZone
+            } else {
+                exchange.attributes.remove(TIME_ZONE_REQUEST_ATTRIBUTE_NAME)
+            }
+        }
+
+        private fun addCookie(response: ServerHttpResponse, cookieValue: String) {
+            Assert.notNull(response, "ServerHttpResponse must not be null")
+            val cookie = ResponseCookie.from(COOKIE_NAME, cookieValue)
+                .path(COOKIE_PATH)
+                .build()
+            response.addCookie(cookie)
+            if (logger.isDebugEnabled) {
+                logger.debug("Added cookie with name [$COOKIE_NAME] and value [$cookieValue]")
+            }
+        }
+
+        private fun removeCookie(response: ServerHttpResponse) {
+            Assert.notNull(response, "ServerHttpResponse must not be null")
+            val cookie = ResponseCookie.from(COOKIE_NAME, "")
+                .path(COOKIE_PATH)
+                .maxAge(Duration.ZERO)
+                .build()
+            response.addCookie(cookie)
+            if (logger.isDebugEnabled) {
+                logger.debug("Removed cookie with name [$COOKIE_NAME]")
+            }
+        }
+
+        private fun parseLocaleCookieIfNecessary(exchange: ServerWebExchange) {
+            if (exchange.getAttribute<Any>(LOCALE_REQUEST_ATTRIBUTE_NAME) == null) {
+                // Retrieve and parse cookie value.
+                val cookie = exchange.request.cookies.getFirst(COOKIE_NAME)
+                var locale: Locale? = null
+                var timeZone: TimeZone? = null
+                if (cookie != null) {
+                    var value = cookie.value
+
+                    // Remove the double quote
+                    value = StringUtils.replace(value, QUOTE, "")
+
+                    var localePart = value
+                    var timeZonePart: String? = null
+                    val spaceIndex = localePart.indexOf(' ')
+                    if (spaceIndex != -1) {
+                        localePart = value.substring(0, spaceIndex)
+                        timeZonePart = value.substring(spaceIndex + 1)
+                    }
+                    locale =
+                        if ("-" != localePart) StringUtils.parseLocaleString(localePart.replace('-', '_')) else null
+                    if (timeZonePart != null) {
+                        timeZone = StringUtils.parseTimeZoneString(timeZonePart)
+                    }
+                    if (logger.isTraceEnabled) {
+                        logger.trace(
+                            "Parsed cookie value [" + cookie.value + "] into locale '" + locale +
+                                "'" + if (timeZone != null) " and time zone '" + timeZone.id + "'" else ""
+                        )
+                    }
+                }
+                if (locale != null) {
+                    exchange.attributes[LOCALE_REQUEST_ATTRIBUTE_NAME] = locale 
+                }
+                if (timeZone != null) {
+                    exchange.attributes[TIME_ZONE_REQUEST_ATTRIBUTE_NAME] = timeZone
+                } else {
+                    exchange.attributes.remove(TIME_ZONE_REQUEST_ATTRIBUTE_NAME)
+                }
+            }
+        }
+
+        companion object {
+
+            private val LOCALE_REQUEST_ATTRIBUTE_NAME = AngularCookieLocaleContextResolver::class.java.name + ".LOCALE"
+
+            private val TIME_ZONE_REQUEST_ATTRIBUTE_NAME =
+                AngularCookieLocaleContextResolver::class.java.name + ".TIME_ZONE"
+
+            private const val QUOTE = "%22"
+
+            private const val COOKIE_NAME = "NG_TRANSLATE_LANG_KEY"
+
+            private const val COOKIE_PATH = "/"
+        }
+    }
+}

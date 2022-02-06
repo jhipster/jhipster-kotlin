@@ -1,0 +1,22 @@
+package <%= packageName %>
+
+import <%= packageName %>.MongoDbTestContainerExtension
+
+import org.springframework.test.context.ContextConfigurationAttributes
+import org.springframework.test.context.ContextCustomizer
+import org.springframework.test.context.ContextCustomizerFactory
+import org.springframework.boot.test.util.TestPropertyValues
+import org.testcontainers.containers.MongoDBContainer
+
+class TestContainersSpringContextCustomizerFactory: ContextCustomizerFactory {
+
+    override fun createContextCustomizer(testClass: Class<*>, configAttributes: List<ContextConfigurationAttributes>): ContextCustomizer {
+        return ContextCustomizer { context, _ ->
+            val container = MongoDbTestContainerExtension().getThreadContainer().get()
+            if (container != null) {
+                TestPropertyValues.of("spring.data.mongodb.uri=" + container.replicaSetUrl)
+                    .applyTo(context.environment)
+            }
+        }
+    }
+}

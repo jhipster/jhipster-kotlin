@@ -30,22 +30,22 @@ if (paginationNo) { %>
     fun search<%= entityClassPlural %>(@RequestParam query: String, @org.springdoc.api.annotations.ParameterObject pageable: Pageable<% if (reactive) { %>, request: ServerHttpRequest<% } %>): <% if (reactive) { %>Mono<<% } %>ResponseEntity<<%= listOrFlux %><<%= instanceType %>>><% if (reactive) { %>><% } %> {
         log.debug("REST request to search for a page of <%= entityClassPlural %> for query $query")
 
-    <%_ if (!reactive) { _%>
-        <%_ if (viaService) { _%>
-
-        val page = <%= entityInstance %>Service.search(query, pageable)
-        <%_ } else { _%>
-        val page = <%= entityInstance %><% if (searchEngineElasticsearch) { %>Search<% } %>Repository.search(query, pageable)
-        <%_ } _%>
-        val headers = PaginationUtil.generatePaginationHttpHeaders(<% if (!reactive) { %>ServletUriComponentsBuilder.fromCurrentRequest()<% } else { %>UriComponentsBuilder.fromHttpRequest(request)<% } %>, page)
-        return ResponseEntity.ok().headers(headers).body(<% if (!viaService && dtoMapstruct) { %><%= entityListToDtoListReference %>(<% } %>page.content<% if (!viaService && dtoMapstruct) { %>)<% } %>)
-    <%_ } else { _%>
+    <%_ if (reactive) { _%>
         return <%= entityInstance %><%= viaService ?
                 'Service.' + (searchEngineElasticsearch ? 'searchCount' : 'countAll') :
                 (searchEngineElasticsearch ? 'Search' : '') + 'Repository.count' %>()
                 .map { PageImpl<<%= instanceType %>>(listOf(), pageable, it) }
                 .map { PaginationUtil.generatePaginationHttpHeaders(UriComponentsBuilder.fromHttpRequest(request), it) }
                 .map { ResponseEntity.ok().headers(it).body(<%= entityInstance %><%= viaService ? 'Service' : (searchEngineElasticsearch ? 'Search' : '') + 'Repository' %>.search(query, pageable)<% if (!viaService && dtoMapstruct) { %>.map(<%= entityToDtoReference %>)<% } %>) }
+    <%_ } else { _%>
+        <%_ if (viaService) { _%>
+
+val page = <%= entityInstance %>Service.search(query, pageable)
+<%_ } else { _%>
+val page = <%= entityInstance %><% if (searchEngineElasticsearch) { %>Search<% } %>Repository.search(query, pageable)
+<%_ } _%>
+val headers = PaginationUtil.generatePaginationHttpHeaders(<% if (reactive) { %>UriComponentsBuilder.fromHttpRequest(request)<% } else { %>ServletUriComponentsBuilder.fromCurrentRequest()<% } %>, page)
+return ResponseEntity.ok().headers(headers).body(<% if (!viaService && dtoMapstruct) { %><%= entityListToDtoListReference %>(<% } %>page.content<% if (!viaService && dtoMapstruct) { %>)<% } %>)
     <%_ } _%>
     <% } -%>
 }

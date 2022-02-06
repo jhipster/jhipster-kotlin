@@ -70,11 +70,10 @@ import org.springframework.web.bind.annotation.RequestMapping
 import org.springframework.web.bind.annotation.RequestParam
 <%_ if (reactive) { _%>
 import org.springframework.web.bind.annotation.ResponseStatus
-<%_ } _%>
-import org.springframework.web.bind.annotation.RestController
-<%_ if (!reactive) { _%>
+<%_ } else { _%>
 import org.springframework.web.servlet.support.ServletUriComponentsBuilder
 <%_ } _%>
+import org.springframework.web.bind.annotation.RestController
 <%_ if (reactive) { _%>
 import org.springframework.web.server.ResponseStatusException
 import org.springframework.web.util.UriComponentsBuilder
@@ -164,19 +163,7 @@ class UserResource(
         if (userDTO.id != null) {
             throw BadRequestAlertException("A new user cannot already have an ID", "userManagement", "idexists")
             // Lowercase the user login before comparing with database
-        <%_ if (!reactive) { _%>
-        } else if (userRepository.findOneByLogin(userDTO.login!!.toLowerCase()).isPresent) {
-            throw LoginAlreadyUsedException()
-        } else if (userRepository.findOneByEmailIgnoreCase(userDTO.email).isPresent) {
-            throw EmailAlreadyUsedException()
-        } else {
-            val newUser = userService.createUser(userDTO)
-            mailService.sendCreationEmail(newUser)
-            return ResponseEntity.created(URI("/api/admin/users/${newUser.login}"))
-                .headers(HeaderUtil.createAlert(applicationName, <% if (enableTranslation) {%>"userManagement.created"<% } else { %> "A user is created with identifier ${newUser.login}"<% } %>, newUser.login))
-                .body(newUser)
-        }
-        <%_ } else { _%>
+        <%_ if (reactive) { _%>
         }
         return userRepository.findOneByLogin(userDTO.login!!.toLowerCase())
             .hasElement()
@@ -203,6 +190,18 @@ class UserResource(
                     throw RuntimeException(e)
                 }
             }
+        <%_ } else { _%>
+        } else if (userRepository.findOneByLogin(userDTO.login!!.toLowerCase()).isPresent) {
+            throw LoginAlreadyUsedException()
+        } else if (userRepository.findOneByEmailIgnoreCase(userDTO.email).isPresent) {
+            throw EmailAlreadyUsedException()
+        } else {
+            val newUser = userService.createUser(userDTO)
+            mailService.sendCreationEmail(newUser)
+            return ResponseEntity.created(URI("/api/admin/users/${newUser.login}"))
+                .headers(HeaderUtil.createAlert(applicationName, <% if (enableTranslation) {%>"userManagement.created"<% } else { %> "A user is created with identifier ${newUser.login}"<% } %>, newUser.login))
+                .body(newUser)
+        }
         <%_ } _%>
     }
 
@@ -216,24 +215,7 @@ class UserResource(
      */
     @PutMapping("/users")
     @PreAuthorize("hasAuthority(\"$ADMIN\")")
-    <%_ if (!reactive) { _%>
-    fun updateUser(@Valid @RequestBody userDTO: <%= asDto('AdminUser') %>): ResponseEntity<<%= asDto('AdminUser') %>> {
-        log.debug("REST request to update User : $userDTO")
-        var existingUser = userRepository.findOneByEmailIgnoreCase(userDTO.email)
-        if (existingUser.isPresent && existingUser.get().id != userDTO.id) {
-            throw EmailAlreadyUsedException()
-        }
-        existingUser = userRepository.findOneByLogin(userDTO.login!!.toLowerCase())
-        if (existingUser.isPresent && existingUser.get().id != userDTO.id) {
-            throw LoginAlreadyUsedException()
-        }
-        val updatedUser = userService.updateUser(userDTO)
-
-        return ResponseUtil.wrapOrNotFound(
-            updatedUser,
-            HeaderUtil.createAlert(applicationName, <% if (enableTranslation) { %>"userManagement.updated"<% } else { %>"A user is updated with identifier $userDTO.login"<% } %>, userDTO.login)
-        )
-    <%_ } else { _%>
+    <%_ if (reactive) { _%>
     fun updateUser(@Valid @RequestBody userDTO: <%= asDto('AdminUser') %>) : Mono<ResponseEntity<<%= asDto('AdminUser') %>>> {
         log.debug("REST request to update User : $userDTO")
         return userRepository.findOneByEmailIgnoreCase(userDTO.email!!)
@@ -259,6 +241,23 @@ class UserResource(
                     .headers(HeaderUtil.createAlert(applicationName, "userManagement.updated", userDTO.login))
                     .body(user)
             }
+    <%_ } else { _%>
+    fun updateUser(@Valid @RequestBody userDTO: <%= asDto('AdminUser') %>): ResponseEntity<<%= asDto('AdminUser') %>> {
+        log.debug("REST request to update User : $userDTO")
+        var existingUser = userRepository.findOneByEmailIgnoreCase(userDTO.email)
+        if (existingUser.isPresent && existingUser.get().id != userDTO.id) {
+            throw EmailAlreadyUsedException()
+        }
+        existingUser = userRepository.findOneByLogin(userDTO.login!!.toLowerCase())
+        if (existingUser.isPresent && existingUser.get().id != userDTO.id) {
+            throw LoginAlreadyUsedException()
+        }
+        val updatedUser = userService.updateUser(userDTO)
+
+        return ResponseUtil.wrapOrNotFound(
+            updatedUser,
+            HeaderUtil.createAlert(applicationName, <% if (enableTranslation) { %>"userManagement.updated"<% } else { %>"A user is updated with identifier $userDTO.login"<% } %>, userDTO.login)
+        )
     <%_ } _%>
     }
 
@@ -275,19 +274,7 @@ class UserResource(
     @GetMapping("/users")
     @PreAuthorize("hasAuthority(\"$ADMIN\")")
     <%_ if (databaseTypeSql || databaseTypeMongodb || databaseTypeNeo4j || databaseTypeCouchbase) { _%>
-        <%_ if (!reactive) { _%>
-    fun getAllUsers(@org.springdoc.api.annotations.ParameterObject pageable: Pageable): ResponseEntity<List<<%= asDto('AdminUser') %>>> {
-        log.debug("REST request to get all User for an admin")
-        <%_ if (!authenticationTypeOauth2) { _%>
-            if (!onlyContainsAllowedProperties(pageable)) {
-                return ResponseEntity.badRequest().build()
-            }
-        <%_ } _%>
-        val page = userService.getAllManagedUsers(pageable)
-        val headers = PaginationUtil.generatePaginationHttpHeaders(ServletUriComponentsBuilder.fromCurrentRequest(), page)
-        return ResponseEntity(page.content, headers, HttpStatus.OK)
-    }
-        <%_ } else { _%>
+        <%_ if (reactive) { _%>
     fun getAllUsers(
         request: ServerHttpRequest,
         @org.springdoc.api.annotations.ParameterObject pageable: Pageable
@@ -303,6 +290,18 @@ class UserResource(
             .map { total -> PageImpl(mutableListOf<<%= asDto('AdminUser') %>>(), pageable, total!!) }
             .map { page -> PaginationUtil.generatePaginationHttpHeaders(UriComponentsBuilder.fromHttpRequest(request), page) }
             .map { headers -> ResponseEntity.ok().headers(headers).body(userService.getAllManagedUsers(pageable)) }
+    }
+        <%_ } else { _%>
+    fun getAllUsers(@org.springdoc.api.annotations.ParameterObject pageable: Pageable): ResponseEntity<List<<%= asDto('AdminUser') %>>> {
+        log.debug("REST request to get all User for an admin")
+        <%_ if (!authenticationTypeOauth2) { _%>
+            if (!onlyContainsAllowedProperties(pageable)) {
+                return ResponseEntity.badRequest().build()
+            }
+        <%_ } _%>
+        val page = userService.getAllManagedUsers(pageable)
+        val headers = PaginationUtil.generatePaginationHttpHeaders(ServletUriComponentsBuilder.fromCurrentRequest(), page)
+        return ResponseEntity(page.content, headers, HttpStatus.OK)
     }
         <%_ } _%>
     <%_ if (!authenticationTypeOauth2) { _%>
@@ -322,18 +321,18 @@ class UserResource(
      */
     @GetMapping("/users/{login}")
     @PreAuthorize("hasAuthority(\"$ADMIN\")")
-    <%_ if (!reactive) { _%>
-    fun getUser(@PathVariable @Pattern(regexp = LOGIN_REGEX) login: String): ResponseEntity<<%= asDto('AdminUser') %>> {
-        log.debug("REST request to get User : $login")
-        return ResponseUtil.wrapOrNotFound(
-            userService.getUserWithAuthoritiesByLogin(login)
-                .map { <%= asDto('AdminUser') %>(it) })
-    <%_ } else { _%>
+    <%_ if (reactive) { _%>
     fun getUser(@PathVariable login: String): Mono<<%= asDto('AdminUser') %>> {
         log.debug("REST request to get User : $login")
         return userService.getUserWithAuthoritiesByLogin(login)
             .map { <%= asDto('AdminUser') %>(it) }
             .switchIfEmpty(Mono.error(ResponseStatusException(HttpStatus.NOT_FOUND)))
+    <%_ } else { _%>
+    fun getUser(@PathVariable @Pattern(regexp = LOGIN_REGEX) login: String): ResponseEntity<<%= asDto('AdminUser') %>> {
+        log.debug("REST request to get User : $login")
+        return ResponseUtil.wrapOrNotFound(
+            userService.getUserWithAuthoritiesByLogin(login)
+                .map { <%= asDto('AdminUser') %>(it) })
     <%_ } _%>
     }
 <%_ if (!authenticationTypeOauth2) { _%>
@@ -346,18 +345,18 @@ class UserResource(
      */
     @DeleteMapping("/users/{login}")
     @PreAuthorize("hasAuthority(\"$ADMIN\")")
-    <%_ if (!reactive) { _%>
-    fun deleteUser(@PathVariable @Pattern(regexp = LOGIN_REGEX) login: String): ResponseEntity<Void> {
-        log.debug("REST request to delete User: $login")
-        userService.deleteUser(login)
-        return ResponseEntity.noContent()
-            .headers(HeaderUtil.createAlert(applicationName, <% if (enableTranslation) {%>"userManagement.deleted"<% } else { %> "A user is deleted with identifier $login"<% } %>, login)).build()
-    <%_ } else { _%>
+    <%_ if (reactive) { _%>
     @ResponseStatus(code = HttpStatus.NO_CONTENT)
     fun deleteUser(@PathVariable @Pattern(regexp = LOGIN_REGEX) login: String): Mono<ResponseEntity<Void>> {
         log.debug("REST request to delete User: $login")
         return userService.deleteUser(login)
             .map { ResponseEntity.noContent().headers(HeaderUtil.createAlert(applicationName, "userManagement.deleted", login)).build<Void>() }
+    <%_ } else { _%>
+    fun deleteUser(@PathVariable @Pattern(regexp = LOGIN_REGEX) login: String): ResponseEntity<Void> {
+        log.debug("REST request to delete User: $login")
+        userService.deleteUser(login)
+        return ResponseEntity.noContent()
+            .headers(HeaderUtil.createAlert(applicationName, <% if (enableTranslation) {%>"userManagement.deleted"<% } else { %> "A user is deleted with identifier $login"<% } %>, login)).build()
     <%_ } _%>
     }
 <%_ } _%>

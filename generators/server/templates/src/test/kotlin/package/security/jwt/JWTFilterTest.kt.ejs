@@ -85,17 +85,7 @@ class JWTFilterTest {
             listOf(SimpleGrantedAuthority(USER))
         )
         val jwt = tokenProvider.createToken(authentication, false)
-        <%_ if (!reactive) { _%>
-        val request = MockHttpServletRequest()
-        request.addHeader(JWTFilter.AUTHORIZATION_HEADER, "Bearer $jwt")
-        request.requestURI = "/api/test"
-        val response = MockHttpServletResponse()
-        val filterChain = MockFilterChain()
-        jwtFilter.doFilter(request, response, filterChain)
-        assertThat(response.status).isEqualTo(HttpStatus.OK.value())
-        assertThat(SecurityContextHolder.getContext().authentication.name).isEqualTo("test-user")
-        assertThat(SecurityContextHolder.getContext().authentication.credentials.toString()).hasToString(jwt)
-        <%_ } else { _%>
+        <%_ if (reactive) { _%>
         val request = MockServerHttpRequest
             .get("/api/test")
             .header(JWTFilter.AUTHORIZATION_HEADER, "Bearer $jwt")
@@ -108,6 +98,16 @@ class JWTFilterTest {
                 .doOnSuccess { auth -> assertThat(auth.credentials.toString()).hasToString(jwt) }
                 .then()
         }.block()
+        <%_ } else { _%>
+        val request = MockHttpServletRequest()
+        request.addHeader(JWTFilter.AUTHORIZATION_HEADER, "Bearer $jwt")
+        request.requestURI = "/api/test"
+        val response = MockHttpServletResponse()
+        val filterChain = MockFilterChain()
+        jwtFilter.doFilter(request, response, filterChain)
+        assertThat(response.status).isEqualTo(HttpStatus.OK.value())
+        assertThat(SecurityContextHolder.getContext().authentication.name).isEqualTo("test-user")
+        assertThat(SecurityContextHolder.getContext().authentication.credentials.toString()).hasToString(jwt)
         <%_ } _%>
     }
 
@@ -117,16 +117,7 @@ class JWTFilterTest {
     <%_ } _%>
     fun testJWTFilterInvalidToken() {
         val jwt = "wrong_jwt"
-        <%_ if (!reactive) { _%>
-        val request = MockHttpServletRequest()
-        request.addHeader(JWTFilter.AUTHORIZATION_HEADER, "Bearer $jwt")
-        request.requestURI = "/api/test"
-        val response = MockHttpServletResponse()
-        val filterChain = MockFilterChain()
-        jwtFilter.doFilter(request, response, filterChain)
-        assertThat(response.status).isEqualTo(HttpStatus.OK.value())
-        assertThat(SecurityContextHolder.getContext().authentication).isNull()
-        <%_ } else { _%>
+        <%_ if (reactive) { _%>    
         val request = MockServerHttpRequest
             .get("/api/test")
             .header(JWTFilter.AUTHORIZATION_HEADER, "Bearer $jwt")
@@ -138,6 +129,15 @@ class JWTFilterTest {
                 .doOnSuccess { auth -> assertThat(auth).isNull() }
                 .then()
         }.block()
+        <%_ } else { _%>
+        val request = MockHttpServletRequest()
+        request.addHeader(JWTFilter.AUTHORIZATION_HEADER, "Bearer $jwt")
+        request.requestURI = "/api/test"
+        val response = MockHttpServletResponse()
+        val filterChain = MockFilterChain()
+        jwtFilter.doFilter(request, response, filterChain)
+        assertThat(response.status).isEqualTo(HttpStatus.OK.value())
+        assertThat(SecurityContextHolder.getContext().authentication).isNull()
         <%_ } _%>
     }
 
@@ -146,16 +146,7 @@ class JWTFilterTest {
     @Throws(Exception::class)
     <%_ } _%>
     fun testJWTFilterMissingAuthorization() {
-        <%_ if (!reactive) { _%>
-        val request = MockHttpServletRequest()
-        request.addHeader(JWTFilter.AUTHORIZATION_HEADER, "Bearer ")
-        request.requestURI = "/api/test"
-        val response = MockHttpServletResponse()
-        val filterChain = MockFilterChain()
-        jwtFilter.doFilter(request, response, filterChain)
-        assertThat(response.status).isEqualTo(HttpStatus.OK.value())
-        assertThat(SecurityContextHolder.getContext().authentication).isNull()
-        <%_ } else { _%>
+        <%_ if (reactive) { _%>
         val request = MockServerHttpRequest
             .get("/api/test")
         val exchange = MockServerWebExchange.from(request)
@@ -166,15 +157,7 @@ class JWTFilterTest {
                 .doOnSuccess { auth -> assertThat(auth).isNull() }
                 .then()
         }.block()
-        <%_ } _%>
-    }
-
-    @Test
-    <%_ if (!reactive) { _%>
-    @Throws(Exception::class)
-    <%_ } _%>
-    fun testJWTFilterMissingToken() {
-        <%_ if (!reactive) { _%>
+        <%_ } else { _%>
         val request = MockHttpServletRequest()
         request.addHeader(JWTFilter.AUTHORIZATION_HEADER, "Bearer ")
         request.requestURI = "/api/test"
@@ -183,7 +166,15 @@ class JWTFilterTest {
         jwtFilter.doFilter(request, response, filterChain)
         assertThat(response.status).isEqualTo(HttpStatus.OK.value())
         assertThat(SecurityContextHolder.getContext().authentication).isNull()
-        <%_ } else { _%>
+        <%_ } _%>
+    }
+
+    @Test
+    <%_ if (!reactive) { _%>
+    @Throws(Exception::class)
+    <%_ } _%>
+    fun testJWTFilterMissingToken() {
+        <%_ if (reactive) { _%>
         val request = MockServerHttpRequest
             .get("/api/test")
             .header(JWTFilter.AUTHORIZATION_HEADER, "Bearer ")
@@ -195,6 +186,15 @@ class JWTFilterTest {
                 .doOnSuccess { auth -> assertThat(auth).isNull() }
                 .then()
         }.block()
+        <%_ } else { _%>
+        val request = MockHttpServletRequest()
+        request.addHeader(JWTFilter.AUTHORIZATION_HEADER, "Bearer ")
+        request.requestURI = "/api/test"
+        val response = MockHttpServletResponse()
+        val filterChain = MockFilterChain()
+        jwtFilter.doFilter(request, response, filterChain)
+        assertThat(response.status).isEqualTo(HttpStatus.OK.value())
+        assertThat(SecurityContextHolder.getContext().authentication).isNull()
         <%_ } _%>
     }
 
@@ -209,16 +209,7 @@ class JWTFilterTest {
             listOf(SimpleGrantedAuthority(USER))
         )
         val jwt = tokenProvider.createToken(authentication, false)
-        <%_ if (!reactive) { _%>
-        val request = MockHttpServletRequest()
-        request.addHeader(JWTFilter.AUTHORIZATION_HEADER, "Basic $jwt")
-        request.requestURI = "/api/test"
-        val response = MockHttpServletResponse()
-        val filterChain = MockFilterChain()
-        jwtFilter.doFilter(request, response, filterChain)
-        assertThat(response.status).isEqualTo(HttpStatus.OK.value())
-        assertThat(SecurityContextHolder.getContext().authentication).isNull()
-        <%_ } else { _%>
+        <%_ if (reactive) { _%>
         val request = MockServerHttpRequest
             .get("/api/test")
             .header(JWTFilter.AUTHORIZATION_HEADER, "Basic $jwt")
@@ -230,6 +221,15 @@ class JWTFilterTest {
                 .doOnSuccess { auth -> assertThat(auth).isNull() }
                 .then()
         }.block()
+        <%_ } else { _%>
+        val request = MockHttpServletRequest()
+        request.addHeader(JWTFilter.AUTHORIZATION_HEADER, "Basic $jwt")
+        request.requestURI = "/api/test"
+        val response = MockHttpServletResponse()
+        val filterChain = MockFilterChain()
+        jwtFilter.doFilter(request, response, filterChain)
+        assertThat(response.status).isEqualTo(HttpStatus.OK.value())
+        assertThat(SecurityContextHolder.getContext().authentication).isNull()
         <%_ } _%>
     }
 

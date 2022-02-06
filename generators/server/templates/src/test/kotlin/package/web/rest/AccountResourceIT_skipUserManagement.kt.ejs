@@ -22,6 +22,9 @@ package <%= packageName %>.web.rest
 import <%= packageName %>.AbstractCassandraTest
 <%_ } _%>
 import <%= packageName %>.IntegrationTest
+<%_ if (reactive) { _%>
+import <%= packageName %>.IntegrationTest.Companion.DEFAULT_TIMEOUT
+<%_ } _%>
 <%_ if (reactive && searchEngineElasticsearch) { _%>
 import <%= packageName %>.repository.search.UserSearchRepository
 <%_ } _%>
@@ -37,13 +40,13 @@ import org.springframework.boot.test.autoconfigure.web.reactive.AutoConfigureWeb
 <%_ } _%>
 import org.springframework.http.MediaType
 import org.springframework.security.test.context.support.WithMockUser
-<%_ if (!reactive) { _%>
+<%_ if (reactive) { _%>
+import org.springframework.test.web.reactive.server.WebTestClient
+<%_ } else { _%>
 import org.springframework.test.web.servlet.MockMvc
 
 import org.springframework.test.web.servlet.request.MockMvcRequestBuilders.get
 import org.springframework.test.web.servlet.result.MockMvcResultMatchers.*
-<%_ } else { _%>
-import org.springframework.test.web.reactive.server.WebTestClient
 <%_ } _%>
 <%_ if (reactive && searchEngineElasticsearch) { _%>
 import reactor.core.publisher.Mono
@@ -55,20 +58,20 @@ import <%= packageName %>.web.rest.TEST_USER_LOGIN
 /**
  * Integration tests for the {@link AccountResource} REST controller.
  */
-<%_ if (!reactive) { _%>
-@AutoConfigureMockMvc
+ <%_ if (reactive) { _%>
+@AutoConfigureWebTestClient(timeout = IntegrationTest.DEFAULT_TIMEOUT)
 <%_ } else { _%>
-@AutoConfigureWebTestClient
+@AutoConfigureMockMvc
 <%_ } _%>
 @WithMockUser(value = TEST_USER_LOGIN)
 @IntegrationTest
 class AccountResourceIT <% if (databaseTypeCassandra) { %>: AbstractCassandraTest() <% } %>{
 
     @Autowired
-    <%_ if (!reactive) { _%>
-    private lateinit var restAccountMockMvc: MockMvc
-    <%_ } else { _%>
+    <%_ if (reactive) { _%>
     private lateinit var accountWebTestClient: WebTestClient
+    <%_ } else { _%>
+    private lateinit var restAccountMockMvc: MockMvc
     <%_ } _%>
     <%_ if (searchEngineElasticsearch && reactive) { _%>
 
@@ -80,8 +83,17 @@ class AccountResourceIT <% if (databaseTypeCassandra) { %>: AbstractCassandraTes
     <% if (!reactive) { %>@Throws(Exception::class)<% } %>
     @WithMockUser(username = TEST_USER_LOGIN, authorities = [ADMIN])
     fun testGetExistingAccount() {
-        <%_ if (!reactive) { _%>
-            restAccountMockMvc.perform(
+        <%_ if (reactive) { _%>
+        accountWebTestClient.get().uri("/api/account")
+            .accept(MediaType.APPLICATION_JSON)
+            .exchange()
+            .expectStatus().isOk
+            .expectHeader().contentType(MediaType.APPLICATION_JSON)
+            .expectBody()
+            .jsonPath("$.login").isEqualTo(TEST_USER_LOGIN)
+            .jsonPath("$.authorities").isEqualTo(ADMIN)
+        <%_ } else { _%>
+        restAccountMockMvc.perform(
             get("/api/account")
                 .accept(MediaType.APPLICATION_JSON)
         )
@@ -89,40 +101,39 @@ class AccountResourceIT <% if (databaseTypeCassandra) { %>: AbstractCassandraTes
             .andExpect(content().contentType(MediaType.APPLICATION_JSON_VALUE))
             .andExpect(jsonPath("\$.login").value(TEST_USER_LOGIN))
             .andExpect(jsonPath("\$.authorities").value(ADMIN))
-        <%_ } else { _%>
-            accountWebTestClient.get().uri("/api/account")
-                .accept(MediaType.APPLICATION_JSON)
-                .exchange()
-                .expectStatus().isOk
-                .expectHeader().contentType(MediaType.APPLICATION_JSON)
-                .expectBody()
-                .jsonPath("$.login").isEqualTo(TEST_USER_LOGIN)
-                .jsonPath("$.authorities").isEqualTo(ADMIN)
         <%_ } _%>
     }
 
     @Test
     @WithUnauthenticatedMockUser
     <% if (!reactive) { %>@Throws(Exception::class)<% } %>
-    <%_ if (!reactive) { _%>
-    fun testNonAuthenticatedUser(){
-        restAccountMockMvc.perform(get("/api/authenticate")
-            .accept(MediaType.APPLICATION_JSON))
-            .andExpect(status().isOk)
-            .andExpect(content().string(""))
-    <%_ } else { _%>
+    <%_ if (reactive) { _%>
     fun testNonAuthenticatedUser() {
         accountWebTestClient.get().uri("/api/authenticate")
             .accept(MediaType.APPLICATION_JSON)
             .exchange()
             .expectStatus().isOk
             .expectBody().isEmpty
+    <%_ } else { _%>
+    fun testNonAuthenticatedUser(){
+        restAccountMockMvc.perform(get("/api/authenticate")
+            .accept(MediaType.APPLICATION_JSON))
+            .andExpect(status().isOk)
+            .andExpect(content().string(""))
     <%_ } _%>
     }
 
     @Test
     <% if (!reactive) { %>@Throws(Exception::class)<% } %>
-    <%_ if (!reactive) { _%>
+    <%_ if (reactive) { _%>
+    fun testAuthenticatedUser() {
+        accountWebTestClient
+            .get().uri("/api/authenticate")
+            .accept(MediaType.APPLICATION_JSON)
+            .exchange()
+            .expectStatus().isOk
+            .expectBody<String>().isEqualTo(TEST_USER_LOGIN)
+    <%_ } else { _%>
     fun testAuthenticatedUser() {
         restAccountMockMvc.perform(get("/api/authenticate")
             .with(request -> {
@@ -132,14 +143,6 @@ class AccountResourceIT <% if (databaseTypeCassandra) { %>: AbstractCassandraTes
             .accept(MediaType.APPLICATION_JSON))
             .andExpect(status().isOk)
             .andExpect(content().string(TEST_USER_LOGIN))
-    <%_ } else { _%>
-    fun testAuthenticatedUser() {
-        accountWebTestClient
-            .get().uri("/api/authenticate")
-            .accept(MediaType.APPLICATION_JSON)
-            .exchange()
-            .expectStatus().isOk
-            .expectBody<String>().isEqualTo(TEST_USER_LOGIN)
     <%_ } _%>
     }
 }

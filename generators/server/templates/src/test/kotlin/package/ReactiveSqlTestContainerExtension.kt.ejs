@@ -21,6 +21,7 @@ package <%= packageName %>
 import org.apache.commons.lang3.StringUtils
 import org.junit.jupiter.api.extension.BeforeAllCallback
 import org.junit.jupiter.api.extension.ExtensionContext
+import org.testcontainers.utility.DockerImageName
 <%_ if (prodDatabaseType === 'mysql') { _%>
 import org.testcontainers.containers.MySQLContainer
 <%_ } else if (prodDatabaseType === 'mariadb') { _%>
@@ -40,13 +41,13 @@ class ReactiveSqlTestContainerExtension: BeforeAllCallback {
     companion object {
 
         private val container: <%_ if (prodDatabaseType === 'mysql') { _%>
-            MySQLContainer<*> = MySQLContainer<Nothing>("<%= DOCKER_MYSQL %>")
+            MySQLContainer<*> = MySQLContainer<Nothing>(DockerImageName.parse("<%= DOCKER_MYSQL %>"))
             <%_ } else if (prodDatabaseType === 'mariadb') { _%>
-            MariaDBContainer<*> = MariaDBContainer<Nothing>("<%= DOCKER_MARIADB %>")
+            MariaDBContainer<*> = MariaDBContainer<Nothing>(DockerImageName.parse("<%= DOCKER_MARIADB %>"))
             <%_ } else if (prodDatabaseType === 'postgresql') { _%>
-            PostgreSQLContainer<*> = PostgreSQLContainer<Nothing>("<%= DOCKER_POSTGRESQL %>")
+            PostgreSQLContainer<*> = PostgreSQLContainer<Nothing>(DockerImageName.parse("<%= DOCKER_POSTGRESQL %>"))
             <%_ } else if (prodDatabaseType === 'mssql') { _%>
-            MSSQLServerContainer<*> =  MSSQLServerContainer<Nothing>("<%= DOCKER_MSSQL %>")
+            MSSQLServerContainer<*> =  MSSQLServerContainer<Nothing>(DockerImageName.parse("<%= DOCKER_MSSQL %>"))
             <%_ } _%>.apply {
             <%_ if (prodDatabaseType !== 'mssql') { _%>
             withDatabaseName("<%= baseName %>")

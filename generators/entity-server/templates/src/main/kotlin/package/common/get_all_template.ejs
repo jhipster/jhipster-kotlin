@@ -60,10 +60,10 @@ _%>
         return <%= entityInstance %>Service.findAll()<% if (reactive) { %>.collectList()<% } %>
         <% } else if (dtoMapstruct) { %>
         val <%= entityInstancePlural %> = <%= entityInstance %>Repository.<% if (relationshipsContainEagerLoad) { %>findAllWithEagerRelationships<% } else { %>findAll<% } %>()
-            <%_ if (!reactive) { _%>
-        return <%= entityListToDtoListReference %>(<%= entityInstancePlural %>)
-            <%_ } else { _%>
+            <%_ if (reactive) { _%>
         return <%= entityInstancePlural %>.map(<%= entityToDtoReference %>).collectList()
+            <%_ } else { _%>
+        return <%= entityListToDtoListReference %>(<%= entityInstancePlural %>)
             <%_ } _%>
         <%_ } else { _%>
         return <%= entityInstance %>Repository.<% if (relationshipsContainEagerLoad) { %>findAllWithEagerRelationships<% } else { %>findAll<% } %>()<% if (reactive) { %>.collectList()<% } %>
@@ -71,21 +71,7 @@ _%>
     <%_ } else { _%>
     fun getAll<%= entityClassPlural %>(@org.springdoc.api.annotations.ParameterObject pageable: Pageable<% if (reactive) { %>, request: ServerHttpRequest<% } %><% if (fieldsContainNoOwnerOneToOne) { %>, @RequestParam(required = false) filter: String?<% } %><% if (relationshipsContainEagerLoad) { %>, @RequestParam(required = false, defaultValue = "false") eagerload: Boolean<% } %>): <% if (reactive) { %>Mono<ResponseEntity<List<<%= instanceClass %>>>><% } else { %>ResponseEntity<List<<%= instanceClass %>>><% } %> {<%- include('get_all_stream_template', {viaService: viaService}); -%>
         log.debug("REST request to get a page of <%= entityClassPlural %>")
-        <%_ if (!reactive) { _%>
-            <%_ if (relationshipsContainEagerLoad) { _%>
-        val page: Page<<%= instanceClass %>> = if (eagerload) {
-            <%= entityInstance %><%= viaService ? 'Service' : 'Repository' %>.findAllWithEagerRelationships(pageable)<%= reactiveEntityToDto %>
-        } else {
-            <%= entityInstance %><%= viaService ? 'Service' : 'Repository' %>.findAll(pageable)<%= reactiveEntityToDto %>
-        }
-        val headers = PaginationUtil.generatePaginationHttpHeaders(<% if (!reactive) { %>ServletUriComponentsBuilder.fromCurrentRequest()<% } else { %>UriComponentsBuilder.fromHttpRequest(request)<% } %>, page)
-        <%_ } else { _%>
-        val page = <%= entityInstance %><%= viaService ? 'Service' : 'Repository' %>.findAll(pageable)<%= reactiveEntityToDto %>
-        val headers = PaginationUtil.generatePaginationHttpHeaders(<% if (!reactive) { %>ServletUriComponentsBuilder.fromCurrentRequest()<% } else { %>UriComponentsBuilder.fromHttpRequest(request)<% } %>, page);
-        <%_ } _%>
-        return ResponseEntity.ok().headers(headers).body(page.content)
-        <%_ } else { _%>
-        // TODO:SK CHECK TYPE info
+        <%_ if (reactive) { _%>
         return <%= entityInstance %><%= viaService ? 'Service.countAll' : 'Repository.count' %>()
             .zipWith(<%= entityInstance %><%= viaService ? 'Service.findAll' : 'Repository.findAllBy' %>(pageable)<%= reactiveEntityToDto %>.collectList())
             .map {
@@ -96,6 +82,19 @@ _%>
                     )
                 ).body(it.t2)
             }
+        <%_ } else { _%>
+            <%_ if (relationshipsContainEagerLoad) { _%>
+                val page: Page<<%= instanceClass %>> = if (eagerload) {
+                    <%= entityInstance %><%= viaService ? 'Service' : 'Repository' %>.findAllWithEagerRelationships(pageable)<%= reactiveEntityToDto %>
+                } else {
+                    <%= entityInstance %><%= viaService ? 'Service' : 'Repository' %>.findAll(pageable)<%= reactiveEntityToDto %>
+                }
+                val headers = PaginationUtil.generatePaginationHttpHeaders(<% if (reactive) { %>UriComponentsBuilder.fromHttpRequest(request)<% } else { %>ServletUriComponentsBuilder.fromCurrentRequest()<% } %>, page)
+                <%_ } else { _%>
+                val page = <%= entityInstance %><%= viaService ? 'Service' : 'Repository' %>.findAll(pageable)<%= reactiveEntityToDto %>
+                val headers = PaginationUtil.generatePaginationHttpHeaders(<% if (reactive) { %>UriComponentsBuilder.fromHttpRequest(request)<% } else { %>ServletUriComponentsBuilder.fromCurrentRequest()<% } %>, page);
+                <%_ } _%>
+                return ResponseEntity.ok().headers(headers).body(page.content)
         <%_ } _%>
     <%_ } _%>
     }

@@ -66,7 +66,7 @@ interface <%= entityClass %>Service {
      * @param <%= instanceName %> the entity to update partially.
      * @return the persisted entity.
      */
-    fun partialUpdate(<%= instanceName %>: <%= instanceType %>): <% if (!reactive) { %>Optional<<% } %><% if (reactive) { %>Mono<<% } %><%= instanceType %>>
+    fun partialUpdate(<%= instanceName %>: <%= instanceType %>): <% if (reactive) { %>Mono<<% }else { %>Optional<<% } %><%= instanceType %>>
 
     /**
      * Get all the <%= entityInstancePlural %>.
@@ -74,7 +74,7 @@ interface <%= entityClass %>Service {
      * @param pageable the pagination information.<% } %>
      * @return the list of entities.
      */
-    fun findAll(<% if (!paginationNo) { %>pageable: Pageable<% } %>): <% if (!paginationNo) { %><%= pageOrFlux %><<%= instanceType %><% } else { %><%= listOrFlux %><<%= instanceType %><% } %>>
+    fun findAll(<% if (!paginationNo) { %>pageable: Pageable<% } %>): <% if (paginationNo) { %><%= listOrFlux %><% } else { %><%= pageOrFlux %><% } %><<%= instanceType %>>
 <% for (const relationship of relationships) { if (relationship.relationshipOneToOne && relationship.ownerSide !== true) { -%>
     /**
      * Get all the [<%= restClass %>] where <%= relationship.relationshipNameCapitalized %> is `null`.

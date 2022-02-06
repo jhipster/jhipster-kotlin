@@ -70,14 +70,14 @@ import java.util.UUID
 <%_ } _%>
 @Repository
 interface <%=entityClass%>Repository : <% if (databaseTypeSql) { %>JpaRepository<% } %><% if (databaseTypeMongodb) { %>MongoRepository<% } %><% if (databaseTypeNeo4j) { %>Neo4jRepository<% } %><% if (databaseTypeCassandra) { %>CassandraRepository<% } %><<%=persistClass%>, <%= primaryKey.type %>><% if (jpaMetamodelFiltering) { %>, JpaSpecificationExecutor<<%= persistClass %>><% } %><% if (searchEngineCouchbase) { %>, SearchCouchbaseRepository<<%= persistClass %>, <%= primaryKey.type %>><% } %> {
-    <%_ for (const relationship of relationships) {
-        if (relationship.relationshipManyToOne && relationship.otherEntityName === 'user' && databaseTypeSql) { _%>
+    <%_ for (const relationship of relationships) { _%>
+        <%_ if (relationship.relationshipManyToOne && relationship.otherEntityName === 'user' && databaseTypeSql) { _%>
 
     @Query("select <%= entityInstanceDbSafe %> from <%= persistClass %> <%= entityInstanceDbSafe %> where <%= entityInstanceDbSafe %>.<%= relationship.relationshipFieldName %>.login = ?#{principal.<% if (authenticationTypeOauth2) { %>preferredUsername<% } else { %>username<% } %>}")
     fun findBy<%= relationship.relationshipNameCapitalized %>IsCurrentUser(): MutableList<<%= persistClass %>>
     <%_ } } _%>
-    <%_ if (relationshipsContainEagerLoad) {
-        if (databaseTypeSql) { _%>
+    <%_ if (relationshipsContainEagerLoad) { _%>
+        <%_ if (databaseTypeSql) { _%>
 
     @Query(value = "select distinct <%= entityInstanceDbSafe %> from <%= persistClass %> <%= entityInstanceDbSafe %><% for (const relationship of relationships) {
     if (relationship.relationshipEagerLoad) { %> left join fetch <%= entityInstanceDbSafe %>.<%= relationship.reference.name %><% } } %>",
@@ -91,8 +91,7 @@ interface <%=entityClass%>Repository : <% if (databaseTypeSql) { %>JpaRepository
     @Query("select <%= entityInstanceDbSafe %> from <%= persistClass %> <%= entityInstanceDbSafe %><% for (const relationship of relationships) {
     if (relationship.relationshipEagerLoad) { %> left join fetch <%= entityInstanceDbSafe %>.<%= relationship.reference.name %><% } } %> where <%= entityInstanceDbSafe %>.id =:id")
     fun findOneWithEagerRelationships(@Param("id") id: <%= primaryKey.type %>): Optional<<%= persistClass %>>
-    <%_
-        } else if (databaseTypeMongodb)  { _%>
+    <%_ } else if (databaseTypeMongodb)  { _%>
 
     @Query("{}")
     fun findAllWithEagerRelationships(pageable: Pageable): Page<<%= persistClass %>>
@@ -102,6 +101,6 @@ interface <%=entityClass%>Repository : <% if (databaseTypeSql) { %>JpaRepository
 
     @Query("{'id': ?0}")
     fun findOneWithEagerRelationships(id: <%= primaryKey.type %>): Optional<<%= persistClass %>>
-    <%_ }
-    } _%>
+    <%_ } _%>
+<%_ } _%>
 }

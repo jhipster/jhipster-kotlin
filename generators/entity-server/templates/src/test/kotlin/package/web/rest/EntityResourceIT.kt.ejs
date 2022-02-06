@@ -83,7 +83,7 @@ import <%= entityAbsolutePackage %>.repository.UserRepository
 <%_ } _%>
 import <%= entityAbsolutePackage %>.repository.<%= entityClass %>Repository
 <%_ if (databaseTypeSql && reactive) { _%>
-import <%= packageName %>.service.EntityManager
+import <%= packageName %>.repository.EntityManager
 <%_ } _%>
 <%_ if (isUsingMapsId&& ( !dtoMapstruct && serviceNo)) { _%>
 import <%= entityAbsolutePackage %>.repository.<%= mapsIdAssoc.otherEntityNameCapitalized %>Repository
@@ -117,10 +117,10 @@ import org.mockito.junit.jupiter.MockitoExtension
 import org.mockito.Mock
 import org.mockito.MockitoAnnotations
 import org.springframework.beans.factory.annotation.Autowired
-<%_ if (!reactive) { _%>
-import org.springframework.boot.test.autoconfigure.web.servlet.AutoConfigureMockMvc
-<%_ } else { _%>
+<%_ if (reactive) { _%>
 import org.springframework.boot.test.autoconfigure.web.reactive.AutoConfigureWebTestClient
+<%_ } else { _%>
+import org.springframework.boot.test.autoconfigure.web.servlet.AutoConfigureMockMvc
 <%_ } _%>
 <%_ if (searchEngineElasticsearch && !paginationNo || relationshipsContainEagerLoad) { _%>
 import org.springframework.data.domain.PageImpl
@@ -225,10 +225,10 @@ import <%= packageName %>.domain.enumeration.<%= field.fieldType %>
     ExtendWith(MockitoExtension::class)
 )
 <%_ } _%>
-<%_ if (!reactive) { _%>
-@AutoConfigureMockMvc
-<%_ } else { _%>
+<%_ if (reactive) { _%>
 @AutoConfigureWebTestClient
+<%_ } else { _%>
+@AutoConfigureMockMvc
 <%_ } _%>
 @WithMockUser
 class <%= entityClass %>ResourceIT <% if (databaseTypeCassandra) { %>: AbstractCassandraTest() <% } %> {
@@ -286,14 +286,14 @@ class <%= entityClass %>ResourceIT <% if (databaseTypeCassandra) { %>: AbstractC
     private lateinit var em: EntityManager
     <%_ } _%>
 
-    <%_ if (!reactive) { _%>
-
-    @Autowired
-    private lateinit var rest<%= entityClass %>MockMvc: MockMvc
-    <%_ } else { _%>
+    <%_ if (reactive) { _%>
 
     @Autowired
     private lateinit var webTestClient: WebTestClient
+    <%_ } else { _%>
+
+    @Autowired
+    private lateinit var rest<%= entityClass %>MockMvc: MockMvc
     <%_ } _%>
 
     private lateinit var <%= persistInstance %>: <%= persistClass %>
@@ -339,18 +339,18 @@ class <%= entityClass %>ResourceIT <% if (databaseTypeCassandra) { %>: AbstractC
         <%_ if (dtoMapstruct) { _%>
         val <%= dtoInstance %> = <%= entityInstance %>Mapper.toDto(<%= persistInstance %>)
         <%_ } _%>
-        <%_ if (!reactive) { _%>
-        rest<%= entityClass %>MockMvc.perform(
-            post(ENTITY_API_URL)<% if (testsNeedCsrf) { %>.with(csrf())<% }%>
-                .contentType(MediaType.APPLICATION_JSON)
-                .content(convertObjectToJsonBytes(<%= restInstance %>))
-        ).andExpect(status().isCreated)
-        <%_ } else { _%>
+        <%_ if (reactive) { _%>
         webTestClient.post().uri(ENTITY_API_URL)
             .contentType(MediaType.APPLICATION_JSON)
             .bodyValue(convertObjectToJsonBytes(<%= restInstance %>))
             .exchange()
             .expectStatus().isCreated
+        <%_ } else { _%>
+        rest<%= entityClass %>MockMvc.perform(
+            post(ENTITY_API_URL)<% if (testsNeedCsrf) { %>.with(csrf())<% }%>
+                .contentType(MediaType.APPLICATION_JSON)
+                .content(convertObjectToJsonBytes(<%= restInstance %>))
+        ).andExpect(status().isCreated)
         <%_ } _%>
 
         // Validate the <%= entityClass %> in the database
@@ -375,7 +375,7 @@ class <%= entityClass %>ResourceIT <% if (databaseTypeCassandra) { %>: AbstractC
         <%_ if (isUsingMapsId) { _%>
 
         // Validate the id for MapsId, the ids must be same
-        assertThat(test<%= entityClass %>.<%= primaryKey.name %>).isEqualTo(test<%= entityClass %>.<%= mapsIdEntityInstance %>?.<%= primaryKey.name %>)
+        assertThat(test<%= entityClass %>.<%= primaryKey.name %>).isEqualTo(<%_ if (dtoMapstruct) { _%><%= dtoInstance %><%_ } else { _%>test<%= entityClass %><%_ } _%>.<%= mapsIdEntityInstance %>?.<%= primaryKey.name %>)
         <%_ } _%>
         <%_ if (searchEngineElasticsearch) { _%>
 
@@ -402,18 +402,18 @@ class <%= entityClass %>ResourceIT <% if (databaseTypeCassandra) { %>: AbstractC
         val databaseSizeBeforeCreate = <%= entityInstance %>Repository.findAll()<%= callListBlock %>.size
 
         // An entity with an existing ID cannot be created, so this API call must fail
-        <%_ if (!reactive) { _%>
-        rest<%= entityClass %>MockMvc.perform(
-            post(ENTITY_API_URL)<% if (testsNeedCsrf) { %>.with(csrf())<% }%>
-                .contentType(MediaType.APPLICATION_JSON)
-                .content(convertObjectToJsonBytes(<%= restInstance %>))
-        ).andExpect(status().isBadRequest)
-        <%_ } else { _%>
+        <%_ if (reactive) { _%>
         webTestClient.post().uri(ENTITY_API_URL)
             .contentType(MediaType.APPLICATION_JSON)
             .bodyValue(convertObjectToJsonBytes(<%= restInstance %>))
             .exchange()
             .expectStatus().isBadRequest
+        <%_ } else { _%>
+        rest<%= entityClass %>MockMvc.perform(
+            post(ENTITY_API_URL)<% if (testsNeedCsrf) { %>.with(csrf())<% }%>
+                .contentType(MediaType.APPLICATION_JSON)
+                .content(convertObjectToJsonBytes(<%= restInstance %>))
+        ).andExpect(status().isBadRequest)
         <%_ } _%>
 
         // Validate the <%= entityClass %> in the database
@@ -502,14 +502,12 @@ class <%= entityClass %>ResourceIT <% if (databaseTypeCassandra) { %>: AbstractC
     }
 <%_ } _%>
 <%_ for (field of fields.filter(field => !field.id && !field.transient)) { _%>
-    <%_ 
-        if (field.fieldValidate) {
-            let required = false;
-            if (field.fieldType !== 'byte[]' && field.fieldValidate&& field.fieldValidateRules.includes('required')) {
-                required = true;
-            }
-            if (required) { 
-    _%>
+    <%_ if (field.fieldValidate) {
+    let required = false;
+    if (field.fieldType !== 'byte[]' && field.fieldValidate&& field.fieldValidateRules.includes('required')) {
+        required = true;
+    } _%>
+    <%_ if (required) { _%>
     @Test<%= transactionalAnnotation %>
     @Throws(Exception::class)
     fun check<%= field.fieldInJavaBeanMethod %>IsRequired() {
@@ -520,18 +518,18 @@ class <%= entityClass %>ResourceIT <% if (databaseTypeCassandra) { %>: AbstractC
         // Create the <%= entityClass %>, which fails.<% if (dtoMapstruct) { %>
         val <%= dtoInstance %> = <%= entityInstance %>Mapper.toDto(<%= persistInstance %>)<% } %>
 
-        <%_ if (!reactive) { _%>
-        rest<%= entityClass %>MockMvc.perform(
-            post(ENTITY_API_URL)<% if (testsNeedCsrf) { %>.with(csrf())<% }%>
-                .contentType(MediaType.APPLICATION_JSON)
-                .content(convertObjectToJsonBytes(<%= restInstance %>))
-        ).andExpect(status().isBadRequest)
-        <%_ } else { _%>
+        <%_ if (reactive) { _%>
         webTestClient.post().uri(ENTITY_API_URL)
             .contentType(MediaType.APPLICATION_JSON)
             .bodyValue(convertObjectToJsonBytes(<%= restInstance %>))
             .exchange()
             .expectStatus().isBadRequest
+        <%_ } else { _%>
+        rest<%= entityClass %>MockMvc.perform(
+            post(ENTITY_API_URL)<% if (testsNeedCsrf) { %>.with(csrf())<% }%>
+                .contentType(MediaType.APPLICATION_JSON)
+                .content(convertObjectToJsonBytes(<%= restInstance %>))
+        ).andExpect(status().isBadRequest)
         <%_ } _%>
 
         <%_ if (databaseTypeCouchbase) { _%>
@@ -598,19 +596,19 @@ class <%= entityClass %>ResourceIT <% if (databaseTypeCassandra) { %>: AbstractC
             <%_ } _%>
         <%_ } _%>
         <%= entityInstance %>Repository.<%= saveMethod %>(<%= persistInstance %>)<%= callBlock %>
-
-        <%_ if (!reactive) { _%>
+        
         // Get all the <%= entityInstance %>List
-        rest<%= entityClass %>MockMvc.perform(get(ENTITY_API_URL<% if (!databaseTypeCassandra) { %>+ "?sort=<%= primaryKey.name %>,desc"<% } %>))
-            .andExpect(status().isOk)
-            .andExpect(content().contentType(MediaType.APPLICATION_JSON_VALUE))
-        <%_ } else { _%>
+        <%_ if (reactive) { _%>
         webTestClient.get().uri(ENTITY_API_URL + "?sort=<%= primaryKey.name %>,desc")
             .accept(MediaType.APPLICATION_JSON)
             .exchange()
             .expectStatus().isOk
             .expectHeader().contentType(MediaType.APPLICATION_JSON)
             .expectBody()
+        <%_ } else { _%>
+        rest<%= entityClass %>MockMvc.perform(get(ENTITY_API_URL<% if (!databaseTypeCassandra) { %>+ "?sort=<%= primaryKey.name %>,desc"<% } %>))
+            .andExpect(status().isOk)
+            .andExpect(content().contentType(MediaType.APPLICATION_JSON_VALUE))
         <%_ } _%>
         <%_ if (['sql', 'mongodb', 'couchbase', 'cassandra'].includes(databaseType)) {
         _%>
@@ -637,19 +635,19 @@ class <%= entityClass %>ResourceIT <% if (databaseTypeCassandra) { %>: AbstractC
     <% if (!reactive) { %>@Throws(Exception::class)<% } %>
     fun getAll<%= entityClassPlural %>WithEagerRelationshipsIsEnabled() {
         <%_ if (!serviceNo) { _%>
-        `when`(<%= entityInstance %>ServiceMock.findAllWithEagerRelationships(any())).thenReturn(<% if (!reactive) { %>PageImpl(mutableListOf())<% } else { %>Flux.empty()<% }%>)
+        `when`(<%= entityInstance %>ServiceMock.findAllWithEagerRelationships(any())).thenReturn(<% if (reactive) { %>Flux.empty()<% } else { %>PageImpl(mutableListOf())<% }%>)
         <%_ } else { _%>
         val <%= entityInstance %>Resource = <%= entityClass %>Resource(<%= entityInstance %>RepositoryMock<% if (dtoMapstruct) { %>, <%= entityInstance %>Mapper<% } %><% if (searchEngineElasticsearch) { %>, mock<%= entityClass %>SearchRepository<% } %><% if (saveUserSnapshot) { %>, userRepository<% } %><% if (isUsingMapsId&& !dtoMapstruct) { %>, <%= mapsIdRepoInstance _%> <% } %>)
-        `when`(<%= entityInstance %>RepositoryMock.findAllWithEagerRelationships(any())).thenReturn(<% if (!reactive) { %>PageImpl(mutableListOf())<% } else { %>Flux.empty()<% }%>)
+        `when`(<%= entityInstance %>RepositoryMock.findAllWithEagerRelationships(any())).thenReturn(<% if (reactive) { %>Flux.empty()<% } else { %>PageImpl(mutableListOf())<% }%>)
         <%_ } _%>
 
-        <%_ if (!reactive) { _%>
-        rest<%= entityClass %>MockMvc.perform(get(ENTITY_API_URL + "?eagerload=true"))
-            .andExpect(status().isOk)
-        <%_ } else { _%>
+        <%_ if (reactive) { _%>
         webTestClient.get().uri(ENTITY_API_URL + "?eagerload=true")
             .exchange()
             .expectStatus().isOk
+        <%_ } else { _%>
+        rest<%= entityClass %>MockMvc.perform(get(ENTITY_API_URL + "?eagerload=true"))
+            .andExpect(status().isOk)
         <%_ } _%>
 
         <%_ if (!serviceNo) { _%>
@@ -663,19 +661,19 @@ class <%= entityClass %>ResourceIT <% if (databaseTypeCassandra) { %>: AbstractC
     <% if (!reactive) { %>@Throws(Exception::class)<% } %>
     fun getAll<%= entityClassPlural %>WithEagerRelationshipsIsNotEnabled() {
         <%_ if (!serviceNo) { _%>
-        `when`(<%= entityInstance %>ServiceMock.findAllWithEagerRelationships(any())).thenReturn(<% if (!reactive) { %>PageImpl(mutableListOf())<% } else { %>Flux.empty()<% }%>)
+        `when`(<%= entityInstance %>ServiceMock.findAllWithEagerRelationships(any())).thenReturn(<% if (reactive) { %>Flux.empty()<% } else { %>PageImpl(mutableListOf())<% }%>)
         <%_ } else { _%>
             val <%= entityInstance %>Resource = <%= entityClass %>Resource(<%= entityInstance %>RepositoryMock<% if (dtoMapstruct) { %>, <%= entityInstance %>Mapper<% } %><% if (searchEngineElasticsearch) { %>, mock<%= entityClass %>SearchRepository<% } %><% if (saveUserSnapshot) { %>, userRepository<% } %><% if (isUsingMapsId&& !dtoMapstruct) { %>, <%= mapsIdRepoInstance _%> <% } %>)
-        `when`(<%= entityInstance %>RepositoryMock.findAllWithEagerRelationships(any())).thenReturn(<% if (!reactive) { %>PageImpl(mutableListOf())<% } else { %>Flux.empty()<% }%>)
+        `when`(<%= entityInstance %>RepositoryMock.findAllWithEagerRelationships(any())).thenReturn(<% if (reactive) { %>Flux.empty()<% } else { %>PageImpl(mutableListOf())<% }%>)
         <%_ } _%>
 
-        <%_ if (!reactive) { _%>
-        rest<%= entityClass %>MockMvc.perform(get(ENTITY_API_URL + "?eagerload=true"))
-            .andExpect(status().isOk)
-        <%_ } else { _%>
+        <%_ if (reactive) { _%>
         webTestClient.get().uri(ENTITY_API_URL + "?eagerload=true")
             .exchange()
             .expectStatus().isOk
+        <%_ } else { _%>
+        rest<%= entityClass %>MockMvc.perform(get(ENTITY_API_URL + "?eagerload=true"))
+            .andExpect(status().isOk)
         <%_ } _%>
 
         <%_ if (!serviceNo) { _%>
@@ -701,17 +699,17 @@ class <%= entityClass %>ResourceIT <% if (databaseTypeCassandra) { %>: AbstractC
         assertNotNull(id)
 
         // Get the <%= entityInstance %>
-        <%_ if (!reactive) { _%>
-        rest<%= entityClass %>MockMvc.perform(get(ENTITY_API_URL_ID, <%= persistInstance %>.<%= primaryKey.name %>))
-            .andExpect(status().isOk)
-            .andExpect(content().contentType(MediaType.APPLICATION_JSON_VALUE))
-        <%_ } else { _%>
+        <%_ if (reactive) { _%>
         webTestClient.get().uri(ENTITY_API_URL_ID, <%= persistInstance %>.<%= primaryKey.name %>)
             .accept(MediaType.APPLICATION_JSON)
             .exchange()
             .expectStatus().isOk
             .expectHeader().contentType(MediaType.APPLICATION_JSON)
             .expectBody()
+        <%_ } else { _%>
+        rest<%= entityClass %>MockMvc.perform(get(ENTITY_API_URL_ID, <%= persistInstance %>.<%= primaryKey.name %>))
+            .andExpect(status().isOk)
+            .andExpect(content().contentType(MediaType.APPLICATION_JSON_VALUE))
         <%_ } _%>
         <%_ if (['sql', 'mongodb', 'couchbase', 'cassandra'].includes(databaseType)) { _%>
             <%= !reactive ? '.andExpect(' : '.' %>jsonPath("$.<%= primaryKey.name %>").value(<%= reactive ? '`is`(' : '' %><%= idValue %>))<%_ } _%><% for (field of fields.filter(field => !field.id && !field.transient)) { %>
@@ -1086,14 +1084,14 @@ class <%= entityClass %>ResourceIT <% if (databaseTypeCassandra) { %>: AbstractC
     <% if (!reactive) { %>@Throws(Exception::class)<% } %>
     fun getNonExisting<%= entityClass %>() {
         // Get the <%= entityInstance %>
-        <%_ if (!reactive) { _%>
-        rest<%= entityClass %>MockMvc.perform(get(ENTITY_API_URL_ID, <% if (primaryKey.typeLong || primaryKey.typeString) { %>Long.MAX_VALUE<% } else if (primaryKey.typeUUID) { %>UUID.randomUUID().toString()<% } %>))
-            .andExpect(status().isNotFound)
-        <%_ } else { _%>
+        <%_ if (reactive) { _%>
         webTestClient.get().uri(ENTITY_API_URL_ID, <% if (primaryKey.typeLong || primaryKey.typeString) { %>Long.MAX_VALUE<% } else if (primaryKey.typeUUID) { %>UUID.randomUUID().toString()<% } %>)
             .accept(MediaType.APPLICATION_JSON)
             .exchange()
             .expectStatus().isNotFound
+        <%_ } else { _%>
+        rest<%= entityClass %>MockMvc.perform(get(ENTITY_API_URL_ID, <% if (primaryKey.typeLong || primaryKey.typeString) { %>Long.MAX_VALUE<% } else if (primaryKey.typeUUID) { %>UUID.randomUUID().toString()<% } %>))
+            .andExpect(status().isNotFound)
         <%_ } _%>
     }
 <%_ if (!readOnly) { _%>
@@ -1130,18 +1128,18 @@ class <%= entityClass %>ResourceIT <% if (databaseTypeCassandra) { %>: AbstractC
         val <%= dtoInstance %> = <%= entityInstance %>Mapper.toDto(updated<%= persistClass %>)
         <%_ } _%>
 
-        <%_ if (!reactive) { _%>
-        rest<%= entityClass %>MockMvc.perform(
-            put(ENTITY_API_URL_ID, <%= (dtoMapstruct ? asDto(entityInstance) : 'updated' + persistClass) %>.<%= primaryKey.name %>)<% if (testsNeedCsrf) { %>.with(csrf())<% }%>
-                .contentType(MediaType.APPLICATION_JSON)
-                .content(convertObjectToJsonBytes(<% if (dtoMapstruct) { %><%= dtoInstance %><% } else { %>updated<%= persistClass %><% } %>))
-        ).andExpect(status().isOk)
-        <%_ } else { _%>
+        <%_ if (reactive) { _%>
         webTestClient.put().uri(ENTITY_API_URL_ID, <%= (dtoMapstruct ? asDto(entityInstance) : 'updated' + persistClass) %>.<%= primaryKey.name %>)
             .contentType(MediaType.APPLICATION_JSON)
             .bodyValue(convertObjectToJsonBytes(<%= (dtoMapstruct ? dtoInstance : 'updated' + persistClass) %>))
             .exchange()
             .expectStatus().isOk
+        <%_ } else { _%>
+        rest<%= entityClass %>MockMvc.perform(
+            put(ENTITY_API_URL_ID, <%= (dtoMapstruct ? asDto(entityInstance) : 'updated' + persistClass) %>.<%= primaryKey.name %>)<% if (testsNeedCsrf) { %>.with(csrf())<% }%>
+                .contentType(MediaType.APPLICATION_JSON)
+                .content(convertObjectToJsonBytes(<% if (dtoMapstruct) { %><%= dtoInstance %><% } else { %>updated<%= persistClass %><% } %>))
+        ).andExpect(status().isOk)
         <%_ } _%>
 
         // Validate the <%= entityClass %> in the database
@@ -1176,17 +1174,17 @@ class <%= entityClass %>ResourceIT <% if (databaseTypeCassandra) { %>: AbstractC
         <%_ } _%>
 
         // If the entity doesn't have an ID, it will throw BadRequestAlertException
-        <%_ if (!reactive) { _%>
-            rest<%= entityClass %>MockMvc.perform(put(ENTITY_API_URL_ID, <%= restInstance %>.<%= primaryKey.name %>)<% if (testsNeedCsrf) { %>.with(csrf())<% }%>
-            .contentType(MediaType.APPLICATION_JSON)
-            .content(convertObjectToJsonBytes(<%= restInstance %>)))
-            .andExpect(status().isBadRequest)
-        <%_ } else { _%>
+        <%_ if (reactive) { _%>
         webTestClient.put().uri(ENTITY_API_URL_ID, <%= restInstance %>.<%= primaryKey.name %>)
             .contentType(MediaType.APPLICATION_JSON)
             .bodyValue(convertObjectToJsonBytes(<%= restInstance %>))
             .exchange()
             .expectStatus().isBadRequest
+        <%_ } else { _%>
+        rest<%= entityClass %>MockMvc.perform(put(ENTITY_API_URL_ID, <%= restInstance %>.<%= primaryKey.name %>)<% if (testsNeedCsrf) { %>.with(csrf())<% }%>
+            .contentType(MediaType.APPLICATION_JSON)
+            .content(convertObjectToJsonBytes(<%= restInstance %>)))
+            .andExpect(status().isBadRequest)
         <%_ } _%>
 
         // Validate the <%= entityClass %> in the database
@@ -1253,17 +1251,17 @@ class <%= entityClass %>ResourceIT <% if (databaseTypeCassandra) { %>: AbstractC
 
         <%_ } _%>
         // If url ID doesn't match entity ID, it will throw BadRequestAlertException
-        <%_ if (!reactive) { _%>
-        rest<%= entityClass %>MockMvc.perform(put(ENTITY_API_URL)<% if (testsNeedCsrf) { %>.with(csrf())<% } %>
-            .contentType(MediaType.APPLICATION_JSON)
-            .content(convertObjectToJsonBytes(<%= restInstance %>)))
-            .andExpect(status().isMethodNotAllowed)
-        <%_ } else { _%>
+        <%_ if (reactive) { _%>
         webTestClient.put().uri(ENTITY_API_URL)
             .contentType(MediaType.APPLICATION_JSON)
             .bodyValue(convertObjectToJsonBytes(<%= restInstance %>))
             .exchange()
             .expectStatus().isEqualTo(405)
+        <%_ } else { _%>
+        rest<%= entityClass %>MockMvc.perform(put(ENTITY_API_URL)<% if (testsNeedCsrf) { %>.with(csrf())<% } %>
+            .contentType(MediaType.APPLICATION_JSON)
+            .content(convertObjectToJsonBytes(<%= restInstance %>)))
+            .andExpect(status().isMethodNotAllowed)
         <%_ } _%>
 
         // Validate the <%= entityClass %> in the database
@@ -1325,17 +1323,17 @@ class <%= entityClass %>ResourceIT <% if (databaseTypeCassandra) { %>: AbstractC
 
         <%_ } _%>
         // If the entity doesn't have an ID, it will throw BadRequestAlertException
-        <%_ if (!reactive) { _%>
-            rest<%= entityClass %>MockMvc.perform(patch(ENTITY_API_URL_ID, <%= (dtoMapstruct ? asDto(entityInstance) : asEntity(entityInstance)) %>.<%= primaryKey.name %>)<% if (testsNeedCsrf) { %>.with(csrf())<% }%>
-            .contentType("application/merge-patch+json")
-            .content(convertObjectToJsonBytes(<%= (dtoMapstruct ? asDto(entityInstance) : asEntity(entityInstance)) %>)))
-            .andExpect(status().isBadRequest)
-        <%_ } else { _%>
-            webTestClient.patch().uri(ENTITY_API_URL_ID, <%= (dtoMapstruct ? asDto(entityInstance) : asEntity(entityInstance)) %>.<%= primaryKey.name %>)
+        <%_ if (reactive) { _%>
+        webTestClient.patch().uri(ENTITY_API_URL_ID, <%= (dtoMapstruct ? asDto(entityInstance) : asEntity(entityInstance)) %>.<%= primaryKey.name %>)
             .contentType(MediaType.valueOf("application/merge-patch+json"))
             .bodyValue(convertObjectToJsonBytes(<%= (dtoMapstruct ? asDto(entityInstance) : asEntity(entityInstance)) %>))
             .exchange()
             .expectStatus().isBadRequest
+        <%_ } else { _%>
+        rest<%= entityClass %>MockMvc.perform(patch(ENTITY_API_URL_ID, <%= (dtoMapstruct ? asDto(entityInstance) : asEntity(entityInstance)) %>.<%= primaryKey.name %>)<% if (testsNeedCsrf) { %>.with(csrf())<% }%>
+            .contentType("application/merge-patch+json")
+            .content(convertObjectToJsonBytes(<%= (dtoMapstruct ? asDto(entityInstance) : asEntity(entityInstance)) %>)))
+            .andExpect(status().isBadRequest)
         <%_ } _%>
 
         // Validate the <%= entityClass %> in the database
@@ -1363,17 +1361,17 @@ class <%= entityClass %>ResourceIT <% if (databaseTypeCassandra) { %>: AbstractC
 
         <%_ } _%>
         // If url ID doesn't match entity ID, it will throw BadRequestAlertException
-        <%_ if (!reactive) { _%>
-            rest<%= entityClass %>MockMvc.perform(patch(ENTITY_API_URL_ID, <%= getJavaValueGeneratorForType(primaryKey.type) %>)<% if (testsNeedCsrf) { %>.with(csrf())<% } %>
-            .contentType("application/merge-patch+json")
-            .content(convertObjectToJsonBytes(<%= (dtoMapstruct ? asDto(entityInstance) : asEntity(entityInstance)) %>)))
-            .andExpect(status().isBadRequest)
-        <%_ } else { _%>
-            webTestClient.patch().uri(ENTITY_API_URL_ID, <%= getJavaValueGeneratorForType(primaryKey.type) %>)
+        <%_ if (reactive) { _%>
+        webTestClient.patch().uri(ENTITY_API_URL_ID, <%= getJavaValueGeneratorForType(primaryKey.type) %>)
             .contentType(MediaType.valueOf("application/merge-patch+json"))
             .bodyValue(convertObjectToJsonBytes(<%= (dtoMapstruct ? asDto(entityInstance) : asEntity(entityInstance)) %>))
             .exchange()
             .expectStatus().isBadRequest
+        <%_ } else { _%>
+        rest<%= entityClass %>MockMvc.perform(patch(ENTITY_API_URL_ID, <%= getJavaValueGeneratorForType(primaryKey.type) %>)<% if (testsNeedCsrf) { %>.with(csrf())<% } %>
+            .contentType("application/merge-patch+json")
+            .content(convertObjectToJsonBytes(<%= (dtoMapstruct ? asDto(entityInstance) : asEntity(entityInstance)) %>)))
+            .andExpect(status().isBadRequest)
         <%_ } _%>
 
         // Validate the <%= entityClass %> in the database
@@ -1401,17 +1399,17 @@ class <%= entityClass %>ResourceIT <% if (databaseTypeCassandra) { %>: AbstractC
 
         <%_ } _%>
         // If url ID doesn't match entity ID, it will throw BadRequestAlertException
-        <%_ if (!reactive) { _%>
-            rest<%= entityClass %>MockMvc.perform(patch(ENTITY_API_URL)<% if (testsNeedCsrf) { %>.with(csrf())<% } %>
-            .contentType("application/merge-patch+json")
-            .content(convertObjectToJsonBytes(<%= (dtoMapstruct ? asDto(entityInstance) : asEntity(entityInstance)) %>)))
-            .andExpect(status().isMethodNotAllowed)
-        <%_ } else { _%>
-            webTestClient.patch().uri(ENTITY_API_URL)
+        <%_ if (reactive) { _%>
+        webTestClient.patch().uri(ENTITY_API_URL)
             .contentType(MediaType.valueOf("application/merge-patch+json"))
             .bodyValue(convertObjectToJsonBytes(<%= (dtoMapstruct ? asDto(entityInstance) : asEntity(entityInstance)) %>))
             .exchange()
             .expectStatus().isEqualTo(405)
+        <%_ } else { _%>
+        rest<%= entityClass %>MockMvc.perform(patch(ENTITY_API_URL)<% if (testsNeedCsrf) { %>.with(csrf())<% } %>
+            .contentType("application/merge-patch+json")
+            .content(convertObjectToJsonBytes(<%= (dtoMapstruct ? asDto(entityInstance) : asEntity(entityInstance)) %>)))
+            .andExpect(status().isMethodNotAllowed)
         <%_ } _%>
 
         // Validate the <%= entityClass %> in the database
@@ -1447,18 +1445,18 @@ class <%= entityClass %>ResourceIT <% if (databaseTypeCassandra) { %>: AbstractC
         <%= entityInstance %>Repository.<%= saveMethod %>(<%= persistInstance %>)<%= callBlock %>
 
         val databaseSizeBeforeDelete = <%= entityInstance %>Repository.findAll()<%= callListBlock %>.size
-
-        <%_ if (!reactive) { _%>
+        
         // Delete the <%= entityInstance %>
-        rest<%= entityClass %>MockMvc.perform(
-            delete(ENTITY_API_URL_ID, <%= persistInstance %>.<%= primaryKey.name %><% if (primaryKey.typeUUID && databaseTypeSql) { %>.toString()<% } %>)<% if (testsNeedCsrf) { %>.with(csrf())<% }%>
-                .accept(MediaType.APPLICATION_JSON)
-        ).andExpect(status().isNoContent)
-        <%_ } else { _%>
+        <%_ if (reactive) { _%>
         webTestClient.delete().uri(ENTITY_API_URL_ID, <%= persistInstance %>.<%= primaryKey.name %>)
             .accept(MediaType.APPLICATION_JSON)
             .exchange()
             .expectStatus().isNoContent
+        <%_ } else { _%>
+        rest<%= entityClass %>MockMvc.perform(
+            delete(ENTITY_API_URL_ID, <%= persistInstance %>.<%= primaryKey.name %><% if (primaryKey.typeUUID && databaseTypeSql) { %>.toString()<% } %>)<% if (testsNeedCsrf) { %>.with(csrf())<% }%>
+                .accept(MediaType.APPLICATION_JSON)
+        ).andExpect(status().isNoContent)
         <%_ } _%>
 
         // Validate the database contains one less item
@@ -1515,16 +1513,16 @@ class <%= entityClass %>ResourceIT <% if (databaseTypeCassandra) { %>: AbstractC
         retryUntilNotEmpty(() -> <%= entityInstance %>Repository.search("id:${<%= entityInstance %>.<%= primaryKey.name %>}")<% if (reactive) { %>.collectList().block()<% } %>)
     <%_ } _%>
         // Search the <%= entityInstance %>
-    <%_ if (!reactive) { _%>
-        rest<%= entityClass %>MockMvc.perform(get("$ENTITY_SEARCH_API_URL?query=id:${<%= persistInstance %>.<%= primaryKey.name %>}"))
-            .andExpect(status().isOk)
-            .andExpect(content().contentType(MediaType.APPLICATION_JSON_VALUE))
-    <%_ } else { _%>
+    <%_ if (reactive) { _%>
         webTestClient.get().uri("$ENTITY_SEARCH_API_URL?query=id:${<%= persistInstance %>.<%= primaryKey.name %>}")
             .exchange()
             .expectStatus().isOk
             .expectHeader().contentType(MediaType.APPLICATION_JSON)
             .expectBody()
+    <%_ } else { _%>
+        rest<%= entityClass %>MockMvc.perform(get("$ENTITY_SEARCH_API_URL?query=id:${<%= persistInstance %>.<%= primaryKey.name %>}"))
+            .andExpect(status().isOk)
+            .andExpect(content().contentType(MediaType.APPLICATION_JSON_VALUE))
     <%_ } _%>
     <%_ if (['sql', 'mongodb', 'couchbase', 'cassandra'].includes(databaseType)) { _%>
             <%= !reactive ? '.andExpect(' : '.' %>jsonPath("$.[*].<%= primaryKey.name %>").value(hasItem(<%= idValue %>))<%= !reactive ? ')' : '' %><%_ } _%><% for (field of fields.filter(field => !field.id && !field.transient)) { %>
