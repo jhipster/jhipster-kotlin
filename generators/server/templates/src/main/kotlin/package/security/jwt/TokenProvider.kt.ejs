@@ -54,32 +54,31 @@ class TokenProvider(
 
     private val log = LoggerFactory.getLogger(javaClass)
 
-    private var key: Key? = null
+    private val key: Key = run {
+        val base64Secret = jHipsterProperties.security.authentication.jwt.base64Secret
 
-    private var jwtParser: JwtParser? = null
-
-    private var tokenValidityInMilliseconds: Long = 0
-
-    private var tokenValidityInMillisecondsForRememberMe: Long = 0
-
-    init {
-        val keyBytes: ByteArray
-        var secret = jHipsterProperties.security.authentication.jwt.base64Secret
-        keyBytes = if (!ObjectUtils.isEmpty(secret)) {
+        val keyBytes: ByteArray = if (!ObjectUtils.isEmpty(base64Secret)) {
             log.debug("Using a Base64-encoded JWT secret key")
-            Decoders.BASE64.decode(secret)
+            Decoders.BASE64.decode(base64Secret)
         } else {
-            log.warn("Warning: the JWT key used is not Base64-encoded. " +
-                "We recommend using the `jhipster.security.authentication.jwt.base64-secret` key for optimum security.")
-            secret = jHipsterProperties.security.authentication.jwt.secret
+            log.warn(
+                "Warning: the JWT key used is not Base64-encoded. " +
+                    "We recommend using the `jhipster.security.authentication.jwt.base64-secret` key for optimum security."
+            )
+            val secret = jHipsterProperties.security.authentication.jwt.secret
             secret.toByteArray(StandardCharsets.UTF_8)
         }
-        this.key = Keys.hmacShaKeyFor(keyBytes)
-        this.jwtParser = Jwts.parserBuilder().setSigningKey(key).build()
-        this.tokenValidityInMilliseconds = 1000 * jHipsterProperties.security.authentication.jwt.tokenValidityInSeconds
-        this.tokenValidityInMillisecondsForRememberMe = 1000 * jHipsterProperties.security.authentication.jwt
-            .tokenValidityInSecondsForRememberMe
+
+        Keys.hmacShaKeyFor(keyBytes)
     }
+
+    private val jwtParser: JwtParser = Jwts.parserBuilder().setSigningKey(key).build()
+
+    private val tokenValidityInMilliseconds: Long =
+        1000 * jHipsterProperties.security.authentication.jwt.tokenValidityInSeconds
+
+    private val tokenValidityInMillisecondsForRememberMe: Long =
+        1000 * jHipsterProperties.security.authentication.jwt.tokenValidityInSecondsForRememberMe
 
     fun createToken(authentication: Authentication, rememberMe: Boolean): String {
         val authorities = authentication.authorities.asSequence()
@@ -105,10 +104,12 @@ class TokenProvider(
     }
 
     fun getAuthentication(token: String): Authentication {
-        val claims = jwtParser?.parseClaimsJws(token)?.body
+        val claims = jwtParser.parseClaimsJws(token)?.body
 
-        val authorities = claims?.get(AUTHORITIES_KEY)?.toString()?.splitToSequence(",")
-            ?.filter{ !it.trim().isEmpty() }?.mapTo(mutableListOf()) { SimpleGrantedAuthority(it) }
+        val authorities = claims?.get(AUTHORITIES_KEY)?.toString()
+            ?.splitToSequence(",")
+            ?.filter { it.trim().isNotEmpty() }
+            ?.mapTo(mutableListOf()) { SimpleGrantedAuthority(it) }
 
         val principal = User(claims?.subject, "", authorities)
 
@@ -117,7 +118,7 @@ class TokenProvider(
 
     fun validateToken(authToken: String): Boolean {
         try {
-            jwtParser?.parseClaimsJws(authToken)
+            jwtParser.parseClaimsJws(authToken)
             return true
         } catch (e: ExpiredJwtException) {
             this.securityMetersService.trackTokenExpired()
