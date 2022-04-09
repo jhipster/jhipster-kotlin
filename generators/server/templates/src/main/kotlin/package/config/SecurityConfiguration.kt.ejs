@@ -42,6 +42,7 @@ import org.springframework.core.convert.converter.Converter
 import org.springframework.http.HttpMethod
     <%_ } _%>
 import org.springframework.security.config.annotation.method.configuration.EnableGlobalMethodSecurity
+import org.springframework.security.config.annotation.web.configuration.WebSecurityCustomizer
 import org.springframework.security.config.annotation.web.builders.HttpSecurity
 <%_ if (!applicationTypeMicroservice || !authenticationTypeOauth2) { _%>
 import org.springframework.security.config.annotation.web.builders.WebSecurity
@@ -51,7 +52,7 @@ import org.springframework.security.config.annotation.web.builders.WebSecurity
             <%_ } _%>
         <%_ } _%>
 import org.springframework.security.config.annotation.web.configuration.EnableWebSecurity
-import org.springframework.security.config.annotation.web.configuration.WebSecurityConfigurerAdapter
+import org.springframework.security.web.SecurityFilterChain
     <%_ if (authenticationTypeJwt || (authenticationTypeOauth2 && applicationTypeMicroservice)) { _%>
 import org.springframework.security.config.http.SessionCreationPolicy
     <%_ } _%>
@@ -118,7 +119,7 @@ class SecurityConfiguration(
     private val corsFilter: CorsFilter,
     <%_ } _%>
     private val problemSupport: SecurityProblemSupport
-) : WebSecurityConfigurerAdapter() {
+) {
     <%_ if (authenticationTypeOauth2) { _%>
 
     @Value("\${spring.security.oauth2.client.provider.oidc.issuer-uri}")
@@ -142,32 +143,38 @@ class SecurityConfiguration(
     <%_ } _%>
     <%_ if (!applicationTypeMicroservice) { _%>
 
-    override fun configure(web: WebSecurity?) {
-        web!!.ignoring()
-            .antMatchers(HttpMethod.OPTIONS, "/**")
-            <%_ if (!skipClient) { _%>
-            .antMatchers("/app/**/*.{js,html}")
-            .antMatchers("/i18n/**")
-            .antMatchers("/content/**")
-            <%_ } _%>
-            <%_ if (devDatabaseTypeH2Any) { _%>
-            .antMatchers("/h2-console/**")
-            <%_ } _%>
-            .antMatchers("/swagger-ui/**")
-            .antMatchers("/test/**")
+    @Bean
+    fun webSecurityCustomizer(): WebSecurityCustomizer {
+        return WebSecurityCustomizer { web -> 
+            web.ignoring()
+                .antMatchers(HttpMethod.OPTIONS, "/**")
+                <%_ if (!skipClient) { _%>
+                .antMatchers("/app/**/*.{js,html}")
+                .antMatchers("/i18n/**")
+                .antMatchers("/content/**")
+                <%_ } _%>
+                <%_ if (devDatabaseTypeH2Any) { _%>
+                .antMatchers("/h2-console/**")
+                <%_ } _%>
+                .antMatchers("/swagger-ui/**")
+                .antMatchers("/test/**")
+        }
     }
     <%_ } else { _%>
         <%_ if (devDatabaseTypeH2Any) { _%>
-
-    override fun configure(web: WebSecurity?) {
-        web!!.ignoring()
-            .antMatchers("/h2-console/**")
+    @Bean
+    fun webSecurityCustomizer(): WebSecurityCustomizer {
+        return WebSecurityCustomizer { web -> 
+            web.ignoring()
+                .antMatchers("/h2-console/**")
+        }
     }
         <%_ } _%>
     <%_ } _%>
 
+    @Bean
     @Throws(Exception::class)
-    public override fun configure(http: HttpSecurity) {
+    fun filterChain(http: HttpSecurity): SecurityFilterChain {
         http
             .csrf()
             <%_ if (['session','oauth2'].includes(authenticationType) && !applicationTypeMicroservice) { _%>
@@ -264,6 +271,7 @@ class SecurityConfiguration(
             .and()
                 .oauth2Client()
         <%_ } _%>
+        return http.build()
     }
     <%_ if (authenticationTypeJwt) { _%>
 

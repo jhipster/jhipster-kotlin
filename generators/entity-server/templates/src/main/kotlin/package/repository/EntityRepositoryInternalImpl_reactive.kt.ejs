@@ -39,11 +39,10 @@ import java.util.Map.Entry
 import java.util.Optional
 
 import org.springframework.data.domain.Pageable
-<%_ if (databaseTypeSql) { _%>
 import io.r2dbc.spi.Row
 import io.r2dbc.spi.RowMetadata
 import org.springframework.data.relational.core.query.Criteria.where
-  <%_ if (fieldsContainOwnerManyToMany) { _%>
+  <%_ if (containsBagRelationships) { _%>
 import org.springframework.data.relational.core.query.Query.query
   <%_ } _%>
 import org.springframework.data.r2dbc.convert.R2dbcConverter
@@ -52,6 +51,9 @@ import org.springframework.data.r2dbc.core.R2dbcEntityTemplate
 import org.springframework.data.r2dbc.repository.support.SimpleR2dbcRepository
 import org.springframework.data.relational.core.query.Criteria
 import org.springframework.data.relational.core.sql.Column
+import org.springframework.data.relational.core.sql.Comparison
+import org.springframework.data.relational.core.sql.Condition
+import org.springframework.data.relational.core.sql.Conditions
 import org.springframework.data.relational.core.sql.Expression
 import org.springframework.data.relational.core.sql.Select
 import org.springframework.data.relational.core.sql.SelectBuilder.SelectFromAndJoin<% if (reactiveEagerRelations.length > 0) { %>Condition<% } %>
@@ -59,7 +61,6 @@ import org.springframework.data.relational.core.sql.Table
 import org.springframework.data.relational.repository.support.MappingRelationalEntityInformation
 import org.springframework.r2dbc.core.DatabaseClient
 import org.springframework.r2dbc.core.RowsFetchSpec
-<%_ } _%>
 
 import <%= entityAbsolutePackage %>.domain.<%= persistClass %>
 <% relationships.forEach(function(rel) {
@@ -99,7 +100,7 @@ class <%= entityClass %>RepositoryInternalImpl(
     entityOperations: R2dbcEntityOperations,
     converter: R2dbcConverter
 ): SimpleR2dbcRepository<<%= persistClass %>, <%= primaryKey.type %>>(
-    MappingRelationalEntityInformation(converter.mappingContext.getRequiredPersistentEntity(<%= entityClass %>::class)), 
+    MappingRelationalEntityInformation(converter.mappingContext.getRequiredPersistentEntity(<%= persistClass %>::class)), 
     entityOperations, 
     converter
 ), <%= entityClass %>RepositoryInternal {
@@ -115,7 +116,7 @@ class <%= entityClass %>RepositoryInternalImpl(
             if (rel.relationshipManyToMany  && rel.ownerSide) {
                 const joinTableName = getJoinTableName(entityTableName, rel.relationshipName, prodDatabaseType);
         _%>
-        private val <%= rel.relationshipName %>Link = EntityManager.LinkTable("<%= joinTableName %>", "<%= getColumnName(name) %>_id", "<%= getColumnName(rel.relationshipName) %>_id")
+        private val <%= rel.relationshipName %>Link = EntityManager.LinkTable("<%= joinTableName %>", "<%= entity.entityTableName %>_<%= getColumnName(entity.primaryKey.name) %>", "<%= rel.joinColumnNames[0] %>")
         <%_ }
         }); _%>
 
@@ -125,34 +126,31 @@ class <%= entityClass %>RepositoryInternalImpl(
         return createQuery(pageable, null).all()
     }
 
-    override fun findAllBy(pageable: Pageable, criteria: Criteria): Flux<<%= persistClass %>> {
-        return createQuery(pageable, criteria).all()
-    }
-
-    fun createQuery(pageable: Pageable?, criteria: Criteria?): RowsFetchSpec<<%= persistClass %>> {
-        val columns = <%= persistClass %>SqlHelper().getColumns(entityTable, EntityManager.ENTITY_ALIAS)
+    fun createQuery(pageable: Pageable?, whereClause: Condition?): RowsFetchSpec<<%= persistClass %>> {
+        val columns = <%= entityClass %>SqlHelper().getColumns(entityTable, EntityManager.ENTITY_ALIAS)
         <%_ reactiveEagerRelations.forEach(function(rel) { _%>
         columns.addAll(<%= rel.otherEntityNameCapitalized %>SqlHelper().getColumns(<%= rel.relationshipName %>Table, "<%= rel.relationshipName %>"))
         <%_ }); _%>
         val selectFrom = Select.builder().select(columns).from(entityTable)
-            <%_ reactiveEagerRelations.forEach(function(rel) {
-            const colName = _getJoinColumnName(rel); _%>
-            .leftOuterJoin(<%= rel.relationshipName %>Table).on(Column.create("<%= colName %>", entityTable)).equals(Column.create("id", <%= rel.relationshipName %>Table ))
-            <%_ }); _%>;
-
-        val select = entityManager.createSelect(selectFrom, <%= persistClass %>::class.java, pageable, criteria)
+            <%_ reactiveEagerRelations.forEach(function(rel) { _%>
+            .leftOuterJoin(<%= rel.relationshipName %>Table).on(Column.create("<%= rel.joinColumnNames[0] %>", entityTable)).equals(Column.create("<%= rel.otherEntity.primaryKey.fields[0].columnName %>", <%= rel.relationshipName %>Table  ))
+            <%_ }); _%>
+        
+        // we do not support Criteria here for now as of https://github.com/jhipster/generator-jhipster/issues/18269
+        val select = entityManager.createSelect(selectFrom, <%= persistClass %>::class.java, pageable, whereClause)
         return db.sql(select).map(this::process)
     }
 
     override fun findAll(): Flux<<%= persistClass %>> {
-        return createQuery(null, null).all()
+        return findAllBy(null)
     }
 
     override fun findById(id: <%= primaryKey.type %>?): Mono<<%= persistClass %>> {
-        return createQuery(null, where(EntityManager.ENTITY_ALIAS + ".<%= primaryKey.name %>").`is`(id)).one()
+        val whereClause = Conditions.isEqual(entityTable.column("<%= primaryKey.fields[0].columnName %>"), Conditions.just(id.toString()));
+        return createQuery(null, whereClause).one();
     }
 
-    <%_ if (fieldsContainOwnerManyToMany) { _%>
+    <%_ if (implementsEagerLoadApis) { _%>
 
     override fun findOneWithEagerRelationships(id: <%= primaryKey.type %>?): Mono<<%= persistClass %>> {
         return findById(id)
@@ -182,28 +180,28 @@ class <%= entityClass %>RepositoryInternalImpl(
             return entityManager.insert(entity)
         }
 <%_ } _%>
-        return super.save(entity)<% if (fieldsContainOwnerManyToMany) { %>.flatMap { updateRelations(it) } <% } %>
+        return super.save(entity)<% if (containsBagRelationships) { %>.flatMap { updateRelations(it) } <% } %>
     }
 
-    <%_ if (fieldsContainOwnerManyToMany) { _%>
+    <%_ if (containsBagRelationships) { _%>
     protected fun <S:<%= persistClass %>> updateRelations(entity: S): Mono<S> {
         <%_ relationships.filter(function(rel) {
             return (rel.relationshipManyToMany  && rel.ownerSide)
         }).forEach(function(rel, idx) { _%>
             <%_ if (idx === 0) { _%>
-        val result = entityManager.updateLinkTable(<%= rel.relationshipName %>Link, entity.<%= primaryKey.name %>, entity.<%= rel.relationshipNamePlural %>?.map { it.id }).then()
+        val result = entityManager.updateLinkTable(<%= rel.relationshipName %>Link, entity.<%= primaryKey.name %>, entity.<%= rel.relationshipNamePlural %>?.map { it.<%= rel.otherEntity.primaryKey.name %> }).then()
             <%_ } else { _%>
-        result = result.and(entityManager.updateLinkTable(<%= rel.relationshipName %>Link, entity.<%= primaryKey.name %>, entity.<%= rel.relationshipNamePlural %>?.map { it.id }))
+        result = result.and(entityManager.updateLinkTable(<%= rel.relationshipName %>Link, entity.<%= primaryKey.name %>, entity.<%= rel.relationshipNamePlural %>?.map { it.<%= rel.otherEntity.primaryKey.name %> }))
             <%_ } _%>
         <%_ }); _%>
         return result.thenReturn(entity)
     }
 
-    override fun deleteById(entityId: Long?): Mono<Void> {
+    override fun deleteById(entityId: <%= primaryKey.type %>?): Mono<Void> {
         return deleteRelations(entityId).then(super.deleteById(entityId))
     }
 
-    protected fun deleteRelations(entityId: Long?): Mono<Void> {
+    protected fun deleteRelations(entityId: <%= primaryKey.type %>?): Mono<Void> {
         <%_ relationships.filter(function(rel) {
                 return (rel.relationshipManyToMany  && rel.ownerSide);
         }).forEach(function(rel, idx) { _%>

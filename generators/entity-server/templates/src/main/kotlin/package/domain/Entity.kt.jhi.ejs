@@ -22,6 +22,7 @@
     importSection: 0,
     staticImportSection: 0,
     annotationSection: 0,
+    additionalInterfacesSection: 0,
     classStaticFieldsSection: 0,
     classFieldsSection: 0,
     classAdditionalFieldsSection: 0,
@@ -65,7 +66,7 @@ import java.time.ZonedDateTime
 <%_ } if (fieldsContainDuration) { _%>
 import java.time.Duration
 <%_ } _%>
-<%_ if (fieldsContainUUID) { _%>
+<%_ if (fieldsContainUUID || otherEntityPrimaryKeyTypesIncludesUUID) { _%>
 import java.util.UUID
 <%_ }
 Object.keys(uniqueEnums).forEach(function(element) { _%>
@@ -154,7 +155,7 @@ data class <%= persistClass %>(
 <%_ }; _%>
 <&- fragments.classAdditionalRelationshipsSection() -&>
     // jhipster-needle-entity-add-field - JHipster will add fields here
-) : Serializable {
+) : Serializable<&- fragments.additionalInterfacesSection() -&> {
 
     <&- fragments.classAdditionalFieldsMethodsSection('\n\n') -&>
 
@@ -208,7 +209,7 @@ data class <%= persistClass %>(
     <%_ } _%>
     <%_ } _%>
     <%_ } _%>
-    
+
     <&- fragments.classAdditionalRelationshipsMethodsSection() -&>
     // jhipster-needle-entity-add-getters-setters - JHipster will add getters and setters here
 
@@ -252,7 +253,7 @@ data class <%= persistClass %>(
     }
 
     companion object {
-        private const val serialVersionUID = 1L        
+        private const val serialVersionUID = 1L
         <&- fragments.classStaticFieldsSection() -&>
     }
 }

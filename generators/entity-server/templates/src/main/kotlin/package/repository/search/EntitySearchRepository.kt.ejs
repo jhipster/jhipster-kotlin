@@ -26,9 +26,6 @@ import org.springframework.data.domain.Page
 import org.springframework.data.domain.PageImpl
      <%_ } _%>
 import org.springframework.data.domain.Pageable
-import org.springframework.data.elasticsearch.core.query.NativeSearchQueryBuilder
-import org.elasticsearch.search.sort.FieldSortBuilder
-import org.springframework.data.domain.PageRequest
 <%_ } _%>
 <%_ if (reactive) { _%>
 import org.springframework.data.elasticsearch.core.ReactiveElasticsearchTemplate
@@ -57,60 +54,50 @@ import org.elasticsearch.index.query.QueryBuilders.queryStringQuery
 interface <%=entityClass%>SearchRepository :  <% if (reactive) {%>Reactive<% } %>ElasticsearchRepository<<%= persistClass %>, <%=primaryKey.type%>>, <%= entityClass %>SearchRepositoryInternal{}
 <%_ if (reactive) { _%>
 interface <%= entityClass %>SearchRepositoryInternal {
-     fun search(query: String<% if (!paginationNo) { %>, pageable: Pageable<% } %>): Flux<<%= entityClass %>>
+     fun search(query: String<% if (!paginationNo) { %>, pageable: Pageable<% } %>): Flux<<%= persistClass %>>
 }
 
 class <%= entityClass %>SearchRepositoryInternalImpl(private val reactiveElasticsearchTemplate: ReactiveElasticsearchTemplate): <%= entityClass %>SearchRepositoryInternal {
 
 
-     override fun search(query: String<% if (!paginationNo) { %>, pageable: Pageable<% } %>): Flux<<%= entityClass %>> {
-        <%_ if (!paginationNo) { _%>
-        val builders = SortToFieldSortBuilderConverter().convert(pageable.sort)
-
-        val queryBuilder = NativeSearchQueryBuilder().withQuery(queryStringQuery(query))
-            .withPageable(PageRequest.of(pageable.pageNumber, pageable.pageSize))
-
-        builders.forEach {
-            queryBuilder.withSort(it)
-        }
-
-        val nativeSearchQuery = queryBuilder.build()
-        <%_ } else { _%>
+     override fun search(query: String<% if (!paginationNo) { %>, pageable: Pageable<% } %>): Flux<<%= persistClass %>> {
         val nativeSearchQuery = NativeSearchQuery(queryStringQuery(query))
+        <%_ if (!paginationNo) { _%>
+        nativeSearchQuery.pageable = pageable
         <%_ } _%>
         return reactiveElasticsearchTemplate
-          .search(nativeSearchQuery, <%= entityClass %>::class.java)
-          .map(SearchHit<<%= entityClass %>>::getContent)
+          .search(nativeSearchQuery, <%= persistClass %>::class.java)
+          .map(SearchHit<<%= persistClass %>>::getContent)
     }
 }
 <%_ } else { _%>
 
 interface <%= entityClass %>SearchRepositoryInternal {
   <%_ if (paginationNo) { _%>
-     fun search(query: String): Stream<<%= entityClass %>> 
+     fun search(query: String): Stream<<%= persistClass %>> 
   <%_ } else { _%>
-     fun search(query: String, pageable: Pageable): Page<<%= entityClass %>> 
+     fun search(query: String, pageable: Pageable): Page<<%= persistClass %>> 
   <%_ } _%>
 }
 
 class <%= entityClass %>SearchRepositoryInternalImpl(val elasticsearchTemplate: ElasticsearchRestTemplate): <%= entityClass %>SearchRepositoryInternal {
 
   <%_ if (paginationNo) { _%>
-    override fun search(query: String): Stream<<%= entityClass %>>  {
+    override fun search(query: String): Stream<<%= persistClass %>>  {
         val nativeSearchQuery = NativeSearchQuery(queryStringQuery(query))
         return elasticsearchTemplate
-            .search(nativeSearchQuery, <%= entityClass %>::class.java)
-            .map(SearchHit<<%= entityClass %>>::getContent)
+            .search(nativeSearchQuery, <%= persistClass %>::class.java)
+            .map(SearchHit<<%= persistClass %>>::getContent)
             .stream()
     }
   <%_ } else { _%>
-    override fun search(query: String, pageable: Pageable): Page<<%= entityClass %>>  {
+    override fun search(query: String, pageable: Pageable): Page<<%= persistClass %>>  {
         val nativeSearchQuery = NativeSearchQuery(queryStringQuery(query))
         nativeSearchQuery.setPageable<NativeSearchQuery>(pageable)
         val hits = elasticsearchTemplate.search(nativeSearchQuery, <%= entityClass %>::class.java)
-          .map(SearchHit<<%= entityClass %>>::getContent)
+          .map(SearchHit<<%= persistClass %>>::getContent)
           .toList()
-        return PageImpl<<%= entityClass %>>(hits, pageable, hits.size.toLong())
+        return PageImpl<<%= persistClass %>>(hits, pageable, hits.size.toLong())
     }
   <%_ } _%>
 }

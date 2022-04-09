@@ -20,8 +20,7 @@ package <%= packageName %>
 
 import org.junit.jupiter.api.extension.BeforeAllCallback
 import org.junit.jupiter.api.extension.ExtensionContext
-import org.testcontainers.couchbase.BucketDefinition
-import org.testcontainers.couchbase.CouchbaseContainer
+import org.testcontainers.couchbase.*
 import org.testcontainers.utility.DockerImageName
 
 import java.util.concurrent.atomic.AtomicBoolean
@@ -42,12 +41,14 @@ class CouchbaseTestContainerExtension : BeforeAllCallback {
                 .asCompatibleSubstituteFor("couchbase/server")
             couchbase = CouchbaseContainer(dockerImage)
                 .withBucket(BucketDefinition(bucketName).withQuota(100))
+                .withServiceQuota(CouchbaseService.SEARCH, 1024)
                 .withCredentials("user", "secret")
             couchbase!!.start()
             System.setProperty("spring.couchbase.connection-string", couchbase!!.connectionString)
             System.setProperty("spring.couchbase.username", couchbase!!.username)
             System.setProperty("spring.couchbase.password", couchbase!!.password)
             System.setProperty("jhipster.database.couchbase.bucket-name", bucketName)
+            System.setProperty("jhipster.database.couchbase.scope-name", "testScope")
             started.set(true)
         }
     }

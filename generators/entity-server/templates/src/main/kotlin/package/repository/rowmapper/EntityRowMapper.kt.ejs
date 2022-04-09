@@ -28,7 +28,7 @@ import java.time.LocalDate
 import java.time.ZonedDateTime
 <%_ } if (fieldsContainDuration) { _%>
 import java.time.Duration
-<%_ } if (fieldsContainUUID) { _%>
+<%_ } if (fieldsContainUUID || otherEntityPrimaryKeyTypesIncludesUUID) { _%>
 import java.util.UUID
 <%_ } _%>
 import java.util.function.BiFunction
@@ -57,7 +57,7 @@ class <%= entityClass %>RowMapper(val converter: ColumnConverter): BiFunction<Ro
      */
      override fun apply(row: Row, prefix: String): <%= persistClass %> {
         val entity = <%= persistClass %>()
-        <%_ fields.forEach(function(field) {
+        <%_ fields.filter(field => !field.transient).forEach(function(field) {
             let fieldType = field.fieldType;
             if (field.blobContentTypeText) {
                 fieldType = 'String';
@@ -72,7 +72,7 @@ class <%= entityClass %>RowMapper(val converter: ColumnConverter): BiFunction<Ro
         entity.<%= field.fieldName %> = converter.fromRow(row, prefix + "_<%= field.fieldNameAsDatabaseColumn %>", <%= fieldType %>::class.java)
         <%_ }}); _%>
         <%_ reactiveRegularEagerRelations.forEach(function(rel) { _%>
-        entity.<%= rel.relationshipName %>Id = converter.fromRow(row, prefix + "_<%= getColumnName(rel.relationshipName) %>_id", <%= rel.otherEntity.primaryKey.type %>::class.java)
+        entity.<%= rel.relationshipName %>Id = converter.fromRow(row, prefix + "_<%= rel.joinColumnNames[0] %>", <%= rel.otherEntity.primaryKey.type %>::class.java)
         <%_ }); _%>
         return entity
     }

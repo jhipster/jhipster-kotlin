@@ -5,7 +5,7 @@ source $(dirname $0)/00-init-env.sh
 #--------------------------------------------------
 # Launch Sonar analysis
 #--------------------------------------------------
-cd "$JHI_FOLDER_APP"
+cd "$KHI_FOLDER_APP"
 
 if [[ "$JHI_APP" = "ngx-default" && "$GITHUB_REPOSITORY" = "jhipster/generator-jhipster" && "$GITHUB_REF" = "refs/heads/main" ]]; then
     echo "*** Sonar analyze for main branch"
@@ -20,7 +20,7 @@ elif [[ $JHI_SONAR = 1 ]]; then
     ./mvnw -ntp --batch-mode initialize org.jacoco:jacoco-maven-plugin:prepare-agent sonar:sonar \
         -Dsonar.host.url=http://localhost:9001 \
         -Dsonar.projectKey=JHipsterSonar
-        
+
     sleep 30
     docker-compose -f src/main/docker/sonar.yml logs
     echo "*** Sonar results:"

@@ -76,6 +76,38 @@ const serverFiles = {
             ],
         },
         {
+            condition: generator => generator.databaseTypeSql && generator.requiresPersistableImplementation,
+            path: SERVER_MAIN_SRC_KOTLIN_DIR,
+            templates: [
+                {
+                    file: 'package/domain/Entity.kt.jhi.spring_data_persistable',
+                    renameTo: generator =>
+                        `${generator.entityAbsoluteFolder}/domain/${generator.persistClass}.kt.jhi.spring_data_persistable`,
+                },
+            ],
+        },
+        {
+            condition: generator => generator.databaseTypeSql && generator.reactive && generator.requiresPersistableImplementation,
+            path: SERVER_MAIN_SRC_KOTLIN_DIR,
+            templates: [
+                {
+                    file: 'package/domain/EntityCallback.kt',
+                    renameTo: generator => `${generator.entityAbsoluteFolder}/domain/${generator.persistClass}Callback.kt`,
+                },
+            ],
+        },
+        {
+            condition: generator => generator.databaseTypeSql && !generator.reactive && generator.requiresPersistableImplementation,
+            path: SERVER_MAIN_SRC_KOTLIN_DIR,
+            templates: [
+                {
+                    file: 'package/domain/Entity.kt.jhi.javax_lifecycle_events',
+                    renameTo: generator =>
+                        `${generator.entityAbsoluteFolder}/domain/${generator.persistClass}.kt.jhi.javax_lifecycle_events`,
+                },
+            ],
+        },
+        {
             condition: generator => generator.databaseType === 'cassandra',
             path: SERVER_MAIN_SRC_KOTLIN_DIR,
             templates: [
@@ -182,24 +214,29 @@ const serverFiles = {
             ],
         },
         {
-            condition: generator => generator.searchEngine === ELASTICSEARCH && !generator.embedded && !generator.paginationNo,
-            path: SERVER_MAIN_SRC_KOTLIN_DIR,
-            templates: [
-                {
-                    file: 'package/repository/search/SortToFieldSortBuilderConverter.kt',
-                    renameTo: generator => `${generator.entityAbsoluteFolder}/repository/search/SortToFieldSortBuilderConverter.kt`,
-                    useBluePrint: true,
-                },
-            ],
-        },
-        {
             condition: generator => !generator.reactive && !generator.embedded && generator.databaseType !== COUCHBASE,
             path: SERVER_MAIN_SRC_KOTLIN_DIR,
             templates: [
                 {
                     file: 'package/repository/EntityRepository.kt',
                     renameTo: generator => `${generator.entityAbsoluteFolder}/repository/${generator.entityClass}Repository.kt`,
-                    useBluePrint: true,
+                },
+            ],
+        },
+        {
+            condition: generator =>
+                !generator.reactive && generator.databaseTypeSql && !generator.embedded && generator.containsBagRelationships,
+            path: SERVER_MAIN_SRC_KOTLIN_DIR,
+            templates: [
+                {
+                    file: 'package/repository/EntityRepositoryWithBagRelationships.kt',
+                    renameTo: generator =>
+                        `${generator.packageFolder}/repository/${generator.entityClass}RepositoryWithBagRelationships.kt`,
+                },
+                {
+                    file: 'package/repository/EntityRepositoryWithBagRelationshipsImpl.kt',
+                    renameTo: generator =>
+                        `${generator.packageFolder}/repository/${generator.entityClass}RepositoryWithBagRelationshipsImpl.kt`,
                 },
             ],
         },

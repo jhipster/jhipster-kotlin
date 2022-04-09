@@ -24,12 +24,12 @@ const mapOrFlatMap = reactive ? 'flatMap' : 'map'
 const returnPrefix = (isService) ? 'return' : 'val result =';
 const mapper = entityInstance  + 'Mapper';
 %>
-<%_ if(viaService) { %>
+<%_ if (viaService) { %>
             val result = <%= entityInstance %>Service.partialUpdate(<%= instanceName %>)
 <%_ } else { %>
          <%- returnPrefix %> <%= entityInstance %>Repository.findById(<%= instanceName %>.<%= primaryKey.name %>)
             .map {
-            <%_ if(dtoMapstruct) { %><%= mapper %>.partialUpdate(it, <%= instanceName %>)<%_ } else { %>
+            <%_ if (dtoMapstruct) { %><%= mapper %>.partialUpdate(it, <%= instanceName %>)<%_ } else { %>
             <%_ for (const field of fields.filter(field => !field.id && !field.transient)) { _%>
                   if (<%= instanceName %>.<%= field.fieldName %>!= null) {
                      it.<%= field.fieldName %> = <%= instanceName %>.<%= field.fieldName %>
@@ -42,7 +42,8 @@ const mapper = entityInstance  + 'Mapper';
             <%_ } %>
                it
             }
-            .<%= mapOrFlatMap %> { <%= entityInstance %>Repository.save(it) }<% if (searchEngineElasticsearch) { %>
+            <% if (!updatableEntity) { %>// <%} %>.<%= mapOrFlatMap %> { <%= entityInstance %>Repository.save(it) }
+            <%_ if (searchEngineElasticsearch) { _%>
             .<%= mapOrFlatMap %> {
                   <%= entityInstance %>SearchRepository.save(it)
             <%_ if(reactive) { %>
@@ -50,6 +51,6 @@ const mapper = entityInstance  + 'Mapper';
             <%_ } else { %>
                   it
             <%_ } %>
-            }<% } %><% if (dtoMapstruct) { %>
-            .map { <%= mapper %>.toDto(it) }<% } %>
+            }
+            <%_ } _%><% if (dtoMapstruct) { %>.map { <%= mapper %>.toDto(it) }<% } %>
 <%_ } %>

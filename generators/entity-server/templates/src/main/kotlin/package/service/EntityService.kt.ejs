@@ -29,7 +29,7 @@ import <%= entityAbsolutePackage %>.service.dto.<%= dtoClass %>
 <%_ } else { _%>
 import <%= entityAbsolutePackage %>.domain.<%= persistClass %>
 <%_ } _%>
-<%_ if (!paginationNo || relationshipsContainEagerLoad) { _%>
+<%_ if (!paginationNo || implementsEagerLoadApis) { _%>
     <%_ if (!reactive) { _%>
 import org.springframework.data.domain.Page
     <%_ } _%>
@@ -61,6 +61,14 @@ interface <%= entityClass %>Service {
     fun save(<%= instanceName %>: <%= instanceType %>): <% if (reactive) { %>Mono<<% } %><%= instanceType %><% if (reactive) { %>><% } %>
 
     /**
+     * Updates a <%= entityInstance %>.
+     *
+     * @param <%= instanceName %> the entity to update.
+     * @return the persisted entity.
+     */
+     fun update(<%= instanceName %>: <%= instanceType %>): <% if (reactive) { %>Mono<<% } %><%= instanceType %><% if (reactive) { %>><% } %>
+
+    /**
      * Partially updates a <%= entityInstance %>.
      *
      * @param <%= instanceName %> the entity to update partially.
@@ -84,7 +92,7 @@ interface <%= entityClass %>Service {
     fun findAllWhere<%= relationship.relationshipNameCapitalized %>IsNull(): <%= listOrFlux %><<%= instanceType %>>
 <%_ } } _%>
 
-    <%_ if (relationshipsContainEagerLoad) { _%>
+    <%_ if (implementsEagerLoadApis) { _%>
     /**
      * Get all the <%= entityInstancePlural %> with eager load of many-to-many relationships.
      * @param pageable the pagination information.

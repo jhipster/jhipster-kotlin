@@ -19,28 +19,16 @@
 package <%= packageName %>.repository
 
 import com.couchbase.client.java.query.QueryScanConsistency
-import org.springframework.data.couchbase.repository.<% if (reactive) { %>Reactive<% } %>CouchbaseRepository
-import org.springframework.data.couchbase.repository.ScanConsistency
-import org.springframework.data.domain.Pageable
-import org.springframework.data.domain.Sort
 import org.springframework.data.repository.NoRepositoryBean
-<%_ if (searchEngineCouchbase) { _%>
-import com.couchbase.client.java.search.SearchQuery
-import com.couchbase.client.java.search.queries.DocIdQuery
-import com.couchbase.client.java.search.queries.QueryStringQuery
-import java.util.LinkedList
-<%_ } _%>
 
 <%_ if (reactive) { _%>
 import reactor.core.publisher.Flux
 import reactor.core.publisher.Mono
 <%_ } else { _%>
-import org.springframework.data.domain.Page
-<%_ } _%>
 
 import java.util.List
+<%_ } _%>
 import java.util.stream.Collectors
-import org.springframework.data.couchbase.core.query.Query
 
 import java.lang.String.format
 
@@ -52,20 +40,13 @@ import java.lang.String.format
     let pageOrFlux = reactive ? 'Flux' : 'Page';
 _%>
 @NoRepositoryBean
+@ScanConsistency(query = QueryScanConsistency.REQUEST_PLUS)
 interface JHipsterCouchbaseRepository<T,ID>:  <% if (reactive) { %>Reactive<% } %>CouchbaseRepository<T, ID> {
-    @ScanConsistency(query = QueryScanConsistency.REQUEST_PLUS)
-    override fun findAll(): <%= listOrFlux %><T>
-
-    @ScanConsistency(query = QueryScanConsistency.REQUEST_PLUS)
-    override fun findAll(sort: Sort): <%= listOrFlux %><T> 
-
-    @ScanConsistency(query = QueryScanConsistency.REQUEST_PLUS)
-    fun findAll<% if (reactive) { %>By<% } %>(pageable: Pageable): <%= pageOrFlux %><T> 
-
-    @ScanConsistency(query = QueryScanConsistency.REQUEST_PLUS)
-    override fun deleteAll()<% if (reactive) { %>: Mono<Void><% } %> 
 
     companion object {
+
+        val FIND_IDS_QUERY = "SELECT meta().id as __id, 0 as __cas FROM #{#n1ql.bucket} WHERE #{#n1ql.filter}"
+
         fun pageableStatement(pageable: Pageable) = pageableStatement(pageable, "")
     
         fun pageableStatement(pageable: Pageable, prefix: String): String? {
@@ -82,32 +63,64 @@ interface JHipsterCouchbaseRepository<T,ID>:  <% if (reactive) { %>Reactive<% } 
                         order.withProperty("$prefix $property")
                     } as Sort.Order
             )
-            return Query()
+            return org.springframework.data.couchbase.core.query.Query()
                 .limit(pageable.pageSize)
                 .skip(pageable.offset)
                 .with(sort)
                 .export()
         }
-    
-    <%_ if (searchEngineCouchbase) { _%>
-        fun searchQuery(queryString: String): SearchQuery {
-            var ids = LinkedList<String>()
-            queryString.split(" ").map {
-                if (it.indexOf("id:") == 0) {
-                    ids.add(r.substring(3))
-                    queryString = queryString.replace(it, "").replaceAll("[ ]+", " ").trim()
-                }
-            }
-            val query = SearchQuery.queryString(queryString)
-            if (ids.size != 0) {
-                val docIdQuery = SearchQuery.docId(ids.toArray(arrayOf<String>()))
-                if (!queryString.isEmpty) {
-                    return SearchQuery.conjuncts(query, docIdQuery)
-                }
-                return docIdQuery
-            }
-            return query
-        }
-    <%_ } _%>
+    }
+
+
+    @JvmDefault
+    fun findAll(): <%= listOrFlux %><T> {
+        return findAllById(toIds(findAllIds()))
+    }
+
+    @JvmDefault
+    fun findAll<% if (reactive) { %>By<% } %>(pageable: Pageable): <%= pageOrFlux %><T> {
+<%_ if (reactive) { _%>
+        return findAllById(toIds(findAllIds(pageable)))
+<%_ } else { _%>
+        val page = findAllIds(pageable)
+        return PageImpl<T>(findAllById(toIds(page.content)), pageable, page.totalElements)
+<%_ } _%>
+    }
+
+    @JvmDefault
+    fun findAll(sort: Sort): <%= listOrFlux %><T> {
+        return findAllById(toIds(findAllIds(sort)))
+    }
+
+    @JvmDefault
+    fun deleteAll(): <% if (reactive) { %>Mono<Void><% } %>  {
+<%_ if (reactive) { _%>
+        return toIds(findAllIds())
+            .collectList()
+            .flatMap(this::deleteAllById)
+<%_ } else { _%>
+        deleteAllById(toIds(findAllIds()))
+<%_ } _%>
+    }
+
+    @Query(FIND_IDS_QUERY)
+    fun findAllIds(): <%= listOrFlux %><T> 
+
+    @Query(FIND_IDS_QUERY)
+    fun findAllIds(pageable: Pageable): <%= pageOrFlux %><T> 
+
+    @Query(FIND_IDS_QUERY)
+    fun findAllIds(sort: Sort): <%= listOrFlux %><T> 
+
+    @SuppressWarnings("unchecked")
+    @JvmDefault
+    fun toIds(entities: <%= listOrFlux %><T>): <%= listOrFlux %><ID>  {
+<%_ if (reactive) { _%>
+        return entities.mapNotNull { entity -> getEntityInformation().getId(entity) as ID} 
+<%_ } else { _%>
+        return entities.stream()
+            .map { entity -> getEntityInformation().getId(entity) as ID } 
+            .collect(Collectors.toList())
+<%_ } _%>
     }
 }

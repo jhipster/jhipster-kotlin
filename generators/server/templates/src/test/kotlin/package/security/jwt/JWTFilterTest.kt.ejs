@@ -91,7 +91,7 @@ class JWTFilterTest {
             .header(JWTFilter.AUTHORIZATION_HEADER, "Bearer $jwt")
         val exchange = MockServerWebExchange.from(request)
         jwtFilter.filter(exchange) {
-            Mono.subscriberContext()
+            Mono.deferContextual(Mono::just)()
                 .flatMap { ReactiveSecurityContextHolder.getContext() }
                 .map(SecurityContext::getAuthentication)
                 .doOnSuccess { auth -> assertThat(auth.name).isEqualTo("test-user") }
@@ -123,7 +123,7 @@ class JWTFilterTest {
             .header(JWTFilter.AUTHORIZATION_HEADER, "Bearer $jwt")
         val exchange = MockServerWebExchange.from(request)
         jwtFilter.filter(exchange) {
-            Mono.subscriberContext()
+            Mono.deferContextual(Mono::just)()
                 .flatMap { ReactiveSecurityContextHolder.getContext() }
                 .map(SecurityContext::getAuthentication)
                 .doOnSuccess { auth -> assertThat(auth).isNull() }
@@ -151,7 +151,7 @@ class JWTFilterTest {
             .get("/api/test")
         val exchange = MockServerWebExchange.from(request)
         jwtFilter.filter(exchange) {
-            Mono.subscriberContext()
+            Mono.deferContextual(Mono::just)()
                 .flatMap { ReactiveSecurityContextHolder.getContext() }
                 .map(SecurityContext::getAuthentication)
                 .doOnSuccess { auth -> assertThat(auth).isNull() }
@@ -180,7 +180,7 @@ class JWTFilterTest {
             .header(JWTFilter.AUTHORIZATION_HEADER, "Bearer ")
         val exchange = MockServerWebExchange.from(request)
         jwtFilter.filter(exchange) {
-            Mono.subscriberContext()
+            Mono.deferContextual(Mono::just)()
                 .flatMap { ReactiveSecurityContextHolder.getContext() }
                 .map(SecurityContext::getAuthentication)
                 .doOnSuccess { auth -> assertThat(auth).isNull() }
@@ -215,7 +215,7 @@ class JWTFilterTest {
             .header(JWTFilter.AUTHORIZATION_HEADER, "Basic $jwt")
         val exchange = MockServerWebExchange.from(request)
         jwtFilter.filter(exchange) {
-            Mono.subscriberContext()
+            Mono.deferContextual(Mono::just)()
                 .flatMap { ReactiveSecurityContextHolder.getContext() }
                 .map(SecurityContext::getAuthentication)
                 .doOnSuccess { auth -> assertThat(auth).isNull() }

@@ -1,10 +1,6 @@
 const expect = require('expect');
-// const path = require('path');
-// const sinon = require('sinon');
-// const { existsSync } = require('fs');
 
 const { GENERATOR_JHIPSTER } = require('generator-jhipster/generators/generator-constants');
-// const { PRIORITY_NAMES } = require('generator-jhipster/lib/constants/priorities.cjs');
 const { skipPrettierHelpers: helpers } = require('../utils/utils');
 
 const testOptions = data => {

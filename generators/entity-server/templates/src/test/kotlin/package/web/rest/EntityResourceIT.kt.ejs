@@ -61,9 +61,6 @@ _%>
 <%_ if (entityAbsolutePackage !== packageName) { _%>
 import <%= packageName %>.web.rest.*
 <% } %>
-<%_ if (databaseTypeCassandra) { _%>
-import <%= packageName %>.AbstractCassandraTest
-<%_ } _%>
 import <%= packageName %>.IntegrationTest
 import <%= entityAbsolutePackage %>.domain.<%= persistClass %>
 <%_
@@ -73,7 +70,7 @@ import <%= entityAbsolutePackage %>.domain.<%= persistClass %>
         const otherEntityNameCapitalized = relationship.otherEntityNameCapitalized;
         const isUsingMapsIdL1 = relationship.id;
         if(imported.indexOf(otherEntityNameCapitalized) === -1 && persistClass !== asEntity(otherEntityNameCapitalized)) {
-            if ((relationshipValidate !== null && relationshipValidate) || jpaMetamodelFiltering || (isUsingMapsIdL1)) { 
+            if ((relationshipValidate !== null && relationshipValidate) || jpaMetamodelFiltering || (isUsingMapsIdL1)) {
 _%>
 import <%= entityAbsolutePackage %>.domain.<%= asEntity(otherEntityNameCapitalized) %>
 <%_         imported.push(otherEntityNameCapitalized);
@@ -91,7 +88,7 @@ import <%= entityAbsolutePackage %>.repository.<%= mapsIdAssoc.otherEntityNameCa
 <%_ if (searchEngineElasticsearch) { _%>
 import <%= entityAbsolutePackage %>.repository.search.<%= entityClass %>SearchRepository
 <%_ } _%>
-<%_ if (!serviceNo && fieldsContainOwnerManyToMany) { _%>
+<%_ if (!serviceNo && implementsEagerLoadApis) { _%>
 import <%= entityAbsolutePackage %>.service.<%= entityClass %>Service
 <%_ } _%>
 <%_ if (dtoMapstruct) { _%>
@@ -109,7 +106,7 @@ import org.junit.jupiter.api.AfterEach
 <%_ } _%>
 import org.junit.jupiter.api.BeforeEach
 import org.junit.jupiter.api.Test
-<%_ if (searchEngineElasticsearch || fieldsContainOwnerManyToMany || cacheProviderRedis || databaseTypeNeo4j || reactiveSqlTestContainers) { _%>
+<%_ if (searchEngineElasticsearch || implementsEagerLoadApis || cacheProviderRedis || databaseTypeNeo4j || reactiveSqlTestContainers) { _%>
 import org.junit.jupiter.api.extension.Extensions
 import org.junit.jupiter.api.extension.ExtendWith
 import org.mockito.junit.jupiter.MockitoExtension
@@ -122,7 +119,7 @@ import org.springframework.boot.test.autoconfigure.web.reactive.AutoConfigureWeb
 <%_ } else { _%>
 import org.springframework.boot.test.autoconfigure.web.servlet.AutoConfigureMockMvc
 <%_ } _%>
-<%_ if (searchEngineElasticsearch && !paginationNo || relationshipsContainEagerLoad) { _%>
+<%_ if (searchEngineElasticsearch && !paginationNo || implementsEagerLoadApis) { _%>
 import org.springframework.data.domain.PageImpl
 <%_ } _%>
 <%_ if (searchEngineElasticsearch && !paginationNo) { _%>
@@ -149,7 +146,7 @@ import org.springframework.transaction.annotation.Transactional
 <%_ if (fieldsContainBlob) { _%>
 import org.springframework.util.Base64Utils
 <%_ } _%>
-<%_ if (reactive && (relationshipsContainEagerLoad || searchEngineElasticsearch)) { _%>
+<%_ if (reactive && (implementsEagerLoadApis || searchEngineElasticsearch)) { _%>
 import reactor.core.publisher.Flux
 import reactor.core.publisher.Mono
 <%_ } _%>
@@ -203,7 +200,7 @@ import org.springframework.security.test.web.reactive.server.SecurityMockServerC
 import org.springframework.security.test.web.servlet.request.SecurityMockMvcRequestPostProcessors.csrf
     <%_ } _%>
 <%_ } _%>
-<%_ if (searchEngineElasticsearch || relationshipsContainEagerLoad) { _%>
+<%_ if (searchEngineElasticsearch || implementsEagerLoadApis) { _%>
 import org.mockito.ArgumentMatchers.*
 import org.mockito.Mockito.*
 <%_ } _%>
@@ -220,7 +217,7 @@ import <%= packageName %>.domain.enumeration.<%= field.fieldType %>
  * Integration tests for the [<%= entityClass %>Resource] REST controller.
  */
 @IntegrationTest
-<%_ if (cacheProviderRedis || searchEngineElasticsearch || fieldsContainOwnerManyToMany) { _%>
+<%_ if (cacheProviderRedis || searchEngineElasticsearch || implementsEagerLoadApis) { _%>
 @Extensions(
     ExtendWith(MockitoExtension::class)
 )
@@ -231,7 +228,7 @@ import <%= packageName %>.domain.enumeration.<%= field.fieldType %>
 @AutoConfigureMockMvc
 <%_ } _%>
 @WithMockUser
-class <%= entityClass %>ResourceIT <% if (databaseTypeCassandra) { %>: AbstractCassandraTest() <% } %> {
+class <%= entityClass %>ResourceIT {
     @Autowired
     private lateinit var <%= entityInstance %>Repository: <%= entityClass %>Repository
     <%_ if (isUsingMapsId&& ( !dtoMapstruct && serviceNo)) { _%>
@@ -243,7 +240,7 @@ class <%= entityClass %>ResourceIT <% if (databaseTypeCassandra) { %>: AbstractC
     @Autowired
     private lateinit var userRepository: UserRepository
     <%_ } _%>
-    <%_ if (fieldsContainOwnerManyToMany) { _%>
+    <%_ if (implementsEagerLoadApis) { _%>
 
     @Mock
     private lateinit var <%= entityInstance %>RepositoryMock: <%= entityClass %>Repository
@@ -253,7 +250,7 @@ class <%= entityClass %>ResourceIT <% if (databaseTypeCassandra) { %>: AbstractC
     @Autowired
     private lateinit var <%= entityInstance %>Mapper: <%= entityClass %>Mapper
     <%_ } if (!serviceNo) { _%>
-    <%_ if (fieldsContainOwnerManyToMany) { _%>
+    <%_ if (implementsEagerLoadApis) { _%>
 
     @Mock
     private lateinit var <%= entityInstance %>ServiceMock: <%= entityClass %>Service
@@ -334,7 +331,13 @@ class <%= entityClass %>ResourceIT <% if (databaseTypeCassandra) { %>: AbstractC
         `when`(mock<%= entityClass %>SearchRepository.save(any(<%= entityClass %>::class.java)))
             .thenAnswer { Mono.just(it.arguments[0] as <%= entityClass %>) }
         <%_ } _%>
-
+        <%_
+          // overwrite the id field again with null
+          // the create method here is supposed to be used for other tests as well,
+          // which may expect an id to be set (at least in the reactive stack)
+          if (reactive && databaseTypeSql && primaryKey.typeUUID && !isUsingMapsId) { _%>
+            <%= persistInstance %>.<%= primaryKey.name %> = null
+        <%_ } _%>
         // Create the <%= entityClass %>
         <%_ if (dtoMapstruct) { _%>
         val <%= dtoInstance %> = <%= entityInstance %>Mapper.toDto(<%= persistInstance %>)
@@ -571,7 +574,7 @@ class <%= entityClass %>ResourceIT <% if (databaseTypeCassandra) { %>: AbstractC
         assertThat(<%= entityInstance %>List).isNotNull
         assertThat(<%= entityInstance %>List).hasSize(1)
         val test<%= entityClass %> = <%= entityInstance %>List[0]
-        <%_ for (field of fields.filter(field => !field.id && !field.transient)) { 
+        <%_ for (field of fields.filter(field => !field.id && !field.transient)) {
             if (field.fieldTypeZonedDateTime) { _%>
         assertThat(test<%= entityClass %>.<%= field.fieldName %>).isEqualTo(<%= 'DEFAULT_' + field.fieldNameUnderscored.toUpperCase() %>)
             <%_ } else if ((field.fieldTypeBinary) && !field.blobContentTypeText) { _%>
@@ -581,7 +584,7 @@ class <%= entityClass %>ResourceIT <% if (databaseTypeCassandra) { %>: AbstractC
         assertThat(test<%= entityClass %>.<%= field.fieldName %>?.stripTrailingZeros()).isEqualTo(<%= 'DEFAULT_' + field.fieldNameUnderscored.toUpperCase() %>.stripTrailingZeros())
             <%_ } else { _%>
         assertThat(test<%= entityClass %>.<%= field.fieldName %>).isEqualTo(<%= 'DEFAULT_' + field.fieldNameUnderscored.toUpperCase() %>)
-            <%_ } 
+            <%_ }
         } _%>
     }
     <%_ } _%>
@@ -596,7 +599,7 @@ class <%= entityClass %>ResourceIT <% if (databaseTypeCassandra) { %>: AbstractC
             <%_ } _%>
         <%_ } _%>
         <%= entityInstance %>Repository.<%= saveMethod %>(<%= persistInstance %>)<%= callBlock %>
-        
+
         // Get all the <%= entityInstance %>List
         <%_ if (reactive) { _%>
         webTestClient.get().uri(ENTITY_API_URL + "?sort=<%= primaryKey.name %>,desc")
@@ -630,7 +633,7 @@ class <%= entityClass %>ResourceIT <% if (databaseTypeCassandra) { %>: AbstractC
                                                 if (field.fieldTypeZonedDateTime) { %>)<% } else
                                                     if (!field.fieldTypeString) { %>.toString()<% } %>))<%= !reactive ? ')' : '' %><%_ } _%>
     }
-    <% if (fieldsContainOwnerManyToMany && !databaseTypeNeo4j && !databaseTypeCouchbase) { %>
+    <% if (implementsEagerLoadApis && !databaseTypeNeo4j && !databaseTypeCouchbase) { %>
     @Suppress("unchecked")
     <% if (!reactive) { %>@Throws(Exception::class)<% } %>
     fun getAll<%= entityClassPlural %>WithEagerRelationshipsIsEnabled() {
@@ -1445,7 +1448,7 @@ class <%= entityClass %>ResourceIT <% if (databaseTypeCassandra) { %>: AbstractC
         <%= entityInstance %>Repository.<%= saveMethod %>(<%= persistInstance %>)<%= callBlock %>
 
         val databaseSizeBeforeDelete = <%= entityInstance %>Repository.findAll()<%= callListBlock %>.size
-        
+
         // Delete the <%= entityInstance %>
         <%_ if (reactive) { _%>
         webTestClient.delete().uri(ENTITY_API_URL_ID, <%= persistInstance %>.<%= primaryKey.name %>)
@@ -1749,7 +1752,9 @@ class <%= entityClass %>ResourceIT <% if (databaseTypeCassandra) { %>: AbstractC
             val <%= persistInstance %> = <%= persistClass %>()
             <%_  } else { _%>
             val <%= persistInstance %> = <%= persistClass %>(
-
+                <%_ if (reactive && databaseTypeSql && primaryKey.typeUUID && !isUsingMapsId) { _%>
+                <%= primaryKey.fields[0].fieldName %> = UUID.randomUUID(),
+                <%_ } _%>
                 <%_
                     let idx = 0;
                     for (field of filteredFields) {
@@ -1789,13 +1794,17 @@ class <%= entityClass %>ResourceIT <% if (databaseTypeCassandra) { %>: AbstractC
         <%_ } else { _%>
             val <%= otherEntityName %>: <%= asEntity(otherEntityNameCapitalized) %>
             <%_ if (databaseTypeSql && !reactive) { _%>
+                <%_ if (!isUsingMapsId || fieldStatus !== "UPDATED_") { _%>
             if (findAll(em, <%= asEntity(otherEntityNameCapitalized) %>::class).isEmpty()) {
+                <%_ } _%>
                 <%= otherEntityName %> = <%= createEntityPrefix %><%= otherEntityNameCapitalized %>ResourceIT.create<% if (fieldStatus === 'UPDATED_') { %>Updated<% } %>Entity(<% if (databaseTypeSql) { %>em<% } %>)<%= createEntityPostfix %>
                 em.persist(<%= otherEntityName %>)
                 em.flush()
+                <%_ if (!isUsingMapsId || fieldStatus !== "UPDATED_") { _%>
             } else {
                 <%= otherEntityName %> = findAll(em, <%= asEntity(otherEntityNameCapitalized) %>::class)[0]
             }
+                <%_ } _%>
             <%_ } else { _%>
             <%= otherEntityName %> = <%= createEntityPrefix %><%= otherEntityNameCapitalized %>ResourceIT.create<% if (fieldStatus === 'UPDATED_') { %>Updated<% } %>Entity(<% if (databaseTypeSql) { %>em<% } %>)<%= createEntityPostfix %>
             <%_ } _%>
@@ -1824,7 +1833,7 @@ class <%= entityClass %>ResourceIT <% if (databaseTypeCassandra) { %>: AbstractC
                 if (rel.shouldWriteJoinTable) { _%>
                     em.deleteAll("<%= rel.joinTable.name %>").block()
             <%_ }}); _%>
-                    em.deleteAll(<%= entityClass %>::class.java).block()
+                    em.deleteAll(<%= persistClass %>::class.java).block()
             } catch (e: Exception) {
                 // It can fail, if other entities are still referring this - it will be removed later.
             }

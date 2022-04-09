@@ -32,15 +32,10 @@ import org.springframework.data.jpa.repository.JpaRepository
 <%_ if (databaseTypeMongodb) { _%>
 import org.springframework.data.mongodb.repository.<% if (reactive) { %>Reactive<% } %>MongoRepository
 <%_ } _%>
-<%_ if (databaseTypeCouchbase) { _%>
-import org.springframework.data.couchbase.repository.Query
-import com.couchbase.client.java.query.QueryScanConsistency
-import org.springframework.data.couchbase.repository.ScanConsistency
-<%_ } _%>
 <%_ if (databaseTypeNeo4j) { _%>
 import org.springframework.data.neo4j.repository.<% if (reactive) { %>Reactive<% } %>Neo4jRepository
 <%_ } _%>
-<%_ if (databaseTypeCouchbase || databaseTypeNeo4j) { _%>
+<%_ if (databaseTypeNeo4j) { _%>
 <%_ if (reactive) { _%>
 import reactor.core.publisher.Flux
 <%_ } _%>
@@ -72,10 +67,5 @@ interface AuthorityRepository : <% if (databaseTypeSql) { %><% if (reactive) { %
     <%_ if (databaseTypeNeo4j) { _%>
     <% if (!reactive) { %>// See https://github.com/neo4j/sdn-rx/issues/51<%_ } _%>
     override fun findAll(): <% if (reactive) { %>Flux<% } else { %>List<% } %><Authority>
-    <%_ } _%>
-    <%_ if (databaseType === 'couchbase') { _%>
-    @Query("#{#n1ql.selectEntity} WHERE #{#n1ql.filter}")
-    @ScanConsistency(query = QueryScanConsistency.REQUEST_PLUS)
-    override fun findAll(): <%= listOrFlux %><Authority>
     <%_ } _%>
 }

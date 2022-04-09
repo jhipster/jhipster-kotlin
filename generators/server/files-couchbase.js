@@ -44,31 +44,6 @@ const couchbaseFiles = {
             path: SERVER_MAIN_KOTLIN_SRC_DIR,
             templates: [
                 {
-                    file: 'package/config/couchbase/CustomCouchbaseRepositoryFactory.kt',
-                    renameTo: generator => `${generator.javaDir}config/couchbase/CustomCouchbaseRepositoryFactory.kt`,
-                    useBluePrint: true,
-                },
-                {
-                    file: 'package/config/couchbase/CustomCouchbaseRepositoryFactoryBean.kt',
-                    renameTo: generator => `${generator.javaDir}config/couchbase/CustomCouchbaseRepositoryFactoryBean.kt`,
-                    useBluePrint: true,
-                },
-                {
-                    file: 'package/config/couchbase/CustomCouchbaseRepositoryQuery.kt',
-                    renameTo: generator => `${generator.javaDir}config/couchbase/CustomCouchbaseRepositoryQuery.kt`,
-                    useBluePrint: true,
-                },
-                {
-                    file: 'package/config/couchbase/CustomN1qlQueryCreator.kt',
-                    renameTo: generator => `${generator.javaDir}config/couchbase/CustomN1qlQueryCreator.kt`,
-                    useBluePrint: true,
-                },
-                {
-                    file: 'package/config/couchbase/CustomN1qlRepositoryQueryExecutor.kt',
-                    renameTo: generator => `${generator.javaDir}config/couchbase/CustomN1qlRepositoryQueryExecutor.kt`,
-                    useBluePrint: true,
-                },
-                {
                     file: 'package/repository/JHipsterCouchbaseRepository.kt',
                     renameTo: generator => `${generator.javaDir}repository/JHipsterCouchbaseRepository.kt`,
                     useBluePrint: true,
@@ -88,11 +63,21 @@ const couchbaseFiles = {
         },
         {
             condition: generator => generator.searchEngine === COUCHBASE,
+            path: SERVER_MAIN_KOTLIN_SRC_DIR,
+            templates: [
+                {
+                    file: 'package/repository/CouchbaseSearchRepository.kt',
+                    renameTo: generator => `${generator.javaDir}repository/CouchbaseSearchRepository.kt`,
+                },
+            ],
+        },
+        {
+            condition: generator => generator.searchEngine === COUCHBASE,
             path: SERVER_TEST_SRC_KOTLIN_DIR,
             templates: [
                 {
-                    file: 'package/repository/JHipsterCouchbaseRepositoryTest.kt',
-                    renameTo: generator => `${generator.testDir}repository/JHipsterCouchbaseRepositoryTest.kt`,
+                    file: 'package/repository/CouchbaseSearchRepositoryTest.kt',
+                    renameTo: generator => `${generator.testDir}repository/CouchbaseSearchRepositoryTest.kt`,
                     useBluePrint: true,
                 },
             ],
@@ -100,17 +85,18 @@ const couchbaseFiles = {
     ],
     serverResource: [
         {
+            condition: generator => !generator.skipUserManagement,
             path: SERVER_MAIN_RES_DIR,
-            templates: ['config/couchmove/changelog/V0__create_indexes.n1ql'],
+            templates: ['config/couchmove/changelog/V0__create_collections.n1ql', 'config/couchmove/changelog/V0.2__create_indexes.n1ql'],
         },
         {
             condition: generator => !generator.skipUserManagement || generator.authenticationType === OAUTH2,
             path: SERVER_MAIN_RES_DIR,
             templates: [
-                'config/couchmove/changelog/V0.1__initial_setup/ROLE_ADMIN.json',
-                'config/couchmove/changelog/V0.1__initial_setup/ROLE_USER.json',
-                'config/couchmove/changelog/V0.1__initial_setup/user__admin.json',
-                'config/couchmove/changelog/V0.1__initial_setup/user__user.json',
+                'config/couchmove/changelog/V0.1__initial_setup/authority/ROLE_ADMIN.json',
+                'config/couchmove/changelog/V0.1__initial_setup/authority/ROLE_USER.json',
+                'config/couchmove/changelog/V0.1__initial_setup/user/admin.json',
+                'config/couchmove/changelog/V0.1__initial_setup/user/user.json',
             ],
         },
     ],

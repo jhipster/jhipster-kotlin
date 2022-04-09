@@ -17,10 +17,10 @@
  * limitations under the License.
  */
 
-const DETEKT_VERSION = '1.18.1';
-const KOTLIN_VERSION = '1.6.0';
-const KTLINT_MAVEN_VERSION = '1.11.1';
-const KTLINT_GRADLE_VERSION = '10.2.0';
+const DETEKT_VERSION = '1.19.0';
+const KOTLIN_VERSION = '1.6.20';
+const KTLINT_MAVEN_VERSION = '1.13.0';
+const KTLINT_GRADLE_VERSION = '10.2.1';
 const MAPSTRUCT_VERSION = '1.4.2.Final';
 const MAVEN_ANTRUN_VERSION = '3.0.0';
 const MOCKITO_KOTLIN_VERSION = '2.2.0';

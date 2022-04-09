@@ -1,0 +1,129 @@
+<%#
+ Copyright 2013-2022 the original author or authors from the JHipster project.
+
+ This file is part of the JHipster project, see https://www.jhipster.tech/
+ for more information.
+
+ Licensed under the Apache License, Version 2.0 (the "License")
+ you may not use this file except in compliance with the License.
+ You may obtain a copy of the License at
+
+      https://www.apache.org/licenses/LICENSE-2.0
+
+ Unless required by applicable law or agreed to in writing, software
+ distributed under the License is distributed on an "AS IS" BASIS,
+ WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
+ See the License for the specific language governing permissions and
+ limitations under the License.
+-%>
+package <%= packageName %>.config
+
+import java.util.List
+
+<%_ if (databaseTypeCassandra) { _%>
+import org.cassandraunit.CQLDataLoader
+<%_ } _%>
+
+import org.slf4j.Logger
+import org.slf4j.LoggerFactory
+import org.springframework.beans.factory.config.ConfigurableListableBeanFactory
+import org.springframework.beans.factory.support.DefaultSingletonBeanRegistry
+import org.springframework.core.annotation.AnnotatedElementUtils
+
+import org.springframework.test.context.ContextConfigurationAttributes
+import org.springframework.test.context.ContextCustomizer
+import org.springframework.test.context.ContextCustomizerFactory
+import org.springframework.boot.test.util.TestPropertyValues
+<%_ if (databaseTypeCassandra) { _%>
+import org.testcontainers.containers.CassandraContainer
+<%_ } _%>
+<%_ if (messageBrokerKafka) { _%>
+import org.testcontainers.containers.KafkaContainer
+<%_ } _%>
+
+class TestContainersSpringContextCustomizerFactory: ContextCustomizerFactory {
+
+    private val log = LoggerFactory.getLogger(TestContainersSpringContextCustomizerFactory::class.java)
+
+    <%_ if (messageBrokerKafka) { _%>
+        private lateinit var kafkaBean: KafkaTestContainer
+    <%_ } _%>
+    <%_ if (databaseTypeMongodb) { _%>
+        private lateinit var mongoDbBean: MongoDbTestContainer
+    <%_ } _%>
+    <%_ if (databaseTypeCassandra) { _%>
+        private lateinit var cassandraBean: CassandraTestContainer
+    <%_ } _%>
+
+    
+
+    override fun createContextCustomizer(
+        testClass: Class<*>,
+        configAttributes: MutableList<ContextConfigurationAttributes>
+    ): ContextCustomizer {
+        return ContextCustomizer { context, _ ->
+            val beanFactory = context.beanFactory
+            var testValues = TestPropertyValues.empty()
+<%_ if (databaseTypeMongodb) { _%>
+            val mongoAnnotation = AnnotatedElementUtils.findMergedAnnotation(testClass, EmbeddedMongo::class.java)
+            if (null != mongoAnnotation) {
+                log.debug("detected the EmbeddedMongo annotation on class {}", testClass.name)
+                if (mongoDbBean == null) {
+                    log.info("Warming up the mongo database")
+                    mongoDbBean = MongoDbTestContainer()
+                    beanFactory.initializeBean(
+                        mongoDbBean,
+                        MongoDbTestContainer::class.java.name.lowercase(Locale.getDefault())
+                    )
+                    beanFactory.registerSingleton(
+                        MongoDbTestContainer::class.java.name.lowercase(Locale.getDefault()), mongoDbBean
+                    )
+                    (beanFactory as DefaultSingletonBeanRegistry).registerDisposableBean(
+                        MongoDbTestContainer::class.java.name.lowercase(Locale.getDefault()), mongoDbBean
+                    )
+                }
+                testValues =
+                    testValues.and(
+                        "spring.data.mongodb.uri=" + mongoDbBean.getMongoDBContainer().replicaSetUrl
+                    )
+            }
+<%_ } _%>
+
+<%_ if (databaseTypeCassandra) { _%>
+    val cassandraAnnotation = AnnotatedElementUtils.findMergedAnnotation(testClass, EmbeddedCassandra::class.java)
+    if (null != cassandraAnnotation) {
+        log.debug("detected the EmbeddedCassandra annotation on class {}", testClass.name)
+        if (cassandraBean == null) {
+            log.info("Warming up the cassandra database")
+            cassandraBean =  CassandraTestContainer()
+            beanFactory.initializeBean(cassandraBean, CassandraTestContainer::class.java.name.lowercase(Locale.getDefault()))
+            beanFactory.registerSingleton(CassandraTestContainer::class.java.name.lowercase(Locale.getDefault()), cassandraBean)
+            (beanFactory as DefaultSingletonBeanRegistry).registerDisposableBean(CassandraTestContainer::class.java.name.lowercase(Locale.getDefault()), cassandraBean);
+        }
+        testValues = testValues.and("spring.data.cassandra.port=" +  cassandraBean.cassandraContainer.getMappedPort(CassandraContainer.CQL_PORT))
+                .and("spring.data.cassandra.contact-points=" +  cassandraBean.cassandraContainer.host)
+                .and("spring.data.cassandra.keyspace-name=" + CQLDataLoader.DEFAULT_KEYSPACE_NAME)
+                .and("spring.data.cassandra.local-datacenter=" + cassandraBean.cassandraContainer.cluster.metadata.allHosts.iterator().next().datacenter)
+                .and("spring.data.cassandra.cluster-name=" + cassandraBean.cassandraContainer.cluster.metadata.clusterName)
+    }
+<%_ } _%>
+
+<%_ if (messageBrokerKafka) { _%>
+    val kafkaAnnotation = AnnotatedElementUtils.findMergedAnnotation(testClass, EmbeddedKafka::class.java)
+    if (null != kafkaAnnotation) {
+        log.debug("detected the EmbeddedKafka annotation on class {}", testClass.name)
+        if (kafkaBean == null) {
+            log.info("Warming up the kafka broker")
+            kafkaBean = KafkaTestContainer()
+            beanFactory.initializeBean(kafkaBean, KafkaTestContainer::class.java.name.lowercase(Locale.getDefault()))
+            beanFactory.registerSingleton(KafkaTestContainer::class.java.name.lowercase(Locale.getDefault()), kafkaBean);
+            ((DefaultSingletonBeanRegistry)beanFactory).registerDisposableBean(KafkaTestContainer::class.java.name.lowercase(Locale.getDefault()), kafkaBean);
+        }
+        testValues = testValues.and("spring.cloud.stream.kafka.binder.brokers=" + kafkaBean.kafkaContainer.host + ':' + kafkaBean.kafkaContainer.getMappedPort(KafkaContainer.KAFKA_PORT))
+    }
+<%_ } _%>
+            testValues.applyTo(context)
+        }
+    }
+
+}

@@ -26,6 +26,7 @@ import org.springframework.data.r2dbc.core.StatementMapper
 import org.springframework.data.r2dbc.mapping.OutboundRow
 import org.springframework.data.r2dbc.query.UpdateMapper
 import org.springframework.data.relational.core.query.Criteria
+import org.springframework.data.relational.core.sql.Condition
 import org.springframework.data.relational.core.mapping.RelationalPersistentEntity
 import org.springframework.data.relational.core.sql.Conditions
 import org.springframework.data.relational.core.sql.OrderByField
@@ -92,18 +93,11 @@ class EntityManager(
      * @param pageable page parameter, or null, if everything needs to be returned
      * @return sql select statement
      */
-    fun createSelect(selectFrom: SelectFromAndJoin, entityType: Class<*>, pageable: Pageable?, criteria: Criteria?): String {
+    fun createSelect(selectFrom: SelectFromAndJoin, entityType: Class<*>, pageable: Pageable?): String {
         if (pageable != null) {
-            if (criteria != null) {
-                return createSelectImpl(selectFrom.limitOffset(pageable.pageSize.toLong(), pageable.offset).where(Conditions.just(criteria.toString())), entityType, pageable.sort)
-            }
             return createSelectImpl(selectFrom.limitOffset(pageable.pageSize.toLong(), pageable.offset), entityType, pageable.sort)
         } else {
-            if (criteria != null) {
-                return createSelectImpl(selectFrom.where(Conditions.just(criteria.toString())), entityType, null)
-            } else {
-                return createSelectImpl(selectFrom, entityType, null)
-            }
+            return createSelectImpl(selectFrom, entityType, null)
         }
     }
 
@@ -114,22 +108,38 @@ class EntityManager(
      * @param pageable page parameter, or null, if everything needs to be returned
      * @return sql select statement
      */
-    fun createSelect(selectFrom: SelectFromAndJoinCondition, entityType: Class<*>, pageable: Pageable?, criteria: Criteria?): String {
+     fun createSelect(selectFrom: SelectFromAndJoinCondition, entityType: Class<*>, pageable: Pageable?, where: Condition?): String {
         if (pageable != null) {
-            if (criteria != null) {
-                return createSelectImpl(selectFrom.limitOffset(pageable.pageSize.toLong(), pageable.offset).where(Conditions.just(criteria.toString())), entityType, pageable.sort)
+            if (where != null) {
+                return createSelectImpl(selectFrom.limitOffset(pageable.pageSize.toLong(), pageable.offset).where(where), entityType, pageable.sort)
             } else {
                 return createSelectImpl(selectFrom.limitOffset(pageable.pageSize.toLong(), pageable.offset), entityType, pageable.sort)
             }
         } else {
-            if (criteria != null) {
-                return createSelectImpl(selectFrom.where(Conditions.just(criteria.toString())), entityType, null)
+            if (where != null) {
+                return createSelectImpl(selectFrom.where(where), entityType, null)
             } else {
                 return createSelectImpl(selectFrom, entityType, null)
             }
         }
     }
 
+    fun createSelect(selectFrom: SelectFromAndJoin, entityType: Class<*>, pageable: Pageable?, where: Condition?): String {
+        if (pageable != null) {
+            if (where != null) {
+                return createSelectImpl(selectFrom.limitOffset(pageable.pageSize.toLong(), pageable.offset).where(where), entityType, pageable.sort);
+            } else {
+                return createSelectImpl(selectFrom.limitOffset(pageable.pageSize.toLong(), pageable.offset), entityType, pageable.sort);
+            }
+        } else {
+            if (where != null) {
+                return createSelectImpl(selectFrom.where(where), entityType, null);
+            } else {
+                return createSelectImpl(selectFrom, entityType, null);
+            }
+        }
+    }
+    
     private fun createSelectImpl(selectFrom: SelectOrdered, entityType: Class<*>, sortParameter: Sort?): String {
         var selected = selectFrom
         if (sortParameter != null && sortParameter.isSorted) {
@@ -193,7 +203,7 @@ class EntityManager(
      * @param referencedIds the id of the referred entities.
      * @return the number of inserted rows.
      */
-    fun updateLinkTable(table: LinkTable, entityId: Long?, referencedIds: List<Long?>?): Mono<Int> {
+    fun updateLinkTable(table: LinkTable, entityId: Any?, referencedIds: List<Any?>?): Mono<Int> {
         
         if (referencedIds == null) {
             return deleteFromLinkTable(table, entityId).then(Mono.just(0))
@@ -202,7 +212,7 @@ class EntityManager(
         return deleteFromLinkTable(table, entityId)
             .then(
                 Flux.fromIterable(referencedIds)
-                    .flatMap { referenceId: Long? ->
+                    .flatMap { referenceId: Any? ->
                         val insert = r2dbcEntityTemplate
                             .dataAccessStrategy
                             .statementMapper
@@ -226,7 +236,7 @@ class EntityManager(
             })
     }
 
-    fun deleteFromLinkTable(table: LinkTable, entityId: Long?): Mono<Void>  {
+    fun deleteFromLinkTable(table: LinkTable, entityId: Any?): Mono<Void>  {
         Assert.notNull(entityId, "entityId is null")
         val deleteSpec = r2dbcEntityTemplate.dataAccessStrategy.statementMapper
             .createDelete(table.tableName)

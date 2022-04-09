@@ -1,5 +1,5 @@
 #
-# Copyright 2013-2019 the original author or authors from the JHipster project.
+# Copyright 2013-2022 the original author or authors from the JHipster project.
 #
 # This file is part of the JHipster project, see https://www.jhipster.tech/
 # for more information.
@@ -8,7 +8,7 @@
 # you may not use this file except in compliance with the License.
 # You may obtain a copy of the License at
 #
-#      http://www.apache.org/licenses/LICENSE-2.0
+#      https://www.apache.org/licenses/LICENSE-2.0
 #
 # Unless required by applicable law or agreed to in writing, software
 # distributed under the License is distributed on an "AS IS" BASIS,
@@ -18,300 +18,230 @@
 #
 
 name: Angular
-on: [push, pull_request]
-env:
-    JHI_RUN_APP: 1
-    JHI_JDK: 11
-    JHI_LIB_REPO: https://github.com/jhipster/jhipster-bom.git
-    JHI_LIB_BRANCH: release
-    JHI_GEN_REPO: https://github.com/jhipster/generator-jhipster.git
-    JHI_GEN_BRANCH: v7.6.0
-    SPRING_OUTPUT_ANSI_ENABLED: ALWAYS
-    SPRING_JPA_SHOW_SQL: false
-    JHI_DISABLE_WEBPACK_LOGS: true
-    JHI_E2E_HEADLESS: true
-    JHI_FOLDER_APP: ${{ github.workspace }}/app
-    JHI_HOME: ${{ github.workspace }}/generator-jhipster-kotlin
-    KOTLIN_JHI_SCRIPTS: ${{ github.workspace }}/generator-jhipster-kotlin/test-integration/scripts
-    NG_CLI_ANALYTICS: 'false'
-    JHI_GITHUB_CI: true
-    FORCE_COLOR: 1
-    # https://github.com/actions/virtual-environments/issues/1499#issuecomment-689467080
-    MAVEN_OPTS: >-
-        -Dhttp.keepAlive=false
-        -Dmaven.wagon.http.pool=false
-        -Dmaven.wagon.httpconnectionManager.ttlSeconds=120
+concurrency:
+    # Group PRs by head_ref, push to main branch by commit id, and others branch by ref.
+    group: ${{ github.workflow }}-${{ github.head_ref || (github.ref == 'refs/heads/main' && github.sha) || github.ref }}
+    cancel-in-progress: true
+on:
+    push:
+        branches-ignore:
+            - 'dependabot/**'
+            - 'skip_ci*'
+        paths-ignore:
+            - 'package*.json'
+            - 'generators/*client/templates/react/**'
+            - 'generators/*client/templates/vue/**'
+    pull_request:
+        types: [closed, opened, synchronize, reopened]
+        branches:
+            - '*'
 jobs:
+    build-matrix:
+        runs-on: ubuntu-20.04
+        outputs:
+            matrix: ${{ steps.build.outputs.matrix }}
+            client: ${{ steps.build.outputs.client }}
+            server: ${{ steps.build.outputs.server }}
+            any: ${{ steps.build.outputs.any }}
+            workflow-angular: ${{ steps.build.outputs.workflow-angular }}
+            workflow-react: ${{ steps.build.outputs.workflow-react }}
+            workflow-vue: ${{ steps.build.outputs.workflow-vue }}
+        steps:
+            - name: 'SETUP: Checkout generator-jhipster-kotlin'
+              uses: actions/checkout@v3
+              with:
+                  fetch-depth: 2
+            - name: 'Build matrix'
+              id: build
+              uses: ./.github/actions/build-matrix
+              with:
+                  workflow-samples-file: angular
     applications:
-        name: ${{ matrix.app-type }}
-        runs-on: ${{ matrix.os }}
+        name: ${{ matrix.name }}
+        runs-on: ${{ matrix.os || 'ubuntu-20.04' }}
+        needs: build-matrix
         defaults:
             run:
                 working-directory: ${{ github.workspace }}/app
         if: >-
+            !contains(github.event.head_commit.message, '[react]') &&
+            !contains(github.event.head_commit.message, '[vue]') &&
+            !contains(github.event.pull_request.title, '[react]') &&
+            !contains(github.event.pull_request.title, '[vue]') &&
             !contains(github.event.head_commit.message, '[ci skip]') &&
             !contains(github.event.head_commit.message, '[skip ci]') &&
             !contains(github.event.pull_request.title, '[skip ci]') &&
             !contains(github.event.pull_request.title, '[ci skip]') &&
-            (github.event.pull_request.draft == false || !contains(github.event.pull_request.labels.*.name, 'pr: skip-ci'))
+            github.event.action != 'closed' &&
+            !contains(github.event.pull_request.labels.*.name, 'pr: skip-ci') &&
+            needs.build-matrix.outputs.workflow-angular == 'true'
         timeout-minutes: 40
         strategy:
             fail-fast: false
-            matrix:
-                node_version: [16.13.1]
-                os: [ubuntu-20.04]
-                cache: [angular]
-                app-type:
-                    - ngx-default
-                    - ngx-mysql-es-noi18n-mapsid
-                    - ngx-mariadb-oauth2-infinispan
-                    - ngx-h2mem-ws-nol2
-                    - ngx-gradle-fr
-                    - ngx-gradle-mysql-es-noi18n-mapsid
-                    - ngx-gradle-mariadb-oauth2-infinispan
-                    - ngx-gradle-mongodb-kafka-cucumber
-                    - ngx-gradle-h2disk-ws-nocache
-                include:
-                    - app-type: ngx-default
-                      entity: sqlfull
-                      jdl-entity: '*'
-                      environment: prod
-                      war: 0
-                      e2e: 1
-                      testcontainers: 1
-                      sonar-analyse: 1
-                    - app-type: ngx-mysql-es-noi18n-mapsid
-                      entity: sql
-                      environment: prod
-                      war: 0
-                      e2e: 1
-                      testcontainers: 0
-                    - app-type: ngx-mariadb-oauth2-infinispan
-                      entity: sqlfull
-                      environment: prod
-                      war: 0
-                      e2e: 1
-                      testcontainers: 0
-                    - app-type: ngx-h2mem-ws-nol2
-                      entity: sql
-                      environment: dev
-                      war: 0 # TODO: need change to 1, when maven+war is fixed
-                      e2e: 1
-                      testcontainers: 0
-                    - app-type: ngx-gradle-fr
-                      entity: sql
-                      environment: prod
-                      war: 0
-                      e2e: 1
-                      testcontainers: 0
-                    - app-type: ngx-gradle-mysql-es-noi18n-mapsid
-                      entity: sqlfull
-                      environment: prod
-                      war: 0
-                      e2e: 1
-                      testcontainers: 1
-                    - app-type: ngx-gradle-mariadb-oauth2-infinispan
-                      entity: sql
-                      environment: dev
-                      war: 0
-                      e2e: 1
-                      testcontainers: 1
-                    - app-type: ngx-gradle-mongodb-kafka-cucumber
-                      entity: mongodb
-                      environment: prod
-                      war: 0
-                      e2e: 1
-                      testcontainers: 0
-                    - app-type: ngx-gradle-h2disk-ws-nocache
-                      entity: sql
-                      environment: dev
-                      war: 1
-                      e2e: 1
-                      testcontainers: 0
-        env:
-            JHI_GENERATE_SKIP_CONFIG: 1
-            JHI_ENTITY: ${{ matrix.entity }}
-            JHI_JDL_ENTITY: ${{ matrix.jdl-entity }}
-            JHI_APP: ${{ matrix.jhi-app-type || matrix.app-type }}
-            JHI_PROFILE: ${{ matrix.environment }}
-            JHI_WAR: ${{ matrix.war }}
-            JHI_E2E: ${{ matrix.e2e }}
-            SPRING_PROFILES_ACTIVE: ${{ fromJson('["", "testcontainers"]')[matrix.testcontainers] }}
+            # Matrix available at https://github.com/jhipster/jhipster-kotlin/tree/main/test-integration/workflow-samples/
+            matrix: ${{fromJson(needs.build-matrix.outputs.matrix)}}
         steps:
             #----------------------------------------------------------------------
             # Install all tools and check configuration
             #----------------------------------------------------------------------
             - name: 'SETUP: Checkout generator-jhipster-kotlin'
-              uses: actions/checkout@v2
+              uses: actions/checkout@v3
               with:
-                  path: generator-jhipster-kotlin
+                  path: jhipster-kotlin
                   fetch-depth: 2
-            - name: 'SETUP: Create required structure'
-              run: |
-                  mkdir app
-                  mkdir -p base/generator-jhipster-kotlin
-                  mkdir -p base/app
-              working-directory: ${{ github.workspace }}
-            - uses: actions/setup-node@v2.5.1
+            - name: Checkout JHipster repo
+              uses: actions/checkout@v3
               with:
-                  node-version: ${{ matrix.node_version }}
-            - uses: actions/setup-java@v1
+                repository: jhipster/generator-jhipster
+                path: generator-jhipster
+                ref: v7.8.0
+            - name: 'SETUP: environment'
+              id: setup
+              uses: ./jhipster-kotlin/.github/actions/setup
               with:
-                  java-version: '11.x'
-            - name: 'SETUP: Get date'
-              id: get-date
-              run: |
-                  echo "::set-output name=date::$(/bin/date -u "+%Y%m%d")"
+                  application-sample: ${{ matrix.jhi-app-sample || matrix.app-sample || 'jdl' }}
+                  entities-sample: ${{ matrix.entity || 'none' }}
+                  jdl-entities-sample: ${{ matrix.jdl-entity || '' }}
+                  jdl-sample: ${{ matrix.jdl-samples || '' }}
+                  application-environment: ${{ matrix.environment || 'prod' }}
+                  application-packaging: ${{ (matrix.war == 1 && 'war') || 'jar' }}
+                  enable-testcontainers: ${{ matrix.testcontainers != 'false' }}
+            - uses: actions/setup-node@v3
+              with:
+                  node-version: ${{ steps.setup.outputs.node-version }}
+            - uses: actions/setup-java@v2
+              with:
+                  distribution: 'temurin'
+                  java-version: ${{ steps.setup.outputs.java-version }}
             - name: 'SETUP: load npm cache'
-              uses: actions/cache@v2.1.4
+              uses: actions/cache@v3
               with:
-                  path: ~/.npm
-                  key: ${{ runner.os }}-node-${{ matrix.cache }}-${{ steps.get-date.outputs.date }}-${{ hashFiles('generator-jhipster/package-lock.json', 'generator-jhipster/**/package.json.ejs') }}
+                  path: |
+                      ~/.npm
+                      ~/.cache/Cypress/
+                  key: ${{ runner.os }}-node-${{ steps.setup.outputs.date }}-${{ matrix.npm-cache || 'angular' }}-${{ hashFiles('jhipster-kotlin/package-lock.json', 'jhipster-kotlin/**/package.json') }}
                   restore-keys: |
-                      ${{ runner.os }}-node-${{ matrix.cache }}-${{ steps.get-date.outputs.date }}-
+                      ${{ runner.os }}-node-${{ steps.setup.outputs.date }}-${{ matrix.npm-cache || 'angular' }}-
+                      ${{ runner.os }}-node-${{ steps.setup.outputs.date }}-
+                      ${{ runner.os }}-node-${{ steps.setup.outputs.date }}
             - name: 'SETUP: load maven cache'
-              if: "!contains(matrix.app-type, 'gradle')"
-              uses: actions/cache@v2.1.4
+              uses: actions/cache@v3
               with:
                   path: ~/.m2/repository
-                  key: ${{ runner.os }}-maven-${{ steps.get-date.outputs.date }}-${{ hashFiles('generator-jhipster/**/pom.xml.ejs') }}
+                  key: ${{ runner.os }}-maven-${{ steps.setup.outputs.date }}-${{ hashFiles('jhipster-kotlin/**/pom.xml.ejs') }}
                   restore-keys: |
-                      ${{ runner.os }}-maven-${{ steps.get-date.outputs.date }}-
-            - name: 'SETUP: load jhipster-bom maven cache'
-              if: contains(matrix.app-type, 'gradle')
-              uses: actions/cache@v2.1.4
-              with:
-                  path: ~/.m2/repository
-                  key: ${{ runner.os }}-maven-jhipster-bom-${{ steps.get-date.outputs.date }}-
-                  restore-keys: |
-                      ${{ runner.os }}-maven-jhipster-bom-
+                      ${{ runner.os }}-maven-${{ steps.setup.outputs.date }}-
+                      ${{ runner.os }}-maven-${{ steps.setup.outputs.date }}
             - name: 'SETUP: load gradle cache'
-              if: contains(matrix.app-type, 'gradle')
-              uses: actions/cache@v2
+              if: matrix.workspaces == 'true' || matrix.gradle == 1 || contains(matrix.name, 'gradle')
+              uses: actions/cache@v3
               with:
                   path: |
                       ~/.gradle/caches
                       ~/.gradle/wrapper
-                  key: ${{ runner.os }}-gradle-${{ hashFiles('generator-jhipster/**/build.gradle.ejs') }}
+                  key: ${{ runner.os }}-gradle-${{ steps.setup.outputs.date }}-${{ hashFiles('jhipster-kotlin/**/build.gradle.ejs') }}
                   restore-keys: |
-                      ${{ runner.os }}-gradle-
-            - name: 'SETUP: load e2e cache'
-              if: matrix.e2e == 1
-              uses: actions/cache@v2.1.4
-              with:
-                  path: ~/.cache/Cypress/
-                  key: ${{ runner.os }}-cypress-${{ hashFiles('generator-jhipster/client/common/package.json') }}
-                  restore-keys: |
-                      ${{ runner.os }}-cypress-
-            - name: 'ENV: display variables'
-              run: $KOTLIN_JHI_SCRIPTS/01-display-configuration.sh
+                      ${{ runner.os }}-gradle-${{ steps.setup.outputs.date }}-
+                      ${{ runner.os }}-gradle-${{ steps.setup.outputs.date }}
             - name: 'TOOLS: configure tools installed by the system'
-              run: $KOTLIN_JHI_SCRIPTS/03-system.sh
+              run: $KHI_SCRIPTS/03-system.sh
             - name: 'TOOLS: configure git'
-              run: $KOTLIN_JHI_SCRIPTS/04-git-config.sh
+              run: $KHI_SCRIPTS/04-git-config.sh
+            # Update global NPM for workspaces support
+            - name: 'Install required NPM version'
+              if: matrix.workspaces == 'true'
+              run: npm install -g npm@${{ steps.setup.outputs.npm-version }} || true
             #----------------------------------------------------------------------
             # Install JHipster and generate project+entities
             #----------------------------------------------------------------------
             - name: 'GENERATION: install JHipster'
-              run: $KOTLIN_JHI_SCRIPTS/10-install-jhipster-kotlin.sh
+              run: $KHI_SCRIPTS/10-install-jhipster.sh
             - name: 'GENERATION: config'
-              run: $KOTLIN_JHI_SCRIPTS/11-generate-config.sh
+              run: $KHI_SCRIPTS/11-generate-config.sh
             - name: 'GENERATION: project'
-              run: $KOTLIN_JHI_SCRIPTS/12-generate-project-kotlin.sh
+              run: $KHI_SCRIPTS/12-generate-project.sh --skip-jhipster-dependencies --skip-install ${{ matrix.extra-args }} ${{ matrix.new-extra-args }}
+            - name: 'GENERATION: workspace git'
+              if: matrix.workspaces == 'true'
+              run: |
+                  git add .
+                  git commit -m "Commit workspaces"
             - name: 'GENERATION: jhipster info'
-              run: $KOTLIN_JHI_SCRIPTS/14-jhipster-info.sh
+              run: $KHI_SCRIPTS/14-jhipster-info.sh
             #----------------------------------------------------------------------
             # Detect changes against base commit
             #----------------------------------------------------------------------
-            - name: 'MERGE: Install base generator-jhipster-kotlin'
-              continue-on-error: true
-              id: base-checkout
-              if: github.event.pull_request
-              working-directory: ${{ github.workspace }}/base/generator-jhipster-kotlin
-              run: |
-                  git clone ${{ github.workspace }}/generator-jhipster-kotlin .
-                  git checkout @~1
-                  git log
-                  npm uninstall -g generator-jhipster-kotlin
-                  npm install
-                  npm install -g .
-            - name: 'MERGE: merge base project'
+            - name: 'MERGE: generate base'
               continue-on-error: true
               id: base-app
-              if: steps.base-checkout.outcome == 'success'
-              working-directory: ${{ github.workspace }}/base/app
-              run: |
-                  $KOTLIN_JHI_SCRIPTS/11-generate-config.sh
-                  # 11-generate-entities.sh removes current dir, we need to switch to the new one
-                  cd ../app
-                  $KOTLIN_JHI_SCRIPTS/12-generate-project-kotlin.sh --skip-install --skip-git
-              env:
-                  JHI_FOLDER_APP: ${{ github.workspace }}/base/app
-            - name: 'MERGE: merge project diff'
+              if: >-
+                  github.event.pull_request &&
+                  !contains(github.event.pull_request.labels.*.name, 'pr: disable-compare')
+              uses: ./generator-jhipster-kotlin/.github/actions/compare-base
+              with:
+                  extra-args: '--skip-jhipster-dependencies ${{ matrix.extra-args }}'
+            - name: 'MERGE: compare changes'
               continue-on-error: true
-              id: merge-is-equal
+              id: compare
               if: steps.base-app.outcome == 'success'
-              working-directory: ${{ github.workspace }}/base/app
-              run: |
-                  # Copy git repository (clone without the files)
-                  cp -a ${{ github.workspace }}/app/.git .
-                  git log
-                  # File keystore.p12 always changes
-                  # File package-lock.json is not generated
-                  # Verify if the generated source has changed
-                  git add .
-                  git -c color.ui=always diff -R --cached -- '.yo-rc.json' '.jhipster/**'
-                  git -c color.ui=always diff -R --cached --exit-code -- . ':!.yo-rc.json' ':!.jhipster/**' ':!package-lock.json' ':!src/main/resources/config/tls/keystore.p12' || echo "::set-output name=has-changes::true"
-            - name: 'MERGE: tests should be skipped'
-              id: tests-should-be-skipped
-              if: >
-                  steps.merge-is-equal.outcome == 'success' &&
-                  steps.merge-is-equal.outputs.has-changes != 'true'
-              run: echo 'Skipping tests' && echo "::set-output name=skip-tests::true"
+              uses: ./generator-jhipster-kotlin/.github/actions/compare
+              with:
+                  application-path: ${{ steps.base-app.outputs.application-path }}
             #----------------------------------------------------------------------
             # Launch tests
             #----------------------------------------------------------------------
+            - name: 'PREPARE: npm install'
+              if: steps.compare.outputs.equals != 'true'
+              run: ${{ (matrix.workspaces == 'true' && 'npm') || './npmw' }} install
             - name: 'TESTS: Start docker-compose containers for e2e and backend tests'
-              if: steps.tests-should-be-skipped.outputs.skip-tests != 'true' && matrix.testcontainers != 1
+              if: steps.compare.outputs.equals != 'true' && matrix.testcontainers == 'false' && matrix.workspaces != 'true'
               run: npm run ci:e2e:prepare
             - name: 'TESTS: backend'
               id: backend
-              if: steps.tests-should-be-skipped.outputs.skip-tests != 'true'
+              if: steps.compare.outputs.equals != 'true' && matrix.skip-backend-tests != 1 && needs.build-matrix.outputs.server != 'false'
               run: npm run ci:backend:test
               continue-on-error: ${{matrix.continue-on-backend-tests-error || false}}
             - name: 'TESTS: frontend'
-              if: steps.tests-should-be-skipped.outputs.skip-tests != 'true'
+              if: steps.compare.outputs.equals != 'true' && matrix.skip-frontend-tests != 1 && needs.build-matrix.outputs.client != 'false'
               run: npm run ci:frontend:test
             - name: 'TESTS: packaging'
-              if: steps.tests-should-be-skipped.outputs.skip-tests != 'true'
+              if: steps.compare.outputs.equals != 'true'
               run: npm run ci:e2e:package
             - name: 'TESTS: Start docker-compose containers for e2e tests'
-              if: steps.tests-should-be-skipped.outputs.skip-tests != 'true' && matrix.testcontainers == 1
+              if: steps.compare.outputs.equals != 'true' && (matrix.testcontainers != 'false' ||  matrix.workspaces == 'true')
               run: npm run ci:e2e:prepare
             - name: 'E2E: Run'
               id: e2e
-              if: steps.tests-should-be-skipped.outputs.skip-tests != 'true'
+              if: steps.compare.outputs.equals != 'true'
               run: npm run ci:e2e:run --if-present
-            - name: 'E2E: Teardown'
-              if: always() && matrix.e2e == 1 && steps.tests-should-be-skipped.outputs.skip-tests != 'true'
-              run: npm run ci:e2e:teardown
             - name: 'BACKEND: Store failure logs'
               uses: actions/upload-artifact@v2
               if: always() && steps.backend.outcome == 'failure'
               with:
-                  name: log-${{ matrix.app-type }}
-                  path: ${{ github.workspace }}/app/build/test-results/**/*.xml
+                  name: log-${{ matrix.name }}
+                  path: ${{ steps.setup.outputs.application-path }}/**/test-results/**/*.xml
             - name: 'E2E: Store failure screenshots'
               uses: actions/upload-artifact@v2
               if: always() && steps.e2e.outcome == 'failure'
               with:
-                  name: screenshots-${{ matrix.app-type }}
-                  path: ${{ github.workspace }}/app/*/cypress/screenshots
-            - name: Dump docker logs on failure
-              if: failure()
+                  name: screenshots-${{ matrix.name }}
+                  path: ${{ steps.setup.outputs.application-path }}/**/cypress/screenshots
+            - name: Dump docker logs
+              if: always()
               uses: jwalton/gh-docker-logs@v2
             - name: 'ANALYSIS: Sonar analysis'
-              run: $KOTLIN_JHI_SCRIPTS/25-sonar-analyze.sh
+              if: steps.compare.outputs.equals != 'true' && matrix.sonar-analyse != 'false' && matrix.workspaces != 'true'
+              run: $KHI_SCRIPTS/25-sonar-analyze.sh
               env:
                   GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
                   SONAR_TOKEN: ${{ secrets.SONAR_TOKEN }}
+    check-angular:
+        runs-on: ubuntu-latest
+        needs: [applications]
+        if: always()
+        steps:
+            - run: |
+                  echo '${{ toJSON(needs) }}'
+                  if [ 'skipped' == '${{ needs.applications.result }}' ] || [ 'success' == '${{ needs.applications.result }}' ] || [ 'closed' == '${{ github.event.action }}' ]; then
+                    exit 0
+                  fi
+                  exit 1

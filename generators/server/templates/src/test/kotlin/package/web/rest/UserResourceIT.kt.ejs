@@ -18,9 +18,6 @@
 -%>
 package <%= packageName %>.web.rest
 
-<%_ if (databaseTypeCassandra) { _%>
-import <%= packageName %>.AbstractCassandraTest
-<%_ } _%>
 import <%= packageName %>.IntegrationTest
 <%_ if (reactive) { _%>
 import <%= packageName %>.IntegrationTest.Companion.DEFAULT_TIMEOUT
@@ -132,7 +129,7 @@ import kotlin.test.assertNull
 <%_ } _%>
 @WithMockUser(authorities = [ADMIN])
 @IntegrationTest
-class UserResourceIT<% if (databaseTypeCassandra) { %>: AbstractCassandraTest() <% } %>{
+class UserResourceIT {
 
     @Autowired
     private lateinit var userRepository: UserRepository
@@ -406,7 +403,6 @@ class UserResourceIT<% if (databaseTypeCassandra) { %>: AbstractCassandraTest() 
 
         assertPersistedUsers { userList -> assertThat(userList).hasSize(databaseSizeBeforeCreate) }
     }
-<%_ } _%>
 
     @Test
     <%_ if (databaseTypeSql && !reactive) { _%>
@@ -426,7 +422,7 @@ class UserResourceIT<% if (databaseTypeCassandra) { %>: AbstractCassandraTest() 
         <%_ } _%>
         // Get all the users
         <%_ if (reactive) { _%>
-        val foundUser = webTestClient.get().uri("/api/admin/users?sort=id,DESC")
+        val foundUser = webTestClient.get().uri("/api/admin/users?sort=id,desc")
             .accept(MediaType.APPLICATION_JSON)
             .exchange()
             .expectStatus().isOk
@@ -545,7 +541,6 @@ class UserResourceIT<% if (databaseTypeCassandra) { %>: AbstractCassandraTest() 
             .andExpect(status().isNotFound)
         <%_ } _%>
     }
-<%_ if (!authenticationTypeOauth2) { _%>
 
     @Test
     <%_ if (databaseTypeSql && !reactive) { _%>
@@ -1011,7 +1006,7 @@ class UserResourceIT<% if (databaseTypeCassandra) { %>: AbstractCassandraTest() 
         <%_ } _%>
 
         <%_ if (databaseTypeCouchbase){ _%>
-        private const val DEFAULT_ID = <%= asEntity('User') %>.PREFIX + DEFAULT_LOGIN
+        private const val DEFAULT_ID = DEFAULT_LOGIN
         <%_ } else { _%>
         private const val DEFAULT_ID = <%- getPrimaryKeyValue(user.primaryKey.type) %>
         <%_ } _%>

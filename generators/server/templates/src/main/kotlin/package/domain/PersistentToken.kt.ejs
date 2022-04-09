@@ -48,7 +48,9 @@ import org.springframework.data.annotation.Id
 import org.springframework.data.couchbase.core.mapping.Document
 import org.springframework.data.couchbase.core.mapping.id.GeneratedValue
 import org.springframework.data.couchbase.core.mapping.id.IdAttribute
-import org.springframework.data.couchbase.core.mapping.id.IdPrefix
+import org.springframework.data.annotation.TypeAlias
+import org.springframework.data.couchbase.repository.Collection
+import <%= packageName %>.domain.Authority.TYPE_NAME
 <%_ } _%>
 
 <%_ if (databaseTypeSql) { _%>
@@ -91,6 +93,8 @@ import org.springframework.data.couchbase.core.mapping.id.GenerationStrategy.USE
 <%_ } _%>
 <%_ if (databaseTypeCouchbase) { _%>
 @Document
+@TypeAlias(TYPE_NAME)
+@Collection(TYPE_NAME)
 <%_ } _%>
 <%_ if (databaseTypeCassandra) { _%>
     <%_ if (reactive) { _%>
@@ -178,12 +182,6 @@ class PersistentToken @JvmOverloads constructor(
     <%_ } _%>
 
 ) : Serializable {
-<%_ if (databaseTypeCouchbase) { _%>
-
-    @Suppress("unused")
-    @IdPrefix
-    private var prefix: String = PREFIX
-<%_ } _%>
 
 <%_ if (databaseTypeSql || (databaseTypeCassandra && reactive)) { _%>
     @Column(name = "user_agent")
@@ -223,7 +221,7 @@ class PersistentToken @JvmOverloads constructor(
 
         private const val MAX_USER_AGENT_LEN = 255
         <%_ if (databaseTypeCouchbase) { _%>
-        const val PREFIX = "token"
+        const val TYPE_NAME = "persistentToken";
         <%_ } _%>
     }
 }

@@ -19,7 +19,15 @@
 const path = require('path');
 // const fs = require('fs');
 const serverCleanup = require('generator-jhipster/generators/cleanup');
-const { INTERPOLATE_REGEX, MAIN_DIR, TEST_DIR, DOCKER_DIR, SERVER_MAIN_RES_DIR, SERVER_TEST_RES_DIR, SUPPORTED_CLIENT_FRAMEWORKS } = require('generator-jhipster/generators/generator-constants');
+const {
+    INTERPOLATE_REGEX,
+    MAIN_DIR,
+    TEST_DIR,
+    DOCKER_DIR,
+    SERVER_MAIN_RES_DIR,
+    SERVER_TEST_RES_DIR,
+    SUPPORTED_CLIENT_FRAMEWORKS,
+} = require('generator-jhipster/generators/generator-constants');
 const cheerio = require('cheerio');
 
 const { GATEWAY, MICROSERVICE, MONOLITH } = require('generator-jhipster/jdl/jhipster/application-types');
@@ -29,14 +37,7 @@ const { ELASTICSEARCH } = require('generator-jhipster/jdl/jhipster/search-engine
 const { SPRING_WEBSOCKET } = require('generator-jhipster/jdl/jhipster/websocket-types');
 const databaseTypes = require('generator-jhipster/jdl/jhipster/database-types');
 const { COUCHBASE, MONGODB, NEO4J, SQL, MARIADB } = require('generator-jhipster/jdl/jhipster/database-types');
-const {
-    CAFFEINE,
-    EHCACHE,
-    HAZELCAST,
-    INFINISPAN,
-    MEMCACHED,
-    REDIS,
-} = require('generator-jhipster/jdl/jhipster/cache-types');
+const { CAFFEINE, EHCACHE, HAZELCAST, INFINISPAN, MEMCACHED, REDIS } = require('generator-jhipster/jdl/jhipster/cache-types');
 const { KAFKA } = require('generator-jhipster/jdl/jhipster/message-broker-types');
 const { CONSUL, EUREKA } = require('generator-jhipster/jdl/jhipster/service-discovery-types');
 const { addSectionsCondition, mergeSections } = require('generator-jhipster/generators/utils');
@@ -110,8 +111,16 @@ const mongoDbFiles = {
             path: SERVER_TEST_SRC_KOTLIN_DIR,
             templates: [
                 {
-                    file: 'package/MongoDbTestContainerExtension.kt',
-                    renameTo: generator => `${generator.testDir}MongoDbTestContainerExtension.kt`,
+                    file: 'package/config/MongoDbTestContainer.kt',
+                    renameTo: generator => `${generator.testDir}config/MongoDbTestContainer.kt`,
+                },
+                {
+                    file: 'package/config/EmbeddedMongo.kt',
+                    renameTo: generator => `${generator.testDir}config/EmbeddedMongo.kt`,
+                },
+                {
+                    file: 'package/config/TestContainersSpringContextCustomizerFactory.kt',
+                    renameTo: generator => `${generator.testDir}config/TestContainersSpringContextCustomizerFactory.kt`,
                 },
             ],
         },
@@ -121,14 +130,8 @@ const mongoDbFiles = {
                 {
                     file: 'META-INF/spring.factories',
                 },
-            ],
-        },
-        {
-            path: SERVER_TEST_SRC_KOTLIN_DIR,
-            templates: [
                 {
-                    file: 'package/TestContainersSpringContextCustomizerFactory.kt',
-                    renameTo: generator => `${generator.testDir}TestContainersSpringContextCustomizerFactory.kt`,
+                    file: 'testcontainers.properties',
                 },
             ],
         },
@@ -220,7 +223,29 @@ const cassandraFiles = {
                     file: 'package/CassandraKeyspaceIT.kt',
                     renameTo: generator => `${generator.testDir}CassandraKeyspaceIT.kt`,
                 },
-                { file: 'package/AbstractCassandraTest.kt', renameTo: generator => `${generator.testDir}AbstractCassandraTest.kt` },
+                {
+                    file: 'package/config/CassandraTestContainer.kt',
+                    renameTo: generator => `${generator.testDir}config/CassandraTestContainer.kt`,
+                },
+                {
+                    file: 'package/config/EmbeddedCassandra.kt',
+                    renameTo: generator => `${generator.testDir}config/EmbeddedCassandra.kt`,
+                },
+                {
+                    file: 'package/config/TestContainersSpringContextCustomizerFactory.kt',
+                    renameTo: generator => `${generator.testDir}config/TestContainersSpringContextCustomizerFactory.kt`,
+                },
+            ],
+        },
+        {
+            path: SERVER_TEST_RES_DIR,
+            templates: [
+                {
+                    file: 'META-INF/spring.factories',
+                },
+                {
+                    file: 'testcontainers.properties',
+                },
             ],
         },
     ],
@@ -330,10 +355,20 @@ const baseServerFiles = {
                 { file: 'config/realm-config/jhipster-users-0.json', method: 'copy', renameTo: () => 'realm-config/jhipster-users-0.json' },
             ],
         },
+        {
+            condition: generator =>
+                generator.serviceDiscoveryType || generator.applicationTypeGateway || generator.applicationTypeMicroservice,
+            path: DOCKER_DIR,
+            templates: ['zipkin.yml'],
+        },
     ],
     serverBuild: [
         {
-            templates: [{ file: 'checkstyle.xml', options: { interpolate: INTERPOLATE_REGEX } }],
+            templates: [
+                { file: 'checkstyle.xml', options: { interpolate: INTERPOLATE_REGEX } },
+                { file: 'devcontainer/devcontainer.json', renameTo: () => '.devcontainer/devcontainer.json' },
+                { file: 'devcontainer/Dockerfile', renameTo: () => '.devcontainer/Dockerfile' },
+            ],
         },
         {
             condition: generator => generator.buildTool === GRADLE,
@@ -362,13 +397,14 @@ const baseServerFiles = {
             templates: [
                 { file: 'mvnw', method: 'copy', noEjs: true },
                 { file: 'mvnw.cmd', method: 'copy', noEjs: true },
+                { file: '.mvn/jvm.config', method: 'copy', noEjs: true },
                 { file: '.mvn/wrapper/maven-wrapper.jar', method: 'copy', noEjs: true },
                 { file: '.mvn/wrapper/maven-wrapper.properties', method: 'copy', noEjs: true },
-                { file: '.mvn/wrapper/MavenWrapperDownloader.java', method: 'copy', noEjs: true },
                 { file: 'pom.xml', options: { interpolate: INTERPOLATE_REGEX } },
             ],
         },
         {
+            condition: generator => !generator.skipClient,
             templates: [
                 { file: 'npmw', method: 'copy', noEjs: true },
                 { file: 'npmw.cmd', method: 'copy', noEjs: true },
@@ -855,7 +891,8 @@ const baseServerFiles = {
                 {
                     file: 'package/aop/logging/LoggingAspect.kt',
                     renameTo: generator => `${generator.javaDir}aop/logging/LoggingAspect.kt`,
-                },{
+                },
+                {
                     file: 'package/config/AsyncConfiguration.kt',
                     renameTo: generator => `${generator.javaDir}config/AsyncConfiguration.kt`,
                 },
@@ -1063,8 +1100,12 @@ const baseServerFiles = {
             path: SERVER_MAIN_KOTLIN_SRC_DIR,
             templates: [
                 {
-                    file: 'package/config/KafkaProperties.kt',
-                    renameTo: generator => `${generator.javaDir}config/KafkaProperties.kt`,
+                    file: 'package/config/KafkaSseConsumer.kt',
+                    renameTo: generator => `${generator.javaDir}config/KafkaSseConsumer.kt`,
+                },
+                {
+                    file: 'package/config/KafkaSseProducer.kt',
+                    renameTo: generator => `${generator.javaDir}config/KafkaSseProducer.kt`,
                 },
             ],
         },
@@ -1128,6 +1169,17 @@ const baseServerFiles = {
                 {
                     file: 'package/web/filter/SpaWebFilter.kt',
                     renameTo: generator => `${generator.javaDir}web/filter/SpaWebFilter.kt`,
+                },
+            ],
+        },
+        {
+            condition: generator => generator.messageBroker === KAFKA && generator.reactive,
+            path: SERVER_MAIN_KOTLIN_SRC_DIR,
+            templates: [
+                {
+                    file: 'package/web/rest/KafkaResource_reactive.kt',
+                    renameTo: generator =>
+                        `${generator.javaDir}web/rest/${generator.upperFirstCamelCase(generator.baseName)}KafkaResource.kt`,
                 },
             ],
         },
@@ -1381,9 +1433,50 @@ const baseServerFiles = {
             path: SERVER_TEST_SRC_KOTLIN_DIR,
             templates: [
                 {
+                    file: 'package/config/KafkaTestContainer.kt',
+                    renameTo: generator => `${generator.testDir}config/KafkaTestContainer.kt`,
+                },
+                {
+                    file: 'package/config/EmbeddedKafka.kt',
+                    renameTo: generator => `${generator.testDir}config/EmbeddedKafka.kt`,
+                },
+                {
+                    file: 'package/config/TestContainersSpringContextCustomizerFactory.kt',
+                    renameTo: generator => `${generator.testDir}config/TestContainersSpringContextCustomizerFactory.kt`,
+                },
+            ],
+        },
+        {
+            condition: generator => generator.messageBroker === KAFKA && !generator.reactive,
+            path: SERVER_TEST_SRC_KOTLIN_DIR,
+            templates: [
+                {
                     file: 'package/web/rest/KafkaResourceIT.kt',
                     renameTo: generator =>
                         `${generator.testDir}web/rest/${generator.upperFirstCamelCase(generator.baseName)}KafkaResourceIT.kt`,
+                },
+            ],
+        },
+        {
+            condition: generator => generator.messageBroker === KAFKA && generator.reactive,
+            path: SERVER_TEST_SRC_KOTLIN_DIR,
+            templates: [
+                {
+                    file: 'package/web/rest/KafkaResourceIT_reactive.kt',
+                    renameTo: generator =>
+                        `${generator.testDir}web/rest/${generator.upperFirstCamelCase(generator.baseName)}KafkaResourceIT.kt`,
+                },
+            ],
+        },
+        {
+            condition: generator => generator.messageBroker === KAFKA,
+            path: SERVER_TEST_RES_DIR,
+            templates: [
+                {
+                    file: 'META-INF/spring.factories',
+                },
+                {
+                    file: 'testcontainers.properties',
                 },
             ],
         },
@@ -1452,7 +1545,6 @@ const baseServerFiles = {
                     file: 'package/repository/UserRepository.kt',
                     renameTo: generator => `${generator.javaDir}repository/UserRepository.kt`,
                 },
-                { file: 'package/web/rest/UserResource.kt', renameTo: generator => `${generator.javaDir}web/rest/UserResource.kt` },
                 {
                     file: 'package/web/rest/PublicUserResource.kt',
                     renameTo: generator => `${generator.javaDir}web/rest/PublicUserResource.kt`,
@@ -1658,7 +1750,11 @@ const baseServerFiles = {
             ],
         },
         {
-            condition: generator => !generator.skipUserManagement && generator.cucumberTests,
+            condition: generator =>
+                !generator.skipUserManagement &&
+                generator.cucumberTests &&
+                !generator.databaseTypeMongodb &&
+                !generator.databaseTypeCassandra,
             path: SERVER_TEST_SRC_KOTLIN_DIR,
             templates: [
                 {
@@ -1668,7 +1764,11 @@ const baseServerFiles = {
             ],
         },
         {
-            condition: generator => !generator.skipUserManagement && generator.cucumberTests,
+            condition: generator =>
+                !generator.skipUserManagement &&
+                generator.cucumberTests &&
+                !generator.databaseTypeMongodb &&
+                !generator.databaseTypeCassandra,
             path: SERVER_TEST_RES_DIR,
             templates: [
                 {
@@ -1751,7 +1851,6 @@ const baseServerFiles = {
         },
     ],
 };
-
 
 const serverFiles = mergeSections(
     baseServerFiles,

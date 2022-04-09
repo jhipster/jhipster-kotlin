@@ -18,9 +18,7 @@
 -%>
 package <%= packageName %>.web.rest
 
-<%_ if (databaseTypeCassandra) { _%>
-import <%= packageName %>.AbstractCassandraTest
-<%_ } else if (databaseTypeCouchbase) { _%>
+<%_ if (databaseTypeCouchbase) { _%>
 import <%= packageName %>.CouchbaseTestContainerExtension
 <%_ } _%>
 import <%= packageName %>.IntegrationTest
@@ -33,7 +31,7 @@ import <%= packageName %>.domain.PersistentToken
 <%_ } _%>
 import <%= packageName %>.domain.<%= asEntity('User') %>
 
-<%_ if (databaseTypeSql || databaseTypeMongodb || databaseTypeNeo4j || databaseTypeCouchbase) { _%>
+<%_ if (databaseTypeSql || databaseTypeMongodb || databaseTypeNeo4j) { _%>
 import <%= packageName %>.repository.AuthorityRepository
 <%_ } _%>
 <%_ if (authenticationTypeSession && !reactive) { _%>
@@ -56,9 +54,6 @@ import org.apache.commons.lang3.RandomStringUtils
 import org.junit.jupiter.api.BeforeEach
 <%_ } _%>
 import org.junit.jupiter.api.Test
-<%_ if (databaseTypeCouchbase) { _%>
-import org.junit.jupiter.api.extension.ExtendWith
-<%_ } _%>
 import org.springframework.beans.factory.annotation.Autowired
 <%_ if (reactive) { _%>
 import org.springframework.boot.test.autoconfigure.web.reactive.AutoConfigureWebTestClient
@@ -116,6 +111,9 @@ import org.springframework.security.test.web.servlet.request.SecurityMockMvcRequ
 import org.springframework.test.web.servlet.request.MockMvcRequestBuilders.*
 import org.springframework.test.web.servlet.result.MockMvcResultMatchers.*
 <%_ } _%>
+<%_ if (databaseTypeCouchbase) { _%>
+import org.springframework.security.test.web.servlet.response.SecurityMockMvcResultHandlers.exportTestSecurityContext
+<%_ } _%>   
 
 <%_ if (reactive) { _%>
 
@@ -129,14 +127,14 @@ import <%= packageName %>.config.SYSTEM_ACCOUNT
 /**
  * Integrations tests for the [AccountResource] REST controller.
  */
- <%_ if (reactive) { _%>
+ <%_ if (reactive) { _%>testRegisterInvalidLogin
 @AutoConfigureWebTestClient(timeout = IntegrationTest.DEFAULT_TIMEOUT)
 <%_ } else { _%>
 @AutoConfigureMockMvc
 <%_ } _%>
 @WithMockUser(value = TEST_USER_LOGIN)
 @IntegrationTest
-class AccountResourceIT <% if (databaseTypeCassandra) { %>: AbstractCassandraTest() <% } %>{
+class AccountResourceIT {
 
     @Autowired
     private lateinit var userRepository: UserRepository
@@ -382,6 +380,9 @@ class AccountResourceIT <% if (databaseTypeCassandra) { %>: AbstractCassandraTes
                 .content(convertObjectToJsonBytes(invalidUser))<% if (testsNeedCsrf) { %>
                 .with(csrf())<% } %>
         )
+        <%_ if (databaseTypeCouchbase) { _%>
+            .andDo(exportTestSecurityContext())
+        <%_ } _%>
             .andExpect(status().isBadRequest)
         
         <%_ } _%>
@@ -583,6 +584,9 @@ class AccountResourceIT <% if (databaseTypeCassandra) { %>: AbstractCassandraTes
                 .content(convertObjectToJsonBytes(secondUser))<% if (testsNeedCsrf) { %>
                 .with(csrf())<% } %>
         )
+        <%_ if (databaseTypeCouchbase) { _%>
+            .andDo(exportTestSecurityContext())
+        <%_ } _%>
             .andExpect(status().isCreated)
         
         <%_ } _%>
@@ -975,6 +979,9 @@ class AccountResourceIT <% if (databaseTypeCassandra) { %>: AbstractCassandraTes
                 .content(convertObjectToJsonBytes(userDTO))<% if (testsNeedCsrf) { %>
                 .with(csrf())<% } %>
         )
+        <%_ if (databaseTypeCouchbase) { _%>
+            .andDo(exportTestSecurityContext())
+        <%_ } _%>
             .andExpect(status().isBadRequest)
         
         <%_ } _%>

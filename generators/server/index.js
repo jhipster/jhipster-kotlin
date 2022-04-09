@@ -32,13 +32,7 @@ module.exports = class extends ServerGenerator {
         if (!jhContext) {
             this.error("This is a JHipster blueprint and should be used only like 'jhipster --blueprints myblueprint')}");
         }
-        this.loadAppConfig();
-        this.loadDerivedAppConfig();
-        this.loadServerConfig();
-        this.loadDerivedServerConfig();
-
-        this.loadStoredAppOptions();
-        this.loadRuntimeOptions();
+        this.configOptions = jhContext.configOptions || {};
     }
 
     get initializing() {
@@ -87,11 +81,6 @@ module.exports = class extends ServerGenerator {
         return writeFiles();
     }
 
-    get postWriting() {
-        // Here we are not overriding this phase and hence its being handled by JHipster
-        return super._postWriting();
-    }
-
     get install() {
         const phaseFromJHipster = super._install();
         const myCustomPhaseSteps = {
@@ -122,6 +111,10 @@ module.exports = class extends ServerGenerator {
             },
         };
         return Object.assign(phaseFromJHipster, myCustomPhaseSteps);
+    }
+
+    get postWriting() {
+        return super._postWriting();
     }
 
     get end() {

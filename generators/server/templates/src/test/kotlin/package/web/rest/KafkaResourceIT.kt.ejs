@@ -18,168 +18,90 @@
 -%>
 package <%= packageName %>.web.rest
 
-import <%= packageName %>.config.KafkaProperties
-import org.apache.kafka.clients.consumer.ConsumerRecord
-import org.apache.kafka.clients.consumer.ConsumerRecords
-import org.apache.kafka.clients.consumer.KafkaConsumer
-import org.apache.kafka.clients.producer.KafkaProducer
-import org.apache.kafka.clients.producer.ProducerRecord
-
-import org.assertj.core.api.Assertions.assertThat
-import org.junit.jupiter.api.BeforeAll
-import org.junit.jupiter.api.BeforeEach
-import org.junit.jupiter.api.Test
-import org.junit.jupiter.api.TestInstance
-import org.springframework.http.MediaType
-
-<%_ if (reactive) { _%>
-import org.springframework.test.web.reactive.server.WebTestClient
-<%_ } else { _%>
-import org.springframework.test.web.servlet.MockMvc
-import org.springframework.test.web.servlet.MvcResult
-import org.springframework.test.web.servlet.setup.MockMvcBuilders
-<%_ } _%>
-
-import org.testcontainers.containers.KafkaContainer
-import org.testcontainers.utility.DockerImageName
-
-import java.time.Duration
-
-<%_ if (!reactive) { _%>
 import org.junit.jupiter.api.Assertions.fail
 import org.springframework.test.web.servlet.request.MockMvcRequestBuilders.get
 import org.springframework.test.web.servlet.request.MockMvcRequestBuilders.post
 import org.springframework.test.web.servlet.result.MockMvcResultMatchers.content
 import org.springframework.test.web.servlet.result.MockMvcResultMatchers.request
 import org.springframework.test.web.servlet.result.MockMvcResultMatchers.status
-<%_ } _%>
 
+import java.util.HashMap;
+import java.util.Map;
+import java.util.concurrent.BlockingQueue;
+
+import org.junit.jupiter.api.Test;
+import org.springframework.beans.factory.annotation.Autowired;
+import org.springframework.beans.factory.annotation.Qualifier;
+import org.springframework.boot.test.autoconfigure.web.servlet.AutoConfigureMockMvc;
+import org.springframework.cloud.stream.test.binder.MessageCollector;
+import org.springframework.messaging.Message;
+import org.springframework.messaging.MessageChannel;
+import org.springframework.messaging.MessageHeaders;
+import org.springframework.messaging.support.GenericMessage;
+import org.springframework.security.test.context.support.WithMockUser;
+import org.springframework.test.web.servlet.MockMvc;
+import org.springframework.test.web.servlet.MvcResult;
+import org.springframework.util.MimeTypeUtils;
+import <%= packageName %>.IntegrationTest;
+import <%= packageName %>.config.EmbeddedKafka;
+import <%= packageName %>.config.KafkaSseConsumer;
+import <%= packageName %>.config.KafkaSseProducer;
+
+@IntegrationTest
+@AutoConfigureMockMvc
+@WithMockUser
+@EmbeddedKafka
 @TestInstance(TestInstance.Lifecycle.PER_CLASS)
 class <%= upperFirstCamelCase(baseName) %>KafkaResourceIT {
 
-    <%_ if (reactive) { _%>
-    private lateinit var client: WebTestClient
-    <%_ } else { _%>
+    @Autowired
+    private lateinit var collector: MessageCollector
+
+    @Autowired
     private lateinit var restMockMvc: MockMvc
-    <%_ } _%>
 
-    private var started = false
+    @Autowired
+    @Qualifier(KafkaSseProducer.CHANNELNAME)
+    private lateinit var output: MessageChannel
 
-    private lateinit var kafkaContainer: KafkaContainer
-
-    @BeforeAll
-    fun startServer() {
-        if (!started) {
-            startTestcontainer()
-            started = true
-        }
-    }
-
-    private fun startTestcontainer() {
-        // TODO: withNetwork will need to be removed soon
-        // See discussion at https://github.com/jhipster/generator-jhipster/issues/11544#issuecomment-609065206
-        kafkaContainer = KafkaContainer(DockerImageName.parse("<%= DOCKER_KAFKA %>")).withNetwork(null)
-        kafkaContainer.start()
-    }
-
-
-    @BeforeEach
-    fun setup() {
-        val kafkaProperties = KafkaProperties()
-        val producerProps = getProducerProps()
-        kafkaProperties.setProducer(producerProps)
-
-        val consumerGroups = getConsumerProps("default-group")
-        consumerGroups["client.id"] = "default-client"
-        kafkaProperties.setConsumer(consumerGroups)
-
-        val kafkaResource = <%= upperFirstCamelCase(baseName) %>KafkaResource(kafkaProperties)
-
-        <%_ if (reactive) { _%>
-        client = WebTestClient.bindToController(kafkaResource).build()
-        <%_ } else { _%>
-        restMockMvc = MockMvcBuilders.standaloneSetup(kafkaResource).build()
-        <%_ } _%>
-    }
+    @Autowired
+    @Qualifier(KafkaSseConsumer.CHANNELNAME)
+    private lateinit var input: MessageChannel
 
     @Test
-    <%_ if (!reactive) { _%>
     @Throws(Exception::class)
-    <%_ } _%>
     fun producesMessages() {
-        <%_ if (reactive) { _%>
-        client.post().uri("/api/<%= dasherizedBaseName %>-kafka/publish/topic-produce?message=value-produce")
-            .exchange()
-            .expectStatus().isOk
-            .expectHeader().contentType(MediaType.APPLICATION_JSON)
-        <%_ } else { _%>
+      
         restMockMvc.perform(post("/api/<%= dasherizedBaseName %>-kafka/publish/topic-produce?message=value-produce"))
             .andExpect(status().isOk)
-            .andExpect(content().contentType(MediaType.APPLICATION_JSON))
-        <%_ } _%>
-
-        val consumerProps = getConsumerProps("group-produce")
-        val consumer = KafkaConsumer<String, String>(consumerProps)
-        consumer.subscribe(listOf("topic-produce"))
-        val records = consumer.poll(Duration.ofSeconds(1))
-
-        assertThat(records.count()).isEqualTo(1)
-        val record = records.iterator().next()
-        assertThat(record.value()).isEqualTo("value-produce")
+      
+        val messages = collector.forChannel(output)
+        val payload = messages.take() as GenericMessage<String>
+        assertThat(payload.getPayload()).isEqualTo("value-produce")
     }
 
     @Test
-    <%_ if (!reactive) { _%>
     @Throws(Exception::class)
-    <%_ } _%>
     fun consumesMessages() {
-        val producerProps = getProducerProps()
-        val producer = KafkaProducer<String, String>(producerProps)
-
-        producer.send(ProducerRecord<String, String>("topic-consume", "value-consume"))
-
-        <%_ if (reactive) { _%>
-        val value = client.get().uri("/api/<%= dasherizedBaseName %>-kafka/consume?topic=topic-consume")
-            .accept(MediaType.TEXT_EVENT_STREAM)
-            .exchange()
-            .expectStatus().isOk
-            .expectHeader().contentTypeCompatibleWith(MediaType.TEXT_EVENT_STREAM)
-            .returnResult(String::class)
-            .getResponseBody().blockFirst(Duration.ofSeconds(10))
-
-        assertThat(value).isEqualTo("value-consume")
-        <%_ } else { _%>
-        val mvcResult = restMockMvc.perform(get("/api/<%= dasherizedBaseName %>-kafka/consume?topic=topic-consume"))
+        val map = mutableHashMap<String, Any>();
+        map[MessageHeaders.CONTENT_TYPE] =  MimeTypeUtils.TEXT_PLAIN_VALUE
+        val headers = MessageHeaders(map)
+        val testMessage = GenericMessage<String>("value-consume", headers);
+        MvcResult mvcResult = restMockMvc
+            .perform(get("/api/<%= dasherizedBaseName %>-kafka/register"))
             .andExpect(status().isOk)
             .andExpect(request().asyncStarted())
             .andReturn()
-
-        for (i in 0..100) {
+        for (int i = 0; i < 100; i++) {
+            input.send(testMessage)
             Thread.sleep(100)
             val content = mvcResult.getResponse().getContentAsString()
             if (content.contains("data:value-consume")) {
+                restMockMvc
+                    .perform(get("/api/<%= dasherizedBaseName %>-kafka/unregister"))
                 return
             }
         }
-        fail<String>("Expected content data:value-consume not received")
-        <%_ } _%>
-    }
-
-    private fun getProducerProps(): MutableMap<String, Any> {
-        val producerProps: MutableMap<String, Any> = HashMap()
-        producerProps["key.serializer"] = "org.apache.kafka.common.serialization.StringSerializer"
-        producerProps["value.serializer"] = "org.apache.kafka.common.serialization.StringSerializer"
-        producerProps["bootstrap.servers"] = kafkaContainer.bootstrapServers
-        return producerProps
-    }
-
-    private fun getConsumerProps(group: String): MutableMap<String, Any> {
-        val consumerProps: MutableMap<String, Any> = HashMap()
-        consumerProps["key.deserializer"] = "org.apache.kafka.common.serialization.StringDeserializer"
-        consumerProps["value.deserializer"] = "org.apache.kafka.common.serialization.StringDeserializer"
-        consumerProps["bootstrap.servers"] = kafkaContainer.bootstrapServers
-        consumerProps["auto.offset.reset"] = "earliest"
-        consumerProps["group.id"] = group
-        return consumerProps
+        fail("Expected content data:value-consume not received")
     }
 }
