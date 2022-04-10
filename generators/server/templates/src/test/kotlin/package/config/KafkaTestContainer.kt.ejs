@@ -10,22 +10,23 @@ import org.testcontainers.utility.DockerImageName
 
 class KafkaTestContainer: InitializingBean, DisposableBean {
 
-    private lateinit var kafkaContainer: KafkaContainer
-    private val log = LoggerFactory.getLogger(KafkaTestContainer::class)
+    companion object {
+        private val log = LoggerFactory.getLogger(KafkaTestContainer::class.java)
 
+        @JvmStatic
+        private var kafkaContainer: KafkaContainer = KafkaContainer(DockerImageName.parse("<%= DOCKER_KAFKA %>"))
+            .withLogConsumer(Slf4jLogConsumer(log))
+            .withReuse(true)
+    }
+    
     override fun destroy() {
-        if (null != kafkaContainer && kafkaContainer.isRunning()) {
+        if (null != kafkaContainer && kafkaContainer.isRunning) {
             kafkaContainer.stop()
         }
     }
 
     override fun afterPropertiesSet() {
-        if (null == kafkaContainer) {
-            kafkaContainer = KafkaContainer(DockerImageName.parse("<%= DOCKER_KAFKA %>"))
-                .withLogConsumer(Slf4jLogConsumer(log))
-                .withReuse(true)
-        }
-        if (!kafkaContainer.isRunning()) {
+        if (!kafkaContainer.isRunning) {
             kafkaContainer.start()
         }
     }

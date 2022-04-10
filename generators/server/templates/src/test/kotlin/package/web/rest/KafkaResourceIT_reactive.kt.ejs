@@ -65,35 +65,35 @@ class <%= upperFirstCamelCase(baseName) %>KafkaResourceIT {
 
     @Test
     @Throws(InterruptedException::class)
-    void producesMessages() {
+    fun producesMessages() {
         client.post().uri("/api/<%= dasherizedBaseName %>-kafka/publish?message=value-produce")
             .exchange()
             .expectStatus()
-            .isNoContent()
+            .isNoContent
 
         val messages = collector.forChannel(output)
-        val payload = messages.take() as (GenericMessage<String>) 
-        assertThat(payload.getPayload()).isEqualTo("value-produce")
+        val payload = messages.take() as (GenericMessage<String>)
+        assertThat(payload.payload).isEqualTo("value-produce")
     }
 
     @Test
-    void consumesMessages() {
-        val map = mutableHashMap<String, Any>()
+    fun consumesMessages() {
+        val map = hashMapOf<String, Any>()
         map[MessageHeaders.CONTENT_TYPE] = MimeTypeUtils.TEXT_PLAIN_VALUE
         val headers = MessageHeaders(map)
         val testMessage = GenericMessage<String>("value-consume", headers)
         input.send(testMessage)
-        String value = client
+        val value = client
             .get()
             .uri("/api/<%= dasherizedBaseName %>-kafka/consume")
             .accept(MediaType.TEXT_EVENT_STREAM)
             .exchange()
             .expectStatus()
-            .isOk()
+            .isOk
             .expectHeader()
             .contentTypeCompatibleWith(MediaType.TEXT_EVENT_STREAM)
-            .returnResult(String::class)
-            .getResponseBody()
+            .returnResult(String::class.java)
+            .responseBody
             .blockFirst(Duration.ofSeconds(10))
         assertThat(value).isEqualTo("value-consume")
     }

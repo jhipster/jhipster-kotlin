@@ -221,14 +221,15 @@ fun <T : Any> findAll(em: EntityManager, clazz: KClass<T>): List<T> {
 <%_ if (searchEngineCouchbase) { _%>
 
 fun <T> retryUntilNotEmpty(iterableCallable: Callable<Iterable<T>>) {
-    Mono.defer(
+    Mono.defer {
         Mono.fromCallable(iterableCallable)
-            .flatMapIterable(UtilityFunctions.identity())
+            .flatMapIterable(Function.identity())
             .next()
             .switchIfEmpty(Mono.error(NoSuchElementException()))
-    ).retry()
-    .timeout(Duration.ofSeconds(60))
-    .block()
+    }
+        .retry()
+        .timeout(Duration.ofSeconds(60))
+        .block()
 }
 <%_ } _%>
 

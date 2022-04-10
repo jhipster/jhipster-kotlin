@@ -21,15 +21,16 @@ const instanceName = restInstance;
 const mapper = entityInstance  + 'Mapper';
 const dtoToEntity = mapper + '.' + 'toEntity';
 const entityToDtoReference = mapper + '::' + 'toDto';
+const returnVal = noReturn ? '' : 'return';
 _%>
 <%_ if (viaService) { _%>
-        return <%= entityInstance %>Service.update(<%= instanceName %>)
+    <%= returnVal %> <%= entityInstance %>Service.update(<%= instanceName %>)
 <%_ } else { _%>
     <%_ if (updatableEntity) { _%>
-        return <%= entityInstance %>Repository.save(<%if (dtoMapstruct) { %><%= dtoToEntity %>(<% } %><%= instanceName %><%if (dtoMapstruct) { %>)<% } -%><% if (isPersisted) { %>.setIsPersisted()<% } %>)
+        <%= returnVal %> <%= entityInstance %>Repository.save(<%if (dtoMapstruct) { %><%= dtoToEntity %>(<% } %><%= instanceName %><%if (dtoMapstruct) { %>)<% } -%><% if (isPersisted) { %>.setIsPersisted()<% } %>)
     <%_ } else { _%>
         // no save call needed as we have no fields that can be updated
-        return <%= entityInstance %>Repository.findById(<%= instanceName %>.<%= primaryKey.name %>)
+        <%= returnVal %> <%= entityInstance %>Repository.findById(<%= instanceName %>.<%= primaryKey.name %>)
     <%_ } _%>
     <%_ if (searchEngineElasticsearch) { %>
             .flatMap(<%= entityInstance %>SearchRepository::save)
@@ -37,5 +38,4 @@ _%>
     <%_ if (dtoMapstruct) { %>
             .map(<%= entityToDtoReference  %>)
     <%_ } -%>
-    <%_ if (returnDirectly) { _%>;<%_ } _%>
 <%_ } _%>

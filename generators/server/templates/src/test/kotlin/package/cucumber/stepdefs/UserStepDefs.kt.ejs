@@ -91,23 +91,28 @@ class UserStepDefs: StepDefs() {
     @Then("the user is found")
     fun the_user_is_found() {
 <%_ if (reactive) { _%>
-        actions
-            ?.expectStatus().isOk
-            ?.expectHeader().contentTypeCompatibleWith(MediaType.APPLICATION_JSON_VALUE)
+        actions?.let {
+            it.expectStatus().isOk
+                .expectHeader().contentTypeCompatibleWith(MediaType.APPLICATION_JSON_VALUE)
+        }
 <%_ } else { _%>
-        actions
-            ?.andExpect(status().isOk)
-            ?.andExpect(content().contentType(MediaType.APPLICATION_JSON_VALUE))
+        actions?.let {
+            it.andExpect(status().isOk)
+                .andExpect(content().contentType(MediaType.APPLICATION_JSON_VALUE))
+        }
 <%_ } _%>
     }
 
     @Then("his last name is {string}")
     fun his_last_name_is(lastName: String) {
         <%_ if (reactive) { _%>
-        actions?.expectBody().jsonPath("\$.lastName").value(`is`(lastName));
+        actions?.let {
+            it.expectBody().jsonPath("\$.lastName").value(`is`(lastName))
+        }
         <%_ } else { _%>
-        actions?.andExpect(jsonPath("\$.lastName").value(lastName));
+        actions?.let { it.andExpect(jsonPath("\$.lastName").value(lastName)) }
         <%_ } _%>
+        
     }
 
 }

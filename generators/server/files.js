@@ -1184,7 +1184,7 @@ const baseServerFiles = {
             ],
         },
         {
-            condition: generator => generator.messageBroker === KAFKA,
+            condition: generator => generator.messageBroker === KAFKA && !generator.reactive,
             path: SERVER_MAIN_KOTLIN_SRC_DIR,
             templates: [
                 {
@@ -2015,7 +2015,7 @@ function writeFiles() {
                     <jvmTarget>$\{java.version}</jvmTarget>
                     <javaParameters>true</javaParameters>
                     <args>
-                        <arg>-Xjvm-default=enable</arg>
+                        <arg>-Xjvm-default=all</arg>
                     </args>
                     <compilerPlugins>
                         <plugin>spring</plugin>${

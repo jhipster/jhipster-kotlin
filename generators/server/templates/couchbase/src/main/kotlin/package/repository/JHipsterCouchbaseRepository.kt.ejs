@@ -19,24 +19,27 @@
 package <%= packageName %>.repository
 
 import com.couchbase.client.java.query.QueryScanConsistency
+import org.springframework.data.couchbase.repository.*
+import org.springframework.data.domain.*
 import org.springframework.data.repository.NoRepositoryBean
 
 <%_ if (reactive) { _%>
 import reactor.core.publisher.Flux
 import reactor.core.publisher.Mono
 <%_ } else { _%>
-
 import java.util.List
 <%_ } _%>
 import java.util.stream.Collectors
 
 import java.lang.String.format
 
+const val FIND_IDS_QUERY = "SELECT meta().id as __id, 0 as __cas FROM #{#n1ql.bucket} WHERE #{#n1ql.filter}"
+
 /**
  * Couchbase specific {@link org.springframework.data.repository.Repository} interface uses N1QL for all requests.
  */
 <%_
-    let listOrFlux = reactive ? 'Flux' : 'List';
+    let listOrFlux = reactive ? 'Flux' : 'MutableList';
     let pageOrFlux = reactive ? 'Flux' : 'Page';
 _%>
 @NoRepositoryBean
@@ -44,11 +47,6 @@ _%>
 interface JHipsterCouchbaseRepository<T,ID>:  <% if (reactive) { %>Reactive<% } %>CouchbaseRepository<T, ID> {
 
     companion object {
-
-        val FIND_IDS_QUERY = "SELECT meta().id as __id, 0 as __cas FROM #{#n1ql.bucket} WHERE #{#n1ql.filter}"
-
-        fun pageableStatement(pageable: Pageable) = pageableStatement(pageable, "")
-    
         fun pageableStatement(pageable: Pageable, prefix: String): String? {
             val sort = Sort.by(
                 pageable.sort
@@ -61,7 +59,8 @@ interface JHipsterCouchbaseRepository<T,ID>:  <% if (reactive) { %>Reactive<% } 
                             order
                         }
                         order.withProperty("$prefix $property")
-                    } as Sort.Order
+                    }
+                    .toList()
             )
             return org.springframework.data.couchbase.core.query.Query()
                 .limit(pageable.pageSize)
@@ -71,14 +70,11 @@ interface JHipsterCouchbaseRepository<T,ID>:  <% if (reactive) { %>Reactive<% } 
         }
     }
 
-
-    @JvmDefault
-    fun findAll(): <%= listOrFlux %><T> {
+    override fun findAll(): <%= listOrFlux %><T> {
         return findAllById(toIds(findAllIds()))
     }
 
-    @JvmDefault
-    fun findAll<% if (reactive) { %>By<% } %>(pageable: Pageable): <%= pageOrFlux %><T> {
+    <% if (reactive) { %><% } else { %>override <% } %>fun findAll<% if (reactive) { %>By<% } %>(pageable: Pageable): <%= pageOrFlux %><T> {
 <%_ if (reactive) { _%>
         return findAllById(toIds(findAllIds(pageable)))
 <%_ } else { _%>
@@ -87,13 +83,11 @@ interface JHipsterCouchbaseRepository<T,ID>:  <% if (reactive) { %>Reactive<% } 
 <%_ } _%>
     }
 
-    @JvmDefault
-    fun findAll(sort: Sort): <%= listOrFlux %><T> {
+    override fun findAll(sort: Sort): <%= listOrFlux %><T> {
         return findAllById(toIds(findAllIds(sort)))
     }
 
-    @JvmDefault
-    fun deleteAll(): <% if (reactive) { %>Mono<Void><% } %>  {
+    override fun deleteAll() <% if (reactive) { %>: Mono<Void><% } %>  {
 <%_ if (reactive) { _%>
         return toIds(findAllIds())
             .collectList()
@@ -113,14 +107,11 @@ interface JHipsterCouchbaseRepository<T,ID>:  <% if (reactive) { %>Reactive<% } 
     fun findAllIds(sort: Sort): <%= listOrFlux %><T> 
 
     @SuppressWarnings("unchecked")
-    @JvmDefault
     fun toIds(entities: <%= listOrFlux %><T>): <%= listOrFlux %><ID>  {
 <%_ if (reactive) { _%>
-        return entities.mapNotNull { entity -> getEntityInformation().getId(entity) as ID} 
+        return entities.mapNotNull { entityInformation.getId(it) as ID}
 <%_ } else { _%>
-        return entities.stream()
-            .map { entity -> getEntityInformation().getId(entity) as ID } 
-            .collect(Collectors.toList())
+        return entities.map { entityInformation.getId(it) as ID }.toMutableList()
 <%_ } _%>
     }
 }

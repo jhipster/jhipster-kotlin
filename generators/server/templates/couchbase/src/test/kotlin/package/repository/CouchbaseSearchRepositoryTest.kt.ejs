@@ -23,6 +23,8 @@ import org.junit.jupiter.params.ParameterizedTest
 import org.junit.jupiter.params.provider.Arguments
 import org.junit.jupiter.params.provider.MethodSource
 
+import <%= packageName %>.repository.CouchbaseSearchRepository.Companion.searchQuery
+
 import java.util.stream.Stream
 
 import org.assertj.core.api.Assertions.assertThat
@@ -32,17 +34,23 @@ class CouchbaseSearchRepositoryTest {
     @MethodSource
     @ParameterizedTest
     fun queryString(query: String, ftsQuery: SearchQuery) {
-        assertThat(CouchbaseSearchRepository.searchQuery(query).toString()).isEqualTo(ftsQuery.toString())
+        assertThat(searchQuery(query).toString()).isEqualTo(ftsQuery.toString())
     }
 
-    @SuppressWarnings("unused")
-    private fun queryString():  Stream<Arguments> {
-        return Stream.of(
-            Arguments.of("id:A", SearchQuery.docId("A")),
-            Arguments.of("id:A id:B", SearchQuery.docId("A", "B")),
-            Arguments.of("hello id:A", SearchQuery.conjuncts(SearchQuery.queryString("hello"), SearchQuery.docId("A"))),
-            Arguments.of("hello id:A kitty id:B", SearchQuery.conjuncts(SearchQuery.queryString("hello kitty"), SearchQuery.docId("A", "B"))),
-            Arguments.of("hello kitty", SearchQuery.queryString("hello kitty"))
-        )
+    companion object {
+        @JvmStatic
+        @SuppressWarnings("unused")
+        private fun queryString(): Stream<Arguments> {
+            return Stream.of(
+                Arguments.of("id:A", SearchQuery.docId("A")),
+                Arguments.of("id:A id:B", SearchQuery.docId("A", "B")),
+                Arguments.of("hello id:A", SearchQuery.conjuncts(SearchQuery.queryString("hello"), SearchQuery.docId("A"))),
+                Arguments.of(
+                    "hello id:A kitty id:B",
+                    SearchQuery.conjuncts(SearchQuery.queryString("hello kitty"), SearchQuery.docId("A", "B"))
+                ),
+                Arguments.of("hello kitty", SearchQuery.queryString("hello kitty"))
+            )
+        }
     }
 }

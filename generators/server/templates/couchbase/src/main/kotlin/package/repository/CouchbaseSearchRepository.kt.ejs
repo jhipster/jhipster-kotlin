@@ -37,27 +37,29 @@ import reactor.core.publisher.Mono
  * Couchbase specific {@link org.springframework.data.repository.Repository} interface for search queries.
  */
 <%_
-    let listOrFlux = reactive ? 'Flux' : 'List'
-    let pageOrFlux = reactive ? 'Flux' : 'Page'
+    let listOrFlux = reactive ? 'Flux' : 'List';
+    let pageOrFlux = reactive ? 'Flux' : 'Page';
+    let toMutableList = reactive ? '' : '.toMutableList()';
 _%>
 @NoRepositoryBean
 interface CouchbaseSearchRepository<T, ID>: JHipsterCouchbaseRepository<T, ID> {
 
     companion object {
-        val SEARCH_CONDITION = "SEARCH(b, #{T(<%= packageName %>.repository.CouchbaseSearchRepository).searchQuery([0]).toString()})"
+        const val SEARCH_CONDITION = "SEARCH(b, #{T(<%= packageName %>.repository.CouchbaseSearchRepository).searchQuery([0]).toString()})"
 
         fun searchQuery(queryString: String): SearchQuery {
-            var ids = LinkedList<String>()
-            queryString.split(" ").map {
-                if (it.indexOf("id:") == 0) {
+            val ids: MutableList<String> = LinkedList()
+            var q = queryString
+            for (r in q.split(" ")) {
+                if (r.indexOf("id:") == 0) {
                     ids.add(r.substring(3))
-                    queryString = queryString.replace(it, "").replaceAll("[ ]+", " ").trim()
+                    q = q.replace(r, "").replace(Regex("[ ]+"), " ").trim()
                 }
             }
-            val query = SearchQuery.queryString(queryString)
+            val query = SearchQuery.queryString(q)
             if (ids.size != 0) {
-                val docIdQuery = SearchQuery.docId(ids.toArray(arrayOf<String>()))
-                if (!queryString.isEmpty) {
+                val docIdQuery = SearchQuery.docId(*ids.toTypedArray())
+                if (q.isNotEmpty()) {
                     return SearchQuery.conjuncts(query, docIdQuery)
                 }
                 return docIdQuery
@@ -67,14 +69,10 @@ interface CouchbaseSearchRepository<T, ID>: JHipsterCouchbaseRepository<T, ID> {
 
     }
 
-    
-
-    
-
     @ScanConsistency(query = QueryScanConsistency.NOT_BOUNDED)
     @JvmDefault
     fun search(queryString: String) :<%= listOrFlux %><T> {
-        return findAllById(toIds(searchIds(queryString)))
+        return findAllById(toIds(searchIds(queryString)<%= toMutableList %>))
     }
 
     @ScanConsistency(query = QueryScanConsistency.NOT_BOUNDED)

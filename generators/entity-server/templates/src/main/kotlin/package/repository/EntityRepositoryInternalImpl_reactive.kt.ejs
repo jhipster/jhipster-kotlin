@@ -49,6 +49,7 @@ import org.springframework.data.r2dbc.convert.R2dbcConverter
 import org.springframework.data.r2dbc.core.R2dbcEntityOperations
 import org.springframework.data.r2dbc.core.R2dbcEntityTemplate
 import org.springframework.data.r2dbc.repository.support.SimpleR2dbcRepository
+import org.springframework.data.relational.core.mapping.RelationalPersistentEntity
 import org.springframework.data.relational.core.query.Criteria
 import org.springframework.data.relational.core.sql.Column
 import org.springframework.data.relational.core.sql.Comparison
@@ -76,14 +77,16 @@ import <%= entityAbsolutePackage %>.domain.enumeration.<%= element %>
 <%_ [...reactiveOtherEntities, entity].forEach(otherEntity => { 
     if (otherEntity.entityAbsolutePackage) { _%>
 import <%= otherEntity.entityAbsolutePackage %>.repository.rowmapper.<%= otherEntity.entityClass %>RowMapper
+  <%_ } else { _%> 
+import <%= packageName %>.repository.rowmapper.<%= otherEntity.entityClass %>RowMapper
   <%_ } _%> 
   <%_ if (otherEntity.entityPackage !== entityPackage) { _%>
 import <%= otherEntity.entityAbsolutePackage %>.repository.<%= otherEntity.entityClass %>SqlHelper
   <%_ } _%>
 <%_ }); _%>
-<%_ if (packageName !== entityAbsolutePackage) { _%>
+<%# TODO Check why the below condition is empty %> 
+<%# if (packageName !== entityAbsolutePackage) {  } %>
 import <%= packageName %>.repository.EntityManager
-<%_ } _%>
 
 import reactor.core.publisher.Flux
 import reactor.core.publisher.Mono
@@ -94,13 +97,15 @@ import reactor.core.publisher.Mono
 @SuppressWarnings("unused")
 class <%= entityClass %>RepositoryInternalImpl(
     val template: R2dbcEntityTemplate,
-    val entityManager: EntityManager <% reactiveUniqueEntityTypes.forEach(function(element) { %>,
+    val entityManager: EntityManager,<% reactiveUniqueEntityTypes.forEach(function(element) { %>
     val <%= element.toLowerCase() %>Mapper: <%= element %>RowMapper,
     <%_ }); _%>
     entityOperations: R2dbcEntityOperations,
     converter: R2dbcConverter
 ): SimpleR2dbcRepository<<%= persistClass %>, <%= primaryKey.type %>>(
-    MappingRelationalEntityInformation(converter.mappingContext.getRequiredPersistentEntity(<%= persistClass %>::class)), 
+    MappingRelationalEntityInformation(
+        converter.mappingContext.getRequiredPersistentEntity(<%= persistClass %>::class.java) as RelationalPersistentEntity<<%= persistClass %>>
+    ), 
     entityOperations, 
     converter
 ), <%= entityClass %>RepositoryInternal {
@@ -122,7 +127,7 @@ class <%= entityClass %>RepositoryInternalImpl(
 
     }
 
-    override fun findAllBy(pageable: Pageable): Flux<<%= persistClass %>> {
+    override fun findAllBy(pageable: Pageable?): Flux<<%= persistClass %>> {
         return createQuery(pageable, null).all()
     }
 
@@ -176,7 +181,7 @@ class <%= entityClass %>RepositoryInternalImpl(
     override fun <S:<%= persistClass %>> save(entity: S): Mono<S>  {
 <%_ if (isUsingMapsId) { _%>
         if (entity.<%= primaryKey.name %> == null && entity.<%= mapsIdAssoc.relationshipName %> != null) {
-            entity.<%= primaryKey.name %> = entity.<%= mapsIdAssoc.relationshipName %>.<%= mapsIdAssoc.otherEntity.primaryKey.name %>
+            entity.<%= primaryKey.name %> = entity.<%= mapsIdAssoc.relationshipName %>!!.<%= mapsIdAssoc.otherEntity.primaryKey.name %>
             return entityManager.insert(entity)
         }
 <%_ } _%>

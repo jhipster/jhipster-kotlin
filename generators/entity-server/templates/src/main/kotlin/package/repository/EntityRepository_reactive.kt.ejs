@@ -60,7 +60,7 @@ import java.util.UUID
 interface <%= entityClass %>Repository: <% if (databaseTypeSql) { %>ReactiveCrud<% } if (databaseTypeMongodb) { %>ReactiveMongo<% } if (databaseTypeNeo4j) { %>ReactiveNeo4j<% } if (databaseTypeCassandra) { %>ReactiveCassandra<% } %>Repository<<%= persistClass %>, <%= primaryKey.type %>><% if (searchEngineCouchbase) { %>, SearchCouchbaseRepository<<%= persistClass %>, <%= primaryKey.type %>><% } %><% if (databaseTypeSql) { %>, <%= entityClass %>RepositoryInternal<% } %>  {
 
 <%_ if (!paginationNo) { _%>
-    fun findAllBy(pageable: Pageable): Flux<<%= persistClass %>>
+    <% if (databaseTypeSql) { %>override<% } %> fun findAllBy(pageable: Pageable?): Flux<<%= persistClass %>>
 <%_ } _%>
 <%_ if (implementsEagerLoadApis) { _%>
     <%_ if (databaseTypeMongodb) { _%>
@@ -134,7 +134,7 @@ interface <%= entityClass %>Repository: <% if (databaseTypeSql) { %>ReactiveCrud
 interface <%= entityClass %>RepositoryInternal {
     fun <S:<%= persistClass %>> save(entity: S): Mono<S>
 
-    fun findAllBy(pageable: Pageable): Flux<<%= persistClass %>>
+    fun findAllBy(pageable: Pageable?): Flux<<%= persistClass %>>
 
     fun findAll(): Flux<<%= persistClass %>>
 

@@ -42,7 +42,14 @@ import org.springframework.stereotype.Repository
 <%_ if (primaryKey.typeUUID) { _%>
 import java.util.UUID
 <%_ } _%>
-import <%= packageName %>.domain.<%= persistClass %>.TYPE_NAME
+<%_ 
+  var notEmbeddedRelationships = relationships.filter(relationship => !relationship.otherEntityIsEmbedded);
+  if (searchEngine && notEmbeddedRelationships.length !== 0) { 
+%>
+import <%= packageName %>.repository.CouchbaseSearchRepository.Companion.SEARCH_CONDITION
+<%_ } _%>
+
+import <%= packageName %>.domain.<%= persistClass %>.Companion.TYPE_NAME
 
 /**
  * Spring Data Couchbase repository for the <%= persistClass %> entity.
@@ -52,15 +59,12 @@ import <%= packageName %>.domain.<%= persistClass %>.TYPE_NAME
 <%_ } _%>
 <%_
     let optionalOrMono = reactive ? 'Mono' : 'Optional'
-    let listOrFlux = reactive ? 'Flux' : 'List'
+    let listOrFlux = reactive ? 'Flux' : 'MutableList'
     let pageOrFlux = reactive ? 'Flux' : 'Page'
 _%>
 @Repository
 interface <%= entityClass %>Repository: JHipsterCouchbaseRepository<<%= persistClass %>, <%= primaryKey.type %>><% if (jpaMetamodelFiltering) { %>, JpaSpecificationExecutor<<%= persistClass %>><% } %><% if (searchEngine) { %>, CouchbaseSearchRepository<<%= persistClass %>, <%= primaryKey.type %>><% } %> {
-  <%_
-    var notEmbeddedRelationships = relationships.filter(relationship => !relationship.otherEntityIsEmbedded)
-
-    if (notEmbeddedRelationships.length !== 0) {  %>
+  <%_ if (notEmbeddedRelationships.length !== 0) {  _%>
 
     companion object {
       const val SELECT = "SELECT meta(b).id as __id, meta(b).cas as __cas, b.*" + <%
@@ -73,22 +77,13 @@ interface <%= entityClass %>Repository: JHipsterCouchbaseRepository<<%= persistC
             } %>
               " FROM #{#n1ql.bucket} b"
 
-      const val JOIN = <%
-           notEmbeddedRelationships.forEach(function (relationship, index) {
-             if (!relationship.collection) { %>
-               " LEFT JOIN `<%= relationship.otherEntity.entityInstance %>` `<%= relationship.relationshipFieldName %>` ON KEYS b.`<%= relationship.relationshipFieldName %>`"<%
-             } else { %>
-               " LEFT NEST `<%= relationship.otherEntity.entityInstance %>` `<%= relationship.relationshipFieldNamePlural %>` ON KEYS b.`<%= relationship.relationshipFieldNamePlural %>`"<%
-             }
-             if (index < notEmbeddedRelationships.length - 1) { %>
-               + <%
-             }
-           }); %>
+      const val JOIN = <% notEmbeddedRelationships.forEach(function (relationship, index) {
+             if (!relationship.collection) { %>" LEFT JOIN `<%= relationship.otherEntity.entityInstance %>` `<%= relationship.relationshipFieldName %>` ON KEYS b.`<%= relationship.relationshipFieldName %>`"<%} else { %>" LEFT NEST `<%= relationship.otherEntity.entityInstance %>` `<%= relationship.relationshipFieldNamePlural %>` ON KEYS b.`<%= relationship.relationshipFieldNamePlural %>`"<% } if (index < notEmbeddedRelationships.length - 1) { %> + <% }}); %>
 
-      const val WHERE = " WHERE b.type = '" + TYPE_NAME + "'"
+      const val WHERE = " WHERE b.type = '$TYPE_NAME'"
     }
 
-    override fun findAll<% if (reactive) {%>By<% } %>(pageable: Pageable): <%= pageOrFlux %><<%= persistClass %>> {
+    <% if (!reactive) { %>override <% } %>fun findAll(pageable: Pageable): <%= pageOrFlux %><<%= persistClass %>> {
       return <% if (!reactive) { %>PageImpl<<%= persistClass %>>(<% } %>findAll(pageableStatement(pageable, "b"))<% if (!reactive) { %>, pageable, count())<% } %>
     }
 
@@ -99,24 +94,21 @@ interface <%= entityClass %>Repository: JHipsterCouchbaseRepository<<%= persistC
     @Query(SELECT + JOIN + WHERE)
     override fun findAll(): <%= listOrFlux %><<%= persistClass %>>
 
-    @Query(SELECT + " USE KEYS \$1" + JOIN)
+    @Query("$SELECT USE KEYS \$1$JOIN")
     override fun findById(id: String?): <%= optionalOrMono %><<%= persistClass %>> <%
     } _%>
 
 <%_ if (searchEngine && notEmbeddedRelationships.length !== 0) { _%>
   @Query(SELECT + JOIN + WHERE + " AND " + SEARCH_CONDITION)
-  fun search(queryString: String): <%= listOrFlux %><<%= persistClass %>>
+  override fun search(queryString: String): <%= listOrFlux %><<%= persistClass %>>
 
-    fun search(queryString: String, pageable: Pageable): <%= pageOrFlux %><<%= persistClass %>> {
-        return
-            <% if (!reactive) { %>PageImpl(<% } %>
-                search(queryString, pageableStatement(pageable, "b"))
-            <% if (!reactive) { %>)<% } %>
-    }
+  override fun search(queryString: String, pageable: Pageable): <%= pageOrFlux %><<%= persistClass %>> {
+      return <% if (!reactive) { %>PageImpl(<% } %>search(queryString, pageableStatement(pageable, "b")!!)<% if (!reactive) { %>)<% } %>
+  }
 
-    @ScanConsistency(query = QueryScanConsistency.NOT_BOUNDED)
-    @Query(SELECT + JOIN + WHERE + " AND " + SEARCH_CONDITION + " #{[1]}")
-    fun search(queryString: String, pageableStatement: String): <%= listOrFlux %><<%= persistClass %>>
+  @ScanConsistency(query = QueryScanConsistency.NOT_BOUNDED)
+  @Query(SELECT + JOIN + WHERE + " AND " + SEARCH_CONDITION + " #{[1]}")
+  fun search(queryString: String, pageableStatement: String): <%= listOrFlux %><<%= persistClass %>>
 <%_ } _%>
 
 }

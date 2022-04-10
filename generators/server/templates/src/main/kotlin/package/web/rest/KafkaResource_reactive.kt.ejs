@@ -41,17 +41,17 @@ import <%= packageName %>.config.KafkaSseProducer
 @RequestMapping("/api/<%= dasherizedBaseName %>-kafka")
 class <%= upperFirstCamelCase(baseName) %>KafkaResource(@Qualifier(KafkaSseProducer.CHANNELNAME) val output: MessageChannel)  {
 
-    private val log = LoggerFactory.getLogger(<%= upperFirstCamelCase(baseName) %>KafkaResource::class)
+    private val log = LoggerFactory.getLogger(javaClass)
 
     private val sink: Sinks.Many<Message<String>> = Sinks.many().unicast().onBackpressureBuffer()
 
     @PostMapping("/publish")
     fun publish(@RequestParam message: String): Mono<ResponseEntity<Void>> {
         log.debug("REST request the message : {} to send to Kafka topic", message)
-        val map = mutableHashMapOf<String, Object>()
+        val map = hashMapOf<String, Any>()
         map[MessageHeaders.CONTENT_TYPE] = MimeTypeUtils.TEXT_PLAIN_VALUE
         val headers = MessageHeaders(map)
-        output.send(GenericMessage<*>(message, headers))
+        output.send(GenericMessage(message, headers))
         return Mono.just(ResponseEntity.noContent().build())
     }
 

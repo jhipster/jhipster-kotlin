@@ -703,16 +703,16 @@ class UserService<% if (!databaseTypeNo) { %>(
     <%_ if (databaseTypeSql) { _%>
     @Transactional(readOnly = true)
     <%_ } _%>
-    <%_ if (['sql', 'mongodb', 'neo4j', 'couchbase'].includes(databaseType)) { _%>
+    <%_ if (databaseTypeSql || databaseTypeMongodb || databaseTypeNeo4j || databaseTypeCouchbase) { _%>
     fun getAllManagedUsers(pageable: Pageable): <% if (reactive) { %>Flux<% } else { %>Page<% } %><<%= asDto('AdminUser') %>> {
-        return userRepository.findAll<% if (reactive) { %><% if (databaseTypeSql) { %>WithAuthorities<% } else { %>By<% if (!databaseTypeCouchbase) { %>IdNotNullIdNotNull<% }}} %>(pageable).map { <%= asDto('AdminUser') %>(it) }
+        return userRepository.findAll<% if (reactive) { %><% if (databaseTypeSql) { %>WithAuthorities<% } else { %>By<% if (!databaseTypeCouchbase) { %>IdNotNull<% }}} %>(pageable).map { <%= asDto('AdminUser') %>(it) }
     }
 
     <%_ if (databaseTypeSql) { _%>
     @Transactional(readOnly = true)
     <%_ } _%>
     fun getAllPublicUsers(pageable: Pageable): <% if (reactive) { %>Flux<% } else { %>Page<% } %><<%= asDto('User') %>> {
-        return userRepository.findAllByIdNotNullAndActivatedIsTrue(pageable).map { <%= asDto('User') %>(it) }
+        return userRepository.findAllBy<% if (!databaseTypeCouchbase) { %>IdNotNullAnd<% } %>ActivatedIsTrue(pageable).map { <%= asDto('User') %>(it) }
     }
 
         <%_ if (reactive) { _%>
@@ -841,7 +841,7 @@ class UserService<% if (!databaseTypeNo) { %>(
             .flatMap<Authority> { authorityRepository.save(it) }
             .then(userRepository.findOneByLogin(user.login!!))
             .switchIfEmpty(<% if (authenticationTypeOauth2 && databaseTypeSql) { %>saveUser(user, true)<% } else { %>userRepository.save(user)<% } %>)
-            .flatMap<Any> { existingUser: User ->
+            .flatMap<Any> { existingUser ->
                 // if IdP sends last updated information, use it to determine if an update should happen
                 if (details["updated_at"] != null) {
                     val dbModifiedDate = existingUser.lastModifiedDate
@@ -855,7 +855,7 @@ class UserService<% if (!databaseTypeNo) { %>(
                     log.debug("Updating user '${user.login}' in local database")
                     return@flatMap updateUser(user.firstName, user.lastName, user.email, user.langKey, user.imageUrl)
                 }
-                return@flatMap Mono.empty<User>()
+                return@flatMap Mono.empty<<%= asEntity('User') %>>()
             }
             .thenReturn(user)
         <%_ } else { _%>
@@ -958,7 +958,7 @@ class UserService<% if (!databaseTypeNo) { %>(
         @JvmStatic
         private fun getUser(details: Map<String, Any>): <%= databaseTypeNo ? asDto('AdminUser') : asEntity('User') %> {
             var activated = true
-            val sub = details["sub"] as String 
+            val sub = details["sub"] as String;
             val username = details["preferred_username"]?.let { it as String } ?: null
             val user = <%= databaseTypeNo ? asDto('AdminUser') : asEntity('User') %>()
             // handle resource server JWT, where sub claim is email and uid is ID

@@ -20,27 +20,27 @@ package <%= packageName %>.web.rest
 
 import org.springframework.web.servlet.mvc.method.annotation.SseEmitter.event
 
-import java.io.IOException;
-import java.security.Principal;
-import java.util.Optional;
+import java.io.IOException
+import java.security.Principal
+import java.util.Optional
 
-import org.slf4j.Logger;
-import org.slf4j.LoggerFactory;
-import org.springframework.beans.factory.annotation.Qualifier;
-import org.springframework.cloud.stream.annotation.StreamListener;
-import org.springframework.http.MediaType;
-import org.springframework.messaging.Message;
-import org.springframework.messaging.MessageChannel;
-import org.springframework.messaging.MessageHeaders;
-import org.springframework.messaging.support.GenericMessage;
-import org.springframework.util.MimeTypeUtils;
+import org.slf4j.Logger
+import org.slf4j.LoggerFactory
+import org.springframework.beans.factory.annotation.Qualifier
+import org.springframework.cloud.stream.annotation.StreamListener
+import org.springframework.http.MediaType
+import org.springframework.messaging.Message
+import org.springframework.messaging.MessageChannel
+import org.springframework.messaging.MessageHeaders
+import org.springframework.messaging.support.GenericMessage
+import org.springframework.util.MimeTypeUtils
 
-import org.springframework.web.bind.annotation.*;
-import org.springframework.web.servlet.mvc.method.annotation.ResponseBodyEmitter;
-import org.springframework.web.servlet.mvc.method.annotation.SseEmitter;
+import org.springframework.web.bind.annotation.*
+import org.springframework.web.servlet.mvc.method.annotation.ResponseBodyEmitter
+import org.springframework.web.servlet.mvc.method.annotation.SseEmitter
 
-import <%= packageName %>.config.KafkaSseConsumer;
-import <%= packageName %>.config.KafkaSseProducer;
+import <%= packageName %>.config.KafkaSseConsumer
+import <%= packageName %>.config.KafkaSseProducer
 
 @RestController
 @RequestMapping("/api/<%= dasherizedBaseName %>-kafka")
@@ -49,22 +49,22 @@ class <%= upperFirstCamelCase(baseName) %>KafkaResource(
 ) {
 
     private val log = LoggerFactory.getLogger(javaClass)
-    private var emitters = hashMapOf<String, SseEmitter>()
+    private var emitters = mutableMapOf<String, SseEmitter>()
 
     @PostMapping("/publish")
     fun publish(@RequestParam message: String) {
-        log.debug("REST request the message : {} to send to Kafka topic ", message);
-        val map = mutableHashMap<String, Any>();
+        log.debug("REST request the message : {} to send to Kafka topic ", message)
+        val map = mutableMapOf<String, Any>()
         map[MessageHeaders.CONTENT_TYPE] = MimeTypeUtils.TEXT_PLAIN_VALUE
         val headers = MessageHeaders(map)
-        output.send(GenericMessage<*>(message, headers));
+        output.send(GenericMessage(message, headers))
     }
 
     @GetMapping("/register")
     fun register(principal: Principal): ResponseBodyEmitter {
-        log.debug("Registering sse client for {}", principal.name)
+        log.debug("Registering sse client for ${principal.name}")
         val emitter = SseEmitter()
-        emitter.onCompletion { _ -> emitters.remove(emitter) }
+        emitter.onCompletion { emitters.remove(principal.name, emitter) }
         emitters[principal.name] = emitter
         return emitter
     }
@@ -72,22 +72,22 @@ class <%= upperFirstCamelCase(baseName) %>KafkaResource(
     @GetMapping("/unregister")
     fun unregister(principal: Principal) {
         val user = principal.name
-        log.debug("Unregistering sse emitter for user: {}", user);
-        Optional.ofNullable(emitters.get(user))
+        log.debug("Unregistering sse emitter for user: $user")
+        Optional.ofNullable(emitters[user])
             .ifPresent(ResponseBodyEmitter::complete)
     }
 
     @StreamListener(value = KafkaSseConsumer.CHANNELNAME, copyHeaders = "false")
     fun consume(message: Message<String> ) {
-        log.debug("Got message from kafka stream: {}", message.payload)
-        emitters.entrySet().map(Map.Entry::getValue)
-            .forEach { (emitter: SseEmitter) -> {
+        log.debug("Got message from kafka stream: ${message.payload}")
+        emitters.entries
+            .map { it.value }
+            .forEach {
                 try {
-                    emitter.send(event().data(message.payload, MediaType.TEXT_PLAIN))
-                } catch (IOException e) {
-                log.debug("error sending sse message, {}", message.payload);
+                    it.send(event().data(message.payload, MediaType.TEXT_PLAIN))
+                } catch (e: IOException) {
+                    log.debug("error sending sse message ${message.payload}")
                 }
             }
-        }
     }
 }

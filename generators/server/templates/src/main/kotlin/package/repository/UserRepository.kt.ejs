@@ -145,10 +145,11 @@ import java.time.Instant
     let optionalOrMono = reactive ? 'Mono' : 'Optional';
     let listOrFlux = reactive ? 'Flux' : 'List';
     let pageOrFlux = (reactive) ? 'Flux' : 'Page';
+    let toListSuffix = reactive ? '' : '.toMutableList()';
 _%>
 <%_ if ((databaseTypeSql && !reactive) || databaseTypeMongodb || databaseTypeNeo4j || databaseTypeCouchbase) { _%>
 @Repository
-interface UserRepository : <% if (databaseTypeSql) { %>JpaRepository<<%= asEntity('User') %>, <%= user.primaryKey.type %>><% } %><% if (reactive && !databaseTypeCouchbase) { %>Reactive<% } %><% if (databaseTypeMongodb) { %>MongoRepository<<%= asEntity('User') %>, String><% } %><% if (databaseTypeNeo4j) { %>Neo4jRepository<<%= asEntity('User') %>, String><% } %><% if (databaseTypeCouchbase) { %>JHipsterCouchbaseRepository<<%= asEntity('User') %>, String><%if (searchEngineCouchbase) { %>, SearchCouchbaseRepository<<%= asEntity('User') %>, String><% } } %> {
+interface UserRepository : <% if (databaseTypeSql) { %>JpaRepository<<%= asEntity('User') %>, <%= user.primaryKey.type %>><% } %><% if (reactive && !databaseTypeCouchbase) { %>Reactive<% } %><% if (databaseTypeMongodb) { %>MongoRepository<<%= asEntity('User') %>, String><% } %><% if (databaseTypeNeo4j) { %>Neo4jRepository<<%= asEntity('User') %>, String><% } %><% if (databaseTypeCouchbase) { %>JHipsterCouchbaseRepository<<%= asEntity('User') %>, String><%if (searchEngineCouchbase) { %>, CouchbaseSearchRepository<<%= asEntity('User') %>, String><% } } %> {
     
     <%_ if (!authenticationTypeOauth2) { _%>
     <%_ if (databaseTypeCouchbase) { _%>
@@ -156,7 +157,7 @@ interface UserRepository : <% if (databaseTypeSql) { %>JpaRepository<<%= asEntit
     <%_ } _%>
     fun findOneByActivationKey(activationKey: String): <%= optionalOrMono %><<%= asEntity('User') %>><% if (databaseTypeCouchbase) { %> {
         return findIdByActivationKey(activationKey)
-        .map(User::getId)
+        .map(User::id)
         .flatMap(this::findById);
     }
     @Query(FIND_IDS_QUERY + " AND activationKey = $1")
@@ -169,7 +170,7 @@ interface UserRepository : <% if (databaseTypeSql) { %>JpaRepository<<%= asEntit
     @JvmDefault
         <%_ } _%>
     fun findAllByActivatedIsFalseAndActivationKeyIsNotNullAndCreatedDateBefore(dateTime: Instant): <%= listOrFlux %><<%= asEntity('User') %>><% if (databaseTypeCouchbase) { %> {
-        return findAllById(toIds(findAllIdsByActivatedIsFalseAndActivationKeyIsNotNullAndCreatedDateBefore(dateTime)))
+        return findAllById(toIds(findAllIdsByActivatedIsFalseAndActivationKeyIsNotNullAndCreatedDateBefore(dateTime)<%= toListSuffix %>))
     }
 
     @Query(FIND_IDS_QUERY + " AND activated = false AND activationKey IS NOT NULL AND createdDate < $1")
@@ -183,7 +184,7 @@ interface UserRepository : <% if (databaseTypeSql) { %>JpaRepository<<%= asEntit
         <%_ } _%>
     fun findOneByResetKey(resetKey: String): <%= optionalOrMono %><<%= asEntity('User') %>><% if (databaseTypeCouchbase) { %> {
         return findIdByResetKey(resetKey)
-            .map(User::getId)
+            .map(User::id)
             .flatMap(this::findById)
     }
 
@@ -202,8 +203,8 @@ interface UserRepository : <% if (databaseTypeSql) { %>JpaRepository<<%= asEntit
     @JvmDefault
         <%_ } _%>
     fun findOneByEmailIgnoreCase(email: String?): <%= optionalOrMono %><<%= asEntity('User') %>><% if (databaseTypeCouchbase) { %> {
-        return findIdByEmailIgnoreCase(email)
-            .map(User::getId)
+        return findIdByEmailIgnoreCase(email!!)
+            .map(User::id)
             .flatMap(this::findById);
     }
 
@@ -351,7 +352,7 @@ interface UserRepositoryInternal<% if (!authenticationTypeOauth2) { %> : DeleteE
     <%_ } _%>
     <%_ if (authenticationTypeOauth2) { _%>
 
-    fun create(user: User): Mono<<%= asEntity('User') %>>
+    fun create(user: <%= asEntity('User') %>): Mono<<%= asEntity('User') %>>
     <%_ } _%>
     fun findAllWithAuthorities(pageable: Pageable): Flux<<%= asEntity('User') %>>
 }
@@ -377,7 +378,7 @@ class UserRepositoryInternalImpl(val db: DatabaseClient, val r2dbcEntityTemplate
         val size = pageable.pageSize
 
         return db
-            .sql("SELECT * FROM jhi_user u LEFT JOIN jhi_user_authority ua ON u.id=ua.user_id")
+            .sql("SELECT * FROM <%= jhiTablePrefix %>_user u LEFT JOIN <%= jhiTablePrefix %>_user_authority ua ON u.id=ua.user_id")
             .map { row, metadata ->
                 return@map Tuples.of(
                     r2dbcConverter.read(<%= asEntity('User') %>::class.java, row, metadata),
@@ -638,7 +639,7 @@ class UserRepository(
         val toInsert = mutableMapOf<CqlIdentifier, Any>()
         converter.write(user, toInsert, persistentEntity)
         val insert = QueryBuilder.insertInto(persistentEntity.getTableName())
-            .value("id", QueryBuilder.literal(user.getId()))
+            .value("id", QueryBuilder.literal(user.id))
         toInsert.forEach { (key, value) -> insert.value(key, QueryBuilder.literal(value)) }
         return insert.build()
         <%_ } else { /* reactive */ _%>

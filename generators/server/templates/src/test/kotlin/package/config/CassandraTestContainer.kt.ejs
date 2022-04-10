@@ -31,11 +31,18 @@ import java.util.stream.StreamSupport.stream
  * Base class for starting/stopping Cassandra during tests.
  */
 class CassandraTestContainer : InitializingBean, DisposableBean {
-    private val log: Logger = LoggerFactory.getLogger(CassandraTestContainer::class.java)
-    private val DATABASE_REQUEST_TIMEOUT = 20.toLong()
-    private val CONTAINER_STARTUP_TIMEOUT_MINUTES = 10.toLong()
 
-    private lateinit var cassandraContainer: CassandraContainer<*>
+    companion object {
+        private val log: Logger = LoggerFactory.getLogger(CassandraTestContainer::class.java)
+        private val DATABASE_REQUEST_TIMEOUT = 20.toLong()
+        private val CONTAINER_STARTUP_TIMEOUT_MINUTES = 10.toLong()
+
+        @JvmStatic
+        private var cassandraContainer: CassandraContainer<*> = CassandraContainer(DockerImageName.parse("<%= DOCKER_CASSANDRA %>"))
+            .withStartupTimeout(Duration.of(CONTAINER_STARTUP_TIMEOUT_MINUTES, ChronoUnit.MINUTES))
+            .withLogConsumer(Slf4jLogConsumer(log))
+            .withReuse(true) as CassandraContainer<*>
+    }
 
 
     override fun destroy() {
@@ -45,12 +52,6 @@ class CassandraTestContainer : InitializingBean, DisposableBean {
     }
 
     override fun afterPropertiesSet() {
-        if (null == cassandraContainer) {
-            cassandraContainer = CassandraContainer<Nothing>(DockerImageName.parse("<%= DOCKER_CASSANDRA %>"))
-                .withStartupTimeout(Duration.of(CONTAINER_STARTUP_TIMEOUT_MINUTES, ChronoUnit.MINUTES))
-                .withLogConsumer(Slf4jLogConsumer(log))
-                .withReuse(true) as CassandraContainer<*>
-        }
         if (!cassandraContainer.isRunning) {
             cassandraContainer.start()
             val cluster: Cluster = cassandraContainer.cluster

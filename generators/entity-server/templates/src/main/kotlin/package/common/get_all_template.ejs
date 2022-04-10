@@ -54,22 +54,55 @@ _%>
     }
 <% } else { %>
     <%_ if (paginationNo) { _%>
-    fun getAll<%= entityClassPlural %>(<% if (fieldsContainNoOwnerOneToOne) { %>@RequestParam(required = false) filter: String?<% } %><% if (relationshipsContainEagerLoad && fieldsContainNoOwnerOneToOne) { %>,<% } %><% if (relationshipsContainEagerLoad) { %>@RequestParam(required = false, defaultValue = "false") eagerload: Boolean<% }%>): <% if (reactive) { %>Mono<<% } %>MutableList<<%= instanceClass %>><% if (reactive) { %>><% } %> {<%- include('get_all_stream_template', {viaService: viaService}); -%>
-        log.debug("REST request to get all <%= entityClassPlural %>")
-        <% if (viaService) { %>
-        return <%= entityInstance %>Service.findAll()<% if (reactive) { %>.collectList()<% } %>
-        <% } else if (dtoMapstruct) { %>
-        val <%= entityInstancePlural %> = <%= entityInstance %>Repository.<% if (relationshipsContainEagerLoad) { %>findAllWithEagerRelationships<% } else { %>findAll<% } %>()
-            <%_ if (reactive) { _%>
-        return <%= entityInstancePlural %>.map(<%= entityToDtoReference %>).collectList()
+    fun getAll<%= entityClassPlural %>(<% if (fieldsContainNoOwnerOneToOne) { %>@RequestParam(required = false) filter: String?<% } %><% if (implementsEagerLoadApis && fieldsContainNoOwnerOneToOne) { %>,<% } %><% if (implementsEagerLoadApis) { %>@RequestParam(required = false, defaultValue = "false") eagerload: Boolean<% }%>): <% if (reactive) { %>Mono<<% } %>MutableList<<%= instanceClass %>><% if (reactive) { %>><% } %> {
+        
+        <%- include('get_all_stream_template', {viaService: viaService}); -%>
+
+        <%_ 
+            let elseCondition = false;
+            for (const relationship of relationships) {
+                if (relationship.relationshipOneToOne && !relationship.ownerSide) { 
+                    elseCondition = true;
+                }
+            }
+
+            if (elseCondition) {
+        _%>
+        else { 
+        <%_ } _%>
+            log.debug("REST request to get all <%= entityClassPlural %>")
+            <% if (viaService) { %>
+            return <%= entityInstance %>Service.findAll()<% if (reactive) { %>.collectList()<% } %>
+            <% } else if (dtoMapstruct) { %>
+            val <%= entityInstancePlural %> = <%= entityInstance %>Repository.<% if (implementsEagerLoadApis) { %>findAllWithEagerRelationships<% } else { %>findAll<% } %>()
+                <%_ if (reactive) { _%>
+            return <%= entityInstancePlural %>.map(<%= entityToDtoReference %>).collectList()
+                <%_ } else { _%>
+            return <%= entityListToDtoListReference %>(<%= entityInstancePlural %>)
+                <%_ } _%>
             <%_ } else { _%>
-        return <%= entityListToDtoListReference %>(<%= entityInstancePlural %>)
+            return <%= entityInstance %>Repository.<% if (implementsEagerLoadApis) { %>findAllWithEagerRelationships<% } else { %>findAll<% } %>()<% if (reactive) { %>.collectList()<% } %>
             <%_ } _%>
-        <%_ } else { _%>
-        return <%= entityInstance %>Repository.<% if (relationshipsContainEagerLoad) { %>findAllWithEagerRelationships<% } else { %>findAll<% } %>()<% if (reactive) { %>.collectList()<% } %>
+        <%_ if (elseCondition) { _%>
+        }
         <%_ } _%>
     <%_ } else { _%>
-    fun getAll<%= entityClassPlural %>(@org.springdoc.api.annotations.ParameterObject pageable: Pageable<% if (reactive) { %>, request: ServerHttpRequest<% } %><% if (fieldsContainNoOwnerOneToOne) { %>, @RequestParam(required = false) filter: String?<% } %><% if (relationshipsContainEagerLoad) { %>, @RequestParam(required = false, defaultValue = "true") eagerload: Boolean<% } %>): <% if (reactive) { %>Mono<ResponseEntity<List<<%= instanceClass %>>>><% } else { %>ResponseEntity<List<<%= instanceClass %>>><% } %> {<%- include('get_all_stream_template', {viaService: viaService}); -%>
+    fun getAll<%= entityClassPlural %>(@org.springdoc.api.annotations.ParameterObject pageable: Pageable<% if (reactive) { %>, request: ServerHttpRequest<% } %><% if (fieldsContainNoOwnerOneToOne) { %>, @RequestParam(required = false) filter: String?<% } %><% if (implementsEagerLoadApis) { %>, @RequestParam(required = false, defaultValue = "true") eagerload: Boolean<% } %>): <% if (reactive) { %>Mono<ResponseEntity<List<<%= instanceClass %>>>><% } else { %>ResponseEntity<List<<%= instanceClass %>>><% } %> {
+        
+        <%- include('get_all_stream_template', {viaService: viaService}); -%>
+
+        <%_ 
+            let elseCondition1 = false;
+            for (const relationship of relationships) {
+                if (relationship.relationshipOneToOne && !relationship.ownerSide) { 
+                    elseCondition1 = true;
+                }
+            }
+
+            if (elseCondition1) {
+        _%>
+        else { 
+        <%_ } _%>
         log.debug("REST request to get a page of <%= entityClassPlural %>")
         <%_ if (reactive) { _%>
         return <%= entityInstance %><%= viaService ? 'Service.countAll' : 'Repository.count' %>()
@@ -83,7 +116,7 @@ _%>
                 ).body(it.t2)
             }
         <%_ } else { _%>
-            <%_ if (relationshipsContainEagerLoad) { _%>
+            <%_ if (implementsEagerLoadApis) { _%>
                 val page: Page<<%= instanceClass %>> = if (eagerload) {
                     <%= entityInstance %><%= viaService ? 'Service' : 'Repository' %>.findAllWithEagerRelationships(pageable)<%= reactiveEntityToDto %>
                 } else {
@@ -95,6 +128,10 @@ _%>
                 val headers = PaginationUtil.generatePaginationHttpHeaders(<% if (reactive) { %>UriComponentsBuilder.fromHttpRequest(request)<% } else { %>ServletUriComponentsBuilder.fromCurrentRequest()<% } %>, page);
                 <%_ } _%>
                 return ResponseEntity.ok().headers(headers).body(page.content)
+        <%_ } _%>
+
+        <%_ if (elseCondition1) { _%>
+        }
         <%_ } _%>
     <%_ } _%>
     }

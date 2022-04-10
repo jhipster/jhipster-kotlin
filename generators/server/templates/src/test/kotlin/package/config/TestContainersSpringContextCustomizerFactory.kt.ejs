@@ -18,7 +18,7 @@
 -%>
 package <%= packageName %>.config
 
-import java.util.List
+import java.util.*
 
 <%_ if (databaseTypeCassandra) { _%>
 import org.cassandraunit.CQLDataLoader
@@ -45,17 +45,19 @@ class TestContainersSpringContextCustomizerFactory: ContextCustomizerFactory {
 
     private val log = LoggerFactory.getLogger(TestContainersSpringContextCustomizerFactory::class.java)
 
-    <%_ if (messageBrokerKafka) { _%>
-        private lateinit var kafkaBean: KafkaTestContainer
-    <%_ } _%>
-    <%_ if (databaseTypeMongodb) { _%>
-        private lateinit var mongoDbBean: MongoDbTestContainer
-    <%_ } _%>
-    <%_ if (databaseTypeCassandra) { _%>
-        private lateinit var cassandraBean: CassandraTestContainer
-    <%_ } _%>
-
+    companion object {
+        @JvmStatic
+        <%_ if (messageBrokerKafka) { _%>
+            private var kafkaBean: KafkaTestContainer? = null
+        <%_ } _%>
+        <%_ if (databaseTypeMongodb) { _%>
+            private var mongoDbBean: MongoDbTestContainer? = null
+        <%_ } _%>
+        <%_ if (databaseTypeCassandra) { _%>
+            private var cassandraBean: CassandraTestContainer? = null
+        <%_ } _%>
     
+    }    
 
     override fun createContextCustomizer(
         testClass: Class<*>,
@@ -82,10 +84,12 @@ class TestContainersSpringContextCustomizerFactory: ContextCustomizerFactory {
                         MongoDbTestContainer::class.java.name.lowercase(Locale.getDefault()), mongoDbBean
                     )
                 }
-                testValues =
-                    testValues.and(
-                        "spring.data.mongodb.uri=" + mongoDbBean.getMongoDBContainer().replicaSetUrl
-                    )
+                mongoDbBean?.let {
+                    testValues =
+                        testValues.and(
+                            "spring.data.mongodb.uri=" + it.getMongoDBContainer().replicaSetUrl
+                        )
+                }
             }
 <%_ } _%>
 
@@ -100,11 +104,14 @@ class TestContainersSpringContextCustomizerFactory: ContextCustomizerFactory {
             beanFactory.registerSingleton(CassandraTestContainer::class.java.name.lowercase(Locale.getDefault()), cassandraBean)
             (beanFactory as DefaultSingletonBeanRegistry).registerDisposableBean(CassandraTestContainer::class.java.name.lowercase(Locale.getDefault()), cassandraBean);
         }
-        testValues = testValues.and("spring.data.cassandra.port=" +  cassandraBean.cassandraContainer.getMappedPort(CassandraContainer.CQL_PORT))
-                .and("spring.data.cassandra.contact-points=" +  cassandraBean.cassandraContainer.host)
+
+        cassandraBean?.let {
+            testValues = testValues.and("spring.data.cassandra.port=" +  it.getCassandraContainer().getMappedPort(CassandraContainer.CQL_PORT))
+                .and("spring.data.cassandra.contact-points=" +  it.getCassandraContainer().host)
                 .and("spring.data.cassandra.keyspace-name=" + CQLDataLoader.DEFAULT_KEYSPACE_NAME)
-                .and("spring.data.cassandra.local-datacenter=" + cassandraBean.cassandraContainer.cluster.metadata.allHosts.iterator().next().datacenter)
-                .and("spring.data.cassandra.cluster-name=" + cassandraBean.cassandraContainer.cluster.metadata.clusterName)
+                .and("spring.data.cassandra.local-datacenter=" + it.getCassandraContainer().cluster.metadata.allHosts.iterator().next().datacenter)
+                .and("spring.data.cassandra.cluster-name=" + it.getCassandraContainer().cluster.metadata.clusterName)
+        }
     }
 <%_ } _%>
 
@@ -117,9 +124,11 @@ class TestContainersSpringContextCustomizerFactory: ContextCustomizerFactory {
             kafkaBean = KafkaTestContainer()
             beanFactory.initializeBean(kafkaBean, KafkaTestContainer::class.java.name.lowercase(Locale.getDefault()))
             beanFactory.registerSingleton(KafkaTestContainer::class.java.name.lowercase(Locale.getDefault()), kafkaBean);
-            ((DefaultSingletonBeanRegistry)beanFactory).registerDisposableBean(KafkaTestContainer::class.java.name.lowercase(Locale.getDefault()), kafkaBean);
+            (beanFactory as (DefaultSingletonBeanRegistry)).registerDisposableBean(KafkaTestContainer::class.java.name.lowercase(Locale.getDefault()), kafkaBean);
         }
-        testValues = testValues.and("spring.cloud.stream.kafka.binder.brokers=" + kafkaBean.kafkaContainer.host + ':' + kafkaBean.kafkaContainer.getMappedPort(KafkaContainer.KAFKA_PORT))
+        kafkaBean?.let {
+            testValues = testValues.and("spring.cloud.stream.kafka.binder.brokers=" + it.getKafkaContainer().host + ':' + it.getKafkaContainer().getMappedPort(KafkaContainer.KAFKA_PORT))
+        }   
     }
 <%_ } _%>
             testValues.applyTo(context)
