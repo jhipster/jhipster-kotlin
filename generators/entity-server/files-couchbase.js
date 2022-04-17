@@ -19,17 +19,31 @@
 const constants = require('generator-jhipster/generators/generator-constants');
 
 const SERVER_MAIN_SRC_DIR = `${constants.MAIN_DIR}kotlin/`;
+const SERVER_MAIN_RES_DIR = constants.SERVER_MAIN_RES_DIR;
 
 const entityCouchbaseFiles = {
     dbChangelog: [
         {
-            condition: generator => generator.searchEngineCouchbase && !generator.skipDbChangelog,
-            path: constants.SERVER_MAIN_RES_DIR,
+            condition: generator => !generator.skipDbChangelog && !generator.embedded,
+            path: SERVER_MAIN_RES_DIR,
+            templates: [
+                {
+                    file: 'config/couchmove/changelog/entity.n1ql',
+                    renameTo: generator =>
+                        `config/couchmove/changelog/V${generator.changelogDate}__${generator.entityInstance.toLowerCase()}.n1ql`,
+                },
+            ],
+        },
+        {
+            condition: generator => generator.searchEngineCouchbase && !generator.skipDbChangelog && !generator.embedded,
+            path: SERVER_MAIN_RES_DIR,
             templates: [
                 {
                     file: 'config/couchmove/changelog/entity.fts',
                     renameTo: generator =>
-                        `config/couchmove/changelog/V${generator.changelogDate}__${generator.entityInstance.toLowerCase()}.fts`,
+                        `config/couchmove/changelog/V${
+                            parseInt(generator.changelogDate, 10) + 10
+                        }__${generator.entityInstance.toLowerCase()}.fts`,
                 },
             ],
         },
@@ -40,7 +54,8 @@ const entityCouchbaseFiles = {
             templates: [
                 {
                     file: 'package/domain/Entity.kt.jhi.spring_data_couchbase',
-                    renameTo: generator => `${generator.entityAbsoluteFolder}/domain/${generator.persistClass}.kt.jhi.spring_data_couchbase`,
+                    renameTo: generator =>
+                        `${generator.entityAbsoluteFolder}/domain/${generator.persistClass}.kt.jhi.spring_data_couchbase`,
                     useBluePrint: true,
                 },
             ],
@@ -61,6 +76,15 @@ const entityCouchbaseFiles = {
 
 function writeEntityCouchbaseFiles() {
     return {
+        cleanupCouchbaseFiles() {
+            if (!this.databaseTypeCouchbase) return;
+
+            if (this.isJhipsterVersionLessThan('7.6.1')) {
+                this.removeFile(
+                    `${SERVER_MAIN_RES_DIR}config/couchmove/changelog/V${this.changelogDate}__${this.entityInstance.toLowerCase()}.fts`
+                );
+            }
+        },
         async writeEntityCouchbaseFiles() {
             if (this.skipServer || !this.databaseTypeCouchbase) return;
 

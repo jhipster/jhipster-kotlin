@@ -18,20 +18,16 @@
 -%>
 package <%= packageName %>
 
-import <%= packageName %>.IntegrationTest
 import com.datastax.oss.driver.api.core.CqlSession
 import com.datastax.oss.driver.api.core.metadata.Metadata
 import org.junit.jupiter.api.Test
 import org.springframework.beans.factory.annotation.Autowired
-import org.springframework.boot.test.context.SpringBootTest
-<%_ if (messageBroker === 'kafka') { _%>
-import org.springframework.kafka.test.context.EmbeddedKafka
-<%_ } _%>
+import org.cassandraunit.CQLDataLoader
 
 import org.assertj.core.api.Assertions.assertThat
 
 @IntegrationTest
-class CassandraKeyspaceIT : AbstractCassandraTest() {
+class CassandraKeyspaceIT {
 
     @Autowired
     private lateinit var session: CqlSession
@@ -39,6 +35,6 @@ class CassandraKeyspaceIT : AbstractCassandraTest() {
     @Test
     fun shouldListCassandraUnitKeyspace() {
         val metadata: Metadata = session.getMetadata()
-        assertThat(metadata.getKeyspace(CASSANDRA_UNIT_KEYSPACE)).isNotNull
+        assertThat(metadata.getKeyspace(CQLDataLoader.DEFAULT_KEYSPACE_NAME)).isNotNull
     }
 }

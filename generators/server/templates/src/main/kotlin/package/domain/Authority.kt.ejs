@@ -26,20 +26,25 @@ import org.hibernate.annotations.CacheConcurrencyStrategy
 import org.springframework.data.annotation.Id
 import org.springframework.data.<%= databaseType %>.core.mapping.Document
 <%_ } _%>
+<%_ if (databaseTypeCouchbase) { _%>
+import org.springframework.data.annotation.TypeAlias
+import org.springframework.data.couchbase.repository.Collection
+import <%= packageName %>.domain.Authority.Companion.TYPE_NAME
+<%_ } _%>
 <%_ if (databaseTypeNeo4j) { _%>
 import org.springframework.data.neo4j.core.schema.Id
 import org.springframework.data.neo4j.core.schema.Node
 <%_ } _%>
 <%_ if (databaseTypeSql) { _%>
-    <%_ if (!reactive) { _%>
+    <%_ if (reactive) { _%>
+import org.springframework.data.annotation.Id
+import org.springframework.data.domain.Persistable
+import org.springframework.data.relational.core.mapping.Table
+    <%_ } else { _%>
 import javax.persistence.Entity
 import javax.persistence.Id
 import javax.persistence.Table
 import javax.persistence.Column
-    <%_ } else { _%>
-import org.springframework.data.annotation.Id
-import org.springframework.data.domain.Persistable
-import org.springframework.data.relational.core.mapping.Table
     <%_ } _%>
 <%_ } _%>
 import javax.validation.constraints.NotNull
@@ -68,6 +73,8 @@ import java.io.Serializable
 <%_ } _%>
 <%_ if (databaseTypeCouchbase) { _%>
 @Document
+@TypeAlias(TYPE_NAME)
+@Collection(TYPE_NAME)
 <%_ } _%>
 <%_ if (databaseTypeNeo4j) { _%>
 @Node("<%= jhiTablePrefix %>_authority")
@@ -102,5 +109,8 @@ data class Authority(
 
     companion object {
         private const val serialVersionUID = 1L
+        <%_ if (databaseTypeCouchbase) { _%>
+        const val TYPE_NAME = "authority"
+        <%_ } _%>
     }
 }

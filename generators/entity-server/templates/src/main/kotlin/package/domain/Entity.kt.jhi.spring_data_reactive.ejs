@@ -26,11 +26,11 @@ import org.springframework.data.annotation.Transient
 import org.springframework.data.relational.core.mapping.Column
 import org.springframework.data.relational.core.mapping.Table
 <&_ } -&>
-    
+
 <&_ if (fragment.annotationSection) { -&>
 @Table("<%= entityTableName %>")
 <&_ } -&>
-    
+
 <%_ for (const field of fields) { _%>
     <&_ if (fragment.field<%- field.fieldNameCapitalized %>AnnotationSection) { -&>
     <%_ if (field.id) { _%>
@@ -39,31 +39,30 @@ import org.springframework.data.relational.core.mapping.Table
         @Column("<%- field.fieldNameAsDatabaseColumn %>")
     <&_ } -&>
 <%_ } -%>
-    
+
 <%_ for (const field of fields.filter(field => field.fieldWithContentType)) { _%>
 <&_ if (fragment.field<%- field.fieldNameCapitalized %>ContentTypeAnnotationSection) { -&>
     @Column("<%- field.fieldNameAsDatabaseColumn %>_content_type")
 <&_ } -&>
 <%_ } -%>
-    
+
 <%_ for (const relationship of relationships) { _%>
     <&_ if (fragment.relationship<%- relationship.relationshipNameCapitalized %>AnnotationSection) { -&>
         @Transient
     <&_ } -&>
 <%_ } -%>
-    
+
 <%_ for (const relationship of relationships) {
     const reactiveRelationshipWithId = (databaseType === 'sql' && reactive && !(relationship.relationshipOneToOne &&
     (!relationship.ownerSide || (relationship.ownerSide && relationship.id))));
     _%>
 <%_ } _%>
-    
+
 <&_ if (fragment.classAdditionalRelationshipsSection) { -&>
     <%_ for (const relationship of relationships) { _%>
         <%_ if (relationship.ownerSide && !relationship.collection && !relationship.id) { _%>
-    @Column("<%= relationship.columnName %>_id")
+    @Column("<%= relationship.joinColumnNames[0] %>")
     var <%= relationship.relationshipFieldName %>Id: <%= relationship.otherEntity.primaryKey.type %>? = null,
         <%_ } _%>
     <%_ } _%>
 <&_ } -&>
-    

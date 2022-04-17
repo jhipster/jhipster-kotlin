@@ -19,10 +19,10 @@
 package <%= packageName %>.config
 
 import tech.jhipster.config.JHipsterConstants
-<%_ if (!reactive) { _%>
-import tech.jhipster.config.liquibase.SpringLiquibaseUtil
-<%_ } else { _%>
+<%_ if (reactive) { _%>
 import tech.jhipster.config.liquibase.AsyncSpringLiquibase
+<%_ } else { _%>
+import tech.jhipster.config.liquibase.SpringLiquibaseUtil
 <%_ } _%> 
 import liquibase.integration.spring.SpringLiquibase
 import org.slf4j.LoggerFactory
@@ -60,18 +60,19 @@ class LiquibaseConfiguration(private val env: Environment) {
         @LiquibaseDataSource liquibaseDataSource: ObjectProvider<DataSource>,
         <%_ } _%>
         liquibaseProperties: LiquibaseProperties,
-        <%_ if (!reactive) { _%>
-        dataSource: ObjectProvider<DataSource>,
+        <%_ if (reactive) { _%>
+        <%_ } else { _%>
+            dataSource: ObjectProvider<DataSource>,
         <%_ } _%>
-        dataSourceProperties:  <% if (!reactive) { %>DataSourceProperties<% } else { %>R2dbcProperties<% } %>
+        dataSourceProperties:  <% if (reactive) { %>R2dbcProperties<% } else { %>DataSourceProperties<% } %>
     ) =
-        <%_ if (!reactive) { _%>
+        <%_ if (reactive) { _%>
+            createAsyncSpringLiquibase(this.env, executor, liquibaseProperties, dataSourceProperties)
+        <%_ } else { _%>
             // If you don't want Liquibase to start asynchronously, substitute by this:
             // val liquibase = SpringLiquibaseUtil.createSpringLiquibase(liquibaseDataSource.getIfAvailable(), liquibaseProperties, dataSource.getIfUnique(), dataSourceProperties)
             SpringLiquibaseUtil.createAsyncSpringLiquibase(this.env, executor, liquibaseDataSource.getIfAvailable(), liquibaseProperties, dataSource.getIfUnique(), dataSourceProperties)
-            <%_ } else { _%>
-            createAsyncSpringLiquibase(this.env, executor, liquibaseProperties, dataSourceProperties)
-            <%_ } _%>
+        <%_ } _%>
             .apply {
             changeLog = "classpath:config/liquibase/master.xml"
             contexts = liquibaseProperties.contexts

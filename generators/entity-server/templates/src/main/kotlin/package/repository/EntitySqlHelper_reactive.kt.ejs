@@ -25,7 +25,7 @@ import org.springframework.data.relational.core.sql.Table
 class <%= entityClass %>SqlHelper {
     fun getColumns(table: Table, columnPrefix: String): MutableList<Expression> {
         val columns = mutableListOf<Expression>()
-<%_ fields.forEach(function(field) {
+<%_ fields.filter(field => !field.transient).forEach(function(field) {
     let col = field.fieldNameAsDatabaseColumn
     _%>
         columns.add(Column.aliased("<%= col %>", table, columnPrefix + "_<%= col %>"))
@@ -35,7 +35,7 @@ class <%= entityClass %>SqlHelper {
 <%_ }); _%>
 
 <%_ reactiveRegularEagerRelations.forEach(function(rel) { _%>
-        columns.add(Column.aliased("<%= getColumnName(rel.relationshipName) %>_id", table, columnPrefix + "_<%= getColumnName(rel.relationshipName) %>_id"))
+        columns.add(Column.aliased("<%= rel.joinColumnNames[0] %>", table, columnPrefix + "_<%= rel.joinColumnNames[0] %>"))
 <%_ }); _%>
         return columns
     }

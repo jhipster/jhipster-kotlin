@@ -682,10 +682,14 @@ const expectedFiles = {
     oauth2Client: [`${CLIENT_MAIN_SRC_DIR}app/login/logout.model.ts`],
 
     messageBroker: [
-        `${SERVER_MAIN_SRC_DIR}com/mycompany/myapp/config/KafkaProperties.kt`,
+        `${SERVER_MAIN_SRC_DIR}com/mycompany/myapp/config/KafkaSseConsumer.kt`,
+        `${SERVER_MAIN_SRC_DIR}com/mycompany/myapp/config/KafkaSseProducer.kt`,
         `${SERVER_MAIN_SRC_DIR}com/mycompany/myapp/web/rest/JhipsterKafkaResource.kt`,
         `${SERVER_TEST_SRC_DIR}com/mycompany/myapp/web/rest/JhipsterKafkaResourceIT.kt`,
+        `${SERVER_TEST_SRC_DIR}com/mycompany/myapp/config/TestContainersSpringContextCustomizerFactory.kt`,
+        `${SERVER_TEST_SRC_DIR}com/mycompany/myapp/config/KafkaTestContainer.kt`,
         `${DOCKER_DIR}kafka.yml`,
+        `${SERVER_TEST_RES_DIR}testcontainers.properties`,
     ],
 
     swaggerCodegen: [`${SERVER_MAIN_RES_DIR}swagger/api.yml`],
@@ -765,18 +769,22 @@ const expectedFiles = {
 
     mongodb: [
         `${SERVER_MAIN_SRC_DIR}com/mycompany/myapp/config/dbmigrations/InitialSetupMigration.kt`,
+        `${SERVER_TEST_SRC_DIR}com/mycompany/myapp/config/TestContainersSpringContextCustomizerFactory.kt`,
+        `${SERVER_TEST_SRC_DIR}com/mycompany/myapp/config/MongoDbTestContainer.kt`,
         `${DOCKER_DIR}mongodb.yml`,
         `${DOCKER_DIR}mongodb-cluster.yml`,
         `${DOCKER_DIR}mongodb/MongoDB.Dockerfile`,
         `${DOCKER_DIR}mongodb/scripts/init_replicaset.js`,
+        `${SERVER_TEST_RES_DIR}testcontainers.properties`,
     ],
 
     couchbase: [
-        `${SERVER_MAIN_RES_DIR}config/couchmove/changelog/V0__create_indexes.n1ql`,
-        `${SERVER_MAIN_RES_DIR}config/couchmove/changelog/V0.1__initial_setup/ROLE_ADMIN.json`,
-        `${SERVER_MAIN_RES_DIR}config/couchmove/changelog/V0.1__initial_setup/ROLE_USER.json`,
-        `${SERVER_MAIN_RES_DIR}config/couchmove/changelog/V0.1__initial_setup/user__admin.json`,
-        `${SERVER_MAIN_RES_DIR}config/couchmove/changelog/V0.1__initial_setup/user__user.json`,
+        `${SERVER_MAIN_RES_DIR}config/couchmove/changelog/V0__create_collections.n1ql`,
+        `${SERVER_MAIN_RES_DIR}config/couchmove/changelog/V0.2__create_indexes.n1ql`,
+        `${SERVER_MAIN_RES_DIR}config/couchmove/changelog/V0.1__initial_setup/authority/ROLE_ADMIN.json`,
+        `${SERVER_MAIN_RES_DIR}config/couchmove/changelog/V0.1__initial_setup/authority/ROLE_USER.json`,
+        `${SERVER_MAIN_RES_DIR}config/couchmove/changelog/V0.1__initial_setup/user/admin.json`,
+        `${SERVER_MAIN_RES_DIR}config/couchmove/changelog/V0.1__initial_setup/user/user.json`,
         `${DOCKER_DIR}couchbase.yml`,
         `${DOCKER_DIR}couchbase-cluster.yml`,
         `${DOCKER_DIR}couchbase/Couchbase.Dockerfile`,
@@ -790,7 +798,7 @@ const expectedFiles = {
         `${DOCKER_DIR}neo4j.yml`,
     ],
 
-    couchbaseSearch: [`${SERVER_TEST_SRC_DIR}com/mycompany/myapp/repository/JHipsterCouchbaseRepositoryTest.kt`],
+    couchbaseSearch: [`${SERVER_TEST_SRC_DIR}com/mycompany/myapp/repository/CouchbaseSearchRepositoryTest.kt`],
 
     cassandra: [
         `${SERVER_MAIN_RES_DIR}config/cql/create-keyspace-prod.cql`,
@@ -798,12 +806,16 @@ const expectedFiles = {
         `${SERVER_MAIN_RES_DIR}config/cql/drop-keyspace.cql`,
         `${SERVER_MAIN_RES_DIR}config/cql/changelog/00000000000000_create-tables.cql`,
         `${SERVER_MAIN_RES_DIR}config/cql/changelog/00000000000001_insert_default_users.cql`,
+        `${SERVER_TEST_SRC_DIR}com/mycompany/myapp/config/TestContainersSpringContextCustomizerFactory.kt`,
+        `${SERVER_TEST_SRC_DIR}com/mycompany/myapp/config/CassandraTestContainer.kt`,
+        `${SERVER_TEST_SRC_DIR}com/mycompany/myapp/CassandraKeyspaceIT.kt`,
         `${DOCKER_DIR}cassandra/Cassandra-Migration.Dockerfile`,
         `${DOCKER_DIR}cassandra/scripts/autoMigrate.sh`,
         `${DOCKER_DIR}cassandra/scripts/execute-cql.sh`,
         `${DOCKER_DIR}cassandra-cluster.yml`,
         `${DOCKER_DIR}cassandra-migration.yml`,
         `${DOCKER_DIR}cassandra.yml`,
+        `${SERVER_TEST_RES_DIR}testcontainers.properties`,
     ],
 
     elasticsearch: [

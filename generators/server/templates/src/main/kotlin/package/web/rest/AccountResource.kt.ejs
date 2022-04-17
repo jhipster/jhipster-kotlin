@@ -33,7 +33,6 @@ import org.springframework.web.bind.annotation.RestController
 <%_ if (reactive) { _%>
 import org.springframework.web.server.ServerWebExchange
 import reactor.core.publisher.Mono
-import java.security.Principal
 <%_ } else { _%>
 import javax.servlet.http.HttpServletRequest
 <%_ } _%>
@@ -96,12 +95,12 @@ import com.fasterxml.jackson.annotation.JsonCreator
 import org.slf4j.Logger
 import org.slf4j.LoggerFactory
 import org.springframework.security.core.GrantedAuthority
-<%_ if (!reactive) { _%>
-import org.springframework.security.core.context.SecurityContextHolder
-<%_ } else { _%>
+<%_ if (reactive) { _%>
 import org.springframework.security.core.context.ReactiveSecurityContextHolder
 import org.springframework.security.core.context.SecurityContext
 import org.springframework.security.core.userdetails.UserDetails
+<%_ } else { _%>
+import org.springframework.security.core.context.SecurityContextHolder
 <%_ } _%>
 import org.springframework.web.bind.annotation.GetMapping
 import org.springframework.web.bind.annotation.RequestMapping
@@ -128,14 +127,7 @@ class AccountResource {
      * @throws AccountResourceException {@code 500 (Internal Server Error)} if the user couldn't be returned.
      */
     @GetMapping("/account")
-    <%_ if (!reactive) { _%>
-    fun getAccount(): UserVM {
-        val login = getCurrentUserLogin()
-            .orElseThrow { AccountResourceException() }
-        val authorities = SecurityContextHolder.getContext().authentication.authorities
-            .mapNotNullTo(mutableSetOf()) { it.authority }
-        return UserVM(login, authorities)
-    <%_ } else { _%>
+    <%_ if (reactive) { _%>
     fun getAccount(): Mono<UserVM> {
         return ReactiveSecurityContextHolder.getContext()
             .map { SecurityContext.getAuthentication(it) }
@@ -154,6 +146,13 @@ class AccountResource {
                 return UserVM(login, authorities)
             }}
             .switchIfEmpty(Mono.error(AccountResourceException()))
+    <%_ } else { _%>
+    fun getAccount(): UserVM {
+        val login = getCurrentUserLogin()
+            .orElseThrow { AccountResourceException() }
+        val authorities = SecurityContextHolder.getContext().authentication.authorities
+            .mapNotNullTo(mutableSetOf()) { it.authority }
+        return UserVM(login, authorities)
     <%_ } _%>
     }
 
@@ -260,13 +259,13 @@ class AccountResource(
         if (isPasswordLengthInvalid(managedUserVM.password)) {
             throw InvalidPasswordException()
         }
-        <%_ if (!reactive) { _%>
-        val user = userService.registerUser(managedUserVM, managedUserVM.password!!)
-        mailService.sendActivationEmail(user)
-        <%_ } else { _%>
+        <%_ if (reactive) { _%>
         return userService.registerUser(managedUserVM, managedUserVM.password!!)
             .doOnSuccess(mailService::sendActivationEmail)
-            .then()
+            .then()        
+        <%_ } else { _%>
+        val user = userService.registerUser(managedUserVM, managedUserVM.password!!)
+        mailService.sendActivationEmail(user)
         <%_ } _%>
     }
 
@@ -278,15 +277,15 @@ class AccountResource(
      */
     @GetMapping("/activate")
     fun activateAccount(@RequestParam(value = "key") key: String) <% if (reactive) { %>: Mono<Void> <% } %>{
-        <%_ if (!reactive) { _%>
+        <%_ if (reactive) { _%>        
+        return userService.activateRegistration(key)
+            .switchIfEmpty(Mono.error(AccountResourceException("No user was found for this activation key")))
+            .then()
+        <%_ } else { _%>
         val user = userService.activateRegistration(key)
         if (!user.isPresent) {
             throw AccountResourceException("No user was found for this activation key")
         }
-        <%_ } else { _%>
-        return userService.activateRegistration(key)
-            .switchIfEmpty(Mono.error(AccountResourceException("No user was found for this activation key")))
-            .then()
         <%_ } _%>
     }
 
@@ -297,14 +296,14 @@ class AccountResource(
      * @return the login if the user is authenticated.
      */
     @GetMapping("/authenticate")
-    <%_ if (!reactive) { _%>
-    fun isAuthenticated(request: HttpServletRequest): String? {
-        log.debug("REST request to check if the current user is authenticated")
-        return request.remoteUser
-    <%_ } else { _%>
+    <%_ if (reactive) { _%>
     fun isAuthenticated(request: ServerWebExchange): Mono<String?> {
         log.debug("REST request to check if the current user is authenticated")
         return request.getPrincipal<Principal>().map(Principal::getName)
+    <%_ } else { _%>
+    fun isAuthenticated(request: HttpServletRequest): String? {
+        log.debug("REST request to check if the current user is authenticated")
+        return request.remoteUser
     <%_ } _%>
     }
 
@@ -318,10 +317,10 @@ class AccountResource(
     fun getAccount(): <% if (reactive) { %>Mono<<%= asDto('AdminUser') %>><% } else { %><%= asDto('AdminUser') %><% } %> =
         userService.getUserWithAuthorities()
             .map { <%= asDto('AdminUser') %>(it) }
-            <%_ if (!reactive) { _%>
-            .orElseThrow { AccountResourceException("User could not be found") }
-            <%_ } else { _%>
+            <%_ if (reactive) { _%>
             .switchIfEmpty(Mono.error(AccountResourceException("User could not be found")))
+            <%_ } else { _%>
+            .orElseThrow { AccountResourceException("User could not be found") }
             <%_ } _%>
 
     /**
@@ -332,24 +331,7 @@ class AccountResource(
      * @throws RuntimeException `500 (Internal Server Error)` if the user login wasn't found.
      */
     @PostMapping("/account")
-    <%_ if (!reactive) { _%>
-    fun saveAccount(@Valid @RequestBody userDTO: <%= asDto('AdminUser') %>) {
-        val userLogin = getCurrentUserLogin()
-            .orElseThrow { AccountResourceException("") }
-        val existingUser = userRepository.findOneByEmailIgnoreCase(userDTO.email)
-        if (existingUser.isPresent && !existingUser.get().login.equals(userLogin, ignoreCase = true)) {
-            throw EmailAlreadyUsedException()
-        }
-        val user = userRepository.findOneByLogin(userLogin)
-        if (!user.isPresent) {
-            throw AccountResourceException("User could not be found")
-        }
-        userService.updateUser(
-            userDTO.firstName, userDTO.lastName, userDTO.email,
-            userDTO.langKey<% if (['sql', 'mongodb', 'couchbase', 'neo4j'].includes(databaseType)) { %>, userDTO.imageUrl<% } %>
-        )
-    }
-    <%_ } else { _%>
+    <%_ if (reactive) { _%>
     fun saveAccount(@Valid @RequestBody userDTO: <%= asDto('AdminUser') %>): Mono<Void> =
         getCurrentUserLogin()
             .switchIfEmpty(Mono.error(AccountResourceException("Current user login not found")))
@@ -370,6 +352,23 @@ class AccountResource(
                     userDTO.firstName, userDTO.lastName, userDTO.email, userDTO.langKey<% if (['sql', 'mongodb', 'couchbase', 'neo4j'].includes(databaseType)) { %>, userDTO.imageUrl<% } %>
                 )
             }
+    <%_ } else { _%>
+    fun saveAccount(@Valid @RequestBody userDTO: <%= asDto('AdminUser') %>) {
+        val userLogin = getCurrentUserLogin()
+            .orElseThrow { AccountResourceException("") }
+        val existingUser = userRepository.findOneByEmailIgnoreCase(userDTO.email)
+        if (existingUser.isPresent && !existingUser.get().login.equals(userLogin, ignoreCase = true)) {
+            throw EmailAlreadyUsedException()
+        }
+        val user = userRepository.findOneByLogin(userLogin)
+        if (!user.isPresent) {
+            throw AccountResourceException("User could not be found")
+        }
+        userService.updateUser(
+            userDTO.firstName, userDTO.lastName, userDTO.email,
+            userDTO.langKey<% if (['sql', 'mongodb', 'couchbase', 'neo4j'].includes(databaseType)) { %>, userDTO.imageUrl<% } %>
+        )
+    }
     <%_ } _%>
 
     /**
@@ -440,18 +439,7 @@ class AccountResource(
      * @param mail the mail of the user
      */
     @PostMapping(path = ["/account/reset-password/init"])
-    <%_ if (!reactive) { _%>
-    fun requestPasswordReset(@RequestBody mail: String) {
-        val user = userService.requestPasswordReset(mail)
-        if (user.isPresent()) {
-            mailService.sendPasswordResetMail(user.get())
-        } else {
-            // Pretend the request has been successful to prevent checking which emails really exist
-            // but log that an invalid attempt has been made
-            log.warn("Password reset requested for non existing mail")
-        }
-    }
-    <%_ } else { _%>
+    <%_ if (reactive) { _%>
     fun requestPasswordReset(@RequestBody mail: String): Mono<Void> =
         userService.requestPasswordReset(mail)
             .doOnSuccess {
@@ -463,6 +451,17 @@ class AccountResource(
                     log.warn("Password reset request for non existing email")
                 }
             }.then()
+    <%_ } else { _%>
+    fun requestPasswordReset(@RequestBody mail: String) {
+        val user = userService.requestPasswordReset(mail)
+        if (user.isPresent()) {
+            mailService.sendPasswordResetMail(user.get())
+        } else {
+            // Pretend the request has been successful to prevent checking which emails really exist
+            // but log that an invalid attempt has been made
+            log.warn("Password reset requested for non existing mail")
+        }
+    }
     <%_ } _%>
 
     /**
@@ -477,16 +476,16 @@ class AccountResource(
         if (isPasswordLengthInvalid(keyAndPassword.newPassword)) {
             throw InvalidPasswordException()
         }
-        <%_ if (!reactive) { _%>
+        <%_ if (reactive) { _%>
+        return userService.completePasswordReset(keyAndPassword.newPassword!!, keyAndPassword.key!!)
+            .switchIfEmpty(Mono.error(AccountResourceException("No user was found for this reset key")))
+            .then()
+        <%_ } else { _%>
         val user = userService.completePasswordReset(keyAndPassword.newPassword!!, keyAndPassword.key!!)
 
         if (!user.isPresent) {
             throw AccountResourceException("No user was found for this reset key")
         }
-        <%_ } else { _%>
-        return userService.completePasswordReset(keyAndPassword.newPassword!!, keyAndPassword.key!!)
-            .switchIfEmpty(Mono.error(AccountResourceException("No user was found for this reset key")))
-            .then()
         <%_ } _%>
     }
 }

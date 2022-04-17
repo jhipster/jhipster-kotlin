@@ -151,9 +151,8 @@ class DatabaseConfiguration<% if (devDatabaseTypeH2Any) { %>(private val env: En
     // LocalDateTime seems to be the only type that is supported across all drivers atm
     // See https://github.com/r2dbc/r2dbc-h2/pull/139 https://github.com/mirromutth/r2dbc-mysql/issues/105
     @Bean
-    fun r2dbcCustomConversions(connectionFactory: ConnectionFactory): R2dbcCustomConversions {
-        val dialect = DialectResolver.getDialect(connectionFactory)
-        val converters = dialect.converters.toMutableList()
+    fun r2dbcCustomConversions(dialect: R2dbcDialect): R2dbcCustomConversions {
+        val converters = mutableListOf<Any>()
         converters.add(InstantWriteConverter)
         converters.add(InstantReadConverter)
         converters.add(BitSetReadConverter)
@@ -165,8 +164,7 @@ class DatabaseConfiguration<% if (devDatabaseTypeH2Any) { %>(private val env: En
         converters.add(StringToUUIDConverter)
         converters.add(UUIDToStringConverter)
         <%_ } _%>
-        converters.addAll(R2dbcCustomConversions.STORE_CONVERTERS)
-        return R2dbcCustomConversions(CustomConversions.StoreConversions.of(dialect.simpleTypeHolder, converters), mutableListOf<Any>())
+        return R2dbcCustomConversions.of(dialect, converters)
     }
 
 

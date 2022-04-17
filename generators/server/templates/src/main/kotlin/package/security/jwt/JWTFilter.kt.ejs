@@ -46,21 +46,21 @@ import java.io.IOException
  * Filters incoming requests and installs a Spring Security principal if a header corresponding to a valid user is
  * found.
  */
-class JWTFilter(private val tokenProvider: TokenProvider) <% if (!reactive) { %>: GenericFilterBean()<% } else { %>: WebFilter<% } %> {
+class JWTFilter(private val tokenProvider: TokenProvider) <% if (reactive) { %>: WebFilter<% } else { %>: GenericFilterBean()<% } %> {
 
-    <%_ if (!reactive) { _%>
+    <%_ if (reactive) { _%>
+    override fun filter(exchange: ServerWebExchange, chain: WebFilterChain): Mono<Void> {
+        val jwt = resolveToken(exchange.request)
+    <%_ } else { _%>
     @Throws(IOException::class, ServletException::class)
     override fun doFilter(servletRequest: ServletRequest, servletResponse: ServletResponse, filterChain: FilterChain) {
         val httpServletRequest = servletRequest as HttpServletRequest
         val jwt = resolveToken(httpServletRequest)
-    <%_ } else { _%>
-    override fun filter(exchange: ServerWebExchange, chain: WebFilterChain): Mono<Void> {
-        val jwt = resolveToken(exchange.request)
     <%_ } _%>
         if (!jwt.isNullOrBlank() && this.tokenProvider.validateToken(jwt)) {
             val authentication = this.tokenProvider.getAuthentication(jwt)
         <%_ if (reactive) { _%>
-            return chain.filter(exchange).subscriberContext(ReactiveSecurityContextHolder.withAuthentication(authentication))
+            return chain.filter(exchange).contextWrite(ReactiveSecurityContextHolder.withAuthentication(authentication))
         }
         return chain.filter(exchange)
         <%_ } else { _%>
@@ -70,8 +70,8 @@ class JWTFilter(private val tokenProvider: TokenProvider) <% if (!reactive) { %>
         <%_ } _%>
     }
 
-    private fun resolveToken(request: <% if (!reactive) { %>HttpServletRequest<% } else { %>ServerHttpRequest<% } %>): String? {
-        val bearerToken = request.<% if (!reactive) { %>getHeader<% } else { %>headers.getFirst<% } %>(AUTHORIZATION_HEADER)
+    private fun resolveToken(request: <% if (reactive) { %>ServerHttpRequest<% } else { %>HttpServletRequest<% } %>): String? {
+        val bearerToken = request.<% if (reactive) { %>headers.getFirst<% } else { %>getHeader<% } %>(AUTHORIZATION_HEADER)
         if (!bearerToken.isNullOrBlank() && bearerToken.startsWith("Bearer ")) {
             return bearerToken.substring(7)
         }

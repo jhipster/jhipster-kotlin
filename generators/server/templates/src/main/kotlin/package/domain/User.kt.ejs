@@ -68,7 +68,9 @@ import org.springframework.data.annotation.Id
 import org.springframework.data.couchbase.core.mapping.Document
 import org.springframework.data.couchbase.core.mapping.id.GeneratedValue
 import org.springframework.data.couchbase.core.mapping.id.IdAttribute
-import org.springframework.data.couchbase.core.mapping.id.IdPrefix
+import org.springframework.data.annotation.TypeAlias
+import org.springframework.data.couchbase.repository.Collection
+import <%= packageName %>.domain.User.Companion.TYPE_NAME
 <%_ } _%>
 <%_ if (searchEngineElasticsearch) { _%>
 import org.springframework.data.elasticsearch.annotations.FieldType
@@ -126,6 +128,8 @@ import org.springframework.data.couchbase.core.mapping.id.GenerationStrategy.USE
 <%_ } _%>
 <%_ if (databaseTypeCouchbase) { _%>
 @Document
+@TypeAlias(TYPE_NAME)
+@Collection(TYPE_NAME)
 <%_ } _%>
 <%_ if (databaseTypeCassandra) { _%>
     <%_ if (reactive) { _%>
@@ -170,10 +174,10 @@ class <%= asEntity('User') %> (
     @GeneratedValue(strategy = USE_ATTRIBUTES, delimiter = ID_DELIMITER)
     <%_ } _%>
     <%_ if (databaseTypeCassandra) { _%>
-        <%_ if (!reactive) { _%>
-    @PartitionKey
-        <%_ } else { _%>
+        <%_ if (reactive) { _%>
     @PrimaryKey
+        <%_ } else { _%>
+    @PartitionKey
         <%_ } _%>
     <%_ } _%>
     <%_ if (searchEngineElasticsearch) { _%>
@@ -402,11 +406,6 @@ class <%= asEntity('User') %> (
     lastModifiedDate: Instant? = Instant.now()
 <%_ } _%>
 ) : <% if (databaseTypeSql || databaseTypeMongodb || databaseTypeNeo4j || databaseTypeCouchbase) { %>AbstractAuditingEntity(createdBy, createdDate, lastModifiedBy, lastModifiedDate), <% } %>Serializable {
-<%_ if (databaseTypeCouchbase) { _%>
-
-    @IdPrefix
-    private val prefix: String = PREFIX
-<%_ } _%>
 
 <%_ if (databaseTypeSql && reactive) { _%>
     @PersistenceConstructor
@@ -493,8 +492,7 @@ class <%= asEntity('User') %> (
     companion object {
         private const val serialVersionUID = 1L
         <%_ if (databaseTypeCouchbase) { _%>
-
-        const val PREFIX = "user"
+        const val TYPE_NAME = "user"
         <%_ } _%>
     }
 }

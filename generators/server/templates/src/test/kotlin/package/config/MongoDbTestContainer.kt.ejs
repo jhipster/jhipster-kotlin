@@ -1,0 +1,67 @@
+<%#
+ Copyright 2013-2022 the original author or authors from the JHipster project.
+
+ This file is part of the JHipster project, see https://www.jhipster.tech/
+ for more information.
+
+ Licensed under the Apache License, Version 2.0 (the "License")
+ you may not use this file except in compliance with the License.
+ You may obtain a copy of the License at
+
+      https://www.apache.org/licenses/LICENSE-2.0
+
+ Unless required by applicable law or agreed to in writing, software
+ distributed under the License is distributed on an "AS IS" BASIS,
+ WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
+ See the License for the specific language governing permissions and
+ limitations under the License.
+-%>
+package <%= packageName %>.config
+
+import java.util.Collections
+
+import org.springframework.beans.factory.DisposableBean
+import org.springframework.beans.factory.InitializingBean
+import org.slf4j.LoggerFactory
+import org.testcontainers.containers.MongoDBContainer
+import org.testcontainers.containers.output.Slf4jLogConsumer
+import kotlin.math.roundToLong
+
+class MongoDbTestContainer: InitializingBean, DisposableBean {
+
+    companion object {
+        private val memoryInBytes = (1024 * 1024 * 1024 * 0.6).roundToLong()
+        private val memorySwapInBytes = (1024 * 1024 * 1024 * 0.8).roundToLong()
+        private val nanoCpu = (1_000_000_000L * 0.1).roundToLong()
+        private val log = LoggerFactory.getLogger(MongoDbTestContainer::class.java)
+
+        @JvmStatic
+        private var mongodbContainer: MongoDBContainer = MongoDBContainer("<%= DOCKER_MONGODB %>")
+            .withTmpFs(Collections.singletonMap("/testtmpfs", "rw"))
+            .withCommand(
+                "--nojournal --wiredTigerCacheSizeGB 0.25 --wiredTigerCollectionBlockCompressor none --slowOpSampleRate 0 --setParameter ttlMonitorEnabled=false --setParameter diagnosticDataCollectionEnabled=false --setParameter logicalSessionRefreshMillis=6000000 --setParameter enableFlowControl=false --setParameter oplogFetcherUsesExhaust=false --setParameter disableResumableRangeDeleter=true --setParameter enableShardedIndexConsistencyCheck=false --setParameter enableFinerGrainedCatalogCacheRefresh=false --setParameter readHedgingMode=off --setParameter loadRoutingTableOnStartup=false --setParameter rangeDeleterBatchDelayMS=2000000 --setParameter skipShardingConfigurationChecks=true --setParameter syncdelay=3600"
+            )
+            .withCreateContainerCmdModifier { cmd ->
+                cmd.hostConfig!!.withMemory(memoryInBytes).withMemorySwap(memorySwapInBytes)
+                    .withNanoCPUs(nanoCpu)
+            }
+            .withLogConsumer(Slf4jLogConsumer(log)).withReuse(true)
+    }
+
+    override fun destroy() {
+        if (null != mongodbContainer && mongodbContainer.isRunning) {
+            mongodbContainer.stop()
+        }
+    }
+
+    override fun afterPropertiesSet() {
+        if (!mongodbContainer.isRunning) {
+            mongodbContainer.start()
+        }
+    }
+
+    fun getMongoDBContainer() = mongodbContainer
+}
+
+
+

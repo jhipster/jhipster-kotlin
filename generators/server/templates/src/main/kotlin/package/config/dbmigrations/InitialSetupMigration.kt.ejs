@@ -24,49 +24,53 @@ import <%= packageName %>.security.ADMIN
 import <%= packageName %>.security.USER
 import <%= packageName %>.config.SYSTEM_ACCOUNT
 
-import com.github.cloudyrock.mongock.ChangeLog
-import com.github.cloudyrock.mongock.ChangeSet
-import com.github.cloudyrock.mongock.driver.mongodb.springdata.v3.decorator.impl.MongockTemplate
+import io.mongock.api.annotations.ChangeUnit
+import io.mongock.api.annotations.Execution
+import io.mongock.api.annotations.RollbackExecution
+import org.springframework.data.mongodb.core.MongoTemplate
 
 import java.time.Instant
 
 /**
  * Creates the initial database setup.
  */
-@ChangeLog(order = "001")
-@Suppress("unused")
-class InitialSetupMigration {
+@ChangeUnit(id="users-initialization", order = "001")
+class InitialSetupMigration(private val template: MongoTemplate) {
 
-    @ChangeSet(order = "01", author = "initiator", id = "01-addAuthorities")
-    fun addAuthorities(mongoTemplate: MongockTemplate) {
-        val adminAuthority = Authority(ADMIN)
-        val userAuthority = Authority(USER)
-
-        mongoTemplate.save(adminAuthority)
-        mongoTemplate.save(userAuthority)
+    @Execution
+    fun changeSet() {
+        var userAuthority = createUserAuthority()
+        userAuthority = template.save(userAuthority)
+        var adminAuthority = createAdminAuthority()
+        adminAuthority = template.save(adminAuthority)
+<%_ if (!authenticationTypeOauth2) { _%>
+        addUsers(userAuthority, adminAuthority);
+<%_ } _%>
     }
+
+    @RollbackExecution
+    fun rollback() { }
+
+    fun createAuthority(authority: String): Authority {
+        var adminAuthority = Authority()
+        adminAuthority.name = authority
+        return adminAuthority
+    }
+
+    private fun createAdminAuthority() = createAuthority(ADMIN)
+
+    private fun createUserAuthority() = createAuthority(USER)
+
     <%_ if (!authenticationTypeOauth2) { _%>
 
-    @ChangeSet(order = "02", author = "initiator", id = "02-addUsers")
-    fun addUsers(mongoTemplate: MongockTemplate) {
-        val adminAuthority = Authority(ADMIN)
-        val userAuthority = Authority(USER)
+    private fun addUsers(userAuthority: Authority, adminAuthority: Authority) {
+        val user = createUser(userAuthority)
+        template.save(user)
+        val admin = createAdmin(adminAuthority, userAuthority)
+        template.save(admin)
+    }
 
-        val adminUser = <%= asEntity('User') %>(
-            id = "user-1",
-            login = "admin",
-            password = "\$2a\$10\$gSAhZrxMllrbgj/kkK9UceBPpChGWJA7SYIb1Mqo.n5aNLq1/oRrC",
-            firstName = "admin",
-            lastName = "Administrator",
-            email = "admin@localhost",
-            activated = true,
-            langKey = "en",
-            createdBy = SYSTEM_ACCOUNT,
-            createdDate = Instant.now(),
-            authorities = mutableSetOf(adminAuthority, userAuthority)
-        )
-        mongoTemplate.save(adminUser)
-
+    private fun createUser(userAuthority: Authority): <%= asEntity('User') %> {
         val userUser = <%= asEntity('User') %>(
             id = "user-2",
             login = "user",
@@ -75,12 +79,29 @@ class InitialSetupMigration {
             lastName = "User",
             email = "user@localhost",
             activated = true,
-            langKey = "en",
+            langKey = "<%= nativeLanguage %>",
             createdBy = SYSTEM_ACCOUNT,
             createdDate = Instant.now(),
             authorities = mutableSetOf(userAuthority)
         )
-        mongoTemplate.save(userUser)
+        return userUser;
+    }
+
+    private fun createAdmin(adminAuthority: Authority, userAuthority: Authority): <%= asEntity('User') %> {
+        val adminUser = <%= asEntity('User') %>(
+            id = "user-1",
+            login = "admin",
+            password = "\$2a\$10\$gSAhZrxMllrbgj/kkK9UceBPpChGWJA7SYIb1Mqo.n5aNLq1/oRrC",
+            firstName = "admin",
+            lastName = "Administrator",
+            email = "admin@localhost",
+            activated = true,
+            langKey = "<%= nativeLanguage %>",
+            createdBy = SYSTEM_ACCOUNT,
+            createdDate = Instant.now(),
+            authorities = mutableSetOf(adminAuthority, userAuthority)
+        )
+        return adminUser
     }
     <%_ } _%>
 }

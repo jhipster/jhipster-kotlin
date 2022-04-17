@@ -65,13 +65,13 @@ const val CLAIMS_NAMESPACE = "https://www.jhipster.tech/"
  *
  * @return the login of the current user.
  */
-fun getCurrentUserLogin(): <% if (!reactive) { %>Optional<% } else { %>Mono<% } %><String> =
-    <%_ if (!reactive) { _%>
-    Optional.ofNullable(extractPrincipal(SecurityContextHolder.getContext().authentication))
-    <%_ } else { _%>
+fun getCurrentUserLogin(): <% if (reactive) { %>Mono<% } else { %>Optional<% } %><String> =
+    <%_ if (reactive) { _%>
     ReactiveSecurityContextHolder.getContext()
         .map(SecurityContext::getAuthentication)
         .flatMap { Mono.justOrEmpty(extractPrincipal(it)) }
+    <%_ } else { _%>
+    Optional.ofNullable(extractPrincipal(SecurityContextHolder.getContext().authentication))
     <%_ } _%>
 
 
@@ -105,12 +105,12 @@ fun extractPrincipal(authentication: Authentication?): String? {
  *
  * @return the JWT of the current user.
  */
-fun getCurrentUserJWT(): <% if (!reactive) { %>Optional<% } else { %>Mono<% } %><String> =
-    <%_ if (!reactive) { _%>
-    Optional.ofNullable(SecurityContextHolder.getContext().authentication)
-    <%_ } else { _%>
+fun getCurrentUserJWT(): <% if (reactive) { %>Mono<% } else { %>Optional<% } %><String> =
+    <%_ if (reactive) { _%>
     ReactiveSecurityContextHolder.getContext()
         .map(SecurityContext::getAuthentication)
+    <%_ } else { _%>
+    Optional.ofNullable(SecurityContextHolder.getContext().authentication)
     <%_ } _%>
         .filter { it.credentials is String }
         .map { it.credentials as String }
@@ -121,8 +121,17 @@ fun getCurrentUserJWT(): <% if (!reactive) { %>Optional<% } else { %>Mono<% } %>
  *
  * @return true if the user is authenticated, false otherwise.
  */
-fun isAuthenticated(): <% if (!reactive) { %>Boolean<% } else { %>Mono<Boolean><% } %> {
-    <%_ if (!reactive) { _%>
+fun isAuthenticated(): <% if (reactive) { %>Mono<Boolean><% } else { %>Boolean<% } %> {
+    <%_ if (reactive) { _%>
+    return ReactiveSecurityContextHolder.getContext()
+        .map(SecurityContext::getAuthentication)
+        .map(Authentication::getAuthorities)
+        .map {
+            it
+            .map(GrantedAuthority::getAuthority)
+            .none { it == ANONYMOUS }
+        }
+    <%_ } else { _%>
     val authentication = SecurityContextHolder.getContext().authentication
 
     if (authentication != null) {
@@ -133,15 +142,6 @@ fun isAuthenticated(): <% if (!reactive) { %>Boolean<% } else { %>Mono<Boolean><
     }
 
     return false
-    <%_ } else { _%>
-    return ReactiveSecurityContextHolder.getContext()
-        .map(SecurityContext::getAuthentication)
-        .map(Authentication::getAuthorities)
-        .map {
-            it
-            .map(GrantedAuthority::getAuthority)
-            .none { it == ANONYMOUS }
-        }
     <%_ } _%>
 }
 
@@ -152,19 +152,19 @@ fun isAuthenticated(): <% if (!reactive) { %>Boolean<% } else { %>Mono<Boolean><
 * @param authorities the authorities to check.
 * @return true if the current user has any of the authorities, false otherwise.
 */
-fun hasCurrentUserAnyOfAuthorities(vararg authorities: String): <% if (!reactive) { %>Boolean<% } else { %>Mono<Boolean><% } %> {
-<%_ if (!reactive) { _%>
-    val authentication = SecurityContextHolder.getContext().authentication
-    return authentication != null && getAuthorities(authentication)?.any { authorities.contains(it) } ?: false
+fun hasCurrentUserAnyOfAuthorities(vararg authorities: String): <% if (reactive) { %>Mono<Boolean><% } else { %>Boolean<% } %> {
+<%_ if (reactive) { _%>
+return ReactiveSecurityContextHolder.getContext()
+    .map(SecurityContext::getAuthentication)
+    .map(Authentication::getAuthorities)
+    .map { 
+        it
+        .map(GrantedAuthority::getAuthority)
+        .any { authorities.contains(it) }
+    }
 <%_ } else { _%>
-   return ReactiveSecurityContextHolder.getContext()
-       .map(SecurityContext::getAuthentication)
-       .map(Authentication::getAuthorities)
-       .map { 
-           it
-           .map(GrantedAuthority::getAuthority)
-           .any { authorities.contains(it) }
-        }
+val authentication = SecurityContextHolder.getContext().authentication
+return authentication != null && getAuthorities(authentication)?.any { authorities.contains(it) } ?: false
 <%_ } _%>
 }
 
@@ -174,11 +174,11 @@ fun hasCurrentUserAnyOfAuthorities(vararg authorities: String): <% if (!reactive
 * @param authorities the authorities to check.
 * @return true if the current user has none of the authorities, false otherwise.
 */
-fun hasCurrentUserNoneOfAuthorities(vararg authorities: String):  <% if (!reactive) { %>Boolean<% } else { %>Mono<Boolean><% } %> {
-<%_ if (!reactive) { _%>
-   return !hasCurrentUserAnyOfAuthorities(*authorities)
+fun hasCurrentUserNoneOfAuthorities(vararg authorities: String): <% if (reactive) { %>Mono<Boolean><% } else { %>Boolean<% } %> {
+<%_ if (reactive) { _%>
+    return hasCurrentUserAnyOfAuthorities(*authorities).map { !it } 
 <%_ } else { _%>
-   return hasCurrentUserAnyOfAuthorities(*authorities).map { !it } 
+    return !hasCurrentUserAnyOfAuthorities(*authorities)
 <%_ } _%>
 }
 
@@ -188,7 +188,7 @@ fun hasCurrentUserNoneOfAuthorities(vararg authorities: String):  <% if (!reacti
 * @param authority the authority to check.
 * @return true if the current user has the authority, false otherwise.
 */
-fun hasCurrentUserThisAuthority(authority: String): <% if (!reactive) { %>Boolean<% } else { %>Mono<Boolean><% } %> {
+fun hasCurrentUserThisAuthority(authority: String): <% if (reactive) { %>Mono<Boolean><% } else { %>Boolean<% } %> {
    return hasCurrentUserAnyOfAuthorities(authority)
 }
 

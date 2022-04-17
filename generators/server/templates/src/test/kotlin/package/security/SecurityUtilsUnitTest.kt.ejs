@@ -23,25 +23,17 @@ import org.junit.jupiter.api.BeforeEach
 import org.junit.jupiter.api.Test
 import org.springframework.security.authentication.UsernamePasswordAuthenticationToken
 import org.springframework.security.core.authority.SimpleGrantedAuthority
-<%_ if (reactive) { _%>
-import org.springframework.security.core.context.ReactiveSecurityContextHolder
-<%_ } else { _%>
+
 import org.springframework.security.core.context.SecurityContextHolder
     <%_ if (authenticationTypeOauth2) { _%>
 import org.springframework.security.oauth2.client.authentication.OAuth2AuthenticationToken
 import org.springframework.security.oauth2.core.oidc.OidcIdToken
 import org.springframework.security.oauth2.core.oidc.user.DefaultOidcUser
 import org.springframework.security.oauth2.core.oidc.user.OidcUser
-    <%_ } _%>
-<%_ } _%>
-
-<%_ if (authenticationTypeOauth2) { _%>
 import java.time.Instant
-<%_ } else { _%>
-    <%_ if (!reactive) { _%>
+    <%_ } else { _%>
 import java.util.Optional
     <%_ } _%>
-<%_ } _%>
 
 import org.assertj.core.api.Assertions.assertThat
 <%_ if (authenticationTypeOauth2) { _%>
@@ -52,7 +44,6 @@ import org.springframework.security.oauth2.core.oidc.endpoint.OidcParameterNames
  * Test class for the Security Utility methods.
  */
 class SecurityUtilsUnitTest {
-    <%_ if (!reactive) { _%>
     @BeforeEach
     @AfterEach
     fun cleanup() {
@@ -179,108 +170,4 @@ class SecurityUtilsUnitTest {
         assertThat(hasCurrentUserNoneOfAuthorities(USER, ADMIN)).isFalse
         assertThat(hasCurrentUserNoneOfAuthorities(ANONYMOUS, ADMIN)).isTrue
     }
-<%_ } _%>
-<%_ if (reactive) { _%>
-    @Test
-    fun testgetCurrentUserLogin() {
-        val login = getCurrentUserLogin()
-            .subscriberContext(
-                ReactiveSecurityContextHolder.withAuthentication(
-                    UsernamePasswordAuthenticationToken("admin", "admin")
-                )
-            )
-            .block()
-        assertThat(login).isEqualTo("admin")
-    }
-    <%_ if (authenticationTypeJwt) { _%>
-
-    @Test
-    fun testGetCurrentUserJWT() {
-        val jwt = getCurrentUserJWT()
-            .subscriberContext(
-                ReactiveSecurityContextHolder.withAuthentication(
-                    UsernamePasswordAuthenticationToken("admin", "token")
-                )
-            )
-            .block()
-        assertThat(jwt).isEqualTo("token")
-    }
-    <%_ } _%>
-
-    @Test
-    fun testIsAuthenticated() {
-        val isAuthenticated = isAuthenticated()
-            .subscriberContext(
-                ReactiveSecurityContextHolder.withAuthentication(
-                    UsernamePasswordAuthenticationToken("admin", "admin")
-                )
-            )
-            .block()
-        assertThat(isAuthenticated!!).isTrue
-    }
-
-    @Test
-    fun testAnonymousIsNotAuthenticated() {
-        val authorities = mutableListOf(SimpleGrantedAuthority(ANONYMOUS))
-        val isAuthenticated = isAuthenticated()
-            .subscriberContext(
-                ReactiveSecurityContextHolder.withAuthentication(
-                    UsernamePasswordAuthenticationToken("admin", "admin", authorities)
-                )
-            )
-            .block()
-        assertThat(isAuthenticated!!).isFalse
-    }
-
-    @Test
-    fun testHasCurrentUserAnyOfAuthorities() {
-        val authorities = listOf(SimpleGrantedAuthority(USER))
-        val context = ReactiveSecurityContextHolder.withAuthentication(
-            UsernamePasswordAuthenticationToken("admin", "admin", authorities)
-        )
-        var hasCurrentUserThisAuthority = hasCurrentUserAnyOfAuthorities(USER, ADMIN)
-            .subscriberContext(context)
-            .block()
-        assertThat(hasCurrentUserThisAuthority).isTrue
-
-        hasCurrentUserThisAuthority = hasCurrentUserAnyOfAuthorities(ANONYMOUS, ADMIN)
-            .subscriberContext(context)
-            .block()
-        assertThat(hasCurrentUserThisAuthority).isFalse
-    }
-
-    @Test
-    fun testHasCurrentUserNoneOfAuthorities() {
-        val authorities = listOf(SimpleGrantedAuthority(USER))
-        val context = ReactiveSecurityContextHolder.withAuthentication(
-            UsernamePasswordAuthenticationToken("admin", "admin", authorities)
-        )
-        var hasCurrentUserThisAuthority = hasCurrentUserNoneOfAuthorities(USER, ADMIN)
-            .subscriberContext(context)
-            .block()
-        assertThat(hasCurrentUserThisAuthority).isFalse
-
-        hasCurrentUserThisAuthority = hasCurrentUserNoneOfAuthorities(ANONYMOUS, ADMIN)
-            .subscriberContext(context)
-            .block()
-        assertThat(hasCurrentUserThisAuthority).isTrue
-    }
-
-    @Test
-    fun testHasCurrentUserThisAuthority() {
-        val authorities = mutableListOf(SimpleGrantedAuthority(USER))
-        val context = ReactiveSecurityContextHolder.withAuthentication(
-            UsernamePasswordAuthenticationToken("admin", "admin", authorities)
-        )
-        var hasCurrentUserThisAuthority = hasCurrentUserThisAuthority(USER)
-            .subscriberContext(context)
-            .block()
-        assertThat(hasCurrentUserThisAuthority!!).isTrue
-
-        hasCurrentUserThisAuthority = hasCurrentUserThisAuthority(ADMIN)
-            .subscriberContext(context)
-            .block()
-        assertThat(hasCurrentUserThisAuthority!!).isFalse
-    }
-<%_ } _%>
 }

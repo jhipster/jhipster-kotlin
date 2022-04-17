@@ -42,7 +42,6 @@ describe.skip('JHipster generator service', () => {
                 .withOptions({
                     'from-cli': true,
                     skipInstall: true,
-
                     skipChecks: true,
                 })
                 .inTmpDir(dir => {

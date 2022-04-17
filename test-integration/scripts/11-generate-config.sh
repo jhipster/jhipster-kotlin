@@ -4,7 +4,7 @@
 # Eg: 11-generate-config.sh ./ ngx-default sqlfull
 #-------------------------------------------------------------------------------
 if [[ "$1" != "" ]]; then
-    JHI_FOLDER_APP=$1
+    KHI_FOLDER_APP=$1
 fi
 
 if [[ "$2" != "" ]]; then
@@ -27,23 +27,23 @@ fi
 #-------------------------------------------------------------------------------
 moveEntity() {
     local entity="$1"
-    cp "$JHI_SAMPLES"/.jhipster/"$entity".json "$JHI_FOLDER_APP"/.jhipster/
+    cp "$JHI_ENTITY_SAMPLES"/"$entity".json "$KHI_FOLDER_APP"/.jhipster/
 }
 
 prepareFolder() {
-    cd "$JHI_HOME"
-    rm -rf "$JHI_FOLDER_APP"
+    cd "$KHI_HOME"
+    rm -rf "$KHI_FOLDER_APP"
 }
 #-------------------------------------------------------------------------------
 # Copy entities json
 #-------------------------------------------------------------------------------
 
-if [[ $JHI_REPO != "" ]]; then
+if [[ $KHI_REPO != "" ]]; then
     prepareFolder
 fi
 
-mkdir -p "$JHI_FOLDER_APP"/.jhipster/
-cd "$JHI_FOLDER_APP"
+mkdir -p "$KHI_FOLDER_APP"/.jhipster/
+cd "$KHI_FOLDER_APP"
 
 if [[ "$JHI_ENTITY" != "jdl" && "$JHI_APP" != "jdl" ]]; then
     #-------------------------------------------------------------------------------
@@ -52,12 +52,12 @@ if [[ "$JHI_ENTITY" != "jdl" && "$JHI_APP" != "jdl" ]]; then
     if [[ -f "$JHI_SAMPLES"/"$JHI_APP"/.yo-rc.json ]]; then
         JHI_APP_SAMPLE_DIR="$JHI_SAMPLES"/"$JHI_APP"
     else
-        JHI_APP_SAMPLE_DIR="$JHI_HOME"/test-integration/samples/"$JHI_APP"
+        JHI_APP_SAMPLE_DIR="$JHI_INTEG"/samples/"$JHI_APP"
     fi
-    cp -f "$JHI_APP_SAMPLE_DIR"/.yo-rc.json "$JHI_FOLDER_APP"/
+    cp -f "$JHI_APP_SAMPLE_DIR"/.yo-rc.json "$KHI_FOLDER_APP"/
     echo "$JHI_APP: ($JHI_APP_SAMPLE_DIR)"
+    ls -al "$KHI_FOLDER_APP"/
 fi
-
 if [[ ("$JHI_ENTITY" == "mongodb") || ("$JHI_ENTITY" == "couchbase") ]]; then
     moveEntity DocumentBankAccount
     moveEntity EmbeddedOperation
@@ -149,8 +149,10 @@ elif [[ "$JHI_ENTITY" == "sqlfull" ]]; then
 
     moveEntity MapsIdParentEntityWithoutDTO
     moveEntity MapsIdChildEntityWithoutDTO
+    moveEntity MapsIdGrandchildEntityWithoutDTO
     moveEntity MapsIdParentEntityWithDTO
     moveEntity MapsIdChildEntityWithDTO
+    moveEntity MapsIdGrandchildEntityWithDTO
     moveEntity MapsIdUserProfileWithDTO
 
     moveEntity JpaFilteringRelationship
@@ -194,12 +196,12 @@ fi
 # Print entities json
 #-------------------------------------------------------------------------------
 echo "*** Entities:"
-ls -al "$JHI_FOLDER_APP"/.jhipster/
+ls -al "$KHI_FOLDER_APP"/.jhipster/
 
 #-------------------------------------------------------------------------------
 # Force no insight
 #-------------------------------------------------------------------------------
-if [ "$JHI_FOLDER_APP" == "$HOME/app" ]; then
+if [ "$KHI_FOLDER_APP" == "$HOME/app" ]; then
     mkdir -p "$HOME"/.config/configstore/
-    cp "$JHI_INTEG"/configstore/*.json "$HOME"/.config/configstore/
+    cp "$KHI_INTEG"/configstore/*.json "$HOME"/.config/configstore/
 fi

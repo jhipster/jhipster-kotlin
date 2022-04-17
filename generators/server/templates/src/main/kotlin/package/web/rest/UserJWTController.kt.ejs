@@ -53,13 +53,25 @@ import javax.validation.Valid
 @RequestMapping("/api")
 class UserJWTController(
     private val tokenProvider: TokenProvider,
-    <%_ if (!reactive) { _%>
-    private val authenticationManagerBuilder: AuthenticationManagerBuilder
-    <%_ } else { _%>
+    <%_ if (reactive) { _%>
     private val authenticationManager: ReactiveAuthenticationManager
+    <%_ } else { _%>
+    private val authenticationManagerBuilder: AuthenticationManagerBuilder
     <%_ } _%>
 ) {
-    <%_ if (!reactive) { _%>
+    <%_ if (reactive) { _%>
+    @PostMapping("/authenticate")
+    fun authorize(@Valid @RequestBody loginVM: Mono<LoginVM>): Mono<ResponseEntity<JWTToken>> =
+        loginVM.flatMap { login ->
+            authenticationManager.authenticate(UsernamePasswordAuthenticationToken(login.username, login.password))
+                .map { tokenProvider.createToken(it, true == login.isRememberMe) }
+        }.map{
+            jwt ->
+            val httpHeaders = HttpHeaders()
+            httpHeaders.add(JWTFilter.AUTHORIZATION_HEADER, "Bearer $jwt")
+            ResponseEntity(JWTToken(jwt), httpHeaders, HttpStatus.OK)
+        }
+    <%_ } else { _%>
     @PostMapping("/authenticate")
     fun authorize(@Valid @RequestBody loginVM: LoginVM): ResponseEntity<JWTToken> {
 
@@ -72,19 +84,7 @@ class UserJWTController(
         httpHeaders.add(JWTFilter.AUTHORIZATION_HEADER, "Bearer $jwt")
         return ResponseEntity(JWTToken(jwt), httpHeaders, HttpStatus.OK)
     }
-    <%_ } else { _%>
-    @PostMapping("/authenticate")
-    fun authorize(@Valid @RequestBody loginVM: Mono<LoginVM>): Mono<ResponseEntity<JWTToken>> =
-        loginVM.flatMap { login ->
-            authenticationManager.authenticate(UsernamePasswordAuthenticationToken(login.username, login.password))
-                .map { tokenProvider.createToken(it, true == login.isRememberMe) }
-        }.map{
-            jwt ->
-            val httpHeaders = HttpHeaders()
-            httpHeaders.add(JWTFilter.AUTHORIZATION_HEADER, "Bearer $jwt")
-            ResponseEntity(JWTToken(jwt), httpHeaders, HttpStatus.OK)
-        }
-<%_ } _%>
+    <%_ } _%>
 
     /**
      * Object to return as body in JWT Authentication.

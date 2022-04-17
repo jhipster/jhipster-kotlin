@@ -44,7 +44,6 @@ import javax.persistence.EntityManager
 <%_ if (searchEngineCouchbase) { _%>
 import java.util.NoSuchElementException
 import java.util.concurrent.Callable
-import java.util.concurrent.TimeUnit
 <%_ } _%>
 
 import java.io.IOException
@@ -220,18 +219,17 @@ fun <T : Any> findAll(em: EntityManager, clazz: KClass<T>): List<T> {
 <%_ } _%>
 
 <%_ if (searchEngineCouchbase) { _%>
-const val MAX_ATTEMPTS = 3
-// const val DEFAULT_DELAY = Delay.exponential(TimeUnit.SECONDS)
 
 fun <T> retryUntilNotEmpty(iterableCallable: Callable<Iterable<T>>) {
-    Mono.defer(
+    Mono.defer {
         Mono.fromCallable(iterableCallable)
-            .flatMapIterable(UtilityFunctions.identity())
+            .flatMapIterable(Function.identity())
             .next()
             .switchIfEmpty(Mono.error(NoSuchElementException()))
-    ).retry()
-    .timeout(Duration.ofSeconds(5))
-    .block()
+    }
+        .retry()
+        .timeout(Duration.ofSeconds(60))
+        .block()
 }
 <%_ } _%>
 

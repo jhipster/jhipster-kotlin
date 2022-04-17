@@ -18,10 +18,10 @@
 -%>
 package <%= packageName %>.web.rest
 
-<%_ if (databaseTypeCassandra) { _%>
-import <%= packageName %>.AbstractCassandraTest
-<%_ } _%>
 import <%= packageName %>.IntegrationTest
+<%_ if (reactive) { _%>
+import <%= packageName %>.IntegrationTest.Companion.DEFAULT_TIMEOUT
+<%_ } _%>
 <%_ if (databaseTypeSql && reactive) { _%>
 import <%= packageName %>.config.SYSTEM_ACCOUNT
 <%_ } _%>
@@ -41,7 +41,7 @@ import <%= packageName %>.security.USER
 import <%= packageName %>.service.dto.<%= asDto('AdminUser') %>
 import <%= packageName %>.service.dto.<%= asDto('User') %>
 <%_ if (databaseTypeSql && reactive) { _%>
-import <%= packageName %>.service.EntityManager
+import <%= packageName %>.repository.EntityManager
 <%_ } _%>
 import <%= packageName %>.service.mapper.UserMapper
 <%_ if (!authenticationTypeOauth2) { _%>
@@ -51,10 +51,10 @@ import org.apache.commons.lang3.RandomStringUtils
 import org.junit.jupiter.api.BeforeEach
 import org.junit.jupiter.api.Test
 import org.springframework.beans.factory.annotation.Autowired
-<%_ if (!reactive) { _%>
-import org.springframework.boot.test.autoconfigure.web.servlet.AutoConfigureMockMvc
-<%_ } else { _%>
+<%_ if (reactive) { _%>
 import org.springframework.boot.test.autoconfigure.web.reactive.AutoConfigureWebTestClient
+<%_ } else { _%>
+import org.springframework.boot.test.autoconfigure.web.servlet.AutoConfigureMockMvc
 <%_ } _%>
 <%_ if (cacheManagerIsAvailable) { _%>
 import org.springframework.cache.CacheManager
@@ -70,8 +70,7 @@ import org.springframework.security.test.context.TestSecurityContextHolder
 import org.springframework.security.test.context.support.WithMockUser
 <%_ if (reactive) { _%>
 import org.springframework.test.web.reactive.server.WebTestClient
-<%_ } _%>
-<%_ if (!reactive) { _%>
+<%_ } else { _%>
 import org.springframework.test.web.servlet.MockMvc
 <%_ } _%>
 <%_ if (databaseTypeSql && !reactive) { _%>
@@ -94,7 +93,9 @@ import org.assertj.core.api.Assertions.assertThat
 <%_ if (reactive && searchEngineElasticsearch) { _%>
 import org.mockito.Mockito.*
 <%_ } _%>
-<%_ if (!reactive) { _%>
+<%_ if (reactive && testsNeedCsrf) { _%>
+import org.springframework.security.test.web.reactive.server.SecurityMockServerConfigurers.csrf
+<%_ } else if (!reactive) { _%>
     <%_ if (databaseTypeSql || databaseTypeMongodb || databaseTypeNeo4j || databaseTypeCouchbase) { _%>
 import org.hamcrest.Matchers.hasItems
     <%_ } _%>
@@ -112,6 +113,7 @@ import org.springframework.test.web.servlet.result.MockMvcResultMatchers.status
 <%_ } else if (testsNeedCsrf) { _%>
 import org.springframework.security.test.web.reactive.server.SecurityMockServerConfigurers.csrf
 <%_ } _%>
+
 import kotlin.test.assertNotNull
 <%_ if (cacheManagerIsAvailable) { _%>
 import kotlin.test.assertNull
@@ -120,14 +122,14 @@ import kotlin.test.assertNull
 /**
  * Integration tests for the [UserResource] REST controller.
  */
- <%_ if (!reactive) { _%>
-@AutoConfigureMockMvc
+ <%_ if (reactive) { _%>
+@AutoConfigureWebTestClient(timeout = IntegrationTest.DEFAULT_TIMEOUT)
 <%_ } else { _%>
-@AutoConfigureWebTestClient
+@AutoConfigureMockMvc
 <%_ } _%>
 @WithMockUser(authorities = [ADMIN])
 @IntegrationTest
-class UserResourceIT<% if (databaseTypeCassandra) { %>: AbstractCassandraTest() <% } %>{
+class UserResourceIT {
 
     @Autowired
     private lateinit var userRepository: UserRepository
@@ -222,7 +224,13 @@ class UserResourceIT<% if (databaseTypeCassandra) { %>: AbstractCassandraTest() 
             authorities = mutableSetOf(USER)
         }
 
-        <%_ if (!reactive) { _%>
+        <%_ if (reactive) { _%>
+        webTestClient.post().uri("/api/admin/users")
+            .contentType(MediaType.APPLICATION_JSON)
+            .bodyValue(convertObjectToJsonBytes(managedUserVM))
+            .exchange()
+            .expectStatus().isCreated
+        <%_ } else { _%>
         restUserMockMvc.perform(
             post("/api/admin/users")
                 .contentType(MediaType.APPLICATION_JSON)
@@ -230,12 +238,6 @@ class UserResourceIT<% if (databaseTypeCassandra) { %>: AbstractCassandraTest() 
                 .with(csrf())<% } %>
         )
             .andExpect(status().isCreated)
-        <%_ } else { _%>
-        webTestClient.post().uri("/api/admin/users")
-            .contentType(MediaType.APPLICATION_JSON)
-            .bodyValue(convertObjectToJsonBytes(managedUserVM))
-            .exchange()
-            .expectStatus().isCreated
         <%_ } _%>
 
         assertPersistedUsers { userList ->
@@ -284,7 +286,13 @@ class UserResourceIT<% if (databaseTypeCassandra) { %>: AbstractCassandraTest() 
         }
 
         // An entity with an existing ID cannot be created, so this API call must fail
-        <%_ if (!reactive) { _%>
+        <%_ if (reactive) { _%>
+        webTestClient.post().uri("/api/admin/users")
+            .contentType(MediaType.APPLICATION_JSON)
+            .bodyValue(convertObjectToJsonBytes(managedUserVM))
+            .exchange()
+            .expectStatus().isBadRequest
+        <%_ } else { _%>
         restUserMockMvc.perform(
             post("/api/admin/users")
                 .contentType(MediaType.APPLICATION_JSON)
@@ -292,12 +300,6 @@ class UserResourceIT<% if (databaseTypeCassandra) { %>: AbstractCassandraTest() 
                 .with(csrf())<% } %>
         )
             .andExpect(status().isBadRequest)
-        <%_ } else { _%>
-        webTestClient.post().uri("/api/admin/users")
-            .contentType(MediaType.APPLICATION_JSON)
-            .bodyValue(convertObjectToJsonBytes(managedUserVM))
-            .exchange()
-            .expectStatus().isBadRequest
         <%_ } _%>
 
         assertPersistedUsers { userList ->
@@ -335,7 +337,13 @@ class UserResourceIT<% if (databaseTypeCassandra) { %>: AbstractCassandraTest() 
         }
 
         // Create the User
-        <%_ if (!reactive) { _%>
+        <%_ if (reactive) { _%>
+        webTestClient.post().uri("/api/admin/users")
+            .contentType(MediaType.APPLICATION_JSON)
+            .bodyValue(convertObjectToJsonBytes(managedUserVM))
+            .exchange()
+            .expectStatus().isBadRequest
+        <%_ } else { _%>
         restUserMockMvc.perform(
             post("/api/admin/users")
                 .contentType(MediaType.APPLICATION_JSON)
@@ -343,12 +351,6 @@ class UserResourceIT<% if (databaseTypeCassandra) { %>: AbstractCassandraTest() 
                 .with(csrf())<% } %>
         )
             .andExpect(status().isBadRequest)
-        <%_ } else { _%>
-        webTestClient.post().uri("/api/admin/users")
-            .contentType(MediaType.APPLICATION_JSON)
-            .bodyValue(convertObjectToJsonBytes(managedUserVM))
-            .exchange()
-            .expectStatus().isBadRequest
         <%_ } _%>
 
         assertPersistedUsers { userList -> assertThat(userList).hasSize(databaseSizeBeforeCreate) }
@@ -383,7 +385,13 @@ class UserResourceIT<% if (databaseTypeCassandra) { %>: AbstractCassandraTest() 
         }
 
         // Create the User
-        <%_ if (!reactive) { _%>
+        <%_ if (reactive) { _%>
+        webTestClient.post().uri("/api/admin/users")
+            .contentType(MediaType.APPLICATION_JSON)
+            .bodyValue(convertObjectToJsonBytes(managedUserVM))
+            .exchange()
+            .expectStatus().isBadRequest
+        <%_ } else { _%>
         restUserMockMvc.perform(
             post("/api/admin/users")
                 .contentType(MediaType.APPLICATION_JSON)
@@ -391,17 +399,10 @@ class UserResourceIT<% if (databaseTypeCassandra) { %>: AbstractCassandraTest() 
                 .with(csrf())<% } %>
         )
             .andExpect(status().isBadRequest)
-        <%_ } else { _%>
-        webTestClient.post().uri("/api/admin/users")
-            .contentType(MediaType.APPLICATION_JSON)
-            .bodyValue(convertObjectToJsonBytes(managedUserVM))
-            .exchange()
-            .expectStatus().isBadRequest
         <%_ } _%>
 
         assertPersistedUsers { userList -> assertThat(userList).hasSize(databaseSizeBeforeCreate) }
     }
-<%_ } _%>
 
     @Test
     <%_ if (databaseTypeSql && !reactive) { _%>
@@ -420,23 +421,8 @@ class UserResourceIT<% if (databaseTypeCassandra) { %>: AbstractCassandraTest() 
             .block()
         <%_ } _%>
         // Get all the users
-        <%_ if (!reactive) { _%>
-        restUserMockMvc.perform(
-            get("/api/admin/users<% if (databaseTypeSql) { %>?sort=id,desc<% } %>")
-                .accept(MediaType.APPLICATION_JSON)
-        )
-            .andExpect(status().isOk)
-            .andExpect(content().contentType(MediaType.APPLICATION_JSON_VALUE))
-            .andExpect(jsonPath("\$.[*].login").value(hasItem(DEFAULT_LOGIN)))
-            .andExpect(jsonPath("\$.[*].firstName").value(hasItem(DEFAULT_FIRSTNAME)))
-            .andExpect(jsonPath("\$.[*].lastName").value(hasItem(DEFAULT_LASTNAME)))
-            .andExpect(jsonPath("\$.[*].email").value(hasItem(DEFAULT_EMAIL)))
-            <%_ if (!databaseTypeCassandra) { _%>
-            .andExpect(jsonPath("\$.[*].imageUrl").value(hasItem(DEFAULT_IMAGEURL)))
-            <%_ } _%>
-            .andExpect(jsonPath("\$.[*].langKey").value(hasItem(DEFAULT_LANGKEY)))
-        <%_ } else { _%>
-        val foundUser = webTestClient.get().uri("/api/admin/users?sort=id,DESC")
+        <%_ if (reactive) { _%>
+        val foundUser = webTestClient.get().uri("/api/admin/users?sort=id,desc")
             .accept(MediaType.APPLICATION_JSON)
             .exchange()
             .expectStatus().isOk
@@ -455,6 +441,21 @@ class UserResourceIT<% if (databaseTypeCassandra) { %>: AbstractCassandraTest() 
         <%_ if (databaseTypeSql && !applicationTypeMicroservice) { _%>
         assertThat(foundUser.authorities).containsExactly(USER)
         <%_ } _%>
+        <%_ } else { _%>
+        restUserMockMvc.perform(
+            get("/api/admin/users<% if (databaseTypeSql) { %>?sort=id,desc<% } %>")
+                .accept(MediaType.APPLICATION_JSON)
+        )
+            .andExpect(status().isOk)
+            .andExpect(content().contentType(MediaType.APPLICATION_JSON_VALUE))
+            .andExpect(jsonPath("\$.[*].login").value(hasItem(DEFAULT_LOGIN)))
+            .andExpect(jsonPath("\$.[*].firstName").value(hasItem(DEFAULT_FIRSTNAME)))
+            .andExpect(jsonPath("\$.[*].lastName").value(hasItem(DEFAULT_LASTNAME)))
+            .andExpect(jsonPath("\$.[*].email").value(hasItem(DEFAULT_EMAIL)))
+            <%_ if (!databaseTypeCassandra) { _%>
+            .andExpect(jsonPath("\$.[*].imageUrl").value(hasItem(DEFAULT_IMAGEURL)))
+            <%_ } _%>
+            .andExpect(jsonPath("\$.[*].langKey").value(hasItem(DEFAULT_LANGKEY)))
         <%_ } _%>
     }
 
@@ -484,19 +485,7 @@ class UserResourceIT<% if (databaseTypeCassandra) { %>: AbstractCassandraTest() 
         <%_ } _%>
 
         // Get the user
-        <%_ if (!reactive) { _%>
-        restUserMockMvc.perform(get("/api/admin/users/{login}", user.login))
-            .andExpect(status().isOk)
-            .andExpect(content().contentType(MediaType.APPLICATION_JSON_VALUE))
-            .andExpect(jsonPath("\$.login").value(user.login!!))
-            .andExpect(jsonPath("\$.firstName").value(DEFAULT_FIRSTNAME))
-            .andExpect(jsonPath("\$.lastName").value(DEFAULT_LASTNAME))
-            .andExpect(jsonPath("\$.email").value(DEFAULT_EMAIL))
-            <%_ if (!databaseTypeCassandra) { _%>
-            .andExpect(jsonPath("\$.imageUrl").value(DEFAULT_IMAGEURL))
-            <%_ } _%>
-            .andExpect(jsonPath("\$.langKey").value(DEFAULT_LANGKEY))
-        <%_ } else { _%>
+        <%_ if (reactive) { _%>
         webTestClient.get().uri("/api/admin/users/{login}", user.login)
             .exchange()
             .expectStatus().isOk
@@ -512,6 +501,18 @@ class UserResourceIT<% if (databaseTypeCassandra) { %>: AbstractCassandraTest() 
             .jsonPath("\$.langKey").isEqualTo(DEFAULT_LANGKEY)<% if (!databaseTypeSql && !applicationTypeMicroservice) { %><% } else { %>
             .jsonPath("\$.authorities").isEqualTo(USER)
             <% } %>
+        <%_ } else { _%>
+        restUserMockMvc.perform(get("/api/admin/users/{login}", user.login))
+            .andExpect(status().isOk)
+            .andExpect(content().contentType(MediaType.APPLICATION_JSON_VALUE))
+            .andExpect(jsonPath("\$.login").value(user.login!!))
+            .andExpect(jsonPath("\$.firstName").value(DEFAULT_FIRSTNAME))
+            .andExpect(jsonPath("\$.lastName").value(DEFAULT_LASTNAME))
+            .andExpect(jsonPath("\$.email").value(DEFAULT_EMAIL))
+            <%_ if (!databaseTypeCassandra) { _%>
+            .andExpect(jsonPath("\$.imageUrl").value(DEFAULT_IMAGEURL))
+            <%_ } _%>
+            .andExpect(jsonPath("\$.langKey").value(DEFAULT_LANGKEY))
         <%_ } _%>
         <%_ if (cacheProviderMemcached) { _%>
         if (cacheManager !is NoOpCacheManager) {
@@ -531,16 +532,15 @@ class UserResourceIT<% if (databaseTypeCassandra) { %>: AbstractCassandraTest() 
     @Throws(Exception::class)
     <%_ } _%>
     fun getNonExistingUser() {
-        <%_ if (!reactive) { _%>
-        restUserMockMvc.perform(get("/api/admin/users/unknown"))
-            .andExpect(status().isNotFound)
-        <%_ } else { _%>
+        <%_ if (reactive) { _%>
         webTestClient.get().uri("/api/admin/users/unknown")
             .exchange()
             .expectStatus().isNotFound
+        <%_ } else { _%>
+        restUserMockMvc.perform(get("/api/admin/users/unknown"))
+            .andExpect(status().isNotFound)
         <%_ } _%>
     }
-<%_ if (!authenticationTypeOauth2) { _%>
 
     @Test
     <%_ if (databaseTypeSql && !reactive) { _%>
@@ -583,7 +583,13 @@ class UserResourceIT<% if (databaseTypeCassandra) { %>: AbstractCassandraTest() 
             authorities = mutableSetOf(USER)
         }
 
-        <%_ if (!reactive) { _%>
+        <%_ if (reactive) { _%>
+        webTestClient.put().uri("/api/admin/users")
+            .contentType(MediaType.APPLICATION_JSON)
+            .bodyValue(convertObjectToJsonBytes(managedUserVM))
+            .exchange()
+            .expectStatus().isOk
+        <%_ } else { _%>
         restUserMockMvc.perform(
             put("/api/admin/users")
                 .contentType(MediaType.APPLICATION_JSON)
@@ -591,12 +597,6 @@ class UserResourceIT<% if (databaseTypeCassandra) { %>: AbstractCassandraTest() 
                 .with(csrf())<% } %>
         )
             .andExpect(status().isOk)
-        <%_ } else { _%>
-        webTestClient.put().uri("/api/admin/users")
-            .contentType(MediaType.APPLICATION_JSON)
-            .bodyValue(convertObjectToJsonBytes(managedUserVM))
-            .exchange()
-            .expectStatus().isOk
         <%_ } _%>
 
         assertPersistedUsers { userList ->
@@ -653,7 +653,13 @@ class UserResourceIT<% if (databaseTypeCassandra) { %>: AbstractCassandraTest() 
             authorities = mutableSetOf(USER)
         }
 
-        <%_ if (!reactive) { _%>
+        <%_ if (reactive) { _%>
+        webTestClient.put().uri("/api/admin/users")
+            .contentType(MediaType.APPLICATION_JSON)
+            .bodyValue(convertObjectToJsonBytes(managedUserVM))
+            .exchange()
+            .expectStatus().isOk
+        <%_ } else { _%>
         restUserMockMvc.perform(
             put("/api/admin/users")
                 .contentType(MediaType.APPLICATION_JSON)
@@ -661,12 +667,6 @@ class UserResourceIT<% if (databaseTypeCassandra) { %>: AbstractCassandraTest() 
                 .with(csrf())<% } %>
         )
             .andExpect(status().isOk)
-        <%_ } else { _%>
-        webTestClient.put().uri("/api/admin/users")
-            .contentType(MediaType.APPLICATION_JSON)
-            .bodyValue(convertObjectToJsonBytes(managedUserVM))
-            .exchange()
-            .expectStatus().isOk
         <%_ } _%>
 
         assertPersistedUsers { userList ->
@@ -743,7 +743,13 @@ class UserResourceIT<% if (databaseTypeCassandra) { %>: AbstractCassandraTest() 
             authorities = mutableSetOf(USER)
         }
 
-        <%_ if (!reactive) { _%>
+        <%_ if (reactive) { _%>
+        webTestClient.put().uri("/api/admin/users")
+            .contentType(MediaType.APPLICATION_JSON)
+            .bodyValue(convertObjectToJsonBytes(managedUserVM))
+            .exchange()
+            .expectStatus().isBadRequest
+        <%_ } else { _%>
         restUserMockMvc.perform(
             put("/api/admin/users")
                 .contentType(MediaType.APPLICATION_JSON)
@@ -751,12 +757,6 @@ class UserResourceIT<% if (databaseTypeCassandra) { %>: AbstractCassandraTest() 
                 .with(csrf())<% } %>
         )
             .andExpect(status().isBadRequest)
-        <%_ } else { _%>
-        webTestClient.put().uri("/api/admin/users")
-            .contentType(MediaType.APPLICATION_JSON)
-            .bodyValue(convertObjectToJsonBytes(managedUserVM))
-            .exchange()
-            .expectStatus().isBadRequest
         <%_ } _%>
     }
 
@@ -820,7 +820,13 @@ class UserResourceIT<% if (databaseTypeCassandra) { %>: AbstractCassandraTest() 
             authorities = mutableSetOf(USER)
         }
 
-        <%_ if (!reactive) { _%>
+        <%_ if (reactive) { _%>
+        webTestClient.put().uri("/api/admin/users")
+            .contentType(MediaType.APPLICATION_JSON)
+            .bodyValue(convertObjectToJsonBytes(managedUserVM))
+            .exchange()
+            .expectStatus().isBadRequest
+        <%_ } else { _%>
         restUserMockMvc.perform(
             put("/api/admin/users")
                 .contentType(MediaType.APPLICATION_JSON)
@@ -828,12 +834,6 @@ class UserResourceIT<% if (databaseTypeCassandra) { %>: AbstractCassandraTest() 
                 .with(csrf())<% } %>
         )
             .andExpect(status().isBadRequest)
-        <%_ } else { _%>
-        webTestClient.put().uri("/api/admin/users")
-            .contentType(MediaType.APPLICATION_JSON)
-            .bodyValue(convertObjectToJsonBytes(managedUserVM))
-            .exchange()
-            .expectStatus().isBadRequest
         <%_ } _%>
     }
 
@@ -858,18 +858,18 @@ class UserResourceIT<% if (databaseTypeCassandra) { %>: AbstractCassandraTest() 
             .collectList().block()!!<% } %>.size
 
         // Delete the user
-        <%_ if (!reactive) { _%>
+        <%_ if (reactive) { _%>
+        webTestClient.delete().uri("/api/admin/users/{login}", user.login)
+            .accept(MediaType.APPLICATION_JSON)
+            .exchange()
+            .expectStatus().isNoContent
+        <%_ } else { _%>
         restUserMockMvc.perform(
             delete("/api/admin/users/{login}", user.login)
                 .accept(MediaType.APPLICATION_JSON)<% if (testsNeedCsrf) { %>
                 .with(csrf())<% } %>
         )
             .andExpect(status().isNoContent)
-        <%_ } else { _%>
-        webTestClient.delete().uri("/api/admin/users/{login}", user.login)
-            .accept(MediaType.APPLICATION_JSON)
-            .exchange()
-            .expectStatus().isNoContent
         <%_ } _%>
         <%_ if (cacheManagerIsAvailable) { _%>
 
@@ -1006,7 +1006,7 @@ class UserResourceIT<% if (databaseTypeCassandra) { %>: AbstractCassandraTest() 
         <%_ } _%>
 
         <%_ if (databaseTypeCouchbase){ _%>
-        private const val DEFAULT_ID = <%= asEntity('User') %>.PREFIX + DEFAULT_LOGIN
+        private const val DEFAULT_ID = DEFAULT_LOGIN
         <%_ } else { _%>
         private const val DEFAULT_ID = <%- getPrimaryKeyValue(user.primaryKey.type) %>
         <%_ } _%>

@@ -15,7 +15,6 @@ describe('JHipster generator spring-controller', () => {
                 .withOptions({
                     'from-cli': true,
                     skipInstall: true,
-
                     skipChecks: true,
                 })
                 .inTmpDir(dir => {

@@ -29,7 +29,7 @@ import <%= entityAbsolutePackage %>.service.dto.<%= dtoClass %>
 <%_ } else { _%>
 import <%= entityAbsolutePackage %>.domain.<%= persistClass %>
 <%_ } _%>
-<%_ if (!paginationNo || relationshipsContainEagerLoad) { _%>
+<%_ if (!paginationNo || implementsEagerLoadApis) { _%>
     <%_ if (!reactive) { _%>
 import org.springframework.data.domain.Page
     <%_ } _%>
@@ -61,12 +61,20 @@ interface <%= entityClass %>Service {
     fun save(<%= instanceName %>: <%= instanceType %>): <% if (reactive) { %>Mono<<% } %><%= instanceType %><% if (reactive) { %>><% } %>
 
     /**
+     * Updates a <%= entityInstance %>.
+     *
+     * @param <%= instanceName %> the entity to update.
+     * @return the persisted entity.
+     */
+     fun update(<%= instanceName %>: <%= instanceType %>): <% if (reactive) { %>Mono<<% } %><%= instanceType %><% if (reactive) { %>><% } %>
+
+    /**
      * Partially updates a <%= entityInstance %>.
      *
      * @param <%= instanceName %> the entity to update partially.
      * @return the persisted entity.
      */
-    fun partialUpdate(<%= instanceName %>: <%= instanceType %>): <% if (!reactive) { %>Optional<<% } %><% if (reactive) { %>Mono<<% } %><%= instanceType %>>
+    fun partialUpdate(<%= instanceName %>: <%= instanceType %>): <% if (reactive) { %>Mono<<% }else { %>Optional<<% } %><%= instanceType %>>
 
     /**
      * Get all the <%= entityInstancePlural %>.
@@ -74,7 +82,7 @@ interface <%= entityClass %>Service {
      * @param pageable the pagination information.<% } %>
      * @return the list of entities.
      */
-    fun findAll(<% if (!paginationNo) { %>pageable: Pageable<% } %>): <% if (!paginationNo) { %><%= pageOrFlux %><<%= instanceType %><% } else { %><%= listOrFlux %><<%= instanceType %><% } %>>
+    fun findAll(<% if (!paginationNo) { %>pageable: Pageable<% } %>): <% if (paginationNo) { %><%= listOrFlux %><% } else { %><%= pageOrFlux %><% } %><<%= instanceType %>>
 <% for (const relationship of relationships) { if (relationship.relationshipOneToOne && relationship.ownerSide !== true) { -%>
     /**
      * Get all the [<%= restClass %>] where <%= relationship.relationshipNameCapitalized %> is `null`.
@@ -84,7 +92,7 @@ interface <%= entityClass %>Service {
     fun findAllWhere<%= relationship.relationshipNameCapitalized %>IsNull(): <%= listOrFlux %><<%= instanceType %>>
 <%_ } } _%>
 
-    <%_ if (relationshipsContainEagerLoad) { _%>
+    <%_ if (implementsEagerLoadApis) { _%>
     /**
      * Get all the <%= entityInstancePlural %> with eager load of many-to-many relationships.
      * @param pageable the pagination information.
@@ -127,7 +135,7 @@ interface <%= entityClass %>Service {
     fun delete(id: <%= primaryKey.type %>)<% if (reactive) { %>: Mono<Void> <% } %>
 
 
-    <% if (searchEngineElasticsearch) { %>
+    <% if (searchEngine) { %>
 
     /**
      * Search for the <%= entityInstance %> corresponding to the query.
