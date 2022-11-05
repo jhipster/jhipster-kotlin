@@ -173,7 +173,7 @@ class SecurityConfiguration(
 
     // See https://github.com/jhipster/generator-jhipster/issues/18868
     // We don't use a distributed cache or the user selected cache implementation here on purpose
-    private val users = Caffeine.newBuilder()
+    private val users: Cache<String, Mono<Jwt>> = Caffeine.newBuilder()
         .maximumSize(10_000)
         .expireAfterWrite(Duration.ofHours(1))
         .recordStats()
@@ -285,7 +285,7 @@ class SecurityConfiguration(
 <%_ if (authenticationTypeOauth2) { _%>
             .pathMatchers("/api/auth-info").permitAll()
 <%_ } _%>
-            .pathMatchers("/api/admin/**").hasAuthority(AuthoritiesConstants.ADMIN)
+            .pathMatchers("/api/admin/**").hasAuthority(ADMIN)
             .pathMatchers("/api/**").authenticated()
 <%_ if (applicationTypeGateway) { _%>
     <%_ if (microfrontend) { _%>
@@ -304,10 +304,15 @@ class SecurityConfiguration(
             .pathMatchers("/management/**").hasAuthority(ADMIN)
         <%_ if (authenticationTypeOauth2) { _%>
 
-        http<%_ if (!applicationTypeMicroservice) { _%>.oauth2Login(oauth2 -> oauth2.authorizationRequestResolver(authorizationRequestResolver(this.clientRegistrationRepository)))
-            <% } %>.oauth2ResourceServer()
-            .jwt()
-            .jwtAuthenticationConverter(jwtAuthenticationConverter())
+
+            http<%_ if (!applicationTypeMicroservice) { _%>.oauth2Login {
+                it.authorizationRequestResolver(
+                    authorizationRequestResolver(this.clientRegistrationRepository)
+                )
+            }<% } %>
+                .oauth2ResourceServer()
+                .jwt()
+                .jwtAuthenticationConverter(jwtAuthenticationConverter())
 
         http.oauth2Client()
             <%_ } _%>
@@ -392,62 +397,63 @@ class SecurityConfiguration(
 
     private fun createJwtDecoder(issuerUri: String, jwkSetUri: String, userInfoUri: String): ReactiveJwtDecoder {
         val jwtDecoder = NimbusReactiveJwtDecoder(jwkSetUri)
-        val audienceValidator = AudienceValidator(jHipsterProperties.security.oauth2.audience)
+        val audienceValidator: OAuth2TokenValidator<Jwt> = AudienceValidator(
+            jHipsterProperties.security.oauth2.audience
+        )
         val withIssuer = JwtValidators.createDefaultWithIssuer(issuerUri)
-        val withAudience = DelegatingOAuth2TokenValidator<OAuth2TokenValidator<Jwt>>(withIssuer, audienceValidator)
-
+        val withAudience: OAuth2TokenValidator<Jwt> = DelegatingOAuth2TokenValidator(withIssuer, audienceValidator)
         jwtDecoder.setJwtValidator(withAudience)
 
-        return ReactiveJwtDecoder() {
+        return object : ReactiveJwtDecoder {
             @Throws(JwtException::class)
-            override fun decode(token: String): Mono<Jwt>{
+            override fun decode(token: String): Mono<Jwt> {
                 return jwtDecoder.decode(token)
                     .flatMap { enrich(token, it) }
             }
 
             private fun enrich(token: String, jwt: Jwt): Mono<Jwt> {
-                // Only look up user information if identity claims are missing
                 if (jwt.hasClaim("given_name") && jwt.hasClaim("family_name")) {
                     return Mono.just(jwt)
-                }
-                // Retrieve user info from OAuth provider if not already loaded
-                return users.get(jwt.getSubject(), s -> {
-                    val webClient = WebClient.create();
-
-                    return webClient
-                        .get()
-                        .uri(userInfoUri)
-                        .headers(headers -> headers.setBearerAuth(token))
-                        .retrieve()
-                        .bodyToMono(ParameterizedTypeReference<Map<String, Object>>() {})
-                        .map(userInfo ->
-                            Jwt
-                                .withTokenValue(jwt.getTokenValue())
-                                .subject(jwt.getSubject())
-                                .audience(jwt.getAudience())
-                                .headers(headers -> headers.putAll(jwt.getHeaders()))
-                                .claims(claims -> {
-                                    val username = userInfo.get("preferred_username").toString()
-                                    // special handling for Auth0
-                                    if (userInfo.get("sub").toString().contains("|") && username.contains("@")) {
-                                        userInfo.put("email", username)
-                                    }
-                                    // Allow full name in a name claim - happens with Auth0
-                                    if (userInfo.get("name") != null) {
-                                        val name = userInfo.get("name").toString().split("\\s+");
-                                        if (name.length > 0) {
-                                            userInfo.put("given_name", name[0]);
-                                            userInfo.put("family_name", String.join(" ", Arrays.copyOfRange(name, 1, name.length)));
+                } else {
+                    return users.get(jwt.subject) { _ ->
+                        val webClient = WebClient.create()
+                        webClient
+                            .get()
+                            .uri(userInfoUri)
+                            .headers { it.setBearerAuth(token) }
+                            .retrieve()
+                            .bodyToMono(object: ParameterizedTypeReference<MutableMap<String, Object>>(){})
+                            .map { userInfo ->
+                                Jwt
+                                    .withTokenValue(jwt.tokenValue)
+                                    .subject(jwt.subject)
+                                    .audience(jwt.audience)
+                                    .headers { it.putAll(jwt.headers) }
+                                    .claims { claims ->
+                                        val username = userInfo["preferred_username"].toString()
+                                        // special handling for Auth0
+                                        if (userInfo["sub"].toString().contains("|") && username.contains("@")) {
+                                            userInfo["email"] = username as Object
                                         }
+                                        // Allow full name in a name claim - happens with Auth0
+                                        if (userInfo["name"] != null) {
+                                            val name = userInfo["name"].toString().split("\\s+")
+                                            if (name.isNotEmpty()) {
+                                                userInfo["given_name"] = name[0] as Object
+                                                userInfo["family_name"] = name.subList(1, name.size).joinToString(" ") as Object
+                                            }
+                                        }
+                                        claims.putAll(userInfo)
                                     }
-                                    claims.putAll(userInfo)
-                                })
-                                .claims(claims -> claims.putAll(jwt.getClaims()))
-                                .build()
-                        );
-                });
+                                    .claims {
+                                        it.putAll(jwt.claims)
+                                    }
+                                    .build()
+                            }
+                    }
+                }
             }
-        };
+        }
     }
     <%_ } _%>
     <%_ } _%>

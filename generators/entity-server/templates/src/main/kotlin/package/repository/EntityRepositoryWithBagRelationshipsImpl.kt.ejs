@@ -72,13 +72,13 @@ class <%= entityClass %>RepositoryWithBagRelationshipsImpl(
             )
             .setParameter("<%= entityInstance %>", result)
             .setHint(QueryHints.PASS_DISTINCT_THROUGH, false)
-            .getSingleResult()
+            .singleResult
     }
 
     fun fetch<%= relationship.relationshipNameCapitalizedPlural %>(<%= entityInstancePlural %>: List<<%= persistClass %>>): List<<%= persistClass %>> {
         val order = mutableMapOf<Any, Int>()
-        <%= entityInstancePlural %>.indicies.map {
-            order[<%= entityInstancePlural %>[it].<%= primaryKey.name %>] = it
+        <%= entityInstancePlural %>.indices.map {
+            order[<%= entityInstancePlural %>[it].<%= primaryKey.name %> as Any] = it
         }
         val result = entityManager
             .createQuery(
@@ -87,7 +87,7 @@ class <%= entityClass %>RepositoryWithBagRelationshipsImpl(
             )
             .setParameter("<%= entityInstancePlural %>", <%= entityInstancePlural %>)
             .setHint(QueryHints.PASS_DISTINCT_THROUGH, false)
-            .getResultList()
+            .resultList
         return result.sortedBy { order[it] }
     }
 <%_ } _%>
