@@ -1,20 +1,18 @@
-const expect = require('expect');
+const { expect } = require('expect');
 const path = require('path');
-const assert = require('yeoman-assert');
 const helpers = require('yeoman-test');
-const angularfiles = require('generator-jhipster/generators/client/files-angular').files;
+
 const { JWT, OAUTH2 } = require('generator-jhipster/jdl/jhipster/authentication-types');
 const { GATEWAY, MICROSERVICE } = require('generator-jhipster/jdl/jhipster/application-types');
 const { CAFFEINE, EHCACHE } = require('generator-jhipster/jdl/jhipster/cache-types');
 const { SQL, H2_MEMORY, POSTGRESQL } = require('generator-jhipster/jdl/jhipster/database-types');
 const { MAVEN } = require('generator-jhipster/jdl/jhipster/build-tool-types');
-const getFilesForOptions = require('./utils/utils').getFilesForOptions;
-const expectedFiles = require('./utils/expected-files');
 
 describe('JHipster server generator', () => {
     describe('generate server with ehcache', () => {
+        let runResult;
         before(async () => {
-            await helpers
+            runResult = await helpers
                 .create(path.join(__dirname, '../generators/app'))
                 .withOptions({
                     withGeneratedFlag: true,
@@ -47,31 +45,13 @@ describe('JHipster server generator', () => {
         });
 
         it('creates expected files for default configuration for server generator', () => {
-            assert.file(expectedFiles.common);
-            assert.file(expectedFiles.server);
-            assert.file(expectedFiles.jwtServer);
-            assert.file(expectedFiles.userManagementServer);
-            assert.file(expectedFiles.maven);
-            assert.file(expectedFiles.postgresql);
-            assert.file(expectedFiles.hibernateTimeZoneConfig);
-            assert.noFile(
-                getFilesForOptions(
-                    angularfiles,
-                    {
-                        enableTranslation: true,
-                        serviceDiscoveryType: false,
-                        authenticationType: JWT,
-                        testFrameworks: [],
-                    },
-                    null,
-                    ['package.json']
-                )
-            );
+            expect(runResult.getStateSnapshot()).toMatchSnapshot();
         });
     });
     describe('generate server with caffeine', () => {
+        let runResult;
         before(async () => {
-            await helpers
+            runResult = await helpers
                 .create(path.join(__dirname, '../generators/app'))
                 .withOptions({
                     withGeneratedFlag: true,
@@ -104,26 +84,7 @@ describe('JHipster server generator', () => {
         });
 
         it('creates expected files for caffeine cache configuration for server generator', () => {
-            assert.file(expectedFiles.common);
-            assert.file(expectedFiles.server);
-            assert.file(expectedFiles.jwtServer);
-            assert.file(expectedFiles.userManagementServer);
-            assert.file(expectedFiles.maven);
-            assert.file(expectedFiles.postgresql);
-            assert.file(expectedFiles.hibernateTimeZoneConfig);
-            assert.noFile(
-                getFilesForOptions(
-                    angularfiles,
-                    {
-                        enableTranslation: true,
-                        serviceDiscoveryType: false,
-                        authenticationType: JWT,
-                        testFrameworks: [],
-                    },
-                    null,
-                    ['package.json']
-                )
-            );
+            expect(runResult.getStateSnapshot()).toMatchSnapshot();
         });
     });
     describe('microfrontend', () => {
@@ -157,7 +118,6 @@ describe('JHipster server generator', () => {
             expect(runResult.getStateSnapshot()).toMatchSnapshot();
         });
     });
-
     describe('gateway application type', () => {
         describe('with non reactive option', () => {
             let runResult;

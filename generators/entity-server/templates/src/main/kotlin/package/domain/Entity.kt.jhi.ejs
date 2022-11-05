@@ -1,3 +1,4 @@
+
 <%#
  Copyright 2013-2020 the original author or authors from the JHipster project.
 
@@ -22,6 +23,7 @@
     importSection: 0,
     staticImportSection: 0,
     annotationSection: 0,
+    extendsSection: 1,
     additionalInterfacesSection: 0,
     classStaticFieldsSection: 0,
     classFieldsSection: 0,
@@ -30,6 +32,8 @@
     classAdditionalRelationshipsSection: 0,
     classAdditionalRelationshipsMethodsSection: 0,
 <%_ for (const field of fields) { _%>
+    field<%- field.fieldNameCapitalized %>CustomDeclarationSection: 1,
+    field<%- field.fieldNameCapitalized %>CustomMethodsSection: 1,
     field<%- field.fieldNameCapitalized %>AnnotationSection: 0,
   <%_ if (field.fieldWithContentType) { _%>
     field<%- field.fieldNameCapitalized %>ContentTypeAnnotationSection: 0,
@@ -89,6 +93,7 @@ import <%= otherEntity.entityAbsoluteClass %>
     <%_ } _%>
 <%_ } _%>
 <&- fragments.annotationSection() -&>
+@SuppressWarnings("common-java:DuplicatedBlocks")
 data class <%= persistClass %>(
     <%_ if (!embedded && primaryKey.composite) { _%>
     @Id
@@ -97,7 +102,9 @@ data class <%= persistClass %>(
 
     <&- fragments.classFieldsSection() -&>
 
-    <%_ for (const field of fields.filter(field => !field.transient && (embedded || !field.id || !primaryKey.composite))) { _%>
+    <%_ for (const field of fields.filter(field => !field.javaInherited && !field.transient && (embedded || !field.id || !primaryKey.composite))) { _%>
+    <&- fragments.field<%- field.fieldNameCapitalized %>CustomDeclarationSection() -&>
+    <&_ if (!fragments.field<%- field.fieldNameCapitalized %>CustomDeclarationSection()) { -&>
         <%_ if (typeof field.javadoc !== 'undefined') { _%>
     <%- formatAsFieldJavadoc(field.javadoc) %>
         <%_ } _%>
@@ -110,6 +117,7 @@ data class <%= persistClass %>(
     <&- fragments.field<%- field.fieldNameCapitalized %>ContentTypeAnnotationSection() -&>
         var <%= field.fieldName %>ContentType: String? = null,
         <%_ } _%>
+    <&_ } -&>
     <%_ } _%>
     <&- fragments.classAdditionalFieldsSection() -&>
     <%_
@@ -155,7 +163,7 @@ data class <%= persistClass %>(
 <%_ }; _%>
 <&- fragments.classAdditionalRelationshipsSection() -&>
     // jhipster-needle-entity-add-field - JHipster will add fields here
-) : Serializable<&- fragments.additionalInterfacesSection() -&> {
+) : <&- fragments.extendsSection() -&> Serializable<&- fragments.additionalInterfacesSection() -&> {
 
     <&- fragments.classAdditionalFieldsMethodsSection('\n\n') -&>
 
@@ -227,7 +235,6 @@ data class <%= persistClass %>(
       <%_ } _%>
     }
 
-    @Override
     override fun toString(): String {
         return "<%= persistClass %>{" +
 <%_ if (!embedded) { _%>

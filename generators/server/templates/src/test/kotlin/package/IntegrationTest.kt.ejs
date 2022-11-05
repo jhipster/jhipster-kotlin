@@ -19,12 +19,10 @@ This file is part of the JHipster project, see https://jhipster.github.io/
 package <%= packageName %>
 
 import <%= packageName %>.<%= mainClass %>
+import <%= packageName %>.config.AsyncSyncConfiguration
 <%_ if (databaseTypeCouchbase) { _%>
 import org.springframework.test.context.ActiveProfiles
 import tech.jhipster.config.JHipsterConstants
-<%_ } _%>
-<%_ if (databaseTypeNeo4j) { _%>
-import <%= packageName %>.AbstractNeo4jIT
 <%_ } _%>
 <%_ if (databaseTypeMongodb) { _%>
 import <%= packageName %>.config.EmbeddedMongo
@@ -32,19 +30,32 @@ import <%= packageName %>.config.EmbeddedMongo
 <%_ if (databaseTypeCassandra) { _%>
 import <%= packageName %>.config.EmbeddedCassandra
 <%_ } _%>
-<%_ if (reactiveSqlTestContainers) { _%>
-import <%= packageName %>.ReactiveSqlTestContainerExtension
+<%_ if (databaseTypeCouchbase || searchEngineCouchbase) { _%>
+import <%= packageName %>.config.EmbeddedCouchbase
+<%_ } _%>
+<%_ if (searchEngineElasticsearch) { _%>
+import <%= packageName %>.config.EmbeddedElasticsearch
+<%_ } _%>
+<%_ if (messageBrokerKafka) { _%>
+import <%= packageName %>.config.EmbeddedKafka
+<%_ } _%>
+<%_ if (databaseTypeNeo4j) { _%>
+import <%= packageName %>.config.EmbeddedNeo4j
+<%_ } _%>
+<%_ if (databaseTypeSql) { _%>
+import <%= packageName %>.config.EmbeddedSQL
 <%_ } _%>
 <%_ if (cacheProviderRedis) { _%>
-import <%= packageName %>.RedisTestContainerExtension
+import <%= packageName %>.config.EmbeddedRedis
 <%_ } _%>
 <%_ if (authenticationTypeOauth2) { _%>
 import <%= packageName %>.config.TestSecurityConfiguration
 <%_ } _%>
-<%_ if (cacheProviderRedis || databaseTypeNeo4j || databaseTypeCouchbase || reactiveSqlTestContainers) { _%>
+<%_ if (cacheProviderRedis) { _%>
 import org.junit.jupiter.api.extension.ExtendWith
 <%_ } _%>
 
+import org.springframework.test.annotation.DirtiesContext
 import org.springframework.boot.test.context.SpringBootTest
 
 /**
@@ -52,16 +63,12 @@ import org.springframework.boot.test.context.SpringBootTest
  */
 @kotlin.annotation.Target(AnnotationTarget.CLASS)
 @kotlin.annotation.Retention(AnnotationRetention.RUNTIME)
-<%_ if (authenticationTypeOauth2) { _%>
-@SpringBootTest(classes = [<%= mainClass %>::class, TestSecurityConfiguration::class])
-<%_ } else { _%>
-@SpringBootTest(classes = [<%= mainClass %>::class])
-<%_ } _%>
+@SpringBootTest(classes = [<%= mainClass %>::class, AsyncSyncConfiguration::class<% if (authenticationTypeOauth2) { %>, TestSecurityConfiguration::class<% } %>])
 <%_ if (cacheProviderRedis) { _%>
-@ExtendWith(RedisTestContainerExtension::class)
+@EmbeddedRedis
 <%_ } _%>
-<%_ if (databaseTypeCouchbase) { _%>
-@ExtendWith(CouchbaseTestContainerExtension::class)
+<%_ if (databaseTypeCouchbase || searchEngineCouchbase) { _%>
+@EmbeddedCouchbase
 @ActiveProfiles(JHipsterConstants.SPRING_PROFILE_TEST)
 <%_ } _%>
 <%_ if (databaseTypeNeo4j) { _%>
@@ -73,9 +80,19 @@ import org.springframework.boot.test.context.SpringBootTest
 <%_ if (databaseTypeCassandra) { _%>
 @EmbeddedCassandra
 <%_ } _%>
-<%_ if (reactiveSqlTestContainers) { _%>
-@ExtendWith(ReactiveSqlTestContainerExtension::class)
+<%_ if (searchEngineElasticsearch) { _%>
+@EmbeddedElasticsearch
 <%_ } _%>
+<%_ if (messageBrokerKafka) { _%>
+@EmbeddedKafka
+<%_ } _%>
+<%_ if (databaseTypeNeo4j) { _%>
+@EmbeddedNeo4j
+<%_ } _%>
+<%_ if (databaseTypeSql) { _%>
+@EmbeddedSQL
+<%_ } _%>
+@DirtiesContext(classMode = DirtiesContext.ClassMode.AFTER_CLASS)
 annotation class IntegrationTest {
      <%_ if (reactive) { _%>
       companion object {

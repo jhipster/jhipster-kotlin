@@ -74,20 +74,26 @@ _%>
             <% if (viaService) { %>
             return <%= entityInstance %>Service.findAll()<% if (reactive) { %>.collectList()<% } %>
             <% } else if (dtoMapstruct) { %>
-            val <%= entityInstancePlural %> = <%= entityInstance %>Repository.<% if (implementsEagerLoadApis) { %>findAllWithEagerRelationships<% } else { %>findAll<% } %>()
+            val <%= entityInstancePlural %> = <%= entityInstance %>Repository.findAll()
                 <%_ if (reactive) { _%>
             return <%= entityInstancePlural %>.map(<%= entityToDtoReference %>).collectList()
                 <%_ } else { _%>
             return <%= entityListToDtoListReference %>(<%= entityInstancePlural %>)
                 <%_ } _%>
+            } else if (implementsEagerLoadApis) { _%>
+                if (eagerload) {
+                    return <%= entityInstance %>Repository.findAllWithEagerRelationships()<% if (reactive) { %>.collectList()<% } %>
+                } else {
+                    return <%= entityInstance %>Repository.findAll()<% if (reactive) { %>.collectList()<% } %>
+                }
             <%_ } else { _%>
-            return <%= entityInstance %>Repository.<% if (implementsEagerLoadApis) { %>findAllWithEagerRelationships<% } else { %>findAll<% } %>()<% if (reactive) { %>.collectList()<% } %>
+            return <%= entityInstance %>Repository.findAll()<% if (reactive) { %>.collectList()<% } %>
             <%_ } _%>
         <%_ if (elseCondition) { _%>
         }
         <%_ } _%>
     <%_ } else { _%>
-    fun getAll<%= entityClassPlural %>(@org.springdoc.api.annotations.ParameterObject pageable: Pageable<% if (reactive) { %>, request: ServerHttpRequest<% } %><% if (fieldsContainNoOwnerOneToOne) { %>, @RequestParam(required = false) filter: String?<% } %><% if (implementsEagerLoadApis) { %>, @RequestParam(required = false, defaultValue = "true") eagerload: Boolean<% } %>): <% if (reactive) { %>Mono<ResponseEntity<List<<%= instanceClass %>>>><% } else { %>ResponseEntity<List<<%= instanceClass %>>><% } %> {
+    fun getAll<%= entityClassPlural %>(@org.springdoc.api.annotations.ParameterObject pageable: Pageable<% if (reactive) { %>, request: ServerHttpRequest<% } %><% if (fieldsContainNoOwnerOneToOne) { %>, @RequestParam(required = false) filter: String?<% } %><% if (implementsEagerLoadApis) { %>, @RequestParam(required = false, defaultValue = "false") eagerload: Boolean<% } %>): <% if (reactive) { %>Mono<ResponseEntity<List<<%= instanceClass %>>>><% } else { %>ResponseEntity<List<<%= instanceClass %>>><% } %> {
         
         <%- include('get_all_stream_template', {viaService: viaService}); -%>
 

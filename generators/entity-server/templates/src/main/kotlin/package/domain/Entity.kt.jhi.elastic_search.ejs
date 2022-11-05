@@ -23,3 +23,21 @@
 <&_ if (fragment.annotationSection) { -&>
 @org.springframework.data.elasticsearch.annotations.Document(indexName = "<%= entityInstance.toLowerCase() %>")
 <&_ } -&>
+
+<%_ for (const field of fields) { -%>
+     <&_ if (fragment.field<%- field.fieldNameCapitalized %>AnnotationSection) { -&>
+          <%_ if (field.id && field.fieldName != 'id') { _%>
+          @org.springframework.data.annotation.Id
+          <%_ } _%>
+     <&_ } -&>
+<%_ } -%>
+
+<%_ for (const relationship of relationships) { -%>
+     <&_ if (fragment.relationship<%- relationship.relationshipNameCapitalized %>AnnotationSection) { -&>
+          <% // just break the cycle // in the reactive area, we already have the annotation in place
+          if (!relationship.ownerSide && !reactive) { %>
+               @org.springframework.data.annotation.Transient
+          <% } %>
+     <&_ } -&>
+<%_ } -%>
+   

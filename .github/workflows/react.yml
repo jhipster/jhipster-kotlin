@@ -75,7 +75,7 @@ jobs:
             github.event.action != 'closed' &&
             !contains(github.event.pull_request.labels.*.name, 'pr: skip-ci') &&
             needs.build-matrix.outputs.workflow-react == 'true'
-        timeout-minutes: 40
+        timeout-minutes: 50
         strategy:
             fail-fast: false
             # Matrix available at https://github.com/jhipster/jhipster-kotlin/tree/main/test-integration/workflow-samples/
@@ -105,11 +105,10 @@ jobs:
                   jdl-sample: ${{ matrix.jdl-samples || '' }}
                   application-environment: ${{ matrix.environment || 'prod' }}
                   application-packaging: ${{ (matrix.war == 1 && 'war') || 'jar' }}
-                  enable-testcontainers: ${{ matrix.testcontainers != 'false' }}
             - uses: actions/setup-node@v3
               with:
                   node-version: ${{ steps.setup.outputs.node-version }}
-            - uses: actions/setup-java@v2
+            - uses: actions/setup-java@v3
               with:
                   distribution: 'temurin'
                   java-version: ${{ steps.setup.outputs.java-version }}
@@ -192,35 +191,38 @@ jobs:
             - name: 'PREPARE: npm install'
               if: steps.compare.outputs.equals != 'true'
               run: ${{ (matrix.workspaces == 'true' && 'npm') || './npmw' }} install
-            - name: 'TESTS: Start docker-compose containers for e2e and backend tests'
-              if: steps.compare.outputs.equals != 'true' && matrix.testcontainers == 'false' && matrix.workspaces != 'true'
-              run: npm run ci:e2e:prepare
+              timeout-minutes: 7
             - name: 'TESTS: backend'
               id: backend
               if: steps.compare.outputs.equals != 'true' && matrix.skip-backend-tests != 1 && needs.build-matrix.outputs.server != 'false'
               run: npm run ci:backend:test
               continue-on-error: ${{matrix.continue-on-backend-tests-error || false}}
+              timeout-minutes: 15
             - name: 'TESTS: frontend'
               if: steps.compare.outputs.equals != 'true' && matrix.skip-frontend-tests != 1 && needs.build-matrix.outputs.client != 'false'
               run: npm run ci:frontend:test
+              timeout-minutes: 15
             - name: 'TESTS: packaging'
               if: steps.compare.outputs.equals != 'true'
               run: npm run ci:e2e:package
+              timeout-minutes: 7
             - name: 'TESTS: Start docker-compose containers for e2e tests'
-              if: steps.compare.outputs.equals != 'true' && (matrix.testcontainers != 'false' ||  matrix.workspaces == 'true')
+              if: steps.compare.outputs.equals != 'true'
               run: npm run ci:e2e:prepare
+              timeout-minutes: 5
             - name: 'E2E: Run'
               id: e2e
               if: steps.compare.outputs.equals != 'true'
               run: npm run ci:e2e:run --if-present
+              timeout-minutes: 15
             - name: 'BACKEND: Store failure logs'
-              uses: actions/upload-artifact@v2
+              uses: actions/upload-artifact@v3
               if: always() && steps.backend.outcome == 'failure'
               with:
                   name: log-${{ matrix.name }}
                   path: ${{ steps.setup.outputs.application-path }}/**/test-results/**/*.xml
             - name: 'E2E: Store failure screenshots'
-              uses: actions/upload-artifact@v2
+              uses: actions/upload-artifact@v3
               if: always() && steps.e2e.outcome == 'failure'
               with:
                   name: screenshots-${{ matrix.name }}
@@ -228,12 +230,6 @@ jobs:
             - name: Dump docker logs
               if: always()
               uses: jwalton/gh-docker-logs@v2
-            - name: 'ANALYSIS: Sonar analysis'
-              if: steps.compare.outputs.equals != 'true' && matrix.sonar-analyse != 'false' && matrix.workspaces != 'true'
-              run: $KHI_SCRIPTS/25-sonar-analyze.sh
-              env:
-                  GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
-                  SONAR_TOKEN: ${{ secrets.SONAR_TOKEN }}
     check-react:
         runs-on: ubuntu-latest
         needs: [applications]

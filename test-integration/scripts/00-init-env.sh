@@ -115,3 +115,6 @@ fi
 if [[ "$JHI_SCRIPTS" == "" ]]; then
     JHI_SCRIPTS="$JHI_INTEG"/scripts
 fi
+
+# generator-jhipster version
+JHI_VERSION=$(grep -o '"version": "[^"]*"' $JHI_HOME/package.json | cut -f4 -d '"')

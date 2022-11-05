@@ -18,6 +18,12 @@
 -%>
 package <%= packageName %>.web.rest
 
+<%_
+let saveMethod = 'save';
+if (!reactive && databaseTypeSql) {
+    saveMethod = 'saveAndFlush';
+}
+_%>
 import <%= packageName %>.IntegrationTest
 <%_ if (reactive) { _%>
 import <%= packageName %>.IntegrationTest.Companion.DEFAULT_TIMEOUT
@@ -39,7 +45,6 @@ import <%= packageName %>.repository.search.UserSearchRepository
 import <%= packageName %>.security.ADMIN
 import <%= packageName %>.security.USER
 import <%= packageName %>.service.dto.<%= asDto('AdminUser') %>
-import <%= packageName %>.service.dto.<%= asDto('User') %>
 <%_ if (databaseTypeSql && reactive) { _%>
 import <%= packageName %>.repository.EntityManager
 <%_ } _%>
@@ -96,9 +101,6 @@ import org.mockito.Mockito.*
 <%_ if (reactive && testsNeedCsrf) { _%>
 import org.springframework.security.test.web.reactive.server.SecurityMockServerConfigurers.csrf
 <%_ } else if (!reactive) { _%>
-    <%_ if (databaseTypeSql || databaseTypeMongodb || databaseTypeNeo4j || databaseTypeCouchbase) { _%>
-import org.hamcrest.Matchers.hasItems
-    <%_ } _%>
 import org.hamcrest.Matchers.hasItem
 <%_ if (testsNeedCsrf) { _%>
 import org.springframework.security.test.web.servlet.request.SecurityMockMvcRequestPostProcessors.csrf
@@ -141,14 +143,8 @@ class UserResourceIT {
     <%_ } _%>
 
     <%_ if (searchEngineElasticsearch) { _%>
-
-    /**
-     * This repository is mocked in the <%= packageName %>.repository.search test package.
-     *
-     * @see <%= packageName %>.repository.search.UserSearchRepositoryMockConfiguration
-     */
     @Autowired
-    private lateinit var mockUserSearchRepository: UserSearchRepository
+    private lateinit var userSearchRepository: UserSearchRepository
     <%_ } _%>
 
     @Autowired
@@ -203,12 +199,6 @@ class UserResourceIT {
     fun createUser() {
         val databaseSizeBeforeCreate = userRepository.findAll()<% if (reactive) { %>
             .collectList().block()!!<% } %>.size
-        <%_ if (searchEngineElasticsearch && reactive) { _%>
-        // Configure the mock search repository
-        `when`(mockUserSearchRepository.save(any(User::class.java)))
-            .thenAnswer { Mono.just(it.arguments[0] as User) }
-        <%_ } _%>
-
         // Create the User
         val managedUserVM = ManagedUserVM().apply {
             login = DEFAULT_LOGIN
@@ -253,6 +243,12 @@ class UserResourceIT {
             <%_ } _%>
             assertThat(testUser.langKey).isEqualTo(DEFAULT_LANGKEY)
         }
+
+        <%_ if (!databaseTypeSql) {_%>
+        userRepository.deleteAll()
+        <% } else if (searchEngineElasticsearch) { %>
+        userSearchRepository.deleteAll()
+        <%_ } _%>
     }
 
     @Test
@@ -306,6 +302,12 @@ class UserResourceIT {
             // Validate the User in the database
             assertThat(userList).hasSize(databaseSizeBeforeCreate)
         }
+
+    <%_ if (!databaseTypeSql) {_%>
+        userRepository.deleteAll()
+    <% } else if (searchEngineElasticsearch) { %>
+        userSearchRepository.deleteAll()
+    <%_ } _%>
     }
 
     @Test
@@ -315,9 +317,9 @@ class UserResourceIT {
     @Throws(Exception::class)
     fun createUserWithExistingLogin() {
         // Initialize the database
-        userRepository.save<% if (databaseTypeSql && !reactive) { %>AndFlush<% } %>(user)<% if (reactive) { %>.block()<% } %>
+        userRepository.<%= saveMethod %>(user)<% if (reactive) { %>.block()<% } %>
         <%_ if (searchEngineElasticsearch) { _%>
-        mockUserSearchRepository.save(user)
+        userSearchRepository.save(user)<% if (reactive) { %>.block()<% } %>;
         <%_ } _%>
         val databaseSizeBeforeCreate = userRepository.findAll()<% if (reactive) { %>
             .collectList().block()!!<% } %>.size
@@ -354,6 +356,12 @@ class UserResourceIT {
         <%_ } _%>
 
         assertPersistedUsers { userList -> assertThat(userList).hasSize(databaseSizeBeforeCreate) }
+
+    <%_ if (!databaseTypeSql) {_%>
+        userRepository.deleteAll()
+    <% } else if (searchEngineElasticsearch) { %>
+        userSearchRepository.deleteAll()
+    <%_ } _%>
     }
 
     @Test
@@ -363,9 +371,9 @@ class UserResourceIT {
     @Throws(Exception::class)
     fun createUserWithExistingEmail() {
         // Initialize the database
-        userRepository.save<% if (databaseTypeSql && !reactive) { %>AndFlush<% } %>(user)<% if (reactive) { %>.block()<% } %>
+        userRepository.<%= saveMethod %>(user)<% if (reactive) { %>.block()<% } %>
         <%_ if (searchEngineElasticsearch) { _%>
-        mockUserSearchRepository.save(user)
+        userSearchRepository.save(user)<% if (reactive) { %>.block()<% } %>
         <%_ } _%>
         val databaseSizeBeforeCreate = userRepository.findAll()<% if (reactive) { %>
             .collectList().block()!!<% } %>.size
@@ -402,6 +410,11 @@ class UserResourceIT {
         <%_ } _%>
 
         assertPersistedUsers { userList -> assertThat(userList).hasSize(databaseSizeBeforeCreate) }
+    <%_ if (!databaseTypeSql) {_%>
+        userRepository.deleteAll()
+    <% } else if (searchEngineElasticsearch) { %>
+        userSearchRepository.deleteAll()
+    <%_ } _%>
     }
 
     @Test
@@ -413,7 +426,7 @@ class UserResourceIT {
     <%_ } _%>
     fun getAllUsers() {
         // Initialize the database
-        userRepository.<% if (databaseTypeSql && reactive && authenticationTypeOauth2) { %>create<% } else { %>save<% } %><% if (databaseTypeSql && !reactive) { %>AndFlush<% } %>(user)<% if (reactive) { %>.block()<% } %>
+        userRepository.<% if (databaseTypeSql && reactive && authenticationTypeOauth2) { %>create<% } else { %><%= saveMethod %><% } %>(user)<% if (reactive) { %>.block()<% } %>
         <%_ if (databaseTypeSql && reactive && !applicationTypeMicroservice) { _%>
         authorityRepository
             .findById(USER)
@@ -457,6 +470,12 @@ class UserResourceIT {
             <%_ } _%>
             .andExpect(jsonPath("\$.[*].langKey").value(hasItem(DEFAULT_LANGKEY)))
         <%_ } _%>
+
+    <%_ if (!databaseTypeSql) {_%>
+        userRepository.deleteAll()
+    <% } else if (searchEngineElasticsearch) { %>
+        userSearchRepository.deleteAll()
+    <%_ } _%>
     }
 
     @Test
@@ -468,7 +487,7 @@ class UserResourceIT {
     <%_ } _%>
     fun getUser() {
         // Initialize the database
-        userRepository.<% if (databaseTypeSql && reactive && authenticationTypeOauth2) { %>create<% } else { %>save<% } %><% if (databaseTypeSql && !reactive) { %>AndFlush<% } %>(user)<% if (reactive) { %>.block()<% } %>
+        userRepository.<% if (databaseTypeSql && reactive && authenticationTypeOauth2) { %>create<% } else { %><%= saveMethod %><% } %>(user)<% if (reactive) { %>.block()<% } %>
         <%_ if (databaseTypeSql && reactive) { _%>
         authorityRepository
             .findById(USER)
@@ -477,7 +496,7 @@ class UserResourceIT {
         <%_ } _%>
 
         <%_ if (searchEngineElasticsearch) { _%>
-        mockUserSearchRepository.save(user)
+        userSearchRepository.save(user)
         <%_ } _%>
         <%_ if (cacheManagerIsAvailable) { _%>
 
@@ -522,6 +541,12 @@ class UserResourceIT {
 
         assertNotNull(cacheManager.getCache(UserRepository.USERS_BY_LOGIN_CACHE)!!.get(user.login!!))
         <%_ } _%>
+
+        <%_ if (!databaseTypeSql) {_%>
+        userRepository.deleteAll()
+        <% } else if (searchEngineElasticsearch) { %>
+        userSearchRepository.deleteAll()
+        <%_ } _%>
     }
 
     @Test
@@ -549,12 +574,7 @@ class UserResourceIT {
     @Throws(Exception::class)
     fun updateUser() {
         // Initialize the database
-        userRepository.save<% if (databaseTypeSql && !reactive) { %>AndFlush<% } %>(user)<% if (reactive) { %>.block()<% } %>
-        <%_ if (searchEngineElasticsearch && reactive) { _%>
-        // Configure the mock search repository
-        `when`(mockUserSearchRepository.save(any(User::class.java)))
-            .thenAnswer { Mono.just(it.arguments[0] as User) }
-        <%_ } _%>
+        userRepository.<%= saveMethod %>(user)<% if (reactive) { %>.block()<% } %>
         val databaseSizeBeforeUpdate = userRepository.findAll()<% if (reactive) { %>
             .collectList().block()!!<% } %>.size
 
@@ -610,6 +630,11 @@ class UserResourceIT {
             <%_ } _%>
             assertThat(testUser.langKey).isEqualTo(UPDATED_LANGKEY)
         }
+        <%_ if (!databaseTypeSql) {_%>
+        userRepository.deleteAll()
+        <% } else if (searchEngineElasticsearch) { %>
+        userSearchRepository.deleteAll()
+        <%_ } _%>
     }
 
     @Test
@@ -619,12 +644,7 @@ class UserResourceIT {
     @Throws(Exception::class)
     fun updateUserLogin() {
         // Initialize the database
-        userRepository.save<% if (databaseTypeSql && !reactive) { %>AndFlush<% } %>(user)<% if (reactive) { %>.block()<% } %>
-        <%_ if (searchEngineElasticsearch && reactive) { _%>
-        // Configure the mock search repository
-        `when`(mockUserSearchRepository.save(any(User::class.java)))
-            .thenAnswer { Mono.just(it.arguments[0] as User) }
-        <%_ } _%>
+        userRepository.<%= saveMethod %>(user)<% if (reactive) { %>.block()<% } %>
         val databaseSizeBeforeUpdate = userRepository.findAll()<% if (reactive) { %>
             .collectList().block()!!<% } %>.size
 
@@ -681,6 +701,11 @@ class UserResourceIT {
             <%_ } _%>
             assertThat(testUser.langKey).isEqualTo(UPDATED_LANGKEY)
         }
+        <%_ if (!databaseTypeSql) {_%>
+        userRepository.deleteAll()
+        <% } else if (searchEngineElasticsearch) { %>
+        userSearchRepository.deleteAll()
+        <%_ } _%>
     }
 
     @Test
@@ -690,9 +715,9 @@ class UserResourceIT {
     @Throws(Exception::class)
     fun updateUserExistingEmail() {
         // Initialize the database with 2 users
-        userRepository.save<% if (databaseTypeSql && !reactive) { %>AndFlush<% } %>(user)<% if (reactive) { %>.block()<% } %>
+        userRepository.<%= saveMethod %>(user)<% if (reactive) { %>.block()<% } %>
         <%_ if (searchEngineElasticsearch) { _%>
-        mockUserSearchRepository.save(user)
+        userSearchRepository.save(user)
         <%_ } _%>
 
         val anotherUser = <%= asEntity('User') %>(
@@ -700,7 +725,7 @@ class UserResourceIT {
             id = UUID.randomUUID().toString(),
             <%_ } _%>
             login = "jhipster",
-            password = RandomStringUtils.random(60),
+            password = RandomStringUtils.randomAlphanumeric(60),
             activated = true,
             email = "jhipster@localhost",
             firstName = "java",
@@ -715,7 +740,7 @@ class UserResourceIT {
         )
         userRepository.save<% if (databaseTypeSql && !reactive) { %>AndFlush<% } %>(anotherUser)<% if (reactive) { %>.block()<% } %>
         <%_ if (searchEngineElasticsearch) { _%>
-        mockUserSearchRepository.save(anotherUser)
+        userSearchRepository.save(anotherUser)
         <%_ } _%>
 
         // Update the user
@@ -758,6 +783,11 @@ class UserResourceIT {
         )
             .andExpect(status().isBadRequest)
         <%_ } _%>
+        <%_ if (!databaseTypeSql) {_%>
+        userRepository.deleteAll()
+        <% } else if (searchEngineElasticsearch) { %>
+        userSearchRepository.deleteAll()
+        <%_ } _%>
     }
 
     @Test
@@ -767,9 +797,9 @@ class UserResourceIT {
     @Throws(Exception::class)
     fun updateUserExistingLogin() {
         // Initialize the database
-        userRepository.save<% if (databaseTypeSql && !reactive) { %>AndFlush<% } %>(user)<% if (reactive) { %>.block()<% } %>
+        userRepository.<%= saveMethod %>(user)<% if (reactive) { %>.block()<% } %>
         <%_ if (searchEngineElasticsearch) { _%>
-        mockUserSearchRepository.save(user)
+        userSearchRepository.save(user)
         <%_ } _%>
 
         val anotherUser = <%= asEntity('User') %>(
@@ -777,7 +807,7 @@ class UserResourceIT {
             id = UUID.randomUUID().toString(),
             <%_ } _%>
             login = "jhipster",
-            password = RandomStringUtils.random(60),
+            password = RandomStringUtils.randomAlphanumeric(60),
             activated = true,
             email = "jhipster@localhost",
             firstName = "java",
@@ -792,7 +822,7 @@ class UserResourceIT {
         )
         userRepository.save<% if (databaseTypeSql && !reactive) { %>AndFlush<% } %>(anotherUser)<% if (reactive) { %>.block()<% } %>
         <%_ if (searchEngineElasticsearch) { _%>
-        mockUserSearchRepository.save(anotherUser)
+        userSearchRepository.save(anotherUser)
         <%_ } _%>
 
         // Update the user
@@ -835,6 +865,11 @@ class UserResourceIT {
         )
             .andExpect(status().isBadRequest)
         <%_ } _%>
+        <%_ if (!databaseTypeSql) {_%>
+        userRepository.deleteAll()
+        <% } else if (searchEngineElasticsearch) { %>
+        userSearchRepository.deleteAll()
+        <%_ } _%>
     }
 
     @Test
@@ -846,14 +881,7 @@ class UserResourceIT {
     <%_ } _%>
     fun deleteUser() {
         // Initialize the database
-        userRepository.save<% if (databaseTypeSql && !reactive) { %>AndFlush<% } %>(user)<% if (reactive) { %>.block()<% } %>
-        <%_ if (searchEngineElasticsearch && reactive) { _%>
-        // Configure the mock search repository
-        `when`(mockUserSearchRepository.delete(any(User::class.java))).thenReturn(Mono.empty())
-        <%_ } _%>
-        <%_ if (searchEngineElasticsearch) { _%>
-        mockUserSearchRepository.save(user)
-        <%_ } _%>
+        userRepository.<%= saveMethod %>(user)<% if (reactive) { %>.block()<% } %>
         val databaseSizeBeforeDelete = userRepository.findAll()<% if (reactive) { %>
             .collectList().block()!!<% } %>.size
 
@@ -1057,7 +1085,7 @@ class UserResourceIT {
                 <%_ } _%>
                 login = DEFAULT_LOGIN<% if (databaseTypeSql) { %> + RandomStringUtils.randomAlphabetic(5)<% } %>,
                 <%_ if (!authenticationTypeOauth2) { _%>
-                password = RandomStringUtils.random(60),
+                password = RandomStringUtils.randomAlphanumeric(60),
                 <%_ } _%>
                 activated = true,
                 email = <% if (databaseTypeSql) { %>RandomStringUtils.randomAlphabetic(5) + <% } %>DEFAULT_EMAIL,
@@ -1097,9 +1125,7 @@ class UserResourceIT {
             <%_ if (databaseTypeSql && reactive) { _%>
             userRepository.deleteAllUserAuthorities().block()
             <%_ } _%>
-            <%_ if (!databaseTypeSql || reactive) { _%>
             userRepository.deleteAll()<% if (reactive) { %>.block()<% } %>
-            <%_ } _%>
             val user = createEntity(<% if (databaseTypeSql ) { %>em<% } _%>)
             <%_ if (databaseTypeSql) { _%>
             user.login = DEFAULT_LOGIN

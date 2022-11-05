@@ -18,14 +18,19 @@
 -%>
 package <%= entityAbsolutePackage %>.repository.search
 
-
 import <%= entityAbsolutePackage %>.domain.<%= persistClass %>
+import <%= entityAbsolutePackage %>.repository.<%= persistClass %>Repository
+
 <%_ if (!paginationNo) { _%>
      <%_ if (!reactive) { _%>
 import org.springframework.data.domain.Page
 import org.springframework.data.domain.PageImpl
+import org.springframework.data.elasticsearch.core.SearchHits
      <%_ } _%>
 import org.springframework.data.domain.Pageable
+import org.springframework.data.elasticsearch.core.query.NativeSearchQueryBuilder
+import org.elasticsearch.search.sort.SortBuilder
+import org.springframework.data.domain.PageRequest
 <%_ } _%>
 <%_ if (reactive) { _%>
 import org.springframework.data.elasticsearch.core.ReactiveElasticsearchTemplate
@@ -33,9 +38,13 @@ import org.springframework.data.elasticsearch.core.ReactiveElasticsearchTemplate
 import org.springframework.data.elasticsearch.core.ElasticsearchRestTemplate
 <%_ } _%>
 import org.springframework.data.elasticsearch.core.query.NativeSearchQuery
+import org.springframework.data.elasticsearch.core.query.Query
 import org.springframework.data.elasticsearch.core.SearchHit
 import org.springframework.data.elasticsearch.repository.<% if (reactive) {%>Reactive<% } %>ElasticsearchRepository
-
+import org.springframework.scheduling.annotation.Async
+import org.springframework.transaction.annotation.Isolation
+import org.springframework.transaction.annotation.Propagation
+import org.springframework.transaction.annotation.Transactional
 <%_ if (reactive) { _%>
 import reactor.core.publisher.Flux
 <%_ } else { _%>
@@ -55,18 +64,23 @@ interface <%=entityClass%>SearchRepository :  <% if (reactive) {%>Reactive<% } %
 <%_ if (reactive) { _%>
 interface <%= entityClass %>SearchRepositoryInternal {
      fun search(query: String<% if (!paginationNo) { %>, pageable: Pageable<% } %>): Flux<<%= persistClass %>>
+
+     fun search(query: Query): Flux<<%= persistClass %>> 
 }
 
 class <%= entityClass %>SearchRepositoryInternalImpl(private val reactiveElasticsearchTemplate: ReactiveElasticsearchTemplate): <%= entityClass %>SearchRepositoryInternal {
 
+    override fun search(query: String<% if (!paginationNo) { %>, pageable: Pageable<% } %>): Flux<<%= persistClass %>> {
+      val nativeSearchQuery = NativeSearchQuery(queryStringQuery(query))
+      <%_ if (!paginationNo) { _%>
+      nativeSearchQuery.setPageable<NativeSearchQuery>(pageable)
+      <%_ } _%>
+      return search(nativeSearchQuery)
+    }
 
-     override fun search(query: String<% if (!paginationNo) { %>, pageable: Pageable<% } %>): Flux<<%= persistClass %>> {
-        val nativeSearchQuery = NativeSearchQuery(queryStringQuery(query))
-        <%_ if (!paginationNo) { _%>
-        nativeSearchQuery.setPageable<NativeSearchQuery>(pageable)
-        <%_ } _%>
+    override fun search(query: Query): Flux<<%= persistClass %>> {
         return reactiveElasticsearchTemplate
-          .search(nativeSearchQuery, <%= persistClass %>::class.java)
+          .search(query, <%= persistClass %>::class.java)
           .map(SearchHit<<%= persistClass %>>::getContent)
     }
 }
@@ -74,31 +88,52 @@ class <%= entityClass %>SearchRepositoryInternalImpl(private val reactiveElastic
 
 interface <%= entityClass %>SearchRepositoryInternal {
   <%_ if (paginationNo) { _%>
-     fun search(query: String): Stream<<%= persistClass %>> 
+  fun search(query: String): Stream<<%= persistClass %>> 
+
+  fun search(query: Query): Stream<<%= persistClass %>> 
   <%_ } else { _%>
-     fun search(query: String, pageable: Pageable): Page<<%= persistClass %>> 
+  fun search(query: String, pageable: Pageable): Page<<%= persistClass %>> 
+
+  fun search(query: Query): Page<<%= persistClass %>> 
   <%_ } _%>
+
+  fun index(entity: <%= persistClass %>)
 }
 
-class <%= entityClass %>SearchRepositoryInternalImpl(val elasticsearchTemplate: ElasticsearchRestTemplate): <%= entityClass %>SearchRepositoryInternal {
+class <%= entityClass %>SearchRepositoryInternalImpl(
+  val elasticsearchTemplate: ElasticsearchRestTemplate, 
+  val repository: <%= entityClass %>Repository
+): <%= entityClass %>SearchRepositoryInternal {
 
   <%_ if (paginationNo) { _%>
-    override fun search(query: String): Stream<<%= persistClass %>>  {
-        val nativeSearchQuery = NativeSearchQuery(queryStringQuery(query))
-        return elasticsearchTemplate
-            .search(nativeSearchQuery, <%= persistClass %>::class.java)
-            .map(SearchHit<<%= persistClass %>>::getContent)
-            .stream()
-    }
-  <%_ } else { _%>
-    override fun search(query: String, pageable: Pageable): Page<<%= persistClass %>>  {
-        val nativeSearchQuery = NativeSearchQuery(queryStringQuery(query))
-        nativeSearchQuery.setPageable<NativeSearchQuery>(pageable)
-        val hits = elasticsearchTemplate.search(nativeSearchQuery, <%= entityClass %>::class.java)
+  override fun search(query: String): Stream<<%= persistClass %>>  {
+      val nativeSearchQuery = NativeSearchQuery(queryStringQuery(query))
+      return search(nativeSearchQuery)
+  }
+
+  override fun search(query: Query): Stream<<%= persistClass %>> {
+      return elasticsearchTemplate
+          .search(query, <%= persistClass %>::class.java)
           .map(SearchHit<<%= persistClass %>>::getContent)
-          .toList()
-        return PageImpl<<%= persistClass %>>(hits, pageable, hits.size.toLong())
-    }
+          .stream()
+  }
+  <%_ } else { _%>
+  override fun search(query: String, pageable: Pageable): Page<<%= persistClass %>>  {
+      val nativeSearchQuery = NativeSearchQuery(queryStringQuery(query))
+      return search(nativeSearchQuery.setPageable<NativeSearchQuery>(pageable))
+  }
+
+  override fun search(query: Query): Page<<%= persistClass %>> {
+    val searchHits = elasticsearchTemplate.search(nativeSearchQuery, <%= entityClass %>::class.java)
+    val hits = searchHits
+        .map(SearchHit<<%= persistClass %>>::getContent)
+        .toList()
+      return PageImpl<<%= persistClass %>>(hits, query.pageable, searchHits.totalHits)
+  }
   <%_ } _%>
+
+  override fun index(entity: <%= persistClass %>) {
+    repository.find<% if (implementsEagerLoadApis) { %>OneWithEagerRelationships<% } else { %>ById<% } %>(entity.<%= primaryKey.name %>).ifPresent(elasticsearchTemplate::save)
+  }
 }
 <%_ } _%>
