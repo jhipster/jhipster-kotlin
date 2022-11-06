@@ -27,14 +27,14 @@ import java.util.Collections
 class MysqlTestContainer : SqlTestContainer {
 
     private val log = LoggerFactory.getLogger(javaClass)
-    private val memoryInBytes = 100 * 1024 * 1024;
-    private val memorySwapInBytes = 200 * 1024 * 1024;
+    private val memoryInBytes = (100 * 1024 * 1024).toLong()
+    private val memorySwapInBytes = (200 * 1024 * 1024).toLong()
 
     private var mysqlContainer : MySQLContainer<*>? = null
 
     override fun destroy() {
         if (null != mysqlContainer && mysqlContainer?.isRunning == true) {
-            mysqlContainer?.stop();
+            mysqlContainer?.stop()
         }
     }
     
@@ -47,11 +47,11 @@ class MysqlTestContainer : SqlTestContainer {
                 .withReuse(true)
                 .withPrivilegedMode(true)
                 .withConfigurationOverride("testcontainers/mysql")
-                .withCreateContainerCmdModifier(cmd ->
-                    cmd.hostConfig
+                .withCreateContainerCmdModifier { cmd ->
+                    cmd.hostConfig!!
                         .withMemory(memoryInBytes)
                         .withMemorySwap(memorySwapInBytes)
-                )
+                }
 
         }
         if (mysqlContainer?.isRunning != true) {

@@ -62,6 +62,7 @@ import org.elasticsearch.index.query.QueryBuilders.queryStringQuery
  */
 interface <%=entityClass%>SearchRepository :  <% if (reactive) {%>Reactive<% } %>ElasticsearchRepository<<%= persistClass %>, <%=primaryKey.type%>>, <%= entityClass %>SearchRepositoryInternal{}
 <%_ if (reactive) { _%>
+
 interface <%= entityClass %>SearchRepositoryInternal {
      fun search(query: String<% if (!paginationNo) { %>, pageable: Pageable<% } %>): Flux<<%= persistClass %>>
 
@@ -124,7 +125,7 @@ class <%= entityClass %>SearchRepositoryInternalImpl(
   }
 
   override fun search(query: Query): Page<<%= persistClass %>> {
-    val searchHits = elasticsearchTemplate.search(nativeSearchQuery, <%= entityClass %>::class.java)
+    val searchHits = elasticsearchTemplate.search(query, <%= entityClass %>::class.java)
     val hits = searchHits
         .map(SearchHit<<%= persistClass %>>::getContent)
         .toList()
