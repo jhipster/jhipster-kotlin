@@ -35,26 +35,25 @@ import java.time.temporal.ChronoUnit
 class Neo4jTestContainer: InitializingBean, DisposableBean {
 
     private val log = LoggerFactory.getLogger(javaClass)
-    private val CONTAINER_STARTUP_TIMEOUT_MINUTES = 10
-    private var neo4jContainer: Neo4jContainer? = null
+    private val CONTAINER_STARTUP_TIMEOUT_MINUTES = 10L
+    private var neo4jContainer: Neo4jContainer<*>? = null
 
     override fun destroy() {
-        if (null != neo4jContainer && neo4jContainer.isRunning()) {
-            neo4jContainer.close()
+        if (null != neo4jContainer && neo4jContainer?.isRunning == true) {
+            neo4jContainer?.close()
         }
     }
 
     override fun afterPropertiesSet() {
         if (null == neo4jContainer) {
-            neo4jContainer =
-                (Neo4jContainer) Neo4jContainer(DockerImageName.parse("<%= DOCKER_NEO4J %>"))
+            neo4jContainer = Neo4jContainer(DockerImageName.parse("<%= DOCKER_NEO4J %>"))
                     .withoutAuthentication()
                     .withStartupTimeout(Duration.of(CONTAINER_STARTUP_TIMEOUT_MINUTES, ChronoUnit.MINUTES))
                     .withLogConsumer(Slf4jLogConsumer(log))
                     .withReuse(true)
         }
-        if (!neo4jContainer.isRunning()) {
-            neo4jContainer.start()
+        if (neo4jContainer?.isRunning != true) {
+            neo4jContainer?.start()
         }
     }
 

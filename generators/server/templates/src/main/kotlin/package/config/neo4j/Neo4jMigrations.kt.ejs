@@ -51,12 +51,14 @@ class Neo4jMigrations {
             val type = om.typeFactory.constructMapType(Map::class.java, String::class.java, Object::class.java)
             val userLabel = "<%= jhiTablePrefix %>_user"
             val authorityLabel = "<%= jhiTablePrefix %>_authority"
-            val query ="""
-                    CREATE (u:%s) SET u = $userLabel WITH u
-                    UNWIND $authorityLabel AS authority
-                    MERGE (a:%s {name: authority})
-                    CREATE (u) - [:HAS_AUTHORITY] -> (a)
-                """.trimIndent()
+            val query = String.format(
+                ""
+                    + "CREATE (u:%s) SET u = \$user WITH u "
+                    + "UNWIND \$authorities AS authority "
+                    + "MERGE (a:%s {name: authority}) "
+                    + "CREATE (u) - [:HAS_AUTHORITY] -> (a) ",
+                userLabel, authorityLabel
+            )
 
            context.session.use { session ->
                resources.forEach {
