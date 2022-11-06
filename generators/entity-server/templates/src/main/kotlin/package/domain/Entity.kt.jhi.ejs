@@ -120,7 +120,12 @@ data class <%= persistClass %>(
     <&_ } -&>
     <%_ } _%>
     <&- fragments.classAdditionalFieldsSection() -&>
-    <%_
+    
+<&- fragments.classAdditionalRelationshipsSection() -&>
+    // jhipster-needle-entity-add-field - JHipster will add fields here
+) : <&- fragments.extendsSection() -&> Serializable<&- fragments.additionalInterfacesSection() -&> {
+
+  <%_
     // An embedded entity should not reference entities that embed it, unless the other entities are also embedded
     for (relationship of relationships.filter(relationship => !relationship.embedded || relationship.otherEntity.embedded || relationship.ownerSide)) {
         if (typeof relationship.javadoc !== 'undefined') { _%>
@@ -138,7 +143,7 @@ data class <%= persistClass %>(
                 <%_ }); _%>
             ], allowSetters = true)
     <%_ } _%>
-    var <%= relationship.relationshipFieldNamePlural %>: MutableSet<<%= relationship.otherEntity.persistClass %>>? = mutableSetOf(),
+    var <%= relationship.relationshipFieldNamePlural %>: MutableSet<<%= relationship.otherEntity.persistClass %>>? = mutableSetOf()
   <%_ } else if (relationship.relationshipManyToOne) { _%>
     <%_ if (relationship.ignoreOtherSideProperty) { _%>
     @JsonIgnoreProperties(value = [
@@ -147,7 +152,7 @@ data class <%= persistClass %>(
       <%_ }); _%>
       ], allowSetters = true)
     <%_ } _%>
-    var <%= relationship.relationshipFieldName %>: <%= relationship.otherEntity.persistClass %>? = null,
+    var <%= relationship.relationshipFieldName %>: <%= relationship.otherEntity.persistClass %>? = null
   <%_ } else if (relationship.relationshipManyToMany) { _%>
     <%_ if (relationship.ignoreOtherSideProperty) { _%>
     @JsonIgnoreProperties(value = [
@@ -156,15 +161,13 @@ data class <%= persistClass %>(
       <%_ }); _%>
       ], allowSetters = true)
     <%_ } _%>
-    var <%= relationship.relationshipFieldNamePlural %>: MutableSet<<%= relationship.otherEntity.persistClass %>>? = mutableSetOf(),
+    var <%= relationship.relationshipFieldNamePlural %>: MutableSet<<%= relationship.otherEntity.persistClass %>>? = mutableSetOf()
   <%_ } else { _%>
-    var <%= relationship.relationshipFieldName %>: <%= relationship.otherEntity.persistClass %>? = null,
+    var <%= relationship.relationshipFieldName %>: <%= relationship.otherEntity.persistClass %>? = null
   <%_ } _%>
 <%_ }; _%>
-<&- fragments.classAdditionalRelationshipsSection() -&>
-    // jhipster-needle-entity-add-field - JHipster will add fields here
-) : <&- fragments.extendsSection() -&> Serializable<&- fragments.additionalInterfacesSection() -&> {
-
+  
+  
     <&- fragments.classAdditionalFieldsMethodsSection('\n\n') -&>
 
     <%_
