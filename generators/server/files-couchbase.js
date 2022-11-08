@@ -16,103 +16,10 @@
  * See the License for the specific language governing permissions and
  * limitations under the License.
  */
-const constants = require('generator-jhipster/generators/generator-constants');
-const { MONOLITH } = require('generator-jhipster/jdl/jhipster/application-types');
-const { OAUTH2, SESSION } = require('generator-jhipster/jdl/jhipster/authentication-types');
-const { COUCHBASE } = require('generator-jhipster/jdl/jhipster/database-types');
+const baseCouchbaseFiles = require('generator-jhipster/generators/server/files-couchbase').couchbaseFiles;
+const { makeKotlinServerFiles } = require('../util');
 
-/* Constants use throughout */
-const DOCKER_DIR = constants.DOCKER_DIR;
-// const SERVER_MAIN_SRC_DIR = constants.SERVER_MAIN_SRC_DIR;
-const SERVER_MAIN_RES_DIR = constants.SERVER_MAIN_RES_DIR;
-// const SERVER_TEST_SRC_DIR = constants.SERVER_TEST_SRC_DIR;
-const SERVER_MAIN_KOTLIN_SRC_DIR = `${constants.MAIN_DIR}kotlin/`;
-const SERVER_TEST_SRC_KOTLIN_DIR = `${constants.TEST_DIR}kotlin/`;
-
-const shouldSkipUserManagement = generator =>
-    generator.skipUserManagement && (generator.applicationType !== MONOLITH || generator.authenticationType !== OAUTH2);
-
-const couchbaseFiles = {
-    docker: [
-        {
-            path: DOCKER_DIR,
-            templates: ['couchbase.yml', 'couchbase-cluster.yml', 'couchbase/Couchbase.Dockerfile', 'couchbase/scripts/configure-node.sh'],
-        },
-    ],
-    serverJavaConfig: [
-        {
-            path: SERVER_MAIN_KOTLIN_SRC_DIR,
-            templates: [
-                {
-                    file: 'package/repository/JHipsterCouchbaseRepository.kt',
-                    renameTo: generator => `${generator.javaDir}repository/JHipsterCouchbaseRepository.kt`,
-                    useBluePrint: true,
-                },
-            ],
-        },
-        {
-            condition: generator => !shouldSkipUserManagement(generator) && generator.authenticationType === SESSION && !generator.reactive,
-            path: SERVER_MAIN_KOTLIN_SRC_DIR,
-            templates: [
-                {
-                    file: 'package/repository/PersistentTokenRepository_couchbase.kt',
-                    renameTo: generator => `${generator.javaDir}repository/PersistentTokenRepository.kt`,
-                    useBluePrint: true,
-                },
-            ],
-        },
-        {
-            condition: generator => generator.searchEngine === COUCHBASE,
-            path: SERVER_MAIN_KOTLIN_SRC_DIR,
-            templates: [
-                {
-                    file: 'package/repository/CouchbaseSearchRepository.kt',
-                    renameTo: generator => `${generator.javaDir}repository/CouchbaseSearchRepository.kt`,
-                },
-            ],
-        },
-        {
-            condition: generator => generator.searchEngine === COUCHBASE,
-            path: SERVER_TEST_SRC_KOTLIN_DIR,
-            templates: [
-                {
-                    file: 'package/repository/CouchbaseSearchRepositoryTest.kt',
-                    renameTo: generator => `${generator.testDir}repository/CouchbaseSearchRepositoryTest.kt`,
-                    useBluePrint: true,
-                },
-            ],
-        },
-    ],
-    serverResource: [
-        {
-            condition: generator => !generator.skipUserManagement,
-            path: SERVER_MAIN_RES_DIR,
-            templates: ['config/couchmove/changelog/V0__create_collections.n1ql', 'config/couchmove/changelog/V0.2__create_indexes.n1ql'],
-        },
-        {
-            condition: generator => !generator.skipUserManagement || generator.authenticationType === OAUTH2,
-            path: SERVER_MAIN_RES_DIR,
-            templates: [
-                'config/couchmove/changelog/V0.1__initial_setup/authority/ROLE_ADMIN.json',
-                'config/couchmove/changelog/V0.1__initial_setup/authority/ROLE_USER.json',
-                'config/couchmove/changelog/V0.1__initial_setup/user/admin.json',
-                'config/couchmove/changelog/V0.1__initial_setup/user/user.json',
-            ],
-        },
-    ],
-    serverTestFw: [
-        {
-            path: SERVER_TEST_SRC_KOTLIN_DIR,
-            templates: [
-                {
-                    file: 'package/CouchbaseTestContainerExtension.kt',
-                    renameTo: generator => `${generator.testDir}CouchbaseTestContainerExtension.kt`,
-                    useBluePrint: true,
-                },
-            ],
-        },
-    ],
-};
+const couchbaseFiles = makeKotlinServerFiles(baseCouchbaseFiles);
 
 function writeCouchbaseFiles() {
     return {

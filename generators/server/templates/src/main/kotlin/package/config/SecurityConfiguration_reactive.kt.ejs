@@ -47,6 +47,9 @@ import org.springframework.context.annotation.Bean
 import org.springframework.context.annotation.Import
 <%_ if (authenticationTypeOauth2) { _%>
 import org.springframework.core.convert.converter.Converter
+    <%_ if (!applicationTypeMicroservice) { _%>
+import org.springframework.core.ParameterizedTypeReference
+    <%_ } _%>
 <%_ } _%>
 import org.springframework.http.HttpMethod
 <%_ if (authenticationTypeSession) { _%>
@@ -68,16 +71,17 @@ import org.springframework.security.core.AuthenticationException
 import org.springframework.security.core.GrantedAuthority
 import org.springframework.security.oauth2.client.oidc.userinfo.OidcReactiveOAuth2UserService
 import org.springframework.security.oauth2.client.oidc.userinfo.OidcUserRequest
-<%_ if (applicationTypeGateway) { _%>
+<%_ if (!applicationTypeMicroservice) { _%>
+import org.springframework.security.oauth2.client.registration.ClientRegistration
 import org.springframework.security.oauth2.client.registration.ReactiveClientRegistrationRepository
 <%_ } _%>
 import org.springframework.security.oauth2.client.userinfo.ReactiveOAuth2UserService
-<%_ if (applicationTypeGateway) { _%>
+<%_ if (!applicationTypeMicroservice) { _%>
 import org.springframework.security.oauth2.client.web.server.DefaultServerOAuth2AuthorizationRequestResolver
 import org.springframework.security.oauth2.client.web.server.ServerOAuth2AuthorizationRequestResolver
 <%_ } _%>
 import org.springframework.security.oauth2.core.DelegatingOAuth2TokenValidator
-<%_ if (applicationTypeGateway) { _%>
+<%_ if (!applicationTypeMicroservice) { _%>
 import org.springframework.security.oauth2.core.endpoint.OAuth2AuthorizationRequest
 <%_ } _%>
 import org.springframework.security.oauth2.core.OAuth2TokenValidator
@@ -121,15 +125,25 @@ import org.springframework.security.web.server.util.matcher.OrServerWebExchangeM
 <%_ if (skipUserManagement && !authenticationTypeOauth2) { _%>
 import org.springframework.util.StringUtils
 <%_ } _%>
+import org.springframework.web.cors.reactive.CorsWebFilter
 import org.zalando.problem.spring.webflux.advice.security.SecurityProblemSupport
 <%_ if (authenticationTypeSession || authenticationTypeOauth2) { _%>
 import reactor.core.publisher.Mono
 <%_ } _%>
 <%_ if (authenticationTypeOauth2) { _%>
+    <%_ if (!applicationTypeMicroservice) { _%>
+import org.springframework.web.reactive.function.client.WebClient
 
+import com.github.benmanes.caffeine.cache.Cache
+import com.github.benmanes.caffeine.cache.Caffeine
+
+import java.time.Duration
+import java.util.Arrays
+import java.util.Map
+    <%_ } _%>
 import java.util.HashSet
 import java.util.Set
-<%_ if (applicationTypeGateway) { _%>
+<%_ if (!applicationTypeMicroservice) { _%>
 import java.util.function.Consumer
 <%_ } _%>
 <%_ } _%>
@@ -146,18 +160,26 @@ class SecurityConfiguration(
 <%_ if (authenticationTypeJwt) { _%>
     private val tokenProvider: TokenProvider,
 <%_ } _%>
+<%_ if (authenticationTypeOauth2 && !applicationTypeMicroservice) { _%>
+    private val clientRegistrationRepository: ReactiveClientRegistrationRepository,
+<%_ } _%>
     private val jHipsterProperties: JHipsterProperties,
-    private val problemSupport: SecurityProblemSupport
+    private val problemSupport: SecurityProblemSupport,
+    private val corsWebFilter: CorsWebFilter
 ) {
-
     <%_ if (authenticationTypeOauth2) { _%>
-
     @Value("\${spring.security.oauth2.client.provider.oidc.issuer-uri}")
     private lateinit var issuerUri: String
-    <%_ if (applicationTypeGateway) { _%>
+        <%_ if (!applicationTypeMicroservice) { _%>
 
-    private lateinit var clientRegistrationRepository: ReactiveClientRegistrationRepository
-    <%_ } _%>
+    // See https://github.com/jhipster/generator-jhipster/issues/18868
+    // We don't use a distributed cache or the user selected cache implementation here on purpose
+    private val users: Cache<String, Mono<Jwt>> = Caffeine.newBuilder()
+        .maximumSize(10_000)
+        .expireAfterWrite(Duration.ofHours(1))
+        .recordStats()
+        .build()
+        <%_ } _%>
     <%_ } _%>
 
     <%_ if (!skipUserManagement && !authenticationTypeOauth2) { _%>
@@ -195,7 +217,7 @@ class SecurityConfiguration(
             .securityMatcher(
                 NegatedServerWebExchangeMatcher(
                     OrServerWebExchangeMatcher(
-                        pathMatchers("/app/**", "/i18n/**", "/content/**", "/swagger-ui/**", "/v3/api-docs/**", "/test/**"),
+                        pathMatchers("/app/**", "/_app/**", "/i18n/**", "/img/**", "/content/**", "/swagger-ui/**", "/v3/api-docs/**", "/test/**"),
                         pathMatchers(HttpMethod.OPTIONS, "/**")
                     )
                 )
@@ -209,6 +231,7 @@ class SecurityConfiguration(
             <%_ } else { _%>
             .disable()
             <%_ } _%>
+            .addFilterBefore(corsWebFilter, SecurityWebFiltersOrder.REACTOR_CONTEXT)
             <%_ if (!skipClient) { _%>
             .addFilterAt(SpaWebFilter(), SecurityWebFiltersOrder.AUTHENTICATION)
             <%_ } _%>
@@ -260,15 +283,20 @@ class SecurityConfiguration(
             .pathMatchers("/api/account/reset-password/init").permitAll()
             .pathMatchers("/api/account/reset-password/finish").permitAll()
             <%_ } _%>
+<%_ if (authenticationTypeOauth2) { _%>
             .pathMatchers("/api/auth-info").permitAll()
+<%_ } _%>
+            .pathMatchers("/api/admin/**").hasAuthority(ADMIN)
             .pathMatchers("/api/**").authenticated()
 <%_ if (applicationTypeGateway) { _%>
+    <%_ if (microfrontend) { _%>
             // microfrontend resources are loaded by webpack without authentication, they need to be public
             .pathMatchers("/services/*/*.js").permitAll()
             .pathMatchers("/services/*/*.js.map").permitAll()
+    <%_ } _%>
             .pathMatchers("/services/*/v3/api-docs").hasAuthority(ADMIN)
 <%_ } _%>
-            <%_ if (applicationTypeMonolith || applicationTypeGateway) { _%>
+            <%_ if (!applicationTypeMicroservice) { _%>
             .pathMatchers("/services/**").authenticated()
             <%_ } _%>
             .pathMatchers("/management/health").permitAll()
@@ -277,11 +305,15 @@ class SecurityConfiguration(
             .pathMatchers("/management/**").hasAuthority(ADMIN)
         <%_ if (authenticationTypeOauth2) { _%>
 
-        http<%_ if (applicationTypeMonolith || applicationTypeGateway) { _%>.oauth2Login()
-        .and()
-            <%_ } _%>.oauth2ResourceServer()
-            .jwt()
-            .jwtAuthenticationConverter(jwtAuthenticationConverter())
+
+            http<%_ if (!applicationTypeMicroservice) { _%>.oauth2Login {
+                it.authorizationRequestResolver(
+                    authorizationRequestResolver(this.clientRegistrationRepository)
+                )
+            }<% } %>
+                .oauth2ResourceServer()
+                .jwt()
+                .jwtAuthenticationConverter(jwtAuthenticationConverter())
 
         http.oauth2Client()
             <%_ } _%>
@@ -290,7 +322,7 @@ class SecurityConfiguration(
     }
     <%_ if (authenticationTypeOauth2) { _%>
 
-        <%_ if (applicationTypeGateway) { _%>
+        <%_ if (!applicationTypeMicroservice) { _%>
     private fun authorizationRequestResolver(clientRegistrationRepository: ReactiveClientRegistrationRepository): ServerOAuth2AuthorizationRequestResolver  {
         val authorizationRequestResolver =
             DefaultServerOAuth2AuthorizationRequestResolver(clientRegistrationRepository)
@@ -339,7 +371,8 @@ class SecurityConfiguration(
     }
 
     @Bean
-    fun jwtDecoder(): ReactiveJwtDecoder {
+    fun jwtDecoder(<%_ if (!applicationTypeMicroservice) { _%>registrations: ReactiveClientRegistrationRepository<%_ } _%>): ReactiveJwtDecoder {
+        <%_ if (applicationTypeMicroservice) { _%>
         val jwtDecoder = ReactiveJwtDecoders.fromOidcIssuerLocation(issuerUri) as NimbusReactiveJwtDecoder
 
         val audienceValidator = AudienceValidator(jHipsterProperties.security.oauth2.audience)
@@ -350,7 +383,80 @@ class SecurityConfiguration(
 
         return jwtDecoder
     }
+    <%_ } else { _%>
 
+        val clientRegistration = registrations.findByRegistrationId("oidc")
+
+        return clientRegistration.map { 
+            createJwtDecoder(
+                it.providerDetails.issuerUri,
+                it.providerDetails.jwkSetUri,
+                it.providerDetails.userInfoEndpoint.uri
+            )
+        }.block()
+    }
+
+    private fun createJwtDecoder(issuerUri: String, jwkSetUri: String, userInfoUri: String): ReactiveJwtDecoder {
+        val jwtDecoder = NimbusReactiveJwtDecoder(jwkSetUri)
+        val audienceValidator: OAuth2TokenValidator<Jwt> = AudienceValidator(
+            jHipsterProperties.security.oauth2.audience
+        )
+        val withIssuer = JwtValidators.createDefaultWithIssuer(issuerUri)
+        val withAudience: OAuth2TokenValidator<Jwt> = DelegatingOAuth2TokenValidator(withIssuer, audienceValidator)
+        jwtDecoder.setJwtValidator(withAudience)
+
+        return object : ReactiveJwtDecoder {
+            @Throws(JwtException::class)
+            override fun decode(token: String): Mono<Jwt> {
+                return jwtDecoder.decode(token)
+                    .flatMap { enrich(token, it) }
+            }
+
+            private fun enrich(token: String, jwt: Jwt): Mono<Jwt> {
+                if (jwt.hasClaim("given_name") && jwt.hasClaim("family_name")) {
+                    return Mono.just(jwt)
+                } else {
+                    return users.get(jwt.subject) { _ ->
+                        val webClient = WebClient.create()
+                        webClient
+                            .get()
+                            .uri(userInfoUri)
+                            .headers { it.setBearerAuth(token) }
+                            .retrieve()
+                            .bodyToMono(object: ParameterizedTypeReference<MutableMap<String, Object>>(){})
+                            .map { userInfo ->
+                                Jwt
+                                    .withTokenValue(jwt.tokenValue)
+                                    .subject(jwt.subject)
+                                    .audience(jwt.audience)
+                                    .headers { it.putAll(jwt.headers) }
+                                    .claims { claims ->
+                                        val username = userInfo["preferred_username"].toString()
+                                        // special handling for Auth0
+                                        if (userInfo["sub"].toString().contains("|") && username.contains("@")) {
+                                            userInfo["email"] = username as Object
+                                        }
+                                        // Allow full name in a name claim - happens with Auth0
+                                        if (userInfo["name"] != null) {
+                                            val name = userInfo["name"].toString().split("\\s+")
+                                            if (name.isNotEmpty()) {
+                                                userInfo["given_name"] = name[0] as Object
+                                                userInfo["family_name"] = name.subList(1, name.size).joinToString(" ") as Object
+                                            }
+                                        }
+                                        claims.putAll(userInfo)
+                                    }
+                                    .claims {
+                                        it.putAll(jwt.claims)
+                                    }
+                                    .build()
+                            }
+                    }
+                }
+            }
+        }
+    }
+    <%_ } _%>
     <%_ } _%>
     <%_ if (authenticationTypeSession) { _%>
 

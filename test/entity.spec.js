@@ -5,6 +5,7 @@ const fse = require('fs-extra');
 const constants = require('generator-jhipster/generators/generator-constants');
 const { MapperTypes, ServiceTypes, PaginationTypes } = require('generator-jhipster/jdl/jhipster/entity-options');
 const { skipPrettierHelpers: helpers } = require('./utils/utils');
+const { createMockedConfig } = require('./support/mock-config.cjs');
 
 const expectedFiles = require('./utils/expected-files').entity;
 
@@ -47,6 +48,21 @@ describe('JHipster generator for entity', () => {
                     assert.file(`${SERVER_MAIN_KOTLIN_SRC_DIR}com/mycompany/myapp/repository/search/FooSearchRepository.kt`);
                     assert.file(expectedFiles.server);
                     assert.file(expectedFiles.gatling);
+                });
+
+                it('search shall provide methods for query and for string and asychronous indexing', () => {
+                    assert.fileContent(
+                        `${SERVER_MAIN_KOTLIN_SRC_DIR}com/mycompany/myapp/repository/search/FooSearchRepository.kt`,
+                        'fun search(query: String)'
+                    );
+                    assert.fileContent(
+                        `${SERVER_MAIN_KOTLIN_SRC_DIR}com/mycompany/myapp/repository/search/FooSearchRepository.kt`,
+                        'fun search(query: Query)'
+                    );
+                    assert.fileContent(
+                        `${SERVER_MAIN_KOTLIN_SRC_DIR}com/mycompany/myapp/repository/search/FooSearchRepository.kt`,
+                        'fun index(entity: Foo)'
+                    );
                 });
             });
 
@@ -766,7 +782,7 @@ describe('JHipster generator for entity', () => {
                     assert.file(expectedFiles.clientBazGatewayMicroserviceEntity);
                 });
                 it('generates a string id for the mongodb entity', () => {
-                    assert.fileContent(`${CLIENT_MAIN_SRC_DIR}app/entities/sampleMicroservice/baz/baz.model.ts`, 'id?: string');
+                    assert.fileContent(`${CLIENT_MAIN_SRC_DIR}app/entities/sampleMicroservice/baz/baz.model.ts`, 'id: string');
                 });
             });
             describe('without database and paginated entity', () => {
@@ -936,7 +952,7 @@ describe('JHipster generator for entity', () => {
                     await helpers
                         .run(require.resolve('generator-jhipster/generators/entity'))
                         .doInDir(dir => {
-                            fse.copySync(path.join(__dirname, '../test/templates/compose/05-cassandra'), dir);
+                            createMockedConfig('05-cassandra', dir, { appDir: '', config: { testFrameworks: ['gatling'] } });
                             fse.copySync(path.join(__dirname, 'templates/.jhipster/Simple.json'), path.join(dir, '.jhipster/Foo.json'));
                         })
                         .withArguments(['Foo'])

@@ -845,7 +845,7 @@ class UserService<% if (!databaseTypeNo) { %>(
                 // if IdP sends last updated information, use it to determine if an update should happen
                 if (details["updated_at"] != null) {
                     val dbModifiedDate = existingUser.lastModifiedDate
-                    val idpModifiedDate = details["updated_at"] as Instant
+                    val idpModifiedDate: Instant = if (details["updated_at"] is Instant) details["updated_at"] as Instant else Instant.ofEpochSecond(details["updated_at"] as Long)
                     if (idpModifiedDate.isAfter(dbModifiedDate)) {
                         log.debug("Updating user '${user.login}' in local database")
                         return@flatMap updateUser(user.firstName, user.lastName, user.email, user.langKey, user.imageUrl)
@@ -878,7 +878,7 @@ class UserService<% if (!databaseTypeNo) { %>(
             // if IdP sends last updated information, use it to determine if an update should happen
             if (details["updated_at"] != null) {
                 val dbModifiedDate = existingUser.get().lastModifiedDate
-                val idpModifiedDate = details["updated_at"] as Instant
+                val idpModifiedDate: Instant = if (details["updated_at"] is Instant) details["updated_at"] as Instant else Instant.ofEpochSecond(details["updated_at"] as Long)
                 if (idpModifiedDate.isAfter(dbModifiedDate)) {
                     log.debug("Updating user '${user.login}' in local database")
                     updateUser(user.firstName, user.lastName, user.email, user.langKey, user.imageUrl)

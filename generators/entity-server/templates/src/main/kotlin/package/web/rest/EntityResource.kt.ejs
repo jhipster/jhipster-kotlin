@@ -405,9 +405,6 @@ _%><%- include('../../common/inject_template', {viaService: viaService, construc
      * @return the [ResponseEntity] with status `204 (NO_CONTENT)`.
      */
     @DeleteMapping("/<%= entityApiUrl %>/{id}")
-    <%_ if (reactive) { _%>
-    @ResponseStatus(code = HttpStatus.NO_CONTENT)
-    <%_ } _%>
     fun delete<%= entityClass %>(@PathVariable id: <%= primaryKey.type %>): <% if (reactive) { %>Mono<<% } %>ResponseEntity<Void><% if (reactive) { %>><% } %> {
         log.debug("REST request to delete <%= entityClass %> : $id")
 <%- include('../../common/delete_template', {viaService: viaService, fromResource: true}); -%>
@@ -417,10 +414,9 @@ _%><%- include('../../common/inject_template', {viaService: viaService, construc
                 .headers(HeaderUtil.createEntityDeletionAlert(applicationName, <%= enableTranslation %>, ENTITY_NAME, id<% if (primaryKey.type !== 'String') { %>.toString()<% } %>)).build<Void>())
             )
             <%_ } else { _%>
-            .map {
-                ResponseEntity.noContent()
-                    .headers(HeaderUtil.createEntityDeletionAlert(applicationName, <%= enableTranslation %>, ENTITY_NAME, id<% if (primaryKey.type !== 'String') { %>.toString()<% } %>)).build<Void>()
-            }
+            .then(Mono.just(ResponseEntity.noContent()
+                .headers(HeaderUtil.createEntityDeletionAlert(applicationName, <%= enableTranslation %>, ENTITY_NAME, id<% if (primaryKey.type !== 'String') { %>.toString()<% } %>)).build<Void>())
+            )
             <%_ } _%>
         <%_ } else { _%>
         return ResponseEntity.noContent()

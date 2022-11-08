@@ -21,7 +21,7 @@ package <%= packageName %>.domain
 <%_ if (databaseTypeCouchbase) { _%>
 import org.springframework.data.couchbase.core.mapping.Field
 <%_ } _%>
-import com.fasterxml.jackson.annotation.JsonIgnore
+import com.fasterxml.jackson.annotation.JsonIgnoreProperties
 import java.io.Serializable
 import java.time.Instant
 <%_ if (databaseTypeSql) { _%>
@@ -58,8 +58,8 @@ import org.springframework.data.jpa.domain.support.AuditingEntityListener
 @MappedSuperclass
 @EntityListeners(AuditingEntityListener::class)
 <%_ } _%>
-abstract class AbstractAuditingEntity(
-
+@JsonIgnoreProperties(value = [ "createdBy", "createdDate", "lastModifiedBy", "lastModifiedDate" ], allowGetters = true)
+abstract class AbstractAuditingEntity<T>(
     <%_ if (!reactive) { _%>
     @CreatedBy
     <%_ } _%>
@@ -75,8 +75,7 @@ abstract class AbstractAuditingEntity(
     <%_ if (databaseTypeCouchbase) { _%>
     @Field
     <%_ } _%>
-    @JsonIgnore
-    var createdBy: String? = null,
+    open var createdBy: String? = null,
 
     @CreatedDate
     <%_ if (databaseTypeSql) { _%>
@@ -91,8 +90,7 @@ abstract class AbstractAuditingEntity(
     <%_ if (databaseTypeNeo4j) { _%>
     @Property("created_date")
     <%_ } _%>
-    @JsonIgnore
-    var createdDate: Instant? = Instant.now(),
+    open var createdDate: Instant? = Instant.now(),
 
     <%_ if (!reactive) { _%>
     @LastModifiedBy
@@ -109,8 +107,7 @@ abstract class AbstractAuditingEntity(
     <%_ if (databaseTypeNeo4j) { _%>
     @Property("last_modified_by")
     <%_ } _%>
-    @JsonIgnore
-    var lastModifiedBy: String? = null,
+    open var lastModifiedBy: String? = null,
 
     @LastModifiedDate
     <%_ if (databaseTypeSql) { _%>
@@ -125,11 +122,11 @@ abstract class AbstractAuditingEntity(
     <%_ if (databaseTypeNeo4j) { _%>
     @Property("last_modified_date")
     <%_ } _%>
-    @JsonIgnore
-    var lastModifiedDate: Instant? = Instant.now()
-
+    open var lastModifiedDate: Instant? = Instant.now()
 ) : Serializable {
 
+    abstract val id: T?
+    
     companion object {
         private const val serialVersionUID = 1L
     }

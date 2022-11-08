@@ -113,7 +113,7 @@ class <%= serviceClassName %>(
     */
     <%_ } _%>
     <% if (serviceImpl) { %>override<% } %> fun update(<%= instanceName %>: <%= instanceType %>): <% if (reactive) { %>Mono<<% } %><%= instanceType %><% if (reactive) { %>><% } %>{
-            log.debug("Request to save <%= entityClass %> : {}", <%= instanceName %>);
+            log.debug("Request to update <%= entityClass %> : {}", <%= instanceName %>);
     <%- include('/partials/update_template', {updatableEntity, viaService: false, returnDirectly: true, isUsingMapsId: isUsingMapsId, mapsIdAssoc: mapsIdAssoc, isController: false, isPersisted: requiresPersistableImplementation, noReturn: false}); -%>
         }
 
@@ -144,7 +144,7 @@ class <%= serviceClassName %>(
     <% if (serviceImpl) { %>override <% } %>fun findAll(<% if (!paginationNo) { %>pageable: Pageable<% } %>): <% if (paginationNo) { %><%= listOrFlux %><<%= instanceType %><% } else { %><%= pageOrFlux %><<%= instanceType %><% } %>> {
         log.debug("Request to get all <%= entityClassPlural %>")
         <%_ if (paginationNo) { _%>
-        return <%= entityInstance %>Repository.<% if (implementsEagerLoadApis) { %>findAllWithEagerRelationships<% } else { %>findAll<% } %>()<% if (dtoMapstruct) { %><% if (reactive !== true) { %>
+        return <%= entityInstance %>Repository.findAll()<% if (dtoMapstruct) { %><% if (reactive !== true) { %>
             .mapTo(mutableListOf(), <%= entityToDtoReference %>)<% } else { %>.map(<%= entityToDtoReference %> )<% } %><% } %>
         <%_ } else { _%>
         return <%= entityInstance %>Repository.findAll<% if (reactive) { %>By<% } %>(pageable)<% if (dtoMapstruct) { %>

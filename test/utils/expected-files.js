@@ -137,13 +137,9 @@ const expectedFiles = {
             `${SERVER_MAIN_SRC_DIR}com/mycompany/myapp/domain/Foo.kt`,
             `${SERVER_MAIN_SRC_DIR}com/mycompany/myapp/repository/FooRepository.kt`,
             `${SERVER_MAIN_SRC_DIR}com/mycompany/myapp/web/rest/FooResource.kt`,
-            // SERVER_MAIN_RES_DIR + 'config/liquibase/changelog/20160120213555_added_entity_Foo.xml',
             `${SERVER_TEST_SRC_DIR}com/mycompany/myapp/web/rest/FooResourceIT.kt`,
         ],
-        entitySearchSpecific: [
-            `${SERVER_MAIN_SRC_DIR}com/mycompany/myapp/repository/search/FooSearchRepository.kt`,
-            `${SERVER_TEST_SRC_DIR}com/mycompany/myapp/repository/search/FooSearchRepositoryMockConfiguration.kt`,
-        ],
+        entitySearchSpecific: [`${SERVER_MAIN_SRC_DIR}com/mycompany/myapp/repository/search/FooSearchRepository.kt`],
         fakeData: [`${SERVER_MAIN_RES_DIR}config/liquibase/fake-data/foo.csv`],
         serverLiquibase: [`${SERVER_MAIN_RES_DIR}config/liquibase/changelog/20160120000100_added_entity_Foo.xml`],
         gatling: [`${TEST_DIR}gatling/user-files/simulations/FooGatlingTest.scala`],
@@ -220,6 +216,10 @@ const expectedFiles = {
         `${SERVER_TEST_SRC_DIR}com/mycompany/myapp/web/rest/errors/ExceptionTranslatorIT.kt`,
         `${SERVER_TEST_SRC_DIR}com/mycompany/myapp/web/rest/errors/ExceptionTranslatorTestController.kt`,
         `${SERVER_TEST_RES_DIR}config/application.yml`,
+        `${SERVER_TEST_SRC_DIR}com/mycompany/myapp/config/AsyncSyncConfiguration.kt`,
+        `${SERVER_TEST_SRC_DIR}com/mycompany/myapp/config/TestContainersSpringContextCustomizerFactory.kt`,
+        `${SERVER_TEST_RES_DIR}META-INF/spring.factories`,
+        `${SERVER_TEST_RES_DIR}testcontainers.properties`,
         `${SERVER_TEST_RES_DIR}logback.xml`,
     ],
 
@@ -246,7 +246,6 @@ const expectedFiles = {
         `${SERVER_MAIN_SRC_DIR}com/mycompany/myapp/web/rest/UserResource.kt`,
         `${SERVER_MAIN_SRC_DIR}com/mycompany/myapp/web/rest/vm/KeyAndPasswordVM.kt`,
         `${SERVER_MAIN_SRC_DIR}com/mycompany/myapp/web/rest/vm/ManagedUserVM.kt`,
-        `${SERVER_TEST_SRC_DIR}com/mycompany/myapp/config/NoOpMailConfiguration.kt`,
         `${SERVER_TEST_SRC_DIR}com/mycompany/myapp/web/rest/UserResourceIT.kt`,
         `${SERVER_TEST_SRC_DIR}com/mycompany/myapp/service/UserServiceIT.kt`,
         `${SERVER_TEST_SRC_DIR}com/mycompany/myapp/service/MailServiceIT.kt`,
@@ -263,7 +262,9 @@ const expectedFiles = {
         `${DOCKER_DIR}redis-cluster.yml`,
         `${DOCKER_DIR}redis/connectRedisCluster.sh`,
         `${DOCKER_DIR}redis/Redis-Cluster.Dockerfile`,
-        `${SERVER_TEST_SRC_DIR}/com/mycompany/myapp/RedisTestContainerExtension.kt`,
+        `${SERVER_TEST_SRC_DIR}/com/mycompany/myapp/config/EmbeddedRedis.kt`,
+        `${SERVER_TEST_SRC_DIR}/com/mycompany/myapp/config/RedisTestContainer.kt`,
+        `${SERVER_TEST_SRC_DIR}/com/mycompany/myapp/config/TestContainersSpringContextCustomizerFactory.kt`,
     ],
 
     gatling: [`${TEST_DIR}gatling/conf/gatling.conf`],
@@ -735,28 +736,52 @@ const expectedFiles = {
     ],
 
     mysql: [
+        `${SERVER_TEST_SRC_DIR}com/mycompany/myapp/config/SqlTestContainer.kt`,
+        `${SERVER_TEST_SRC_DIR}com/mycompany/myapp/config/MysqlTestContainer.kt`,
+        `${SERVER_TEST_SRC_DIR}com/mycompany/myapp/config/TestContainersSpringContextCustomizerFactory.kt`,
+        `${SERVER_TEST_SRC_DIR}com/mycompany/myapp/config/EmbeddedSQL.kt`,
+        `${SERVER_TEST_RES_DIR}testcontainers.properties`,
+        `${SERVER_TEST_RES_DIR}META-INF/spring.factories`,
         `${SERVER_MAIN_SRC_DIR}com/mycompany/myapp/config/LiquibaseConfiguration.kt`,
         `${DOCKER_DIR}mysql.yml`,
-        `${SERVER_TEST_RES_DIR}config/application-testcontainers.yml`,
     ],
 
     mariadb: [
+        `${SERVER_TEST_SRC_DIR}com/mycompany/myapp/config/SqlTestContainer.kt`,
+        `${SERVER_TEST_SRC_DIR}com/mycompany/myapp/config/MariadbTestContainer.kt`,
+        `${SERVER_TEST_SRC_DIR}com/mycompany/myapp/config/TestContainersSpringContextCustomizerFactory.kt`,
+        `${SERVER_TEST_SRC_DIR}com/mycompany/myapp/config/EmbeddedSQL.kt`,
+        `${SERVER_TEST_RES_DIR}testcontainers.properties`,
+        `${SERVER_TEST_RES_DIR}META-INF/spring.factories`,
         `${SERVER_MAIN_SRC_DIR}com/mycompany/myapp/config/LiquibaseConfiguration.kt`,
         `${DOCKER_DIR}mariadb.yml`,
-        `${SERVER_TEST_RES_DIR}config/application-testcontainers.yml`,
+        `${SERVER_TEST_RES_DIR}config/application-testdev.yml`,
+        `${SERVER_TEST_RES_DIR}config/application-testprod.yml`,
         `${SERVER_TEST_RES_DIR}testcontainers/mariadb/my.cnf`,
     ],
 
     mssql: [
+        `${SERVER_TEST_SRC_DIR}com/mycompany/myapp/config/SqlTestContainer.kt`,
+        `${SERVER_TEST_SRC_DIR}com/mycompany/myapp/config/MsSqlTestContainer.kt`,
+        `${SERVER_TEST_SRC_DIR}com/mycompany/myapp/config/TestContainersSpringContextCustomizerFactory.kt`,
+        `${SERVER_TEST_SRC_DIR}com/mycompany/myapp/config/EmbeddedSQL.kt`,
+        `${SERVER_TEST_RES_DIR}testcontainers.properties`,
+        `${SERVER_TEST_RES_DIR}META-INF/spring.factories`,
         `${SERVER_MAIN_SRC_DIR}com/mycompany/myapp/config/LiquibaseConfiguration.kt`,
         `${DOCKER_DIR}mssql.yml`,
-        `${SERVER_TEST_RES_DIR}config/application-testcontainers.yml`,
     ],
 
     postgresql: [
+        `${SERVER_TEST_SRC_DIR}com/mycompany/myapp/config/SqlTestContainer.kt`,
+        `${SERVER_TEST_SRC_DIR}com/mycompany/myapp/config/PostgreSqlTestContainer.kt`,
+        `${SERVER_TEST_SRC_DIR}com/mycompany/myapp/config/TestContainersSpringContextCustomizerFactory.kt`,
+        `${SERVER_TEST_SRC_DIR}com/mycompany/myapp/config/EmbeddedSQL.kt`,
+        `${SERVER_TEST_RES_DIR}testcontainers.properties`,
+        `${SERVER_TEST_RES_DIR}META-INF/spring.factories`,
         `${SERVER_MAIN_SRC_DIR}com/mycompany/myapp/config/LiquibaseConfiguration.kt`,
         `${DOCKER_DIR}postgresql.yml`,
-        `${SERVER_TEST_RES_DIR}config/application-testcontainers.yml`,
+        `${SERVER_TEST_RES_DIR}config/application-testdev.yml`,
+        `${SERVER_TEST_RES_DIR}config/application-testprod.yml`,
     ],
 
     liquibase: [
@@ -792,7 +817,11 @@ const expectedFiles = {
     ],
 
     neo4j: [
-        `${SERVER_TEST_SRC_DIR}com/mycompany/myapp/AbstractNeo4jIT.kt`,
+        `${SERVER_TEST_SRC_DIR}com/mycompany/myapp/config/EmbeddedNeo4j.kt`,
+        `${SERVER_TEST_SRC_DIR}com/mycompany/myapp/config/Neo4jTestContainer.kt`,
+        `${SERVER_TEST_SRC_DIR}com/mycompany/myapp/config/TestContainersSpringContextCustomizerFactory.kt`,
+        `${SERVER_TEST_RES_DIR}testcontainers.properties`,
+        `${SERVER_TEST_RES_DIR}META-INF/spring.factories`,
         `${SERVER_MAIN_RES_DIR}config/neo4j/migrations/user__admin.json`,
         `${SERVER_MAIN_RES_DIR}config/neo4j/migrations/user__user.json`,
         `${DOCKER_DIR}neo4j.yml`,
@@ -821,7 +850,6 @@ const expectedFiles = {
     elasticsearch: [
         `${DOCKER_DIR}elasticsearch.yml`,
         `${SERVER_MAIN_SRC_DIR}com/mycompany/myapp/repository/search/UserSearchRepository.kt`,
-        `${SERVER_TEST_SRC_DIR}com/mycompany/myapp/repository/search/UserSearchRepositoryMockConfiguration.kt`,
     ],
 
     cucumber: [
@@ -843,22 +871,22 @@ const expectedFiles = {
     consul: [`${DOCKER_DIR}central-server-config/application.yml`, `${DOCKER_DIR}consul.yml`, `${DOCKER_DIR}config/git2consul.json`],
 
     cypress: [
-        'cypress.json',
+        'cypress.config.ts',
         `${CLIENT_TEST_SRC_DIR}cypress/plugins/index.ts`,
-        `${CLIENT_TEST_SRC_DIR}cypress/integration/administration/administration.spec.ts`,
+        `${CLIENT_TEST_SRC_DIR}cypress/e2e/administration/administration.cy.ts`,
         `${CLIENT_TEST_SRC_DIR}cypress/support/commands.ts`,
         `${CLIENT_TEST_SRC_DIR}cypress/support/navbar.ts`,
         `${CLIENT_TEST_SRC_DIR}cypress/support/index.ts`,
         `${CLIENT_TEST_SRC_DIR}cypress/tsconfig.json`,
     ],
 
-    cypressNoOAuth2: [`${CLIENT_TEST_SRC_DIR}cypress/integration/account/login-page.spec.ts`],
+    cypressNoOAuth2: [`${CLIENT_TEST_SRC_DIR}cypress/e2e/account/login-page.cy.ts`],
 
     cypressWithDatabaseAndNoOAuth2: [
-        `${CLIENT_TEST_SRC_DIR}cypress/integration/account/register-page.spec.ts`,
-        `${CLIENT_TEST_SRC_DIR}cypress/integration/account/settings-page.spec.ts`,
-        `${CLIENT_TEST_SRC_DIR}cypress/integration/account/password-page.spec.ts`,
-        `${CLIENT_TEST_SRC_DIR}cypress/integration/account/reset-password-page.spec.ts`,
+        `${CLIENT_TEST_SRC_DIR}cypress/e2e/account/register-page.cy.ts`,
+        `${CLIENT_TEST_SRC_DIR}cypress/e2e/account/settings-page.cy.ts`,
+        `${CLIENT_TEST_SRC_DIR}cypress/e2e/account/password-page.cy.ts`,
+        `${CLIENT_TEST_SRC_DIR}cypress/e2e/account/reset-password-page.cy.ts`,
     ],
 
     cypressWithOauth2: [`${CLIENT_TEST_SRC_DIR}cypress/support/oauth2.ts`],

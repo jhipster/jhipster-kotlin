@@ -182,7 +182,7 @@ class <%= asEntity('User') %> (
     @org.springframework.data.elasticsearch.annotations.Field(type = FieldType.Keyword)
     <%_ } _%>
 <%_ } _%>
-    var id: <%= user.primaryKey.type %>? = null,
+    <% if (databaseTypeSql || databaseTypeMongodb || databaseTypeNeo4j || databaseTypeCouchbase) { %>override <% } %>var id: <%= user.primaryKey.type %>? = null,
 
     @field:NotNull
     @field:Pattern(regexp = LOGIN_REGEX)
@@ -403,7 +403,7 @@ class <%= asEntity('User') %> (
     lastModifiedBy: String? = null,
     lastModifiedDate: Instant? = Instant.now()
 <%_ } _%>
-) : <% if (databaseTypeSql || databaseTypeMongodb || databaseTypeNeo4j || databaseTypeCouchbase) { %>AbstractAuditingEntity(createdBy, createdDate, lastModifiedBy, lastModifiedDate), <% } %>Serializable {
+) : <% if (databaseTypeSql || databaseTypeMongodb || databaseTypeNeo4j || databaseTypeCouchbase) { %>AbstractAuditingEntity<<%= user.primaryKey.type %>>(createdBy, createdDate, lastModifiedBy, lastModifiedDate), <% } %>Serializable {
 
 <%_ if (databaseTypeSql && reactive) { _%>
     @PersistenceConstructor

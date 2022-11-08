@@ -37,6 +37,7 @@ import java.util.List
 import java.util.Map
 import java.util.Map.Entry
 import java.util.Optional
+import org.apache.commons.lang3.StringUtils
 
 import org.springframework.data.domain.Pageable
 import io.r2dbc.spi.Row
@@ -92,7 +93,7 @@ import reactor.core.publisher.Flux
 import reactor.core.publisher.Mono
 
 /**
- * Spring Data <%= officialDatabaseType %> reactive custom repository implementation for the <%= persistClass %> entity.
+ * <%= springDataDescription %> custom repository implementation for the <%= persistClass %> entity.
  */
 @SuppressWarnings("unused")
 class <%= entityClass %>RepositoryInternalImpl(
@@ -151,7 +152,11 @@ class <%= entityClass %>RepositoryInternalImpl(
     }
 
     override fun findById(id: <%= primaryKey.type %>?): Mono<<%= persistClass %>> {
+        <%_ if (primaryKey.type != 'Long') {  _%>
+        val whereClause = Conditions.isEqual(entityTable.column("<%= primaryKey.fields[0].columnName %>"), Conditions.just(StringUtils.wrap(id.toString(), "'")));
+        <%_ } else { _%>
         val whereClause = Conditions.isEqual(entityTable.column("<%= primaryKey.fields[0].columnName %>"), Conditions.just(id.toString()));
+        <%_ }_%>
         return createQuery(null, whereClause).one();
     }
 

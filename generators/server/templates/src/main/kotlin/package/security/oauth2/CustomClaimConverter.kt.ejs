@@ -20,6 +20,8 @@ package <%= packageName %>.security.oauth2
 
 import com.fasterxml.jackson.databind.JsonNode
 import com.fasterxml.jackson.databind.node.ObjectNode
+import com.github.benmanes.caffeine.cache.Cache
+import com.github.benmanes.caffeine.cache.Caffeine
 import org.springframework.core.convert.converter.Converter
 import org.springframework.http.HttpEntity
 import org.springframework.http.HttpHeaders
@@ -30,11 +32,12 @@ import org.springframework.security.oauth2.jwt.MappedJwtClaimSetConverter
 import org.springframework.security.oauth2.server.resource.web.BearerTokenResolver
 import org.springframework.security.oauth2.server.resource.web.DefaultBearerTokenResolver
 import org.springframework.web.client.RestTemplate
+import org.springframework.web.context.request.RequestAttributes
 import org.springframework.web.context.request.RequestContextHolder
 import org.springframework.web.context.request.ServletRequestAttributes
 import <%= packageName %>.security.CLAIMS_NAMESPACE
 
-import java.util.concurrent.ConcurrentHashMap
+import java.time.Duration
 
 class CustomClaimConverter(
     private val registration: ClientRegistration,
@@ -43,20 +46,31 @@ class CustomClaimConverter(
 
     private val bearerTokenResolver: BearerTokenResolver = DefaultBearerTokenResolver()
     private val delegate: MappedJwtClaimSetConverter = MappedJwtClaimSetConverter.withDefaults(emptyMap())
-    val users: MutableMap<String, ObjectNode> = ConcurrentHashMap()
+    
+    // See https://github.com/jhipster/generator-jhipster/issues/18868
+    // We don't use a distributed cache or the user selected cache implementation here on purpose
+    private val users: Cache<String, ObjectNode> = Caffeine.newBuilder()
+        .maximumSize(10_000)
+        .expireAfterWrite(Duration.ofHours(1))
+        .recordStats()
+        .build();
 
 
     override fun convert(claims: Map<String, Any>): Map<String, Any>? {
         val convertedClaims = delegate.convert(claims)
-        if (RequestContextHolder.getRequestAttributes() != null && RequestContextHolder.getRequestAttributes() != null) {
+        // Only look up user information if identity claims are missing
+        if (claims.containsKey("given_name") && claims.containsKey("family_name")) {
+            return convertedClaims
+        }
+        val attributes = RequestContextHolder.getRequestAttributes()
+        if (attributes is ServletRequestAttributes) {
             // Retrieve and set the token
-            val token = bearerTokenResolver.resolve((RequestContextHolder.getRequestAttributes() as ServletRequestAttributes).request)
+            val token = bearerTokenResolver.resolve(attributes.request)
             val headers = HttpHeaders()
             headers.set("Authorization", buildBearer(token))
             
-
-            // Retrieve user infos from OAuth provider if not already loaded
-            val user = users.computeIfAbsent(claims["sub"].toString()) {
+            // Retrieve user info from OAuth provider if not already loaded
+            val user = users.get(claims["sub"].toString()) {
                 val userInfo: ResponseEntity<ObjectNode> = restTemplate.exchange(
                     registration.providerDetails.userInfoEndpoint.uri,
                     HttpMethod.GET,
