@@ -28,7 +28,6 @@ const kotlinConstants = require('../generator-kotlin-constants');
 const { writeCouchbaseFiles } = require('./files-couchbase');
 const { writeSqlFiles } = require('./files-sql');
 const { makeKotlinServerFiles } = require('../util');
-const { update } = require('lodash');
 
 /* Constants use throughout */
 const SERVER_MAIN_KOTLIN_SRC_DIR = `${MAIN_DIR}kotlin/`;
