@@ -90,6 +90,8 @@ function writeFiles() {
                 this.addGradlePlugin('io.gitlab.arturbosch.detekt', 'detekt-gradle-plugin', '${detekt_version}');
 
                 this.applyFromGradleScript('gradle/kotlin');
+
+                updateGradle(this);
             }
 
             if (this.buildTool === MAVEN) {
@@ -350,6 +352,17 @@ async function updatePom(generator) {
 `);
     _this.fs.write(fullPath, $.xml());
 }
+
+async function updateGradle(generator) {
+    const _this = generator || this;
+
+    const fullPath = path.join(process.cwd(), 'build.gradle');
+
+    const content = _this.fs.read(fullPath).toString();
+
+    _this.fs.write(fullPath, content.replace('classes/java/main', 'classes/kotlin/main'));
+}
+
 
 module.exports = {
     writeFiles,
