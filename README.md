@@ -33,7 +33,7 @@ Full documentation and information about JHipster is available [here](https://ww
 Install the package with `npm install -g generator-jhipster-kotlin`
 
 1. Install the package with `npm install -g generator-jhipster-kotlin`
-1. Create and Go to a directory 
+1. Create and navigate to a directory 
 1. Generate the application with `khipster`
 
 ## Using Docker
