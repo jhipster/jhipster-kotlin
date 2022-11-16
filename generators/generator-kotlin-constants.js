@@ -23,7 +23,7 @@ const KTLINT_MAVEN_VERSION = '1.13.0';
 const KTLINT_GRADLE_VERSION = '10.2.1';
 const MAPSTRUCT_VERSION = '1.4.2.Final';
 const MAVEN_ANTRUN_VERSION = '3.0.0';
-const MOCKITO_KOTLIN_VERSION = '2.2.0';
+const MOCKITO_KOTLIN_VERSION = '4.0.0';
 
 const DETEKT_CONFIG_FILE = 'detekt-config.yml';
 
