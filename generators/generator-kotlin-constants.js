@@ -18,7 +18,7 @@
  */
 
 const DETEKT_VERSION = '1.21.0';
-const KOTLIN_VERSION = '1.7.21';
+const KOTLIN_VERSION = '1.6.21';
 const KTLINT_MAVEN_VERSION = '1.15.2';
 const KTLINT_GRADLE_VERSION = '11.0.0';
 const MAPSTRUCT_VERSION = '1.5.3.Final';
