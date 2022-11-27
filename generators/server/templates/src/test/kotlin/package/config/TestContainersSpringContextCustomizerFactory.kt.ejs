@@ -78,7 +78,7 @@ class TestContainersSpringContextCustomizerFactory: ContextCustomizerFactory {
     <%_ if (prodDatabaseTypeMysql || prodDatabaseTypeMariadb || prodDatabaseTypeMssql || prodDatabaseTypePostgres) { _%>
         private var prodTestContainer: SqlTestContainer? = null
     <%_ } _%>
-    }    
+    }
 
     override fun createContextCustomizer(
         testClass: Class<*>,
@@ -171,7 +171,7 @@ class TestContainersSpringContextCustomizerFactory: ContextCustomizerFactory {
                 if (context.environment.activeProfiles.asList().contains("test${JHipsterConstants.SPRING_PROFILE_PRODUCTION}")) {
                     if (null == prodTestContainer) {
                         try {
-                            val containerClass = Class.forName("${javaClass.packageName}.PostgreSqlTestContainer") as Class<out SqlTestContainer>
+                            val containerClass = Class.forName("${javaClass.packageName}.<% if (prodDatabaseTypeMysql) { %>Mysql<% } else if (prodDatabaseTypeMariadb) { %>Mariadb<% } else if (prodDatabaseTypeMssql) { %>MsSql<% } else if (prodDatabaseTypePostgres) { %>PostgreSql<% } %>TestContainer") as (Class<out SqlTestContainer>)
                             prodTestContainer = beanFactory.createBean(containerClass)
                             beanFactory.registerSingleton(containerClass.name, prodTestContainer)
                             // (beanFactory as (DefaultListableBeanFactory)).registerDisposableBean(containerClass.name, prodTestContainer)
@@ -230,7 +230,7 @@ class TestContainersSpringContextCustomizerFactory: ContextCustomizerFactory {
                         testValues.and(
                             "spring.neo4j.uri=" + it.getNeo4jContainer()?.boltUrl
                         )
-                }   
+                }
             }
 <%_ } _%>
 <%_ if (messageBrokerKafka) { _%>
@@ -245,7 +245,7 @@ class TestContainersSpringContextCustomizerFactory: ContextCustomizerFactory {
         }
         kafkaBean?.let {
             testValues = testValues.and("spring.cloud.stream.kafka.binder.brokers=" + it.getKafkaContainer().host + ':' + it.getKafkaContainer().getMappedPort(KafkaContainer.KAFKA_PORT))
-        }   
+        }
     }
 <%_ } _%>
 <%_ if (searchEngineElasticsearch) { _%>
