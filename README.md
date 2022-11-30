@@ -8,13 +8,7 @@
 
 # About
 
-<div align="center">
-    <a href="https://khipster.dev">
-        <img width="500" height="98" src="https://raw.githubusercontent.com/sendilkumarn/jhipster-kotlin-artwork/master/about-project.png">
-    </a>
-</div>
-
-> JHipster is a development platform to quickly generate, develop, and deploy modern web applications and microservice architectures. We support many frontend technologies, including Angular, React, and Vue. We even have mobile app support for Ionic and React Native! On the backend, we support Spring Boot (with Java or Kotlin), Micronaut, Quarkus, Node.js, and .NET. For deployment, we embrace cloud native principles with Docker and Kubernetes. Deployment support exists for AWS, Azure, Cloud Foundry, Google Cloud Platform, Heroku, and OpenShift.
+Kotlin + JHipster = KHipster
 
 Documentation and information about KHipster is available [here](https://www.khipster.dev/)
 
@@ -28,26 +22,19 @@ Full documentation and information about JHipster is available [here](https://ww
 
 ![React](https://github.com/jhipster/jhipster-kotlin/workflows/React/badge.svg)
 
-![Webflux](https://github.com/jhipster/jhipster-kotlin/workflows/Webflux/badge.svg)
-
-![Microservices](https://dev.azure.com/jhipster/jhipster-kotlin/_apis/build/status/jhipster.jhipster-kotlin?branchName=main)
-
-![KHipster Generated Applications CI](https://github.com/jhipster/jhipster-kotlin/workflows/KHipster%20Generated%20Applications%20CI/badge.svg)
-
 # Greetings, Kotlin Hipster!
 
 [![NPM version][npm-image]][npm-url]
 [![Dependency Status][daviddm-image]][daviddm-url]
 
-This project adds Kotlin to the JHipster application 😎. It is based on JHipster Blueprint 🔵.
 
 ## 🚀 How to get started
 
 Install the package with `npm install -g generator-jhipster-kotlin`
 
-1. Make sure you have `yo` installed with `npm install -g yo`
-2. Install the package with `npm install -g generator-jhipster-kotlin`
-3. Generate the application with `khipster`
+1. Install the package with `npm install -g generator-jhipster-kotlin`
+1. Create and navigate to a directory 
+1. Generate the application with `khipster`
 
 ## Using Docker
 

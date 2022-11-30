@@ -19,24 +19,16 @@
 package <%= packageName %>.web.rest
 
 import <%= packageName %>.config.LOGIN_REGEX
-<%_ if (!authenticationTypeOauth2) { _%>
 import <%= packageName %>.domain.<%= asEntity('User') %>
-<%_ } _%>
-<%_ if (!authenticationTypeOauth2) { _%>
 import <%= packageName %>.repository.UserRepository
-<%_ } _%>
 import <%= packageName %>.security.ADMIN
-<%_ if (!authenticationTypeOauth2) { _%>
 import <%= packageName %>.service.MailService
 import org.springframework.data.domain.Sort
-<%_ } _%>
 import <%= packageName %>.service.UserService
 import <%= packageName %>.service.dto.<%= asDto('AdminUser') %>
-<%_ if (!authenticationTypeOauth2) { _%>
 import <%= packageName %>.web.rest.errors.BadRequestAlertException
 import <%= packageName %>.web.rest.errors.EmailAlreadyUsedException
 import <%= packageName %>.web.rest.errors.LoginAlreadyUsedException
-<%_ } _%>
 
 import tech.jhipster.web.util.HeaderUtil
 <%_ if (databaseTypeSql || databaseTypeMongodb || databaseTypeNeo4j || databaseTypeCouchbase) { _%>
@@ -82,11 +74,9 @@ import reactor.core.publisher.Mono
 <%_ } _%>
 
 import javax.validation.constraints.Pattern
-<%_ if (!authenticationTypeOauth2) { _%>
 import javax.validation.Valid
 import java.net.URI
 import java.net.URISyntaxException
-<%_ } _%>
 <%_ if (searchEngineElasticsearch && !reactive) { _%>
 import java.util.stream.Collectors
 import java.util.stream.StreamSupport
@@ -97,7 +87,7 @@ import org.elasticsearch.index.query.QueryBuilders.queryStringQuery
 /**
  * REST controller for managing users.
  *
- * This class accesses the [<% if (!(!authenticationTypeOauth2 || searchEngineElasticsearch)) { %><%= packageName %>.domain.<% } %><%= asEntity('User') %>] entity, and needs to fetch its collection of authorities.
+ * This class accesses the {@link <%= packageName %>.domain.<%= user.persistClass %>} entity, and needs to fetch its collection of authorities.
  *
  * For a normal use-case, it would be better to have an eager relationship between User and Authority,
  * and send everything to the client side: there would be no View Model and DTO, a lot less code, and an outer-join
@@ -120,24 +110,19 @@ import org.elasticsearch.index.query.QueryBuilders.queryStringQuery
 @RestController
 @RequestMapping("/api/admin")
 class UserResource(
-    private val userService: UserService<%_ if (!authenticationTypeOauth2) { _%>,
+    private val userService: UserService,
     private val userRepository: UserRepository,
-    private val mailService: MailService<% } %>
+    private val mailService: MailService
 ) {
-
-    <%_ if (!authenticationTypeOauth2) { _%>
     companion object {
         private val ALLOWED_ORDERED_PROPERTIES = arrayOf("id", "login", "firstName", "lastName", "email", "activated", "langKey", "createdBy", "createdDate", "lastModifiedBy", "lastModifiedDate")
     }
-    <%_ } _%>
-
 
     private val log = LoggerFactory.getLogger(javaClass)
 
     @Value("\${jhipster.clientApp.name}")
     private val applicationName: String? = null
 
-<%_ if (!authenticationTypeOauth2) { _%>
     /**
      * `POST  /admin/users`  : Creates a new user.
      *
@@ -165,7 +150,7 @@ class UserResource(
             // Lowercase the user login before comparing with database
         <%_ if (reactive) { _%>
         }
-        return userRepository.findOneByLogin(userDTO.login!!.toLowerCase())
+        return userRepository.findOneByLogin(userDTO.login!!.lowercase())
             .hasElement()
             .flatMap { loginExists ->
                 if (loginExists!!) {
@@ -184,14 +169,14 @@ class UserResource(
             .map { user ->
                 try {
                     ResponseEntity.created(URI("/api/admin/users/${user.login}"))
-                        .headers(HeaderUtil.createAlert(applicationName, "userManagement.created", user.login))
+                        .headers(HeaderUtil.createAlert(applicationName, <% if (enableTranslation) { %> "userManagement.created"<% } else { %> "A user is created with identifier " + user.login<% } %>, user.login))
                         .body(user)
                 } catch (e: URISyntaxException) {
                     throw RuntimeException(e)
                 }
             }
         <%_ } else { _%>
-        } else if (userRepository.findOneByLogin(userDTO.login!!.toLowerCase()).isPresent) {
+        } else if (userRepository.findOneByLogin(userDTO.login!!.lowercase()).isPresent) {
             throw LoginAlreadyUsedException()
         } else if (userRepository.findOneByEmailIgnoreCase(userDTO.email).isPresent) {
             throw EmailAlreadyUsedException()
@@ -225,7 +210,7 @@ class UserResource(
                 if (emailExists!!) {
                     throw EmailAlreadyUsedException()
                 }
-                userRepository.findOneByLogin(userDTO.login!!.toLowerCase())
+                userRepository.findOneByLogin(userDTO.login!!.lowercase())
             }
             .filter { user -> user.id != userDTO.id }
             .hasElement()
@@ -238,7 +223,7 @@ class UserResource(
             .switchIfEmpty(Mono.error(ResponseStatusException(HttpStatus.NOT_FOUND)))
             .map { user ->
                 ResponseEntity.ok()
-                    .headers(HeaderUtil.createAlert(applicationName, "userManagement.updated", userDTO.login))
+                    .headers(HeaderUtil.createAlert(applicationName, <% if (enableTranslation) { %>"userManagement.updated"<% } else { %>"A user is updated with identifier " + userDTO.login<% } %>, userDTO.login))
                     .body(user)
             }
     <%_ } else { _%>
@@ -248,7 +233,7 @@ class UserResource(
         if (existingUser.isPresent && existingUser.get().id != userDTO.id) {
             throw EmailAlreadyUsedException()
         }
-        existingUser = userRepository.findOneByLogin(userDTO.login!!.toLowerCase())
+        existingUser = userRepository.findOneByLogin(userDTO.login!!.lowercase())
         if (existingUser.isPresent && existingUser.get().id != userDTO.id) {
             throw LoginAlreadyUsedException()
         }
@@ -261,7 +246,6 @@ class UserResource(
     <%_ } _%>
     }
 
-<%_ } _%>
     /**
      * `GET /admin/users` : get all users with all the details - calling this are only allowed for the administrators.
      *<% if (databaseTypeSql || databaseTypeMongodb || databaseTypeNeo4j || databaseTypeCouchbase) { %>
@@ -279,12 +263,10 @@ class UserResource(
         request: ServerHttpRequest,
         @org.springdoc.api.annotations.ParameterObject pageable: Pageable
     ): Mono<ResponseEntity<Flux<<%= asDto('AdminUser') %>>>> {
-            log.debug("REST request to get all User for an admin")
-            <%_ if (!authenticationTypeOauth2) { _%>
-            if (!onlyContainsAllowedProperties(pageable)) {
-                return Mono.just(ResponseEntity.badRequest().build())
-            }
-            <%_ } _%>
+        log.debug("REST request to get all User for an admin")
+        if (!onlyContainsAllowedProperties(pageable)) {
+            return Mono.just(ResponseEntity.badRequest().build())
+        }
 
         return userService.countManagedUsers()
             .map { total -> PageImpl(mutableListOf<<%= asDto('AdminUser') %>>(), pageable, total!!) }
@@ -294,20 +276,16 @@ class UserResource(
         <%_ } else { _%>
     fun getAllUsers(@org.springdoc.api.annotations.ParameterObject pageable: Pageable): ResponseEntity<List<<%= asDto('AdminUser') %>>> {
         log.debug("REST request to get all User for an admin")
-        <%_ if (!authenticationTypeOauth2) { _%>
-            if (!onlyContainsAllowedProperties(pageable)) {
-                return ResponseEntity.badRequest().build()
-            }
-        <%_ } _%>
+        if (!onlyContainsAllowedProperties(pageable)) {
+            return ResponseEntity.badRequest().build()
+        }
         val page = userService.getAllManagedUsers(pageable)
         val headers = PaginationUtil.generatePaginationHttpHeaders(ServletUriComponentsBuilder.fromCurrentRequest(), page)
         return ResponseEntity(page.content, headers, HttpStatus.OK)
     }
         <%_ } _%>
-    <%_ if (!authenticationTypeOauth2) { _%>
     private fun onlyContainsAllowedProperties(pageable: Pageable) =
         pageable.sort.map(Sort.Order::getProperty).all { ALLOWED_ORDERED_PROPERTIES.contains(it) }
-    <%_ } _%>
 
     <%_ } else { // Cassandra _%>
     fun getAllUsers() = userService.getAllManagedUsers()
@@ -335,7 +313,6 @@ class UserResource(
                 .map { <%= asDto('AdminUser') %>(it) })
     <%_ } _%>
     }
-<%_ if (!authenticationTypeOauth2) { _%>
 
     /**
      * `DELETE /admin/users/:login` : delete the "login" User.
@@ -346,11 +323,10 @@ class UserResource(
     @DeleteMapping("/users/{login}")
     @PreAuthorize("hasAuthority(\"$ADMIN\")")
     <%_ if (reactive) { _%>
-    @ResponseStatus(code = HttpStatus.NO_CONTENT)
     fun deleteUser(@PathVariable @Pattern(regexp = LOGIN_REGEX) login: String): Mono<ResponseEntity<Void>> {
         log.debug("REST request to delete User: $login")
         return userService.deleteUser(login)
-            .map { ResponseEntity.noContent().headers(HeaderUtil.createAlert(applicationName, "userManagement.deleted", login)).build<Void>() }
+        .then(Mono.just(ResponseEntity.noContent().headers(HeaderUtil.createAlert(applicationName, <% if (enableTranslation) { %> "userManagement.deleted"<% } else { %> "A user is deleted with identifier " + login<% } %>, login)).build()))
     <%_ } else { _%>
     fun deleteUser(@PathVariable @Pattern(regexp = LOGIN_REGEX) login: String): ResponseEntity<Void> {
         log.debug("REST request to delete User: $login")
@@ -359,5 +335,4 @@ class UserResource(
             .headers(HeaderUtil.createAlert(applicationName, <% if (enableTranslation) {%>"userManagement.deleted"<% } else { %> "A user is deleted with identifier $login"<% } %>, login)).build()
     <%_ } _%>
     }
-<%_ } _%>
 }

@@ -35,10 +35,6 @@ module.exports = class extends EntityServerGenerator {
         this.loadDerivedServerConfig();
     }
 
-    get initializing() {
-        return super._initializing();
-    }
-
     get preparing() {
         return super._preparing();
     }

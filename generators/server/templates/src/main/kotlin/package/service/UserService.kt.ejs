@@ -231,7 +231,7 @@ class UserService<% if (!databaseTypeNo) { %>(
         val login = userDTO.login ?: throw IllegalArgumentException("Empty login not allowed")
         val email = userDTO.email
     <%_ if (reactive) { _%>
-        return userRepository.findOneByLogin(login.toLowerCase())
+        return userRepository.findOneByLogin(login.lowercase())
             .flatMap { existingUser ->
                 if (existingUser.activated == false) {
                     <%_ if (cacheManagerIsAvailable) { _%>
@@ -260,12 +260,12 @@ class UserService<% if (!databaseTypeNo) { %>(
                     id  = UUID.randomUUID().toString()
                     <%_ } _%>
                     val encryptedPassword = passwordEncoder.encode(password)
-                    this.login = login.toLowerCase()
+                    this.login = login.lowercase()
                     // new user gets initially a generated password
                     this.password = encryptedPassword
                     firstName = userDTO.firstName
                     lastName = userDTO.lastName
-                    this.email = email?.toLowerCase()
+                    this.email = email?.lowercase()
                     <%_ if (databaseTypeSql || databaseTypeMongodb || databaseTypeNeo4j || databaseTypeCouchbase) { _%>
                     imageUrl = userDTO.imageUrl
                     <%_ } _%>
@@ -298,7 +298,7 @@ class UserService<% if (!databaseTypeNo) { %>(
                     .doOnNext { user -> log.debug("Created Information for User: $user") }
             }
     <%_ } else {/* reactive */ _%>
-        userRepository.findOneByLogin(login.toLowerCase()).ifPresent { existingUser ->
+        userRepository.findOneByLogin(login.lowercase()).ifPresent { existingUser ->
             val removed = removeNonActivatedUser(existingUser)
             if (!removed) {
                 throw UsernameAlreadyUsedException()
@@ -316,12 +316,12 @@ class UserService<% if (!databaseTypeNo) { %>(
         <%_ } _%>
         val encryptedPassword = passwordEncoder.encode(password)
         newUser.apply {
-            this.login = login.toLowerCase()
+            this.login = login.lowercase()
             // new user gets initially a generated password
             this.password = encryptedPassword
             firstName = userDTO.firstName
             lastName = userDTO.lastName
-            this.email = email?.toLowerCase()
+            this.email = email?.lowercase()
             <%_ if (databaseTypeSql || databaseTypeMongodb || databaseTypeCouchbase || databaseTypeNeo4j) { _%>
             imageUrl = userDTO.imageUrl
             <%_ } _%>
@@ -373,10 +373,10 @@ class UserService<% if (!databaseTypeNo) { %>(
             <%_ if (databaseTypeCassandra) { _%>
             id = UUID.randomUUID().toString(),
             <%_ } _%>
-            login = userDTO.login?.toLowerCase(),
+            login = userDTO.login?.lowercase(),
             firstName = userDTO.firstName,
             lastName = userDTO.lastName,
-            email = userDTO.email?.toLowerCase(),
+            email = userDTO.email?.lowercase(),
             <%_ if (databaseTypeSql || databaseTypeCouchbase || databaseTypeMongodb || databaseTypeNeo4j) { _%>
             imageUrl = userDTO.imageUrl,
             <%_ } _%>
@@ -463,10 +463,10 @@ class UserService<% if (!databaseTypeNo) { %>(
                 clearUserCaches(user)
                 <%_ } _%>
                 user.apply {
-                    login = userDTO.login?.let{it.toLowerCase()}
+                    login = userDTO.login?.let{it.lowercase()}
                     firstName = userDTO.firstName
                     lastName = userDTO.lastName
-                    email = userDTO.email?.toLowerCase()
+                    email = userDTO.email?.lowercase()
                     <%_ if (databaseTypeSql || databaseTypeMongodb || databaseTypeNeo4j || databaseTypeCouchbase) { _%>
                     imageUrl = userDTO.imageUrl
                     <%_ } _%>
@@ -585,7 +585,7 @@ class UserService<% if (!databaseTypeNo) { %>(
 
                 it.firstName = firstName
                 it.lastName = lastName
-                it.email = email?.toLowerCase()
+                it.email = email?.lowercase()
                 it.langKey = langKey
                 <%_ if (databaseTypeSql || databaseTypeMongodb || databaseTypeCouchbase || databaseTypeNeo4j) { _%>
                 it.imageUrl = imageUrl
@@ -845,7 +845,7 @@ class UserService<% if (!databaseTypeNo) { %>(
                 // if IdP sends last updated information, use it to determine if an update should happen
                 if (details["updated_at"] != null) {
                     val dbModifiedDate = existingUser.lastModifiedDate
-                    val idpModifiedDate = details["updated_at"] as Instant
+                    val idpModifiedDate: Instant = if (details["updated_at"] is Instant) details["updated_at"] as Instant else Instant.ofEpochSecond(details["updated_at"] as Long)
                     if (idpModifiedDate.isAfter(dbModifiedDate)) {
                         log.debug("Updating user '${user.login}' in local database")
                         return@flatMap updateUser(user.firstName, user.lastName, user.email, user.langKey, user.imageUrl)
@@ -878,7 +878,7 @@ class UserService<% if (!databaseTypeNo) { %>(
             // if IdP sends last updated information, use it to determine if an update should happen
             if (details["updated_at"] != null) {
                 val dbModifiedDate = existingUser.get().lastModifiedDate
-                val idpModifiedDate = details["updated_at"] as Instant
+                val idpModifiedDate: Instant = if (details["updated_at"] is Instant) details["updated_at"] as Instant else Instant.ofEpochSecond(details["updated_at"] as Long)
                 if (idpModifiedDate.isAfter(dbModifiedDate)) {
                     log.debug("Updating user '${user.login}' in local database")
                     updateUser(user.firstName, user.lastName, user.email, user.langKey, user.imageUrl)
@@ -969,7 +969,7 @@ class UserService<% if (!databaseTypeNo) { %>(
                 user.id = sub
             }
             if (username != null) {
-                user.login = username.toLowerCase()
+                user.login = username.lowercase()
             } else if (user.login == null) {
                 user.login = user.id
             }
@@ -985,7 +985,7 @@ class UserService<% if (!databaseTypeNo) { %>(
                 activated = details["email_verified"] as Boolean
             }
             if (details["email"] != null) {
-                user.email = (details["email"] as String).toLowerCase()
+                user.email = (details["email"] as String).lowercase()
             }else if (sub.contains("|") && (username != null && username.contains("@"))) {
                 // special handling for Auth0
                 user.email = username
@@ -1002,7 +1002,7 @@ class UserService<% if (!databaseTypeNo) { %>(
                 } else if (locale.contains("-")) {
                     locale = locale.substring(0, locale.indexOf("-"))
                 }
-                user.langKey = locale.toLowerCase()
+                user.langKey = locale.lowercase()
             } else {
                 // set langKey to default if not specified by IdP
                 user.langKey = DEFAULT_LANGUAGE

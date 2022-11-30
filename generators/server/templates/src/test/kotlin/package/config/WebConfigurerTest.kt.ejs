@@ -20,9 +20,6 @@ package <%= packageName %>.config
 
 import tech.jhipster.config.JHipsterConstants
 import tech.jhipster.config.JHipsterProperties
-<%_ if (devDatabaseTypeH2Any) { _%>
-import org.h2.server.web.WebServlet
-<%_ } _%>
 import org.junit.jupiter.api.BeforeEach
 import org.junit.jupiter.api.Test
 <%_ if (!skipClient) { _%>
@@ -83,34 +80,6 @@ class WebConfigurerTest {
         props = JHipsterProperties()
 
         webConfigurer = WebConfigurer(env, props)
-    }
-
-    @Test
-    @Throws(ServletException::class)
-    fun shouldStartUpProdServletContext() {
-        env.setActiveProfiles(JHipsterConstants.SPRING_PROFILE_PRODUCTION)
-
-        assertThatCode { 
-            webConfigurer.onStartup(servletContext)
-        }.doesNotThrowAnyException()
-        <%_ if (devDatabaseTypeH2Any) { _%>
-        verify(servletContext, never())
-            .addServlet(ArgumentMatchers.eq("H2Console"), any(WebServlet::class.java))
-        <%_ } _%>
-    }
-
-    @Test
-    @Throws(ServletException::class)
-    fun shouldStartUpDevServletContext() {
-        env.setActiveProfiles(JHipsterConstants.SPRING_PROFILE_DEVELOPMENT)
-
-        assertThatCode { 
-            webConfigurer.onStartup(servletContext)
-        }.doesNotThrowAnyException()
-        <%_ if (devDatabaseTypeH2Any) { _%>
-        verify(servletContext)
-            .addServlet(ArgumentMatchers.eq("H2Console"), any(WebServlet::class.java))
-        <%_ } _%>
     }
 
     <%_ if (!skipClient) { _%>

@@ -333,7 +333,7 @@ interface UserRepository: R2dbcRepository<<%= asEntity('User') %>, <% if (authen
     fun deleteAllUserAuthorities(): Mono<Void>
 
     @Query("DELETE FROM <%= jhiTablePrefix %>_user_authority WHERE user_id = :userId")
-    fun deleteUserAuthorities(userId: Long): Mono<Void>
+    fun deleteUserAuthorities(userId: <%= user.primaryKey.type %>): Mono<Void>
 }
 
     <%_ if (!authenticationTypeOauth2) { _%>
@@ -365,7 +365,7 @@ class UserRepositoryInternalImpl(val db: DatabaseClient, val r2dbcEntityTemplate
 
     <%_ if (!authenticationTypeOauth2) { _%>
     override fun findOneWithAuthoritiesByEmailIgnoreCase(email: String): Mono<<%= asEntity('User') %>> {
-        return findOneWithAuthoritiesBy("email", email.toLowerCase())
+        return findOneWithAuthoritiesBy("email", email.lowercase())
     }
 
     <%_ } _%>
@@ -560,7 +560,7 @@ class UserRepository(
     @Cacheable(cacheNames = [USERS_BY_EMAIL_CACHE])
     <%_ } _%>
     fun findOneByEmailIgnoreCase(email: String?): <%= optionalOrMono %><<%= asEntity('User') %>> {
-        val stmt = findOneByEmailStmt.bind().setString("email", email?.toLowerCase())
+        val stmt = findOneByEmailStmt.bind().setString("email", email?.lowercase())
         return findOneFromIndex(stmt)
     }
 
@@ -605,7 +605,7 @@ class UserRepository(
                     deleteOps.mergeWith(session.execute(deleteByLoginStmt.bind().setString("login", oldUser.login)))
                 }
                 if (!StringUtils.isEmpty(oldUser.email) && oldUser.email != user.email) {
-                    deleteOps.mergeWith(session.execute(deleteByEmailStmt.bind().setString("email", oldUser.email?.toLowerCase())))
+                    deleteOps.mergeWith(session.execute(deleteByEmailStmt.bind().setString("email", oldUser.email?.lowercase())))
                 }
                 deleteOps
             }
@@ -626,7 +626,7 @@ class UserRepository(
                     .setString("login", user.login)
                     .setString("id", user.id))
                 batch.addStatement(insertByEmailStmt.bind()
-                    .setString("email", user.email?.toLowerCase())
+                    .setString("email", user.email?.lowercase())
                     .setString("id", user.id))
                 session.execute(batch.build())
             })
@@ -655,7 +655,7 @@ class UserRepository(
                 session.execute(deleteByLoginStmt.bind().setString("login", oldUser.login))
             }
             if (!StringUtils.isEmpty(oldUser.email) && !oldUser.email.equals(user.email, ignoreCase = true)) {
-                session.execute(deleteByEmailStmt.bind().setString("email", oldUser.email!!.toLowerCase()))
+                session.execute(deleteByEmailStmt.bind().setString("email", oldUser.email!!.lowercase()))
             }
         }
         val batch = BatchStatement.builder(DefaultBatchType.LOGGED)
@@ -677,7 +677,7 @@ class UserRepository(
                 .setString("id", user.id)
         )
         batch.addStatement(insertByEmailStmt.bind()
-                .setString("email", user.email!!.toLowerCase())
+                .setString("email", user.email!!.lowercase())
                 .setString("id", user.id)
         )
         session.execute(batch.build())
@@ -695,7 +695,7 @@ class UserRepository(
             batch.addStatement(deleteByResetKeyStmt.bind().setString("reset_key", user.resetKey))
         }
         batch.addStatement(deleteByLoginStmt.bind().setString("login", user.login))
-        batch.addStatement(deleteByEmailStmt.bind().setString("email", user.email!!.toLowerCase()))
+        batch.addStatement(deleteByEmailStmt.bind().setString("email", user.email!!.lowercase()))
         <%_ if(reactive) { _%>
         return session.execute(batch.build()).then()
         <%_ } else { _%>

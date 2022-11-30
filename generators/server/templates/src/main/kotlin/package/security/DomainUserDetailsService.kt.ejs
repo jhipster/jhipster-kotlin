@@ -19,6 +19,9 @@
 package <%= packageName %>.security
 
 import <%= packageName %>.domain.<%= asEntity('User') %>
+<%_ if (databaseTypeSql || databaseTypeMongodb || databaseTypeNeo4j) { _%>
+import <%= packageName %>.domain.Authority
+<%_ } _%>
 import <%= packageName %>.repository.UserRepository
 import org.hibernate.validator.internal.constraintvalidators.hv.EmailValidator
 import org.slf4j.LoggerFactory
@@ -50,7 +53,7 @@ class DomainUserDetailsService(private val userRepository: UserRepository) : <% 
     private val log = LoggerFactory.getLogger(javaClass)
 
     <%_ if (databaseTypeSql) { _%>
-    @Transactional
+    @Transactional(readOnly = true)
     <%_ } _%>
     override fun <% if (reactive) { %>findByUsername(login: String): Mono<UserDetails><% } else { %>loadUserByUsername(login: String): UserDetails<% } %> {
         log.debug("Authenticating $login")
@@ -64,7 +67,7 @@ class DomainUserDetailsService(private val userRepository: UserRepository) : <% 
                 .orElseThrow { UsernameNotFoundException("User with email $login was not found in the database") }<% } %>
         }
 
-        val lowercaseLogin = login.toLowerCase(Locale.ENGLISH)
+        val lowercaseLogin = login.lowercase(Locale.ENGLISH)
         return userRepository.findOne<% if (databaseTypeSql) { %>WithAuthorities<% } %>ByLogin(lowercaseLogin)
             <%_ if (reactive) { _%>
             .switchIfEmpty(Mono.error(UsernameNotFoundException("User $lowercaseLogin was not found in the database")))

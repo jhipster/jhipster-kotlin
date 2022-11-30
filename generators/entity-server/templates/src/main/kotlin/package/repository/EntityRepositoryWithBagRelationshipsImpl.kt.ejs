@@ -16,7 +16,7 @@
  See the License for the specific language governing permissions and
  limitations under the License.
 -%>
-package <%= packageName %>.repository
+package <%= entityAbsolutePackage %>.repository
 
 import java.util.Collections
 import java.util.Optional
@@ -31,7 +31,7 @@ import org.hibernate.annotations.QueryHints
 import org.springframework.data.domain.Page
 import org.springframework.data.domain.PageImpl
 
-import <%= packageName %>.domain.<%= persistClass %>
+import <%= entityAbsolutePackage %>.domain.<%= persistClass %>
 
 /**
  * Utility repository to load bag relationships based on https://vladmihalcea.com/hibernate-multiplebagfetchexception/
@@ -72,18 +72,23 @@ class <%= entityClass %>RepositoryWithBagRelationshipsImpl(
             )
             .setParameter("<%= entityInstance %>", result)
             .setHint(QueryHints.PASS_DISTINCT_THROUGH, false)
-            .getSingleResult()
+            .singleResult
     }
 
     fun fetch<%= relationship.relationshipNameCapitalizedPlural %>(<%= entityInstancePlural %>: List<<%= persistClass %>>): List<<%= persistClass %>> {
-        return entityManager
+        val order = mutableMapOf<Any, Int>()
+        <%= entityInstancePlural %>.indices.map {
+            order[<%= entityInstancePlural %>[it].<%= primaryKey.name %> as Any] = it
+        }
+        val result = entityManager
             .createQuery(
                 "select distinct <%= entityInstance %> from <%= persistClass %> <%= entityInstance %> left join fetch <%= entityInstance %>.<%= relationship.relationshipFieldNamePlural %> where <%= entityInstance %> in :<%= entityInstancePlural %>",
                 <%= persistClass %>::class.java
             )
             .setParameter("<%= entityInstancePlural %>", <%= entityInstancePlural %>)
             .setHint(QueryHints.PASS_DISTINCT_THROUGH, false)
-            .getResultList()
+            .resultList
+        return result.sortedBy { order[it] }
     }
 <%_ } _%>
 }

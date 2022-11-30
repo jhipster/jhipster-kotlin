@@ -19,7 +19,9 @@
 /* eslint-disable consistent-return */
 const _ = require('lodash');
 const chalk = require('chalk');
-const BaseGenerator = require('generator-jhipster/generators/generator-base');
+const BaseBlueprintGenerator = require('generator-jhipster/generators/generator-base-blueprint');
+const { INITIALIZING_PRIORITY, PROMPTING_PRIORITY, LOADING_PRIORITY, DEFAULT_PRIORITY, WRITING_PRIORITY } =
+    require('generator-jhipster/lib/constants/priorities.cjs').compat;
 const constants = require('generator-jhipster/generators/generator-constants');
 const statistics = require('generator-jhipster/generators/statistics');
 const prompts = require('./prompts');
@@ -27,7 +29,7 @@ const prompts = require('./prompts');
 const SERVER_MAIN_SRC_DIR = `${constants.MAIN_DIR}kotlin/`;
 const SERVER_TEST_SRC_DIR = `${constants.TEST_DIR}kotlin/`;
 
-module.exports = class extends BaseGenerator {
+module.exports = class extends BaseBlueprintGenerator {
     constructor(args, opts) {
         super(args, { fromBlueprint: true, ...opts });
         this.argument('name', { type: String, required: true });
@@ -74,7 +76,7 @@ module.exports = class extends BaseGenerator {
         };
     }
 
-    get initializing() {
+    get [INITIALIZING_PRIORITY]() {
         return this._initializing();
     }
 
@@ -85,7 +87,7 @@ module.exports = class extends BaseGenerator {
         };
     }
 
-    get prompting() {
+    get [PROMPTING_PRIORITY]() {
         return this._prompting();
     }
 
@@ -98,7 +100,20 @@ module.exports = class extends BaseGenerator {
         };
     }
 
-    get default() {
+    // Public API method used by the getter and also by Blueprints
+    _loading() {
+        return {
+            loadSharedConfig() {
+                this.loadDerivedServerConfig();
+            },
+        };
+    }
+
+    get [LOADING_PRIORITY]() {
+        return this._loading();
+    }
+
+    get [DEFAULT_PRIORITY]() {
         return this._default();
     }
 
@@ -156,7 +171,7 @@ module.exports = class extends BaseGenerator {
         };
     }
 
-    get writing() {
+    get [WRITING_PRIORITY]() {
         return this._writing();
     }
 };

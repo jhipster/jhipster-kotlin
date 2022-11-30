@@ -27,18 +27,13 @@ import org.junit.jupiter.api.Test
 import org.mockito.ArgumentCaptor
 import org.mockito.ArgumentMatchers.any
 import org.mockito.Captor
-import org.mockito.Mockito.doNothing
-import org.mockito.Mockito.doThrow
-import org.mockito.Mockito.verify
-import org.mockito.MockitoAnnotations
-import org.mockito.Spy
+import org.mockito.Mockito.*
 import org.springframework.beans.factory.annotation.Autowired
-import org.springframework.context.MessageSource
 import org.springframework.mail.MailSendException
-import org.springframework.mail.javamail.JavaMailSenderImpl
-import org.thymeleaf.spring5.SpringTemplateEngine
+import org.springframework.mail.javamail.JavaMailSender
 
 import javax.mail.Multipart
+import javax.mail.Session
 import javax.mail.internet.MimeBodyPart
 import javax.mail.internet.MimeMessage
 import javax.mail.internet.MimeMultipart
@@ -50,6 +45,7 @@ import java.net.URI
 import java.nio.charset.Charset
 import java.util.Properties
 import java.util.regex.Pattern
+import org.springframework.boot.test.mock.mockito.MockBean
 
 import org.assertj.core.api.Assertions.assertThat
 import org.assertj.core.api.Assertions.fail
@@ -71,25 +67,19 @@ class MailServiceIT {
     @Autowired
     private lateinit var jHipsterProperties: JHipsterProperties
 
-    @Autowired
-    private lateinit var messageSource: MessageSource
-
-    @Autowired
-    private lateinit var templateEngine: SpringTemplateEngine
-
-    @Spy
-    private lateinit var javaMailSender: JavaMailSenderImpl
+    @MockBean
+    private lateinit var javaMailSender: JavaMailSender
 
     @Captor
     private lateinit var messageCaptor: ArgumentCaptor<MimeMessage>
 
+    @Autowired
     private lateinit var mailService: MailService
 
     @BeforeEach
     fun setup() {
-        MockitoAnnotations.openMocks(this)
         doNothing().`when`(javaMailSender).send(any(MimeMessage::class.java))
-        mailService = MailService(jHipsterProperties, javaMailSender, messageSource, templateEngine)
+        `when`(javaMailSender.createMimeMessage()).thenReturn(MimeMessage(null as (Session?)))
     }
 
     @Test

@@ -1,5 +1,5 @@
 const path = require('path');
-const expect = require('expect');
+const { expect } = require('expect');
 const assert = require('yeoman-assert');
 
 const { GATEWAY, MICROSERVICE, MONOLITH } = require('generator-jhipster/jdl/jhipster/application-types');
@@ -34,7 +34,7 @@ const { CLIENT_MAIN_SRC_DIR, MAIN_DIR, SERVER_MAIN_RES_DIR } = constants;
 const NO_CACHE_PROVIDER = cacheProviders.NO;
 const SERVER_MAIN_KOTLIN_SRC_DIR = `${MAIN_DIR}kotlin/`;
 
-describe('JHipster generator', () => {
+describe('JHipster generator for App generator', () => {
     context('Default configuration with', () => {
         describe(ANGULAR_X, () => {
             let runResult;
@@ -297,6 +297,7 @@ describe('JHipster generator', () => {
             });
         });
     });
+
     context('Application with DB option', () => {
         describe('mariadb', () => {
             let runResult;
@@ -847,6 +848,64 @@ describe('JHipster generator', () => {
                 assert.file(expectedFiles.oauth2);
                 assert.file(expectedFiles.oauth2Client);
                 assert.file(expectedFiles.mongodb);
+            });
+        });
+
+        describe('oauth2 + react, no db, no service discovery & no admin ui', () => {
+            let runResult;
+            before(async () => {
+                runResult = await helpers
+                    .create(path.join(__dirname, '../generators/app'))
+                    .withOptions({
+                        jhiprefix: 'test',
+                        withgeneratedflag: true,
+                        'skip-ktlint-format': true,
+                        blueprints: 'kotlin',
+                    })
+                    .withPrompts({
+                        applicationType: 'gateway',
+                        authenticationType: 'oauth2',
+                        baseName: 'reacttest',
+                        blueprints: [],
+                        buildTool: 'maven',
+                        cacheProvider: 'no',
+                        clientFramework: 'react',
+                        clientPackageManager: 'npm',
+                        clientTheme: 'darkly',
+                        clientThemeVariant: 'dark',
+                        databaseType: 'no',
+                        devDatabaseType: 'no',
+                        enableHibernateCache: false,
+                        enableSwaggerCodegen: false,
+                        enableTranslation: false,
+                        entitySuffix: '',
+                        jhiPrefix: 'jhi',
+                        jwtSecretKey: 'somerandomkey',
+                        languages: ['en'],
+                        nativeLanguage: 'en',
+                        otherModules: [],
+                        packageName: 'com.test.reactui',
+                        pages: [],
+                        prodDatabaseType: 'no',
+                        searchEngine: false,
+                        serverSideOptions: [],
+                        serviceDiscoveryType: 'no',
+                        skipCommitHook: true,
+                        skipFakeData: false,
+                        skipUserManagement: true,
+                        testFrameworks: [],
+                        withAdminUi: false,
+                    })
+                    .run();
+            });
+
+            it('creates expected files for the oauth2 + react custom options', () => {
+                expect(runResult.getStateSnapshot()).toMatchSnapshot();
+            });
+            it('uses correct prettier formatting', () => {
+                // tabWidth = 2 (see generators/common/templates/.prettierrc.ejs)
+                assert.fileContent('webpack/webpack.dev.js', / {2}devtool:/);
+                assert.fileContent('tsconfig.json', / {2}"compilerOptions":/);
             });
         });
 

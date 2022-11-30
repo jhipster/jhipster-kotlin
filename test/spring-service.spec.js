@@ -6,16 +6,11 @@ const constants = require('generator-jhipster/generators/generator-constants');
 
 const SERVER_MAIN_SRC_DIR = `${constants.MAIN_DIR}kotlin/`;
 
-describe.skip('JHipster generator service', () => {
+describe('JHipster generator spring-service', () => {
     describe('creates service without interface', () => {
         before(done => {
             helpers
                 .run(require.resolve('../generators/spring-service'))
-                .withOptions({
-                    'from-cli': true,
-                    skipInstall: true,
-                    skipChecks: true,
-                })
                 .inTmpDir(dir => {
                     fse.copySync(path.join(__dirname, '../test/templates/default'), dir);
                 })
@@ -39,11 +34,6 @@ describe.skip('JHipster generator service', () => {
         before(done => {
             helpers
                 .run(require.resolve('../generators/spring-service'))
-                .withOptions({
-                    'from-cli': true,
-                    skipInstall: true,
-                    skipChecks: true,
-                })
                 .inTmpDir(dir => {
                     fse.copySync(path.join(__dirname, '../test/templates/default'), dir);
                 })
@@ -66,12 +56,6 @@ describe.skip('JHipster generator service', () => {
         before(done => {
             helpers
                 .run(require.resolve('../generators/spring-service'))
-                .withOptions({
-                    'from-cli': true,
-                    skipInstall: true,
-
-                    skipChecks: true,
-                })
                 .inTmpDir(dir => {
                     fse.copySync(path.join(__dirname, '../test/templates/default'), dir);
                 })
