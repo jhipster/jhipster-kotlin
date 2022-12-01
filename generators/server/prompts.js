@@ -69,7 +69,7 @@ function askForKotlinServerSideOpts() {
             when: answers => answers.reactive,
             type: 'confirm',
             name: 'coroutine',
-            message: 'Using coroutines for reactive application?',
+            message: 'Do you want to using coroutines for reactive application?',
             default: false,
         },
         {
