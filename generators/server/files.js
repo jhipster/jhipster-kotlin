@@ -21,9 +21,10 @@ const path = require('path');
 const serverCleanup = require('generator-jhipster/generators/cleanup');
 const baseServerFiles = require('generator-jhipster/generators/server/files').serverFiles;
 const { MAIN_DIR, TEST_DIR, SERVER_MAIN_RES_DIR, SERVER_TEST_RES_DIR } = require('generator-jhipster/generators/generator-constants');
-const cheerio = require('cheerio');
 
+const cheerio = require('cheerio');
 const { GRADLE, MAVEN } = require('generator-jhipster/jdl/jhipster/build-tool-types');
+const baseCoroutineServerFiles = require('./files-coroutine-list').serverFiles;
 const kotlinConstants = require('../generator-kotlin-constants');
 const { writeCouchbaseFiles } = require('./files-couchbase');
 const { writeSqlFiles } = require('./files-sql');
@@ -33,11 +34,26 @@ const { makeKotlinServerFiles } = require('../util');
 const SERVER_MAIN_KOTLIN_SRC_DIR = `${MAIN_DIR}kotlin/`;
 const SERVER_TEST_SRC_KOTLIN_DIR = `${TEST_DIR}kotlin/`;
 const files = makeKotlinServerFiles(baseServerFiles);
+const coroutineFiles = makeKotlinServerFiles(baseCoroutineServerFiles);
 
 const serverFiles = {
     ...files,
     serverBuild: [
         ...files.serverBuild,
+        {
+            condition: generator => generator.buildTool === GRADLE,
+            templates: [{ file: 'gradle/kotlin.gradle' }],
+        },
+        {
+            templates: [{ file: `${kotlinConstants.DETEKT_CONFIG_FILE}` }],
+        },
+    ],
+};
+
+const coroutineServerFiles = {
+    ...coroutineFiles,
+    serverBuild: [
+        ...coroutineFiles.serverBuild,
         {
             condition: generator => generator.buildTool === GRADLE,
             templates: [{ file: 'gradle/kotlin.gradle' }],
@@ -69,7 +85,8 @@ function writeFiles() {
         },
 
         writeFiles() {
-            return this.writeFilesToDisk(serverFiles);
+            // TODO: to be compatible with Reactor
+            return this.writeFilesToDisk(coroutineServerFiles);
         },
 
         ...writeCouchbaseFiles(),
@@ -363,8 +380,8 @@ async function updateGradle(generator) {
     _this.fs.write(fullPath, content.replace('classes/java/main', 'classes/kotlin/main'));
 }
 
-
 module.exports = {
     writeFiles,
     serverFiles,
+    coroutineServerFiles,
 };

@@ -1,0 +1,86 @@
+<%#
+ Copyright 2013-2020 the original author or authors from the JHipster project.
+
+ This file is part of the JHipster project, see https://www.jhipster.tech/
+ for more information.
+
+ Licensed under the Apache License, Version 2.0 (the "
+ you may not use this file except in compliance with the License.
+ You may obtain a copy of the License at
+
+      http://www.apache.org/licenses/LICENSE-2.0
+
+ Unless required by applicable law or agreed to in writing, software
+ distributed under the License is distributed on an "AS IS" BASIS,
+ WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
+ See the License for the specific language governing permissions and
+ limitations under the License.
+-%>
+package <%= packageName %>.security
+
+import <%= packageName %>.domain.<%= asEntity('User') %>
+<%_ if (databaseTypeSql || databaseTypeMongodb || databaseTypeNeo4j) { _%>
+import <%= packageName %>.domain.Authority
+<%_ } _%>
+import <%= packageName %>.repository.UserRepository
+import kotlinx.coroutines.runBlocking
+import reactor.kotlin.core.publisher.toMono
+import org.hibernate.validator.internal.constraintvalidators.hv.EmailValidator
+import org.slf4j.LoggerFactory
+import org.springframework.security.core.authority.SimpleGrantedAuthority
+import org.springframework.security.core.userdetails.ReactiveUserDetailsService
+import org.springframework.security.core.userdetails.UserDetails
+import org.springframework.security.core.userdetails.UsernameNotFoundException
+import org.springframework.stereotype.Component
+<%_ if (databaseTypeSql) { _%>
+import org.springframework.transaction.annotation.Transactional
+<%_ } _%>
+import reactor.core.publisher.Mono
+
+import java.util.Locale
+
+/**
+ * Authenticate a user from the database.
+ */
+@Component("userDetailsService")
+class DomainUserDetailsService(private val userRepository: UserRepository) : ReactiveUserDetailsService {
+
+    private val log = LoggerFactory.getLogger(javaClass)
+
+    <%_ if (databaseTypeSql) { _%>
+    @Transactional(readOnly = true)
+    <%_ } _%>
+    override fun findByUsername(login: String): Mono<UserDetails> {
+        log.debug("Authenticating $login")
+
+        if (EmailValidator().isValid(login, null)) {
+            return runBlocking {
+                userRepository.<% if (databaseTypeSql) { %>findOneWithAuthoritiesByEmailIgnoreCase<% } else { %>findOneByEmailIgnoreCase<% } %>(login)
+                    ?.let { createSpringSecurityUser(login, it) }
+                    ?.toMono()
+                    ?: throw UsernameNotFoundException("User with email $login was not found in the database")
+            }
+        }
+
+        val lowercaseLogin = login.lowercase(Locale.ENGLISH)
+        return runBlocking {
+            userRepository.findOne<% if (databaseTypeSql) { %>WithAuthorities<% } %>ByLogin(lowercaseLogin)
+                ?.let { createSpringSecurityUser(lowercaseLogin, it) }
+                ?.toMono()
+                ?: throw UsernameNotFoundException("User $lowercaseLogin was not found in the database")
+        }
+    }
+
+    private fun createSpringSecurityUser(lowercaseLogin: String, user: <%= asEntity('User') %>)
+        : org.springframework.security.core.userdetails.User {
+        if (user.activated == null || user.activated == false) {
+            throw UserNotActivatedException("User $lowercaseLogin was not activated")
+        }
+        val grantedAuthorities = user.authorities.map { SimpleGrantedAuthority(it<% if (databaseTypeSql || databaseTypeMongodb || databaseTypeNeo4j) { %>.name<% } %>) }
+        return org.springframework.security.core.userdetails.User(
+            user.login!!,
+            user.password!!,
+            grantedAuthorities
+        )
+    }
+}
