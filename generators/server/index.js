@@ -19,10 +19,13 @@
 /* eslint-disable consistent-return */
 const os = require('os');
 
+const constants = require('generator-jhipster/generators/generator-constants');
+const prompts = require('generator-jhipster/generators/server/prompts');
 const shelljs = require('shelljs');
 const ServerGenerator = require('generator-jhipster/generators/server');
 const writeFiles = require('./files').writeFiles;
 const kotlinConstants = require('../generator-kotlin-constants');
+const { askForKotlinServerSideOpts } = require('./prompts');
 
 module.exports = class extends ServerGenerator {
     constructor(args, opts, features) {
@@ -48,7 +51,18 @@ module.exports = class extends ServerGenerator {
 
     get prompting() {
         // Here we are not overriding this phase and hence its being handled by JHipster
-        return super._prompting();
+        return {
+            askForModuleName: prompts.askForModuleName,
+            askForServerSideOpts: askForKotlinServerSideOpts,
+            askForOptionalItems: prompts.askForOptionalItems,
+
+            setSharedConfigOptions() {
+                // Make dist dir available in templates
+                this.BUILD_DIR = this.getBuildDirectoryForBuildTool(this.jhipsterConfig.buildTool);
+                this.CLIENT_DIST_DIR =
+                    this.getResourceBuildDirectoryForBuildTool(this.jhipsterConfig.buildTool) + constants.CLIENT_DIST_DIR;
+            },
+        };
     }
 
     get configuring() {
