@@ -18,6 +18,92 @@
 -%>
 package <%= packageName %>.repository
 
+<% if(jhipsterConfig.coroutine) { %>
+import com.couchbase.client.java.query.QueryScanConsistency
+import kotlinx.coroutines.flow.*
+import org.springframework.data.couchbase.repository.*
+import org.springframework.data.couchbase.repository.query.CouchbaseEntityInformation
+import org.springframework.data.domain.*
+import org.springframework.data.repository.NoRepositoryBean
+import org.springframework.data.repository.kotlin.CoroutineSortingRepository
+
+const val FIND_IDS_QUERY = "SELECT meta().id as __id, 0 as __cas FROM #{#n1ql.bucket} WHERE #{#n1ql.filter}"
+
+/**
+ * Couchbase specific {@link org.springframework.data.repository.Repository} interface uses N1QL for all requests.
+ */
+@NoRepositoryBean
+@ScanConsistency(query = QueryScanConsistency.REQUEST_PLUS)
+interface JHipsterCouchbaseRepository<T, ID> : CoroutineSortingRepository<T, ID>, RepositoryInternal<T> {
+
+    companion object {
+        fun pageableStatement(pageable: Pageable, prefix: String): String? {
+            val sort = Sort.by(
+                pageable.sort
+                    .map { order ->
+                        val property = order.property
+                        if ("id" == property) {
+                            order.withProperty("meta($prefix).id")
+                        }
+                        if (prefix.isEmpty()) {
+                            order
+                        }
+                        order.withProperty("$prefix $property")
+                    }
+                    .toList()
+            )
+            return org.springframework.data.couchbase.core.query.Query()
+                .limit(pageable.pageSize)
+                .skip(pageable.offset)
+                .with(sort)
+                .export()
+        }
+    }
+
+    override fun findAll(): Flow<T> {
+        return findAllById(toIds(findAllIds()))
+    }
+
+    fun findAllBy(pageable: Pageable): Flow<T> {
+        return findAllById(toIds(findAllIds(pageable)))
+    }
+
+    override fun findAll(sort: Sort): Flow<T> {
+        return findAllById(toIds(findAllIds(sort)))
+    }
+
+    override suspend fun deleteAll() {
+        deleteAllById(toIds(findAllIds()).toList())
+    }
+
+    @Query(FIND_IDS_QUERY)
+    fun findAllIds(): Flow<T>
+
+    @Query(FIND_IDS_QUERY)
+    fun findAllIds(pageable: Pageable): Flow<T>
+
+    @Query(FIND_IDS_QUERY)
+    fun findAllIds(sort: Sort): Flow<T>
+
+    @SuppressWarnings("unchecked")
+    fun toIds(entities: Flow<T>): Flow<ID> {
+        return entities.mapNotNull { getEntityInformation().getId(it) as ID }
+    }
+}
+
+interface RepositoryInternal<T> {
+    fun getEntityInformation(): CouchbaseEntityInformation<T, String>
+}
+
+class RepositoryInternalImpl<T>(private val entityInformation: CouchbaseEntityInformation<T, String>) :
+    RepositoryInternal<T> {
+
+    override fun getEntityInformation(): CouchbaseEntityInformation<T, String> {
+        return entityInformation
+    }
+
+}
+<% } else { %>
 import com.couchbase.client.java.query.QueryScanConsistency
 import org.springframework.data.couchbase.repository.*
 import org.springframework.data.domain.*
@@ -98,13 +184,13 @@ interface JHipsterCouchbaseRepository<T,ID>:  <% if (reactive) { %>Reactive<% } 
     }
 
     @Query(FIND_IDS_QUERY)
-    fun findAllIds(): <%= listOrFlux %><T> 
+    fun findAllIds(): <%= listOrFlux %><T>
 
     @Query(FIND_IDS_QUERY)
-    fun findAllIds(pageable: Pageable): <%= pageOrFlux %><T> 
+    fun findAllIds(pageable: Pageable): <%= pageOrFlux %><T>
 
     @Query(FIND_IDS_QUERY)
-    fun findAllIds(sort: Sort): <%= listOrFlux %><T> 
+    fun findAllIds(sort: Sort): <%= listOrFlux %><T>
 
     @SuppressWarnings("unchecked")
     fun toIds(entities: <%= listOrFlux %><T>): <%= listOrFlux %><ID>  {
@@ -115,3 +201,4 @@ interface JHipsterCouchbaseRepository<T,ID>:  <% if (reactive) { %>Reactive<% } 
 <%_ } _%>
     }
 }
+<% } %>

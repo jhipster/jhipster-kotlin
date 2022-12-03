@@ -35,7 +35,7 @@ import tech.jhipster.web.util.HeaderUtil
 import tech.jhipster.web.util.PaginationUtil
 <%_ } _%>
 import tech.jhipster.web.util.ResponseUtil
-import kotlinx.coroutines.flow.Flow
+import kotlinx.coroutines.flow.toList
 import org.slf4j.LoggerFactory
 import org.springframework.beans.factory.annotation.Value
 <%_ if (databaseTypeSql || databaseTypeMongodb || databaseTypeNeo4j || databaseTypeCouchbase) { _%>
@@ -46,16 +46,7 @@ import org.springframework.http.HttpStatus
 import org.springframework.http.ResponseEntity
 import org.springframework.http.server.reactive.ServerHttpRequest
 import org.springframework.security.access.prepost.PreAuthorize
-import org.springframework.web.bind.annotation.DeleteMapping
-import org.springframework.web.bind.annotation.GetMapping
-import org.springframework.web.bind.annotation.PathVariable
-import org.springframework.web.bind.annotation.PostMapping
-import org.springframework.web.bind.annotation.PutMapping
-import org.springframework.web.bind.annotation.RequestBody
-import org.springframework.web.bind.annotation.RequestMapping
-import org.springframework.web.bind.annotation.RequestParam
-import org.springframework.web.bind.annotation.ResponseStatus
-import org.springframework.web.bind.annotation.RestController
+import org.springframework.web.bind.annotation.*
 import org.springframework.web.server.ResponseStatusException
 import org.springframework.web.util.UriComponentsBuilder
 import reactor.core.publisher.Flux
@@ -124,9 +115,15 @@ class UserResource(
     suspend fun createUser(@Valid @RequestBody userDTO: <%= asDto('AdminUser') %>): ResponseEntity<<%= asEntity('User') %>> {
         log.debug("REST request to save User : $userDTO")
 
-        userDTO.id ?: throw BadRequestAlertException("A new user cannot already have an ID", "userManagement", "idexists")
-        userRepository.findOneByLogin(userDTO.login!!.lowercase()) ?: throw LoginAlreadyUsedException()
-        userRepository.findOneByEmailIgnoreCase(userDTO.email!!) ?: throw EmailAlreadyUsedException()
+        userDTO.id?.apply {
+            throw BadRequestAlertException("A new user cannot already have an ID", "userManagement", "idexists")
+        }
+        userRepository.findOneByLogin(userDTO.login!!.lowercase())?.apply {
+            throw LoginAlreadyUsedException()
+        }
+        userRepository.findOneByEmailIgnoreCase(userDTO.email!!)?.apply {
+            throw EmailAlreadyUsedException()
+        }
 
         val newUser = userService.createUser(userDTO)!!
         mailService.sendCreationEmail(newUser)
@@ -174,13 +171,13 @@ class UserResource(
     suspend fun getAllUsers(
         request: ServerHttpRequest,
         @org.springdoc.api.annotations.ParameterObject pageable: Pageable
-    ): ResponseEntity<Flow<<%= asDto('AdminUser') %>>> {
+    ): ResponseEntity<Array<<%= asDto('AdminUser') %>>> {
         log.debug("REST request to get all User for an admin")
         if (!onlyContainsAllowedProperties(pageable)) {
             return ResponseEntity.badRequest().build()
         }
         val total = userService.countManagedUsers()
-        val content = userService.getAllManagedUsers(pageable)
+        val content = userService.getAllManagedUsers(pageable).toList().toTypedArray()
         val page = PageImpl(mutableListOf<<%= asDto('AdminUser') %>>(), pageable, total)
         val headers = PaginationUtil.generatePaginationHttpHeaders(UriComponentsBuilder.fromHttpRequest(request), page)
         return ResponseEntity(content, headers, HttpStatus.OK)
@@ -190,7 +187,7 @@ class UserResource(
         pageable.sort.map(Sort.Order::getProperty).all { ALLOWED_ORDERED_PROPERTIES.contains(it) }
 
     <%_ } else { // Cassandra _%>
-    suspend fun getAllUsers() = userService.getAllManagedUsers()
+    suspend fun getAllUsers() = userService.getAllManagedUsers().toList().toTypedArray()
     <%_ } _%>
 
     /**
@@ -206,7 +203,7 @@ class UserResource(
         return ResponseUtil.wrapOrNotFound(
             userService.getUserWithAuthoritiesByLogin(login)
                 ?.let { AdminUserDTO(it) }
-                ?.let { Optional.ofNullable(it) }
+                .let { Optional.ofNullable(it) }
         )
     }
 

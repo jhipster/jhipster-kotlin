@@ -66,7 +66,6 @@ import org.springframework.data.cassandra.core.ReactiveCassandraTemplate
 import org.springframework.data.cassandra.core.convert.CassandraConverter
 import org.springframework.data.cassandra.core.mapping.CassandraPersistentEntity
 <%_ } _%>
-import org.springframework.stereotype.Repository
 <%_ if (databaseTypeCassandra) { _%>
 import org.springframework.util.StringUtils
 <%_ } _%>
@@ -106,17 +105,14 @@ import java.time.Instant
     let toListSuffix = reactive ? '' : '.toMutableList()';
 _%>
 <%_ if (databaseTypeMongodb || databaseTypeNeo4j || databaseTypeCouchbase) { _%>
-@Repository
-interface UserRepository: CoroutineSortingRepository<<%= asEntity('User') %>, String> {
+interface UserRepository: <% if (databaseTypeCouchbase) { %>JHipsterCouchbaseRepository<<%= asEntity('User') %>, String><%if (searchEngineCouchbase) { %>, CouchbaseSearchRepository<<%= asEntity('User') %>, String><% } } else { %> CoroutineSortingRepository<<%= asEntity('User') %>, String> <% } %> {
 
     <%_ if (!authenticationTypeOauth2) { _%>
     <%_ if (databaseTypeCouchbase) { _%>
     @JvmDefault
     <%_ } _%>
     suspend fun findOneByActivationKey(activationKey: String): <%= asEntity('User') %>?<% if (databaseTypeCouchbase) { %> {
-        return findIdByActivationKey(activationKey)
-        .map(User::id)
-        .flatMap(this::findById);
+        return findIdByActivationKey(activationKey)?.id?.let { findById(it) }
     }
     @Query(FIND_IDS_QUERY + " AND activationKey = $1")
     suspend fun findIdByActivationKey(activationKey: String): <%= asEntity('User') %>?
@@ -132,7 +128,7 @@ interface UserRepository: CoroutineSortingRepository<<%= asEntity('User') %>, St
     }
 
     @Query(FIND_IDS_QUERY + " AND activated = false AND activationKey IS NOT NULL AND createdDate < $1")
-    fun findAllIdsByActivatedIsFalseAndActivationKeyIsNotNullAndCreatedDateBefore(dateTime: Instant): Flow<%= asEntity('User') %>
+    fun findAllIdsByActivatedIsFalseAndActivationKeyIsNotNullAndCreatedDateBefore(dateTime: Instant): Flow<<%= asEntity('User') %>>
     <% } %>
     <%_ } _%>
 
@@ -141,9 +137,7 @@ interface UserRepository: CoroutineSortingRepository<<%= asEntity('User') %>, St
     @JvmDefault
         <%_ } _%>
     suspend fun findOneByResetKey(resetKey: String): <%= asEntity('User') %>?<% if (databaseTypeCouchbase) { %> {
-        return findIdByResetKey(resetKey)
-            .map(User::id)
-            .flatMap(this::findById)
+        return findIdByResetKey(resetKey)?.id?.let { findById(it) }
     }
 
     @Query(FIND_IDS_QUERY + " AND resetKey = $1")
@@ -161,9 +155,7 @@ interface UserRepository: CoroutineSortingRepository<<%= asEntity('User') %>, St
     @JvmDefault
         <%_ } _%>
     suspend fun findOneByEmailIgnoreCase(email: String?): <%= asEntity('User') %>?<% if (databaseTypeCouchbase) { %> {
-        return findIdByEmailIgnoreCase(email!!)
-            .map(User::id)
-            .flatMap(this::findById);
+        return findIdByEmailIgnoreCase(email!!)?.id?.let { findById(it) }
     }
 
     @Query(FIND_IDS_QUERY + " AND LOWER(email) = LOWER($1)")
@@ -186,10 +178,6 @@ interface UserRepository: CoroutineSortingRepository<<%= asEntity('User') %>, St
     suspend fun findOneByLogin(login: String): <%= asEntity('User') %>?
     <%_ } else { _%>
     suspend fun findOneByLogin(login: String): <%= asEntity('User') %>?
-    <%_ } _%>
-
-    <%_ if (databaseTypeNeo4j) { _%>
-    override fun findAll(): Flow<%= asEntity('User') %>
     <%_ } _%>
 
         <%_ if (!databaseTypeCouchbase) { _%>
@@ -219,7 +207,6 @@ interface UserRepository: CoroutineSortingRepository<<%= asEntity('User') %>, St
     <%_ } _%>
 }
 <%_ } else if (databaseTypeSql) { _%>
-@Repository
 interface UserRepository: CoroutineSortingRepository<<%= asEntity('User') %>, <% if (authenticationTypeOauth2) { %>String<% } else { %>Long<% } %>>, UserRepositoryInternal {
 
     <%_ if (!authenticationTypeOauth2) { _%>
@@ -323,7 +310,7 @@ class UserRepositoryInternalImpl(val db: DatabaseClient, val r2dbcEntityTemplate
     }
     <%_ } _%>
 
-    private  fun findOneWithAuthoritiesBy(fieldName: String, fieldValue: Any): <%= asEntity('User') %>? {
+    private suspend fun findOneWithAuthoritiesBy(fieldName: String, fieldValue: Any): <%= asEntity('User') %>? {
         return db.sql("SELECT * FROM <%= jhiTablePrefix %>_user u LEFT JOIN <%= jhiTablePrefix %>_user_authority ua ON u.id=ua.user_id WHERE u.$fieldName = :$fieldName")
             .bind(fieldName, fieldValue)
             .map { row, metadata ->
@@ -335,7 +322,7 @@ class UserRepositoryInternalImpl(val db: DatabaseClient, val r2dbcEntityTemplate
             .collectList()
             .filter { it.isNotEmpty() }
             .map { l -> updateUserWithAuthorities(l[0].t1, l) }
-            .block()
+            .awaitSingleOrNull()
     }
 
     private fun updateUserWithAuthorities(user: <%= asEntity('User') %>, tuples: List<Tuple2<<%= asEntity('User') %>, Optional<String>>>): <%= asEntity('User') %> {
@@ -350,6 +337,8 @@ class UserRepositoryInternalImpl(val db: DatabaseClient, val r2dbcEntityTemplate
 }
 
 <%_ } else if (databaseTypeCassandra) { _%>
+import org.springframework.stereotype.Repository
+
 @Repository
 class UserRepository(
     private val cqlTemplate: ReactiveCassandraTemplate,

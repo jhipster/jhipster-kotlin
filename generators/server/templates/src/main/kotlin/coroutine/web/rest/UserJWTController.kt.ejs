@@ -49,14 +49,12 @@ class UserJWTController(
 
     @PostMapping("/authenticate")
     suspend fun authorize(@Valid @RequestBody loginVM: LoginVM): ResponseEntity<JWTToken> {
-        return authenticationManager.authenticate(UsernamePasswordAuthenticationToken(loginVM.username, loginVM.password))
-            .map { tokenProvider.createToken(it, loginVM.isRememberMe ?: false) }
-            .map { jwt ->
-                val httpHeaders = HttpHeaders()
-                httpHeaders.add(JWTFilter.AUTHORIZATION_HEADER, "Bearer $jwt")
-                ResponseEntity(JWTToken(jwt), httpHeaders, HttpStatus.OK)
-            }
-            .awaitSingle()
+        val authenticationToken = UsernamePasswordAuthenticationToken(loginVM.username, loginVM.password)
+        val authentication = authenticationManager.authenticate(authenticationToken).awaitSingle()
+        val jwt = tokenProvider.createToken(authentication, loginVM.isRememberMe ?: false)
+        val httpHeaders = HttpHeaders()
+        httpHeaders.add(JWTFilter.AUTHORIZATION_HEADER, "Bearer $jwt")
+        return ResponseEntity(JWTToken(jwt), httpHeaders, HttpStatus.OK)
     }
 
     /**

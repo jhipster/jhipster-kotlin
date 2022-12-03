@@ -1553,7 +1553,7 @@ const baseServerFiles = {
             path: SERVER_MAIN_SRC_DIR,
             templates: [
                 {
-                    file: 'package/repository/search/UserSearchRepository.java',
+                    file: 'coroutine/repository/search/UserSearchRepository.java',
                     renameTo: generator => `${generator.javaDir}repository/search/UserSearchRepository.java`,
                 },
             ],
@@ -1638,7 +1638,7 @@ const baseServerFiles = {
             path: SERVER_MAIN_SRC_DIR,
             templates: [
                 {
-                    file: 'package/repository/search/UserSearchRepository.java',
+                    file: 'coroutine/repository/search/UserSearchRepository.java',
                     renameTo: generator => `${generator.javaDir}repository/search/UserSearchRepository.java`,
                 },
             ],

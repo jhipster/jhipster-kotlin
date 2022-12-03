@@ -47,9 +47,14 @@ import org.springframework.data.mongodb.core.mapping.event.ValidatingMongoEventL
 import org.springframework.data.mongodb.repository.<% if (reactive) { %>Reactive<% } %>MongoRepository
 <%_ } _%>
 import org.springframework.data.mongodb.repository.config.Enable<% if (reactive) { %>Reactive<% } %>MongoRepositories
+import org.springframework.data.repository.kotlin.CoroutineSortingRepository
 import org.springframework.validation.beanvalidation.LocalValidatorFactoryBean
 import java.util.ArrayList
 import java.util.List
+
+<% if(searchEngineElasticsearch) { %>
+    annotation class SearchRepository
+<% } %>
 
 @Configuration
 @EnableMongock
@@ -58,7 +63,10 @@ import java.util.List
 @Enable<% if (reactive) { %>Reactive<% } %>MongoRepositories(
     basePackages = ["<%= packageName %>.repository"],
     includeFilters = [
-        Filter(type=FilterType.ASSIGNABLE_TYPE,value = [<% if (reactive) { %>Reactive<% } %>MongoRepository::class])
+        Filter(type=FilterType.ASSIGNABLE_TYPE,value = [<% if (reactive) { %>CoroutineSortingRepository::class, Reactive<% } %>MongoRepository::class])
+    ],
+    excludeFilters = [
+        Filter(type = FilterType.ANNOTATION, value = [SearchRepository::class])
     ]
 )
 <%_ } else { _%>

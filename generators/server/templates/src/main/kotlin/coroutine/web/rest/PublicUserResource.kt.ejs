@@ -81,7 +81,7 @@ class PublicUserResource(
      */
     @GetMapping("/users")
     <%_ if (databaseTypeSql || databaseTypeMongodb || databaseTypeNeo4j || databaseTypeCouchbase) { _%>
-    suspend fun getAllPublicUsers(request: ServerHttpRequest, @org.springdoc.api.annotations.ParameterObject pageable: Pageable): ResponseEntity<Flow<<%= asDto('User') %>>> {
+    suspend fun getAllPublicUsers(request: ServerHttpRequest, @org.springdoc.api.annotations.ParameterObject pageable: Pageable): ResponseEntity<Array<<%= asDto('User') %>>> {
         log.debug("REST request to get all public User names")
         <%_ if (!authenticationTypeOauth2) { _%>
         if (!onlyContainsAllowedProperties(pageable)) {
@@ -91,7 +91,7 @@ class PublicUserResource(
 
         return PageImpl<<%= asDto('User') %>>(listOf(), pageable, userService.countManagedUsers())
             .let { PaginationUtil.generatePaginationHttpHeaders(UriComponentsBuilder.fromHttpRequest(request), it) }
-            .let { ResponseEntity.ok().headers(it).body(userService.getAllPublicUsers(pageable)) }
+            .let { ResponseEntity.ok().headers(it).body(userService.getAllPublicUsers(pageable).toList().toTypedArray()) }
     }
         <%_ if (!authenticationTypeOauth2) { _%>
     private fun onlyContainsAllowedProperties(pageable: Pageable) =
@@ -103,10 +103,11 @@ class PublicUserResource(
      * @return a string list of all roles.
      */
     @GetMapping("/authorities")
-    suspend fun getAuthorities() = userService.getAuthorities()
+    suspend fun getAuthorities() = userService.getAuthorities().toList().toTypedArray()
 
     <%_ } else { /* Cassandra */ _%>
-    suspend fun getAllPublicUsers(): Flow<<%= asDto('User') %>> = userService.getAllPublicUsers()
+    suspend fun getAllPublicUsers(): Array<<%= asDto('User') %>> =
+        userService.getAllPublicUsers().toList().toTypedArray()
 
     <%_ } _%>
 
@@ -119,21 +120,11 @@ class PublicUserResource(
      * @return the result of the search.
      */
     @GetMapping("/_search/users/{query}")
-    fun search(@PathVariable query: String): <% if(reactive) { %>Mono<Mutable<% } %>List<<%= asDto('User') %>><% if(reactive) { %>><% } %> {
-        <%/* TODO fix this */%>
+    suspend fun search(@PathVariable query: String): Array<<%= asDto('User') %>> {
     <%_ if (searchEngineElasticsearch) { _%>
-        <%_ if (reactive) { _%>
-        return userSearchRepository.search(query).map { <%= asDto('User') %>(it) }.collectList()
-        <%_ } else { _%>
-        return userSearchRepository.search(query).map { <%= asDto('User') %>(it) }
-        <%_ } _%>
+        return userSearchRepository.search(query).map { <%= asDto('User') %>(it) }.toList().toTypedArray()
     <%_ } else { _%>
-        <%_ if (reactive) { _%>
-        return userRepository.search(query).map { <%= asDto('User') %>(it) }.collectList()
-         <%_ } else { _%>
-        return userRepository.search(query)
-            .map { <%= asDto('User') %>(it) }
-         <%_ } _%>
+        return userRepository.search(query).map { <%= asDto('User') %>(it) }.toList().toTypedArray()
     <%_ } _%>
     }
 <%_ } _%>
