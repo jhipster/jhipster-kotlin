@@ -52,6 +52,7 @@ import <%= packageName %>.service.mapper.UserMapper
 <%_ if (!authenticationTypeOauth2) { _%>
 import <%= packageName %>.web.rest.vm.ManagedUserVM
 <%_ } _%>
+import kotlinx.coroutines.flow.toList
 import org.apache.commons.lang3.RandomStringUtils
 import org.junit.jupiter.api.BeforeEach
 import org.junit.jupiter.api.Test
@@ -121,6 +122,9 @@ import kotlin.test.assertNotNull
 import kotlin.test.assertNull
 <%_ } _%>
 
+import kotlinx.coroutines.test.runTest
+
+
 /**
  * Integration tests for the [UserResource] REST controller.
  */
@@ -172,7 +176,7 @@ class UserResourceIT {
 
     <%_ if (cacheManagerIsAvailable) { _%>
     @BeforeEach
-    fun setup() {
+    fun setup()<% if (jhipsterConfig.coroutine) { %> = runTest<% } %> {
         cacheManager.getCache(UserRepository.USERS_BY_LOGIN_CACHE)!!.clear()
         cacheManager.getCache(UserRepository.USERS_BY_EMAIL_CACHE)!!.clear()
     }
@@ -180,13 +184,13 @@ class UserResourceIT {
     <%_ } _%>
     <%_ if (reactive && testsNeedCsrf) { _%>
     @BeforeEach
-    fun setupCsrf() {
+    fun setupCsrf()<% if (jhipsterConfig.coroutine) { %> = runTest<% } %> {
         webTestClient = webTestClient.mutateWith(csrf())
     }
     <%_ } _%>
 
     @BeforeEach
-    fun initTest() {
+    fun initTest()<% if (jhipsterConfig.coroutine) { %> = runTest<% } %> {
         user = initTestUser(userRepository<% if (databaseTypeSql ) { %>, em<% } _%>)
     }
 <%_ if (!authenticationTypeOauth2) { _%>
@@ -196,9 +200,8 @@ class UserResourceIT {
     @Transactional
     <%_ } _%>
     @Throws(Exception::class)
-    fun createUser() {
-        val databaseSizeBeforeCreate = userRepository.findAll()<% if (reactive) { %>
-            .collectList().block()!!<% } %>.size
+    fun createUser()<% if (jhipsterConfig.coroutine) { %> = runTest<% } %> {
+        val databaseSizeBeforeCreate = userRepository.findAll()<% if (jhipsterConfig.coroutine) { %>.toList() <% }  else if (reactive) { %>.collectList().block()!!<% } %>.size
         // Create the User
         val managedUserVM = ManagedUserVM().apply {
             login = DEFAULT_LOGIN
@@ -256,9 +259,8 @@ class UserResourceIT {
     @Transactional
     <%_ } _%>
     @Throws(Exception::class)
-    fun createUserWithExistingId() {
-        val databaseSizeBeforeCreate = userRepository.findAll()<% if (reactive) { %>
-            .collectList().block()!!<% } %>.size
+    fun createUserWithExistingId()<% if (jhipsterConfig.coroutine) { %> = runTest<% } %> {
+        val databaseSizeBeforeCreate = userRepository.findAll()<% if (jhipsterConfig.coroutine) { %>.toList() <% }  else if (reactive) { %>.collectList().block()!!<% } %>.size
 
         val managedUserVM = ManagedUserVM().apply {
             <%_ if (databaseTypeCassandra) { _%>
@@ -315,14 +317,13 @@ class UserResourceIT {
     @Transactional
     <%_ } _%>
     @Throws(Exception::class)
-    fun createUserWithExistingLogin() {
+    fun createUserWithExistingLogin()<% if (jhipsterConfig.coroutine) { %> = runTest<% } %> {
         // Initialize the database
-        userRepository.<%= saveMethod %>(user)<% if (reactive) { %>.block()<% } %>
+        userRepository.<%= saveMethod %>(user)<% if (reactive && !jhipsterConfig.coroutine) { %>.block()<% } %>
         <%_ if (searchEngineElasticsearch) { _%>
-        userSearchRepository.save(user)<% if (reactive) { %>.block()<% } %>;
+        userSearchRepository.save(user)<% if (reactive && !jhipsterConfig.coroutine) { %>.block()<% } %>;
         <%_ } _%>
-        val databaseSizeBeforeCreate = userRepository.findAll()<% if (reactive) { %>
-            .collectList().block()!!<% } %>.size
+        val databaseSizeBeforeCreate = userRepository.findAll()<% if (jhipsterConfig.coroutine) { %>.toList() <% }  else if (reactive) { %>.collectList().block()!!<% } %>.size
 
         val managedUserVM = ManagedUserVM().apply {
             login = DEFAULT_LOGIN // this login should already be used
@@ -369,14 +370,13 @@ class UserResourceIT {
     @Transactional
     <%_ } _%>
     @Throws(Exception::class)
-    fun createUserWithExistingEmail() {
+    fun createUserWithExistingEmail()<% if (jhipsterConfig.coroutine) { %> = runTest<% } %> {
         // Initialize the database
-        userRepository.<%= saveMethod %>(user)<% if (reactive) { %>.block()<% } %>
+        userRepository.<%= saveMethod %>(user)<% if (reactive && !jhipsterConfig.coroutine) { %>.block()<% } %>
         <%_ if (searchEngineElasticsearch) { _%>
-        userSearchRepository.save(user)<% if (reactive) { %>.block()<% } %>
+        userSearchRepository.save(user)<% if (reactive && !jhipsterConfig.coroutine) { %>.block()<% } %>
         <%_ } _%>
-        val databaseSizeBeforeCreate = userRepository.findAll()<% if (reactive) { %>
-            .collectList().block()!!<% } %>.size
+        val databaseSizeBeforeCreate = userRepository.findAll()<% if (jhipsterConfig.coroutine) { %>.toList() <% }  else if (reactive) { %>.collectList().block()!!<% } %>.size
 
         val managedUserVM = ManagedUserVM().apply {
             login = "anotherlogin"
@@ -424,9 +424,9 @@ class UserResourceIT {
     <%_ if (!reactive) { _%>
     @Throws(Exception::class)
     <%_ } _%>
-    fun getAllUsers() {
+    fun getAllUsers()<% if (jhipsterConfig.coroutine) { %> = runTest<% } %> {
         // Initialize the database
-        userRepository.<% if (databaseTypeSql && reactive && authenticationTypeOauth2) { %>create<% } else { %><%= saveMethod %><% } %>(user)<% if (reactive) { %>.block()<% } %>
+        userRepository.<% if (databaseTypeSql && reactive && authenticationTypeOauth2) { %>create<% } else { %><%= saveMethod %><% } %>(user)<% if (reactive && !jhipsterConfig.coroutine) { %>.block()<% } %>
         <%_ if (databaseTypeSql && reactive && !applicationTypeMicroservice) { _%>
         authorityRepository
             .findById(USER)
@@ -485,9 +485,9 @@ class UserResourceIT {
     <%_ if (!reactive) { _%>
     @Throws(Exception::class)
     <%_ } _%>
-    fun getUser() {
+    fun getUser()<% if (jhipsterConfig.coroutine) { %> = runTest<% } %> {
         // Initialize the database
-        userRepository.<% if (databaseTypeSql && reactive && authenticationTypeOauth2) { %>create<% } else { %><%= saveMethod %><% } %>(user)<% if (reactive) { %>.block()<% } %>
+        userRepository.<% if (databaseTypeSql && reactive && authenticationTypeOauth2) { %>create<% } else { %><%= saveMethod %><% } %>(user)<% if (reactive && !jhipsterConfig.coroutine) { %>.block()<% } %>
         <%_ if (databaseTypeSql && reactive) { _%>
         authorityRepository
             .findById(USER)
@@ -556,7 +556,7 @@ class UserResourceIT {
     <%_ if (!reactive) { _%>
     @Throws(Exception::class)
     <%_ } _%>
-    fun getNonExistingUser() {
+    fun getNonExistingUser()<% if (jhipsterConfig.coroutine) { %> = runTest<% } %> {
         <%_ if (reactive) { _%>
         webTestClient.get().uri("/api/admin/users/unknown")
             .exchange()
@@ -572,14 +572,13 @@ class UserResourceIT {
     @Transactional
     <%_ } _%>
     @Throws(Exception::class)
-    fun updateUser() {
+    fun updateUser()<% if (jhipsterConfig.coroutine) { %> = runTest<% } %> {
         // Initialize the database
-        userRepository.<%= saveMethod %>(user)<% if (reactive) { %>.block()<% } %>
-        val databaseSizeBeforeUpdate = userRepository.findAll()<% if (reactive) { %>
-            .collectList().block()!!<% } %>.size
+        userRepository.<%= saveMethod %>(user)<% if (reactive && !jhipsterConfig.coroutine) { %>.block()<% } %>
+        val databaseSizeBeforeUpdate = userRepository.findAll()<% if (jhipsterConfig.coroutine) { %>.toList() <% }  else if (reactive) { %>.collectList().block()!!<% } %>.size
 
         // Update the user
-        val updatedUser = userRepository.findById(user.id!!).<% if (reactive) { %>block<% } else { %>get<% } %>()
+        val updatedUser = userRepository.findById(user.id!!)<% if(!jhipsterConfig.coroutine){ %>.<% if (reactive) { %>block<% } else { %>get<% } %>()<% } %>
         assertNotNull(updatedUser)
 
         val managedUserVM = ManagedUserVM().apply {
@@ -642,14 +641,13 @@ class UserResourceIT {
     @Transactional
     <%_ } _%>
     @Throws(Exception::class)
-    fun updateUserLogin() {
+    fun updateUserLogin()<% if (jhipsterConfig.coroutine) { %> = runTest<% } %> {
         // Initialize the database
-        userRepository.<%= saveMethod %>(user)<% if (reactive) { %>.block()<% } %>
-        val databaseSizeBeforeUpdate = userRepository.findAll()<% if (reactive) { %>
-            .collectList().block()!!<% } %>.size
+        userRepository.<%= saveMethod %>(user)<% if (reactive && !jhipsterConfig.coroutine) { %>.block()<% } %>
+        val databaseSizeBeforeUpdate = userRepository.findAll()<% if (jhipsterConfig.coroutine) { %>.toList() <% }  else if (reactive) { %>.collectList().block()!!<% } %>.size
 
         // Update the user
-        val updatedUser = userRepository.findById(user.id!!).<% if (reactive) { %>block<% } else { %>get<% } %>()
+        val updatedUser = userRepository.findById(user.id!!)<% if(!jhipsterConfig.coroutine){ %>.<% if (reactive) { %>block<% } else { %>get<% } %>()<% } %>
         assertNotNull(updatedUser)
 
         val managedUserVM = ManagedUserVM().apply {
@@ -713,9 +711,9 @@ class UserResourceIT {
     @Transactional
     <%_ } _%>
     @Throws(Exception::class)
-    fun updateUserExistingEmail() {
+    fun updateUserExistingEmail()<% if (jhipsterConfig.coroutine) { %> = runTest<% } %> {
         // Initialize the database with 2 users
-        userRepository.<%= saveMethod %>(user)<% if (reactive) { %>.block()<% } %>
+        userRepository.<%= saveMethod %>(user)<% if (reactive && !jhipsterConfig.coroutine) { %>.block()<% } %>
         <%_ if (searchEngineElasticsearch) { _%>
         userSearchRepository.save(user)
         <%_ } _%>
@@ -738,13 +736,13 @@ class UserResourceIT {
             <%_ } _%>
             langKey = "en"
         )
-        userRepository.save<% if (databaseTypeSql && !reactive) { %>AndFlush<% } %>(anotherUser)<% if (reactive) { %>.block()<% } %>
+        userRepository.save<% if (databaseTypeSql && !reactive) { %>AndFlush<% } %>(anotherUser)<% if (reactive && !jhipsterConfig.coroutine) { %>.block()<% } %>
         <%_ if (searchEngineElasticsearch) { _%>
         userSearchRepository.save(anotherUser)
         <%_ } _%>
 
         // Update the user
-        val updatedUser = userRepository.findById(user.id!!).<% if (reactive) { %>block<% } else { %>get<% } %>()
+        val updatedUser = userRepository.findById(user.id!!)<% if(!jhipsterConfig.coroutine){ %>.<% if (reactive) { %>block<% } else { %>get<% } %>()<% } %>
         assertNotNull(updatedUser)
 
         val managedUserVM = ManagedUserVM().apply {
@@ -795,9 +793,9 @@ class UserResourceIT {
     @Transactional
     <%_ } _%>
     @Throws(Exception::class)
-    fun updateUserExistingLogin() {
+    fun updateUserExistingLogin()<% if (jhipsterConfig.coroutine) { %> = runTest<% } %> {
         // Initialize the database
-        userRepository.<%= saveMethod %>(user)<% if (reactive) { %>.block()<% } %>
+        userRepository.<%= saveMethod %>(user)<% if (reactive && !jhipsterConfig.coroutine) { %>.block()<% } %>
         <%_ if (searchEngineElasticsearch) { _%>
         userSearchRepository.save(user)
         <%_ } _%>
@@ -820,13 +818,13 @@ class UserResourceIT {
             <%_ } _%>
             langKey = "en"
         )
-        userRepository.save<% if (databaseTypeSql && !reactive) { %>AndFlush<% } %>(anotherUser)<% if (reactive) { %>.block()<% } %>
+        userRepository.save<% if (databaseTypeSql && !reactive) { %>AndFlush<% } %>(anotherUser)<% if (reactive && !jhipsterConfig.coroutine) { %>.block()<% } %>
         <%_ if (searchEngineElasticsearch) { _%>
         userSearchRepository.save(anotherUser)
         <%_ } _%>
 
         // Update the user
-        val updatedUser = userRepository.findById(user.id!!).<% if (reactive) { %>block<% } else { %>get<% } %>()
+        val updatedUser = userRepository.findById(user.id!!)<% if(!jhipsterConfig.coroutine){ %>.<% if (reactive) { %>block<% } else { %>get<% } %>()<% } %>
         assertNotNull(updatedUser)
 
         val managedUserVM = ManagedUserVM().apply {
@@ -879,11 +877,10 @@ class UserResourceIT {
     <%_ if (!reactive) { _%>
     @Throws(Exception::class)
     <%_ } _%>
-    fun deleteUser() {
+    fun deleteUser()<% if (jhipsterConfig.coroutine) { %> = runTest<% } %> {
         // Initialize the database
-        userRepository.<%= saveMethod %>(user)<% if (reactive) { %>.block()<% } %>
-        val databaseSizeBeforeDelete = userRepository.findAll()<% if (reactive) { %>
-            .collectList().block()!!<% } %>.size
+        userRepository.<%= saveMethod %>(user)<% if (reactive && !jhipsterConfig.coroutine) { %>.block()<% } %>
+        val databaseSizeBeforeDelete = userRepository.findAll()<% if (jhipsterConfig.coroutine) { %>.toList() <% }  else if (reactive) { %>.collectList().block()!!<% } %>.size
 
         // Delete the user
         <%_ if (reactive) { _%>
@@ -911,7 +908,7 @@ class UserResourceIT {
 
     @Test
     @Throws(Exception::class)
-    fun testUserEquals() {
+    fun testUserEquals()<% if (jhipsterConfig.coroutine) { %> = runTest<% } %> {
         equalsVerifier(<%= asEntity('User') %>::class)
         val user1 = <%= asEntity('User') %>(id = DEFAULT_ID)
         val user2 = <%= asEntity('User') %>(id = user1.id)
@@ -923,7 +920,7 @@ class UserResourceIT {
     }
 
     @Test
-    fun testUserDTOtoUser() {
+    fun testUserDTOtoUser()<% if (jhipsterConfig.coroutine) { %> = runTest<% } %> {
         val userDTO = <%= asDto('AdminUser') %>(
             id = DEFAULT_ID,
             login = DEFAULT_LOGIN,
@@ -964,7 +961,7 @@ class UserResourceIT {
     }
 
     @Test
-    fun testUserToUserDTO() {
+    fun testUserToUserDTO()<% if (jhipsterConfig.coroutine) { %> = runTest<% } %> {
         user.id = DEFAULT_ID
         <%_ if (!databaseTypeCassandra) { _%>
         user.createdBy = DEFAULT_LOGIN
@@ -1002,7 +999,7 @@ class UserResourceIT {
     <%_ if (databaseTypeSql || databaseTypeMongodb || databaseTypeNeo4j) { _%>
 
     @Test
-    fun testAuthorityEquals() {
+    fun testAuthorityEquals()<% if (jhipsterConfig.coroutine) { %> = runTest<% } %> {
         val authorityA = Authority()
         assertThat(authorityA)
             .isNotEqualTo(null)
@@ -1121,11 +1118,11 @@ class UserResourceIT {
          * Setups the database with one user.
          */
         @JvmStatic
-        fun initTestUser(userRepository: UserRepository<% if (databaseTypeSql ) { %>, em: EntityManager<% } _%>): <%= asEntity('User') %> {
+        <% if (jhipsterConfig.coroutine) { %>suspend <% } %>fun initTestUser(userRepository: UserRepository<% if (databaseTypeSql ) { %>, em: EntityManager<% } _%>): <%= asEntity('User') %> {
             <%_ if (databaseTypeSql && reactive) { _%>
             userRepository.deleteAllUserAuthorities().block()
             <%_ } _%>
-            userRepository.deleteAll()<% if (reactive) { %>.block()<% } %>
+            userRepository.deleteAll()<% if (reactive && !jhipsterConfig.coroutine) { %>.block()<% } %>
             val user = createEntity(<% if (databaseTypeSql ) { %>em<% } _%>)
             <%_ if (databaseTypeSql) { _%>
             user.login = DEFAULT_LOGIN
@@ -1135,11 +1132,11 @@ class UserResourceIT {
         }
     }
 
-    fun assertPersistedUsers(userAssertion: (List<<%= asEntity('User') %>>) -> Unit) {
+    <% if (jhipsterConfig.coroutine) { %>suspend <% } %>fun assertPersistedUsers(userAssertion: (List<<%= asEntity('User') %>>) -> Unit) {
         <%_ if (databaseTypeCouchbase) { _%>
         // The security filter chain clears the security context after remote calls
         SecurityContextHolder.setContext(TestSecurityContextHolder.getContext())
         <%_ } _%>
-        userAssertion(userRepository.findAll()<% if (reactive) { %>.collectList().block()<% } %>)
+        userAssertion(userRepository.findAll()<% if (jhipsterConfig.coroutine) { %>.toList()<% } else if (reactive) { %>.collectList().block()<% } %>)
     }
 }

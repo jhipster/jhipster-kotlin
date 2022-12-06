@@ -110,13 +110,11 @@ import org.springframework.test.web.servlet.result.MockMvcResultMatchers.*
 <%_ } _%>
 <%_ if (databaseTypeCouchbase) { _%>
 import org.springframework.security.test.web.servlet.response.SecurityMockMvcResultHandlers.exportTestSecurityContext
-<%_ } _%>   
-
-<%_ if (reactive) { _%>
-
-import kotlin.test.assertNotNull
 <%_ } _%>
-import kotlin.test.assertContains
+
+import kotlin.test.*
+import kotlinx.coroutines.test.runTest
+
 <%_ if (databaseTypeSql && reactive) { _%>
 import <%= packageName %>.config.SYSTEM_ACCOUNT
 <%_ } _%>
@@ -161,14 +159,14 @@ class AccountResourceIT {
 
     <%_ if (databaseTypeMongodb || databaseTypeNeo4j) { _%>
     @BeforeEach
-    fun setup() {
-        userRepository.deleteAll()<% if (reactive) { %>.block()<% } %>
+    fun setup()<% if (jhipsterConfig.coroutine) { %> = runTest<% } %> {
+        userRepository.deleteAll()<% if (reactive && !jhipsterConfig.coroutine) { %>.block()<% } %>
     }
     <%_ } _%>
     <%_ if (reactive && testsNeedCsrf) { _%>
 
     @BeforeEach
-    fun setupCsrf() {
+    fun setupCsrf()<% if (jhipsterConfig.coroutine) { %> = runTest<% } %> {
         accountWebTestClient = accountWebTestClient.mutateWith(csrf())
     }
 
@@ -178,14 +176,14 @@ class AccountResourceIT {
     @WithUnauthenticatedMockUser
     @Throws(Exception::class)
     <%_ if (reactive) { _%>
-    fun testNonAuthenticatedUser() {
+    fun testNonAuthenticatedUser()<% if (jhipsterConfig.coroutine) { %> = runTest<% } %> {
         accountWebTestClient.get().uri("/api/authenticate")
             .accept(MediaType.APPLICATION_JSON)
             .exchange()
             .expectStatus().isOk
             .expectBody().isEmpty
     <%_ } else { _%>
-    fun testNonAuthenticatedUser() {
+    fun testNonAuthenticatedUser()<% if (jhipsterConfig.coroutine) { %> = runTest<% } %> {
         restAccountMockMvc.perform(
             get("/api/authenticate")
                 .accept(MediaType.APPLICATION_JSON)
@@ -197,7 +195,7 @@ class AccountResourceIT {
 
     @Test
     <%_ if (reactive) { _%>
-    fun testAuthenticatedUser() {
+    fun testAuthenticatedUser()<% if (jhipsterConfig.coroutine) { %> = runTest<% } %> {
         accountWebTestClient
             .get().uri("/api/authenticate")
             .accept(MediaType.APPLICATION_JSON)
@@ -206,7 +204,7 @@ class AccountResourceIT {
             .expectBody<String>().isEqualTo(TEST_USER_LOGIN)
     <%_ } else { _%>
     @Throws(Exception::class)
-    fun testAuthenticatedUser() {
+    fun testAuthenticatedUser()<% if (jhipsterConfig.coroutine) { %> = runTest<% } %> {
         restAccountMockMvc.perform(get("/api/authenticate")
             .with { request ->
                 request.remoteUser = TEST_USER_LOGIN
@@ -222,7 +220,7 @@ class AccountResourceIT {
     <%_ if (!reactive) { _%>
     @Throws(Exception::class)
     <%_ } _%>
-    fun testGetExistingAccount() {
+    fun testGetExistingAccount()<% if (jhipsterConfig.coroutine) { %> = runTest<% } %> {
         val authorities = mutableSetOf(ADMIN)
         val user = <%= asDto('AdminUser') %>(
             login = TEST_USER_LOGIN,
@@ -235,7 +233,7 @@ class AccountResourceIT {
             langKey = "en",
             authorities = authorities
         )
-        userService.createUser(user)<% if (reactive) { %>.block()<% } %>
+        userService.createUser(user)<% if (reactive && !jhipsterConfig.coroutine) { %>.block()<% } %>
 
         <%_ if (reactive) { _%>
             accountWebTestClient.get().uri("/api/account")
@@ -274,14 +272,14 @@ class AccountResourceIT {
 
     @Test
     <%_ if (reactive) { _%>
-    fun testGetUnknownAccount() {
+    fun testGetUnknownAccount()<% if (jhipsterConfig.coroutine) { %> = runTest<% } %> {
         accountWebTestClient.get().uri("/api/account")
             .accept(MediaType.APPLICATION_JSON)
             .exchange()
             .expectStatus().isEqualTo(HttpStatus.INTERNAL_SERVER_ERROR)
     <%_ } else { _%>
     @Throws(Exception::class)
-    fun testGetUnknownAccount() {
+    fun testGetUnknownAccount()<% if (jhipsterConfig.coroutine) { %> = runTest<% } %> {
         restAccountMockMvc.perform(get("/api/account")
             .accept(MediaType.APPLICATION_PROBLEM_JSON))
             .andExpect(status().isInternalServerError)
@@ -291,7 +289,7 @@ class AccountResourceIT {
     @Test<% if (databaseTypeSql && !reactive) { %>
     @Transactional<% } %>
     @Throws(Exception::class)
-    fun testRegisterValid() {
+    fun testRegisterValid()<% if (jhipsterConfig.coroutine) { %> = runTest<% } %> {
         val validUser = ManagedUserVM().apply {
             login = "test-register-valid"
             password = "password"
@@ -304,7 +302,7 @@ class AccountResourceIT {
             langKey = DEFAULT_LANGUAGE
             authorities = mutableSetOf(USER)
         }
-        assertThat(userRepository.findOneByLogin("test-register-valid")<% if (reactive) { %>.blockOptional()<% } %>).isEmpty
+        assertNull(userRepository.findOneByLogin("test-register-valid")<% if (reactive && !jhipsterConfig.coroutine) { %>.blockOptional()<% } %>)
 
         <%_ if (reactive) { _%>
         accountWebTestClient.post().uri("/api/register")
@@ -320,20 +318,20 @@ class AccountResourceIT {
                 .with(csrf())<% } %>
         )
             .andExpect(status().isCreated)
-        
+
         <%_ } _%>
 
-        assertThat(userRepository.findOneByLogin("test-register-valid")<% if (reactive) { %>.blockOptional()<% } %>).isPresent
+        assertNotNull(userRepository.findOneByLogin("test-register-valid")<% if (reactive && !jhipsterConfig.coroutine) { %>.blockOptional()<% } %>)
     }
 
     @Test<% if (databaseTypeSql && !reactive) { %>
     @Transactional<% } %>
     @Throws(Exception::class)
-    fun testRegisterInvalidLogin() {
+    fun testRegisterInvalidLogin()<% if (jhipsterConfig.coroutine) { %> = runTest<% } %> {
         val invalidUser = ManagedUserVM().apply {
             login = "funky-log(n" // <-- invalid
             password = "password"
-            firstName = "Funky"
+            firstName = "funky"
             lastName = "One"
             email = "funky@example.com"
             activated = true
@@ -361,17 +359,17 @@ class AccountResourceIT {
             .andDo(exportTestSecurityContext())
         <%_ } _%>
             .andExpect(status().isBadRequest)
-        
+
         <%_ } _%>
 
-        val user = userRepository.findOneByEmailIgnoreCase("funky@example.com")<% if (reactive) { %>.blockOptional()<% } %>
-        assertThat(user).isEmpty
+        val user = userRepository.findOneByEmailIgnoreCase("funky@example.com")<% if (reactive && !jhipsterConfig.coroutine) { %>.blockOptional()<% } %>
+        assertNull(user)
     }
 
     @Test<% if (databaseTypeSql && !reactive) { %>
     @Transactional<% } %>
     @Throws(Exception::class)
-    fun testRegisterInvalidEmail() {
+    fun testRegisterInvalidEmail()<% if (jhipsterConfig.coroutine) { %> = runTest<% } %> {
         val invalidUser = ManagedUserVM().apply {
             login = "bob"
             password = "password"
@@ -400,17 +398,17 @@ class AccountResourceIT {
                 .with(csrf())<% } %>
         )
             .andExpect(status().isBadRequest)
-        
+
         <%_ } _%>
 
-        val user = userRepository.findOneByLogin("bob")<% if (reactive) { %>.blockOptional()<% } %>
-        assertThat(user).isEmpty
+        val user = userRepository.findOneByLogin("bob")<% if (reactive && !jhipsterConfig.coroutine) { %>.blockOptional()<% } %>
+        assertNull(user)
     }
 
     @Test<% if (databaseTypeSql && !reactive) { %>
     @Transactional<% } %>
     @Throws(Exception::class)
-    fun testRegisterInvalidPassword() {
+    fun testRegisterInvalidPassword()<% if (jhipsterConfig.coroutine) { %> = runTest<% } %> {
         val invalidUser = ManagedUserVM().apply {
             login = "bob"
             password = "123" // password with only 3 digits
@@ -439,17 +437,17 @@ class AccountResourceIT {
                 .with(csrf())<% } %>
         )
             .andExpect(status().isBadRequest)
-        
+
         <%_ } _%>
 
-        val user = userRepository.findOneByLogin("bob")<% if (reactive) { %>.blockOptional()<% } %>
-        assertThat(user).isEmpty
+        val user = userRepository.findOneByLogin("bob")<% if (reactive && !jhipsterConfig.coroutine) { %>.blockOptional()<% } %>
+        assertNull(user)
     }
 
     @Test<% if (databaseTypeSql && !reactive) { %>
     @Transactional<% } %>
     @Throws(Exception::class)
-    fun testRegisterNullPassword() {
+    fun testRegisterNullPassword()<% if (jhipsterConfig.coroutine) { %> = runTest<% } %> {
         val invalidUser = ManagedUserVM().apply {
             login = "bob"
             password = null // invalid null password
@@ -478,17 +476,17 @@ class AccountResourceIT {
                 .with(csrf())<% } %>
         )
             .andExpect(status().isBadRequest)
-        
+
         <%_ } _%>
 
-        val user = userRepository.findOneByLogin("bob")<% if (reactive) { %>.blockOptional()<% } %>
-        assertThat(user).isEmpty
+        val user = userRepository.findOneByLogin("bob")<% if (reactive && !jhipsterConfig.coroutine) { %>.blockOptional()<% } %>
+        assertNull(user)
     }
 
     @Test<% if (databaseTypeSql && !reactive) { %>
     @Transactional<% } %>
     @Throws(Exception::class)
-    fun testRegisterDuplicateLogin() {
+    fun testRegisterDuplicateLogin()<% if (jhipsterConfig.coroutine) { %> = runTest<% } %> {
         // First registration
         val firstUser = ManagedUserVM().apply {
             login = "alice"
@@ -538,7 +536,7 @@ class AccountResourceIT {
                 .with(csrf())<% } %>
         )
             .andExpect(status().isCreated)
-        
+
         <%_ } _%>
 
         // Second (non activated) user
@@ -559,13 +557,13 @@ class AccountResourceIT {
             .andDo(exportTestSecurityContext())
         <%_ } _%>
             .andExpect(status().isCreated)
-        
+
         <%_ } _%>
 
-        val testUser = userRepository.findOneByEmailIgnoreCase("alice2@example.com")<% if (reactive) { %>.blockOptional()<% } %>
-        assertThat(testUser).isPresent
-        testUser.get().activated = true
-        userRepository.save(testUser.get())<% if (reactive) { %>.block()<% } %>
+        val testUser = userRepository.findOneByEmailIgnoreCase("alice2@example.com")<% if (reactive && !jhipsterConfig.coroutine) { %>.blockOptional()<% } %>
+        assertNotNull(testUser)
+        testUser.activated = true
+        userRepository.save(testUser)<% if (reactive && !jhipsterConfig.coroutine) { %>.block()<% } %>
 
         // Second (already activated) user
         <%_ if (reactive) { _%>
@@ -582,14 +580,14 @@ class AccountResourceIT {
                 .with(csrf())<% } %>
         )
             .andExpect(status().is4xxClientError)
-        
+
         <%_ } _%>
     }
 
     @Test<% if (databaseTypeSql && !reactive) { %>
     @Transactional<% } %>
     @Throws(Exception::class)
-    fun testRegisterDuplicateEmail() {
+    fun testRegisterDuplicateEmail()<% if (jhipsterConfig.coroutine) { %> = runTest<% } %> {
         // First user
         val firstUser = ManagedUserVM().apply {
             login = "test-register-duplicate-email"
@@ -619,11 +617,11 @@ class AccountResourceIT {
                 .with(csrf())<% } %>
         )
             .andExpect(status().isCreated)
-        
+
         <%_ } _%>
 
-        val testUser1 = userRepository.findOneByLogin("test-register-duplicate-email")<% if (reactive) { %>.blockOptional()<% } %>
-        assertThat(testUser1).isPresent
+        val testUser1 = userRepository.findOneByLogin("test-register-duplicate-email")<% if (reactive && !jhipsterConfig.coroutine) { %>.blockOptional()<% } %>
+        assertNotNull(testUser1)
 
         // Duplicate email, different login
         val secondUser = ManagedUserVM().apply {
@@ -654,14 +652,14 @@ class AccountResourceIT {
                 .with(csrf())<% } %>
         )
             .andExpect(status().isCreated)
-        
+
         <%_ } _%>
 
-        val testUser2 = userRepository.findOneByLogin("test-register-duplicate-email")<% if (reactive) { %>.blockOptional()<% } %>
-        assertThat(testUser2).isEmpty
+        val testUser2 = userRepository.findOneByLogin("test-register-duplicate-email")<% if (reactive && !jhipsterConfig.coroutine) { %>.blockOptional()<% } %>
+        assertNull(testUser2)
 
-        val testUser3 = userRepository.findOneByLogin("test-register-duplicate-email-2")<% if (reactive) { %>.blockOptional()<% } %>
-        assertThat(testUser3).isPresent
+        val testUser3 = userRepository.findOneByLogin("test-register-duplicate-email-2")<% if (reactive && !jhipsterConfig.coroutine) { %>.blockOptional()<% } %>
+        assertNotNull(testUser3)
 
         // Duplicate email - with uppercase email address
         val userWithUpperCaseEmail = ManagedUserVM().apply {
@@ -693,15 +691,15 @@ class AccountResourceIT {
                 .with(csrf())<% } %>
         )
             .andExpect(status().isCreated)
-        
+
         <%_ } _%>
 
-        val testUser4 = userRepository.findOneByLogin("test-register-duplicate-email-3")<% if (reactive) { %>.blockOptional()<% } %>
-        assertThat(testUser4).isPresent
-        assertThat(testUser4.get().email).isEqualTo("test-register-duplicate-email@example.com")
+        val testUser4 = userRepository.findOneByLogin("test-register-duplicate-email-3")<% if (reactive && !jhipsterConfig.coroutine) { %>.blockOptional()<% } %>
+        assertNotNull(testUser4)
+        assertThat(testUser4.email).isEqualTo("test-register-duplicate-email@example.com")
 
-        testUser4.get().activated = true
-        userService.updateUser((<%= asDto('AdminUser') %>(testUser4.get())))<% if (reactive) { %>.block()<% } %>
+        testUser4.activated = true
+        userService.updateUser((<%= asDto('AdminUser') %>(testUser4)))<% if (reactive && !jhipsterConfig.coroutine) { %>.block()<% } %>
 
         // Register 4th (already activated) user
         <%_ if (reactive) { _%>
@@ -718,14 +716,14 @@ class AccountResourceIT {
                 .with(csrf())<% } %>
         )
             .andExpect(status().is4xxClientError)
-        
+
         <%_ } _%>
     }
 
     @Test<% if (databaseTypeSql && !reactive) { %>
     @Transactional<% } %>
     @Throws(Exception::class)
-    fun testRegisterAdminIsIgnored() {
+    fun testRegisterAdminIsIgnored()<% if (jhipsterConfig.coroutine) { %> = runTest<% } %> {
         val validUser = ManagedUserVM().apply {
             login = "badguy"
             password = "password"
@@ -754,13 +752,13 @@ class AccountResourceIT {
                 .with(csrf())<% } %>
         )
             .andExpect(status().isCreated)
-        
+
         <%_ } _%>
 
-        val userDup = userRepository.findOne<% if (databaseTypeSql) { %>WithAuthorities<% } %>ByLogin("badguy")<% if (reactive) { %>.blockOptional()<% } %>
-        assertThat(userDup).isPresent
-        assertThat(userDup.get().authorities).hasSize(1)
-        assertContains(userDup.get().authorities, <% if (databaseTypeSql || databaseTypeMongodb || databaseTypeNeo4j) { %>authorityRepository.findById(USER).<% if (reactive) { %>block<% } else { %>get<% } %>()<% } %><% if (databaseTypeCassandra || databaseTypeCouchbase) { %>USER<% } %>)
+        val userDup = userRepository.findOne<% if (databaseTypeSql) { %>WithAuthorities<% } %>ByLogin("badguy")<% if (reactive && !jhipsterConfig.coroutine) { %>.blockOptional()<% } %>
+        assertNotNull(userDup)
+        assertThat(userDup.authorities).hasSize(1)
+        assertContains(userDup.authorities, <% if (databaseTypeSql || databaseTypeMongodb || databaseTypeNeo4j) { %>authorityRepository.findById(USER)<% if (!jhipsterConfig.coroutine) { %>.<% if (reactive) { %>block<% } else { %>get<% } %>()<% } %><% } %><% if (databaseTypeCassandra || databaseTypeCouchbase) { %>USER<% } %>)
     }
 
     @Test<% if (databaseTypeSql && !reactive) { %>
@@ -768,7 +766,7 @@ class AccountResourceIT {
     <%_ if (!reactive) { _%>
     @Throws(Exception::class)
     <%_ } _%>
-    fun testActivateAccount() {
+    fun testActivateAccount()<% if (jhipsterConfig.coroutine) { %> = runTest<% } %> {
         val activationKey = "some activation key"
         var user = <%= asEntity('User') %>(
             <%_ if (databaseTypeCassandra) { _%>
@@ -784,7 +782,7 @@ class AccountResourceIT {
             activationKey = activationKey
         )
 
-        userRepository.save<% if (databaseTypeSql && !reactive) { %>AndFlush<% } %>(user)<% if (reactive) { %>.block()<% } %>
+        userRepository.save<% if (databaseTypeSql && !reactive) { %>AndFlush<% } %>(user)<% if (reactive && !jhipsterConfig.coroutine) { %>.block()<% } %>
 
         <%_ if (reactive) { _%>
         accountWebTestClient.get().uri("/api/activate?key={activationKey}", activationKey)
@@ -795,7 +793,7 @@ class AccountResourceIT {
             .andExpect(status().isOk)
         <%_ } _%>
 
-        user = userRepository.findOneByLogin(user.login!!)<%_ if (reactive) { _%>.block()!!<% } else { %>.orElse(null)<% } %>
+        user = userRepository.findOneByLogin(user.login!!)<%_  if (reactive && !jhipsterConfig.coroutine) { _%>.block()<% } %>!!
         assertThat(user.activated).isTrue
     }
 
@@ -803,7 +801,7 @@ class AccountResourceIT {
     @Transactional<% } %>
     <%_ if (!reactive) { _%>
     @Throws(Exception::class)<% } %>
-    fun testActivateAccountWithWrongKey() {
+    fun testActivateAccountWithWrongKey()<% if (jhipsterConfig.coroutine) { %> = runTest<% } %> {
         <%_ if (reactive) { _%>
         accountWebTestClient.get().uri("/api/activate?key=wrongActivationKey")
             .exchange()
@@ -818,7 +816,7 @@ class AccountResourceIT {
     @Transactional<% } %>
     @WithMockUser("save-account")
     @Throws(Exception::class)
-    fun testSaveAccount() {
+    fun testSaveAccount()<% if (jhipsterConfig.coroutine) { %> = runTest<% } %> {
         val user = <%= asEntity('User') %>(
             <%_ if (databaseTypeCassandra) { _%>
             id = UUID.randomUUID().toString(),
@@ -832,7 +830,7 @@ class AccountResourceIT {
             activated = true
         )
 
-        userRepository.save<% if (databaseTypeSql && !reactive) { %>AndFlush<% } %>(user)<% if (reactive) { %>.block()<% } %>
+        userRepository.save<% if (databaseTypeSql && !reactive) { %>AndFlush<% } %>(user)<% if (reactive && !jhipsterConfig.coroutine) { %>.block()<% } %>
         val userDTO = <%= asDto('AdminUser') %>(
             login = "not-used",
             firstName = "firstname",
@@ -860,10 +858,10 @@ class AccountResourceIT {
                 .with(csrf())<% } %>
         )
             .andExpect(status().isOk)
-        
+
         <%_ } _%>
 
-        val updatedUser = userRepository.findOne<% if (databaseTypeSql) { %>WithAuthorities<% } %>ByLogin(user?.login!!)<%_ if (reactive) { _%>.block()<% } else { %>.orElse(null)<% } %>
+        val updatedUser = userRepository.findOne<% if (databaseTypeSql) { %>WithAuthorities<% } %>ByLogin(user?.login!!)<%_  if (reactive && !jhipsterConfig.coroutine) { _%>.block()<% } %>
         assertThat(updatedUser?.firstName).isEqualTo(userDTO.firstName)
         assertThat(updatedUser?.lastName).isEqualTo(userDTO.lastName)
         assertThat(updatedUser?.email).isEqualTo(userDTO.email)
@@ -873,7 +871,7 @@ class AccountResourceIT {
         assertThat(updatedUser?.imageUrl).isEqualTo(userDTO.imageUrl)
         <%_ } _%>
         assertThat(updatedUser?.activated).isTrue
-        assertThat(updatedUser?.authorities).isEmpty()
+        assertNotNull(updatedUser?.authorities)
     }
 
     @Test<% if (databaseTypeSql && !reactive) { %>
@@ -882,7 +880,7 @@ class AccountResourceIT {
     <%_ if (!reactive) { _%>
     @Throws(Exception::class)
     <%_ } _%>
-    fun testSaveInvalidEmail() {
+    fun testSaveInvalidEmail()<% if (jhipsterConfig.coroutine) { %> = runTest<% } %> {
         val user = <%= asEntity('User') %>(
             <%_ if (databaseTypeCassandra) { _%>
             id = UUID.randomUUID().toString(),
@@ -896,7 +894,7 @@ class AccountResourceIT {
             activated = true
         )
 
-        userRepository.save<% if (databaseTypeSql && !reactive) { %>AndFlush<% } %>(user)<% if (reactive) { %>.block()<% } %>
+        userRepository.save<% if (databaseTypeSql && !reactive) { %>AndFlush<% } %>(user)<% if (reactive && !jhipsterConfig.coroutine) { %>.block()<% } %>
 
         val userDTO = <%= asDto('AdminUser') %>(
             login = "not-used",
@@ -928,10 +926,10 @@ class AccountResourceIT {
             .andDo(exportTestSecurityContext())
         <%_ } _%>
             .andExpect(status().isBadRequest)
-        
+
         <%_ } _%>
 
-        assertThat(userRepository.findOneByEmailIgnoreCase("invalid email")<% if (reactive) { %>.blockOptional()<% } %>).isNotPresent
+        assertNull(userRepository.findOneByEmailIgnoreCase("invalid email")<% if (reactive && !jhipsterConfig.coroutine) { %>.blockOptional()<% } %>)
     }
 
     @Test<% if (databaseTypeSql && !reactive) { %>
@@ -940,7 +938,7 @@ class AccountResourceIT {
     <%_ if (!reactive) { _%>
     @Throws(Exception::class)
     <%_ } _%>
-    fun testSaveExistingEmail() {
+    fun testSaveExistingEmail()<% if (jhipsterConfig.coroutine) { %> = runTest<% } %> {
         val user = <%= asEntity('User') %>(
             <%_ if (databaseTypeCassandra) { _%>
             id = UUID.randomUUID().toString(),
@@ -954,7 +952,7 @@ class AccountResourceIT {
             activated = true
         )
 
-        userRepository.save<% if (databaseTypeSql && !reactive) { %>AndFlush<% } %>(user)<% if (reactive) { %>.block()<% } %>
+        userRepository.save<% if (databaseTypeSql && !reactive) { %>AndFlush<% } %>(user)<% if (reactive && !jhipsterConfig.coroutine) { %>.block()<% } %>
 
         val anotherUser = <%= asEntity('User') %>(
             <%_ if (databaseTypeCassandra) { _%>
@@ -969,7 +967,7 @@ class AccountResourceIT {
             activated = true
         )
 
-        userRepository.save<% if (databaseTypeSql && !reactive) { %>AndFlush<% } %>(anotherUser)<% if (reactive) { %>.block()<% } %>
+        userRepository.save<% if (databaseTypeSql && !reactive) { %>AndFlush<% } %>(anotherUser)<% if (reactive && !jhipsterConfig.coroutine) { %>.block()<% } %>
 
         val userDTO = <%= asDto('AdminUser') %>(
             login = "not-used",
@@ -998,18 +996,18 @@ class AccountResourceIT {
                 .with(csrf())<% } %>
         )
             .andExpect(status().isBadRequest)
-        
+
         <%_ } _%>
 
-        val updatedUser = userRepository.findOneByLogin("save-existing-email")<%_ if (reactive) { _%>.block()<% } else { %>.orElse(null)<% } %>
-        assertThat(updatedUser.email).isEqualTo("save-existing-email@example.com")
+        val updatedUser = userRepository.findOneByLogin("save-existing-email")<%_  if (reactive && !jhipsterConfig.coroutine) { _%>.block()<% } %>
+        assertThat(updatedUser?.email).isEqualTo("save-existing-email@example.com")
     }
 
     @Test<% if (databaseTypeSql && !reactive) { %>
     @Transactional<% } %>
     @WithMockUser("save-existing-email-and-login")
     <%_ if (!reactive) { _%>@Throws(Exception::class)<%_ } _%>
-    fun testSaveExistingEmailAndLogin() {
+    fun testSaveExistingEmailAndLogin()<% if (jhipsterConfig.coroutine) { %> = runTest<% } %> {
         val user = <%= asEntity('User') %>(
             <%_ if (databaseTypeCassandra) { _%>
             id = UUID.randomUUID().toString(),
@@ -1023,7 +1021,7 @@ class AccountResourceIT {
             activated = true
         )
 
-        userRepository.save<% if (databaseTypeSql && !reactive) { %>AndFlush<% } %>(user)<% if (reactive) { %>.block()<% } %>
+        userRepository.save<% if (databaseTypeSql && !reactive) { %>AndFlush<% } %>(user)<% if (reactive && !jhipsterConfig.coroutine) { %>.block()<% } %>
         val userDTO = <%= asDto('AdminUser') %>(
             login = "not-used",
             firstName = "firstname",
@@ -1051,18 +1049,18 @@ class AccountResourceIT {
                 .with(csrf())<% } %>
         )
             .andExpect(status().isOk)
-        
+
         <%_ } _%>
 
-        val updatedUser = userRepository.findOneByLogin("save-existing-email-and-login")<%_ if (reactive) { _%>.block()<% } else { %>.orElse(null)<% } %>
-        assertThat(updatedUser.email).isEqualTo("save-existing-email-and-login@example.com")
+        val updatedUser = userRepository.findOneByLogin("save-existing-email-and-login")<%_  if (reactive && !jhipsterConfig.coroutine) { _%>.block()<% } %>
+        assertThat(updatedUser?.email).isEqualTo("save-existing-email-and-login@example.com")
     }
 
     @Test<% if (databaseTypeSql && !reactive) { %>
     @Transactional<% } %>
     @WithMockUser("change-password-wrong-existing-password")
     <%_ if (!reactive) { _%>@Throws(Exception::class)<%_ } _%>
-    fun testChangePasswordWrongExistingPassword() {
+    fun testChangePasswordWrongExistingPassword()<% if (jhipsterConfig.coroutine) { %> = runTest<% } %> {
         val currentPassword = RandomStringUtils.randomAlphanumeric(60)
         val user = <%= asEntity('User') %>(
             <%_ if (databaseTypeCassandra) { _%>
@@ -1076,7 +1074,7 @@ class AccountResourceIT {
             email = "change-password-wrong-existing-password@example.com"
         )
 
-        userRepository.save<% if (databaseTypeSql && !reactive) { %>AndFlush<% } %>(user)<% if (reactive) { %>.block()<% } %>
+        userRepository.save<% if (databaseTypeSql && !reactive) { %>AndFlush<% } %>(user)<% if (reactive && !jhipsterConfig.coroutine) { %>.block()<% } %>
 
         <%_ if (reactive) { _%>
         accountWebTestClient.post().uri("/api/account/change-password")
@@ -1095,16 +1093,16 @@ class AccountResourceIT {
             .andExpect(status().isBadRequest)
         <%_ } _%>
 
-        val updatedUser = userRepository.findOneByLogin("change-password-wrong-existing-password")<%_ if (reactive) { _%>.block()<% } else { %>.orElse(null)<% } %>
-        assertThat(passwordEncoder.matches("new password", updatedUser.password)).isFalse
-        assertThat(passwordEncoder.matches(currentPassword, updatedUser.password)).isTrue
+        val updatedUser = userRepository.findOneByLogin("change-password-wrong-existing-password")<%_  if (reactive && !jhipsterConfig.coroutine) { _%>.block()<% } %>
+        assertThat(passwordEncoder.matches("new password", updatedUser?.password)).isFalse
+        assertThat(passwordEncoder.matches(currentPassword, updatedUser?.password)).isTrue
     }
 
     @Test<% if (databaseTypeSql && !reactive) { %>
     @Transactional<% } %>
     @WithMockUser("change-password")
     <%_ if (!reactive) { _%>@Throws(Exception::class)<%_ } _%>
-    fun testChangePassword() {
+    fun testChangePassword()<% if (jhipsterConfig.coroutine) { %> = runTest<% } %> {
         val currentPassword = RandomStringUtils.randomAlphanumeric(60)
         val user = <%= asEntity('User') %>(
             <%_ if (databaseTypeCassandra) { _%>
@@ -1118,7 +1116,7 @@ class AccountResourceIT {
             email = "change-password@example.com"
         )
 
-        userRepository.save<% if (databaseTypeSql && !reactive) { %>AndFlush<% } %>(user)<% if (reactive) { %>.block()<% } %>
+        userRepository.save<% if (databaseTypeSql && !reactive) { %>AndFlush<% } %>(user)<% if (reactive && !jhipsterConfig.coroutine) { %>.block()<% } %>
 
         <%_ if (reactive) { _%>
         accountWebTestClient.post().uri("/api/account/change-password")
@@ -1137,15 +1135,15 @@ class AccountResourceIT {
             .andExpect(status().isOk)
         <%_ } _%>
 
-        val updatedUser = userRepository.findOneByLogin("change-password")<%_ if (reactive) { _%>.block()<% } else { %>.orElse(null)<% } %>
-        assertThat(passwordEncoder.matches("new password", updatedUser.password)).isTrue
+        val updatedUser = userRepository.findOneByLogin("change-password")<%_  if (reactive && !jhipsterConfig.coroutine) { _%>.block()<% } %>
+        assertThat(passwordEncoder.matches("new password", updatedUser?.password)).isTrue
     }
 
     @Test<% if (databaseTypeSql && !reactive) { %>
     @Transactional<% } %>
     @WithMockUser("change-password-too-small")
     <%_ if (!reactive) { _%>@Throws(Exception::class)<%_ } _%>
-    fun testChangePasswordTooSmall() {
+    fun testChangePasswordTooSmall()<% if (jhipsterConfig.coroutine) { %> = runTest<% } %> {
         val currentPassword = RandomStringUtils.randomAlphanumeric(60)
         val user = <%= asEntity('User') %>(
             <%_ if (databaseTypeCassandra) { _%>
@@ -1159,7 +1157,7 @@ class AccountResourceIT {
             email = "change-password-too-small@example.com"
         )
 
-        userRepository.save<% if (databaseTypeSql && !reactive) { %>AndFlush<% } %>(user)<% if (reactive) { %>.block()<% } %>
+        userRepository.save<% if (databaseTypeSql && !reactive) { %>AndFlush<% } %>(user)<% if (reactive && !jhipsterConfig.coroutine) { %>.block()<% } %>
 
         val newPassword = RandomStringUtils.random(ManagedUserVM.PASSWORD_MIN_LENGTH - 1)
 
@@ -1180,15 +1178,15 @@ class AccountResourceIT {
             .andExpect(status().isBadRequest)
         <%_ } _%>
 
-        val updatedUser = userRepository.findOneByLogin("change-password-too-small")<%_ if (reactive) { _%>.block()<% } else { %>.orElse(null)<% } %>
-        assertThat(updatedUser.password).isEqualTo(user.password)
+        val updatedUser = userRepository.findOneByLogin("change-password-too-small")<%_  if (reactive && !jhipsterConfig.coroutine) { _%>.block()<% } %>
+        assertThat(updatedUser?.password).isEqualTo(user.password)
     }
 
     @Test<% if (databaseTypeSql && !reactive) { %>
     @Transactional<% } %>
     @WithMockUser("change-password-too-long")
     <%_ if (!reactive) { _%>@Throws(Exception::class)<%_ } _%>
-    fun testChangePasswordTooLong() {
+    fun testChangePasswordTooLong()<% if (jhipsterConfig.coroutine) { %> = runTest<% } %> {
         val currentPassword = RandomStringUtils.randomAlphanumeric(60)
         val user = <%= asEntity('User') %>(
             <%_ if (databaseTypeCassandra) { _%>
@@ -1202,7 +1200,7 @@ class AccountResourceIT {
             email = "change-password-too-long@example.com"
         )
 
-        userRepository.save<% if (databaseTypeSql && !reactive) { %>AndFlush<% } %>(user)<% if (reactive) { %>.block()<% } %>
+        userRepository.save<% if (databaseTypeSql && !reactive) { %>AndFlush<% } %>(user)<% if (reactive && !jhipsterConfig.coroutine) { %>.block()<% } %>
 
         val newPassword = RandomStringUtils.random(ManagedUserVM.PASSWORD_MAX_LENGTH + 1)
 
@@ -1223,15 +1221,15 @@ class AccountResourceIT {
             .andExpect(status().isBadRequest)
         <%_ } _%>
 
-        val updatedUser = userRepository.findOneByLogin("change-password-too-long")<%_ if (reactive) { _%>.block()<% } else { %>.orElse(null)<% } %>
-        assertThat(updatedUser.password).isEqualTo(user.password)
+        val updatedUser = userRepository.findOneByLogin("change-password-too-long")<%_  if (reactive && !jhipsterConfig.coroutine) { _%>.block()<% } %>
+        assertThat(updatedUser?.password).isEqualTo(user.password)
     }
 
     @Test<% if (databaseTypeSql && !reactive) { %>
     @Transactional<% } %>
     @WithMockUser("change-password-empty")
     <%_ if (!reactive) { _%>@Throws(Exception::class)<%_ } _%>
-    fun testChangePasswordEmpty() {
+    fun testChangePasswordEmpty()<% if (jhipsterConfig.coroutine) { %> = runTest<% } %> {
         val currentPassword = RandomStringUtils.randomAlphanumeric(60)
         val user = <%= asEntity('User') %>(
             <%_ if (databaseTypeCassandra) { _%>
@@ -1245,7 +1243,7 @@ class AccountResourceIT {
             email = "change-password-empty@example.com"
         )
 
-        userRepository.save<% if (databaseTypeSql && !reactive) { %>AndFlush<% } %>(user)<% if (reactive) { %>.block()<% } %>
+        userRepository.save<% if (databaseTypeSql && !reactive) { %>AndFlush<% } %>(user)<% if (reactive && !jhipsterConfig.coroutine) { %>.block()<% } %>
 
         <%_ if (reactive) { _%>
         accountWebTestClient.post().uri("/api/account/change-password")
@@ -1264,8 +1262,8 @@ class AccountResourceIT {
             .andExpect(status().isBadRequest)
         <%_ } _%>
 
-        val updatedUser = userRepository.findOneByLogin("change-password-empty")<% if (reactive) { %>.block()<% } else { %>.orElse(null)<% } %>
-        assertThat(updatedUser.password).isEqualTo(user.password)
+        val updatedUser = userRepository.findOneByLogin("change-password-empty")<% if (reactive && !jhipsterConfig.coroutine) { %>.block()<% } %>
+        assertThat(updatedUser?.password).isEqualTo(user.password)
     }
     <%_ if (authenticationTypeSession && !reactive) { _%>
 
@@ -1273,7 +1271,7 @@ class AccountResourceIT {
     @Transactional<% } %>
     @WithMockUser("current-sessions")
     <%_ if (!reactive) { _%>@Throws(Exception::class)<%_ } _%>
-    fun testGetCurrentSessions() {
+    fun testGetCurrentSessions()<% if (jhipsterConfig.coroutine) { %> = runTest<% } %> {
         val user = <%= asEntity('User') %>(
             <%_ if (databaseTypeCassandra) { _%>
             id = UUID.randomUUID().toString(),
@@ -1286,7 +1284,7 @@ class AccountResourceIT {
             email = "current-sessions@example.com"
         )
 
-        userRepository.save<% if (databaseTypeSql && !reactive) { %>AndFlush<% } %>(user)<% if (reactive) { %>.block()<% } %>
+        userRepository.save<% if (databaseTypeSql && !reactive) { %>AndFlush<% } %>(user)<% if (reactive && !jhipsterConfig.coroutine) { %>.block()<% } %>
 
         val token = PersistentToken(
             series = "current-sessions",
@@ -1321,7 +1319,7 @@ class AccountResourceIT {
     @Transactional<% } %>
     @WithMockUser("invalidate-session")
     <%_ if (!reactive) { _%>@Throws(Exception::class)<%_ } _%>
-    fun testInvalidateSession() {
+    fun testInvalidateSession()<% if (jhipsterConfig.coroutine) { %> = runTest<% } %> {
         val user = <%= asEntity('User') %>(
             <%_ if (databaseTypeCassandra) { _%>
             id = UUID.randomUUID().toString(),
@@ -1334,7 +1332,7 @@ class AccountResourceIT {
             email = "invalidate-session@example.com"
         )
 
-        userRepository.save<% if (databaseTypeSql && !reactive) { %>AndFlush<% } %>(user)<% if (reactive) { %>.block()<% } %>
+        userRepository.save<% if (databaseTypeSql && !reactive) { %>AndFlush<% } %>(user)<% if (reactive && !jhipsterConfig.coroutine) { %>.block()<% } %>
 
         val token = PersistentToken(
             series = "invalidate-session",
@@ -1362,7 +1360,7 @@ class AccountResourceIT {
         restAccountMockMvc.perform(delete("/api/account/sessions/invalidate-session")<%_ if (testsNeedCsrf) { _%>.with(csrf())<%_ } _%>)
             .andExpect(status().isOk)
 
-        assertThat(persistentTokenRepository.findByUser(user)).isEmpty()
+        assertNotNull(persistentTokenRepository.findByUser(user))
     }
     <%_ } _%>
 
@@ -1371,7 +1369,7 @@ class AccountResourceIT {
     <%_ if (!reactive) { _%>
     @Throws(Exception::class)
     <%_ } _%>
-    fun testRequestPasswordReset() {
+    fun testRequestPasswordReset()<% if (jhipsterConfig.coroutine) { %> = runTest<% } %> {
         val user = <%= asEntity('User') %>(
             <%_ if (databaseTypeCassandra) { _%>
             id = UUID.randomUUID().toString(),
@@ -1386,7 +1384,7 @@ class AccountResourceIT {
             langKey = "en"
         )
 
-        userRepository.save<% if (databaseTypeSql && !reactive) { %>AndFlush<% } %>(user)<% if (reactive) { %>.block()<% } %>
+        userRepository.save<% if (databaseTypeSql && !reactive) { %>AndFlush<% } %>(user)<% if (reactive && !jhipsterConfig.coroutine) { %>.block()<% } %>
 
         <%_ if (reactive) { _%>
         accountWebTestClient.post().uri("/api/account/reset-password/init")
@@ -1409,7 +1407,7 @@ class AccountResourceIT {
     <%_ if (!reactive) { _%>
     @Throws(Exception::class)
     <%_ } _%>
-    fun testRequestPasswordResetUpperCaseEmail() {
+    fun testRequestPasswordResetUpperCaseEmail()<% if (jhipsterConfig.coroutine) { %> = runTest<% } %> {
         val user = <%= asEntity('User') %>(
             <%_ if (databaseTypeCassandra) { _%>
             id = UUID.randomUUID().toString(),
@@ -1424,7 +1422,7 @@ class AccountResourceIT {
             langKey = "en"
         )
 
-        userRepository.save<% if (databaseTypeSql && !reactive) { %>AndFlush<% } %>(user)<% if (reactive) { %>.block()<% } %>
+        userRepository.save<% if (databaseTypeSql && !reactive) { %>AndFlush<% } %>(user)<% if (reactive && !jhipsterConfig.coroutine) { %>.block()<% } %>
 
         <%_ if (reactive) { _%>
         accountWebTestClient.post().uri("/api/account/reset-password/init")
@@ -1444,14 +1442,14 @@ class AccountResourceIT {
 
     @Test
     <%_ if (reactive) { _%>
-    fun testRequestPasswordResetWrongEmail() {
+    fun testRequestPasswordResetWrongEmail()<% if (jhipsterConfig.coroutine) { %> = runTest<% } %> {
         accountWebTestClient.post().uri("/api/account/reset-password/init")
             .bodyValue("password-reset-wrong-email@example.com")
             .exchange()
             .expectStatus().isOk
     <%_ } else { _%>
     @Throws(Exception::class)
-    fun testRequestPasswordResetWrongEmail() {
+    fun testRequestPasswordResetWrongEmail()<% if (jhipsterConfig.coroutine) { %> = runTest<% } %> {
         restAccountMockMvc.perform(
             post("/api/account/reset-password/init")
                 .content("password-reset-wrong-email@example.com")<% if (testsNeedCsrf) { %>
@@ -1464,7 +1462,7 @@ class AccountResourceIT {
     @Test<% if (databaseTypeSql && !reactive) { %>
     @Transactional<% } %>
     @Throws(Exception::class)
-    fun testFinishPasswordReset() {
+    fun testFinishPasswordReset()<% if (jhipsterConfig.coroutine) { %> = runTest<% } %> {
         val user = <%= asEntity('User') %>(
             <%_ if (databaseTypeCassandra) { _%>
             id = UUID.randomUUID().toString(),
@@ -1479,7 +1477,7 @@ class AccountResourceIT {
             resetKey = "reset key"
         )
 
-        userRepository.save<% if (databaseTypeSql && !reactive) { %>AndFlush<% } %>(user)<% if (reactive) { %>.block()<% } %>
+        userRepository.save<% if (databaseTypeSql && !reactive) { %>AndFlush<% } %>(user)<% if (reactive && !jhipsterConfig.coroutine) { %>.block()<% } %>
 
         val keyAndPassword = KeyAndPasswordVM(key = user.resetKey, newPassword = "new password")
 
@@ -1497,17 +1495,17 @@ class AccountResourceIT {
                 .with(csrf())<% } %>
         )
             .andExpect(status().isOk)
-        
+
         <%_ } _%>
 
-        val updatedUser = userRepository.findOneByLogin(user.login!!)<%_ if (reactive) { _%>.block()<% } else { %>.orElse(null)<% } %>
-        assertThat(passwordEncoder.matches(keyAndPassword.newPassword, updatedUser.password)).isTrue
+        val updatedUser = userRepository.findOneByLogin(user.login!!)<%_  if (reactive && !jhipsterConfig.coroutine) { _%>.block()<% } %>
+        assertThat(passwordEncoder.matches(keyAndPassword.newPassword, updatedUser?.password)).isTrue
     }
 
     @Test<% if (databaseTypeSql && !reactive) { %>
     @Transactional<% } %>
     @Throws(Exception::class)
-    fun testFinishPasswordResetTooSmall() {
+    fun testFinishPasswordResetTooSmall()<% if (jhipsterConfig.coroutine) { %> = runTest<% } %> {
         val user = <%= asEntity('User') %>(
             <%_ if (databaseTypeCassandra) { _%>
             id = UUID.randomUUID().toString(),
@@ -1522,7 +1520,7 @@ class AccountResourceIT {
             resetKey = "reset key too small"
         )
 
-        userRepository.save<% if (databaseTypeSql && !reactive) { %>AndFlush<% } %>(user)<% if (reactive) { %>.block()<% } %>
+        userRepository.save<% if (databaseTypeSql && !reactive) { %>AndFlush<% } %>(user)<% if (reactive && !jhipsterConfig.coroutine) { %>.block()<% } %>
 
         val keyAndPassword = KeyAndPasswordVM(key = user.resetKey, newPassword = "foo")
 
@@ -1540,17 +1538,17 @@ class AccountResourceIT {
                 .with(csrf())<% } %>
         )
             .andExpect(status().isBadRequest)
-        
+
         <%_ } _%>
 
-        val updatedUser = userRepository.findOneByLogin(user.login!!)<%_ if (reactive) { _%>.block()<% } else { %>.orElse(null)<% } %>
-        assertThat(passwordEncoder.matches(keyAndPassword.newPassword, updatedUser.password)).isFalse
+        val updatedUser = userRepository.findOneByLogin(user.login!!)<%_  if (reactive && !jhipsterConfig.coroutine) { _%>.block()<% } %>
+        assertThat(passwordEncoder.matches(keyAndPassword.newPassword, updatedUser?.password)).isFalse
     }
 
     @Test<% if (databaseTypeSql && !reactive) { %>
     @Transactional<% } %>
     @Throws(Exception::class)
-    fun testFinishPasswordResetWrongKey() {
+    fun testFinishPasswordResetWrongKey()<% if (jhipsterConfig.coroutine) { %> = runTest<% } %> {
         val keyAndPassword = KeyAndPasswordVM(key = "wrong reset key", newPassword = "new password")
 
         <%_ if (reactive) { _%>
@@ -1567,7 +1565,7 @@ class AccountResourceIT {
                 .with(csrf())<% } %>
         )
             .andExpect(status().isInternalServerError)
-        
+
         <%_ } _%>
     }
 }

@@ -56,6 +56,7 @@ import org.springframework.data.relational.core.query.Criteria.where
 import org.springframework.data.relational.core.query.Query.query
 <%_ } _%>
 import org.springframework.data.repository.kotlin.CoroutineSortingRepository
+import reactor.core.publisher.Mono
 <%_ if (databaseTypeCouchbase) { _%>
 import org.springframework.data.couchbase.repository.Query
 <%_ } _%>
@@ -162,6 +163,11 @@ interface UserRepository: <% if (databaseTypeCouchbase) { %>JHipsterCouchbaseRep
     suspend fun findIdByEmailIgnoreCase(email: String): <%= asEntity('User') %>?
     <% } %>
     <%_ } _%>
+
+    // for DomainUserDetailService
+    fun getOneByEmailIgnoreCase(email: String): Mono<User>
+
+    fun getOneByLogin(email: String): Mono<User>
 
     <%_ if (databaseTypeCouchbase) { _%>
         <%_ if (cacheManagerIsAvailable) { _%>
@@ -446,6 +452,11 @@ class UserRepository(
         val stmt = findOneByEmailStmt.bind().setString("email", email?.lowercase())
         return findOneFromIndex(stmt)
     }
+
+    // for DomainUserDetailService
+    fun getOneByEmailIgnoreCase(email: String): Mono<User>
+
+    fun getOneByLogin(email: String): Mono<User>
 
     <%_ if (cacheManagerIsAvailable) { _%>
     @Cacheable(cacheNames = [USERS_BY_LOGIN_CACHE])

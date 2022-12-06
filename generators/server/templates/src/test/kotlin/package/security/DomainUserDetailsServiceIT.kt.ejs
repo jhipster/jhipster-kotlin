@@ -50,6 +50,7 @@ import java.util.Locale
 
 import org.assertj.core.api.Assertions.assertThat
 import org.assertj.core.api.Assertions.assertThatExceptionOfType
+import kotlinx.coroutines.test.runTest
 
 private const val USER_ONE_LOGIN = "test-user-one"
 private const val USER_ONE_EMAIL = "test-user-one@localhost"
@@ -78,13 +79,13 @@ class DomainUserDetailsServiceIT {
     private lateinit var domainUserDetailsService: <% if (reactive) { %>Reactive<% } %>UserDetailsService
 
     @BeforeEach
-    fun init() {
+    fun init()<% if (jhipsterConfig.coroutine) { %> = runTest<% } %> {
         <%_ if (databaseTypeSql && reactive) { _%>
         userRepository.deleteAllUserAuthorities().block()
         <%_ } _%>
         <%_ if (!databaseTypeSql || reactive) { _%>
-        userRepository.deleteAll()<% if (reactive) { %>.block()<% } %>
-    
+        userRepository.deleteAll()<% if (reactive && !jhipsterConfig.coroutine) { %>.block()<% } %>
+
         <%_ } _%>
         val userOne = <%= asEntity('User') %>(
             <%_ if (databaseTypeCassandra) { _%>
@@ -101,7 +102,7 @@ class DomainUserDetailsServiceIT {
             <%_ } _%>
             langKey = "en"
         )
-        userRepository.save(userOne)<% if (reactive) { %>.block()<% } %>
+        userRepository.save(userOne)<% if (reactive && !jhipsterConfig.coroutine) { %>.block()<% } %>
 
         val userTwo = <%= asEntity('User') %>(
             <%_ if (databaseTypeCassandra) { _%>
@@ -118,7 +119,7 @@ class DomainUserDetailsServiceIT {
             <%_ } _%>
             langKey = "en"
         )
-        userRepository.save(userTwo)<% if (reactive) { %>.block()<% } %>
+        userRepository.save(userTwo)<% if (reactive && !jhipsterConfig.coroutine) { %>.block()<% } %>
 
         val userThree = <%= asEntity('User') %>(
             <%_ if (databaseTypeCassandra) { _%>
@@ -135,46 +136,46 @@ class DomainUserDetailsServiceIT {
             <%_ } _%>
             langKey = "en"
         )
-        userRepository.save(userThree)<% if (reactive) { %>.block()<% } %>
+        userRepository.save(userThree)<% if (reactive && !jhipsterConfig.coroutine) { %>.block()<% } %>
     }
 
     @Test
-    fun assertThatUserCanBeFoundByLogin() {
+    fun assertThatUserCanBeFoundByLogin()<% if (jhipsterConfig.coroutine) { %> = runTest<% } %> {
         val userDetails = domainUserDetailsService.<% if (reactive) { %>find<% } else { %>loadUser<% } %>ByUsername(USER_ONE_LOGIN)<% if (reactive) { %>.block()<% } %>
         assertThat(userDetails).isNotNull
         assertThat(userDetails.username).isEqualTo(USER_ONE_LOGIN)
     }
 
     @Test
-    fun assertThatUserCanBeFoundByLoginIgnoreCase() {
+    fun assertThatUserCanBeFoundByLoginIgnoreCase()<% if (jhipsterConfig.coroutine) { %> = runTest<% } %> {
         val userDetails = domainUserDetailsService.<% if (reactive) { %>find<% } else { %>loadUser<% } %>ByUsername(USER_ONE_LOGIN.toUpperCase(Locale.ENGLISH))<% if (reactive) { %>.block()<% } %>
         assertThat(userDetails).isNotNull
         assertThat(userDetails.username).isEqualTo(USER_ONE_LOGIN)
     }
 
     @Test
-    fun assertThatUserCanBeFoundByEmail() {
+    fun assertThatUserCanBeFoundByEmail()<% if (jhipsterConfig.coroutine) { %> = runTest<% } %> {
         val userDetails = domainUserDetailsService.<% if (reactive) { %>find<% } else { %>loadUser<% } %>ByUsername(USER_TWO_EMAIL)<% if (reactive) { %>.block()<% } %>
         assertThat(userDetails).isNotNull
         assertThat(userDetails.username).isEqualTo(USER_TWO_LOGIN)
     }
 
     @Test
-    fun assertThatUserCanBeFoundByEmailIgnoreCase() {
+    fun assertThatUserCanBeFoundByEmailIgnoreCase()<% if (jhipsterConfig.coroutine) { %> = runTest<% } %> {
         val userDetails = domainUserDetailsService.<% if (reactive) { %>find<% } else { %>loadUser<% } %>ByUsername(USER_TWO_EMAIL.toUpperCase(Locale.ENGLISH))<% if (reactive) { %>.block()<% } %>
         assertThat(userDetails).isNotNull
         assertThat(userDetails.username).isEqualTo(USER_TWO_LOGIN)
     }
 
     @Test
-    fun assertThatEmailIsPrioritizedOverLogin() {
+    fun assertThatEmailIsPrioritizedOverLogin()<% if (jhipsterConfig.coroutine) { %> = runTest<% } %> {
         val userDetails = domainUserDetailsService.<% if (reactive) { %>find<% } else { %>loadUser<% } %>ByUsername(USER_ONE_EMAIL)<% if (reactive) { %>.block()<% } %>
         assertThat(userDetails).isNotNull
         assertThat(userDetails.username).isEqualTo(USER_ONE_LOGIN)
     }
 
     @Test
-    fun assertThatUserNotActivatedExceptionIsThrownForNotActivatedUsers() {
+    fun assertThatUserNotActivatedExceptionIsThrownForNotActivatedUsers()<% if (jhipsterConfig.coroutine) { %> = runTest<% } %> {
         assertThatExceptionOfType(UserNotActivatedException::class.java).isThrownBy {
             domainUserDetailsService.<% if (reactive) { %>find<% } else { %>loadUser<% } %>ByUsername(USER_THREE_LOGIN)<% if (reactive) { %>.block()<% } %>
         }

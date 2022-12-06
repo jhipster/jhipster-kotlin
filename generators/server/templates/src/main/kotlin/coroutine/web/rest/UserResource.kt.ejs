@@ -144,18 +144,20 @@ class UserResource(
     @PreAuthorize("hasAuthority(\"$ADMIN\")")
     suspend fun updateUser(@Valid @RequestBody userDTO: <%= asDto('AdminUser') %>): ResponseEntity<<%= asDto('AdminUser') %>> {
         log.debug("REST request to update User : $userDTO")
-
-        when{
-            userRepository.findOneByEmailIgnoreCase(userDTO.email!!)?.id != userDTO.id  -> throw EmailAlreadyUsedException()
-            userRepository.findOneByLogin(userDTO.login!!.lowercase())?.id != userDTO.id -> throw LoginAlreadyUsedException()
-            else -> {
-                val updatedUser = userService.updateUser(userDTO).let { Optional.ofNullable(it) }
-                return ResponseUtil.wrapOrNotFound(
-                    updatedUser,
-                    HeaderUtil.createAlert(applicationName, <% if (enableTranslation) { %>"userManagement.updated"<% } else { %>"A user is updated with identifier $userDTO.login"<% } %>, userDTO.login)
-                )
-            }
+        var existingUser = userRepository.findOneByEmailIgnoreCase(userDTO.email!!)
+        if (existingUser != null && existingUser.id != userDTO.id) {
+            throw EmailAlreadyUsedException()
         }
+        existingUser = userRepository.findOneByLogin(userDTO.login!!.lowercase())
+        if (existingUser != null && existingUser.id != userDTO.id) {
+            throw LoginAlreadyUsedException()
+        }
+
+        val updatedUser = userService.updateUser(userDTO)
+        return ResponseUtil.wrapOrNotFound(
+            Optional.ofNullable(updatedUser),
+            HeaderUtil.createAlert(applicationName, "userManagement.updated", userDTO.login)
+        )
     }
 
     /**
