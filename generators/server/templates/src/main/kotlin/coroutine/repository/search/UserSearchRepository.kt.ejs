@@ -1,0 +1,51 @@
+<%#
+ Copyright 2013-2020 the original author or authors from the JHipster project.
+
+ This file is part of the JHipster project, see https://www.jhipster.tech/
+ for more information.
+
+ Licensed under the Apache License, Version 2.0 (the "
+ you may not use this file except in compliance with the License.
+ You may obtain a copy of the License at
+
+      http://www.apache.org/licenses/LICENSE-2.0
+
+ Unless required by applicable law or agreed to in writing, software
+ distributed under the License is distributed on an "AS IS" BASIS,
+ WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
+ See the License for the specific language governing permissions and
+ limitations under the License.
+-%>
+package <%= packageName %>.repository.search
+
+import <%= packageName %>.domain.<%= asEntity('User') %>
+import <%= packageName %>.config.SearchRepository
+import kotlinx.coroutines.flow.Flow
+import kotlinx.coroutines.reactive.asFlow
+import org.springframework.data.elasticsearch.core.ReactiveElasticsearchTemplate
+import org.springframework.data.elasticsearch.core.query.NativeSearchQuery
+import org.springframework.data.elasticsearch.core.SearchHit
+<%_ if (databaseTypeCassandra) { _%>
+import java.util.UUID
+<%_ } _%>
+import org.elasticsearch.index.query.QueryBuilders.queryStringQuery
+import org.springframework.data.repository.kotlin.CoroutineSortingRepository
+
+/**
+ * Spring Data Elasticsearch repository for the User entity.
+ */
+@SearchRepository
+interface UserSearchRepository : CoroutineSortingRepository<<%= asEntity('User') %>, <% if (databaseTypeSql && !authenticationTypeOauth2) { %>Long<% } %><% if ((databaseTypeCassandra || databaseTypeMongodb || databaseTypeNeo4j || databaseTypeCouchbase) || authenticationTypeOauth2) { %>String<% } %>>, UserSearchRepositoryInternal
+
+interface UserSearchRepositoryInternal {
+     fun search(query: String): Flow<User>
+}
+
+class UserSearchRepositoryInternalImpl(private val reactiveElasticsearchTemplate: ReactiveElasticsearchTemplate) : UserSearchRepositoryInternal {
+     override fun search(query: String): Flow<User> {
+          val nativeSearchQuery = NativeSearchQuery(queryStringQuery(query))
+          return reactiveElasticsearchTemplate.search(nativeSearchQuery, User::class.java)
+                .map(SearchHit<User>::getContent)
+                .asFlow()
+     }
+}

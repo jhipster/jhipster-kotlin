@@ -50,6 +50,7 @@ function displayLogo() {
     this.log(
         chalk.blue(' _______________________________________________________________________________________________________________\n')
     );
+    this.log(chalk.red(' Just for Debug: coroutine. \n'));
 }
 
 module.exports = {

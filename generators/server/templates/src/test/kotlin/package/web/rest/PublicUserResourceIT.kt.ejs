@@ -93,6 +93,9 @@ import org.springframework.test.web.servlet.request.MockMvcRequestBuilders.*
 import org.springframework.test.web.servlet.result.MockMvcResultMatchers.*
 <%_ } _%>
 
+import kotlinx.coroutines.test.runTest
+
+
 /**
  * Integration tests for the {@link UserResource} REST controller.
  */
@@ -146,7 +149,7 @@ class PublicUserResourceIT {
 
     <%_ if (cacheManagerIsAvailable) { _%>
     @BeforeEach
-    fun setup() {
+    fun setup()<% if (jhipsterConfig.coroutine) { %> = runTest<% } %> {
         cacheManager.getCache(UserRepository.USERS_BY_LOGIN_CACHE).clear()
         cacheManager.getCache(UserRepository.USERS_BY_EMAIL_CACHE).clear()
     }
@@ -154,13 +157,13 @@ class PublicUserResourceIT {
     <%_ } _%>
     <%_ if (reactive && testsNeedCsrf) { _%>
     @BeforeEach
-    fun setupCsrf() {
+    fun setupCsrf()<% if (jhipsterConfig.coroutine) { %> = runTest<% } %> {
         webTestClient = webTestClient.mutateWith(csrf())
     }
 
     <%_ } _%>
     @BeforeEach
-    fun initTest() {
+    fun initTest()<% if (jhipsterConfig.coroutine) { %> = runTest<% } %> {
         user = UserResourceIT.initTestUser(userRepository<% if (databaseTypeSql) { %>, em<% } %>)
     }
 
@@ -171,9 +174,9 @@ class PublicUserResourceIT {
     <%_ if (!reactive) { _%>
     @Throws(Exception::class)
     <%_ } _%>
-    fun getAllPublicUsers() {
+    fun getAllPublicUsers()<% if (jhipsterConfig.coroutine) { %> = runTest<% } %> {
         // Initialize the database
-        userRepository.<% if (databaseTypeSql && reactive && authenticationTypeOauth2) { %>create<% } else { %>save<% } %><% if (databaseTypeSql && !reactive) { %>AndFlush<% } %>(user)<% if (reactive) { %>.block()<% } %>
+        userRepository.<% if (databaseTypeSql && reactive && authenticationTypeOauth2) { %>create<% } else { %>save<% } %><% if (databaseTypeSql && !reactive) { %>AndFlush<% } %>(user)<% if (reactive && !jhipsterConfig.coroutine) { %>.block()<% } %>
 
         // Get all the users
         <%_ if (reactive) { _%>
@@ -214,7 +217,7 @@ class PublicUserResourceIT {
     <%_ if (!reactive) { _%>
     @Throws(Exception::class)
     <%_ } _%>
-    fun getAllAuthorities() {
+    fun getAllAuthorities()<% if (jhipsterConfig.coroutine) { %> = runTest<% } %> {
         <%_ if (reactive) { _%>
         webTestClient.get().uri("/api/authorities")
             .accept(MediaType.APPLICATION_JSON)
@@ -243,9 +246,9 @@ class PublicUserResourceIT {
     @Transactional
     <%_ } _%>
     @Throws(Exception::class)
-    fun getAllUsersSortedByParameters() {
+    fun getAllUsersSortedByParameters()<% if (jhipsterConfig.coroutine) { %> = runTest<% } %> {
         // Initialize the database
-        userRepository.<% if (reactive) { %>save<% } else { %>saveAndFlush<% } %>(user)<% if (reactive) { %>.block()<% } %>
+        userRepository.<% if (reactive) { %>save<% } else { %>saveAndFlush<% } %>(user)<% if (reactive && !jhipsterConfig.coroutine) { %>.block()<% } %>
 
         <%_ if (reactive) { _%>
         webTestClient.get().uri("/api/users?sort=resetKey,desc").accept(MediaType.APPLICATION_JSON).exchange().expectStatus().isBadRequest

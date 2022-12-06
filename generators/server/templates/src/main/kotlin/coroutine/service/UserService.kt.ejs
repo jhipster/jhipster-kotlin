@@ -1,0 +1,672 @@
+<%#
+ Copyright 2013-2020 the original author or authors from the JHipster project.
+
+ This file is part of the JHipster project, see https://www.jhipster.tech/
+ for more information.
+
+ Licensed under the Apache License, Version 2.0 (the "
+ you may not use this file except in compliance with the License.
+ You may obtain a copy of the License at
+
+      http://www.apache.org/licenses/LICENSE-2.0
+
+ Unless required by applicable law or agreed to in writing, software
+ distributed under the License is distributed on an "AS IS" BASIS,
+ WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
+ See the License for the specific language governing permissions and
+ limitations under the License.
+-%>
+package <%= packageName %>.service
+
+import <%= packageName %>.config.DEFAULT_LANGUAGE
+import <%= packageName %>.config.SYSTEM_ACCOUNT
+<%_ if (databaseTypeSql || databaseTypeMongodb || databaseTypeNeo4j || databaseTypeCouchbase) { _%>
+import <%= packageName %>.domain.Authority
+<%_ } _%>
+<%_ if (!databaseTypeNo) { _%>
+import <%= packageName %>.service.dto.<%= asDto('AdminUser') %>
+import <%= packageName %>.domain.<%= asEntity('User') %>
+    <%_ if (databaseTypeSql || databaseTypeMongodb || databaseTypeNeo4j || databaseTypeCouchbase) { _%>
+import <%= packageName %>.repository.AuthorityRepository
+    <%_ } _%>
+import <%= packageName %>.repository.UserRepository
+    <%_ if (searchEngineElasticsearch) { _%>
+import <%= packageName %>.repository.search.UserSearchRepository
+    <%_ } _%>
+    <%_ if (!authenticationTypeOauth2) { _%>
+import <%= packageName %>.security.USER
+    <%_ } _%>
+import <%= packageName %>.security.getCurrentUserLogin
+<%_ } _%>
+import <%= packageName %>.service.dto.<%= asDto('User') %>
+<%_ if (!authenticationTypeOauth2) { _%>
+import tech.jhipster.security.RandomUtil
+<%_ } _%>
+import kotlinx.coroutines.flow.*
+import kotlinx.coroutines.reactor.awaitSingle
+import kotlinx.coroutines.runBlocking
+<%_ if (!databaseTypeNo) { _%>
+import org.slf4j.LoggerFactory
+<%_ } _%>
+<%_ if (cacheManagerIsAvailable) { _%>
+import org.springframework.cache.CacheManager
+<%_ } _%>
+<%_ if (databaseTypeSql || databaseTypeMongodb || databaseTypeNeo4j || databaseTypeCouchbase) { _%>
+import org.springframework.data.domain.Pageable
+    <%_ if (!authenticationTypeOauth2) { _%>
+import org.springframework.scheduling.annotation.Scheduled
+    <%_ } _%>
+<%_ } _%>
+<%_ if (authenticationTypeOauth2) { _%>
+import org.springframework.security.authentication.AbstractAuthenticationToken
+import org.springframework.security.core.GrantedAuthority
+import org.springframework.security.oauth2.client.authentication.OAuth2AuthenticationToken
+import org.springframework.security.oauth2.server.resource.authentication.JwtAuthenticationToken
+<%_ } _%>
+<%_ if (!authenticationTypeOauth2) { _%>
+import org.springframework.security.crypto.password.PasswordEncoder
+<%_ } _%>
+import org.springframework.stereotype.Service
+<%_ if (databaseTypeSql) { _%>
+import org.springframework.transaction.annotation.Transactional
+<%_ } _%>
+import reactor.core.publisher.Flux
+import reactor.core.publisher.Mono
+import reactor.core.scheduler.Schedulers
+
+<%_ if ((databaseTypeSql || databaseTypeMongodb || databaseTypeNeo4j || databaseTypeCouchbase) && authenticationTypeSession && !reactive) { _%>
+import java.time.LocalDate
+<%_ } _%>
+<%_ if (!databaseTypeNo) { _%>
+import java.time.Instant
+<%_ } _%>
+<%_ if (databaseTypeSql && !authenticationTypeOauth2) { _%>
+import java.time.LocalDateTime
+import java.time.ZoneOffset
+<%_ } _%>
+<%_ if (!authenticationTypeOauth2) { _%>
+import java.time.temporal.ChronoUnit
+<%_ } _%>
+<%_ if (authenticationTypeOauth2) { _%>
+import java.util.Date
+<%_ } _%>
+import java.util.Optional
+<%_ if (databaseTypeCassandra) { _%>
+import java.util.UUID
+<%_ } _%>
+
+/**
+ * Service class for managing users.
+ */
+@Service
+class UserService<% if (!databaseTypeNo) { %>(
+    private val userRepository: UserRepository<%_ if (!authenticationTypeOauth2) { _%>,
+    private val passwordEncoder: PasswordEncoder<%_ } if (searchEngineElasticsearch) { _%>,
+    private val userSearchRepository: UserSearchRepository<%_ } if (databaseTypeSql || databaseTypeMongodb || databaseTypeNeo4j || databaseTypeCouchbase) { _%>,
+    private val authorityRepository: AuthorityRepository<%_ } if (cacheManagerIsAvailable) { _%>,
+    private val cacheManager: CacheManager
+    <%_ } _%>
+)<%_ } %> {
+<%_ if (!databaseTypeNo) { _%>
+
+    private val log = LoggerFactory.getLogger(javaClass)
+<%_ if (!authenticationTypeOauth2) { _%>
+
+    <%_ if (databaseTypeSql) { _%>
+    @Transactional
+    <%_ } _%>
+    suspend fun activateRegistration(key: String): <%= asEntity('User') %>? {
+        log.debug("Activating user for activation key $key")
+        return userRepository.findOneByActivationKey(key)
+            ?.apply {
+                // activate given user for the registration key.
+                activated = true
+                activationKey = null
+                saveUser(this)
+                <%_ if (searchEngineElasticsearch) { _%>
+                userSearchRepository.save(this)
+                <%_ } _%>
+                <%_ if (cacheManagerIsAvailable) { _%>
+                clearUserCaches(this)
+                <%_ } _%>
+                log.debug("Activated user: $this")
+            }
+    }
+
+    <%_ if (databaseTypeSql && reactive) { _%>
+    @Transactional
+    <%_ } _%>
+    suspend fun completePasswordReset(newPassword: String, key: String): <%= asEntity('User') %>? {
+        log.debug("Reset user password for reset key $key")
+        userRepository.findOneByResetKey(key)?.apply {
+            if(true == resetDate?.isAfter(Instant.now().minus(1, ChronoUnit.DAYS))){
+                password = passwordEncoder.encode(newPassword)
+                resetKey = null
+                resetDate = null
+                val updatedUser = saveUser(this)<% if (cacheManagerIsAvailable) { %>
+                clearUserCaches(this)<% } %>
+                return updatedUser
+            }
+        }
+        return null
+    }
+
+    <%_ if (databaseTypeSql && reactive) { _%>
+    @Transactional
+    <%_ } _%>
+    suspend fun requestPasswordReset(mail: String): <%= asEntity('User') %>? {
+        userRepository.findOneByEmailIgnoreCase(mail)
+            ?.let {
+                it.resetKey = RandomUtil.generateResetKey()
+                it.resetDate = Instant.now()
+                val updatedUser = saveUser(it)<% if (cacheManagerIsAvailable) { %>
+                clearUserCaches(this)<% } %>
+                return updatedUser
+            }
+        return null
+    }
+
+    <%_ if (databaseTypeSql) { _%>
+    @Transactional
+    <%_ } _%>
+    suspend fun registerUser(userDTO: <%= asDto('AdminUser') %>, password: String): <%= asEntity('User') %>? {
+        val login = userDTO.login ?: throw IllegalArgumentException("Empty login not allowed")
+        val email = userDTO.email
+        userRepository.findOneByLogin(login.lowercase())?.apply {
+            if(false == activated){
+                userRepository.delete(this)
+            } else {
+                throw UsernameAlreadyUsedException()
+            }
+        }
+        userRepository.findOneByEmailIgnoreCase(email!!)?.apply {
+            if(false == activated){
+                userRepository.delete(this)
+            } else {
+                throw EmailAlreadyUsedException()
+            }
+        }
+        val savedUser = saveUser(
+            User().apply {
+                <%_ if (databaseTypeCassandra) { _%>
+                id  = UUID.randomUUID().toString()
+                <%_ } _%>
+                val encryptedPassword = passwordEncoder.encode(password)
+                this.login = login.lowercase()
+                // new user gets initially a generated password
+                this.password = encryptedPassword
+                firstName = userDTO.firstName
+                lastName = userDTO.lastName
+                this.email = email.lowercase()
+                <%_ if (databaseTypeSql || databaseTypeMongodb || databaseTypeNeo4j || databaseTypeCouchbase) { _%>
+                imageUrl = userDTO.imageUrl
+                <%_ } _%>
+                langKey = userDTO.langKey
+                // new user is not active
+                activated = false
+                // new user gets registration key
+                activationKey = RandomUtil.generateActivationKey()
+                authorities = arrayOf(USER)
+                    <%_ if (databaseTypeSql || databaseTypeMongodb || databaseTypeNeo4j) { _%>
+                    .mapNotNull { authorityRepository.findById(it) }
+                    <%_ } _%>
+                    .toMutableSet()
+            }
+        )!!
+        <%_ if (searchEngineElasticsearch) { _%>
+        userSearchRepository.save(savedUser)
+        <%_ } _%>
+        <%_ if (cacheManagerIsAvailable) { _%>
+        clearUserCaches(savedUser)
+        <%_ } _%>
+        log.debug("Created Information for User: $savedUser")
+        return savedUser
+    }
+
+    <%_ if (databaseTypeSql) { _%>
+    @Transactional
+    <%_ } _%>
+    suspend fun createUser(userDTO: <%= asDto('AdminUser') %>): <%= asEntity('User') %>? {
+        val encryptedPassword = passwordEncoder.encode(RandomUtil.generatePassword())
+        val savedUser = saveUser(
+            <%= asEntity('User') %>(
+                <%_ if (databaseTypeCassandra) { _%>
+                id = UUID.randomUUID().toString(),
+                <%_ } _%>
+                login = userDTO.login?.lowercase(),
+                firstName = userDTO.firstName,
+                lastName = userDTO.lastName,
+                email = userDTO.email?.lowercase(),
+                <%_ if (databaseTypeSql || databaseTypeCouchbase || databaseTypeMongodb || databaseTypeNeo4j) { _%>
+                imageUrl = userDTO.imageUrl,
+                <%_ } _%>
+                // default language
+                langKey = userDTO.langKey ?: DEFAULT_LANGUAGE,
+                password = encryptedPassword,
+                resetKey = RandomUtil.generateResetKey(),
+                resetDate = Instant.now(),
+                activated = true,
+                authorities = userDTO.authorities
+                    <%_ if (databaseTypeSql || databaseTypeMongodb || databaseTypeNeo4j) { _%>
+                    .mapNotNull { authorityRepository.findById(it) }
+                    <%_ } _%>
+                    .toMutableSet()
+            )
+        )!!
+        <%_ if (searchEngineElasticsearch) { _%>
+        userSearchRepository.save(savedUser)
+        <%_ } _%>
+        <%_ if (cacheManagerIsAvailable) { _%>
+        clearUserCaches(savedUser)
+        <%_ } _%>
+        log.debug("Changed Information for User: $savedUser")
+        return savedUser
+    }
+
+    /**
+     * Update all information for a specific user, and return the modified user.
+     *
+     * @param userDTO user to update.
+     * @return updated user.
+     */
+    <%_ if (databaseTypeSql) { _%>
+    @Transactional
+    <%_ } _%>
+    suspend fun updateUser(userDTO: <%= asDto('AdminUser') %>): <%= asDto('AdminUser') %>? {
+        return userRepository.findById(userDTO.id!!)
+            ?.apply {
+                    <%_ if (databaseTypeCouchbase) { _%>
+                if (login != userDTO.login) {
+                    userRepository.deleteById(userDTO.id!!)
+                }
+                    <%_ } _%>
+                    <%_ if (cacheManagerIsAvailable) { _%>
+                clearUserCaches(this)
+                    <%_ } _%>
+                login = userDTO.login?.lowercase()
+                firstName = userDTO.firstName
+                lastName = userDTO.lastName
+                email = userDTO.email?.lowercase()
+                    <%_ if (databaseTypeSql || databaseTypeMongodb || databaseTypeNeo4j || databaseTypeCouchbase) { _%>
+                imageUrl = userDTO.imageUrl
+                    <%_ } _%>
+                activated = userDTO.activated
+                langKey = userDTO.langKey
+            <%_ if (databaseTypeSql || databaseTypeMongodb || databaseTypeNeo4j) { _%>
+                authorities.clear()
+                <%_ if (databaseTypeSql) { _%>
+                userRepository.deleteUserAuthorities(id!!)
+                <%_ } _%>
+                userDTO.authorities
+                    .mapNotNull { authorityRepository.findById(it) }
+                    .forEach(authorities::add)
+            <%_ } else { /* Cassandra & Couchbase */ _%>
+                authorities = userDTO.authorities.toMutableSet()
+            <%_ } _%>
+            }?.let {
+                saveUser(it)
+            }?.let {
+                <%_ if (searchEngineElasticsearch) { _%>
+                userSearchRepository.save(it)
+                <%_ } _%>
+                <%_ if (cacheManagerIsAvailable) { _%>
+                clearUserCaches(it)
+                <%_ } _%>
+                log.debug("Changed Information for User: $it")
+                AdminUserDTO(it)
+            }
+    }
+
+        <%_ if (databaseTypeSql) { _%>
+    @Transactional
+        <%_ } _%>
+    suspend fun deleteUser(login: String) {
+        userRepository.findOneByLogin(login)?.let {
+            userRepository.delete(it)
+            <%_ if (searchEngineElasticsearch) { _%>
+            userSearchRepository.delete(it)
+            <%_ } _%>
+            <%_ if (cacheManagerIsAvailable) { _%>
+            clearUserCaches(this)
+            <%_ } _%>
+            log.debug("Changed Information for User: $it")
+        }
+    }
+<%_ } /* !authenticationTypeOauth2 */ _%>
+    /**
+     * Update basic information (first name, last name, email, language) for the current user.
+     *
+     * @param firstName first name of user.
+     * @param lastName  last name of user.
+     * @param email     email id of user.
+     * @param langKey   language key.
+     <%_ if (databaseTypeSql || databaseTypeMongodb || databaseTypeCouchbase || databaseTypeNeo4j) { _%>
+     * @param imageUrl  image URL of user.
+     <%_ } _%>
+     */
+    <%_ if (databaseTypeSql) { _%>
+    @Transactional
+    <%_ } _%>
+    suspend fun updateUser(firstName: String?, lastName: String?, email: String?, langKey: String?<% if (databaseTypeSql || databaseTypeMongodb || databaseTypeCouchbase || databaseTypeNeo4j) { %>, imageUrl: String?<% } %>) {
+        getCurrentUserLogin()
+            .awaitSingle()
+            .let { userRepository.findOneByLogin(it) }
+            ?.let {
+                it.firstName = firstName
+                it.lastName = lastName
+                it.email = email?.lowercase()
+                it.langKey = langKey
+                <%_ if (databaseTypeSql || databaseTypeMongodb || databaseTypeCouchbase || databaseTypeNeo4j) { _%>
+                it.imageUrl = imageUrl
+                <%_ } _%>
+                saveUser(it)
+            }?.let {
+                <%_ if (searchEngineElasticsearch) { _%>
+                userSearchRepository.save(it)
+                <%_ } _%>
+                <%_ if (cacheManagerIsAvailable) { _%>
+                clearUserCaches(it)
+                <%_ } _%>
+                log.debug("Changed Information for User: $it")
+            }
+    }
+
+        <%_ if (databaseTypeSql && authenticationTypeOauth2) { _%>
+       @Transactional
+       suspend fun saveUser(user: <%= asEntity('User') %>) = saveUser(user, false)
+        <%_ } _%>
+        <%_ if (databaseTypeSql) { _%>
+        @Transactional
+        <%_ } _%>
+        <% if (!databaseTypeSql) { %>private <% } %> suspend fun saveUser(user: <%= asEntity('User') %><% if (databaseTypeSql && authenticationTypeOauth2) { %>, forceCreate: Boolean<% } %>): <%= asEntity('User') %>? {
+            <%_ if (databaseTypeCassandra) { _%>
+            return userRepository.save(user)
+            <%_ } else { _%>
+                val login = getCurrentUserLogin().switchIfEmpty(Mono.just(SYSTEM_ACCOUNT)).awaitSingle()
+                if (user.createdBy == null) {
+                    user.createdBy = login
+                }
+                user.lastModifiedBy = login
+                <%_ if (databaseTypeSql) { _%>
+                // Saving the relationship can be done in an entity callback
+                // once https://github.com/spring-projects/spring-data-r2dbc/issues/215 is done
+                    <%_ if (authenticationTypeOauth2) { _%>
+                val updatedUser = if (forceCreate) { userRepository.create(user) } else { userRepository.save(user) }!!
+                    <%_ } else { _%>
+                val updatedUser = userRepository.save(user)
+                    <%_ } _%>
+                updatedUser.authorities.forEach {
+                    userRepository.saveUserAuthority(updatedUser.id!!, it.name!!)
+                }
+                return updatedUser
+                <%_ } else { _%>
+                return userRepository.save(user)
+                <%_ } _%>
+            <%_ } _%>
+        }
+
+<%_ if (!authenticationTypeOauth2) { _%>
+    <%_ if (databaseTypeSql) { _%>
+    @Transactional
+    <%_ } _%>
+    suspend fun changePassword(currentClearTextPassword: String, newPassword: String) {
+        getCurrentUserLogin()
+            .awaitSingle()
+            .let { userRepository.findOneByLogin(it) }
+            ?.apply {
+                val currentEncryptedPassword = password
+                if (!passwordEncoder.matches(currentClearTextPassword, currentEncryptedPassword)) {
+                throw InvalidPasswordException()
+                }
+                val encryptedPassword = passwordEncoder.encode(newPassword)
+                password = encryptedPassword
+            }?.let { saveUser(it) }
+            ?.let {
+                <%_ if (cacheManagerIsAvailable) { _%>
+                clearUserCaches(it)
+                <%_ } _%>
+                log.debug("Changed password for User: $it")
+            }
+    }
+<%_ } _%>
+
+    <%_ if (databaseTypeSql) { _%>
+    @Transactional(readOnly = true)
+    <%_ } _%>
+    <%_ if (databaseTypeSql || databaseTypeMongodb || databaseTypeNeo4j || databaseTypeCouchbase) { _%>
+    suspend fun getAllManagedUsers(pageable: Pageable): Flow<<%= asDto('AdminUser') %>> {
+        return userRepository.findAll<% if (databaseTypeSql) { %>WithAuthorities<% } else { %>By<% if (!databaseTypeCouchbase) { %>IdNotNull<% }} %>(pageable).map { <%= asDto('AdminUser') %>(it) }
+    }
+
+    <%_ if (databaseTypeSql) { _%>
+    @Transactional(readOnly = true)
+    <%_ } _%>
+    suspend fun getAllPublicUsers(pageable: Pageable): Flow<<%= asDto('User') %>> {
+        return userRepository.findAllBy<% if (!databaseTypeCouchbase) { %>IdNotNullAnd<% } %>ActivatedIsTrue(pageable).map { <%= asDto('User') %>(it) }
+    }
+
+    <%_ if (databaseTypeSql) { _%>
+    @Transactional(readOnly = true)
+    <%_ } _%>
+    suspend fun countManagedUsers() = userRepository.count()
+    <%_ } else { /* Cassandra */ _%>
+
+    suspend fun getAllManagedUsers() = userRepository.findAll().map { <%= asDto('AdminUser') %>(it) }
+
+    suspend fun getAllPublicUsers() = userRepository.findAll()
+        .filter { it.activated == true }
+        .map { <%= asDto('User') %>(it) }
+    <%_ } _%>
+
+    <%_ if (databaseTypeSql) { _%>
+    @Transactional(readOnly = true)
+    <%_ } _%>
+    suspend fun getUserWithAuthoritiesByLogin(login: String): <%= asEntity('User') %>? =
+        userRepository.<% if (databaseTypeSql) { %>findOneWithAuthoritiesByLogin(login)<% } else { %>findOneByLogin(login)<% } %>
+
+    <%_ if (!authenticationTypeOauth2) { _%>
+        <%_ if (databaseTypeSql) { _%>
+    @Transactional(readOnly = true)
+        <%_ } _%>
+    suspend fun getUserWithAuthorities(): <%= asEntity('User') %>? =
+        getCurrentUserLogin()
+            .awaitSingle()
+            .let { userRepository.findOne<% if (databaseTypeSql) { %>WithAuthorities<% } %>ByLogin(it) }
+    <%_ } _%>
+
+    <%_ if (!authenticationTypeOauth2 && (databaseTypeSql || databaseTypeMongodb || databaseTypeNeo4j || databaseTypeCouchbase)) { _%>
+
+    /**
+     * Not activated users should be automatically deleted after 3 days.
+     *
+     * This is scheduled to get fired everyday, at 01:00 (am).
+     */
+    @Scheduled(cron = "0 0 1 * * ?")
+    fun removeNotActivatedUsers() {
+        runBlocking {
+            removeNotActivatedUsersReactively().collect()
+        }
+    }
+
+        <%_ if (databaseTypeSql) { _%>
+    @Transactional
+        <%_ } _%>
+    suspend fun removeNotActivatedUsersReactively(): Flow<<%= asEntity('User') %>> {
+        return userRepository
+            .findAllByActivatedIsFalseAndActivationKeyIsNotNullAndCreatedDateBefore(<%_ if (databaseTypeSql) { _%>LocalDateTime.ofInstant(Instant.now().minus(3, ChronoUnit.DAYS), ZoneOffset.UTC)<%_ } else { _%>Instant.now().minus(3, ChronoUnit.DAYS)<%_ } _%>)
+            .onEach(userRepository::delete)
+            <%_ if (searchEngineElasticsearch) { _%>
+            .onEach(userSearchRepository::delete)
+            <%_ } _%>
+            <%_ if (cacheManagerIsAvailable) { _%>
+            .onEach(this::clearUserCaches)
+            <%_ } _%>
+            .onEach { log.debug("Deleted User: $it") }
+        }
+    <%_ } _%>
+    <%_ if (databaseTypeSql || databaseTypeMongodb || databaseTypeNeo4j || databaseTypeCouchbase) { _%>
+
+    /**
+     * @return a list of all the authorities
+     */
+    <%_ if (databaseTypeSql) { _%>
+    @Transactional(readOnly = true)
+    <%_ } _%>
+    suspend fun getAuthorities() =
+        authorityRepository.findAll().mapNotNull { it.name }
+    <%_ } _%>
+    <%_ if (authenticationTypeOauth2) { _%>
+
+    private suspend fun syncUserWithIdP(details: Map<String, Any>, user: <%= asEntity('User') %>): <%= asEntity('User') %> {
+        // save authorities in to sync user roles/groups between IdP and JHipster's local database
+        val dbAuthorities = getAuthorities().toCollection(mutableListOf())
+            <%_ if (!databaseTypeCouchbase) { _%>
+        val userAuthorities = user.authorities.mapTo(mutableListOf(), Authority::name)
+            <%_ } else { _%>
+        val userAuthorities = user.authorities
+            <%_ } _%>
+        for (authority in userAuthorities) {
+            if (!dbAuthorities.contains(authority)) {
+                log.debug("Saving authority '$authority' in local database")
+                val authorityToSave = Authority(name = authority)
+                authorityRepository.save(authorityToSave)
+            }
+        }
+        // save account in to sync users between IdP and JHipster's local database
+        userRepository.findOneByLogin(user.login!!)?.apply {
+            // if IdP sends last updated information, use it to determine if an update should happen
+            if (details["updated_at"] != null) {
+                val dbModifiedDate = lastModifiedDate
+                val idpModifiedDate: Instant = if (details["updated_at"] is Instant) details["updated_at"] as Instant else Instant.ofEpochSecond(details["updated_at"] as Long)
+                if (idpModifiedDate.isAfter(dbModifiedDate)) {
+                    log.debug("Updating user '${user.login}' in local database")
+                    updateUser(user.firstName, user.lastName, user.email, user.langKey, user.imageUrl)
+                }
+                // no last updated info, blindly update
+            } else {
+                log.debug("Updating user '${user.login}' in local database")
+                updateUser(user.firstName, user.lastName, user.email, user.langKey, user.imageUrl)
+            }
+        } ?: run {
+            log.debug("Saving user '${user.login}' in local database")
+            userRepository.save(user)
+            <%_ if (cacheManagerIsAvailable) { _%>
+            clearUserCaches(user)
+            <%_ } _%>
+        }
+        return user
+    }
+    <%_ } _%>
+
+<%_ } /* !databaseTypeNo */ _%>
+    <%_ if (authenticationTypeOauth2) { _%>
+    /**
+     * Returns the user from an OAuth 2.0 login or resource server with JWT.
+        <%_ if (!databaseTypeNo) { _%>
+     * Synchronizes the user in the local repository.
+        <%_ } _%>
+     *
+     * @param authToken the authentication token.
+     * @return the user from the authentication.
+     */
+        <%_ if (databaseTypeSql) { _%>
+    @Transactional
+        <%_ } _%>
+    suspend fun getUserFromAuthentication(authToken: AbstractAuthenticationToken): <%= asDto('AdminUser') %> {
+        val attributes: Map<String, Any> =
+            when (authToken) {
+                is OAuth2AuthenticationToken -> authToken.principal.attributes
+                is JwtAuthenticationToken -> authToken.tokenAttributes
+                else -> throw IllegalArgumentException("AuthenticationToken is not OAuth2 or JWT!")
+            }
+
+        val user = getUser(attributes)
+        user.authorities = authToken.authorities.asSequence()
+            .map(GrantedAuthority::getAuthority)
+            <%_ if (['sql', 'mongodb', 'neo4j'].includes(databaseType)) { _%>
+            .map { Authority(name = it) }
+            <%_ } _%>
+            .toMutableSet()
+        <%_ if (databaseTypeNo) { _%>
+            return user
+        <%_ } else { _%>
+            return <%= asDto('AdminUser') %>(syncUserWithIdP(attributes, user))
+        <%_ } _%>
+    }
+    <%_ } _%>
+    <%_ if (cacheManagerIsAvailable && !databaseTypeNo) { _%>
+
+    private fun clearUserCaches(user: <%= asEntity('User') %>) {
+        user.login?.let{
+            cacheManager.getCache(UserRepository.USERS_BY_LOGIN_CACHE)?.evict(it)
+        }
+        user.email?.let {
+            cacheManager.getCache(UserRepository.USERS_BY_EMAIL_CACHE)?.evict(it)
+        }
+    }
+    <%_ } _%>
+    <%_ if (authenticationTypeOauth2) { _%>
+
+    companion object {
+
+        @JvmStatic
+        private fun getUser(details: Map<String, Any>): <%= databaseTypeNo ? asDto('AdminUser') : asEntity('User') %> {
+            var activated = true
+            val sub = details["sub"] as String;
+            val username = details["preferred_username"]?.let { it as String } ?: null
+            val user = <%= databaseTypeNo ? asDto('AdminUser') : asEntity('User') %>()
+            // handle resource server JWT, where sub claim is email and uid is ID
+            if (details["uid"] != null) {
+                user.id = details["uid"] as String
+                user.login = sub
+            } else {
+                user.id = sub
+            }
+            if (username != null) {
+                user.login = username.lowercase()
+            } else if (user.login == null) {
+                user.login = user.id
+            }
+            if (details["given_name"] != null) {
+                user.firstName = details["given_name"] as String
+            } else if (details.get("name") != null) {
+                user.firstName = details.get("name") as String
+            }
+            if (details["family_name"] != null) {
+                user.lastName = details["family_name"] as String
+            }
+            if (details["email_verified"] != null) {
+                activated = details["email_verified"] as Boolean
+            }
+            if (details["email"] != null) {
+                user.email = (details["email"] as String).lowercase()
+            }else if (sub.contains("|") && (username != null && username.contains("@"))) {
+                // special handling for Auth0
+                user.email = username
+            } else {
+                user.email = sub
+            }
+            if (details["langKey"] != null) {
+                user.langKey = details["langKey"] as String
+            } else if (details["locale"] != null) {
+                // trim off country code if it exists
+                var locale = details["locale"] as String
+                if (locale.contains("_")) {
+                    locale = locale.substring(0, locale.indexOf("_"))
+                } else if (locale.contains("-")) {
+                    locale = locale.substring(0, locale.indexOf("-"))
+                }
+                user.langKey = locale.lowercase()
+            } else {
+                // set langKey to default if not specified by IdP
+                user.langKey = DEFAULT_LANGUAGE
+            }
+            if (details["picture"] != null) {
+                user.imageUrl = details["picture"] as String
+            }
+            user.activated = activated
+            return user
+        }
+    }
+    <%_ } _%>
+}

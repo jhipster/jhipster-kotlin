@@ -1,0 +1,132 @@
+<%#
+ Copyright 2013-2020 the original author or authors from the JHipster project.
+
+This file is part of the JHipster project, see https://jhipster.github.io/
+ for more information.
+
+ Licensed under the Apache License, Version 2.0 (the "License")
+ you may not use this file except in compliance with the License.
+ You may obtain a copy of the License at
+
+      http://www.apache.org/licenses/LICENSE-2.0
+
+ Unless required by applicable law or agreed to in writing, software
+ distributed under the License is distributed on an "AS IS" BASIS,
+ WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
+ See the License for the specific language governing permissions and
+ limitations under the License.
+-%>
+package <%= packageName %>.web.rest
+
+<%_ if (searchEngineElasticsearch) { _%>
+import <%= packageName %>.repository.search.UserSearchRepository
+<%_ } else if (searchEngineCouchbase) { _%>
+import <%= packageName %>.repository.UserRepository
+import <%= packageName %>.domain.User
+<%_ } _%>
+<%_ if (!authenticationTypeOauth2) { _%>
+import org.springframework.data.domain.Sort
+import java.util.Collections
+<%_ } _%>
+import <%= packageName %>.service.UserService
+import <%= packageName %>.service.dto.<%= asDto('User') %>
+import kotlinx.coroutines.flow.*
+
+<%_ if (databaseTypeSql || databaseTypeMongodb || databaseTypeNeo4j || databaseTypeCouchbase) { _%>
+import tech.jhipster.web.util.PaginationUtil
+<%_ } _%>
+
+import org.slf4j.LoggerFactory
+<%_ if (databaseTypeSql || databaseTypeMongodb || databaseTypeNeo4j || databaseTypeCouchbase) { _%>
+import org.springframework.data.domain.PageImpl
+import org.springframework.data.domain.Pageable
+<%_ } _%>
+import org.springframework.http.HttpStatus
+import org.springframework.http.ResponseEntity
+import org.springframework.http.server.reactive.ServerHttpRequest
+import org.springframework.web.bind.annotation.*
+import org.springframework.web.server.ResponseStatusException
+import org.springframework.web.util.UriComponentsBuilder
+import reactor.core.publisher.Flux
+import reactor.core.publisher.Mono
+import java.util.ArrayList
+import java.util.List
+import java.util.Arrays
+
+@RestController
+@RequestMapping("/api")
+class PublicUserResource(
+    <%_ if (searchEngineElasticsearch) { _%>
+    private val userSearchRepository: UserSearchRepository,
+    <%_ } _%>
+    <%_ if (searchEngineCouchbase) {  _%>
+    private val userRepository: UserRepository,
+    <%_ } _%>
+    private val userService: UserService
+) {
+    <%_ if (!authenticationTypeOauth2) { _%>
+    companion object {
+        private val ALLOWED_ORDERED_PROPERTIES = arrayOf("id", "login", "firstName", "lastName", "email", "activated", "langKey")
+    }
+    <%_ } _%>
+
+    private val log = LoggerFactory.getLogger(javaClass)
+
+    /**
+     * {@code GET /users} : get all users with only the public informations - calling this are allowed for anyone.
+     *<% if (databaseTypeSql || databaseTypeMongodb || databaseTypeNeo4j || databaseTypeCouchbase) { %>
+     * @param request a {@link ServerHttpRequest} request.
+     * @param pageable the pagination information.<% } %>
+     * @return the {@link ResponseEntity} with status {@code 200 (OK)} and with body all users.
+     */
+    @GetMapping("/users")
+    <%_ if (databaseTypeSql || databaseTypeMongodb || databaseTypeNeo4j || databaseTypeCouchbase) { _%>
+    suspend fun getAllPublicUsers(request: ServerHttpRequest, @org.springdoc.api.annotations.ParameterObject pageable: Pageable): ResponseEntity<Array<<%= asDto('User') %>>> {
+        log.debug("REST request to get all public User names")
+        <%_ if (!authenticationTypeOauth2) { _%>
+        if (!onlyContainsAllowedProperties(pageable)) {
+            return ResponseEntity.badRequest().build()
+        }
+        <%_ } _%>
+
+        return PageImpl<<%= asDto('User') %>>(listOf(), pageable, userService.countManagedUsers())
+            .let { PaginationUtil.generatePaginationHttpHeaders(UriComponentsBuilder.fromHttpRequest(request), it) }
+            .let { ResponseEntity.ok().headers(it).body(userService.getAllPublicUsers(pageable).toList().toTypedArray()) }
+    }
+        <%_ if (!authenticationTypeOauth2) { _%>
+    private fun onlyContainsAllowedProperties(pageable: Pageable) =
+        pageable.sort.map(Sort.Order::getProperty).all(ALLOWED_ORDERED_PROPERTIES::contains)
+        <%_ } _%>
+
+    /**
+     * Gets a list of all roles.
+     * @return a string list of all roles.
+     */
+    @GetMapping("/authorities")
+    suspend fun getAuthorities() = userService.getAuthorities().toList().toTypedArray()
+
+    <%_ } else { /* Cassandra */ _%>
+    suspend fun getAllPublicUsers(): Array<<%= asDto('User') %>> =
+        userService.getAllPublicUsers().toList().toTypedArray()
+
+    <%_ } _%>
+
+    <%_ if (!!searchEngine) { _%>
+
+    /**
+     * {@code SEARCH /_search/users/:query} : search for the User corresponding to the query.
+     *
+     * @param query the query to search.
+     * @return the result of the search.
+     */
+    @GetMapping("/_search/users/{query}")
+    suspend fun search(@PathVariable query: String): Array<<%= asDto('User') %>> {
+    <%_ if (searchEngineElasticsearch) { _%>
+        return userSearchRepository.search(query).map { <%= asDto('User') %>(it) }.toList().toTypedArray()
+    <%_ } else { _%>
+        return userRepository.search(query).map { <%= asDto('User') %>(it) }.toList().toTypedArray()
+    <%_ } _%>
+    }
+<%_ } _%>
+
+}
