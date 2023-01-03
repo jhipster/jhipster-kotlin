@@ -1,5 +1,5 @@
 <%#
- Copyright 2013-2020 the original author or authors from the JHipster project.
+ Copyright 2013-2022 the original author or authors from the JHipster project.
 
  This file is part of the JHipster project, see https://www.jhipster.tech/
  for more information.
@@ -56,7 +56,7 @@ import java.util.UUID
 <% } %>
 
 import org.elasticsearch.index.query.QueryBuilders.queryStringQuery
-     
+
 /**
  * Spring Data Elasticsearch repository for the [<%= persistClass %>] entity.
  */
@@ -66,7 +66,7 @@ interface <%=entityClass%>SearchRepository :  <% if (reactive) {%>Reactive<% } %
 interface <%= entityClass %>SearchRepositoryInternal {
      fun search(query: String<% if (!paginationNo) { %>, pageable: Pageable<% } %>): Flux<<%= persistClass %>>
 
-     fun search(query: Query): Flux<<%= persistClass %>> 
+     fun search(query: Query): Flux<<%= persistClass %>>
 }
 
 class <%= entityClass %>SearchRepositoryInternalImpl(private val reactiveElasticsearchTemplate: ReactiveElasticsearchTemplate): <%= entityClass %>SearchRepositoryInternal {
@@ -89,20 +89,20 @@ class <%= entityClass %>SearchRepositoryInternalImpl(private val reactiveElastic
 
 interface <%= entityClass %>SearchRepositoryInternal {
   <%_ if (paginationNo) { _%>
-  fun search(query: String): Stream<<%= persistClass %>> 
+  fun search(query: String): Stream<<%= persistClass %>>
 
-  fun search(query: Query): Stream<<%= persistClass %>> 
+  fun search(query: Query): Stream<<%= persistClass %>>
   <%_ } else { _%>
-  fun search(query: String, pageable: Pageable): Page<<%= persistClass %>> 
+  fun search(query: String, pageable: Pageable): Page<<%= persistClass %>>
 
-  fun search(query: Query): Page<<%= persistClass %>> 
+  fun search(query: Query): Page<<%= persistClass %>>
   <%_ } _%>
 
   fun index(entity: <%= persistClass %>)
 }
 
 class <%= entityClass %>SearchRepositoryInternalImpl(
-  val elasticsearchTemplate: ElasticsearchRestTemplate, 
+  val elasticsearchTemplate: ElasticsearchRestTemplate,
   val repository: <%= entityClass %>Repository
 ): <%= entityClass %>SearchRepositoryInternal {
 
@@ -134,7 +134,7 @@ class <%= entityClass %>SearchRepositoryInternalImpl(
   <%_ } _%>
 
   override fun index(entity: <%= persistClass %>) {
-    entity.<%= primaryKey.name %>?.let { 
+    entity.<%= primaryKey.name %>?.let {
       repository.find<% if (implementsEagerLoadApis) { %>OneWithEagerRelationships<% } else { %>ById<% } %>(it).ifPresent(elasticsearchTemplate::save)
     }
   }

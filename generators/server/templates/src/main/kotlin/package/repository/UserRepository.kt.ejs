@@ -1,5 +1,5 @@
 <%#
- Copyright 2013-2020 the original author or authors from the JHipster project.
+ Copyright 2013-2022 the original author or authors from the JHipster project.
 
  This file is part of the JHipster project, see https://www.jhipster.tech/
  for more information.
@@ -63,7 +63,7 @@ import org.springframework.cache.annotation.Cacheable
 <%_ } _%>
 <%_ if (databaseTypeSql || databaseTypeCouchbase || databaseTypeMongodb || databaseTypeNeo4j) { _%>
 import org.springframework.data.domain.*
-<%_ } _%>    
+<%_ } _%>
 <%_ if (databaseTypeSql) { _%>
     <%_ if (reactive) { _%>
 import org.springframework.data.domain.Sort
@@ -150,7 +150,7 @@ _%>
 <%_ if ((databaseTypeSql && !reactive) || databaseTypeMongodb || databaseTypeNeo4j || databaseTypeCouchbase) { _%>
 @Repository
 interface UserRepository : <% if (databaseTypeSql) { %>JpaRepository<<%= asEntity('User') %>, <%= user.primaryKey.type %>><% } %><% if (reactive && !databaseTypeCouchbase) { %>Reactive<% } %><% if (databaseTypeMongodb) { %>MongoRepository<<%= asEntity('User') %>, String><% } %><% if (databaseTypeNeo4j) { %>Neo4jRepository<<%= asEntity('User') %>, String><% } %><% if (databaseTypeCouchbase) { %>JHipsterCouchbaseRepository<<%= asEntity('User') %>, String><%if (searchEngineCouchbase) { %>, CouchbaseSearchRepository<<%= asEntity('User') %>, String><% } } %> {
-    
+
     <%_ if (!authenticationTypeOauth2) { _%>
     <%_ if (databaseTypeCouchbase) { _%>
     @JvmDefault
@@ -209,7 +209,7 @@ interface UserRepository : <% if (databaseTypeSql) { %>JpaRepository<<%= asEntit
     }
 
     @Query(FIND_IDS_QUERY + " AND LOWER(email) = LOWER($1)")
-    fun findIdByEmailIgnoreCase(email: String): <%= optionalOrMono %><User> 
+    fun findIdByEmailIgnoreCase(email: String): <%= optionalOrMono %><User>
     <% } %>
     <%_ } _%>
 
@@ -261,9 +261,9 @@ interface UserRepository : <% if (databaseTypeSql) { %>JpaRepository<<%= asEntit
     fun findAllByActivatedIsTrue(pageable: Pageable): Flux<User>{
         return findAllById(toIds(findAllIdsByActivatedIsTrue(pageable)))
     }
-        
+
     @Query(FIND_IDS_QUERY + " AND activated = true")
-    fun findAllIdsByActivatedIsTrue(pageable: Pageable): Flux<User> 
+    fun findAllIdsByActivatedIsTrue(pageable: Pageable): Flux<User>
         <%_ } else { _%>
     fun findAllByIdNotNullAndActivatedIsTrue(pageable: Pageable): Flux<<%= asEntity('User') %>>
         <%_ } _%>
@@ -448,7 +448,7 @@ class UserRepository(
 ) {
 
     <%_ if(reactive) { _%>
-    private val findAllStmt = session.prepare("SELECT * FROM user")<% if(reactive) { %>.block()<% } %>    
+    private val findAllStmt = session.prepare("SELECT * FROM user")<% if(reactive) { %>.block()<% } %>
     <%_ } else { _%>
     private val userTokenMapper = UserTokenMapperBuilder(session).build()
     private val userDao = userTokenMapper.userTokenDao(CqlIdentifier.fromCql(cassandraProperties.keyspaceName))
@@ -632,7 +632,7 @@ class UserRepository(
             })
             .thenReturn(user)
     }
-    
+
     private fun getInsertStatement(user: <%= asEntity('User') %>): SimpleStatement {
         val converter = cqlTemplate.getConverter()
         val persistentEntity = converter.getMappingContext().getRequiredPersistentEntity(user::class.java)

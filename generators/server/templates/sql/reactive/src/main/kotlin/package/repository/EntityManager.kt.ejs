@@ -1,5 +1,5 @@
 <%#
- Copyright 2013-2020 the original author or authors from the JHipster project.
+ Copyright 2013-2022 the original author or authors from the JHipster project.
 
 This file is part of the JHipster project, see https://jhipster.github.io/
  for more information.
@@ -51,7 +51,7 @@ import java.util.stream.Stream
  */
 @Service
 class EntityManager(
-    private val sqlRenderer: SqlRenderer, 
+    private val sqlRenderer: SqlRenderer,
     private val updateMapper: UpdateMapper,
     private val r2dbcEntityTemplate: R2dbcEntityTemplate
 ) {
@@ -68,14 +68,14 @@ class EntityManager(
 
         private fun <T: OrderByField> createOrderByFields(table: Table, sortToUse: Sort): Collection<T> {
             val fields = mutableListOf<OrderByField>()
-            sortToUse.forEach { 
+            sortToUse.forEach {
                 val propertyName = it.property
                 val orderByField = OrderByField.from(table.column(propertyName).`as`(ALIAS_PREFIX + propertyName))
                 val sort = if (it.isAscending) orderByField.asc() else orderByField.desc()
                 fields.add(sort)
             }
             return fields as Collection<T>
-        } 
+        }
     }
 
     data class LinkTable(val tableName: String, val idColumn: String, val referenceColumn: String) {
@@ -139,7 +139,7 @@ class EntityManager(
             }
         }
     }
-    
+
     private fun createSelectImpl(selectFrom: SelectOrdered, entityType: Class<*>, sortParameter: Sort?): String {
         var selected = selectFrom
         if (sortParameter != null && sortParameter.isSorted) {
@@ -155,7 +155,7 @@ class EntityManager(
 
     private fun  getPersistentEntity(entityType: Class<*>): RelationalPersistentEntity<*> {
         return r2dbcEntityTemplate.converter.mappingContext
-                .getPersistentEntity(entityType) as RelationalPersistentEntity<*> 
+                .getPersistentEntity(entityType) as RelationalPersistentEntity<*>
     }
 
     /**
@@ -204,7 +204,7 @@ class EntityManager(
      * @return the number of inserted rows.
      */
     fun updateLinkTable(table: LinkTable, entityId: Any?, referencedIds: List<Any?>?): Mono<Int> {
-        
+
         if (referencedIds == null) {
             return deleteFromLinkTable(table, entityId).then(Mono.just(0))
         }

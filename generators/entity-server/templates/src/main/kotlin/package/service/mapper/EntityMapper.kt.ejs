@@ -1,5 +1,5 @@
 <%#
- Copyright 2013-2020 the original author or authors from the JHipster project.
+ Copyright 2013-2022 the original author or authors from the JHipster project.
 
  This file is part of the JHipster project, see https://www.jhipster.tech/
  for more information.
@@ -24,7 +24,7 @@ const byteMapMethod = dtoReferences.some(reference => reference.valueReference &
 const dtoRelationships = dtoReferences.filter(reference => reference.relationship && !reference.relationship.otherEntity.embedded).map(reference => reference.relationship);
 let otherEntitiesFields = otherEntities
     .filter(otherEntity => dtoRelationships.some(relationship => relationship.otherEntity === otherEntity))
-    .map(otherEntity => 
+    .map(otherEntity =>
         dtoRelationships
         .filter(relationship => relationship.otherEntity == otherEntity)
         .map(({relatedField, collection}) => ({otherEntity, relatedField, collection}))
@@ -43,7 +43,7 @@ import <%= entityAbsolutePackage %>.service.dto.<%= dtoClass %>
 import <%= otherEntity.entityAbsoluteClass.replace('undefined',entityAbsolutePackage ) %>
 import <%= otherEntity.entityAbsolutePackage || entityAbsolutePackage %>.service.dto.<%= otherEntity.dtoClass %>
 <%_ } _%>
-    
+
 
 import org.mapstruct.*
 <%_ if (uuidMapMethod) { _%>
@@ -60,19 +60,19 @@ interface <%= entityClass %>Mapper :
     EntityMapper<<%= dtoClass %>, <%= persistClass %>> {
 
 <%_ if (!embedded) { _%>
-    <%_ 
-        var renMapAnotEnt = false; //Render Mapping Annotation during Entity to DTO conversion? 
+    <%_
+        var renMapAnotEnt = false; //Render Mapping Annotation during Entity to DTO conversion?
         const mappings = [];
-        for (relationship of dtoRelationships) { 
+        for (relationship of dtoRelationships) {
             renMapAnotEnt = true;
             let qualifiedByName = relationship.otherEntity.entityInstance + _.upperFirst(relationship.otherEntityField);
             qualifiedByName = qualifiedByName + (relationship.collection ? 'Set' : '');
             mappings.push(`Mapping(target = "${relationship.propertyName}", source = "${relationship.propertyName}", qualifiedByName=["${qualifiedByName}"])`);
         }
         for (const field of fields.filter(field => field.mapstructExpression)) {
-            renMapAnotEnt = true; 
+            renMapAnotEnt = true;
             mappings.push(`Mapping( target = "${field.propertyName}", expression = "${field.mapstructExpression}")`);
-        } 
+        }
     _%>
     <%_ if (renMapAnotEnt) { _%>
         <%_ if (mappings.length !== 0) { _%>
@@ -80,16 +80,16 @@ interface <%= entityClass %>Mapper :
         <%- [...new Set(mappings)].join(',') %>
     )
         <%_ } _%>
-    override fun toDto(s: <%= persistClass %>): <%= dtoClass %> 
+    override fun toDto(s: <%= persistClass %>): <%= dtoClass %>
     <%_ } _%>
-    <%_ 
-        var renMapAnotDto = false;  //Render Mapping Annotation during DTO to Entity conversion? 
+    <%_
+        var renMapAnotDto = false;  //Render Mapping Annotation during DTO to Entity conversion?
         const mappings2 = [];
-        if(primaryKey.ids.length > 1) { 
-            renMapAnotDto = true; 
-            for (const id of primaryKey.ids) { 
+        if(primaryKey.ids.length > 1) {
+            renMapAnotDto = true;
+            for (const id of primaryKey.ids) {
                 mappings2.push(`Mapping(target = "id.${id.name}", source = "${id.nameDotted}")`);
-            } 
+            }
         }
 
         for (relationship of dtoRelationships) {
@@ -101,7 +101,7 @@ interface <%= entityClass %>Mapper :
                 renMapAnotDto = true;
                 mappings2.push(`Mapping(target = "remove${relationship.relationshipNameCapitalized}", ignore = true)`);
             }
-        } 
+        }
     _%>
     <%_ if (renMapAnotDto) { _%>
         <%_ if (mappings2.length !== 0) { _%>
@@ -109,25 +109,25 @@ interface <%= entityClass %>Mapper :
         <%-  [...new Set(mappings2)].join(',') %>
     )
         <%_ } _%>
-    override fun toEntity(<%= dtoInstance %>: <%= dtoClass %>): <%= persistClass %> 
+    override fun toEntity(<%= dtoInstance %>: <%= dtoClass %>): <%= persistClass %>
     <%_ } _%>
 
 
-    <%_ 
+    <%_
         const mappings3 = [];
-        for (const {otherEntity, relatedField, collection} of otherEntitiesFields) { 
-             const mapperName = otherEntity.entityInstance + _.upperFirst(relatedField.propertyName); 
+        for (const {otherEntity, relatedField, collection} of otherEntitiesFields) {
+             const mapperName = otherEntity.entityInstance + _.upperFirst(relatedField.propertyName);
     _%>
-    
+
     @Named("<%= mapperName %>")
     @BeanMapping(ignoreByDefault = true)
-        
-    <%_ 
-        
-        for (const field of otherEntity.primaryKey.fields) { 
+
+    <%_
+
+        for (const field of otherEntity.primaryKey.fields) {
             mappings3.push(`Mapping(target = "${field.propertyName}", source = "${field.propertyName}")`);
         }
-        
+
         if (!relatedField.id) {
             mappings3.push(`Mapping(target = "${relatedField.propertyName}", source = "${relatedField.propertyName}")`);
         }
@@ -137,11 +137,11 @@ interface <%= entityClass %>Mapper :
         <%-  [...new Set(mappings3)].join(',') %>
     )
     <%_ } _%>
-    fun toDto<%= _.upperFirst(mapperName) %>(<%= otherEntity.persistInstance %>: <%- otherEntity.persistClass %>): <%- otherEntity.dtoClass %> 
-    
+    fun toDto<%= _.upperFirst(mapperName) %>(<%= otherEntity.persistInstance %>: <%- otherEntity.persistClass %>): <%- otherEntity.dtoClass %>
+
     <%_ if (collection) { _%>
         <%_ const collectionMapperName = otherEntity.entityInstance + _.upperFirst(relatedField.propertyName) + 'Set'; _%>
-    
+
     @Named("<%= collectionMapperName %>")
     @JvmDefault fun toDto<%= _.upperFirst(mapperName) %>Set(<%= otherEntity.persistInstance %>: Set<<%- otherEntity.persistClass %>>): Set<<%- otherEntity.dtoClass %>> {
         return <%= otherEntity.persistInstance %>.map(this::toDto<%= _.upperFirst(mapperName) %>).toSet()
@@ -149,10 +149,10 @@ interface <%= entityClass %>Mapper :
     <%_ } _%>
 
     <%_ } _%>
-      
+
 
     <%_ if (uuidMapMethod) { _%>
-    
+
     @JvmDefault
     fun map(value: UUID) = Objects.toString(value, null)
     <%_ } _%>

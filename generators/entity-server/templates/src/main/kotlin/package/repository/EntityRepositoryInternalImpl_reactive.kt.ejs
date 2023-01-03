@@ -1,5 +1,5 @@
 <%#
- Copyright 2013-2020 the original author or authors from the JHipster project.
+ Copyright 2013-2022 the original author or authors from the JHipster project.
 
  This file is part of the JHipster project, see https://www.jhipster.tech/
  for more information.
@@ -75,17 +75,17 @@ import <%= rel.otherEntity.entityAbsolutePackage %>.domain.<%= rel.otherEntity.p
 import <%= entityAbsolutePackage %>.domain.enumeration.<%= element %>
 <%_ }); _%>
 
-<%_ [...reactiveOtherEntities, entity].forEach(otherEntity => { 
+<%_ [...reactiveOtherEntities, entity].forEach(otherEntity => {
     if (otherEntity.entityAbsolutePackage) { _%>
 import <%= otherEntity.entityAbsolutePackage %>.repository.rowmapper.<%= otherEntity.entityClass %>RowMapper
-  <%_ } else { _%> 
+  <%_ } else { _%>
 import <%= packageName %>.repository.rowmapper.<%= otherEntity.entityClass %>RowMapper
-  <%_ } _%> 
+  <%_ } _%>
   <%_ if (otherEntity.entityPackage !== entityPackage) { _%>
 import <%= otherEntity.entityAbsolutePackage %>.repository.<%= otherEntity.entityClass %>SqlHelper
   <%_ } _%>
 <%_ }); _%>
-<%# TODO Check why the below condition is empty %> 
+<%# TODO Check why the below condition is empty %>
 <%# if (packageName !== entityAbsolutePackage) {  } %>
 import <%= packageName %>.repository.EntityManager
 
@@ -106,8 +106,8 @@ class <%= entityClass %>RepositoryInternalImpl(
 ): SimpleR2dbcRepository<<%= persistClass %>, <%= primaryKey.type %>>(
     MappingRelationalEntityInformation(
         converter.mappingContext.getRequiredPersistentEntity(<%= persistClass %>::class.java) as RelationalPersistentEntity<<%= persistClass %>>
-    ), 
-    entityOperations, 
+    ),
+    entityOperations,
     converter
 ), <%= entityClass %>RepositoryInternal {
 
@@ -141,7 +141,7 @@ class <%= entityClass %>RepositoryInternalImpl(
             <%_ reactiveEagerRelations.forEach(function(rel) { _%>
             .leftOuterJoin(<%= rel.relationshipName %>Table).on(Column.create("<%= rel.joinColumnNames[0] %>", entityTable)).equals(Column.create("<%= rel.otherEntity.primaryKey.fields[0].columnName %>", <%= rel.relationshipName %>Table  ))
             <%_ }); _%>
-        
+
         // we do not support Criteria here for now as of https://github.com/jhipster/generator-jhipster/issues/18269
         val select = entityManager.createSelect(selectFrom, <%= persistClass %>::class.java, pageable, whereClause)
         return db.sql(select).map(this::process)
