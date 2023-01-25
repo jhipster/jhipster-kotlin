@@ -300,6 +300,7 @@ class SecurityConfiguration(
             .pathMatchers("/services/**").authenticated()
             <%_ } _%>
             .pathMatchers("/management/health").permitAll()
+            .pathMatchers("/management/health/**").permitAll()
             .pathMatchers("/management/info").permitAll()
             .pathMatchers("/management/prometheus").permitAll()
             .pathMatchers("/management/**").hasAuthority(ADMIN)
@@ -332,9 +333,9 @@ class SecurityConfiguration(
         return  authorizationRequestResolver
     }
 
-    private fun authorizationRequestCustomizer() = 
-        Consumer<OAuth2AuthorizationRequest.Builder> {  
-            it.authorizationRequestUri { uriBuilder -> 
+    private fun authorizationRequestCustomizer() =
+        Consumer<OAuth2AuthorizationRequest.Builder> {
+            it.authorizationRequestUri { uriBuilder ->
                 uriBuilder.queryParam("audience", jHipsterProperties.security.oauth2.audience)
                     .build()
             }
@@ -387,7 +388,7 @@ class SecurityConfiguration(
 
         val clientRegistration = registrations.findByRegistrationId("oidc")
 
-        return clientRegistration.map { 
+        return clientRegistration.map {
             createJwtDecoder(
                 it.providerDetails.issuerUri,
                 it.providerDetails.jwkSetUri,
