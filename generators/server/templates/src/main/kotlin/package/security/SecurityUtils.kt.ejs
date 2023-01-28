@@ -79,12 +79,15 @@ fun extractPrincipal(authentication: Authentication?): String? {
 
     if(authentication == null) {
         return null
+    <%_ if (authenticationTypeOauth2) { _%>
+    } else if (authentication is JwtAuthenticationToken) {
+        return authentication.token.claims["preferred_username"].toString()
+    <%_ } _%>
     }
 
     return when (val principal = authentication.principal) {
         is UserDetails -> principal.username
         <%_ if (authenticationTypeOauth2) { _%>
-        is JwtAuthenticationToken -> (authentication as JwtAuthenticationToken).token.claims as String
         is DefaultOidcUser -> {
             if(principal.attributes.containsKey("preferred_username")) {
                 principal.attributes["preferred_username"].toString()
@@ -210,7 +213,7 @@ fun getAuthorities(authentication: Authentication): List<String>? {
 <%_ } _%>
 
 <%_ if (authenticationTypeOauth2) { _%>
-    fun extractAuthorityFromClaims(claims: Map<String, Any>): List<GrantedAuthority>? {
+    fun extractAuthorityFromClaims(claims: Map<String, Any>): List<GrantedAuthority> {
         return mapRolesToGrantedAuthorities(getRolesFromClaims(claims))
     }
 
