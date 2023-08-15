@@ -11,6 +11,7 @@ RUN \
   apt-get update && \
   # install utilities
   apt-get install -y \
+    git \
     wget \
     sudo && \
   # install node.js
