@@ -140,7 +140,7 @@ import org.springframework.data.couchbase.core.mapping.id.GenerationStrategy.USE
 <%_ if (searchEngineElasticsearch) { _%>
 @org.springframework.data.elasticsearch.annotations.Document(indexName = "user")
 <%_ } _%>
-class <%= asEntity('User') %> (
+data class <%= asEntity('User') %> (
 <%_ if (databaseTypeSql) { _%>
 
     @Id
@@ -398,12 +398,8 @@ class <%= asEntity('User') %> (
     @Cache(usage = CacheConcurrencyStrategy.READ_WRITE)
     <%_ } _%>
     var persistentTokens: MutableSet<PersistentToken> = mutableSetOf()<% } %><% if (databaseTypeSql || databaseTypeMongodb || databaseTypeNeo4j || databaseTypeCouchbase) { %>,
-    createdBy: String? = null,
-    createdDate: Instant? = Instant.now(),
-    lastModifiedBy: String? = null,
-    lastModifiedDate: Instant? = Instant.now()
 <%_ } _%>
-) : <% if (databaseTypeSql || databaseTypeMongodb || databaseTypeNeo4j || databaseTypeCouchbase) { %>AbstractAuditingEntity<<%= user.primaryKey.type %>>(createdBy, createdDate, lastModifiedBy, lastModifiedDate), <% } %>Serializable {
+) : <% if (databaseTypeSql || databaseTypeMongodb || databaseTypeNeo4j || databaseTypeCouchbase) { %>AbstractAuditingEntity<<%= user.primaryKey.type %>>(), <% } %>Serializable {
 
 <%_ if (databaseTypeSql && reactive) { _%>
     @PersistenceConstructor
