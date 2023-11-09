@@ -17,9 +17,14 @@
  * limitations under the License.
  */
 const baseCouchbaseFiles = require('generator-jhipster/generators/server/files-couchbase').couchbaseFiles;
+const constants = require('generator-jhipster/generators/generator-constants');
 const { makeKotlinServerFiles } = require('../util');
 
 const couchbaseFiles = makeKotlinServerFiles(baseCouchbaseFiles);
+
+const SERVER_MAIN_SRC_DIR = `${constants.MAIN_DIR}kotlin/`;
+const SERVER_TEST_SRC_DIR = `${constants.TEST_DIR}kotlin/`;
+const SERVER_MAIN_RES_DIR = constants.SERVER_MAIN_RES_DIR;
 
 function writeCouchbaseFiles() {
     return {
@@ -36,6 +41,16 @@ function writeCouchbaseFiles() {
                 this.removeFile(`${this.javaDir}repository/SearchCouchbaseRepository.kt`);
                 this.removeFile(`${this.testDir}repository/CustomCouchbaseRepositoryTest.kt`);
             }
+
+            if (this.isJhipsterVersionLessThan('7.6.1')) {
+                this.removeFile(`${SERVER_TEST_SRC_DIR}${this.testDir}repository/JHipsterCouchbaseRepositoryTest.java`);
+                this.removeFolder(`${SERVER_MAIN_SRC_DIR}${this.javaDir}config/couchbase`);
+                this.removeFile(`${SERVER_MAIN_RES_DIR}config/couchmove/changelog/V0__create_indexes.n1ql`);
+                this.removeFile(`${SERVER_MAIN_RES_DIR}config/couchmove/changelog/V0.1__initial_setup/ROLE_ADMIN.json`);
+                this.removeFile(`${SERVER_MAIN_RES_DIR}config/couchmove/changelog/V0.1__initial_setup/ROLE_USER.json`);
+                this.removeFile(`${SERVER_MAIN_RES_DIR}config/couchmove/changelog/V0.1__initial_setup/user__admin.json`);
+                this.removeFile(`${SERVER_MAIN_RES_DIR}config/couchmove/changelog/V0.1__initial_setup/user__user.json`);
+              }
         },
 
         async writeCouchbaseFiles() {

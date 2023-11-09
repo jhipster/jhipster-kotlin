@@ -1,0 +1,182 @@
+<%#
+ Copyright 2013-2023 the original author or authors from the JHipster project.
+
+ This file is part of the JHipster project, see https://www.jhipster.tech/
+ for more information.
+
+ Licensed under the Apache License, Version 2.0 (the "
+ you may not use this file except in compliance with the License.
+ You may obtain a copy of the License at
+
+      http://www.apache.org/licenses/LICENSE-2.0
+
+ Unless required by applicable law or agreed to in writing, software
+ distributed under the License is distributed on an "AS IS" BASIS,
+ WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
+ See the License for the specific language governing permissions and
+ limitations under the License.
+-%>
+package <%= packageName %>.security
+
+import <%= packageName %>.IntegrationTest
+<%_ if (databaseTypeSql && reactive) { _%>
+import <%= packageName %>.config.SYSTEM_ACCOUNT
+<%_ } _%>
+import <%= user.entityAbsoluteClass %>
+import <%= packageName %>.repository.UserRepository
+
+import org.apache.commons.lang3.RandomStringUtils
+import org.junit.jupiter.api.BeforeEach
+import org.junit.jupiter.api.Test
+import org.springframework.beans.factory.annotation.Autowired
+import org.springframework.beans.factory.annotation.Qualifier
+<%_ if (reactive) { _%>
+import org.springframework.security.core.userdetails.ReactiveUserDetailsService
+<%_ } _%>
+<%_ if (!reactive) { _%>
+import org.springframework.security.core.userdetails.UserDetailsService
+<%_ } _%>
+<%_ if (databaseTypeCouchbase) { _%>
+import org.springframework.security.test.context.support.WithMockUser
+<%_ } _%>
+<%_ if (databaseTypeSql && !reactive) { _%>
+import org.springframework.transaction.annotation.Transactional
+<%_ } _%>
+
+<%_ if (databaseTypeCassandra) { _%>
+import java.util.UUID
+<%_ } _%>
+import java.util.Locale
+
+import org.assertj.core.api.Assertions.assertThat
+import org.assertj.core.api.Assertions.assertThatExceptionOfType
+
+private const val USER_ONE_LOGIN = "test-user-one"
+private const val USER_ONE_EMAIL = "test-user-one@localhost"
+private const val USER_TWO_LOGIN = "test-user-two"
+private const val USER_TWO_EMAIL = "test-user-two@localhost"
+private const val USER_THREE_LOGIN = "test-user-three"
+private const val USER_THREE_EMAIL = "test-user-three@localhost"
+
+/**
+ * Integration tests for [DomainUserDetailsService].
+ */
+<%_ if (databaseTypeSql && !reactive) { _%>
+@Transactional
+<%_ } _%>
+<%_ if (databaseTypeCouchbase) { _%>
+@WithMockUser("test-user-one")
+<%_ } _%>
+@IntegrationTest
+class DomainUserDetailsServiceIT {
+
+    @Autowired
+    private lateinit var userRepository: UserRepository
+
+    @Autowired
+    @Qualifier("userDetailsService")
+    private lateinit var domainUserDetailsService: <% if (reactive) { %>Reactive<% } %>UserDetailsService
+
+    @BeforeEach
+    fun init() {
+        <%_ if (databaseTypeSql && reactive) { _%>
+        userRepository.deleteAllUserAuthorities().block()
+        <%_ } _%>
+        <%_ if (!databaseTypeSql || reactive) { _%>
+        userRepository.deleteAll()<% if (reactive) { %>.block()<% } %>
+
+        <%_ } _%>
+        val userOne = <%= user.persistClass %>(
+            <%_ if (databaseTypeCassandra) { _%>
+            id = UUID.randomUUID().toString(),
+            <%_ } _%>
+            login = USER_ONE_LOGIN,
+            password = RandomStringUtils.randomAlphanumeric(60),
+            activated = true,
+            email = USER_ONE_EMAIL,
+            firstName = "userOne",
+            lastName = "doe",
+            <%_ if (databaseTypeSql && reactive) { _%>
+            createdBy = SYSTEM_ACCOUNT,
+            <%_ } _%>
+            langKey = "en"
+        )
+        userRepository.save(userOne)<% if (reactive) { %>.block()<% } %>
+
+        val userTwo = <%= user.persistClass %>(
+            <%_ if (databaseTypeCassandra) { _%>
+            id = UUID.randomUUID().toString(),
+            <%_ } _%>
+            login = USER_TWO_LOGIN,
+            password = RandomStringUtils.randomAlphanumeric(60),
+            activated = true,
+            email = USER_TWO_EMAIL,
+            firstName = "userTwo",
+            lastName = "doe",
+            <%_ if (databaseTypeSql && reactive) { _%>
+            createdBy = SYSTEM_ACCOUNT,
+            <%_ } _%>
+            langKey = "en"
+        )
+        userRepository.save(userTwo)<% if (reactive) { %>.block()<% } %>
+
+        val userThree = <%= user.persistClass %>(
+            <%_ if (databaseTypeCassandra) { _%>
+            id = UUID.randomUUID().toString(),
+            <%_ } _%>
+            login = USER_THREE_LOGIN,
+            password = RandomStringUtils.randomAlphanumeric(60),
+            activated = false,
+            email = USER_THREE_EMAIL,
+            firstName = "userThree",
+            lastName = "doe",
+            <%_ if (databaseTypeSql && reactive) { _%>
+            createdBy = SYSTEM_ACCOUNT,
+            <%_ } _%>
+            langKey = "en"
+        )
+        userRepository.save(userThree)<% if (reactive) { %>.block()<% } %>
+    }
+
+    @Test
+    fun assertThatUserCanBeFoundByLogin() {
+        val userDetails = domainUserDetailsService.<% if (reactive) { %>find<% } else { %>loadUser<% } %>ByUsername(USER_ONE_LOGIN)<% if (reactive) { %>.block()<% } %>
+        assertThat(userDetails).isNotNull
+        assertThat(userDetails.username).isEqualTo(USER_ONE_LOGIN)
+    }
+
+    @Test
+    fun assertThatUserCanBeFoundByLoginIgnoreCase() {
+        val userDetails = domainUserDetailsService.<% if (reactive) { %>find<% } else { %>loadUser<% } %>ByUsername(USER_ONE_LOGIN.toUpperCase(Locale.ENGLISH))<% if (reactive) { %>.block()<% } %>
+        assertThat(userDetails).isNotNull
+        assertThat(userDetails.username).isEqualTo(USER_ONE_LOGIN)
+    }
+
+    @Test
+    fun assertThatUserCanBeFoundByEmail() {
+        val userDetails = domainUserDetailsService.<% if (reactive) { %>find<% } else { %>loadUser<% } %>ByUsername(USER_TWO_EMAIL)<% if (reactive) { %>.block()<% } %>
+        assertThat(userDetails).isNotNull
+        assertThat(userDetails.username).isEqualTo(USER_TWO_LOGIN)
+    }
+
+    @Test
+    fun assertThatUserCanBeFoundByEmailIgnoreCase() {
+        val userDetails = domainUserDetailsService.<% if (reactive) { %>find<% } else { %>loadUser<% } %>ByUsername(USER_TWO_EMAIL.toUpperCase(Locale.ENGLISH))<% if (reactive) { %>.block()<% } %>
+        assertThat(userDetails).isNotNull
+        assertThat(userDetails.username).isEqualTo(USER_TWO_LOGIN)
+    }
+
+    @Test
+    fun assertThatEmailIsPrioritizedOverLogin() {
+        val userDetails = domainUserDetailsService.<% if (reactive) { %>find<% } else { %>loadUser<% } %>ByUsername(USER_ONE_EMAIL)<% if (reactive) { %>.block()<% } %>
+        assertThat(userDetails).isNotNull
+        assertThat(userDetails.username).isEqualTo(USER_ONE_LOGIN)
+    }
+
+    @Test
+    fun assertThatUserNotActivatedExceptionIsThrownForNotActivatedUsers() {
+        assertThatExceptionOfType(UserNotActivatedException::class.java).isThrownBy {
+            domainUserDetailsService.<% if (reactive) { %>find<% } else { %>loadUser<% } %>ByUsername(USER_THREE_LOGIN)<% if (reactive) { %>.block()<% } %>
+        }
+    }
+}

@@ -1,0 +1,91 @@
+<%#
+ Copyright 2013-2023 the original author or authors from the JHipster project.
+
+ This file is part of the JHipster project, see https://www.jhipster.tech/
+ for more information.
+
+ Licensed under the Apache License, Version 2.0 (the "
+ you may not use this file except in compliance with the License.
+ You may obtain a copy of the License at
+
+      http://www.apache.org/licenses/LICENSE-2.0
+
+ Unless required by applicable law or agreed to in writing, software
+ distributed under the License is distributed on an "AS IS" BASIS,
+ WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
+ See the License for the specific language governing permissions and
+ limitations under the License.
+-%>
+package <%= packageName %>.security
+
+import <%= user.entityAbsoluteClass %>
+<%_ if (databaseTypeSql || databaseTypeMongodb || databaseTypeNeo4j) { _%>
+import <%= packageName %>.domain.Authority
+<%_ } _%>
+import <%= packageName %>.repository.UserRepository
+import org.hibernate.validator.internal.constraintvalidators.hv.EmailValidator
+import org.slf4j.LoggerFactory
+import org.springframework.security.core.authority.SimpleGrantedAuthority
+<%_ if (reactive) { _%>
+import org.springframework.security.core.userdetails.ReactiveUserDetailsService
+<%_ } _%>
+import org.springframework.security.core.userdetails.UserDetails
+<%_ if (!reactive) { _%>
+import org.springframework.security.core.userdetails.UserDetailsService
+<%_ } _%>
+import org.springframework.security.core.userdetails.UsernameNotFoundException
+import org.springframework.stereotype.Component
+<%_ if (databaseTypeSql) { _%>
+import org.springframework.transaction.annotation.Transactional
+<%_ } _%>
+<%_ if (reactive) { _%>
+import reactor.core.publisher.Mono
+<%_ } _%>
+
+import java.util.Locale
+
+/**
+ * Authenticate a user from the database.
+ */
+@Component("userDetailsService")
+class DomainUserDetailsService(private val userRepository: UserRepository) : <% if (reactive) { %>Reactive<% } %>UserDetailsService {
+
+    private val log = LoggerFactory.getLogger(javaClass)
+
+    <%_ if (databaseTypeSql) { _%>
+    @Transactional(readOnly = true)
+    <%_ } _%>
+    override fun <% if (reactive) { %>findByUsername(login: String): Mono<UserDetails><% } else { %>loadUserByUsername(login: String): UserDetails<% } %> {
+        log.debug("Authenticating $login")
+
+        if (EmailValidator().isValid(login, null)) {
+            return userRepository.<% if (databaseTypeSql) { %>findOneWithAuthoritiesByEmailIgnoreCase<% } else { %>findOneByEmailIgnoreCase<% } %>(login)
+                <%_ if (reactive) { _%>
+                .switchIfEmpty(Mono.error(UsernameNotFoundException("User with email $login was not found in the database")))
+                <%_ } _%>
+                .map { createSpringSecurityUser(login, it) }<% if (!reactive) { %>
+                .orElseThrow { UsernameNotFoundException("User with email $login was not found in the database") }<% } %>
+        }
+
+        val lowercaseLogin = login.lowercase(Locale.ENGLISH)
+        return userRepository.findOne<% if (databaseTypeSql) { %>WithAuthorities<% } %>ByLogin(lowercaseLogin)
+            <%_ if (reactive) { _%>
+            .switchIfEmpty(Mono.error(UsernameNotFoundException("User $lowercaseLogin was not found in the database")))
+            <%_ } _%>
+            .map { createSpringSecurityUser(lowercaseLogin, it) }<% if (!reactive) { %>
+            .orElseThrow { UsernameNotFoundException("User $lowercaseLogin was not found in the database") }<% } %>
+    }
+
+    private fun createSpringSecurityUser(lowercaseLogin: String, user: <%= user.persistClass %>)
+        : org.springframework.security.core.userdetails.User {
+        if (user.activated == null || user.activated == false) {
+            throw UserNotActivatedException("User $lowercaseLogin was not activated")
+        }
+        val grantedAuthorities = user.authorities.map { SimpleGrantedAuthority(it<% if (databaseTypeSql || databaseTypeMongodb || databaseTypeNeo4j) { %>.name<% } %>) }
+        return org.springframework.security.core.userdetails.User(
+            user.login!!,
+            user.password!!,
+            grantedAuthorities
+        )
+    }
+}

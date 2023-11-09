@@ -1,0 +1,148 @@
+<%#
+ Copyright 2013-2023 the original author or authors from the JHipster project.
+
+ This file is part of the JHipster project, see https://www.jhipster.tech/
+ for more information.
+
+ Licensed under the Apache License, Version 2.0 (the "
+ you may not use this file except in compliance with the License.
+ You may obtain a copy of the License at
+
+      http://www.apache.org/licenses/LICENSE-2.0
+
+ Unless required by applicable law or agreed to in writing, software
+ distributed under the License is distributed on an "AS IS" BASIS,
+ WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
+ See the License for the specific language governing permissions and
+ limitations under the License.
+-%>
+package <%= packageName %>.web.rest
+
+import <%= packageName %>.security.SecurityUtils.AUTHORITIES_KEY
+import <%= packageName %>.security.SecurityUtils.JWT_ALGORITHM
+import <%= packageName %>.web.rest.vm.LoginVM
+
+import com.fasterxml.jackson.annotation.JsonProperty
+
+import jakarta.validation.Valid
+import java.time.Instant
+import java.time.temporal.ChronoUnit
+import java.util.stream.Collectors
+import org.slf4j.Logger
+import org.slf4j.LoggerFactory
+import org.springframework.beans.factory.annotation.Value
+import org.springframework.http.HttpHeaders
+import org.springframework.http.HttpStatus
+import org.springframework.http.ResponseEntity
+import org.springframework.security.authentication.UsernamePasswordAuthenticationToken
+import org.springframework.security.core.GrantedAuthority
+import org.springframework.security.oauth2.jwt.JwsHeader
+import org.springframework.security.oauth2.jwt.JwtClaimsSet
+import org.springframework.security.oauth2.jwt.JwtEncoder
+import org.springframework.security.oauth2.jwt.JwtEncoderParameters
+import org.springframework.web.bind.annotation.*
+<%_ if (reactive) { _%>
+import java.security.Principal
+import reactor.core.publisher.Mono
+import org.springframework.web.server.ServerWebExchange
+import org.springframework.security.authentication.ReactiveAuthenticationManager
+<%_ } else { _%>
+import jakarta.servlet.http.HttpServletRequest
+import org.springframework.security.config.annotation.authentication.builders.AuthenticationManagerBuilder
+import org.springframework.security.core.context.SecurityContextHolder
+<%_ } _%>
+
+/**
+ * Controller to authenticate users.
+ */
+@RestController
+@RequestMapping("/api")
+class AuthenticateController(
+    private val jwtEncoder: JwtEncoder,
+    <%_ if (reactive) { _%>
+    private val authenticationManager: ReactiveAuthenticationManager
+    <%_ } else { _%>
+    private val authenticationManagerBuilder: AuthenticationManagerBuilder
+    <%_ } _%>
+) {
+
+    @Value("\${jhipster.security.authentication.jwt.token-validity-in-seconds:0}")
+    private var tokenValidityInSeconds: Long = 0
+
+    @Value("\${jhipster.security.authentication.jwt.token-validity-in-seconds-for-remember-me:0}")
+    private var tokenValidityInSecondsForRememberMe: Long = 0
+
+    <%_ if (reactive) { _%>
+    @PostMapping("/authenticate")
+    fun authorize(@Valid @RequestBody loginVM: Mono<LoginVM>): Mono<ResponseEntity<JWTToken>> =
+        loginVM.flatMap { login ->
+            authenticationManager.authenticate(UsernamePasswordAuthenticationToken(login.username, login.password))
+                .map { this.createToken(it, true == login.isRememberMe) }
+        }.map{
+            jwt ->
+            val httpHeaders = HttpHeaders()
+            httpHeaders.setBearerAuth(jwt)
+            ResponseEntity(JWTToken(jwt), httpHeaders, HttpStatus.OK)
+        }
+    <%_ } else { _%>
+    @PostMapping("/authenticate")
+    fun authorize(@Valid @RequestBody loginVM: LoginVM): ResponseEntity<JWTToken> {
+
+        val authenticationToken = UsernamePasswordAuthenticationToken(loginVM.username, loginVM.password)
+
+        val authentication = authenticationManagerBuilder.getObject().authenticate(authenticationToken)
+        SecurityContextHolder.getContext().authentication = authentication
+        val jwt = this.createToken(authentication, loginVM.isRememberMe ?: false)
+        val httpHeaders = HttpHeaders()
+        httpHeaders.setBearerAuth(jwt)
+        return ResponseEntity(JWTToken(jwt), httpHeaders, HttpStatus.OK)
+    }
+    <%_ } _%>
+
+
+
+    /**
+     * {@code GET /authenticate} : check if the user is authenticated, and return its login.
+     *
+     * @param request the HTTP request.
+     * @return the login if the user is authenticated.
+     */
+    @GetMapping("/authenticate")
+<%_ if (reactive) { _%>
+    fun isAuthenticated(request: ServerWebExchange): Mono<String> {
+        log.debug("REST request to check if the current user is authenticated")
+        return request.getPrincipal().map(Principal::getName)
+<%_ } else { _%>
+    fun isAuthenticated(request: HttpServletRequest): String {
+        log.debug("REST request to check if the current user is authenticated")
+        return request.getRemoteUser()
+<%_ } _%>
+    }
+
+    fun createToken(authentication: Authentication, rememberMe: boolean): String {
+        val authorities = authentication.authorities.stream().map { it.authority }.collect(Collectors.joining(" "))
+
+        val now = Instant.now()
+        var validity = if (rememberMe) {
+            now.plus(this.tokenValidityInSecondsForRememberMe, ChronoUnit.SECONDS);
+        } else {
+            now.plus(this.tokenValidityInSeconds, ChronoUnit.SECONDS);
+        }
+
+        // @formatter:off
+        val claims = JwtClaimsSet.builder()
+            .issuedAt(now)
+            .expiresAt(validity)
+            .subject(authentication.name)
+            .claim(AUTHORITIES_KEY, authorities)
+            .build()
+
+        val jwsHeader = JwsHeader.with(JWT_ALGORITHM).build()
+        return this.jwtEncoder.encode(JwtEncoderParameters.from(jwsHeader, claims)).tokenValue
+    }
+
+    /**
+     * Object to return as body in JWT Authentication.
+     */
+    class JWTToken(@get:JsonProperty("id_token") var idToken: String?)
+}

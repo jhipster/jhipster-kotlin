@@ -1,0 +1,113 @@
+<%#
+ Copyright 2013-2023 the original author or authors from the JHipster project.
+
+ This file is part of the JHipster project, see https://www.jhipster.tech/
+ for more information.
+
+ Licensed under the Apache License, Version 2.0 (the "License")
+ you may not use this file except in compliance with the License.
+ You may obtain a copy of the License at
+
+      https://www.apache.org/licenses/LICENSE-2.0
+
+ Unless required by applicable law or agreed to in writing, software
+ distributed under the License is distributed on an "AS IS" BASIS,
+ WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
+ See the License for the specific language governing permissions and
+ limitations under the License.
+-%>
+package <%= packageName %>.config
+
+import java.util.*
+
+import org.slf4j.Logger
+import org.slf4j.LoggerFactory
+import org.springframework.beans.factory.config.ConfigurableListableBeanFactory
+import org.springframework.beans.factory.support.DefaultSingletonBeanRegistry
+import org.springframework.core.annotation.AnnotatedElementUtils
+
+import org.springframework.test.context.ContextConfigurationAttributes
+import org.springframework.test.context.ContextCustomizer
+import org.springframework.test.context.ContextCustomizerFactory
+import org.springframework.beans.factory.support.DefaultListableBeanFactory
+import org.springframework.boot.test.util.TestPropertyValues
+
+class TestContainersSpringContextCustomizerFactory: ContextCustomizerFactory {
+
+    private val log = LoggerFactory.getLogger(TestContainersSpringContextCustomizerFactory::class.java)
+
+    companion object {
+    <%_ if (databaseTypeMongodb) { _%>
+        private var mongoDbBean: MongoDbTestContainer? = null
+    <%_ } _%>
+    <%_ if (searchEngineElasticsearch) { _%>
+        private var elasticsearchBean: ElasticsearchTestContainer? = null
+    <%_ } _%>
+    <%_ if (databaseTypeCouchbase || searchEngineCouchbase) { _%>
+        private var couchbaseBean: CouchbaseTestContainer? = null
+    <%_ } _%>
+    }
+
+    override fun createContextCustomizer(
+        testClass: Class<*>,
+        configAttributes: MutableList<ContextConfigurationAttributes>
+    ): ContextCustomizer {
+        return ContextCustomizer { context, _ ->
+            val beanFactory = context.beanFactory
+            var testValues = TestPropertyValues.empty()
+<%_ if (databaseTypeCouchbase || searchEngineCouchbase) { _%>
+            val couchbaseAnnotation = AnnotatedElementUtils.findMergedAnnotation(testClass, EmbeddedCouchbase::class.java)
+            if (null != couchbaseAnnotation) {
+                log.debug("detected the EmbeddedCouchbase annotation on class {}", testClass.name)
+                log.info("Warming up the Couchbase database")
+                if (null == couchbaseBean) {
+                    couchbaseBean = beanFactory.createBean(CouchbaseTestContainer::class.java)
+                    beanFactory.registerSingleton(CouchbaseTestContainer::class.java.name, couchbaseBean)
+                    // ((DefaultListableBeanFactory)beanFactory).registerDisposableBean(CouchbaseTestContainer::class.java.name, couchbaseBean)
+                }
+                couchbaseBean?.let {
+                    testValues = testValues.and("spring.couchbase.connection-string=" + it.getCouchbaseContainer()?.connectionString)
+                    testValues = testValues.and("spring.couchbase.username=" + it.getCouchbaseContainer()?.username)
+                    testValues = testValues.and("spring.couchbase.password=" + it.getCouchbaseContainer()?.password)
+                    testValues = testValues.and("jhipster.database.couchbase.bucket-name=" + it.bucketName)
+                    testValues = testValues.and("jhipster.database.couchbase.scope-name=testScope")
+                }
+            }
+<%_ } _%>
+<%_ if (databaseTypeMongodb) { _%>
+            val mongoAnnotation = AnnotatedElementUtils.findMergedAnnotation(testClass, EmbeddedMongo::class.java)
+            if (null != mongoAnnotation) {
+                log.debug("detected the EmbeddedMongo annotation on class {}", testClass.name)
+                log.info("Warming up the mongo database")
+                if (null == mongoDbBean) {
+                    mongoDbBean = beanFactory.createBean(MongoDbTestContainer::class.java)
+                    beanFactory.registerSingleton(MongoDbTestContainer::class.java.name, mongoDbBean)
+                    // (beanFactory as (DefaultListableBeanFactory)).registerDisposableBean(MongoDbTestContainer::class.java.name, mongoDbBean)
+                }
+                mongoDbBean?.let {
+                    testValues = testValues.and("spring.data.mongodb.uri=" + it.getMongoDBContainer().replicaSetUrl)
+                }
+    }
+<%_ } _%>
+<%_ if (searchEngineElasticsearch) { _%>
+            val elasticsearchAnnotation = AnnotatedElementUtils.findMergedAnnotation(testClass, EmbeddedElasticsearch::class.java)
+            if (null != elasticsearchAnnotation) {
+                log.debug("detected the EmbeddedElasticsearch annotation on class {}", testClass.name)
+                log.info("Warming up the elastic database")
+                if (null == elasticsearchBean) {
+                    elasticsearchBean = beanFactory.createBean(ElasticsearchTestContainer::class.java)
+                    beanFactory.registerSingleton(ElasticsearchTestContainer::class.java.name, elasticsearchBean)
+                    // (beanFactory as (DefaultListableBeanFactory)).registerDisposableBean(ElasticsearchTestContainer::class.java.name, elasticsearchBean)
+                }
+                elasticsearchBean?.let {
+                    testValues =
+                        testValues.and(
+                            "spring.elasticsearch.uris=http://" + it.getElasticsearchContainer()?.httpHostAddress
+                        )
+                }
+            }
+<%_ } _%>
+            testValues.applyTo(context)
+        }
+    }
+}

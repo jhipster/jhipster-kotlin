@@ -1,0 +1,173 @@
+<%#
+ Copyright 2013-2023 the original author or authors from the JHipster project.
+
+ This file is part of the JHipster project, see https://www.jhipster.tech/
+ for more information.
+
+ Licensed under the Apache License, Version 2.0 (the "
+ you may not use this file except in compliance with the License.
+ You may obtain a copy of the License at
+
+      http://www.apache.org/licenses/LICENSE-2.0
+
+ Unless required by applicable law or agreed to in writing, software
+ distributed under the License is distributed on an "AS IS" BASIS,
+ WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
+ See the License for the specific language governing permissions and
+ limitations under the License.
+-%>
+package <%= packageName %>.repository
+
+<%_ if (databaseTypeCassandra) { _%>
+import com.datastax.oss.driver.api.core.CqlIdentifier
+import com.datastax.oss.driver.api.core.CqlSession
+import com.datastax.oss.driver.api.core.cql.BatchStatement
+import com.datastax.oss.driver.api.core.cql.BatchStatementBuilder
+import com.datastax.oss.driver.api.core.cql.BoundStatementBuilder
+import com.datastax.oss.driver.api.core.cql.DefaultBatchType
+import com.datastax.oss.driver.api.core.cql.PreparedStatement
+import com.datastax.oss.driver.api.core.cql.ResultSet
+import com.datastax.oss.driver.api.mapper.annotations.Dao
+import com.datastax.oss.driver.api.mapper.annotations.DaoFactory
+import com.datastax.oss.driver.api.mapper.annotations.DaoKeyspace
+import com.datastax.oss.driver.api.mapper.annotations.Delete
+import com.datastax.oss.driver.api.mapper.annotations.Mapper
+import com.datastax.oss.driver.api.mapper.annotations.Select
+<%_ } _%>
+import <%= packageName %>.domain.PersistentToken
+import <%= user.entityAbsoluteClass %>
+<%_ if (!databaseTypeCassandra) { _%>
+import java.time.LocalDate
+<%_ } _%>
+<%_ if (databaseTypeSql) { _%>
+import org.springframework.data.jpa.repository.JpaRepository
+<%_ } _%>
+<%_ if (databaseTypeMongodb) { _%>
+import org.springframework.data.mongodb.repository.MongoRepository
+<%_ } _%><%_ if (databaseTypeNeo4j) { _%>
+import org.springframework.data.neo4j.repository.Neo4jRepository
+<%_ } if (databaseTypeCassandra) { _%>
+import org.springframework.boot.autoconfigure.cassandra.CassandraProperties
+import org.springframework.stereotype.Repository
+
+import jakarta.validation.ConstraintViolationException
+import jakarta.validation.Validator
+<%_ } _%>
+<%_ if (databaseTypeCassandra || databaseTypeCouchbase) { _%>
+
+import java.util.Optional
+<%_ } _%>
+
+/**
+<%_ if (databaseTypeSql) { _%>
+ * Spring Data JPA repository for the [PersistentToken] entity.
+<%_ } else if (databaseTypeMongodb) { _%>
+ * Spring Data MongoDB repository for the [PersistentToken] entity.
+<%_ } else if (databaseTypeCassandra) { _%>
+ * Cassandra repository for the [PersistentToken] entity.
+<%_ } _%>
+ */
+ <%_ if (['sql', 'mongodb', 'neo4j'].includes(databaseType)) { _%>
+interface PersistentTokenRepository : <% if (databaseTypeSql) { %>JpaRepository<% } %><% if (databaseTypeMongodb) { %>MongoRepository<% } %><% if (databaseTypeNeo4j) { %>Neo4jRepository<% } %><% if (databaseTypeCouchbase) { %>N1qlCouchbaseRepository<% } %><PersistentToken, String> {
+    fun findByUser(user: <%= user.persistClass %>): List<PersistentToken>
+
+    fun findByTokenDateBefore(localDate: LocalDate): List<PersistentToken>
+}
+<%_ } else if (databaseTypeCassandra) { _%>
+@Repository
+class PersistentTokenRepository(
+    private val session: CqlSession,
+    private val validator: Validator,
+    private val cassandraProperties: CassandraProperties
+) {
+
+    private val persistentTokenMapper = PersistentTokenMapperBuilder(session).build()
+    private val persistentTokenDao = persistentTokenMapper.persistentTokenDao(CqlIdentifier.fromCql(cassandraProperties.keyspaceName))
+
+
+    private val findPersistentTokenSeriesByUserIdStmt = session.prepare(
+        "SELECT persistent_token_series " +
+            "FROM persistent_token_by_user " +
+            "WHERE user_id = :user_id"
+    )
+
+    private val insertPersistentTokenSeriesByUserIdStmt = session.prepare(
+        "INSERT INTO persistent_token_by_user (user_id, persistent_token_series) " +
+            "VALUES (:user_id, :persistent_token_series) " +
+            "USING TTL 2592000"
+    ) // 30 days
+
+    private val insertPersistentTokenStmt = session.prepare(
+        "INSERT INTO persistent_token (series, token_date, user_agent, token_value, login, user_id, ip_address) " +
+            "VALUES (:series, :token_date, :user_agent, :token_value, :login, :user_id, :ip_address) " +
+            "USING TTL 2592000"
+    ) // 30 days
+
+    private val deletePersistentTokenSeriesByUserIdStmt = session.prepare(
+        "DELETE FROM persistent_token_by_user WHERE user_id = :user_id AND persistent_token_series = :persistent_token_series"
+    )
+
+    fun findById(presentedSeries: String): Optional<PersistentToken> =
+        Optional.ofNullable(persistentTokenDao.get(presentedSeries))
+
+    fun findByUser( user: <%= user.persistClass %>): MutableList<PersistentToken> {
+        val statementBuilder = findPersistentTokenSeriesByUserIdStmt.boundStatementBuilder()
+        statementBuilder.setString("user_id", user.id)
+        val rs = session.execute(statementBuilder.build())
+        return rs.all().asSequence()
+            .map { row -> row.getString("persistent_token_series") }
+            .filterNotNull()
+            .map { persistentTokenDao.get(it) }
+            .toMutableList()
+    }
+
+    fun save(token: PersistentToken) {
+        val violations = validator.validate(token)
+        if (violations != null && !violations.isEmpty()) {
+            throw ConstraintViolationException(violations)
+        }
+        val batch = BatchStatement.builder(DefaultBatchType.LOGGED)
+        batch.addStatement(
+            insertPersistentTokenStmt.bind()
+                .setString("series", token.series)
+                .setInstant("token_date", token.tokenDate)
+                .setString("user_agent", token.userAgent)
+                .setString("token_value", token.tokenValue)
+                .setString("login", token.login)
+                .setString("user_id", token.userId)
+                .setString("ip_address", token.ipAddress)
+        )
+        batch.addStatement(
+            insertPersistentTokenSeriesByUserIdStmt.bind()
+                .setString("user_id", token.userId)
+                .setString("persistent_token_series", token.series)
+        )
+        session.execute(batch.build())
+    }
+
+    fun delete(token: PersistentToken) {
+        persistentTokenDao.delete(token)
+        session.execute(
+            deletePersistentTokenSeriesByUserIdStmt.bind()
+                .setString("user_id", token.userId)
+                .setString("persistent_token_series", token.series)
+        )
+    }
+}
+
+@Mapper
+interface PersistentTokenMapper {
+    @DaoFactory
+    fun persistentTokenDao(@DaoKeyspace keyspace: CqlIdentifier): PersistentTokenDao
+}
+
+@Dao
+interface PersistentTokenDao {
+
+    @Select
+    fun get(presentedSeries: String): PersistentToken
+
+    @Delete
+    fun delete(token: PersistentToken)
+}
+<%_ } _%>

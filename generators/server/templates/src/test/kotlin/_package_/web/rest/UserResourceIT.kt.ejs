@@ -1,0 +1,1134 @@
+<%#
+ Copyright 2013-2023 the original author or authors from the JHipster project.
+
+ This file is part of the JHipster project, see https://www.jhipster.tech/
+ for more information.
+
+ Licensed under the Apache License, Version 2.0 (the "
+ you may not use this file except in compliance with the License.
+ You may obtain a copy of the License at
+
+      http://www.apache.org/licenses/LICENSE-2.0
+
+ Unless required by applicable law or agreed to in writing, software
+ distributed under the License is distributed on an "AS IS" BASIS,
+ WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
+ See the License for the specific language governing permissions and
+ limitations under the License.
+-%>
+package <%= packageName %>.web.rest
+
+<%_
+let saveMethod = 'save';
+if (!reactive && databaseTypeSql) {
+    saveMethod = 'saveAndFlush';
+}
+_%>
+import <%= packageName %>.IntegrationTest
+<%_ if (reactive) { _%>
+import <%= packageName %>.IntegrationTest.Companion.DEFAULT_TIMEOUT
+<%_ } _%>
+<%_ if (databaseTypeSql && reactive) { _%>
+import <%= packageName %>.config.SYSTEM_ACCOUNT
+<%_ } _%>
+<%_ if (!databaseTypeCassandra && !databaseTypeCouchbase) { _%>
+import <%= packageName %>.domain.Authority
+<%_ } _%>
+import <%= user.entityAbsoluteClass %>
+<%_ if (databaseTypeSql && reactive) { _%>
+import <%= packageName %>.repository.AuthorityRepository
+<%_ } _%>
+import <%= packageName %>.repository.UserRepository
+<%_ if (searchEngineElasticsearch) { _%>
+import <%= packageName %>.repository.search.UserSearchRepository
+<%_ } _%>
+import <%= packageName %>.security.ADMIN
+import <%= packageName %>.security.USER
+import <%= packageName %>.service.dto.<%= user.adminUserDto %>
+<%_ if (databaseTypeSql && reactive) { _%>
+import <%= packageName %>.repository.EntityManager
+<%_ } _%>
+import <%= packageName %>.service.mapper.UserMapper
+import org.apache.commons.lang3.RandomStringUtils
+import org.junit.jupiter.api.BeforeEach
+import org.junit.jupiter.api.Test
+import org.springframework.beans.factory.annotation.Autowired
+<%_ if (reactive) { _%>
+import org.springframework.boot.test.autoconfigure.web.reactive.AutoConfigureWebTestClient
+<%_ } else { _%>
+import org.springframework.boot.test.autoconfigure.web.servlet.AutoConfigureMockMvc
+<%_ } _%>
+<%_ if (cacheProviderAny) { _%>
+import org.springframework.cache.CacheManager
+<%_ } _%>
+<%_ if (cacheProviderMemcached ) { _%>
+import org.springframework.cache.support.NoOpCacheManager
+<%_ } _%>
+import org.springframework.http.MediaType
+<%_ if (databaseTypeCouchbase) { _%>
+import org.springframework.security.core.context.SecurityContextHolder
+import org.springframework.security.test.context.TestSecurityContextHolder
+<%_ } _%>
+import org.springframework.security.test.context.support.WithMockUser
+<%_ if (reactive) { _%>
+import org.springframework.test.web.reactive.server.WebTestClient
+<%_ } else { _%>
+import org.springframework.test.web.servlet.MockMvc
+<%_ } _%>
+<%_ if (databaseTypeSql && !reactive) { _%>
+import org.springframework.transaction.annotation.Transactional
+<%_ } _%>
+<%_ if (reactive && searchEngineElasticsearch) { _%>
+import reactor.core.publisher.Mono
+<%_ } _%>
+
+<%_ if (databaseTypeSql && !reactive) { _%>
+import jakarta.persistence.EntityManager
+<%_ } _%>
+<%_ if (!databaseTypeCassandra) { _%>
+import java.time.Instant
+<%_ } _%>
+import java.util.UUID
+import java.util.function.Consumer
+
+import org.assertj.core.api.Assertions.assertThat
+<%_ if (reactive && searchEngineElasticsearch) { _%>
+import org.mockito.Mockito.*
+<%_ } _%>
+<%_ if (reactive && authenticationUsesCsrf) { _%>
+import org.springframework.security.test.web.reactive.server.SecurityMockServerConfigurers.csrf
+<%_ } else if (!reactive) { _%>
+import org.hamcrest.Matchers.hasItem
+<%_ if (authenticationUsesCsrf) { _%>
+import org.springframework.security.test.web.servlet.request.SecurityMockMvcRequestPostProcessors.csrf
+<%_ } _%>
+import org.springframework.test.web.servlet.request.MockMvcRequestBuilders.delete
+import org.springframework.test.web.servlet.request.MockMvcRequestBuilders.get
+import org.springframework.test.web.servlet.request.MockMvcRequestBuilders.post
+import org.springframework.test.web.servlet.request.MockMvcRequestBuilders.put
+import org.springframework.test.web.servlet.result.MockMvcResultMatchers.content
+import org.springframework.test.web.servlet.result.MockMvcResultMatchers.jsonPath
+import org.springframework.test.web.servlet.result.MockMvcResultMatchers.status
+<%_ } else if (authenticationUsesCsrf) { _%>
+import org.springframework.security.test.web.reactive.server.SecurityMockServerConfigurers.csrf
+<%_ } _%>
+
+import kotlin.test.assertNotNull
+<%_ if (cacheProviderAny) { _%>
+import kotlin.test.assertNull
+<%_ } _%>
+
+/**
+ * Integration tests for the [UserResource] REST controller.
+ */
+ <%_ if (reactive) { _%>
+@AutoConfigureWebTestClient(timeout = IntegrationTest.DEFAULT_TIMEOUT)
+<%_ } else { _%>
+@AutoConfigureMockMvc
+<%_ } _%>
+@WithMockUser(authorities = [ADMIN])
+@IntegrationTest
+class UserResourceIT {
+
+    @Autowired
+    private lateinit var userRepository: UserRepository
+
+    <%_ if (databaseTypeSql && reactive) { _%>
+
+    @Autowired
+    private lateinit var authorityRepository: AuthorityRepository
+    <%_ } _%>
+
+    <%_ if (searchEngineElasticsearch) { _%>
+    @Autowired
+    private lateinit var userSearchRepository: UserSearchRepository
+    <%_ } _%>
+
+    @Autowired
+    private lateinit var userMapper: UserMapper
+
+    <%_ if (databaseTypeSql) { _%>
+
+    @Autowired
+    private lateinit var em: EntityManager
+    <%_ } _%>
+    <%_ if (cacheProviderAny) { _%>
+
+    @Autowired
+    private lateinit var cacheManager: CacheManager
+    <%_ } _%>
+
+    @Autowired
+    <%_ if (reactive) { _%>
+    private lateinit var webTestClient: WebTestClient
+    <%_ } else { _%>
+    private lateinit var restUserMockMvc: MockMvc
+    <%_ } _%>
+
+    private lateinit var user: <%= user.persistClass %>
+
+    <%_ if (cacheProviderAny) { _%>
+    @BeforeEach
+    fun setup() {
+        cacheManager.getCache(UserRepository.USERS_BY_LOGIN_CACHE)!!.clear()
+        cacheManager.getCache(UserRepository.USERS_BY_EMAIL_CACHE)!!.clear()
+    }
+
+    <%_ } _%>
+    <%_ if (reactive && authenticationUsesCsrf) { _%>
+    @BeforeEach
+    fun setupCsrf() {
+        webTestClient = webTestClient.mutateWith(csrf())
+    }
+    <%_ } _%>
+
+    @BeforeEach
+    fun initTest() {
+        user = initTestUser(userRepository<% if (databaseTypeSql ) { %>, em<% } _%>)
+    }
+<%_ if (!authenticationTypeOauth2) { _%>
+
+    @Test
+    <%_ if (databaseTypeSql && !reactive) { _%>
+    @Transactional
+    <%_ } _%>
+    @Throws(Exception::class)
+    fun createUser() {
+        val databaseSizeBeforeCreate = userRepository.findAll()<% if (reactive) { %>
+            .collectList().block()!!<% } %>.size
+        // Create the User
+        val user = <%= user.adminUserDto %>().apply {
+            login = DEFAULT_LOGIN
+            firstName = DEFAULT_FIRSTNAME
+            lastName = DEFAULT_LASTNAME
+            email = DEFAULT_EMAIL
+            activated = true
+            <%_ if (!databaseTypeCassandra) { _%>
+            imageUrl = DEFAULT_IMAGEURL
+            <%_ } _%>
+            langKey = DEFAULT_LANGKEY
+            authorities = mutableSetOf(USER)
+        }
+
+        <%_ if (reactive) { _%>
+        webTestClient.post().uri("/api/admin/users")
+            .contentType(MediaType.APPLICATION_JSON)
+            .bodyValue(convertObjectToJsonBytes(user))
+            .exchange()
+            .expectStatus().isCreated
+        <%_ } else { _%>
+        restUserMockMvc.perform(
+            post("/api/admin/users")
+                .contentType(MediaType.APPLICATION_JSON)
+                .content(convertObjectToJsonBytes(user))<% if (authenticationUsesCsrf) { %>
+                .with(csrf())<% } %>
+        )
+            .andExpect(status().isCreated)
+        <%_ } _%>
+
+        assertPersistedUsers { userList ->
+            // Validate the User in the database
+            assertThat(userList).hasSize(databaseSizeBeforeCreate + 1)
+            val testUser = userList.first { it.login == DEFAULT_LOGIN }
+            assertThat(testUser.login).isEqualTo(DEFAULT_LOGIN)
+            assertThat(testUser.firstName).isEqualTo(DEFAULT_FIRSTNAME)
+            assertThat(testUser.lastName).isEqualTo(DEFAULT_LASTNAME)
+            assertThat(testUser.email).isEqualTo(DEFAULT_EMAIL)
+            <%_ if (!databaseTypeCassandra) { _%>
+            assertThat(testUser.imageUrl).isEqualTo(DEFAULT_IMAGEURL)
+            <%_ } _%>
+            assertThat(testUser.langKey).isEqualTo(DEFAULT_LANGKEY)
+        }
+
+        <%_ if (!databaseTypeSql) {_%>
+        userRepository.deleteAll()
+        <% } else if (searchEngineElasticsearch) { %>
+        userSearchRepository.deleteAll()
+        <%_ } _%>
+    }
+
+    @Test
+    <%_ if (databaseTypeSql && !reactive) { _%>
+    @Transactional
+    <%_ } _%>
+    @Throws(Exception::class)
+    fun createUserWithExistingId() {
+        val databaseSizeBeforeCreate = userRepository.findAll()<% if (reactive) { %>
+            .collectList().block()!!<% } %>.size
+
+        val user = <%= user.adminUserDto %>().apply {
+            <%_ if (databaseTypeCassandra) { _%>
+            id = UUID.randomUUID().toString()
+            <%_ } else if (databaseTypeMongodb || databaseTypeNeo4j || databaseTypeCouchbase) { _%>
+            id = "1L"
+            <%_ } else { _%>
+            id = DEFAULT_ID
+            <%_ } _%>
+            login = DEFAULT_LOGIN
+            firstName = DEFAULT_FIRSTNAME
+            lastName = DEFAULT_LASTNAME
+            email = DEFAULT_EMAIL
+            activated = true
+            <%_ if (!databaseTypeCassandra) { _%>
+            imageUrl = DEFAULT_IMAGEURL
+            <%_ } _%>
+            langKey = DEFAULT_LANGKEY
+            authorities = mutableSetOf(USER)
+        }
+
+        // An entity with an existing ID cannot be created, so this API call must fail
+        <%_ if (reactive) { _%>
+        webTestClient.post().uri("/api/admin/users")
+            .contentType(MediaType.APPLICATION_JSON)
+            .bodyValue(convertObjectToJsonBytes(user))
+            .exchange()
+            .expectStatus().isBadRequest
+        <%_ } else { _%>
+        restUserMockMvc.perform(
+            post("/api/admin/users")
+                .contentType(MediaType.APPLICATION_JSON)
+                .content(convertObjectToJsonBytes(user))<% if (authenticationUsesCsrf) { %>
+                .with(csrf())<% } %>
+        )
+            .andExpect(status().isBadRequest)
+        <%_ } _%>
+
+        assertPersistedUsers { userList ->
+            // Validate the User in the database
+            assertThat(userList).hasSize(databaseSizeBeforeCreate)
+        }
+
+    <%_ if (!databaseTypeSql) {_%>
+        userRepository.deleteAll()
+    <% } else if (searchEngineElasticsearch) { %>
+        userSearchRepository.deleteAll()
+    <%_ } _%>
+    }
+
+    @Test
+    <%_ if (databaseTypeSql && !reactive) { _%>
+    @Transactional
+    <%_ } _%>
+    @Throws(Exception::class)
+    fun createUserWithExistingLogin() {
+        // Initialize the database
+        userRepository.<%= saveMethod %>(user)<% if (reactive) { %>.block()<% } %>
+        <%_ if (searchEngineElasticsearch) { _%>
+        userSearchRepository.save(user)<% if (reactive) { %>.block()<% } %>;
+        <%_ } _%>
+        val databaseSizeBeforeCreate = userRepository.findAll()<% if (reactive) { %>
+            .collectList().block()!!<% } %>.size
+
+        val user = <%= user.adminUserDto %>().apply {
+            login = DEFAULT_LOGIN // this login should already be used
+            firstName = DEFAULT_FIRSTNAME
+            lastName = DEFAULT_LASTNAME
+            email = "anothermail@localhost"
+            activated = true
+            <%_ if (!databaseTypeCassandra) { _%>
+            imageUrl = DEFAULT_IMAGEURL
+            <%_ } _%>
+            langKey = DEFAULT_LANGKEY
+            authorities = mutableSetOf(USER)
+        }
+
+        // Create the User
+        <%_ if (reactive) { _%>
+        webTestClient.post().uri("/api/admin/users")
+            .contentType(MediaType.APPLICATION_JSON)
+            .bodyValue(convertObjectToJsonBytes(user))
+            .exchange()
+            .expectStatus().isBadRequest
+        <%_ } else { _%>
+        restUserMockMvc.perform(
+            post("/api/admin/users")
+                .contentType(MediaType.APPLICATION_JSON)
+                .content(convertObjectToJsonBytes(user))<% if (authenticationUsesCsrf) { %>
+                .with(csrf())<% } %>
+        )
+            .andExpect(status().isBadRequest)
+        <%_ } _%>
+
+        assertPersistedUsers { userList -> assertThat(userList).hasSize(databaseSizeBeforeCreate) }
+
+    <%_ if (!databaseTypeSql) {_%>
+        userRepository.deleteAll()
+    <% } else if (searchEngineElasticsearch) { %>
+        userSearchRepository.deleteAll()
+    <%_ } _%>
+    }
+
+    @Test
+    <%_ if (databaseTypeSql && !reactive) { _%>
+    @Transactional
+    <%_ } _%>
+    @Throws(Exception::class)
+    fun createUserWithExistingEmail() {
+        // Initialize the database
+        userRepository.<%= saveMethod %>(user)<% if (reactive) { %>.block()<% } %>
+        <%_ if (searchEngineElasticsearch) { _%>
+        userSearchRepository.save(user)<% if (reactive) { %>.block()<% } %>
+        <%_ } _%>
+        val databaseSizeBeforeCreate = userRepository.findAll()<% if (reactive) { %>
+            .collectList().block()!!<% } %>.size
+
+        val user = <%= user.adminUserDto %>().apply {
+            login = "anotherlogin"
+            firstName = DEFAULT_FIRSTNAME
+            lastName = DEFAULT_LASTNAME
+            email = DEFAULT_EMAIL // this email should already be used
+            activated = true
+            <%_ if (!databaseTypeCassandra) { _%>
+            imageUrl = DEFAULT_IMAGEURL
+            <%_ } _%>
+            langKey = DEFAULT_LANGKEY
+            authorities = mutableSetOf(USER)
+        }
+
+        // Create the User
+        <%_ if (reactive) { _%>
+        webTestClient.post().uri("/api/admin/users")
+            .contentType(MediaType.APPLICATION_JSON)
+            .bodyValue(convertObjectToJsonBytes(user))
+            .exchange()
+            .expectStatus().isBadRequest
+        <%_ } else { _%>
+        restUserMockMvc.perform(
+            post("/api/admin/users")
+                .contentType(MediaType.APPLICATION_JSON)
+                .content(convertObjectToJsonBytes(user))<% if (authenticationUsesCsrf) { %>
+                .with(csrf())<% } %>
+        )
+            .andExpect(status().isBadRequest)
+        <%_ } _%>
+
+        assertPersistedUsers { userList -> assertThat(userList).hasSize(databaseSizeBeforeCreate) }
+    <%_ if (!databaseTypeSql) {_%>
+        userRepository.deleteAll()
+    <% } else if (searchEngineElasticsearch) { %>
+        userSearchRepository.deleteAll()
+    <%_ } _%>
+    }
+
+    @Test
+    <%_ if (databaseTypeSql && !reactive) { _%>
+    @Transactional
+    <%_ } _%>
+    <%_ if (!reactive) { _%>
+    @Throws(Exception::class)
+    <%_ } _%>
+    fun getAllUsers() {
+        // Initialize the database
+        userRepository.<% if (databaseTypeSql && reactive && authenticationTypeOauth2) { %>create<% } else { %><%= saveMethod %><% } %>(user)<% if (reactive) { %>.block()<% } %>
+        <%_ if (databaseTypeSql && reactive && !applicationTypeMicroservice) { _%>
+        authorityRepository
+            .findById(USER)
+            .flatMap { authority -> authority.name?.let { user.id?.let { it1 -> userRepository.saveUserAuthority(it1, it) } } }
+            .block()
+        <%_ } _%>
+        // Get all the users
+        <%_ if (reactive) { _%>
+        val foundUser = webTestClient.get().uri("/api/admin/users?sort=id,desc")
+            .accept(MediaType.APPLICATION_JSON)
+            .exchange()
+            .expectStatus().isOk
+            .expectHeader().contentType(MediaType.APPLICATION_JSON)
+            .returnResult(<%= user.adminUserDto %>::class.java).responseBody.blockFirst()
+
+        assertNotNull(foundUser)
+        assertThat(foundUser.login).isEqualTo(DEFAULT_LOGIN)
+        assertThat(foundUser.firstName).isEqualTo(DEFAULT_FIRSTNAME)
+        assertThat(foundUser.lastName).isEqualTo(DEFAULT_LASTNAME)
+        assertThat(foundUser.email).isEqualTo(DEFAULT_EMAIL)
+        <%_ if (!databaseTypeCassandra) { _%>
+        assertThat(foundUser.imageUrl).isEqualTo(DEFAULT_IMAGEURL)
+        <%_ } _%>
+        assertThat(foundUser.langKey).isEqualTo(DEFAULT_LANGKEY)
+        <%_ if (databaseTypeSql && !applicationTypeMicroservice) { _%>
+        assertThat(foundUser.authorities).containsExactly(USER)
+        <%_ } _%>
+        <%_ } else { _%>
+        restUserMockMvc.perform(
+            get("/api/admin/users<% if (databaseTypeSql) { %>?sort=id,desc<% } %>")
+                .accept(MediaType.APPLICATION_JSON)
+        )
+            .andExpect(status().isOk)
+            .andExpect(content().contentType(MediaType.APPLICATION_JSON_VALUE))
+            .andExpect(jsonPath("\$.[*].login").value(hasItem(DEFAULT_LOGIN)))
+            .andExpect(jsonPath("\$.[*].firstName").value(hasItem(DEFAULT_FIRSTNAME)))
+            .andExpect(jsonPath("\$.[*].lastName").value(hasItem(DEFAULT_LASTNAME)))
+            .andExpect(jsonPath("\$.[*].email").value(hasItem(DEFAULT_EMAIL)))
+            <%_ if (!databaseTypeCassandra) { _%>
+            .andExpect(jsonPath("\$.[*].imageUrl").value(hasItem(DEFAULT_IMAGEURL)))
+            <%_ } _%>
+            .andExpect(jsonPath("\$.[*].langKey").value(hasItem(DEFAULT_LANGKEY)))
+        <%_ } _%>
+
+    <%_ if (!databaseTypeSql) {_%>
+        userRepository.deleteAll()
+    <% } else if (searchEngineElasticsearch) { %>
+        userSearchRepository.deleteAll()
+    <%_ } _%>
+    }
+
+    @Test
+    <%_ if (databaseTypeSql && !reactive) { _%>
+    @Transactional
+    <%_ } _%>
+    <%_ if (!reactive) { _%>
+    @Throws(Exception::class)
+    <%_ } _%>
+    fun getUser() {
+        // Initialize the database
+        userRepository.<% if (databaseTypeSql && reactive && authenticationTypeOauth2) { %>create<% } else { %><%= saveMethod %><% } %>(user)<% if (reactive) { %>.block()<% } %>
+        <%_ if (databaseTypeSql && reactive) { _%>
+        authorityRepository
+            .findById(USER)
+            .flatMap { authority -> authority.name?.let { user.id?.let { it1 -> userRepository.saveUserAuthority(it1, it) } } }
+            .block()
+        <%_ } _%>
+
+        <%_ if (searchEngineElasticsearch) { _%>
+        userSearchRepository.save(user)
+        <%_ } _%>
+        <%_ if (cacheProviderAny) { _%>
+
+        assertNull(cacheManager.getCache(UserRepository.USERS_BY_LOGIN_CACHE)!!.get(user.login!!))
+        <%_ } _%>
+
+        // Get the user
+        <%_ if (reactive) { _%>
+        webTestClient.get().uri("/api/admin/users/{login}", user.login)
+            .exchange()
+            .expectStatus().isOk
+            .expectHeader().contentType(MediaType.APPLICATION_JSON)
+            .expectBody()
+            .jsonPath("\$.login").isEqualTo(user.login)
+            .jsonPath("\$.firstName").isEqualTo(DEFAULT_FIRSTNAME)
+            .jsonPath("\$.lastName").isEqualTo(DEFAULT_LASTNAME)
+            .jsonPath("\$.email").isEqualTo(DEFAULT_EMAIL)
+            <%_ if (!databaseTypeCassandra) { _%>
+            .jsonPath("\$.imageUrl").isEqualTo(DEFAULT_IMAGEURL)
+            <%_ } _%>
+            .jsonPath("\$.langKey").isEqualTo(DEFAULT_LANGKEY)<% if (!databaseTypeSql && !applicationTypeMicroservice) { %><% } else { %>
+            .jsonPath("\$.authorities").isEqualTo(USER)
+            <% } %>
+        <%_ } else { _%>
+        restUserMockMvc.perform(get("/api/admin/users/{login}", user.login))
+            .andExpect(status().isOk)
+            .andExpect(content().contentType(MediaType.APPLICATION_JSON_VALUE))
+            .andExpect(jsonPath("\$.login").value(user.login!!))
+            .andExpect(jsonPath("\$.firstName").value(DEFAULT_FIRSTNAME))
+            .andExpect(jsonPath("\$.lastName").value(DEFAULT_LASTNAME))
+            .andExpect(jsonPath("\$.email").value(DEFAULT_EMAIL))
+            <%_ if (!databaseTypeCassandra) { _%>
+            .andExpect(jsonPath("\$.imageUrl").value(DEFAULT_IMAGEURL))
+            <%_ } _%>
+            .andExpect(jsonPath("\$.langKey").value(DEFAULT_LANGKEY))
+        <%_ } _%>
+        <%_ if (cacheProviderMemcached) { _%>
+        if (cacheManager !is NoOpCacheManager) {
+            assertThat(cacheManager.getCache(UserRepository.USERS_BY_LOGIN_CACHE)!!.get(user.login!!)).isNotNull
+        }
+        <%_ } else if (cacheProviderAny) { _%>
+
+        assertNotNull(cacheManager.getCache(UserRepository.USERS_BY_LOGIN_CACHE)!!.get(user.login!!))
+        <%_ } _%>
+
+        <%_ if (!databaseTypeSql) {_%>
+        userRepository.deleteAll()
+        <% } else if (searchEngineElasticsearch) { %>
+        userSearchRepository.deleteAll()
+        <%_ } _%>
+    }
+
+    @Test
+    <%_ if (databaseTypeSql && !reactive) { _%>
+    @Transactional
+    <%_ } _%>
+    <%_ if (!reactive) { _%>
+    @Throws(Exception::class)
+    <%_ } _%>
+    fun getNonExistingUser() {
+        <%_ if (reactive) { _%>
+        webTestClient.get().uri("/api/admin/users/unknown")
+            .exchange()
+            .expectStatus().isNotFound
+        <%_ } else { _%>
+        restUserMockMvc.perform(get("/api/admin/users/unknown"))
+            .andExpect(status().isNotFound)
+        <%_ } _%>
+    }
+
+    @Test
+    <%_ if (databaseTypeSql && !reactive) { _%>
+    @Transactional
+    <%_ } _%>
+    @Throws(Exception::class)
+    fun updateUser() {
+        // Initialize the database
+        userRepository.<%= saveMethod %>(user)<% if (reactive) { %>.block()<% } %>
+        val databaseSizeBeforeUpdate = userRepository.findAll()<% if (reactive) { %>
+            .collectList().block()!!<% } %>.size
+
+        // Update the user
+        val updatedUser = userRepository.findById(user.id!!).<% if (reactive) { %>block<% } else { %>get<% } %>()
+        assertNotNull(updatedUser)
+
+        val user = <%= user.adminUserDto %>().apply {
+            id = updatedUser.id
+            login = updatedUser.login
+            firstName = UPDATED_FIRSTNAME
+            lastName = UPDATED_LASTNAME
+            email = UPDATED_EMAIL
+            activated = updatedUser.activated
+            <%_ if (!databaseTypeCassandra) { _%>
+            imageUrl = UPDATED_IMAGEURL
+            <%_ } _%>
+            langKey = UPDATED_LANGKEY
+            <%_ if (!databaseTypeCassandra) { _%>
+            createdBy = updatedUser.createdBy
+            createdDate = updatedUser.createdDate
+            lastModifiedBy = updatedUser.lastModifiedBy
+            lastModifiedDate = updatedUser.lastModifiedDate
+            <%_ } _%>
+            authorities = mutableSetOf(USER)
+        }
+
+        <%_ if (reactive) { _%>
+        webTestClient.put().uri("/api/admin/users")
+            .contentType(MediaType.APPLICATION_JSON)
+            .bodyValue(convertObjectToJsonBytes(user))
+            .exchange()
+            .expectStatus().isOk
+        <%_ } else { _%>
+        restUserMockMvc.perform(
+            put("/api/admin/users")
+                .contentType(MediaType.APPLICATION_JSON)
+                .content(convertObjectToJsonBytes(user))<% if (authenticationUsesCsrf) { %>
+                .with(csrf())<% } %>
+        )
+            .andExpect(status().isOk)
+        <%_ } _%>
+
+        assertPersistedUsers { userList ->
+            assertThat(userList).hasSize(databaseSizeBeforeUpdate)
+            val testUser = userList.first { it.id == updatedUser.id }
+            assertThat(testUser.firstName).isEqualTo(UPDATED_FIRSTNAME)
+            assertThat(testUser.lastName).isEqualTo(UPDATED_LASTNAME)
+            assertThat(testUser.email).isEqualTo(UPDATED_EMAIL)
+            <%_ if (!databaseTypeCassandra) { _%>
+            assertThat(testUser.imageUrl).isEqualTo(UPDATED_IMAGEURL)
+            <%_ } _%>
+            assertThat(testUser.langKey).isEqualTo(UPDATED_LANGKEY)
+        }
+        <%_ if (!databaseTypeSql) {_%>
+        userRepository.deleteAll()
+        <% } else if (searchEngineElasticsearch) { %>
+        userSearchRepository.deleteAll()
+        <%_ } _%>
+    }
+
+    @Test
+    <%_ if (databaseTypeSql && !reactive) { _%>
+    @Transactional
+    <%_ } _%>
+    @Throws(Exception::class)
+    fun updateUserLogin() {
+        // Initialize the database
+        userRepository.<%= saveMethod %>(user)<% if (reactive) { %>.block()<% } %>
+        val databaseSizeBeforeUpdate = userRepository.findAll()<% if (reactive) { %>
+            .collectList().block()!!<% } %>.size
+
+        // Update the user
+        val updatedUser = userRepository.findById(user.id!!).<% if (reactive) { %>block<% } else { %>orElseThrow<% } %>()
+        assertNotNull(updatedUser)
+
+        val user = <%= user.adminUserDto %>().apply {
+            id = updatedUser.id
+            login = UPDATED_LOGIN
+            firstName = UPDATED_FIRSTNAME
+            lastName = UPDATED_LASTNAME
+            email = UPDATED_EMAIL
+            activated = updatedUser.activated
+            <%_ if (!databaseTypeCassandra) { _%>
+            imageUrl = UPDATED_IMAGEURL
+            <%_ } _%>
+            langKey = UPDATED_LANGKEY
+            <%_ if (!databaseTypeCassandra) { _%>
+            createdBy = updatedUser.createdBy
+            createdDate = updatedUser.createdDate
+            lastModifiedBy = updatedUser.lastModifiedBy
+            lastModifiedDate = updatedUser.lastModifiedDate
+            <%_ } _%>
+            authorities = mutableSetOf(USER)
+        }
+
+        <%_ if (reactive) { _%>
+        webTestClient.put().uri("/api/admin/users")
+            .contentType(MediaType.APPLICATION_JSON)
+            .bodyValue(convertObjectToJsonBytes(user))
+            .exchange()
+            .expectStatus().isOk
+        <%_ } else { _%>
+        restUserMockMvc.perform(
+            put("/api/admin/users")
+                .contentType(MediaType.APPLICATION_JSON)
+                .content(convertObjectToJsonBytes(user))<% if (authenticationUsesCsrf) { %>
+                .with(csrf())<% } %>
+        )
+            .andExpect(status().isOk)
+        <%_ } _%>
+
+        assertPersistedUsers { userList ->
+            assertThat(userList).hasSize(databaseSizeBeforeUpdate)
+            val testUser = userList.first { it.id == updatedUser.id }
+            assertThat(testUser.login).isEqualTo(UPDATED_LOGIN)
+            assertThat(testUser.firstName).isEqualTo(UPDATED_FIRSTNAME)
+            assertThat(testUser.lastName).isEqualTo(UPDATED_LASTNAME)
+            assertThat(testUser.email).isEqualTo(UPDATED_EMAIL)
+            <%_ if (!databaseTypeCassandra) { _%>
+            assertThat(testUser.imageUrl).isEqualTo(UPDATED_IMAGEURL)
+            <%_ } _%>
+            assertThat(testUser.langKey).isEqualTo(UPDATED_LANGKEY)
+        }
+        <%_ if (!databaseTypeSql) {_%>
+        userRepository.deleteAll()
+        <% } else if (searchEngineElasticsearch) { %>
+        userSearchRepository.deleteAll()
+        <%_ } _%>
+    }
+
+    @Test
+    <%_ if (databaseTypeSql && !reactive) { _%>
+    @Transactional
+    <%_ } _%>
+    @Throws(Exception::class)
+    fun updateUserExistingEmail() {
+        // Initialize the database with 2 users
+        userRepository.<%= saveMethod %>(user)<% if (reactive) { %>.block()<% } %>
+        <%_ if (searchEngineElasticsearch) { _%>
+        userSearchRepository.save(user)
+        <%_ } _%>
+
+        val anotherUser = <%= user.persistClass %>(
+            <%_ if (databaseTypeCassandra) { _%>
+            id = UUID.randomUUID().toString(),
+            <%_ } _%>
+            login = "jhipster",
+            password = RandomStringUtils.randomAlphanumeric(60),
+            activated = true,
+            email = "jhipster@localhost",
+            firstName = "java",
+            lastName = "hipster",
+            <%_ if (!databaseTypeCassandra) { _%>
+            imageUrl = "",
+            <%_ } _%>
+            <%_ if (databaseTypeSql && reactive) { _%>
+            createdBy = SYSTEM_ACCOUNT,
+            <%_ } _%>
+            langKey = "en"
+        )
+        userRepository.save<% if (databaseTypeSql && !reactive) { %>AndFlush<% } %>(anotherUser)<% if (reactive) { %>.block()<% } %>
+        <%_ if (searchEngineElasticsearch) { _%>
+        userSearchRepository.save(anotherUser)
+        <%_ } _%>
+
+        // Update the user
+        val updatedUser = userRepository.findById(user.id!!).<% if (reactive) { %>block<% } else { %>get<% } %>()
+        assertNotNull(updatedUser)
+
+        val user = <%= user.adminUserDto %>().apply {
+            id = updatedUser.id
+            login = updatedUser.login
+            firstName = updatedUser.firstName
+            lastName = updatedUser.lastName
+            email = "jhipster@localhost" // this email should already be used by anotherUser
+            activated = updatedUser.activated
+            <%_ if (!databaseTypeCassandra) { _%>
+            imageUrl = updatedUser.imageUrl
+            <%_ } _%>
+            langKey = updatedUser.langKey
+            <%_ if (!databaseTypeCassandra) { _%>
+            createdBy = updatedUser.createdBy
+            createdDate = updatedUser.createdDate
+            lastModifiedBy = updatedUser.lastModifiedBy
+            lastModifiedDate = updatedUser.lastModifiedDate
+            <%_ } _%>
+            authorities = mutableSetOf(USER)
+        }
+
+        <%_ if (reactive) { _%>
+        webTestClient.put().uri("/api/admin/users")
+            .contentType(MediaType.APPLICATION_JSON)
+            .bodyValue(convertObjectToJsonBytes(user))
+            .exchange()
+            .expectStatus().isBadRequest
+        <%_ } else { _%>
+        restUserMockMvc.perform(
+            put("/api/admin/users")
+                .contentType(MediaType.APPLICATION_JSON)
+                .content(convertObjectToJsonBytes(user))<% if (authenticationUsesCsrf) { %>
+                .with(csrf())<% } %>
+        )
+            .andExpect(status().isBadRequest)
+        <%_ } _%>
+        <%_ if (!databaseTypeSql) {_%>
+        userRepository.deleteAll()
+        <% } else if (searchEngineElasticsearch) { %>
+        userSearchRepository.deleteAll()
+        <%_ } _%>
+    }
+
+    @Test
+    <%_ if (databaseTypeSql && !reactive) { _%>
+    @Transactional
+    <%_ } _%>
+    @Throws(Exception::class)
+    fun updateUserExistingLogin() {
+        // Initialize the database
+        userRepository.<%= saveMethod %>(user)<% if (reactive) { %>.block()<% } %>
+        <%_ if (searchEngineElasticsearch) { _%>
+        userSearchRepository.save(user)
+        <%_ } _%>
+
+        val anotherUser = <%= user.persistClass %>(
+            <%_ if (databaseTypeCassandra) { _%>
+            id = UUID.randomUUID().toString(),
+            <%_ } _%>
+            login = "jhipster",
+            password = RandomStringUtils.randomAlphanumeric(60),
+            activated = true,
+            email = "jhipster@localhost",
+            firstName = "java",
+            lastName = "hipster",
+            <%_ if (!databaseTypeCassandra) { _%>
+            imageUrl = "",
+            <%_ } _%>
+            <%_ if (databaseTypeSql && reactive) { _%>
+            createdBy = SYSTEM_ACCOUNT,
+            <%_ } _%>
+            langKey = "en"
+        )
+        userRepository.save<% if (databaseTypeSql && !reactive) { %>AndFlush<% } %>(anotherUser)<% if (reactive) { %>.block()<% } %>
+        <%_ if (searchEngineElasticsearch) { _%>
+        userSearchRepository.save(anotherUser)
+        <%_ } _%>
+
+        // Update the user
+        val updatedUser = userRepository.findById(user.id!!).<% if (reactive) { %>block<% } else { %>orElseThrow<% } %>()
+        assertNotNull(updatedUser)
+
+        val user = <%= user.adminUserDto %>().apply {
+            id = updatedUser.id
+            login = "jhipster" // this login should already be used by anotherUser
+            firstName = updatedUser.firstName
+            lastName = updatedUser.lastName
+            email = updatedUser.email
+            activated = updatedUser.activated
+            <%_ if (!databaseTypeCassandra) { _%>
+            imageUrl = updatedUser.imageUrl
+            <%_ } _%>
+            langKey = updatedUser.langKey
+            <%_ if (!databaseTypeCassandra) { _%>
+            createdBy = updatedUser.createdBy
+            createdDate = updatedUser.createdDate
+            lastModifiedBy = updatedUser.lastModifiedBy
+            lastModifiedDate = updatedUser.lastModifiedDate
+            <%_ } _%>
+            authorities = mutableSetOf(USER)
+        }
+
+        <%_ if (reactive) { _%>
+        webTestClient.put().uri("/api/admin/users")
+            .contentType(MediaType.APPLICATION_JSON)
+            .bodyValue(convertObjectToJsonBytes(user))
+            .exchange()
+            .expectStatus().isBadRequest
+        <%_ } else { _%>
+        restUserMockMvc.perform(
+            put("/api/admin/users")
+                .contentType(MediaType.APPLICATION_JSON)
+                .content(convertObjectToJsonBytes(user))<% if (authenticationUsesCsrf) { %>
+                .with(csrf())<% } %>
+        )
+            .andExpect(status().isBadRequest)
+        <%_ } _%>
+        <%_ if (!databaseTypeSql) {_%>
+        userRepository.deleteAll()
+        <% } else if (searchEngineElasticsearch) { %>
+        userSearchRepository.deleteAll()
+        <%_ } _%>
+    }
+
+    @Test
+    <%_ if (databaseTypeSql && !reactive) { _%>
+    @Transactional
+    <%_ } _%>
+    <%_ if (!reactive) { _%>
+    @Throws(Exception::class)
+    <%_ } _%>
+    fun deleteUser() {
+        // Initialize the database
+        userRepository.<%= saveMethod %>(user)<% if (reactive) { %>.block()<% } %>
+        val databaseSizeBeforeDelete = userRepository.findAll()<% if (reactive) { %>
+            .collectList().block()!!<% } %>.size
+
+        // Delete the user
+        <%_ if (reactive) { _%>
+        webTestClient.delete().uri("/api/admin/users/{login}", user.login)
+            .accept(MediaType.APPLICATION_JSON)
+            .exchange()
+            .expectStatus().isNoContent
+        <%_ } else { _%>
+        restUserMockMvc.perform(
+            delete("/api/admin/users/{login}", user.login)
+                .accept(MediaType.APPLICATION_JSON)<% if (authenticationUsesCsrf) { %>
+                .with(csrf())<% } %>
+        )
+            .andExpect(status().isNoContent)
+        <%_ } _%>
+        <%_ if (cacheProviderAny) { _%>
+
+        assertNull(cacheManager.getCache(UserRepository.USERS_BY_LOGIN_CACHE)!!.get(user.login!!))
+        <%_ } _%>
+
+        assertPersistedUsers { userList -> assertThat(userList).hasSize(databaseSizeBeforeDelete - 1) }
+
+    }
+    <%_ } _%>
+
+    @Test
+    @Throws(Exception::class)
+    fun testUserEquals() {
+        equalsVerifier(<%= user.persistClass %>::class)
+        val user1 = <%= user.persistClass %>(id = DEFAULT_ID)
+        val user2 = <%= user.persistClass %>(id = user1.id)
+        assertThat(user1).isEqualTo(user2)
+        user2.id = <%- this.getPrimaryKeyValue(user.primaryKey.type, databaseType, 2) %>
+        assertThat(user1).isNotEqualTo(user2)
+        user1.id = null
+        assertThat(user1).isNotEqualTo(user2)
+    }
+
+    @Test
+    fun testUserDTOtoUser() {
+        val userDTO = <%= user.adminUserDto %>(
+            id = DEFAULT_ID,
+            login = DEFAULT_LOGIN,
+            firstName = DEFAULT_FIRSTNAME,
+            lastName = DEFAULT_LASTNAME,
+            email = DEFAULT_EMAIL,
+            activated = true,
+            <%_ if (!databaseTypeCassandra) { _%>
+            imageUrl = DEFAULT_IMAGEURL,
+            <%_ } _%>
+            langKey = DEFAULT_LANGKEY,
+            <%_ if (!databaseTypeCassandra) { _%>
+            createdBy = DEFAULT_LOGIN,
+            lastModifiedBy = DEFAULT_LOGIN,
+            <%_ } _%>
+            authorities = mutableSetOf(USER)
+        )
+
+        val user = userMapper.userDTOToUser(userDTO)
+        assertNotNull(user)
+        assertThat(user.id).isEqualTo(DEFAULT_ID)
+        assertThat(user.login).isEqualTo(DEFAULT_LOGIN)
+        assertThat(user.firstName).isEqualTo(DEFAULT_FIRSTNAME)
+        assertThat(user.lastName).isEqualTo(DEFAULT_LASTNAME)
+        assertThat(user.email).isEqualTo(DEFAULT_EMAIL)
+        assertThat(user.activated).isTrue
+        <%_ if (!databaseTypeCassandra) { _%>
+        assertThat(user.imageUrl).isEqualTo(DEFAULT_IMAGEURL)
+        <%_ } _%>
+        assertThat(user.langKey).isEqualTo(DEFAULT_LANGKEY)
+        <%_ if (!databaseTypeCassandra) { _%>
+        assertThat(user.createdBy).isNull()
+        assertThat(user.createdDate).isNotNull()
+        assertThat(user.lastModifiedBy).isNull()
+        assertThat(user.lastModifiedDate).isNotNull()
+        <%_ } _%>
+        assertThat(user.authorities)<% if (!databaseTypeCassandra && !databaseTypeCouchbase) { %>.extracting("name")<%_ } _%>.containsExactly(USER)
+    }
+
+    @Test
+    fun testUserToUserDTO() {
+        user.id = DEFAULT_ID
+        <%_ if (!databaseTypeCassandra) { _%>
+        user.createdBy = DEFAULT_LOGIN
+        user.createdDate = Instant.now()
+        user.lastModifiedBy = DEFAULT_LOGIN
+        user.lastModifiedDate = Instant.now()
+        <%_ } _%>
+        <%_ if (!databaseTypeCassandra && !databaseTypeCouchbase) { _%>
+        user.authorities = mutableSetOf(Authority(name = USER))
+        <%_ } else { _%>
+        user.authorities = mutableSetOf(USER)
+        <%_ } _%>
+
+        val userDTO = userMapper.userToAdminUserDTO(user)
+
+        assertThat(userDTO.id).isEqualTo(DEFAULT_ID)
+        assertThat(userDTO.login).isEqualTo(DEFAULT_LOGIN)
+        assertThat(userDTO.firstName).isEqualTo(DEFAULT_FIRSTNAME)
+        assertThat(userDTO.lastName).isEqualTo(DEFAULT_LASTNAME)
+        assertThat(userDTO.email).isEqualTo(DEFAULT_EMAIL)
+        assertThat(userDTO.activated).isTrue
+        <%_ if (!databaseTypeCassandra) { _%>
+        assertThat(userDTO.imageUrl).isEqualTo(DEFAULT_IMAGEURL)
+        <%_ } _%>
+        assertThat(userDTO.langKey).isEqualTo(DEFAULT_LANGKEY)
+        <%_ if (!databaseTypeCassandra) { _%>
+        assertThat(userDTO.createdBy).isEqualTo(DEFAULT_LOGIN)
+        assertThat(userDTO.createdDate).isEqualTo(user.createdDate)
+        assertThat(userDTO.lastModifiedBy).isEqualTo(DEFAULT_LOGIN)
+        assertThat(userDTO.lastModifiedDate).isEqualTo(user.lastModifiedDate)
+        <%_ } _%>
+        assertThat(userDTO.authorities).containsExactly(USER)
+        assertThat(userDTO.toString()).isNotNull()
+    }
+    <%_ if (databaseTypeSql || databaseTypeMongodb || databaseTypeNeo4j) { _%>
+
+    @Test
+    fun testAuthorityEquals() {
+        val authorityA = Authority()
+        assertThat(authorityA)
+            .isNotEqualTo(null)
+            .isNotEqualTo(Any())
+        assertThat(authorityA.hashCode()).isEqualTo(31)
+        assertThat(authorityA.toString()).isNotNull()
+
+        val authorityB = Authority()
+        assertThat(authorityA.name).isEqualTo(authorityB.name)
+
+        authorityB.name = ADMIN
+        assertThat(authorityA).isNotEqualTo(authorityB)
+
+        authorityA.name = USER
+        assertThat(authorityA).isNotEqualTo(authorityB)
+
+        authorityB.name = USER
+        assertThat(authorityA)
+            .isEqualTo(authorityB)
+            .hasSameHashCodeAs(authorityB)
+    }
+    <%_ } _%>
+
+    companion object {
+
+        private const val DEFAULT_LOGIN = "johndoe"
+        <%_ if (!authenticationTypeOauth2) { _%>
+        private const val UPDATED_LOGIN = "jhipster"
+        <%_ } _%>
+
+        <%_ if (databaseTypeCouchbase){ _%>
+        private const val DEFAULT_ID = DEFAULT_LOGIN
+        <%_ } else { _%>
+        private const val DEFAULT_ID = <%- this.getPrimaryKeyValue(user.primaryKey.type) %>
+        <%_ } _%>
+
+        <%_ if (!authenticationTypeOauth2) { _%>
+        private const val DEFAULT_PASSWORD = "passjohndoe"
+        private const val UPDATED_PASSWORD = "passjhipster"
+        <%_ } _%>
+
+        private const val DEFAULT_EMAIL = "johndoe@localhost"
+        <%_ if (!authenticationTypeOauth2) { _%>
+        private const val UPDATED_EMAIL = "jhipster@localhost"
+        <%_ } _%>
+
+        private const val DEFAULT_FIRSTNAME = "john"
+        <%_ if (!authenticationTypeOauth2) { _%>
+        private const val UPDATED_FIRSTNAME = "jhipsterFirstName"
+        <%_ } _%>
+
+        private const val DEFAULT_LASTNAME = "doe"
+        <%_ if (!authenticationTypeOauth2) { _%>
+        private const val UPDATED_LASTNAME = "jhipsterLastName"
+        <%_ } _%>
+
+        <%_ if (!databaseTypeCassandra) { _%>
+        private const val DEFAULT_IMAGEURL = "http://placehold.it/50x50"
+        <%_ if (!authenticationTypeOauth2) { _%>
+        private const val UPDATED_IMAGEURL = "http://placehold.it/40x40"
+        <%_ } _%>
+
+        <%_ } _%>
+        private const val DEFAULT_LANGKEY = "en"
+        <%_ if (!authenticationTypeOauth2) { _%>
+        private const val UPDATED_LANGKEY = "fr"
+        <%_ } _%>
+
+        /**
+         * Create a User.
+         *
+         * This is a static method, as tests for other entities might also need it,
+         * if they test an entity which has a required relationship to the User entity.
+         */
+        @JvmStatic
+        fun createEntity(<% if (databaseTypeSql) { %>em: EntityManager?<% } %>): <%= user.persistClass %> {
+            return <%= user.persistClass %>(
+                <%_ if (databaseTypeCassandra || (authenticationTypeOauth2 && !databaseTypeCouchbase)) { _%>
+                id = UUID.randomUUID().toString(),
+                <%_ } _%>
+                login = DEFAULT_LOGIN<% if (databaseTypeSql) { %> + RandomStringUtils.randomAlphabetic(5)<% } %>,
+                <%_ if (!authenticationTypeOauth2) { _%>
+                password = RandomStringUtils.randomAlphanumeric(60),
+                <%_ } _%>
+                activated = true,
+                email = <% if (databaseTypeSql) { %>RandomStringUtils.randomAlphabetic(5) + <% } %>DEFAULT_EMAIL,
+                firstName = DEFAULT_FIRSTNAME,
+                lastName = DEFAULT_LASTNAME,
+                <%_ if (!databaseTypeCassandra) { _%>
+                imageUrl = DEFAULT_IMAGEURL,
+                <%_ } _%>
+                <%_ if (databaseTypeSql && reactive) { _%>
+                createdBy = SYSTEM_ACCOUNT,
+                <%_ } _%>
+                langKey = DEFAULT_LANGKEY
+            )
+        }
+
+        <%_ if (databaseTypeSql && reactive) { _%>
+
+        /**
+         * Delete all the users from the database.
+         */
+        @JvmStatic
+        fun deleteEntities(em: EntityManager) {
+            try {
+                em.deleteAll("<%= jhiTablePrefix %>_user_authority").block()
+                em.deleteAll(<%= user.persistClass %>::class.java).block()
+            } catch (e: Exception) {
+                // It can fail, if other entities are still referring this - it will be removed later.
+            }
+        }
+        <%_ } _%>
+
+         /**
+         * Setups the database with one user.
+         */
+        @JvmStatic
+        fun initTestUser(userRepository: UserRepository<% if (databaseTypeSql ) { %>, em: EntityManager<% } _%>): <%= user.persistClass %> {
+            <%_ if (databaseTypeSql && reactive) { _%>
+            userRepository.deleteAllUserAuthorities().block()
+            <%_ } _%>
+            userRepository.deleteAll()<% if (reactive) { %>.block()<% } %>
+            val user = createEntity(<% if (databaseTypeSql ) { %>em<% } _%>)
+            <%_ if (databaseTypeSql) { _%>
+            user.login = DEFAULT_LOGIN
+            user.email = DEFAULT_EMAIL
+            <%_ } _%>
+            return user
+        }
+    }
+
+    fun assertPersistedUsers(userAssertion: (List<<%= user.persistClass %>>) -> Unit) {
+        <%_ if (databaseTypeCouchbase) { _%>
+        // The security filter chain clears the security context after remote calls
+        SecurityContextHolder.setContext(TestSecurityContextHolder.getContext())
+        <%_ } _%>
+        userAssertion(userRepository.findAll()<% if (reactive) { %>.collectList().block()<% } %>)
+    }
+}

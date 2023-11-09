@@ -1,0 +1,121 @@
+package <%= packageName %>.web.filter;
+
+import <%= packageName %>.IntegrationTest;
+import <%= packageName %>.security.AuthoritiesConstants;
+
+import org.junit.jupiter.api.Test
+import org.springframework.beans.factory.annotation.Autowired
+import org.springframework.boot.test.autoconfigure.web.servlet.AutoConfigureMockMvc
+import org.springframework.security.test.context.support.WithMockUser
+import org.springframework.test.web.servlet.MockMvc
+import org.springframework.test.web.servlet.request.MockMvcRequestBuilders
+import org.springframework.test.web.servlet.result.MockMvcResultMatchers
+
+
+@AutoConfigureMockMvc
+@WithMockUser
+@IntegrationTest
+class SpaWebFilterIT {
+    @Autowired
+    private lateinit var mockMvc: MockMvc
+
+    @Test
+    @Throws(Exception::class)
+    fun testFilterForwardsToIndex() {
+        mockMvc.perform(MockMvcRequestBuilders.get("/"))
+            .andExpect(MockMvcResultMatchers.status().isOk())
+            .andExpect(MockMvcResultMatchers.forwardedUrl("/index.html"))
+    }
+
+<%_ if (!skipUserManagement) { _%>
+    
+    @Test
+    @Throws(Exception::class)
+    fun testFilterDoesNotForwardToIndexForApi() {
+        mockMvc.perform(MockMvcRequestBuilders.get("/api/<% if (!applicationTypeMicroservice) { %>authenticate<% } else { %>users<% } %>"))
+            .andExpect(MockMvcResultMatchers.status().isOk())
+            .andExpect(MockMvcResultMatchers.forwardedUrl(null))
+    }
+
+<%_ } _%>
+
+    @Test
+    @WithMockUser(authorities = [AuthoritiesConstants.ADMIN])
+    @Throws(Exception::class)
+    fun testFilterDoesNotForwardToIndexForV3ApiDocs() {
+        mockMvc.perform(MockMvcRequestBuilders.get("/v3/api-docs"))
+            .andExpect(MockMvcResultMatchers.status().isOk())
+            .andExpect(MockMvcResultMatchers.forwardedUrl(null))
+    }
+
+    @Test
+    @Throws(Exception::class)
+    fun testFilterDoesNotForwardToIndexForDotFile() {
+        mockMvc.perform(MockMvcRequestBuilders.get("/file.js"))
+            .andExpect(MockMvcResultMatchers.status().isNotFound())
+    }
+
+    @Test
+    @Throws(Exception::class)
+    fun getBackendEndpoint() {
+        mockMvc.perform(MockMvcRequestBuilders.get("/test"))
+            .andExpect(MockMvcResultMatchers.status().isOk())
+            .andExpect(MockMvcResultMatchers.forwardedUrl("/index.html"))
+    }
+
+    @Test
+    @Throws(Exception::class)
+    fun forwardUnmappedFirstLevelMapping() {
+        mockMvc.perform(MockMvcRequestBuilders.get("/first-level"))
+            .andExpect(MockMvcResultMatchers.status().isOk())
+            .andExpect(MockMvcResultMatchers.forwardedUrl("/index.html"))
+    }
+
+    @Test
+    @Throws(Exception::class)
+    fun forwardUnmappedSecondLevelMapping() {
+        mockMvc.perform(MockMvcRequestBuilders.get("/first-level/second-level"))
+            .andExpect(MockMvcResultMatchers.status().isOk())
+            .andExpect(MockMvcResultMatchers.forwardedUrl("/index.html"))
+    }
+
+    @Test
+    @Throws(Exception::class)
+    fun forwardUnmappedThirdLevelMapping() {
+        mockMvc.perform(MockMvcRequestBuilders.get("/first-level/second-level/third-level"))
+            .andExpect(MockMvcResultMatchers.status().isOk())
+            .andExpect(MockMvcResultMatchers.forwardedUrl("/index.html"))
+    }
+
+    @Test
+    @Throws(Exception::class)
+    fun forwardUnmappedDeepMapping() {
+        mockMvc.perform(MockMvcRequestBuilders.get("/1/2/3/4/5/6/7/8/9/10"))
+            .andExpect(MockMvcResultMatchers.forwardedUrl("/index.html"))
+    }
+
+    @Throws(Exception::class)
+    @Test
+    fun getUnmappedFirstLevelFile() {
+        mockMvc.perform(MockMvcRequestBuilders.get("/foo.js"))
+            .andExpect(MockMvcResultMatchers.status().isNotFound())
+    }
+
+
+    /**
+     * This test verifies that any files that aren't permitted by Spring Security will be forbidden.
+     * If you want to change this to return isNotFound(), you need to add a request mapping that
+     * allows this file in SecurityConfiguration.
+     */
+    @Throws(Exception::class)
+    @Test
+    fun getUnmappedSecondLevelFile() {
+        mockMvc.perform(MockMvcRequestBuilders.get("/foo/bar.js")).andExpect(MockMvcResultMatchers.status().isForbidden())
+    }
+
+    @Throws(Exception::class)
+    @Test
+    fun getUnmappedThirdLevelFile() {
+        mockMvc.perform(MockMvcRequestBuilders.get("/foo/another/bar.js")).andExpect(MockMvcResultMatchers.status().isForbidden())
+    }
+}

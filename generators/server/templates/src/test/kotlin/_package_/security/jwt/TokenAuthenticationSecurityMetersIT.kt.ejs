@@ -1,0 +1,111 @@
+package <%= packageName %>.security.jwt
+
+import <%= packageName %>.security.jwt.JwtAuthenticationTestUtils.*
+import org.assertj.core.api.Assertions.assertThat
+
+import io.micrometer.core.instrument.Counter
+import io.micrometer.core.instrument.MeterRegistry
+import java.util.Collection
+import org.junit.jupiter.api.Test
+import org.springframework.beans.factory.annotation.Autowired
+import org.springframework.beans.factory.annotation.Value
+
+<%_ if (reactive) { _%>
+import <%= packageName %>.IntegrationTest
+import org.springframework.boot.test.autoconfigure.web.reactive.AutoConfigureWebTestClient
+import org.springframework.test.web.reactive.server.WebTestClient
+
+@AutoConfigureWebTestClient(timeout = IntegrationTest.DEFAULT_TIMEOUT)
+<%_ } else { _%>
+import org.springframework.http.HttpHeaders.AUTHORIZATION
+import org.springframework.boot.test.autoconfigure.web.servlet.AutoConfigureMockMvc
+import org.springframework.test.web.servlet.MockMvc
+import org.springframework.test.web.servlet.request.MockMvcRequestBuilders
+
+@AutoConfigureMockMvc
+<%_ } _%>
+@AuthenticationIntegrationTest
+class TokenAuthenticationSecurityMetersIT {
+
+    companion object {
+        private const val INVALID_TOKENS_METER_EXPECTED_NAME = "security.authentication.invalid-tokens"
+    }
+
+    @Autowired
+<%_ if (reactive) { _%>
+    private lateinit var webTestClient: WebTestClient
+<%_ } else { _%>
+    private lateinit var mvc: MockMvc
+<%_ } _%>
+
+    @Value("\${jhipster.security.authentication.jwt.base64-secret}")
+    private lateinit var jwtKey: String
+
+    @Autowired
+    private lateinit var meterRegistry: MeterRegistry
+
+    @Test
+    @Throws(Exception::class)
+    fun testValidTokenShouldNotCountAnything() {
+        val counters = meterRegistry.find(INVALID_TOKENS_METER_EXPECTED_NAME).counters()
+        val count = aggregate(counters)
+        tryToAuthenticate(JwtAuthenticationTestUtils.createValidToken(jwtKey))
+        Assertions.assertThat(aggregate(counters)).isEqualTo(count)
+    }
+
+    @Test
+    @Throws(Exception::class)
+    fun testTokenExpiredCount() {
+        val count = meterRegistry[INVALID_TOKENS_METER_EXPECTED_NAME].tag("cause", "expired").counter().count()
+        tryToAuthenticate(JwtAuthenticationTestUtils.createExpiredToken(jwtKey))
+        Assertions.assertThat(meterRegistry[INVALID_TOKENS_METER_EXPECTED_NAME].tag("cause", "expired").counter().count()).isEqualTo(count + 1)
+    }
+
+    @Test
+    @Throws(Exception::class)
+    fun testTokenSignatureInvalidCount() {
+        val count = meterRegistry[INVALID_TOKENS_METER_EXPECTED_NAME].tag("cause", "invalid-signature").counter().count()
+        tryToAuthenticate(JwtAuthenticationTestUtils.createTokenWithDifferentSignature())
+        Assertions.assertThat(meterRegistry[INVALID_TOKENS_METER_EXPECTED_NAME].tag("cause", "invalid-signature").counter().count())
+            .isEqualTo(count + 1)
+    }
+
+    @Test
+    @Throws(Exception::class)
+    fun testTokenMalformedCount() {
+        val count = meterRegistry[INVALID_TOKENS_METER_EXPECTED_NAME].tag("cause", "malformed").counter().count()
+        tryToAuthenticate(JwtAuthenticationTestUtils.createSignedInvalidJwt(jwtKey))
+        Assertions.assertThat(meterRegistry[INVALID_TOKENS_METER_EXPECTED_NAME].tag("cause", "malformed").counter().count()).isEqualTo(count + 1)
+    }
+
+    @Test
+    @Throws(Exception::class)
+    fun testTokenInvalidCount() {
+        val count = meterRegistry[INVALID_TOKENS_METER_EXPECTED_NAME].tag("cause", "malformed").counter().count()
+        tryToAuthenticate(JwtAuthenticationTestUtils.createInvalidToken(jwtKey))
+        Assertions.assertThat(meterRegistry[INVALID_TOKENS_METER_EXPECTED_NAME].tag("cause", "malformed").counter().count()).isEqualTo(count + 1)
+    }
+<%_ if (reactive) { _%>
+
+    private fun tryToAuthenticate(token: String) {
+        webTestClient
+            .get()
+            .uri("/api/authenticate")
+            .headers { headers -> headers.setBearerAuth(token) }
+            .exchange()
+            .returnResult(String::class.java)
+            .getResponseBody()
+            .blockLast()
+    }
+<%_ } else { _%>
+
+    @Throws(Exception::class)
+    private fun tryToAuthenticate(token: String) {
+        mvc.perform(MockMvcRequestBuilders.get("/api/authenticate").header(HttpHeaders.AUTHORIZATION, JwtAuthenticationTestUtils.BEARER + token))
+    }
+<%_ } _%>
+
+    private fun aggregate(counters: Collection<Counter>): Double {
+        return counters.stream().mapToDouble { obj: Counter -> obj.count() }.sum()
+    }
+}

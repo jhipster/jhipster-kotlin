@@ -1,0 +1,81 @@
+<%#
+ Copyright 2013-2023 the original author or authors from the JHipster project.
+
+ This file is part of the JHipster project, see https://www.jhipster.tech/
+ for more information.
+
+ Licensed under the Apache License, Version 2.0 (the "
+ you may not use this file except in compliance with the License.
+ You may obtain a copy of the License at
+
+      http://www.apache.org/licenses/LICENSE-2.0
+
+ Unless required by applicable law or agreed to in writing, software
+ distributed under the License is distributed on an "AS IS" BASIS,
+ WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
+ See the License for the specific language governing permissions and
+ limitations under the License.
+-%>
+package <%= packageName %>.web.rest
+
+import org.springframework.http.ResponseEntity
+import org.springframework.security.core.annotation.AuthenticationPrincipal
+import org.springframework.security.oauth2.client.registration.ClientRegistration
+import org.springframework.security.oauth2.client.registration.ClientRegistrationRepository
+import org.springframework.security.oauth2.core.oidc.OidcIdToken
+import org.springframework.web.bind.annotation.PostMapping
+import org.springframework.web.bind.annotation.RestController
+
+import jakarta.servlet.http.HttpServletRequest
+import org.springframework.http.HttpHeaders
+
+/**
+ * REST controller for managing global OIDC logout.
+ */
+@RestController
+class LogoutResource(
+    private val registrations: <% if (reactive) { %>Reactive<% } %>ClientRegistrationRepository
+) {
+    private val registration = registrations.findByRegistrationId("oidc")
+
+    /**
+     * `POST  /api/logout` : logout the current user.
+     *
+     * @param request the [HttpServletRequest].
+     * @param idToken the ID token.
+      * @return the [ResponseEntity] with status `200 (OK)` and a body with a global logout URL.
+     */
+    @PostMapping("/api/logout")
+    fun logout(
+        request: HttpServletRequest,
+        @AuthenticationPrincipal(expression = "idToken") idToken: OidcIdToken?
+    ): ResponseEntity<*> {
+        val logoutUrl = StringBuilder()
+
+        val issuerUri = registration.providerDetails.issuerUri
+        if (issuerUri.contains("auth0.com")) {
+            val iUrl = if (issuerUri.endsWith("/")) {
+                        issuerUri + "v2/logout"
+                      } else {
+                          issuerUri + "/v2/logout"
+                      }
+            logoutUrl.append(iUrl)
+        } else {
+            logoutUrl.append(registration.providerDetails.configurationMetadata["end_session_endpoint"].toString())
+        }
+
+        val originUrl = request.getHeader(HttpHeaders.ORIGIN)
+
+        if (issuerUri.contains("auth0.com")) {
+            logoutUrl.append("?client_id=").append(registration.clientId).append("&returnTo=").append(originUrl)
+        } else {
+            logoutUrl.append("?id_token_hint=").append(idToken?.tokenValue).append("&post_logout_redirect_uri=").append(originUrl)
+        }
+
+        val logoutDetails = mutableMapOf(
+            "logoutUrl" to logoutUrl.toString()
+        )
+        request.session.invalidate()
+        return ResponseEntity.ok().body(logoutDetails)
+    }
+}

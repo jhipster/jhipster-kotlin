@@ -1,0 +1,234 @@
+<%#
+ Copyright 2013-2023 the original author or authors from the JHipster project.
+
+ This file is part of the JHipster project, see https://www.jhipster.tech/
+ for more information.
+
+ Licensed under the Apache License, Version 2.0 (the "License")
+ you may not use this file except in compliance with the License.
+ You may obtain a copy of the License at
+
+      http://www.apache.org/licenses/LICENSE-2.0
+
+ Unless required by applicable law or agreed to in writing, software
+ distributed under the License is distributed on an "AS IS" BASIS,
+ WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
+ See the License for the specific language governing permissions and
+ limitations under the License.
+-%>
+@file:JvmName("SecurityUtils")
+
+package <%= packageName %>.security
+
+import org.springframework.security.core.Authentication
+import org.springframework.security.core.GrantedAuthority
+import org.springframework.security.core.context.SecurityContext
+<%_ if (reactive) { _%>
+import org.springframework.security.core.context.ReactiveSecurityContextHolder
+<%_ } else { _%>
+import org.springframework.security.core.context.SecurityContextHolder
+<%_ } _%>
+import org.springframework.security.core.userdetails.UserDetails
+<%_ if (authenticationTypeJwt) { _%>
+import org.springframework.security.oauth2.jose.jws.MacAlgorithm
+import org.springframework.security.oauth2.jwt.Jwt
+<%_ } _%>
+<%_ if (authenticationTypeOauth2) { _%>
+import org.springframework.security.core.authority.SimpleGrantedAuthority
+import org.springframework.security.oauth2.core.oidc.user.DefaultOidcUser
+import org.springframework.security.oauth2.server.resource.authentication.JwtAuthenticationToken
+import java.util.*
+import java.util.stream.Collectors
+  <%_ if (reactive) { _%>
+import reactor.core.publisher.Mono
+  <%_ } else { _%>
+import java.util.stream.Stream
+  <%_ } _%>
+<%_ } else { _%>
+  <%_ if (reactive) { _%>
+import reactor.core.publisher.Mono
+import java.util.Arrays
+  <%_ } else { _%>
+import java.util.Arrays
+import java.util.Optional
+import java.util.stream.Stream
+  <%_ } _%>
+<%_ } _%>
+
+<%_ if (authenticationTypeOauth2) { _%>
+const val CLAIMS_NAMESPACE = "https://www.jhipster.tech/"
+<%_ } else if (authenticationTypeJwt) { _%>
+const val JWT_ALGORITHM: MacAlgorithm = MacAlgorithm.HS512
+
+const val AUTHORITIES_KEY: String = "auth";
+<%_ } _%>
+
+/**
+ * Get the login of the current user.
+ *
+ * @return the login of the current user.
+ */
+fun getCurrentUserLogin(): <% if (reactive) { %>Mono<% } else { %>Optional<% } %><String> =
+    <%_ if (reactive) { _%>
+    ReactiveSecurityContextHolder.getContext()
+        .map(SecurityContext::getAuthentication)
+        .flatMap { Mono.justOrEmpty(extractPrincipal(it)) }
+    <%_ } else { _%>
+    Optional.ofNullable(extractPrincipal(SecurityContextHolder.getContext().authentication))
+    <%_ } _%>
+
+
+fun extractPrincipal(authentication: Authentication?): String? {
+    if (authentication == null) {
+        return null
+    } else if (authentication.principal is UserDetails) {
+        return (authentication.principal as UserDetails).username
+<%_ if (authenticationTypeJwt) { _%>
+    } else if (authentication.principal is Jwt) {
+        return (authentication.principal as Jwt).subject
+<%_ } _%>
+<%_ if (authenticationTypeOauth2) { _%>
+    } else if (authentication is JwtAuthenticationToken) {
+        return authentication.token.claims["preferred_username"] as String
+    } else if (authentication.principal is DefaultOidcUser) {
+        val attributes = (authentication.principal as DefaultOidcUser).attributes
+        if (attributes.containsKey("preferred_username")) {
+            return attributes["preferred_username"] as String
+        }
+<%_ } _%>
+    } else if (authentication.principal is String) {
+        return authentication.principal as String
+    }
+    return null
+}
+
+<%_ if (authenticationTypeJwt) { _%>
+
+/**
+ * Get the JWT of the current user.
+ *
+ * @return the JWT of the current user.
+ */
+fun getCurrentUserJWT(): <% if (reactive) { %>Mono<% } else { %>Optional<% } %><String> =
+    <%_ if (reactive) { _%>
+    ReactiveSecurityContextHolder.getContext()
+        .map(SecurityContext::getAuthentication)
+    <%_ } else { _%>
+    Optional.ofNullable(SecurityContextHolder.getContext().authentication)
+    <%_ } _%>
+        .filter { it.credentials is String }
+        .map { it.credentials as String }
+<%_ } _%>
+
+/**
+ * Check if a user is authenticated.
+ *
+ * @return true if the user is authenticated, false otherwise.
+ */
+fun isAuthenticated(): <% if (reactive) { %>Mono<Boolean><% } else { %>Boolean<% } %> {
+    <%_ if (reactive) { _%>
+    return ReactiveSecurityContextHolder.getContext()
+        .map(SecurityContext::getAuthentication)
+        .map(Authentication::getAuthorities)
+        .map {
+            it
+            .map(GrantedAuthority::getAuthority)
+            .none { it == ANONYMOUS }
+        }
+    <%_ } else { _%>
+    val authentication = SecurityContextHolder.getContext().authentication
+
+    if (authentication != null) {
+        val isAnonymousUser = getAuthorities(authentication)?.none { it == ANONYMOUS }
+        if(isAnonymousUser != null) {
+            return isAnonymousUser
+        }
+    }
+
+    return false
+    <%_ } _%>
+}
+
+
+/**
+* Checks if the current user has any of the authorities.
+*
+* @param authorities the authorities to check.
+* @return true if the current user has any of the authorities, false otherwise.
+*/
+fun hasCurrentUserAnyOfAuthorities(vararg authorities: String): <% if (reactive) { %>Mono<Boolean><% } else { %>Boolean<% } %> {
+<%_ if (reactive) { _%>
+return ReactiveSecurityContextHolder.getContext()
+    .map(SecurityContext::getAuthentication)
+    .map(Authentication::getAuthorities)
+    .map {
+        it
+        .map(GrantedAuthority::getAuthority)
+        .any { authorities.contains(it) }
+    }
+<%_ } else { _%>
+val authentication = SecurityContextHolder.getContext().authentication
+return authentication != null && getAuthorities(authentication)?.any { authorities.contains(it) } ?: false
+<%_ } _%>
+}
+
+/**
+* Checks if the current user has none of the authorities.
+*
+* @param authorities the authorities to check.
+* @return true if the current user has none of the authorities, false otherwise.
+*/
+fun hasCurrentUserNoneOfAuthorities(vararg authorities: String): <% if (reactive) { %>Mono<Boolean><% } else { %>Boolean<% } %> {
+<%_ if (reactive) { _%>
+    return hasCurrentUserAnyOfAuthorities(*authorities).map { !it }
+<%_ } else { _%>
+    return !hasCurrentUserAnyOfAuthorities(*authorities)
+<%_ } _%>
+}
+
+/**
+* Checks if the current user has a specific authority.
+*
+* @param authority the authority to check.
+* @return true if the current user has the authority, false otherwise.
+*/
+fun hasCurrentUserThisAuthority(authority: String): <% if (reactive) { %>Mono<Boolean><% } else { %>Boolean<% } %> {
+   return hasCurrentUserAnyOfAuthorities(authority)
+}
+
+
+<%_ if (!reactive) { _%>
+fun getAuthorities(authentication: Authentication): List<String>? {
+  <%_ if (authenticationTypeOauth2) { _%>
+    val authorities = when (authentication) {
+        is JwtAuthenticationToken ->
+            extractAuthorityFromClaims(authentication.token.claims)
+        else ->
+            authentication.authorities
+    }
+    return authorities?.map(GrantedAuthority::getAuthority)
+  <%_ } else { _%>
+    return authentication.authorities.map(GrantedAuthority::getAuthority)
+  <%_ } _%>
+}
+<%_ } _%>
+
+<%_ if (authenticationTypeOauth2) { _%>
+    fun extractAuthorityFromClaims(claims: Map<String, Any>): List<GrantedAuthority> {
+        return mapRolesToGrantedAuthorities(getRolesFromClaims(claims))
+    }
+
+    @Suppress("UNCHECKED_CAST")
+    fun getRolesFromClaims(claims: Map<String, Any>): Collection<String> {
+        return when (val test = claims.getOrDefault("groups", claims.getOrDefault("roles", claims.getOrDefault("${CLAIMS_NAMESPACE}roles", listOf<String>())))) {
+            is String -> listOf(test)
+            else -> test as Collection<String>
+        }
+    }
+
+    fun mapRolesToGrantedAuthorities(roles: Collection<String>): List<GrantedAuthority> {
+        return roles
+            .filter { it.startsWith("ROLE_") }
+            .map { SimpleGrantedAuthority(it) }
+    }
+<%_ } _%>

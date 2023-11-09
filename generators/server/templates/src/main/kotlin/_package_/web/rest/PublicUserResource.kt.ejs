@@ -1,0 +1,190 @@
+<%#
+ Copyright 2013-2023 the original author or authors from the JHipster project.
+
+This file is part of the JHipster project, see https://jhipster.github.io/
+ for more information.
+
+ Licensed under the Apache License, Version 2.0 (the "License")
+ you may not use this file except in compliance with the License.
+ You may obtain a copy of the License at
+
+      http://www.apache.org/licenses/LICENSE-2.0
+
+ Unless required by applicable law or agreed to in writing, software
+ distributed under the License is distributed on an "AS IS" BASIS,
+ WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
+ See the License for the specific language governing permissions and
+ limitations under the License.
+-%>
+package <%= packageName %>.web.rest
+
+<%_ if (searchEngineElasticsearch) { _%>
+import <%= packageName %>.repository.search.UserSearchRepository
+<%_ } else if (searchEngineCouchbase) { _%>
+import <%= packageName %>.repository.UserRepository
+import <%= packageName %>.domain.User
+    <%_ if (!reactive) { _%>
+import java.util.stream.Collectors
+import java.util.stream.StreamSupport
+    <%_ } _%>
+<%_ } _%>
+<%_ if (!authenticationTypeOauth2) { _%>
+import org.springframework.data.domain.Sort
+import java.util.Collections
+<%_ } _%>
+import <%= packageName %>.service.UserService
+import <%= packageName %>.service.dto.<%= user.dtoClass %>
+
+<%_ if (databaseTypeSql || databaseTypeMongodb || databaseTypeNeo4j || databaseTypeCouchbase) { _%>
+import tech.jhipster.web.util.PaginationUtil
+<%_ } _%>
+
+import org.slf4j.LoggerFactory
+<%_ if (databaseTypeSql || databaseTypeMongodb || databaseTypeNeo4j || databaseTypeCouchbase) { _%>
+    <%_ if (reactive) { _%>
+import org.springframework.data.domain.PageImpl
+    <%_ } else { _%>
+import org.springframework.data.domain.Page
+    <%_ } _%>
+import org.springframework.data.domain.Pageable
+    <%_ if (!reactive) { _%>
+import org.springframework.http.HttpHeaders
+    <%_ } _%>
+<%_ } _%>
+import org.springframework.http.HttpStatus
+import org.springframework.http.ResponseEntity
+<%_ if (reactive) { _%>
+import org.springframework.http.server.reactive.ServerHttpRequest
+<%_ } _%>
+import org.springframework.web.bind.annotation.*
+
+<%_ if (reactive) { _%>
+import org.springframework.web.server.ResponseStatusException
+import org.springframework.web.util.UriComponentsBuilder
+import reactor.core.publisher.Flux
+import reactor.core.publisher.Mono
+<%_ } else {_%>
+import org.springframework.web.servlet.support.ServletUriComponentsBuilder;
+<%_ } _%>
+
+<%_ if (reactive) { _%>
+import java.util.ArrayList
+import java.util.List
+import java.util.Arrays
+<%_ } else {_%>
+import java.util.*
+<%_ } _%>
+<%_ if (searchEngineElasticsearch && !reactive) { _%>
+import java.util.stream.StreamSupport
+<%_ } _%>
+
+@RestController
+@RequestMapping("/api")
+class PublicUserResource(
+    <%_ if (searchEngineElasticsearch) { _%>
+    private val userSearchRepository: UserSearchRepository,
+    <%_ } _%>
+    <%_ if (searchEngineCouchbase) {  _%>
+    private val userRepository: UserRepository,
+    <%_ } _%>
+    private val userService: UserService
+) {
+    <%_ if (!authenticationTypeOauth2) { _%>
+    companion object {
+        private val ALLOWED_ORDERED_PROPERTIES = arrayOf("id", "login", "firstName", "lastName", "email", "activated", "langKey")
+    }
+    <%_ } _%>
+
+    private val log = LoggerFactory.getLogger(javaClass)
+
+    /**
+     * {@code GET /users} : get all users with only public information - calling this method is allowed for anyone.
+<%_ if (databaseTypeSql || databaseTypeMongodb || databaseTypeNeo4j || databaseTypeCouchbase) { _%>
+     *
+    <%_ if (reactive) { _%>
+     * @param request a {@link ServerHttpRequest} request.
+    <%_ } _%>
+     * @param pageable the pagination information.
+<%_ } _%>
+     * @return the {@link ResponseEntity} with status {@code 200 (OK)} and with body all users.
+     */
+    @GetMapping("/users")
+    <%_ if (databaseTypeSql || databaseTypeMongodb || databaseTypeNeo4j || databaseTypeCouchbase) { _%>
+        <%_ if (reactive) { _%>
+    fun getAllPublicUsers(request: ServerHttpRequest, @org.springdoc.core.annotations.ParameterObject pageable: Pageable): Mono<ResponseEntity<Flux<<%= user.dtoClass %>>>> {
+        log.debug("REST request to get all public User names")
+        <%_ if (!authenticationTypeOauth2) { _%>
+        if (!onlyContainsAllowedProperties(pageable)) {
+            return Mono.just(ResponseEntity.badRequest().build())
+        }
+        <%_ } _%>
+
+        return userService.countManagedUsers()
+            .map { PageImpl<<%= user.dtoClass %>>(listOf(), pageable, it)  }
+            .map { PaginationUtil.generatePaginationHttpHeaders(UriComponentsBuilder.fromHttpRequest(request), it) }
+            .map { ResponseEntity.ok().headers(it).body(userService.getAllPublicUsers(pageable)) }
+    }
+        <%_ } else { _%>
+    fun getAllPublicUsers(@org.springdoc.core.annotations.ParameterObject pageable: Pageable):  ResponseEntity<List<<%= user.dtoClass %>>> {
+        log.debug("REST request to get all public User names")
+        <%_ if (!authenticationTypeOauth2) { _%>
+        if (!onlyContainsAllowedProperties(pageable)) {
+            return ResponseEntity.badRequest().build()
+        }
+        <%_ } _%>
+
+        val page = userService.getAllPublicUsers(pageable)
+        val headers = PaginationUtil.generatePaginationHttpHeaders(ServletUriComponentsBuilder.fromCurrentRequest(), page)
+        return ResponseEntity(page.content, headers, HttpStatus.OK)
+    }
+        <%_ } _%>
+        <%_ if (!authenticationTypeOauth2) { _%>
+    private fun onlyContainsAllowedProperties(pageable: Pageable) =
+        pageable.sort.map(Sort.Order::getProperty).all(ALLOWED_ORDERED_PROPERTIES::contains)
+        <%_ } _%>
+
+    /**
+     * Gets a list of all roles.
+     * @return a string list of all roles.
+     */
+    @GetMapping("/authorities")
+    fun getAuthorities() = userService.getAuthorities()<% if (reactive) { %>.collectList()<% } %>
+
+    <%_ } else { /* Cassandra */ _%>
+    fun getAllPublicUsers(): <% if (reactive) { %>Flux<% } else { %>List<% } %><<%= user.dtoClass %>> = userService.getAllPublicUsers()
+
+    <%_ } _%>
+
+    <%_ if (searchEngineAny) { _%>
+
+    /**
+    * {@code SEARCH /users/_search/:query} : search for the User corresponding to the query.
+    *
+    * @param query the query to search.
+    * @return the result of the search.
+    */
+    @GetMapping("/users/_search/{query}")
+    fun search(@PathVariable query: String): <% if(reactive) { %>Mono<Mutable<% } %>List<<%= user.dtoClass %>><% if(reactive) { %>><% } %> {
+    <%_ if (searchEngineElasticsearch) { _%>
+        <%_ if (reactive) { _%>
+        return userSearchRepository.search(query).map { <%= user.dtoClass %>(it) }.collectList()
+        <%_ } else { _%>
+        return StreamSupport
+            .stream(userSearchRepository.search(query).spliterator(), false)
+            .map { <%= user.dtoClass %>(it) }
+            .toList()
+        <%_ } _%>
+    <%_ } else { _%>
+        <%_ if (reactive) { _%>
+        return userRepository.search(query).map { <%= user.dtoClass %>(it) }.collectList()
+         <%_ } else { _%>
+        return StreamSupport
+            .stream(userRepository.search(query).spliterator(), false)
+            .map { <%= user.dtoClass %>(it) }
+            .toList();
+         <%_ } _%>
+    <%_ } _%>
+    }
+<%_ } _%>
+
+}
