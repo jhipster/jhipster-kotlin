@@ -189,7 +189,7 @@ fi
 # Generate jdl entities
 #-------------------------------------------------------------------------------
 if [[ "$JHI_JDL_ENTITY" != "" && "$JHI_JDL_ENTITY" != "none" ]]; then
-    khipster.js --no-insight jdl "$JHI_SAMPLES"/jdl-entities/$JHI_JDL_ENTITY.jdl --json-only
+    cli.cjs --no-insight jdl "$JHI_SAMPLES"/jdl-entities/$JHI_JDL_ENTITY.jdl --json-only
 fi
 
 #-------------------------------------------------------------------------------

@@ -81,7 +81,7 @@ if [[ "$KHI_FOLDER_APP" == "" ]]; then
 fi
 
 if [[ "$KHI_CLI" == "" ]]; then
-    KHI_CLI=khipster.js
+    KHI_CLI=cli.cjs
 fi
 
 # set correct OpenJDK version

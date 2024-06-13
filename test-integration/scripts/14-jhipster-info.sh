@@ -4,4 +4,4 @@ set -e
 source $(dirname $0)/00-init-env.sh
 
 cd "$KHI_FOLDER_APP"
-khipster.js info
+cli.cjs info
