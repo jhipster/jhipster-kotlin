@@ -28,22 +28,23 @@ const packageFolderName = basename(packagePath);
 const blueprint = packageFolderName.startsWith('jhipster-') ? `generator-${packageFolderName}` : packageFolderName;
 
 (async () => {
-  const { runJHipster, done, logger } = await import('generator-jhipster/esm/cli');
-  const executableName = Object.keys(bin)[0];
+    const { runJHipster, done, logger } = await import('generator-jhipster/esm/cli');
+    const { displayLogo } = await import('./logo.mjs');
+    const executableName = Object.keys(bin)[0];
 
-  runJHipster({
-    executableName,
-    executableVersion: version,
-    defaultCommand: 'app',
-    blueprints: {
-      [blueprint]: version,
-    },
-    printLogo: () => {},
-    lookups: [{ packagePaths: [packagePath], lookups: ['generators'] }],
-  }).catch(done);
+    runJHipster({
+        executableName,
+        executableVersion: version,
+        defaultCommand: 'app',
+        blueprints: {
+            [blueprint]: version,
+        },
+        printLogo: displayLogo,
+        lookups: [{ packagePaths: [packagePath], lookups: ['generators'] }],
+    }).catch(done);
 
-  process.on('unhandledRejection', up => {
-    logger.error('Unhandled promise rejection at:');
-    logger.fatal(up);
-  });
+    process.on('unhandledRejection', up => {
+        logger.error('Unhandled promise rejection at:');
+        logger.fatal(up);
+    });
 })();

@@ -16,10 +16,10 @@
  * See the License for the specific language governing permissions and
  * limitations under the License.
  */
-const chalk = require('chalk');
-const packagejs = require('../../package.json');
+import chalk from 'chalk';
+import packagejs from './package-json.mjs';
 
-function displayLogo() {
+export function displayLogo() {
     this.log('\n');
     this.log(`${chalk.blue(' ██╗  ██╗')}${chalk.green(' ██╗   ██╗ ████████╗ ███████╗   ██████╗ ████████╗ ████████╗ ███████╗')}`);
     this.log(`${chalk.blue(' ██║ ██╔╝')}${chalk.green(' ██║   ██║ ╚══██╔══╝ ██╔═══██╗ ██╔════╝ ╚══██╔══╝ ██╔═════╝ ██╔═══██╗')}`);
@@ -51,7 +51,3 @@ function displayLogo() {
         chalk.blue(' _______________________________________________________________________________________________________________\n')
     );
 }
-
-module.exports = {
-    displayLogo,
-};
