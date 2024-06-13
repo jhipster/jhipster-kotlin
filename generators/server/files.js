@@ -363,7 +363,6 @@ async function updateGradle(generator) {
     _this.fs.write(fullPath, content.replace('classes/java/main', 'classes/kotlin/main'));
 }
 
-
 module.exports = {
     writeFiles,
     serverFiles,

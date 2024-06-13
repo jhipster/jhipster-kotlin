@@ -27,13 +27,12 @@ Full documentation and information about JHipster is available [here](https://ww
 [![NPM version][npm-image]][npm-url]
 [![Dependency Status][daviddm-image]][daviddm-url]
 
-
 ## 🚀 How to get started
 
 Install the package with `npm install -g generator-jhipster-kotlin`
 
 1. Install the package with `npm install -g generator-jhipster-kotlin`
-1. Create and navigate to a directory 
+1. Create and navigate to a directory
 1. Generate the application with `khipster`
 
 ## Using Docker
