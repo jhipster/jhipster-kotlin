@@ -24,13 +24,8 @@ concurrency:
     cancel-in-progress: true
 on:
     push:
-        branches-ignore:
-            - 'dependabot/**'
-            - 'skip_ci*'
-        paths-ignore:
-            - 'package*.json'
-            - 'generators/*client/templates/react/**'
-            - 'generators/*client/templates/vue/**'
+        branches:
+            - main
     pull_request:
         types: [closed, opened, synchronize, reopened]
         branches:
@@ -55,7 +50,7 @@ jobs:
               id: build
               uses: ./.github/actions/build-matrix
               with:
-                workflow-samples-file: angular
+                  workflow-samples-file: angular
     applications:
         name: ${{ matrix.name }}
         runs-on: ${{ matrix.os || 'ubuntu-20.04' }}
@@ -88,12 +83,17 @@ jobs:
               with:
                   path: jhipster-kotlin
                   fetch-depth: 2
-            - name: Checkout JHipster repo
-              uses: actions/checkout@v3
+            - run: npm install
+              working-directory: jhipster-kotlin
+            # workspaces fork the process and lookup blueprints again, link globally to be findable
+            - run: npm link
+              if: matrix.workspaces == 'true'
+              working-directory: jhipster-kotlin
+            - uses: jhipster/actions/setup-runner@v0
               with:
-                repository: jhipster/generator-jhipster
-                path: generator-jhipster
-                ref: v7.9.3
+                  node-version: 16
+                  java-version: 11
+                  binary-dir: ${{ github.workspace }}/jhipster-kotlin/cli
             - name: 'SETUP: environment'
               id: setup
               uses: ./jhipster-kotlin/.github/actions/setup
@@ -104,56 +104,10 @@ jobs:
                   jdl-sample: ${{ matrix.jdl-samples || '' }}
                   application-environment: ${{ matrix.environment || 'prod' }}
                   application-packaging: ${{ (matrix.war == 1 && 'war') || 'jar' }}
-            - uses: actions/setup-node@v3
-              with:
-                  node-version: ${{ steps.setup.outputs.node-version }}
-            - uses: actions/setup-java@v3
-              with:
-                  distribution: 'temurin'
-                  java-version: ${{ steps.setup.outputs.java-version }}
-            - name: 'SETUP: load npm cache'
-              uses: actions/cache@v3
-              with:
-                  path: |
-                      ~/.npm
-                      ~/.cache/Cypress/
-                  key: ${{ runner.os }}-node-${{ steps.setup.outputs.date }}-${{ matrix.npm-cache || 'angular' }}-${{ hashFiles('jhipster-kotlin/package-lock.json', 'jhipster-kotlin/**/package.json') }}
-                  restore-keys: |
-                      ${{ runner.os }}-node-${{ steps.setup.outputs.date }}-${{ matrix.npm-cache || 'angular' }}-
-                      ${{ runner.os }}-node-${{ steps.setup.outputs.date }}-
-                      ${{ runner.os }}-node-${{ steps.setup.outputs.date }}
-            - name: 'SETUP: load maven cache'
-              uses: actions/cache@v3
-              with:
-                  path: ~/.m2/repository
-                  key: ${{ runner.os }}-maven-${{ steps.setup.outputs.date }}-${{ hashFiles('jhipster-kotlin/**/pom.xml.ejs') }}
-                  restore-keys: |
-                      ${{ runner.os }}-maven-${{ steps.setup.outputs.date }}-
-                      ${{ runner.os }}-maven-${{ steps.setup.outputs.date }}
-            - name: 'SETUP: load gradle cache'
-              if: matrix.workspaces == 'true' || matrix.gradle == 1 || contains(matrix.name, 'gradle')
-              uses: actions/cache@v3
-              with:
-                  path: |
-                      ~/.gradle/caches
-                      ~/.gradle/wrapper
-                  key: ${{ runner.os }}-gradle-${{ steps.setup.outputs.date }}-${{ hashFiles('jhipster-kotlin/**/build.gradle.ejs') }}
-                  restore-keys: |
-                      ${{ runner.os }}-gradle-${{ steps.setup.outputs.date }}-
-                      ${{ runner.os }}-gradle-${{ steps.setup.outputs.date }}
-            - name: 'TOOLS: configure tools installed by the system'
-              run: $KHI_SCRIPTS/03-system.sh
-            - name: 'TOOLS: configure git'
-              run: $KHI_SCRIPTS/04-git-config.sh
             # Update global NPM for workspaces support
-            - name: 'Install required NPM version'
-              if: matrix.workspaces == 'true'
-              run: npm install -g npm@${{ steps.setup.outputs.npm-version }} || true
             #----------------------------------------------------------------------
             # Install JHipster and generate project+entities
             #----------------------------------------------------------------------
-            - name: 'GENERATION: install JHipster'
-              run: $KHI_SCRIPTS/10-install-jhipster.sh
             - name: 'GENERATION: config'
               run: $KHI_SCRIPTS/11-generate-config.sh
             - name: 'GENERATION: project'
@@ -174,14 +128,14 @@ jobs:
               if: >-
                   github.event.pull_request &&
                   !contains(github.event.pull_request.labels.*.name, 'pr: disable-compare')
-              uses: ./generator-jhipster-kotlin/.github/actions/compare-base
+              uses: ./jhipster-kotlin/.github/actions/compare-base
               with:
                   extra-args: '--skip-jhipster-dependencies ${{ matrix.extra-args }}'
             - name: 'MERGE: compare changes'
               continue-on-error: true
               id: compare
               if: steps.base-app.outcome == 'success'
-              uses: ./generator-jhipster-kotlin/.github/actions/compare
+              uses: ./jhipster-kotlin/.github/actions/compare
               with:
                   application-path: ${{ steps.base-app.outputs.application-path }}
             #----------------------------------------------------------------------
@@ -190,24 +144,30 @@ jobs:
             - name: 'PREPARE: npm install'
               if: steps.compare.outputs.equals != 'true'
               run: ${{ (matrix.workspaces == 'true' && 'npm') || './npmw' }} install
+              timeout-minutes: 7
             - name: 'TESTS: backend'
               id: backend
               if: steps.compare.outputs.equals != 'true' && matrix.skip-backend-tests != 1 && needs.build-matrix.outputs.server != 'false'
               run: npm run ci:backend:test
               continue-on-error: ${{matrix.continue-on-backend-tests-error || false}}
+              timeout-minutes: 20
             - name: 'TESTS: frontend'
               if: steps.compare.outputs.equals != 'true' && matrix.skip-frontend-tests != 1 && needs.build-matrix.outputs.client != 'false'
               run: npm run ci:frontend:test
+              timeout-minutes: 8
             - name: 'TESTS: packaging'
               if: steps.compare.outputs.equals != 'true'
               run: npm run ci:e2e:package
+              timeout-minutes: 7
             - name: 'TESTS: Start docker-compose containers for e2e tests'
               if: steps.compare.outputs.equals != 'true'
               run: npm run ci:e2e:prepare
+              timeout-minutes: 5
             - name: 'E2E: Run'
               id: e2e
               if: steps.compare.outputs.equals != 'true'
               run: npm run ci:e2e:run --if-present
+              timeout-minutes: 20
             - name: 'BACKEND: Store failure logs'
               uses: actions/upload-artifact@v3
               if: always() && steps.backend.outcome == 'failure'
@@ -225,21 +185,21 @@ jobs:
               uses: jwalton/gh-docker-logs@v2
             - name: 'ANALYSIS: Sonar analysis'
               if: >-
-                github.event_name == 'push' &&
-                github.repository == 'jhipster/generator-jhipster' &&
-                matrix.sonar-analyse == 'true' &&
-                steps.compare.outputs.equals != 'true' &&
-                matrix.workspaces != 'true' &&
-                matrix.skip-frontend-tests != 1 &&
-                needs.build-matrix.outputs.client != 'false' &&
-                matrix.skip-backend-tests != 1 &&
-                needs.build-matrix.outputs.server != 'false'
+                  github.event_name == 'push' &&
+                  github.repository == 'jhipster/generator-jhipster' &&
+                  matrix.sonar-analyse == 'true' &&
+                  steps.compare.outputs.equals != 'true' &&
+                  matrix.workspaces != 'true' &&
+                  matrix.skip-frontend-tests != 1 &&
+                  needs.build-matrix.outputs.client != 'false' &&
+                  matrix.skip-backend-tests != 1 &&
+                  needs.build-matrix.outputs.server != 'false'
               run: |
-                ./mvnw -ntp --batch-mode initialize org.jacoco:jacoco-maven-plugin:prepare-agent sonar:sonar \
-                  -Dsonar.host.url=https://sonarcloud.io \
-                  -Dsonar.projectKey=jhipster-sample-application \
-                  -Dsonar.organization=jhipster \
-                  -Dsonar.login=$SONAR_TOKEN
+                  ./mvnw -ntp --batch-mode initialize org.jacoco:jacoco-maven-plugin:prepare-agent sonar:sonar \
+                    -Dsonar.host.url=https://sonarcloud.io \
+                    -Dsonar.projectKey=jhipster-sample-application \
+                    -Dsonar.organization=jhipster \
+                    -Dsonar.login=$SONAR_TOKEN
               env:
                   SONAR_TOKEN: ${{ secrets.SONAR_TOKEN }}
     check-angular:

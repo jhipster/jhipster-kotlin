@@ -20,33 +20,33 @@
 name: 'Compare generated applications'
 description: 'Experimental compare generated applications action'
 inputs:
-  application-path:
-    description: 'Application path'
-    required: false
-    default: ${{ github.workspace }}/base/app
+    application-path:
+        description: 'Application path'
+        required: false
+        default: ${{ github.workspace }}/base/app
 outputs:
-  equals:
-    description: "Generated source didn't changed"
-    value: ${{ steps.compare.outputs.equals }}
-  has-changes:
-    description: 'Generated source has changed'
-    value: ${{ steps.compare.outputs.has-changes }}
+    equals:
+        description: "Generated source didn't changed"
+        value: ${{ steps.compare.outputs.equals }}
+    has-changes:
+        description: 'Generated source has changed'
+        value: ${{ steps.compare.outputs.has-changes }}
 runs:
-  using: 'composite'
-  steps:
-    - name: 'MERGE: merge project diff'
-      id: compare
-      working-directory: ${{inputs.application-path}}
-      run: |
-        git log
-        # File keystore.p12 always changes
-        # File package-lock.json is not generated
-        # Verify if the generated source has changed
-        git add .
-        echo "Showing config diff changes (won't trigger builds)"
-        git -c color.ui=always diff -R --cached -- '.yo-rc.json' '**/.yo-rc.json' '.jhipster/**' '**/.jhipster/**'
-        echo "Showing source diff changes (will trigger builds)"
-        git -c color.ui=always diff -R --cached --exit-code -- . ':!.yo-rc.json' ':!**/.yo-rc.json' ':!.jhipster/**' ':!**/.jhipster/**' ':!package-lock.json' ':!**/package-lock.json' ':!**/keystore.p12' \
-          && echo "::set-output name=equals::true" \
-          || echo "::set-output name=has-changes::true"
-      shell: bash
+    using: 'composite'
+    steps:
+        - name: 'MERGE: merge project diff'
+          id: compare
+          working-directory: ${{inputs.application-path}}
+          run: |
+              git log
+              # File keystore.p12 always changes
+              # File package-lock.json is not generated
+              # Verify if the generated source has changed
+              git add .
+              echo "Showing config diff changes (won't trigger builds)"
+              git -c color.ui=always diff -R --cached -- '.yo-rc.json' '**/.yo-rc.json' '.jhipster/**' '**/.jhipster/**'
+              echo "Showing source diff changes (will trigger builds)"
+              git -c color.ui=always diff -R --cached --exit-code -- . ':!.yo-rc.json' ':!**/.yo-rc.json' ':!.jhipster/**' ':!**/.jhipster/**' ':!package-lock.json' ':!**/package-lock.json' ':!**/keystore.p12' \
+                && echo "::set-output name=equals::true" \
+                || echo "::set-output name=has-changes::true"
+          shell: bash

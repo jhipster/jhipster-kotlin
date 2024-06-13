@@ -53,8 +53,7 @@ elif [[ "$JHI_APP" == "jdl" ]]; then
 
     ls -la "$KHI_FOLDER_APP"/
     cd "$KHI_FOLDER_APP"
-    npm link generator-jhipster-kotlin
-    eval "$KHI_CLI import-jdl *.jdl --no-insight $@"
+    eval "$KHI_CLI jdl *.jdl --no-insight $@"
 
 else
 
