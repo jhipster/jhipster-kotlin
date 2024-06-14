@@ -23,7 +23,7 @@ if [[ "$JHI_ENTITY" == "jdl" ]]; then
     done
     cd "$KHI_FOLDER_APP"
     ls -la "$KHI_FOLDER_APP"/
-    eval "$KHI_CLI import-jdl *.jdl --no-insight $@"
+    eval "$KHI_CLI import-jdl *.jdl --no-insight --skip-ktlint-format $@"
 
 elif [[ "$JHI_APP" == "jdl" ]]; then
     #-------------------------------------------------------------------------------
@@ -53,7 +53,7 @@ elif [[ "$JHI_APP" == "jdl" ]]; then
 
     ls -la "$KHI_FOLDER_APP"/
     cd "$KHI_FOLDER_APP"
-    eval "$KHI_CLI jdl *.jdl --no-insight $@"
+    eval "$KHI_CLI jdl *.jdl --no-insight --skip-ktlint-format $@"
 
 else
 
@@ -67,7 +67,7 @@ else
         echo "skipping config file"
     fi
     cd "$KHI_FOLDER_APP"
-    eval "$KHI_CLI --force --no-insight --skip-checks --with-entities $@"
+    eval "$KHI_CLI --force --no-insight --skip-checks --with-entities --skip-ktlint-format $@"
 
 fi
 
