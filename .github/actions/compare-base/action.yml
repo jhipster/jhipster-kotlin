@@ -20,61 +20,56 @@
 name: 'Generate application using merge base commit to compare'
 description: 'Experimental generate application using merge base commit to compare action'
 inputs:
-  application-path:
-    description: 'Application path'
-    required: false
-    default: ${{ github.workspace }}/base/app
-  extra-args:
-    description: 'Extra arguments'
-    required: false
-    default: ''
+    application-path:
+        description: 'Application path'
+        required: false
+        default: ${{ github.workspace }}/base/app
+    extra-args:
+        description: 'Extra arguments'
+        required: false
+        default: ''
 outputs:
-  application-path:
-    description: 'Application path'
-    value: ${{ steps.base.outputs.application-path }}
+    application-path:
+        description: 'Application path'
+        value: ${{ steps.base.outputs.application-path }}
 runs:
-  using: 'composite'
-  steps:
-    - name: 'MERGE: Install base generator-jhipster'
-      run: |
-        if [[ "$JHI_CLI_PACKAGE" == "" ]]; then
-          JHI_CLI_PACKAGE=generator-jhipster
-        fi
-        mkdir -p "${{ github.workspace }}/base/$JHI_CLI_PACKAGE"
-        cd "${{ github.workspace }}/base/$JHI_CLI_PACKAGE"
-        git clone "${{ github.workspace }}/$JHI_CLI_PACKAGE" .
-        git checkout @~1
-        git log
-        npm uninstall -g $JHI_CLI_PACKAGE
-        npm install
-        npm install -g .
-      shell: bash
-    - name: 'MERGE: merge base config'
-      id: base-config
-      run: $JHI_SCRIPTS/11-generate-config.sh
-      env:
-        JHI_FOLDER_APP: ${{ inputs.application-path }}
-      shell: bash
-    - name: 'MERGE: quirks'
-      id: quirks
-      run: |
-        # docker-compose is not reproducible, copy old config
-        ls "$JHI_FOLDER_APP/docker-compose" \
-          && mkdir "${{ inputs.application-path }}/docker-compose" \
-          && cp "$JHI_FOLDER_APP/docker-compose"/.yo-rc.json "${{ inputs.application-path }}/docker-compose" \
-          || true
-      shell: bash
-    - name: 'MERGE: merge base project'
-      id: base
-      run: |
-        $JHI_SCRIPTS/12-generate-project.sh --skip-jhipster-dependencies --skip-install --skip-git ${{ inputs.extra-args }}
-        echo "::set-output name=application-path::${{inputs.application-path}}"
-      env:
-        JHI_FOLDER_APP: ${{ inputs.application-path }}
-        JHI_JDL_SAMPLES: "${{ github.workspace }}/base/${{ env.JHI_CLI_PACKAGE || 'generator-jhipster' }}/test-integration/jdl-samples"
-      shell: bash
-    - name: 'MERGE: merge base git'
-      run: |
-        # Copy git repository (clone without the files)
-        cp -a "$JHI_FOLDER_APP/.git" "${{ inputs.application-path }}"
-      shell: bash
+    using: 'composite'
+    steps:
+        - name: 'MERGE: Install base generator-jhipster'
+          run: |
+              cd "${{ github.workspace }}/jhipster-kotlin"
+              git restore -s @~1 .
+              npm install
+              # use updated cli, scripts and samples
+              git checkout cli/cli.cjs test-integration
+          shell: bash
+        - name: 'MERGE: merge base config'
+          id: base-config
+          run: $KHI_SCRIPTS/11-generate-config.sh
+          env:
+              JHI_FOLDER_APP: ${{ inputs.application-path }}
+              KHI_FOLDER_APP: ${{ inputs.application-path }}
+          shell: bash
+        - name: 'MERGE: quirks'
+          id: quirks
+          run: |
+              # docker-compose is not reproducible, copy old config
+              ls "${{ github.workspace }}/app//docker-compose" \
+                && mkdir "${{ inputs.application-path }}/docker-compose" \
+                && cp "${{ github.workspace }}/app/docker-compose"/.yo-rc.json "${{ inputs.application-path }}/docker-compose" \
+                || true
+          shell: bash
+        - name: 'MERGE: merge base project'
+          id: base
+          run: |
+              $KHI_SCRIPTS/12-generate-project.sh --skip-jhipster-dependencies --skip-install --skip-git ${{ inputs.extra-args }}
+              echo "::set-output name=application-path::${{inputs.application-path}}"
+          env:
+              JHI_FOLDER_APP: ${{ inputs.application-path }}
+              KHI_FOLDER_APP: ${{ inputs.application-path }}
+          shell: bash
+        - name: 'MERGE: merge base git'
+          run: |
+              # Copy git repository (clone without the files)
+              cp -a "${{ github.workspace }}/app/.git" "${{ inputs.application-path }}"
+          shell: bash

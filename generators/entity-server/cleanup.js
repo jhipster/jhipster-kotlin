@@ -27,7 +27,7 @@
 function cleanupOldFiles(generator, javaDir, testDir) {
     if (generator.isJhipsterVersionLessThan('7.6.1')) {
         if (generator.searchEngineElasticsearch) {
-        generator.removeFile(`${javaDir}/repository/search/SortToFieldSortBuilderConverter.kt`);
+            generator.removeFile(`${javaDir}/repository/search/SortToFieldSortBuilderConverter.kt`);
         }
     }
     if (generator.isJhipsterVersionLessThan('7.7.1')) {

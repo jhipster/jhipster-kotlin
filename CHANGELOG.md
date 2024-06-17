@@ -1,4 +1,3 @@
-
 Refer [releases](https://github.com/jhipster/jhipster-kotlin/releases).
 
 <a name="1.8.1"></a>
