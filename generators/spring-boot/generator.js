@@ -2,7 +2,7 @@ import { dirname, join } from 'path';
 import { fileURLToPath } from 'url';
 import { transform, passthrough } from '@yeoman/transform';
 import BaseApplicationGenerator from 'generator-jhipster/generators/spring-boot';
-import { createNeedleCallback, upperFirstCamelCase } from 'generator-jhipster/generators/base/support';
+import { createNeedleCallback } from 'generator-jhipster/generators/base/support';
 import { prepareSqlApplicationProperties } from 'generator-jhipster/generators/spring-data-relational/support';
 import { files as entityServerFiles } from 'jhipster-7-templates/esm/generators/entity-server';
 import { getEnumInfo } from 'generator-jhipster/generators/base-application/support';
@@ -57,22 +57,21 @@ const convertToKotlinFile = file =>
         .replace(SERVER_MAIN_SRC_DIR, SERVER_MAIN_SRC_KOTLIN_DIR)
         .replace(SERVER_TEST_SRC_DIR, SERVER_TEST_SRC_KOTLIN_DIR);
 
-const customizeKotlinPaths = ({ sourceFile, destinationFile }) => {
+const customizeSpringBootFiles = ({ sourceFile, destinationFile }) => {
     // Ignore docker files, use updated docker files from v8 jhipster:docker generator
     if (
-        destinationFile.includes('package-info') ||
-        (destinationFile.includes('src/main/docker') &&
-            !destinationFile.includes('src/main/docker/jhipster-control-center.yml') &&
-            !destinationFile.includes('src/main/docker/jib') &&
-            !destinationFile.includes('src/main/docker/grafana') &&
-            !destinationFile.includes('src/main/docker/monitoring.yml'))
+        destinationFile.includes('src/main/docker') &&
+        !destinationFile.includes('src/main/docker/jhipster-control-center.yml') &&
+        !destinationFile.includes('src/main/docker/jib') &&
+        !destinationFile.includes('src/main/docker/grafana') &&
+        !destinationFile.includes('src/main/docker/monitoring.yml')
     ) {
         return undefined;
     }
     if (['src/main/resources/templates/error.html', 'src/main/resources/config/cql/changelog/README.md'].includes(sourceFile)) {
-        sourceFile = `${sourceFile}.ejs`;
+        return { sourceFile: `${sourceFile}.ejs`, destinationFile };
     }
-    return { sourceFile: convertToKotlinFile(sourceFile), destinationFile: convertToKotlinFile(destinationFile) };
+    return { sourceFile, destinationFile };
 };
 
 export default class extends BaseApplicationGenerator {
@@ -99,9 +98,6 @@ export default class extends BaseApplicationGenerator {
             async composingTemplateTask() {
                 await this.composeCurrentJHipsterCommand();
             },
-            async composeDocker() {
-                await this.composeWithJHipster('docker');
-            },
             async liquibase() {
                 if (
                     this.jhipsterConfigWithDefaults.databaseType === 'sql' ||
@@ -112,9 +108,28 @@ export default class extends BaseApplicationGenerator {
                         generatorOptions: { skipPriorities: ['writing', 'postWriting'] },
                     });
                 }
-                if (this.jhipsterConfigWithDefaults.applicationType === 'gateway') {
+            },
+            async composing() {
+                const { applicationType, databaseType } = this.jhipsterConfigWithDefaults;
+
+                await this.composeWithJHipster('docker');
+
+                const generatorOptions = { skipPriorities: ['writing', 'postWriting', 'writingEntities', 'postWritingEntities'] };
+                if (applicationType === 'gateway') {
                     // Use gateway package.json scripts.
-                    await this.composeWithJHipster('jhipster:spring-cloud:gateway');
+                    await this.composeWithJHipster('jhipster:spring-cloud:gateway', { generatorOptions: { skipPriorities: ['writing'] } });
+                }
+
+                if (databaseType === 'sql') {
+                    await this.composeWithJHipster('jhipster:spring-data-relational', { generatorOptions });
+                } else if (databaseType === 'cassandra') {
+                    await this.composeWithJHipster('jhipster:spring-data-cassandra', { generatorOptions });
+                } else if (databaseType === 'couchbase') {
+                    await this.composeWithJHipster('jhipster:spring-data-couchbase', { generatorOptions });
+                } else if (databaseType === 'mongodb') {
+                    await this.composeWithJHipster('jhipster:spring-data-mongodb', { generatorOptions });
+                } else if (databaseType === 'neo4j') {
+                    await this.composeWithJHipster('jhipster:spring-data-neo4j', { generatorOptions });
                 }
             },
         });
@@ -130,6 +145,21 @@ export default class extends BaseApplicationGenerator {
                     // syncUserWithIdp disabled is not supported by kotlin blueprint
                     syncUserWithIdp: application.authenticationType === 'oauth2',
                 });
+
+                application.customizeTemplatePath = file => {
+                    if (!file) return file;
+                    const { sourceFile, destinationFile } = file;
+                    if (destinationFile.includes('package-info')) {
+                        return undefined;
+                    }
+                    if (sourceFile.includes('.java')) {
+                        return {
+                            sourceFile: this.templatePath(convertToKotlinFile(sourceFile)),
+                            destinationFile: convertToKotlinFile(destinationFile),
+                        };
+                    }
+                    return { sourceFile, destinationFile };
+                };
             },
             async migration({ application, applicationDefaults }) {
                 const dockerContainersVersions = Object.fromEntries(
@@ -162,12 +192,6 @@ export default class extends BaseApplicationGenerator {
                 });
 
                 Object.assign(application, {
-                    // Required by renameTo
-                    upperFirstCamelCase,
-                    // Required by renameTo
-                    asDto: name => `${name}${application.dtoSuffix}`,
-                    // Required by renameTo
-                    asEntity: name => `${name}${application.entitySuffix}`,
                     jhipsterDependenciesVersion: JHIPSTER_DEPENDENCIES_VERSION,
                     JHIPSTER_DEPENDENCIES_VERSION,
                     JAVA_COMPATIBLE_VERSIONS,
@@ -175,10 +199,6 @@ export default class extends BaseApplicationGenerator {
                     JAVA_VERSION,
                     javaVersion: JAVA_VERSION,
                     SPRING_BOOT_VERSION,
-                    isUsingBuiltInUser: () => application.generateBuiltInUserEntity,
-                    isUsingBuiltInAuthority: () => application.generateBuiltInAuthorityEntity,
-                    jhipsterConfig: this.config.getAll(),
-                    configOptions: {},
                 });
             },
         });
@@ -195,6 +215,7 @@ export default class extends BaseApplicationGenerator {
                 });
             },
             async migration({ application, applicationDefaults }) {
+                // Kotlin templates uses devDatabaseType* without sql filtering.
                 prepareSqlApplicationProperties({ application });
 
                 applicationDefaults({
@@ -224,9 +245,6 @@ export default class extends BaseApplicationGenerator {
         return this.asPostPreparingEachEntityTaskGroup({
             ...super.postPreparingEachEntity,
             migration({ entity }) {
-                // V7 templates requires liquibase preparation
-                // postPrepareEntity({ application, entity });
-
                 // V7 templates expects false instead of 'no'
                 entity.searchEngine = entity.searchEngine === 'no' ? false : entity.searchEngine;
                 // V7 templates are not compatible with jpaMetamodelFiltering for reactive
@@ -243,7 +261,6 @@ export default class extends BaseApplicationGenerator {
             migration({ application }) {
                 Object.assign(application, {
                     serviceDiscoveryType: application.serviceDiscoveryType === 'no' ? false : application.serviceDiscoveryType,
-                    cacheProviderEhCache: application.cacheProviderEhcache,
                 });
             },
             async defaultTemplateTask({ application }) {
@@ -290,12 +307,11 @@ export default class extends BaseApplicationGenerator {
                 await this.writeFiles({
                     sections: serverFiles,
                     context: application,
-                    customizeTemplatePath: customizeKotlinPaths,
+                    customizeTemplatePath: customizeSpringBootFiles,
                 });
                 await this.writeFiles({
                     sections: kotlinAdditionalFiles,
                     context: application,
-                    customizeTemplatePath: customizeKotlinPaths,
                 });
             },
             async writeSqlFiles({ application }) {
@@ -345,7 +361,6 @@ export default class extends BaseApplicationGenerator {
                         sections: entityServerFiles,
                         context: { ...application, ...entity, entity },
                         rootTemplatesPath: application.reactive ? ['reactive', ''] : [''],
-                        customizeTemplatePath: customizeKotlinPaths,
                     });
 
                     if (application.databaseTypeCouchbase) {
@@ -353,7 +368,6 @@ export default class extends BaseApplicationGenerator {
                             sections: entityCouchbaseFiles,
                             context: { ...application, ...entity, entity },
                             rootTemplatesPath: 'couchbase',
-                            customizeTemplatePath: customizeKotlinPaths,
                         });
                     }
                 }
@@ -383,7 +397,6 @@ export default class extends BaseApplicationGenerator {
                                 },
                             ],
                             context: enumInfo,
-                            customizeTemplatePath: customizeKotlinPaths,
                         });
                     }
                 }
