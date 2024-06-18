@@ -30,7 +30,7 @@ application {
     prodDatabaseType mariadb
     serviceDiscoveryType eureka
     testFrameworks [cypress]
-    microfrontends [blog, notification, store]
+    microfrontends [blog, notification]
   }
   entities UserData, Product
 }
@@ -138,6 +138,8 @@ entity Notification {
 }
 
 relationship ManyToOne {
+  Blog{user(login)} to User
+  Notification{user(login)} to User
   Post{blog(name)} to Blog
 }
 
@@ -156,6 +158,14 @@ microservice Product with store
 
 deployment {
   deploymentType docker-compose,
+  appsFolders [gateway, store, blog, notification]
+  dockerRepositoryName "hipsterslabs"
+  monitoring no
+  serviceDiscoveryType eureka
+}
+
+deployment {
+  deploymentType kubernetes,
   appsFolders [gateway, store, blog, notification]
   dockerRepositoryName "hipsterslabs"
   monitoring no

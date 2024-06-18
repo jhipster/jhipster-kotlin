@@ -1,15 +1,16 @@
 /*
- * Microservice stack sample to test compilation and base gateway/microservices functionality.
+ * Microservice stack sample to test compilation and base microfrontend functionality.
  *
  * Test focus:
+ * - clientFramework: angular with microfrontend
  * - serviceDiscovery: eureka
- * - authenticationType: oauth2
- * - databaseType: mongodb
- * - testFrameworks: cypress, cucumber, gatling
- * - messageBroker: kafka
+ * - authenticationType: jwt
+ * - prodDatabaseType: postgresql
+ * - testFrameworks: cypress
+ * - messageBroker: pulsar
  *
  * Imperative focus:
- * - cacheProvider: caffeine
+ * - cacheProvider: ehcache
  *
  * Matrix:
  * - reactive: true, false
@@ -20,39 +21,41 @@
 application {
   config {
     applicationType gateway
-    authenticationType oauth2
+    authenticationType jwt
     baseName gateway
     buildTool maven
-    clientFramework angularX
+    clientFramework angular
     creationTimestamp 1617901618886
-    databaseType mongodb
-    jhiPrefix custom
     jwtSecretKey "ZjY4MTM4YjI5YzMwZjhjYjI2OTNkNTRjMWQ5Y2Q0Y2YwOWNmZTE2NzRmYzU3NTMwM2NjOTE3MTllOTM3MWRkMzcyYTljMjVmNmQ0Y2MxOTUzODc0MDhhMTlkMDIxMzI2YzQzZDM2ZDE3MmQ3NjVkODk3OTVmYzljYTQyZDNmMTQ="
-    // TODO enable kafka
-    // messageBroker kafka
+    // tests are not stable enough
+    // messageBroker pulsar
     packageName com.okta.developer.gateway
+    prodDatabaseType postgresql
     serviceDiscoveryType eureka
-    testFrameworks [cypress, cucumber, gatling]
+    testFrameworks [cypress]
+    microfrontends [blog, notification, store]
   }
-  entities *
+  entities UserData
 }
 
 /* imperative, maven */
 application {
   config {
     applicationType microservice
-    authenticationType oauth2
+    authenticationType jwt
     baseName blog
     buildTool maven
-    cacheProvider caffeine
+    cacheProvider ehcache
+    clientFramework angular
     creationTimestamp 1617901618887
-    databaseType mongodb
     jwtSecretKey "ZjY4MTM4YjI5YzMwZjhjYjI2OTNkNTRjMWQ5Y2Q0Y2YwOWNmZTE2NzRmYzU3NTMwM2NjOTE3MTllOTM3MWRkMzcyYTljMjVmNmQ0Y2MxOTUzODc0MDhhMTlkMDIxMzI2YzQzZDM2ZDE3MmQ3NjVkODk3OTVmYzljYTQyZDNmMTQ="
-    messageBroker kafka
+    // tests are not stable enough
+    // messageBroker pulsar
     packageName com.okta.developer.blog
+    prodDatabaseType postgresql
     serverPort 8081
     serviceDiscoveryType eureka
-    testFrameworks [cucumber, gatling]
+    testFrameworks [cypress]
   }
   entities Blog, Post, Tag
 }
@@ -61,20 +64,22 @@ application {
 application {
   config {
     applicationType microservice
-    authenticationType oauth2
+    authenticationType jwt
     baseName store,
     buildTool gradle
-    cacheProvider caffeine
+    cacheProvider ehcache
+    clientFramework angular
     creationTimestamp 1617901618888
-    databaseType mongodb
     dtoSuffix Rest
     entitySuffix Entity
     jwtSecretKey "ZjY4MTM4YjI5YzMwZjhjYjI2OTNkNTRjMWQ5Y2Q0Y2YwOWNmZTE2NzRmYzU3NTMwM2NjOTE3MTllOTM3MWRkMzcyYTljMjVmNmQ0Y2MxOTUzODc0MDhhMTlkMDIxMzI2YzQzZDM2ZDE3MmQ3NjVkODk3OTVmYzljYTQyZDNmMTQ="
-    messageBroker kafka
+    // tests are not stable enough
+    // messageBroker pulsar
     packageName com.okta.developer.store
+    prodDatabaseType postgresql
     serverPort 8082
     serviceDiscoveryType eureka
-    testFrameworks [cucumber, gatling]
+    testFrameworks [cypress]
   }
   entities Product
 }
@@ -83,20 +88,22 @@ application {
 application {
   config {
     applicationType microservice
-    authenticationType oauth2
+    authenticationType jwt
     baseName notification,
     buildTool gradle
+    clientFramework angular
     creationTimestamp 1617901618889
-    databaseType mongodb
     dtoSuffix Rest
     entitySuffix Entity
     jwtSecretKey "ZjY4MTM4YjI5YzMwZjhjYjI2OTNkNTRjMWQ5Y2Q0Y2YwOWNmZTE2NzRmYzU3NTMwM2NjOTE3MTllOTM3MWRkMzcyYTljMjVmNmQ0Y2MxOTUzODc0MDhhMTlkMDIxMzI2YzQzZDM2ZDE3MmQ3NjVkODk3OTVmYzljYTQyZDNmMTQ="
-    messageBroker kafka
+    // tests are not stable enough
+    // messageBroker pulsar
     packageName com.okta.developer.notification
+    prodDatabaseType postgresql
     reactive true
     serverPort 8083
     serviceDiscoveryType eureka
-    testFrameworks [cucumber, gatling]
+    testFrameworks [cypress]
   }
   entities Notification
 }
@@ -129,13 +136,15 @@ entity Product {
   image ImageBlob
 }
 
+/*
+relationship OneToOne {
+  @Id UserData{user(login)} to User
+}
+*/
+
 @ChangelogDate(20210408164814)
 entity Notification {
   title String required
-}
-
-relationship OneToOne {
-  @Id UserData{user(login)} to User
 }
 
 relationship ManyToOne {
@@ -151,14 +160,18 @@ paginate Product with pagination
 
 service Product with serviceClass
 service Notification with serviceImpl
-dto Blog, Post, Tag with mapstruct
-
-microservice Product with store
-microservice Blog, Post, Tag with blog
-microservice Notification with notification
+dto Blog, Post, Tag, Notification with mapstruct
 
 deployment {
   deploymentType docker-compose,
+  appsFolders [gateway, store, blog, notification]
+  dockerRepositoryName "hipsterslabs"
+  monitoring no
+  serviceDiscoveryType eureka
+}
+
+deployment {
+  deploymentType kubernetes,
   appsFolders [gateway, store, blog, notification]
   dockerRepositoryName "hipsterslabs"
   monitoring no
