@@ -16,16 +16,14 @@
  * See the License for the specific language governing permissions and
  * limitations under the License.
  */
-const constants = require('../jhipster-constants.cjs');
 
-const SERVER_MAIN_SRC_DIR = `${constants.MAIN_DIR}kotlin/`;
-const SERVER_MAIN_RES_DIR = constants.SERVER_MAIN_RES_DIR;
+import { KOTLIN_MAIN_RES_DIR, KOTLIN_MAIN_SRC_DIR } from './kotlin-constants.js';
 
-const entityCouchbaseFiles = {
+export const entityCouchbaseFiles = {
     dbChangelog: [
         {
             condition: generator => !generator.skipDbChangelog && !generator.embedded,
-            path: SERVER_MAIN_RES_DIR,
+            path: KOTLIN_MAIN_RES_DIR,
             templates: [
                 {
                     file: 'config/couchmove/changelog/entity.n1ql',
@@ -36,7 +34,7 @@ const entityCouchbaseFiles = {
         },
         {
             condition: generator => generator.searchEngineCouchbase && !generator.skipDbChangelog && !generator.embedded,
-            path: SERVER_MAIN_RES_DIR,
+            path: KOTLIN_MAIN_RES_DIR,
             templates: [
                 {
                     file: 'config/couchmove/changelog/entity.fts',
@@ -50,7 +48,7 @@ const entityCouchbaseFiles = {
     ],
     server: [
         {
-            path: SERVER_MAIN_SRC_DIR,
+            path: KOTLIN_MAIN_SRC_DIR,
             templates: [
                 {
                     file: 'package/domain/Entity.kt.jhi.spring_data_couchbase',
@@ -62,7 +60,7 @@ const entityCouchbaseFiles = {
         },
         {
             condition: generator => !generator.embedded,
-            path: SERVER_MAIN_SRC_DIR,
+            path: KOTLIN_MAIN_SRC_DIR,
             templates: [
                 {
                     file: 'package/repository/EntityRepository.kt',
@@ -72,31 +70,4 @@ const entityCouchbaseFiles = {
             ],
         },
     ],
-};
-
-function writeEntityCouchbaseFiles() {
-    return {
-        cleanupCouchbaseFiles() {
-            if (!this.databaseTypeCouchbase) return;
-
-            if (this.isJhipsterVersionLessThan('7.6.1')) {
-                this.removeFile(
-                    `${SERVER_MAIN_RES_DIR}config/couchmove/changelog/V${this.changelogDate}__${this.entityInstance.toLowerCase()}.fts`,
-                );
-            }
-        },
-        async writeEntityCouchbaseFiles() {
-            if (this.skipServer || !this.databaseTypeCouchbase) return;
-
-            await this.writeFiles({
-                sections: entityCouchbaseFiles,
-                rootTemplatesPath: 'couchbase',
-            });
-        },
-    };
-}
-
-module.exports = {
-    writeEntityCouchbaseFiles,
-    entityCouchbaseFiles,
 };

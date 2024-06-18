@@ -24,7 +24,7 @@
  * @param {string} javaDir - Java directory
  * @param {string} testDir - Java tests directory
  */
-function cleanupOldFiles(generator, javaDir, testDir) {
+export function cleanupOldFiles(generator, javaDir, testDir) {
     if (generator.isJhipsterVersionLessThan('7.6.1')) {
         if (generator.searchEngineElasticsearch) {
             generator.removeFile(`${javaDir}/repository/search/SortToFieldSortBuilderConverter.kt`);
@@ -35,7 +35,3 @@ function cleanupOldFiles(generator, javaDir, testDir) {
         generator.removeFile(`${testDir}/repository/search/${generator.entityClass}SearchRepositoryMockConfiguration.kt`);
     }
 }
-
-module.exports = {
-    cleanupOldFiles,
-};

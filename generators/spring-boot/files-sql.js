@@ -17,29 +17,19 @@
  * limitations under the License.
  */
 import { addSectionsCondition, mergeSections } from 'generator-jhipster/generators/base/support';
-import constants from '../jhipster-constants.cjs';
-
-const DOCKER_DIR = constants.DOCKER_DIR;
-// const SERVER_MAIN_SRC_DIR = constants.SERVER_MAIN_SRC_DIR;
-const SERVER_MAIN_RES_DIR = constants.SERVER_MAIN_RES_DIR;
-// const SERVER_TEST_SRC_DIR = constants.SERVER_TEST_SRC_DIR;
-const SERVER_TEST_RES_DIR = constants.SERVER_TEST_RES_DIR;
-
-const { MAIN_DIR, TEST_DIR } = constants;
-
-const SERVER_MAIN_SRC_DIR = `${MAIN_DIR}kotlin/`;
-const SERVER_TEST_SRC_DIR = `${TEST_DIR}kotlin/`;
+import { JAVA_DOCKER_DIR } from 'generator-jhipster';
+import { KOTLIN_MAIN_RES_DIR, KOTLIN_MAIN_SRC_DIR, KOTLIN_TEST_RES_DIR, KOTLIN_TEST_SRC_DIR } from './kotlin-constants.js';
 
 const dockerFiles = {
     docker: [
         {
             condition: generator => !generator.prodDatabaseTypeOracle,
-            path: DOCKER_DIR,
+            path: JAVA_DOCKER_DIR,
             templates: [{ file: generator => `${generator.prodDatabaseType}.yml` }],
         },
         {
             condition: generator => !generator.devDatabaseTypeOracle && !generator.devDatabaseTypeH2Any,
-            path: DOCKER_DIR,
+            path: JAVA_DOCKER_DIR,
             templates: [{ file: generator => `${generator.devDatabaseType}.yml` }],
         },
     ],
@@ -49,7 +39,7 @@ const sqlFiles = {
     reactiveJavaUserManagement: [
         {
             condition: generator => generator.reactive && (!generator.skipUserManagement || generator.authenticationTypeOauth2),
-            path: SERVER_MAIN_SRC_DIR,
+            path: KOTLIN_MAIN_SRC_DIR,
             templates: [
                 {
                     file: 'package/repository/UserSqlHelper.kt',
@@ -59,7 +49,7 @@ const sqlFiles = {
         },
         {
             condition: generator => generator.reactive && (!generator.skipUserManagement || generator.authenticationTypeOauth2),
-            path: SERVER_MAIN_SRC_DIR,
+            path: KOTLIN_MAIN_SRC_DIR,
             templates: [
                 {
                     file: 'package/repository/rowmapper/UserRowMapper.kt',
@@ -71,7 +61,7 @@ const sqlFiles = {
     reactiveCommon: [
         {
             condition: generator => generator.reactive,
-            path: SERVER_MAIN_SRC_DIR,
+            path: KOTLIN_MAIN_SRC_DIR,
             templates: [
                 {
                     file: 'package/repository/rowmapper/ColumnConverter.kt',
@@ -86,7 +76,7 @@ const sqlFiles = {
     ],
     liquibase: [
         {
-            path: SERVER_MAIN_SRC_DIR,
+            path: KOTLIN_MAIN_SRC_DIR,
             templates: [
                 {
                     file: 'package/config/LiquibaseConfiguration.kt',
@@ -98,7 +88,7 @@ const sqlFiles = {
     hibernate: [
         {
             condition: generator => !generator.reactive,
-            path: SERVER_TEST_SRC_DIR,
+            path: KOTLIN_TEST_SRC_DIR,
             templates: [
                 {
                     file: 'package/config/timezone/HibernateTimeZoneIT.kt',
@@ -117,7 +107,7 @@ const sqlFiles = {
     ],
     testContainers: [
         {
-            path: SERVER_TEST_SRC_DIR,
+            path: KOTLIN_TEST_SRC_DIR,
             templates: [
                 {
                     file: 'package/config/EmbeddedSQL.kt',
@@ -130,12 +120,12 @@ const sqlFiles = {
             ],
         },
         {
-            path: SERVER_TEST_RES_DIR,
+            path: KOTLIN_TEST_RES_DIR,
             templates: ['config/application-testdev.yml'],
         },
         {
             condition: generator => !generator.reactive,
-            path: SERVER_TEST_RES_DIR,
+            path: KOTLIN_TEST_RES_DIR,
             templates: ['config/application-testprod.yml'],
         },
     ],
@@ -144,7 +134,7 @@ const sqlFiles = {
 const h2Files = {
     serverResource: [
         {
-            path: SERVER_MAIN_RES_DIR,
+            path: KOTLIN_MAIN_RES_DIR,
             templates: [{ file: 'h2.server.properties', renameTo: () => '.h2.server.properties' }],
         },
     ],
@@ -153,7 +143,7 @@ const h2Files = {
 const mysqlFiles = {
     serverTestSources: [
         {
-            path: SERVER_TEST_SRC_DIR,
+            path: KOTLIN_TEST_SRC_DIR,
             templates: [
                 {
                     file: 'package/config/MysqlTestContainer.kt',
@@ -162,11 +152,11 @@ const mysqlFiles = {
             ],
         },
         {
-            path: SERVER_TEST_RES_DIR,
+            path: KOTLIN_TEST_RES_DIR,
             templates: [{ file: 'testcontainers/mysql/my.cnf', method: 'copy', noEjs: true }],
         },
         {
-            path: DOCKER_DIR,
+            path: JAVA_DOCKER_DIR,
             templates: [{ file: 'config/mysql/my.cnf', method: 'copy', noEjs: true }],
         },
     ],
@@ -175,7 +165,7 @@ const mysqlFiles = {
 const mariadbFiles = {
     serverTestSources: [
         {
-            path: SERVER_TEST_SRC_DIR,
+            path: KOTLIN_TEST_SRC_DIR,
             templates: [
                 {
                     file: 'package/config/MariadbTestContainer.kt',
@@ -184,11 +174,11 @@ const mariadbFiles = {
             ],
         },
         {
-            path: SERVER_TEST_RES_DIR,
+            path: KOTLIN_TEST_RES_DIR,
             templates: [{ file: 'testcontainers/mariadb/my.cnf', method: 'copy', noEjs: true }],
         },
         {
-            path: DOCKER_DIR,
+            path: JAVA_DOCKER_DIR,
             templates: [{ file: 'config/mariadb/my.cnf', method: 'copy', noEjs: true }],
         },
     ],
@@ -197,7 +187,7 @@ const mariadbFiles = {
 const mssqlFiles = {
     serverTestSources: [
         {
-            path: SERVER_TEST_SRC_DIR,
+            path: KOTLIN_TEST_SRC_DIR,
             templates: [
                 {
                     file: 'package/config/MsSqlTestContainer.kt',
@@ -211,7 +201,7 @@ const mssqlFiles = {
 const postgresFiles = {
     serverTestSources: [
         {
-            path: SERVER_TEST_SRC_DIR,
+            path: KOTLIN_TEST_SRC_DIR,
             templates: [
                 {
                     file: 'package/config/PostgreSqlTestContainer.kt',
@@ -222,7 +212,7 @@ const postgresFiles = {
     ],
 };
 
-const serverFiles = mergeSections(
+export const serverFiles = mergeSections(
     sqlFiles,
     dockerFiles,
     addSectionsCondition(h2Files, context => context.devDatabaseTypeH2Any),
@@ -231,35 +221,3 @@ const serverFiles = mergeSections(
     addSectionsCondition(mssqlFiles, context => context.devDatabaseTypeMssql || context.prodDatabaseTypeMssql),
     addSectionsCondition(postgresFiles, context => context.devDatabaseTypePostgresql || context.prodDatabaseTypePostgresql),
 );
-
-export function writeSqlFiles() {
-    return {
-        async writeSqlFiles({ application }) {
-            if (!application.databaseTypeSql) return;
-
-            await this.writeFiles({
-                sections: serverFiles,
-                rootTemplatesPath: ['sql/reactive', 'sql/common'],
-                context: application,
-            });
-        },
-    };
-}
-
-// function writeSqlFiles() {
-//     return {
-//         async writeSqlFiles() {
-//             if (!this.databaseTypeSql) return;
-
-//             await this.writeFiles({
-//                 sections: sqlFiles,
-//                 rootTemplatesPath: ['sql/reactive', 'sql'],
-//             });
-//         },
-//     };
-// }
-
-// module.exports = {
-//     sqlFiles,
-//     writeSqlFiles,
-// };

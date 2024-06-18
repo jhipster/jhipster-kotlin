@@ -1,6 +1,6 @@
-import khipsterconstants from '../../generators/generator-kotlin-constants.cjs';
+import migration from '../../generators/spring-boot/migration.cjs';
 
-const { jhipsterConstants: constants } = khipsterconstants;
+const { jhipsterConstants: constants } = migration;
 
 const TEST_DIR = constants.TEST_DIR;
 const CLIENT_MAIN_SRC_DIR = constants.CLIENT_MAIN_SRC_DIR;

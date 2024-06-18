@@ -4,15 +4,26 @@ import { transform, passthrough } from '@yeoman/transform';
 import BaseApplicationGenerator from 'generator-jhipster/generators/spring-boot';
 import { createNeedleCallback, upperFirstCamelCase } from 'generator-jhipster/generators/base/support';
 import { prepareSqlApplicationProperties } from 'generator-jhipster/generators/spring-data-relational/support';
-
-import { serverFiles } from './files.js';
-import { writeSqlFiles } from './files-sql.js';
-import jhipsterConstants from '../jhipster-constants.cjs';
-import kotlinConstants from '../generator-kotlin-constants.cjs';
-import { serverFiles as entityServerFiles } from './entity-files.js';
+import { files as entityServerFiles } from 'jhipster-7-templates/esm/generators/entity-server';
 import { getEnumInfo } from 'generator-jhipster/generators/base-application/support';
+import { files as serverFiles } from 'jhipster-7-templates/esm/generators/server';
 
-const { DETEKT_CONFIG_FILE, MOCKITO_KOTLIN_VERSION } = kotlinConstants;
+import { kotlinAdditionalFiles } from './files.js';
+import migration from './migration.cjs';
+import { serverFiles as sqlFiles } from './files-sql.js';
+import {
+    DETEKT_CONFIG_FILE,
+    DETEKT_VERSION,
+    KOTLIN_VERSION,
+    KTLINT_GRADLE_VERSION,
+    KTLINT_MAVEN_VERSION,
+    MAPSTRUCT_VERSION,
+    MAVEN_ANTRUN_VERSION,
+    MOCKITO_KOTLIN_VERSION,
+} from './kotlin-constants.js';
+import { entityCouchbaseFiles } from './entity-files-couchbase.js';
+
+const { jhipsterConstants, jhipster7DockerContainers } = migration;
 const {
     DOCKER_COMPOSE_FORMAT_VERSION,
     SPRING_BOOT_VERSION,
@@ -24,13 +35,45 @@ const {
     JAVA_VERSION,
     JAVA_COMPATIBLE_VERSIONS,
     JHIPSTER_DEPENDENCIES_VERSION,
-    jhipster7DockerContainers,
     JACKSON_DATABIND_NULLABLE_VERSION,
     DOCKER_ELASTICSEARCH_CONTAINER,
     ELASTICSEARCH_VERSION,
+    MAIN_DIR,
+    SERVER_MAIN_SRC_DIR,
+    SERVER_TEST_SRC_DIR,
+    TEST_DIR,
 } = jhipsterConstants;
 
+const { couchbaseFiles } = migration;
+
 const jhipster7TemplatesPackage = dirname(fileURLToPath(import.meta.resolve('jhipster-7-templates/package.json')));
+
+const SERVER_MAIN_SRC_KOTLIN_DIR = `${MAIN_DIR}kotlin/`;
+const SERVER_TEST_SRC_KOTLIN_DIR = `${TEST_DIR}kotlin/`;
+
+const convertToKotlinFile = file =>
+    file
+        .replace('.java', '.kt')
+        .replace(SERVER_MAIN_SRC_DIR, SERVER_MAIN_SRC_KOTLIN_DIR)
+        .replace(SERVER_TEST_SRC_DIR, SERVER_TEST_SRC_KOTLIN_DIR);
+
+const customizeKotlinPaths = ({ sourceFile, destinationFile }) => {
+    // Ignore docker files, use updated docker files from v8 jhipster:docker generator
+    if (
+        destinationFile.includes('package-info') ||
+        (destinationFile.includes('src/main/docker') &&
+            !destinationFile.includes('src/main/docker/jhipster-control-center.yml') &&
+            !destinationFile.includes('src/main/docker/jib') &&
+            !destinationFile.includes('src/main/docker/grafana') &&
+            !destinationFile.includes('src/main/docker/monitoring.yml'))
+    ) {
+        return undefined;
+    }
+    if (['src/main/resources/templates/error.html', 'src/main/resources/config/cql/changelog/README.md'].includes(sourceFile)) {
+        sourceFile = `${sourceFile}.ejs`;
+    }
+    return { sourceFile: convertToKotlinFile(sourceFile), destinationFile: convertToKotlinFile(destinationFile) };
+};
 
 export default class extends BaseApplicationGenerator {
     constructor(args, options, features) {
@@ -132,6 +175,10 @@ export default class extends BaseApplicationGenerator {
                     JAVA_VERSION,
                     javaVersion: JAVA_VERSION,
                     SPRING_BOOT_VERSION,
+                    isUsingBuiltInUser: () => application.generateBuiltInUserEntity,
+                    isUsingBuiltInAuthority: () => application.generateBuiltInAuthorityEntity,
+                    jhipsterConfig: this.config.getAll(),
+                    configOptions: {},
                 });
             },
         });
@@ -193,6 +240,12 @@ export default class extends BaseApplicationGenerator {
     get [BaseApplicationGenerator.DEFAULT]() {
         return this.asDefaultTaskGroup({
             ...super.default,
+            migration({ application }) {
+                Object.assign(application, {
+                    serviceDiscoveryType: application.serviceDiscoveryType === 'no' ? false : application.serviceDiscoveryType,
+                    cacheProviderEhCache: application.cacheProviderEhcache,
+                });
+            },
             async defaultTemplateTask({ application }) {
                 this.queueTransformStream(
                     {
@@ -234,17 +287,53 @@ export default class extends BaseApplicationGenerator {
             resetFakeDataSeed,
             generateKeyStore,
             async writingTemplateTask({ application }) {
-                /*
-                if (application.user && !application.user.liquibaseFakeData) {
-                    application.user.liquibaseFakeData = [{}, {}];
-                }
-                    */
                 await this.writeFiles({
                     sections: serverFiles,
                     context: application,
+                    customizeTemplatePath: customizeKotlinPaths,
+                });
+                await this.writeFiles({
+                    sections: kotlinAdditionalFiles,
+                    context: application,
+                    customizeTemplatePath: customizeKotlinPaths,
                 });
             },
-            ...writeSqlFiles(),
+            async writeSqlFiles({ application }) {
+                if (!application.databaseTypeSql) return;
+
+                await this.writeFiles({
+                    sections: sqlFiles,
+                    rootTemplatesPath: application.reactive ? ['sql/reactive', 'sql/common'] : ['sql/common'],
+                    context: application,
+                });
+            },
+            cleanupCouchbaseFiles({ application }) {
+                if (!application.databaseTypeCouchbase) return;
+
+                if (this.isJhipsterVersionLessThan('7.1.1')) {
+                    this.removeFile(
+                        `${SERVER_MAIN_SRC_KOTLIN_DIR}${application.packageFolder}repository/CustomReactiveCouchbaseRepository.kt`,
+                    );
+                    this.removeFile(`${SERVER_TEST_SRC_KOTLIN_DIR}${application.packageFolder}config/DatabaseConfigurationIT.kt`);
+                    this.removeFile(`${SERVER_MAIN_SRC_KOTLIN_DIR}${application.packageFolder}repository/N1qlCouchbaseRepository.kt`);
+                    this.removeFile(
+                        `${SERVER_MAIN_SRC_KOTLIN_DIR}${application.packageFolder}repository/ReactiveN1qlCouchbaseRepository.kt`,
+                    );
+                    this.removeFile(`${SERVER_MAIN_SRC_KOTLIN_DIR}${application.packageFolder}repository/CustomN1qlCouchbaseRepository.kt`);
+                    this.removeFile(`${SERVER_MAIN_SRC_KOTLIN_DIR}${application.packageFolder}repository/CustomCouchbaseRepository.kt`);
+                    this.removeFile(`${SERVER_MAIN_SRC_KOTLIN_DIR}${application.packageFolder}repository/SearchCouchbaseRepository.kt`);
+                    this.removeFile(`${SERVER_TEST_SRC_KOTLIN_DIR}${application.packageFolder}repository/CustomCouchbaseRepositoryTest.kt`);
+                }
+            },
+            async writeCouchbaseFiles({ application }) {
+                if (!application.databaseTypeCouchbase) return;
+
+                await this.writeFiles({
+                    sections: couchbaseFiles,
+                    rootTemplatesPath: 'couchbase',
+                    context: application,
+                });
+            },
         });
     }
 
@@ -256,7 +345,17 @@ export default class extends BaseApplicationGenerator {
                         sections: entityServerFiles,
                         context: { ...application, ...entity, entity },
                         rootTemplatesPath: application.reactive ? ['reactive', ''] : [''],
+                        customizeTemplatePath: customizeKotlinPaths,
                     });
+
+                    if (application.databaseTypeCouchbase) {
+                        await this.writeFiles({
+                            sections: entityCouchbaseFiles,
+                            context: { ...application, ...entity, entity },
+                            rootTemplatesPath: 'couchbase',
+                            customizeTemplatePath: customizeKotlinPaths,
+                        });
+                    }
                 }
             },
 
@@ -276,14 +375,15 @@ export default class extends BaseApplicationGenerator {
                                 {
                                     templates: [
                                         {
-                                            file: 'src/main/kotlin/package/domain/enumeration/Enum.kt',
+                                            file: `${SERVER_MAIN_SRC_KOTLIN_DIR}package/domain/enumeration/Enum.kt`,
                                             renameTo: () =>
-                                                `src/main/kotlin/${entity.entityAbsoluteFolder}/domain/enumeration/${field.fieldType}.kt`,
+                                                `${SERVER_MAIN_SRC_KOTLIN_DIR}${entity.entityAbsoluteFolder}/domain/enumeration/${field.fieldType}.kt`,
                                         },
                                     ],
                                 },
                             ],
                             context: enumInfo,
+                            customizeTemplatePath: customizeKotlinPaths,
                         });
                     }
                 }
@@ -311,9 +411,8 @@ export default class extends BaseApplicationGenerator {
                         script: 'gradle/kotlin.gradle',
                     });
 
-                    const { DETEKT_VERSION, KTLINT_GRADLE_VERSION, KOTLIN_VERSION } = kotlinConstants;
                     source.addGradleProperty({ property: 'kotlin_version', value: KOTLIN_VERSION });
-                    source.addGradleProperty({ property: 'mapstruct_version', value: kotlinConstants.MAPSTRUCT_VERSION });
+                    source.addGradleProperty({ property: 'mapstruct_version', value: MAPSTRUCT_VERSION });
                     source.addGradleProperty({ property: 'detekt_version', value: DETEKT_VERSION });
 
                     // JHipster 7 does not support buildScript add for migration
@@ -392,16 +491,21 @@ export default class extends BaseApplicationGenerator {
                 if (application.buildToolMaven) {
                     const maven = await this.composeWithJHipster('jhipster:maven');
                     maven.pomStorage.merge({
-                        project: { build: { sourceDirectory: 'src/main/kotlin/', testSourceDirectory: 'src/test/kotlin/' } },
+                        project: {
+                            build: {
+                                sourceDirectory: SERVER_MAIN_SRC_KOTLIN_DIR,
+                                testSourceDirectory: SERVER_TEST_SRC_KOTLIN_DIR,
+                            },
+                        },
                     });
 
                     source.addJavaDefinition({
                         versions: [
-                            { name: 'kotlin', version: kotlinConstants.KOTLIN_VERSION },
-                            { name: 'mapstruct', version: kotlinConstants.MAPSTRUCT_VERSION },
-                            { name: 'ktlint-maven-plugin', version: kotlinConstants.KTLINT_MAVEN_VERSION },
-                            { name: 'maven-antrun-plugin', version: kotlinConstants.MAVEN_ANTRUN_VERSION },
-                            { name: 'detekt', version: kotlinConstants.DETEKT_VERSION },
+                            { name: 'kotlin', version: KOTLIN_VERSION },
+                            { name: 'mapstruct', version: MAPSTRUCT_VERSION },
+                            { name: 'ktlint-maven-plugin', version: KTLINT_MAVEN_VERSION },
+                            { name: 'maven-antrun-plugin', version: MAVEN_ANTRUN_VERSION },
+                            { name: 'detekt', version: DETEKT_VERSION },
                             { name: 'modernizer-maven-plugin', version: '2.6.0' },
                         ],
                         dependencies: [
@@ -415,7 +519,7 @@ export default class extends BaseApplicationGenerator {
                             {
                                 groupId: 'org.mockito.kotlin',
                                 artifactId: 'mockito-kotlin',
-                                version: kotlinConstants.MOCKITO_KOTLIN_VERSION,
+                                version: MOCKITO_KOTLIN_VERSION,
                                 scope: 'test',
                             },
                         ],
@@ -614,7 +718,7 @@ export default class extends BaseApplicationGenerator {
                     source.addMavenDefinition({
                         properties: [
                             { property: 'modernizer.failOnViolations', value: 'false' },
-                            { property: 'detekt.configFile', value: `$\{project.basedir}/${kotlinConstants.DETEKT_CONFIG_FILE}` },
+                            { property: 'detekt.configFile', value: `$\{project.basedir}/${DETEKT_CONFIG_FILE}` },
                             { property: 'detekt.xmlReportFile', value: '${project.build.directory}/detekt-reports/detekt.xml' },
                             { property: 'sonar.kotlin.detekt.reportPaths', value: '${detekt.xmlReportFile}' },
                             { property: 'sonar.coverage.jacoco.xmlReportPaths', value: '${jacoco.reportFolder}/jacoco.xml' },

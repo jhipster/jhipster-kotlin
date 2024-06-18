@@ -2,7 +2,7 @@ import { expect, beforeAll, describe, it } from 'vitest';
 import { defaultHelpers as helpers, runResult } from 'generator-jhipster/testing';
 import { JAVA_DOCKER_DIR } from 'generator-jhipster';
 
-import khipsterconstants from '../generators/generator-kotlin-constants.cjs';
+import migration from '../generators/spring-boot/migration.cjs';
 
 import {
     applicationTypes,
@@ -15,9 +15,9 @@ import {
     databaseTypes,
 } from 'generator-jhipster/jdl';
 
-import expectedFiles from './utils/expected-files.mjs';
+import expectedFiles from './utils/expected-files.js';
 
-const { jhipsterConstants: constants } = khipsterconstants;
+const { jhipsterConstants: constants } = migration;
 
 const { GATEWAY, MICROSERVICE, MONOLITH } = applicationTypes;
 const { CASSANDRA, H2_DISK, H2_MEMORY, MARIADB, MSSQL, MONGODB, MYSQL, NEO4J, POSTGRESQL, SQL } = databaseTypes;
