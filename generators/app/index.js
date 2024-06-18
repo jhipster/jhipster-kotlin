@@ -36,6 +36,34 @@ module.exports = class extends BaseGenerator {
         const initializer = {
             ...super._initializing(),
             displayLogo,
+            adjustV8Config() {
+                if (this.jhipsterConfig.clientFramework === 'angular') {
+                    this.jhipsterConfig.clientFramework = 'angularX';
+                }
+                if (this.jhipsterConfig.searchEngine === 'no') {
+                    this.jhipsterConfig.searchEngine = false;
+                }
+                if (this.jhipsterConfig.serviceDiscoveryType === 'no') {
+                    this.jhipsterConfig.serviceDiscoveryType = false;
+                }
+                if (this.jhipsterConfig.messageBroker === 'no') {
+                    this.jhipsterConfig.messageBroker = false;
+                }
+                if (this.jhipsterConfig.websocket === 'no') {
+                    this.jhipsterConfig.websocket = false;
+                }
+                if (this.jhipsterConfig.languages) {
+                    if (this.jhipsterConfig.languages.includes('id')) {
+                        this.jhipsterConfig.languages = this.jhipsterConfig.languages.map(lang => (lang === 'id' ? 'in' : lang));
+                    }
+                    if (this.jhipsterConfig.languages.includes('kr-Latn-kr')) {
+                        this.jhipsterConfig.languages = this.jhipsterConfig.languages.filter(lang => lang !== 'kr-Latn-kr');
+                    }
+                    if (this.jhipsterConfig.languages.includes('az-Latn-az')) {
+                        this.jhipsterConfig.languages = this.jhipsterConfig.languages.filter(lang => lang !== 'az-Latn-az');
+                    }
+                }
+            },
         };
 
         return initializer;

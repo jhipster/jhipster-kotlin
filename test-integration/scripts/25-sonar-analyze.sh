@@ -7,7 +7,7 @@ source $(dirname $0)/00-init-env.sh
 #--------------------------------------------------
 cd "$KHI_FOLDER_APP"
 
-if [[ "$JHI_APP" = "ngx-default" && "$GITHUB_REPOSITORY" = "jhipster/generator-jhipster" && "$GITHUB_REF" = "refs/heads/main" ]]; then
+if [[ "$JHI_APP" = "ng-default" && "$GITHUB_REPOSITORY" = "jhipster/generator-jhipster" && "$GITHUB_REF" = "refs/heads/main" ]]; then
     echo "*** Sonar analyze for main branch"
     ./mvnw -ntp --batch-mode initialize org.jacoco:jacoco-maven-plugin:prepare-agent sonar:sonar \
         -Dsonar.host.url=https://sonarcloud.io \
