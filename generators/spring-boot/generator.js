@@ -421,6 +421,10 @@ export default class extends BaseApplicationGenerator {
             },
             async customizeGradle({ application, source }) {
                 if (application.buildToolGradle) {
+                    // Add a noop needles for spring-gateway generator
+                    source.addJavaDefinition = () => {};
+                    source.addJavaDependencies = () => {};
+
                     // JHipster 8 have needles fixed
                     this.editFile('build.gradle', contents => contents.replaceAll('//jhipster', '// jhipster'));
                     this.editFile('settings.gradle', contents => contents.replaceAll('//jhipster', '// jhipster'));
