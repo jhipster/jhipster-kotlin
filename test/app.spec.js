@@ -365,6 +365,29 @@ describe('JHipster generator for App generator', () => {
             shouldBeV3DockerfileCompatible('mariadb');
         });
 
+        describe('couchbase', () => {
+            beforeAll(async () => {
+                await helpers
+                    .create('jhipster:server')
+                    .withOptions({
+                        jhiprefix: 'test',
+                        skipKtlintFormat: true,
+                        blueprints: 'kotlin',
+                    })
+                    .withJHipsterConfig({
+                        databaseType: 'couchbase',
+                    })
+                    .withJHipsterLookup()
+                    .withParentBlueprintLookup()
+                    .withMockedGenerators(['jhipster:languages'])
+                    .run();
+            });
+
+            it('creates expected default files', () => {
+                expect(runResult.getStateSnapshot()).toMatchSnapshot();
+            });
+        });
+
         describe(MONGODB, () => {
             let runResult;
             beforeAll(async () => {

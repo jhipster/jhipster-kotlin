@@ -346,8 +346,11 @@ export default class extends BaseApplicationGenerator {
 
                 await this.writeFiles({
                     sections: couchbaseFiles,
-                    rootTemplatesPath: 'couchbase',
                     context: application,
+                    customizeTemplatePath: ({ sourceFile, destinationFile }) => ({
+                        sourceFile: `couchbase/${sourceFile}`,
+                        destinationFile,
+                    }),
                 });
             },
         });
