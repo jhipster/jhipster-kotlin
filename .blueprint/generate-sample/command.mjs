@@ -16,9 +16,9 @@
  * See the License for the specific language governing permissions and
  * limitations under the License.
  */
+import { existsSync, readdirSync } from 'node:fs';
 import { getSamples } from './get-samples.mjs';
 import { entitiesByType } from './support/index.mjs';
-import { existsSync, readdirSync } from 'node:fs';
 
 const updateSampleName = sample =>
     sample.replace('ngx', 'ng').replace('ms-ng-eureka-oauth2-mongodb-caffeine', 'ms-ng-oauth2-mongodb-caffeine');

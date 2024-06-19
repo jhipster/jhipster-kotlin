@@ -146,8 +146,7 @@ export default class extends BaseApplicationGenerator {
                     syncUserWithIdp: application.authenticationType === 'oauth2',
                 });
 
-                application.customizeTemplatePath = file => {
-                    if (!file) return file;
+                application.customizeTemplatePaths.push(file => {
                     const { sourceFile, destinationFile } = file;
                     if (destinationFile.includes('package-info')) {
                         return undefined;
@@ -159,7 +158,7 @@ export default class extends BaseApplicationGenerator {
                         };
                     }
                     return { sourceFile, destinationFile };
-                };
+                });
             },
             async migration({ application, applicationDefaults }) {
                 const dockerContainersVersions = Object.fromEntries(
