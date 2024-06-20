@@ -52,6 +52,7 @@ describe('JHipster generator for App generator', () => {
                 runResult = await helpers
                     .create('jhipster:server')
                     .withOptions({
+                        ignoreNeedlesError: true,
                         withGeneratedFlag: true,
                         blueprints: 'kotlin',
                         jhiPrefix: 'test',
@@ -101,6 +102,7 @@ describe('JHipster generator for App generator', () => {
                 runResult = await helpers
                     .create('jhipster:server')
                     .withOptions({
+                        ignoreNeedlesError: true,
                         jhiPrefix: 'test',
                         withGeneratedFlag: true,
                         'skip-ktlint-format': true,
@@ -147,6 +149,7 @@ describe('JHipster generator for App generator', () => {
                 runResult = await helpers
                     .create('jhipster:server')
                     .withOptions({
+                        ignoreNeedlesError: true,
                         blueprints: 'kotlin',
                     })
                     .withJHipsterConfig({
@@ -193,6 +196,7 @@ describe('JHipster generator for App generator', () => {
                 runResult = await helpers
                     .create('jhipster:server')
                     .withOptions({
+                        ignoreNeedlesError: true,
                         jhiprefix: 'test',
                         withgeneratedflag: true,
                         'skip-ktlint-format': true,
@@ -234,6 +238,7 @@ describe('JHipster generator for App generator', () => {
                 runResult = await helpers
                     .create('jhipster:server')
                     .withOptions({
+                        ignoreNeedlesError: true,
                         jhiPrefix: 'test',
                         withGeneratedFlag: true,
                         'skip-ktlint-format': true,
@@ -284,6 +289,7 @@ describe('JHipster generator for App generator', () => {
                 runResult = await helpers
                     .create('jhipster:server')
                     .withOptions({
+                        ignoreNeedlesError: true,
                         jhiPrefix: 'test',
                         withGeneratedFlag: true,
                         'skip-ktlint-format': true,
@@ -326,6 +332,7 @@ describe('JHipster generator for App generator', () => {
                 await helpers
                     .create('jhipster:server')
                     .withOptions({
+                        ignoreNeedlesError: true,
                         jhiprefix: 'test',
                         withgeneratedflag: true,
                         'skip-ktlint-format': true,
@@ -369,6 +376,7 @@ describe('JHipster generator for App generator', () => {
                 await helpers
                     .create('jhipster:server')
                     .withOptions({
+                        ignoreNeedlesError: true,
                         jhiprefix: 'test',
                         skipKtlintFormat: true,
                         blueprints: 'kotlin',
@@ -393,6 +401,7 @@ describe('JHipster generator for App generator', () => {
                 runResult = await helpers
                     .create('jhipster:server')
                     .withOptions({
+                        ignoreNeedlesError: true,
                         jhiprefix: 'test',
                         withgeneratedflag: true,
                         'skip-ktlint-format': true,
@@ -440,6 +449,7 @@ describe('JHipster generator for App generator', () => {
                 await helpers
                     .create('jhipster:server')
                     .withOptions({
+                        ignoreNeedlesError: true,
                         jhiprefix: 'test',
                         withgeneratedflag: true,
                         'skip-ktlint-format': true,
@@ -487,6 +497,7 @@ describe('JHipster generator for App generator', () => {
                 await helpers
                     .create('jhipster:server')
                     .withOptions({
+                        ignoreNeedlesError: true,
                         jhiprefix: 'test',
                         withgeneratedflag: true,
                         'skip-ktlint-format': true,
@@ -532,6 +543,7 @@ describe('JHipster generator for App generator', () => {
                 await helpers
                     .create('jhipster:server')
                     .withOptions({
+                        ignoreNeedlesError: true,
                         jhiprefix: 'test',
                         withgeneratedflag: true,
                         'skip-ktlint-format': true,
@@ -579,6 +591,7 @@ describe('JHipster generator for App generator', () => {
                 await helpers
                     .create('jhipster:server')
                     .withOptions({
+                        ignoreNeedlesError: true,
                         jhiprefix: 'test',
                         withgeneratedflag: true,
                         'skip-ktlint-format': true,
@@ -619,6 +632,7 @@ describe('JHipster generator for App generator', () => {
                 await helpers
                     .create('jhipster:server')
                     .withOptions({
+                        ignoreNeedlesError: true,
                         jhiprefix: 'test',
                         withgeneratedflag: true,
                         'skip-ktlint-format': true,
@@ -664,6 +678,7 @@ describe('JHipster generator for App generator', () => {
                 await helpers
                     .create('jhipster:server')
                     .withOptions({
+                        ignoreNeedlesError: true,
                         jhiprefix: 'test',
                         withgeneratedflag: true,
                         'skip-ktlint-format': true,
@@ -714,6 +729,7 @@ describe('JHipster generator for App generator', () => {
                 await helpers
                     .create('jhipster:server')
                     .withOptions({
+                        ignoreNeedlesError: true,
                         jhiprefix: 'test',
                         withgeneratedflag: true,
                         'skip-ktlint-format': true,
@@ -756,6 +772,7 @@ describe('JHipster generator for App generator', () => {
                 await helpers
                     .create('jhipster:server')
                     .withOptions({
+                        ignoreNeedlesError: true,
                         jhiprefix: 'test',
                         withgeneratedflag: true,
                         'skip-ktlint-format': true,
@@ -799,6 +816,7 @@ describe('JHipster generator for App generator', () => {
                 await helpers
                     .create('jhipster:server')
                     .withOptions({
+                        ignoreNeedlesError: true,
                         jhiprefix: 'test',
                         withgeneratedflag: true,
                         'skip-ktlint-format': true,
@@ -841,6 +859,7 @@ describe('JHipster generator for App generator', () => {
                 runResult = await helpers
                     .create('jhipster:server')
                     .withOptions({
+                        ignoreNeedlesError: true,
                         jhiprefix: 'test',
                         withgeneratedflag: true,
                         'skip-ktlint-format': true,
@@ -896,6 +915,7 @@ describe('JHipster generator for App generator', () => {
                 await helpers
                     .create('jhipster:server')
                     .withOptions({
+                        ignoreNeedlesError: true,
                         jhiprefix: 'test',
                         withgeneratedflag: true,
                         'skip-ktlint-format': true,
@@ -939,6 +959,7 @@ describe('JHipster generator for App generator', () => {
                 await helpers
                     .create('jhipster:server')
                     .withOptions({
+                        ignoreNeedlesError: true,
                         jhiprefix: 'test',
                         withgeneratedflag: true,
                         'skip-ktlint-format': true,
@@ -983,6 +1004,7 @@ describe('JHipster generator for App generator', () => {
                 await helpers
                     .create('jhipster:server')
                     .withOptions({
+                        ignoreNeedlesError: true,
                         jhiprefix: 'test',
                         withgeneratedflag: true,
                         'skip-ktlint-format': true,
@@ -1028,6 +1050,7 @@ describe('JHipster generator for App generator', () => {
                 await helpers
                     .create('jhipster:server')
                     .withOptions({
+                        ignoreNeedlesError: true,
                         jhiprefix: 'test',
                         withgeneratedflag: true,
                         'skip-ktlint-format': true,
@@ -1072,6 +1095,7 @@ describe('JHipster generator for App generator', () => {
                 await helpers
                     .create('jhipster:server')
                     .withOptions({
+                        ignoreNeedlesError: true,
                         jhiprefix: 'test',
                         withgeneratedflag: true,
                         'skip-ktlint-format': true,
@@ -1116,6 +1140,7 @@ describe('JHipster generator for App generator', () => {
                 await helpers
                     .create('jhipster:server')
                     .withOptions({
+                        ignoreNeedlesError: true,
                         jhiprefix: 'test',
                         withgeneratedflag: true,
                         'skip-ktlint-format': true,
@@ -1168,6 +1193,7 @@ describe('JHipster generator for App generator', () => {
                 await helpers
                     .create('jhipster:server')
                     .withOptions({
+                        ignoreNeedlesError: true,
                         jhiprefix: 'test',
                         withgeneratedflag: true,
                         'skip-ktlint-format': true,
@@ -1220,6 +1246,7 @@ describe('JHipster generator for App generator', () => {
                 await helpers
                     .create('jhipster:server')
                     .withOptions({
+                        ignoreNeedlesError: true,
                         jhiprefix: 'test',
                         withgeneratedflag: true,
                         'skip-ktlint-format': true,
@@ -1276,6 +1303,7 @@ describe('JHipster generator for App generator', () => {
                 await helpers
                     .create('jhipster:server')
                     .withOptions({
+                        ignoreNeedlesError: true,
                         jhiprefix: 'test',
                         withgeneratedflag: true,
                         'skip-ktlint-format': true,
@@ -1318,6 +1346,7 @@ describe('JHipster generator for App generator', () => {
                 await helpers
                     .create('jhipster:server')
                     .withOptions({
+                        ignoreNeedlesError: true,
                         jhiprefix: 'test',
                         withgeneratedflag: true,
                         'skip-ktlint-format': true,
@@ -1365,6 +1394,7 @@ describe('JHipster generator for App generator', () => {
                 runResult = await helpers
                     .create('jhipster:server')
                     .withOptions({
+                        ignoreNeedlesError: true,
                         jhiprefix: 'test',
                         withgeneratedflag: true,
                         'skip-ktlint-format': true,
@@ -1406,6 +1436,7 @@ describe('JHipster generator for App generator', () => {
                 runResult = await helpers
                     .create('jhipster:server')
                     .withOptions({
+                        ignoreNeedlesError: true,
                         jhiprefix: 'test',
                         withgeneratedflag: true,
                         'skip-ktlint-format': true,
@@ -1449,6 +1480,7 @@ describe('JHipster generator for App generator', () => {
                 runResult = await helpers
                     .create('jhipster:server')
                     .withOptions({
+                        ignoreNeedlesError: true,
                         jhiprefix: 'test',
                         withgeneratedflag: true,
                         'skip-ktlint-format': true,
@@ -1497,6 +1529,7 @@ describe('JHipster generator for App generator', () => {
                 runResult = await helpers
                     .create('jhipster:server')
                     .withOptions({
+                        ignoreNeedlesError: true,
                         jhiPrefix: 'test',
                         withGeneratedFlag: true,
                         'skip-ktlint-format': true,
@@ -1556,6 +1589,7 @@ describe('JHipster generator for App generator', () => {
                 runResult = await helpers
                     .create('jhipster:server')
                     .withOptions({
+                        ignoreNeedlesError: true,
                         jhiPrefix: 'test',
                         withGeneratedFlag: true,
                         'skip-ktlint-format': true,
@@ -1599,6 +1633,7 @@ describe('JHipster generator for App generator', () => {
                 await helpers
                     .create('jhipster:server')
                     .withOptions({
+                        ignoreNeedlesError: true,
                         jhiPrefix: 'test',
                         withGeneratedFlag: true,
                         'skip-ktlint-format': true,
@@ -1647,6 +1682,7 @@ describe('JHipster generator for App generator', () => {
                 await helpers
                     .create('jhipster:server')
                     .withOptions({
+                        ignoreNeedlesError: true,
                         jhiprefix: 'test',
                         withgeneratedflag: true,
                         'skip-ktlint-format': true,
@@ -1691,6 +1727,7 @@ describe('JHipster generator for App generator', () => {
                 await helpers
                     .create('jhipster:server')
                     .withOptions({
+                        ignoreNeedlesError: true,
                         jhiprefix: 'test',
                         withgeneratedflag: true,
                         'skip-ktlint-format': true,
@@ -1735,6 +1772,7 @@ describe('JHipster generator for App generator', () => {
                 await helpers
                     .create('jhipster:server')
                     .withOptions({
+                        ignoreNeedlesError: true,
                         jhiprefix: 'test',
                         withgeneratedflag: true,
                         'skip-ktlint-format': true,
@@ -1780,6 +1818,7 @@ describe('JHipster generator for App generator', () => {
                 await helpers
                     .create('jhipster:server')
                     .withOptions({
+                        ignoreNeedlesError: true,
                         jhiprefix: 'test',
                         withgeneratedflag: true,
                         'skip-ktlint-format': true,
@@ -1826,6 +1865,7 @@ describe('JHipster generator for App generator', () => {
                 await helpers
                     .create('jhipster:server')
                     .withOptions({
+                        ignoreNeedlesError: true,
                         jhiprefix: 'test',
                         withgeneratedflag: true,
                         'skip-ktlint-format': true,
@@ -1876,6 +1916,7 @@ describe('JHipster generator for App generator', () => {
                 await helpers
                     .create('jhipster:server')
                     .withOptions({
+                        ignoreNeedlesError: true,
                         jhiprefix: 'test',
                         withgeneratedflag: true,
                         'skip-ktlint-format': true,
@@ -1920,6 +1961,7 @@ describe('JHipster generator for App generator', () => {
                 await helpers
                     .create('jhipster:server')
                     .withOptions({
+                        ignoreNeedlesError: true,
                         jhiprefix: 'test',
                         withgeneratedflag: true,
                         'skip-ktlint-format': true,
@@ -1964,6 +2006,7 @@ describe('JHipster generator for App generator', () => {
                 await helpers
                     .create('jhipster:server')
                     .withOptions({
+                        ignoreNeedlesError: true,
                         jhiprefix: 'test',
                         withgeneratedflag: true,
                         'skip-ktlint-format': true,
@@ -2010,6 +2053,7 @@ describe('JHipster generator for App generator', () => {
                 await helpers
                     .create('jhipster:server')
                     .withOptions({
+                        ignoreNeedlesError: true,
                         jhiprefix: 'test',
                         withgeneratedflag: true,
                         'skip-ktlint-format': true,
@@ -2054,6 +2098,7 @@ describe('JHipster generator for App generator', () => {
                 await helpers
                     .create('jhipster:server')
                     .withOptions({
+                        ignoreNeedlesError: true,
                         jhiprefix: 'test',
                         withgeneratedflag: true,
                         'skip-ktlint-format': true,

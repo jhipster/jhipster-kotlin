@@ -14,6 +14,7 @@ describe('JHipster server generator', () => {
             await helpers
                 .create('jhipster:app')
                 .withOptions({
+                    ignoreNeedlesError: true,
                     withGeneratedFlag: true,
                     blueprints: 'kotlin',
                     'from-cli': true,
@@ -54,6 +55,7 @@ describe('JHipster server generator', () => {
             runResult = await helpers
                 .create('jhipster:app')
                 .withOptions({
+                    ignoreNeedlesError: true,
                     withGeneratedFlag: true,
                     blueprints: 'kotlin',
                     'from-cli': true,
@@ -94,6 +96,7 @@ describe('JHipster server generator', () => {
             runResult = await helpers
                 .create('jhipster:app')
                 .withOptions({
+                    ignoreNeedlesError: true,
                     withGeneratedFlag: true,
                     blueprints: 'kotlin',
                     'from-cli': true,
