@@ -17,10 +17,7 @@ describe('JHipster server generator', () => {
                     ignoreNeedlesError: true,
                     withGeneratedFlag: true,
                     blueprints: 'kotlin',
-                    'from-cli': true,
-                    skipInstall: true,
-                    skipChecks: true,
-                    'skip-ktlint-format': true,
+                    skipKtlintFormat: true,
                 })
                 .withPrompts({
                     baseName: 'jhipster',
@@ -58,10 +55,7 @@ describe('JHipster server generator', () => {
                     ignoreNeedlesError: true,
                     withGeneratedFlag: true,
                     blueprints: 'kotlin',
-                    'from-cli': true,
-                    skipInstall: true,
-                    skipChecks: true,
-                    'skip-ktlint-format': true,
+                    skipKtlintFormat: true,
                 })
                 .withPrompts({
                     baseName: 'jhipster',
@@ -99,16 +93,12 @@ describe('JHipster server generator', () => {
                     ignoreNeedlesError: true,
                     withGeneratedFlag: true,
                     blueprints: 'kotlin',
-                    'from-cli': true,
-                    skipInstall: true,
-                    skipChecks: true,
-                    'skip-ktlint-format': true,
+                    skipKtlintFormat: true,
                     skipClient: true,
                     applicationType: MICROSERVICE,
                 })
-                .withPrompts({
+                .withJHipsterConfig({
                     baseName: 'jhipster',
-                    skipInstall: true,
                     auth: OAUTH2,
                     microfrontend: true,
                     enableTranslation: true,

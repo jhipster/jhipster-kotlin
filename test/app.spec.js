@@ -56,7 +56,7 @@ describe('JHipster generator for App generator', () => {
                         withGeneratedFlag: true,
                         blueprints: 'kotlin',
                         jhiPrefix: 'test',
-                        'skip-ktlint-format': true,
+                        skipKtlintFormat: true,
                     })
                     .withJHipsterConfig({
                         baseName: 'jhipster',
@@ -105,7 +105,7 @@ describe('JHipster generator for App generator', () => {
                         ignoreNeedlesError: true,
                         jhiPrefix: 'test',
                         withGeneratedFlag: true,
-                        'skip-ktlint-format': true,
+                        skipKtlintFormat: true,
                         blueprints: 'kotlin',
                     })
                     .withJHipsterConfig({
@@ -199,7 +199,7 @@ describe('JHipster generator for App generator', () => {
                         ignoreNeedlesError: true,
                         jhiprefix: 'test',
                         withgeneratedflag: true,
-                        'skip-ktlint-format': true,
+                        skipKtlintFormat: true,
                         blueprints: 'kotlin',
                     })
                     .withJHipsterConfig({
@@ -241,7 +241,7 @@ describe('JHipster generator for App generator', () => {
                         ignoreNeedlesError: true,
                         jhiPrefix: 'test',
                         withGeneratedFlag: true,
-                        'skip-ktlint-format': true,
+                        skipKtlintFormat: true,
                         blueprints: 'kotlin',
                     })
                     .withJHipsterConfig({
@@ -292,7 +292,7 @@ describe('JHipster generator for App generator', () => {
                         ignoreNeedlesError: true,
                         jhiPrefix: 'test',
                         withGeneratedFlag: true,
-                        'skip-ktlint-format': true,
+                        skipKtlintFormat: true,
                         blueprints: 'kotlin',
                     })
                     .withJHipsterConfig({
@@ -335,7 +335,7 @@ describe('JHipster generator for App generator', () => {
                         ignoreNeedlesError: true,
                         jhiprefix: 'test',
                         withgeneratedflag: true,
-                        'skip-ktlint-format': true,
+                        skipKtlintFormat: true,
                         blueprints: 'kotlin',
                     })
                     .withJHipsterConfig({
@@ -404,7 +404,7 @@ describe('JHipster generator for App generator', () => {
                         ignoreNeedlesError: true,
                         jhiprefix: 'test',
                         withgeneratedflag: true,
-                        'skip-ktlint-format': true,
+                        skipKtlintFormat: true,
                         blueprints: 'kotlin',
                     })
                     .withJHipsterConfig({
@@ -452,7 +452,7 @@ describe('JHipster generator for App generator', () => {
                         ignoreNeedlesError: true,
                         jhiprefix: 'test',
                         withgeneratedflag: true,
-                        'skip-ktlint-format': true,
+                        skipKtlintFormat: true,
                         blueprints: 'kotlin',
                     })
                     .withJHipsterConfig({
@@ -500,7 +500,7 @@ describe('JHipster generator for App generator', () => {
                         ignoreNeedlesError: true,
                         jhiprefix: 'test',
                         withgeneratedflag: true,
-                        'skip-ktlint-format': true,
+                        skipKtlintFormat: true,
                         blueprints: 'kotlin',
                     })
                     .withJHipsterConfig({
@@ -546,7 +546,7 @@ describe('JHipster generator for App generator', () => {
                         ignoreNeedlesError: true,
                         jhiprefix: 'test',
                         withgeneratedflag: true,
-                        'skip-ktlint-format': true,
+                        skipKtlintFormat: true,
                         blueprints: 'kotlin',
                     })
                     .withJHipsterConfig({
@@ -594,7 +594,7 @@ describe('JHipster generator for App generator', () => {
                         ignoreNeedlesError: true,
                         jhiprefix: 'test',
                         withgeneratedflag: true,
-                        'skip-ktlint-format': true,
+                        skipKtlintFormat: true,
                         blueprints: 'kotlin',
                     })
                     .withJHipsterConfig({
@@ -635,7 +635,7 @@ describe('JHipster generator for App generator', () => {
                         ignoreNeedlesError: true,
                         jhiprefix: 'test',
                         withgeneratedflag: true,
-                        'skip-ktlint-format': true,
+                        skipKtlintFormat: true,
                         blueprints: 'kotlin',
                     })
                     .withJHipsterConfig({
@@ -681,7 +681,7 @@ describe('JHipster generator for App generator', () => {
                         ignoreNeedlesError: true,
                         jhiprefix: 'test',
                         withgeneratedflag: true,
-                        'skip-ktlint-format': true,
+                        skipKtlintFormat: true,
                         blueprints: 'kotlin',
                     })
                     .withJHipsterConfig({
@@ -732,7 +732,7 @@ describe('JHipster generator for App generator', () => {
                         ignoreNeedlesError: true,
                         jhiprefix: 'test',
                         withgeneratedflag: true,
-                        'skip-ktlint-format': true,
+                        skipKtlintFormat: true,
                         blueprints: 'kotlin',
                     })
                     .withJHipsterConfig({
@@ -775,7 +775,7 @@ describe('JHipster generator for App generator', () => {
                         ignoreNeedlesError: true,
                         jhiprefix: 'test',
                         withgeneratedflag: true,
-                        'skip-ktlint-format': true,
+                        skipKtlintFormat: true,
                         blueprints: 'kotlin',
                     })
                     .withJHipsterConfig({
@@ -819,7 +819,7 @@ describe('JHipster generator for App generator', () => {
                         ignoreNeedlesError: true,
                         jhiprefix: 'test',
                         withgeneratedflag: true,
-                        'skip-ktlint-format': true,
+                        skipKtlintFormat: true,
                         blueprints: 'kotlin',
                     })
                     .withJHipsterConfig({
@@ -862,7 +862,7 @@ describe('JHipster generator for App generator', () => {
                         ignoreNeedlesError: true,
                         jhiprefix: 'test',
                         withgeneratedflag: true,
-                        'skip-ktlint-format': true,
+                        skipKtlintFormat: true,
                         blueprints: 'kotlin',
                     })
                     .withJHipsterConfig({
@@ -918,7 +918,7 @@ describe('JHipster generator for App generator', () => {
                         ignoreNeedlesError: true,
                         jhiprefix: 'test',
                         withgeneratedflag: true,
-                        'skip-ktlint-format': true,
+                        skipKtlintFormat: true,
                         blueprints: 'kotlin',
                     })
                     .withJHipsterConfig({
@@ -962,7 +962,7 @@ describe('JHipster generator for App generator', () => {
                         ignoreNeedlesError: true,
                         jhiprefix: 'test',
                         withgeneratedflag: true,
-                        'skip-ktlint-format': true,
+                        skipKtlintFormat: true,
                         blueprints: 'kotlin',
                     })
                     .withJHipsterConfig({
@@ -1007,7 +1007,7 @@ describe('JHipster generator for App generator', () => {
                         ignoreNeedlesError: true,
                         jhiprefix: 'test',
                         withgeneratedflag: true,
-                        'skip-ktlint-format': true,
+                        skipKtlintFormat: true,
                         blueprints: 'kotlin',
                     })
                     .withJHipsterConfig({
@@ -1053,7 +1053,7 @@ describe('JHipster generator for App generator', () => {
                         ignoreNeedlesError: true,
                         jhiprefix: 'test',
                         withgeneratedflag: true,
-                        'skip-ktlint-format': true,
+                        skipKtlintFormat: true,
                         blueprints: 'kotlin',
                     })
                     .withJHipsterConfig({
@@ -1098,7 +1098,7 @@ describe('JHipster generator for App generator', () => {
                         ignoreNeedlesError: true,
                         jhiprefix: 'test',
                         withgeneratedflag: true,
-                        'skip-ktlint-format': true,
+                        skipKtlintFormat: true,
                         blueprints: 'kotlin',
                     })
                     .withJHipsterConfig({
@@ -1143,7 +1143,7 @@ describe('JHipster generator for App generator', () => {
                         ignoreNeedlesError: true,
                         jhiprefix: 'test',
                         withgeneratedflag: true,
-                        'skip-ktlint-format': true,
+                        skipKtlintFormat: true,
                         blueprints: 'kotlin',
                     })
                     .withJHipsterConfig({
@@ -1196,7 +1196,7 @@ describe('JHipster generator for App generator', () => {
                         ignoreNeedlesError: true,
                         jhiprefix: 'test',
                         withgeneratedflag: true,
-                        'skip-ktlint-format': true,
+                        skipKtlintFormat: true,
                         blueprints: 'kotlin',
                     })
                     .withJHipsterConfig({
@@ -1249,7 +1249,7 @@ describe('JHipster generator for App generator', () => {
                         ignoreNeedlesError: true,
                         jhiprefix: 'test',
                         withgeneratedflag: true,
-                        'skip-ktlint-format': true,
+                        skipKtlintFormat: true,
                         blueprints: 'kotlin',
                     })
                     .withJHipsterConfig({
@@ -1306,7 +1306,7 @@ describe('JHipster generator for App generator', () => {
                         ignoreNeedlesError: true,
                         jhiprefix: 'test',
                         withgeneratedflag: true,
-                        'skip-ktlint-format': true,
+                        skipKtlintFormat: true,
                         blueprints: 'kotlin',
                     })
                     .withJHipsterConfig({
@@ -1349,7 +1349,7 @@ describe('JHipster generator for App generator', () => {
                         ignoreNeedlesError: true,
                         jhiprefix: 'test',
                         withgeneratedflag: true,
-                        'skip-ktlint-format': true,
+                        skipKtlintFormat: true,
                         blueprints: 'kotlin',
                     })
                     .withJHipsterConfig({
@@ -1397,7 +1397,7 @@ describe('JHipster generator for App generator', () => {
                         ignoreNeedlesError: true,
                         jhiprefix: 'test',
                         withgeneratedflag: true,
-                        'skip-ktlint-format': true,
+                        skipKtlintFormat: true,
                         blueprints: 'kotlin',
                     })
                     .withJHipsterConfig({
@@ -1439,7 +1439,7 @@ describe('JHipster generator for App generator', () => {
                         ignoreNeedlesError: true,
                         jhiprefix: 'test',
                         withgeneratedflag: true,
-                        'skip-ktlint-format': true,
+                        skipKtlintFormat: true,
                         blueprints: 'kotlin',
                     })
                     .withJHipsterConfig({
@@ -1483,7 +1483,7 @@ describe('JHipster generator for App generator', () => {
                         ignoreNeedlesError: true,
                         jhiprefix: 'test',
                         withgeneratedflag: true,
-                        'skip-ktlint-format': true,
+                        skipKtlintFormat: true,
                         blueprints: 'kotlin',
                     })
                     .withJHipsterConfig({
@@ -1532,7 +1532,7 @@ describe('JHipster generator for App generator', () => {
                         ignoreNeedlesError: true,
                         jhiPrefix: 'test',
                         withGeneratedFlag: true,
-                        'skip-ktlint-format': true,
+                        skipKtlintFormat: true,
                         blueprints: 'kotlin',
                     })
                     .withJHipsterConfig({
@@ -1592,7 +1592,7 @@ describe('JHipster generator for App generator', () => {
                         ignoreNeedlesError: true,
                         jhiPrefix: 'test',
                         withGeneratedFlag: true,
-                        'skip-ktlint-format': true,
+                        skipKtlintFormat: true,
                         blueprints: 'kotlin',
                         skipClient: true,
                     })
@@ -1636,7 +1636,7 @@ describe('JHipster generator for App generator', () => {
                         ignoreNeedlesError: true,
                         jhiPrefix: 'test',
                         withGeneratedFlag: true,
-                        'skip-ktlint-format': true,
+                        skipKtlintFormat: true,
                         blueprints: 'kotlin',
                         skipClient: true,
                         skipUserManagement: true,
@@ -1685,7 +1685,7 @@ describe('JHipster generator for App generator', () => {
                         ignoreNeedlesError: true,
                         jhiprefix: 'test',
                         withgeneratedflag: true,
-                        'skip-ktlint-format': true,
+                        skipKtlintFormat: true,
                         blueprints: 'kotlin',
                     })
                     .withJHipsterConfig({
@@ -1730,7 +1730,7 @@ describe('JHipster generator for App generator', () => {
                         ignoreNeedlesError: true,
                         jhiprefix: 'test',
                         withgeneratedflag: true,
-                        'skip-ktlint-format': true,
+                        skipKtlintFormat: true,
                         blueprints: 'kotlin',
                     })
                     .withJHipsterConfig({
@@ -1775,7 +1775,7 @@ describe('JHipster generator for App generator', () => {
                         ignoreNeedlesError: true,
                         jhiprefix: 'test',
                         withgeneratedflag: true,
-                        'skip-ktlint-format': true,
+                        skipKtlintFormat: true,
                         blueprints: 'kotlin',
                     })
                     .withJHipsterConfig({
@@ -1821,7 +1821,7 @@ describe('JHipster generator for App generator', () => {
                         ignoreNeedlesError: true,
                         jhiprefix: 'test',
                         withgeneratedflag: true,
-                        'skip-ktlint-format': true,
+                        skipKtlintFormat: true,
                         blueprints: 'kotlin',
                     })
                     .withJHipsterConfig({
@@ -1868,7 +1868,7 @@ describe('JHipster generator for App generator', () => {
                         ignoreNeedlesError: true,
                         jhiprefix: 'test',
                         withgeneratedflag: true,
-                        'skip-ktlint-format': true,
+                        skipKtlintFormat: true,
                         blueprints: 'kotlin',
                     })
                     .withJHipsterConfig({
@@ -1919,7 +1919,7 @@ describe('JHipster generator for App generator', () => {
                         ignoreNeedlesError: true,
                         jhiprefix: 'test',
                         withgeneratedflag: true,
-                        'skip-ktlint-format': true,
+                        skipKtlintFormat: true,
                         blueprints: 'kotlin',
                     })
                     .withJHipsterConfig({
@@ -1964,7 +1964,7 @@ describe('JHipster generator for App generator', () => {
                         ignoreNeedlesError: true,
                         jhiprefix: 'test',
                         withgeneratedflag: true,
-                        'skip-ktlint-format': true,
+                        skipKtlintFormat: true,
                         blueprints: 'kotlin',
                     })
                     .withJHipsterConfig({
@@ -2009,7 +2009,7 @@ describe('JHipster generator for App generator', () => {
                         ignoreNeedlesError: true,
                         jhiprefix: 'test',
                         withgeneratedflag: true,
-                        'skip-ktlint-format': true,
+                        skipKtlintFormat: true,
                         blueprints: 'kotlin',
                     })
                     .withJHipsterConfig({
@@ -2056,7 +2056,7 @@ describe('JHipster generator for App generator', () => {
                         ignoreNeedlesError: true,
                         jhiprefix: 'test',
                         withgeneratedflag: true,
-                        'skip-ktlint-format': true,
+                        skipKtlintFormat: true,
                         blueprints: 'kotlin',
                     })
                     .withJHipsterConfig({
@@ -2101,7 +2101,7 @@ describe('JHipster generator for App generator', () => {
                         ignoreNeedlesError: true,
                         jhiprefix: 'test',
                         withgeneratedflag: true,
-                        'skip-ktlint-format': true,
+                        skipKtlintFormat: true,
                         blueprints: 'kotlin',
                     })
                     .withJHipsterConfig({
