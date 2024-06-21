@@ -57,7 +57,8 @@ const convertToKotlinFile = file =>
         .replace(SERVER_MAIN_SRC_DIR, SERVER_MAIN_SRC_KOTLIN_DIR)
         .replace(SERVER_TEST_SRC_DIR, SERVER_TEST_SRC_KOTLIN_DIR);
 
-const customizeSpringBootFiles = ({ sourceFile, destinationFile }) => {
+const customizeSpringBootFiles = file => {
+    const { destinationFile } = file;
     // Ignore docker files, use updated docker files from v8 jhipster:docker generator
     if (
         destinationFile.includes('src/main/docker') &&
@@ -68,10 +69,7 @@ const customizeSpringBootFiles = ({ sourceFile, destinationFile }) => {
     ) {
         return undefined;
     }
-    if (['src/main/resources/templates/error.html', 'src/main/resources/config/cql/changelog/README.md'].includes(sourceFile)) {
-        return { sourceFile: `${sourceFile}.ejs`, destinationFile };
-    }
-    return { sourceFile, destinationFile };
+    return file;
 };
 
 export default class extends BaseApplicationGenerator {
@@ -147,17 +145,18 @@ export default class extends BaseApplicationGenerator {
                 });
 
                 application.customizeTemplatePaths.push(file => {
-                    const { sourceFile, destinationFile } = file;
-                    if (destinationFile.includes('package-info')) {
+                    const { resolvedSourceFile, sourceFile, destinationFile } = file;
+                    if (sourceFile.includes('package-info.java')) {
                         return undefined;
                     }
-                    if (sourceFile.includes('.java')) {
+                    if (resolvedSourceFile.includes('.java')) {
                         return {
-                            sourceFile: this.templatePath(convertToKotlinFile(sourceFile)),
+                            ...file,
+                            resolvedSourceFile: this.templatePath(convertToKotlinFile(sourceFile)),
                             destinationFile: convertToKotlinFile(destinationFile),
                         };
                     }
-                    return { sourceFile, destinationFile };
+                    return file;
                 });
             },
             async migration({ application, applicationDefaults }) {
@@ -346,10 +345,14 @@ export default class extends BaseApplicationGenerator {
                 await this.writeFiles({
                     sections: couchbaseFiles,
                     context: application,
-                    customizeTemplatePath: ({ sourceFile, destinationFile }) => ({
-                        sourceFile: `couchbase/${sourceFile}`,
-                        destinationFile,
-                    }),
+                    rootTemplatesPath: ['couchbase'],
+                    customizeTemplatePath: file =>
+                        file.sourceFile.includes('.java')
+                            ? {
+                                  resolvedSourceFile: this.templatePath(`couchbase/${convertToKotlinFile(file.sourceFile)}`),
+                                  destinationFile: convertToKotlinFile(file.destinationFile),
+                              }
+                            : file,
                 });
             },
         });
