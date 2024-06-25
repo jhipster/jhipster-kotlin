@@ -1,0 +1,112 @@
+<%#
+ Copyright 2013-2024 the original author or authors from the JHipster project.
+
+ This file is part of the JHipster project, see https://www.jhipster.tech/
+ for more information.
+
+ Licensed under the Apache License, Version 2.0 (the "License");
+ you may not use this file except in compliance with the License.
+ You may obtain a copy of the License at
+
+      http://www.apache.org/licenses/LICENSE-2.0
+
+ Unless required by applicable law or agreed to in writing, software
+ distributed under the License is distributed on an "AS IS" BASIS,
+ WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
+ See the License for the specific language governing permissions and
+ limitations under the License.
+-%>
+import org.gradle.internal.os.OperatingSystem
+
+apply plugin: "kotlin" // Required for Kotlin integration
+apply plugin: "kotlin-kapt" // Required for annotations processing
+apply plugin: "kotlin-spring" // See https://kotlinlang.org/docs/reference/compiler-plugins.html#spring-support
+<%_ if (databaseTypeSql) { _%>
+apply plugin: "kotlin-allopen" // See https://kotlinlang.org/docs/reference/compiler-plugins.html#using-in-gradle
+apply plugin: "kotlin-jpa" // See https://kotlinlang.org/docs/reference/compiler-plugins.html#jpa-support
+<%_ } _%>
+
+apply plugin: "org.jlleitschuh.gradle.ktlint"
+
+apply plugin: "io.gitlab.arturbosch.detekt"
+
+dependencies {
+    implementation "org.jetbrains.kotlin:kotlin-stdlib-jdk8:${kotlin_version}"
+    implementation "org.jetbrains.kotlin:kotlin-reflect:${kotlin_version}"
+
+    <%_ if (reactive) { _%>
+    implementation "org.jetbrains.kotlinx:kotlinx-coroutines-debug"
+    implementation "org.jetbrains.kotlinx:kotlinx-coroutines-reactor"
+    implementation "io.projectreactor.kotlin:reactor-kotlin-extensions"
+    <%_ } _%>
+
+    kapt "org.mapstruct:mapstruct-processor:${mapstructVersion}"
+    <%_ if (databaseTypeSql) { _%>
+    kapt "org.hibernate:hibernate-jpamodelgen:${hibernateVersion}"
+    kapt "org.glassfish.jaxb:jaxb-runtime:${jaxbRuntimeVersion}"
+    <%_ } _%>
+    <%_ if (databaseTypeCassandra) { _%>
+    kapt "com.datastax.oss:java-driver-mapper-processor:${cassandraDriverVersion}"
+    <%_ } _%>
+
+    testImplementation "org.jetbrains.kotlin:kotlin-test-junit:${kotlin_version}"
+
+    testImplementation "org.mockito.kotlin:mockito-kotlin:<%= MOCKITO_KOTLIN_VERSION %>"
+}<%_ if (databaseTypeSql) { %>
+
+allOpen {
+    annotation("javax.persistence.Entity")
+    annotation("javax.persistence.MappedSuperclass")
+    annotation("javax.persistence.Embeddable")
+}<%_ } %>
+
+[compileKotlin, compileTestKotlin]*.with {
+    kotlinOptions {
+        jvmTarget = "<%= JAVA_VERSION %>"
+        javaParameters = true
+        freeCompilerArgs = ["-Xjvm-default=all"]
+    }
+}
+
+ktlint {
+    //See more options: https://github.com/JLLeitschuh/ktlint-gradle#configuration
+    ignoreFailures = false
+    disabledRules = ["no-wildcard-imports", "filename"]
+}
+
+detekt {
+    toolVersion = detekt_version
+    input = files("src/main/kotlin")
+    config = files("<%= DETEKT_CONFIG_FILE %>")
+    reports {
+        xml {
+            required = true
+            outputLocation = file("$buildDir/reports/detekt/detekt.xml")
+        }
+    }
+}
+
+if (OperatingSystem.current().isWindows()) {
+    bootRun {
+        doFirst {
+            classpath += files("$buildDir/classes/kotlin/main")
+        }
+    }
+}
+
+//Reformat code before compilation
+compileKotlin.dependsOn ktlintFormat
+
+
+jacocoTestReport {
+    // Add Kotlin sources to Jacoco source dirs
+    sourceDirectories.from += sourceSets.main.kotlin.srcDirs
+}
+
+sonarqube {
+    properties {
+        property "sonar.kotlin.detekt.reportPaths", detekt.reports.xml.outputLocation
+    }
+}
+
+check.dependsOn jacocoTestReport
