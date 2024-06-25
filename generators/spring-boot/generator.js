@@ -511,8 +511,7 @@ export default class extends BaseApplicationGenerator {
 
             async customizeMaven({ application, source }) {
                 if (application.buildToolMaven) {
-                    const maven = await this.composeWithJHipster('jhipster:maven');
-                    maven.pomStorage.merge({
+                    source.mergeMavenPomContent({
                         project: {
                             build: {
                                 sourceDirectory: SERVER_MAIN_SRC_KOTLIN_DIR,
@@ -776,8 +775,6 @@ export default class extends BaseApplicationGenerator {
                             },
                         ],
                     });
-
-                    maven.pomStorage.save(false);
                 }
             },
         });
