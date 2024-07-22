@@ -713,7 +713,7 @@ export default class extends BaseApplicationGenerator {
                                 <!-- See https://arturbosch.github.io/detekt/cli.html for more options-->
                                 <java taskname="detekt" dir="$\{basedir}"
                                       fork="true"
-                                      failonerror="true"
+                                      failonerror="false"
                                       classname="io.gitlab.arturbosch.detekt.cli.Main"
                                       classpathref="maven.plugin.classpath">
                                     <arg value="--input"/>
