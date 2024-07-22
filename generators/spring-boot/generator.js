@@ -160,6 +160,11 @@ export default class extends BaseApplicationGenerator {
                 });
             },
             async migration({ application, applicationDefaults }) {
+                // Downgrade elasticsearch to 7.17.4
+                Object.assign(application.dockerContainers, {
+                    elasticsearchTag: '7.17.4',
+                    elasticsearch: `${DOCKER_ELASTICSEARCH_CONTAINER}:7.17.4`,
+                });
                 const dockerContainersVersions = Object.fromEntries(
                     Object.entries({ ...application.dockerContainers, ...jhipster7DockerContainers }).map(([containerName, container]) => [
                         `DOCKER_${this._.snakeCase(containerName).toUpperCase().replace('_4_', '4')}`,
