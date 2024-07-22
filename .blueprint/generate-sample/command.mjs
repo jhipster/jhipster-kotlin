@@ -18,10 +18,13 @@
  */
 import { existsSync, readdirSync } from 'node:fs';
 import { getSamples } from './get-samples.mjs';
-import { entitiesByType } from './support/index.mjs';
+import { entitiesByType, workflowSamples } from './support/index.mjs';
 
 const updateSampleName = sample =>
     sample.replace('ngx', 'ng').replace('ms-ng-eureka-oauth2-mongodb-caffeine', 'ms-ng-oauth2-mongodb-caffeine');
+
+const revertSampleName = sample =>
+    sample.replace('ng-', 'ngx-').replace('ms-ng-oauth2-mongodb-caffeine', 'ms-ng-eureka-oauth2-mongodb-caffeine');
 
 /**
  * @type {import('generator-jhipster').JHipsterCommandDefinition}
@@ -78,7 +81,11 @@ const command = {
             },
             configure: gen => {
                 if (gen.appSample && gen.appSample !== 'jdl') {
-                    gen.samplesFolder = `json-samples/${updateSampleName(gen.appSample)}`;
+                    gen.appSample = revertSampleName(gen.appSample);
+
+                    let { appSample } = gen;
+                    appSample = workflowSamples[appSample]?.['app-sample'] ?? appSample;
+                    gen.samplesFolder = `json-samples/${updateSampleName(appSample)}`;
                     gen.entrypointGenerator = 'app';
                 }
             },
@@ -109,7 +116,10 @@ const command = {
                 type: String,
             },
             configure: gen => {
-                const { entityType } = gen;
+                let { entityType } = gen;
+                if (!entityType && gen.appSample) {
+                    entityType = workflowSamples[gen.appSample]?.entity;
+                }
                 if (entityType && entityType !== 'none') {
                     gen.supportingSamples.push(...entitiesByType[entityType].map(entity => `.jhipster/${entity}.json`));
                 }
@@ -124,8 +134,12 @@ const command = {
                 env: 'JHI_JDL_ENTITY',
             },
             configure: gen => {
-                if (gen.jdlEntities) {
-                    const entities = gen.jdlEntities.split(',');
+                let { jdlEntities } = gen;
+                if (!jdlEntities && gen.appSample) {
+                    jdlEntities = workflowSamples[gen.appSample]?.['jdl-entity'];
+                }
+                if (jdlEntities) {
+                    const entities = jdlEntities.split(',');
                     gen.generatorArgs = '*.jdl';
                     gen.entrypointGenerator = 'jdl';
                     if (entities && entities.length > 0) {
