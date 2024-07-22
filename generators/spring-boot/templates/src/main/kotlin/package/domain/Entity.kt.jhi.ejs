@@ -100,30 +100,30 @@ data class <%= persistClass %>(
     var <%= primaryKey.name %>: <%= primaryKey.type %>? = null,
     <%_ } _%>
 
-    <&- fragments.classFieldsSection() -&>
+<&- fragments.classFieldsSection() -&>
 
     <%_ for (const field of fields.filter(field => !field.javaInherited && !field.transient && (embedded || !field.id || !primaryKey.composite))) { _%>
-    <&- fragments.field<%- field.fieldNameCapitalized %>CustomDeclarationSection() -&>
-    <&_ if (!fragments.field<%- field.fieldNameCapitalized %>CustomDeclarationSection()) { -&>
+<&- fragments.field<%- field.fieldNameCapitalized %>CustomDeclarationSection() -&>
+<&_ if (!fragments.field<%- field.fieldNameCapitalized %>CustomDeclarationSection()) { -&>
         <%_ if (typeof field.javadoc !== 'undefined') { _%>
     <%- formatAsFieldJavadoc(field.javadoc) %>
         <%_ } _%>
         <%_ if (!dtoMapstruct && typeof field.javadoc !== 'undefined') { _%>
-        @Schema(description = "<%- formatAsApiDescription(field.javadoc) %>"<% if (field.fieldValidationRequired) { %>, required = true<% } %>)
+    @Schema(description = "<%- formatAsApiDescription(field.javadoc) %>"<% if (field.fieldValidationRequired) { %>, required = true<% } %>)
         <%_ } _%>
-    <&- fragments.field<%- field.fieldNameCapitalized %>AnnotationSection() -&>
-        var <%= field.fieldName %>: <% if(field.fieldTypeBlobContent === 'text') { _%>String<% } else if(field.fieldType === 'byte[]' && field.fieldTypeBlobContent !== 'text') { _%>ByteArray<%_ } else if(field.fieldType==='Integer'){ _%>Int<%_ } else { _%><%= field.fieldType %><% } %>? = null,
+<&- fragments.field<%- field.fieldNameCapitalized %>AnnotationSection() -&>
+    var <%= field.fieldName %>: <% if(field.fieldTypeBlobContent === 'text') { _%>String<% } else if(field.fieldType === 'byte[]' && field.fieldTypeBlobContent !== 'text') { _%>ByteArray<%_ } else if(field.fieldType==='Integer'){ _%>Int<%_ } else { _%><%= field.fieldType %><% } %>? = null,
         <%_ if (field.fieldWithContentType) { _%>
-    <&- fragments.field<%- field.fieldNameCapitalized %>ContentTypeAnnotationSection() -&>
-        var <%= field.fieldName %>ContentType: String? = null,
+<&- fragments.field<%- field.fieldNameCapitalized %>ContentTypeAnnotationSection() -&>
+    var <%= field.fieldName %>ContentType: String? = null,
         <%_ } _%>
-    <&_ } -&>
+<&_ } -&>
     <%_ } _%>
-    <&- fragments.classAdditionalFieldsSection() -&>
+<&- fragments.classAdditionalFieldsSection() -&>
 
 <&- fragments.classAdditionalRelationshipsSection() -&>
     // jhipster-needle-entity-add-field - JHipster will add fields here
-) : <&- fragments.extendsSection() -&> Serializable<&- fragments.additionalInterfacesSection() -&> {
+) :<&- fragments.extendsSection() -&> Serializable<&- fragments.additionalInterfacesSection() -&> {
 
   <%_
     // An embedded entity should not reference entities that embed it, unless the other entities are also embedded
@@ -131,17 +131,17 @@ data class <%= persistClass %>(
         if (typeof relationship.javadoc !== 'undefined') { _%>
     <%- formatAsFieldJavadoc(relationship.javadoc) %>
         <%_ if (!dtoMapstruct) { _%>
-        @Schema(description = "<%- formatAsApiDescription(relationship.javadoc) %>")
+    @Schema(description = "<%- formatAsApiDescription(relationship.javadoc) %>")
         <%_ } _%>
     <%_ } _%>
-    <&- fragments.relationship<%- relationship.relationshipNameCapitalized %>AnnotationSection() -&>
+<&- fragments.relationship<%- relationship.relationshipNameCapitalized %>AnnotationSection() -&>
         <%_ if (relationship.relationshipOneToMany) { _%>
             <%_ if (relationship.ignoreOtherSideProperty) { _%>
-            @JsonIgnoreProperties(value = [
+    @JsonIgnoreProperties(value = [
                 <%_ relationship.otherEntity.relationships.forEach(otherRelationship => { _%>
-                "<%= otherRelationship.relationshipReferenceField %>",
+        "<%= otherRelationship.relationshipReferenceField %>",
                 <%_ }); _%>
-            ], allowSetters = true)
+    ], allowSetters = true)
     <%_ } _%>
     var <%= relationship.relationshipFieldNamePlural %>: MutableSet<<%= relationship.otherEntity.persistClass %>>? = mutableSetOf()
   <%_ } else if (relationship.relationshipManyToOne) { _%>
@@ -168,7 +168,7 @@ data class <%= persistClass %>(
 <%_ }; _%>
 
 
-    <&- fragments.classAdditionalFieldsMethodsSection('\n\n') -&>
+<&- fragments.classAdditionalFieldsMethodsSection('\n\n') -&>
 
     <%_
     for (const relationship of relationships) {
@@ -177,11 +177,11 @@ data class <%= persistClass %>(
         continue;
     }
     _%>
-    <&- fragments.relationship<%- relationship.relationshipNameCapitalized %>CustomSetSection() -&>
+<&- fragments.relationship<%- relationship.relationshipNameCapitalized %>CustomSetSection() -&>
     <%_ if (fluentMethods) { _%>
       <%_ if (relationship.collection) { _%>
-    <&- fragments.relationship<%- relationship.relationshipNameCapitalized %>CustomAddSection() -&>
-    <&_ if (!fragments.relationship<%- relationship.relationshipNameCapitalized %>CustomAddSection()) { -&>
+<&- fragments.relationship<%- relationship.relationshipNameCapitalized %>CustomAddSection() -&>
+<&_ if (!fragments.relationship<%- relationship.relationshipNameCapitalized %>CustomAddSection()) { -&>
     fun add<%= relationship.relationshipNameCapitalized %>(<%= relationship.otherEntityName %>: <%= relationship.otherEntity.persistClass %>) : <%= persistClass %> {
         this.<%= relationship.relationshipFieldNamePlural %>?.add(<%= relationship.otherEntityName %>)
       <%_ if (!relationship.otherEntity.embedded || embedded && relationship.ownerSide) { _%>
@@ -195,9 +195,9 @@ data class <%= persistClass %>(
       <%_ } _%>
         return this;
     }
-    <&_ } -&>
-    <&- fragments.relationship<%- relationship.relationshipNameCapitalized %>CustomRemoveSection() -&>
-    <&_ if (!fragments.relationship<%- relationship.relationshipNameCapitalized %>CustomRemoveSection()) { -&>
+<&_ } -&>
+<&- fragments.relationship<%- relationship.relationshipNameCapitalized %>CustomRemoveSection() -&>
+<&_ if (!fragments.relationship<%- relationship.relationshipNameCapitalized %>CustomRemoveSection()) { -&>
     fun remove<%= relationship.relationshipNameCapitalized %>(<%= relationship.otherEntityName %>: <%= relationship.otherEntity.persistClass %>) : <%= persistClass %>{
         this.<%= relationship.relationshipFieldNamePlural %>?.remove(<%= relationship.otherEntityName %>)
       <%_ if (!relationship.otherEntity.embedded || (embedded && relationship.ownerSide)) { _%>
@@ -211,7 +211,7 @@ data class <%= persistClass %>(
       <%_ } _%>
         return this;
     }
-    <&_ } -&>
+<&_ } -&>
     <%_ } else { _%>
     fun <%= relationship.relationshipFieldName %>(<%= relationship.otherEntityName %>: <%= relationship.otherEntity.persistClass %>?): <%= persistClass %> {
         this.<%= relationship.relationshipName %> = <%= relationship.otherEntityName %>
@@ -221,7 +221,7 @@ data class <%= persistClass %>(
     <%_ } _%>
     <%_ } _%>
 
-    <&- fragments.classAdditionalRelationshipsMethodsSection() -&>
+<&- fragments.classAdditionalRelationshipsMethodsSection() -&>
     // jhipster-needle-entity-add-getters-setters - JHipster will add getters and setters here
 
     override fun hashCode(): Int {
@@ -264,6 +264,6 @@ data class <%= persistClass %>(
 
     companion object {
         private const val serialVersionUID = 1L
-        <&- fragments.classStaticFieldsSection() -&>
+<&- fragments.classStaticFieldsSection() -&>
     }
 }
