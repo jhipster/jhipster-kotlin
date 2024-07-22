@@ -693,10 +693,13 @@ export default class extends BaseApplicationGenerator {
 
                     const ktlintMavenOther = `                <executions>
                     <execution>
-                        <id>format</id>
+                        <id>check</id>
                         <goals>
-                            <goal>format</goal>
+                            <goal>check</goal>
                         </goals>
+                        <configuration>
+                            <failOnViolation>false</failOnViolation>
+                        </configuration>
                     </execution>
                 </executions>`;
 
