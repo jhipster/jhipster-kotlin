@@ -89,6 +89,7 @@ export default class extends BaseApplicationGenerator {
             // We want to use v7 liquibase templates and keep pom.xml unsorted for easier migration
             generatorOptions: { skipPriorities: ['writing', 'postWriting'], sortMavenPom: false },
         });
+        await this.dependsOnJHipster('jhipster-kotlin:ktlint');
     }
 
     get [BaseApplicationGenerator.COMPOSING]() {
