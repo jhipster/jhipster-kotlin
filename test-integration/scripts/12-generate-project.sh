@@ -67,7 +67,7 @@ else
         echo "skipping config file"
     fi
     cd "$KHI_FOLDER_APP"
-    eval "$KHI_CLI --force --no-insight --skip-checks --with-entities --skip-ktlint-format $@"
+    eval "$KHI_CLI --force --no-insight --skip-checks --skip-ktlint-format $@"
 
 fi
 
