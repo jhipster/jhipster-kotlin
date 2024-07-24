@@ -102,6 +102,46 @@ export default class extends BaseApplicationGenerator {
                     },
                 });
             },
+            addDependencies({ application, source }) {
+                if (application.buildToolGradle) {
+                    source.addGradlePluginToBuildScript({
+                        group: 'org.jlleitschuh.gradle',
+                        name: 'ktlint-gradle',
+                        version: application.javaDependencies['ktlint-gradle'],
+                    });
+
+                    /* JHipster 8 based configuration
+                    source.addGradleDependencyCatalogPlugins([{ pluginName: 'ktlint', id: 'org.jlleitschuh.gradle.ktlint', version: KTLINT_GRADLE_VERSION, addToBuild: true }]);
+                    */
+                } else {
+                    source.addJavaDefinition({
+                        versions: [{ name: 'ktlint-maven-plugin', version: application.javaDependencies['ktlint-maven'] }],
+                    });
+
+                    const ktlintMavenOther = `                <executions>
+                    <execution>
+                        <id>check</id>
+                        <goals>
+                            <goal>check</goal>
+                        </goals>
+                        <configuration>
+                            <failOnViolation>false</failOnViolation>
+                        </configuration>
+                    </execution>
+                </executions>`;
+
+                    source.addMavenDefinition({
+                        plugins: [
+                            {
+                                groupId: 'com.github.gantsign.maven',
+                                artifactId: 'ktlint-maven-plugin',
+                                version: '${ktlint-maven-plugin.version}',
+                                additionalContent: ktlintMavenOther,
+                            },
+                        ],
+                    });
+                }
+            },
         });
     }
 }

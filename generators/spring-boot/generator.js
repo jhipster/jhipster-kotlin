@@ -15,8 +15,6 @@ import {
     DETEKT_CONFIG_FILE,
     DETEKT_VERSION,
     KOTLIN_VERSION,
-    KTLINT_GRADLE_VERSION,
-    KTLINT_MAVEN_VERSION,
     MAPSTRUCT_VERSION,
     MAVEN_ANTRUN_VERSION,
     MOCKITO_KOTLIN_VERSION,
@@ -471,11 +469,6 @@ export default class extends BaseApplicationGenerator {
                         });
                     }
                     source.addGradlePluginToBuildScript({
-                        group: 'org.jlleitschuh.gradle',
-                        name: 'ktlint-gradle',
-                        version: KTLINT_GRADLE_VERSION,
-                    });
-                    source.addGradlePluginToBuildScript({
                         group: 'io.gitlab.arturbosch.detekt',
                         name: 'detekt-gradle-plugin',
                         version: '${detekt_version}',
@@ -493,7 +486,6 @@ export default class extends BaseApplicationGenerator {
                     source.addGradleDependencyCatalogPlugins([
                         { pluginName: 'kotlin-jvm', id: 'org.jetbrains.kotlin.jvm', 'version.ref': 'kotlin', addToBuild: true },
                         { pluginName: 'detekt', id: 'io.gitlab.arturbosch.detekt', version: DETEKT_VERSION, addToBuild: true },
-                        { pluginName: 'ktlint', id: 'org.jlleitschuh.gradle.ktlint', version: KTLINT_GRADLE_VERSION, addToBuild: true },
                         {
                             pluginName: 'kotlin-allopen',
                             id: 'org.jetbrains.kotlin.plugin.allopen',
@@ -530,7 +522,6 @@ export default class extends BaseApplicationGenerator {
                         versions: [
                             { name: 'kotlin', version: KOTLIN_VERSION },
                             { name: 'mapstruct', version: MAPSTRUCT_VERSION },
-                            { name: 'ktlint-maven-plugin', version: KTLINT_MAVEN_VERSION },
                             { name: 'maven-antrun-plugin', version: MAVEN_ANTRUN_VERSION },
                             { name: 'detekt', version: DETEKT_VERSION },
                             { name: 'modernizer-maven-plugin', version: '2.6.0' },
@@ -697,18 +688,6 @@ export default class extends BaseApplicationGenerator {
                     <proc>none</proc>
                 </configuration>`;
 
-                    const ktlintMavenOther = `                <executions>
-                    <execution>
-                        <id>check</id>
-                        <goals>
-                            <goal>check</goal>
-                        </goals>
-                        <configuration>
-                            <failOnViolation>false</failOnViolation>
-                        </configuration>
-                    </execution>
-                </executions>`;
-
                     const antRunOther = `                <executions>
                     <execution>
                         <!-- This can be run separately with mvn antrun:run@detekt -->
@@ -769,12 +748,6 @@ export default class extends BaseApplicationGenerator {
                                 artifactId: 'maven-compiler-plugin',
                                 version: '${maven-compiler-plugin.version}',
                                 additionalContent: defaultCompileOther,
-                            },
-                            {
-                                groupId: 'com.github.gantsign.maven',
-                                artifactId: 'ktlint-maven-plugin',
-                                version: '${ktlint-maven-plugin.version}',
-                                additionalContent: ktlintMavenOther,
                             },
                             {
                                 groupId: 'org.apache.maven.plugins',
