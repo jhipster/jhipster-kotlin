@@ -86,8 +86,8 @@ export default class extends BaseApplicationGenerator {
     async beforeQueue() {
         await this.dependsOnJHipster('server');
         await this.dependsOnJHipster('jhipster:java:build-tool', {
-            // We want to use v7 liquibase templates and keep pom.xml unsorted for easier migration
-            generatorOptions: { skipPriorities: ['writing', 'postWriting'], sortMavenPom: false },
+            // We want to use v7 build-tool templates
+            generatorOptions: { skipPriorities: ['writing', 'postWriting'] },
         });
     }
 
