@@ -113,29 +113,14 @@ jobs:
             #----------------------------------------------------------------------
             # Detect changes against base commit
             #----------------------------------------------------------------------
-            # Revert samples rename to old name.
-            - uses: actions/setup-node@v4
-              with:
-                  node-version: 16
-            - name: 'MERGE: generate base'
-              continue-on-error: true
-              id: base-app
+            - uses: jhipster/actions/compare-sample@v0
+              id: compare
               if: >-
                   github.event.pull_request &&
                   !contains(github.event.pull_request.labels.*.name, 'pr: disable-compare')
-              uses: ./jhipster-kotlin/.github/actions/compare-base
               with:
-                  extra-args: '--skip-jhipster-dependencies --skip-ktlint-format ${{ matrix.extra-args }}'
-            - name: 'MERGE: compare changes'
-              continue-on-error: true
-              id: compare
-              if: steps.base-app.outcome == 'success'
-              uses: ./jhipster-kotlin/.github/actions/compare
-              with:
-                  application-path: ${{ steps.base-app.outputs.application-path }}
-            - uses: actions/setup-node@v4
-              with:
-                  node-version: 20
+                  generator-path: jhipster-kotlin
+                  cmd: cli.cjs generate-sample --skip-jhipster-dependencies --skip-install --skip-ktlint-format ${{ matrix.extra-args }}
             #----------------------------------------------------------------------
             # Launch tests
             #----------------------------------------------------------------------
