@@ -2,7 +2,6 @@ import { dirname, join } from 'path';
 import { fileURLToPath } from 'url';
 import { transform, passthrough } from '@yeoman/transform';
 import BaseApplicationGenerator from 'generator-jhipster/generators/spring-boot';
-import { createNeedleCallback } from 'generator-jhipster/generators/base/support';
 import { prepareSqlApplicationProperties } from 'generator-jhipster/generators/spring-data-relational/support';
 import { files as entityServerFiles } from 'jhipster-7-templates/esm/generators/entity-server';
 import { getEnumInfo } from 'generator-jhipster/generators/base-application/support';
@@ -87,6 +86,7 @@ export default class extends BaseApplicationGenerator {
             // We want to use v7 liquibase templates and keep pom.xml unsorted for easier migration
             generatorOptions: { skipPriorities: ['writing', 'postWriting'], sortMavenPom: false },
         });
+        await this.dependsOnJHipster('jhipster-kotlin:migration');
         await this.dependsOnJHipster('jhipster-kotlin:ktlint');
     }
 
@@ -425,14 +425,6 @@ export default class extends BaseApplicationGenerator {
             },
             async customizeGradle({ application, source }) {
                 if (application.buildToolGradle) {
-                    // Add a noop needles for spring-gateway generator
-                    source.addJavaDefinition = () => {};
-                    source.addJavaDependencies = () => {};
-
-                    // JHipster 8 have needles fixed
-                    this.editFile('build.gradle', contents => contents.replaceAll('//jhipster', '// jhipster'));
-                    this.editFile('settings.gradle', contents => contents.replaceAll('//jhipster', '// jhipster'));
-
                     source.applyFromGradle({
                         script: 'gradle/kotlin.gradle',
                     });
@@ -441,16 +433,6 @@ export default class extends BaseApplicationGenerator {
                     source.addGradleProperty({ property: 'mapstruct_version', value: MAPSTRUCT_VERSION });
                     source.addGradleProperty({ property: 'detekt_version', value: DETEKT_VERSION });
 
-                    // JHipster 7 does not support buildScript add for migration
-                    source.addGradlePluginToBuildScript = ({ group, name, version }) => {
-                        this.editFile(
-                            'build.gradle',
-                            createNeedleCallback({
-                                needle: 'gradle-buildscript-dependency',
-                                contentToAdd: `classpath "${group}:${name}:${version}"`,
-                            }),
-                        );
-                    };
                     source.addGradlePluginToBuildScript({
                         group: 'org.jetbrains.kotlin',
                         name: 'kotlin-gradle-plugin',
