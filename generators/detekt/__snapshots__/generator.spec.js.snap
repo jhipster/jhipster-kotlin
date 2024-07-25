@@ -1,0 +1,128 @@
+// Vitest Snapshot v1, https://vitest.dev/guide/snapshot.html
+
+exports[`SubGenerator detekt of kotlin JHipster blueprint > gradle > should match source calls 1`] = `
+{
+  "addGradlePluginToBuildScript": [
+    {
+      "group": "io.gitlab.arturbosch.detekt",
+      "name": "detekt-gradle-plugin",
+      "version": "\${detekt_version}",
+    },
+  ],
+  "addGradleProperty": [
+    {
+      "property": "detekt_version",
+      "value": "'DETEKT-GRADLE-VERSION'",
+    },
+  ],
+  "applyFromGradle": [
+    {
+      "script": "gradle/detekt.gradle",
+    },
+  ],
+}
+`;
+
+exports[`SubGenerator detekt of kotlin JHipster blueprint > gradle > should succeed 1`] = `
+{
+  ".yo-rc.json": {
+    "stateCleared": "modified",
+  },
+  "detekt-config.yml": {
+    "stateCleared": "modified",
+  },
+  "gradle/detekt.gradle": {
+    "stateCleared": "modified",
+  },
+}
+`;
+
+exports[`SubGenerator detekt of kotlin JHipster blueprint > maven > should match source calls 1`] = `
+{
+  "addJavaDefinition": [
+    {
+      "versions": [
+        {
+          "name": "maven-antrun-plugin",
+          "version": "3.0.0",
+        },
+        {
+          "name": "detekt",
+          "version": "'DETEKT-CLI-VERSION'",
+        },
+      ],
+    },
+  ],
+  "addMavenDefinition": [
+    {
+      "plugins": [
+        {
+          "additionalContent": "                <executions>
+                    <execution>
+                        <!-- This can be run separately with mvn antrun:run@detekt -->
+                        <id>detekt</id>
+                        <phase>verify</phase>
+                        <configuration>
+                            <target name="detekt">
+                                <!-- See https://arturbosch.github.io/detekt/cli.html for more options-->
+                                <java taskname="detekt" dir="\${basedir}"
+                                      fork="true"
+                                      failonerror="false"
+                                      classname="io.gitlab.arturbosch.detekt.cli.Main"
+                                      classpathref="maven.plugin.classpath">
+                                    <arg value="--input"/>
+                                    <arg value="\${project.basedir}/src/main/kotlin"/>
+                                    <arg value="--report"/>
+                                    <arg value="xml:\${detekt.xmlReportFile}"/>
+                                    <arg value="--config"/>
+                                    <arg value="\${detekt.configFile}"/>
+                                </java>
+                            </target>
+                        </configuration>
+                        <goals>
+                            <goal>run</goal>
+                        </goals>
+                    </execution>
+                </executions>
+                <dependencies>
+                    <dependency>
+                        <groupId>io.gitlab.arturbosch.detekt</groupId>
+                        <artifactId>detekt-cli</artifactId>
+                        <version>\${detekt.version}</version>
+                    </dependency>
+                    <!-- additional 3rd party ruleset(s) can be specified here -->
+                </dependencies>",
+          "artifactId": "maven-antrun-plugin",
+          "groupId": "org.apache.maven.plugins",
+          "version": "\${maven-antrun-plugin.version}",
+        },
+      ],
+      "properties": [
+        {
+          "property": "detekt.configFile",
+          "value": "\${project.basedir}/detekt-config.yml",
+        },
+        {
+          "property": "detekt.xmlReportFile",
+          "value": "\${project.build.directory}/detekt-reports/detekt.xml",
+        },
+        {
+          "property": "sonar.kotlin.detekt.reportPaths",
+          "value": "\${detekt.xmlReportFile}",
+        },
+      ],
+    },
+  ],
+}
+`;
+
+exports[`SubGenerator detekt of kotlin JHipster blueprint > maven > should succeed 1`] = `
+{
+  ".yo-rc.json": {
+    "stateCleared": "modified",
+  },
+  "detekt-config.yml": {
+    "stateCleared": "modified",
+  },
+}
+`;

@@ -17,7 +17,6 @@
  * limitations under the License.
  */
 import { buildToolTypes } from 'generator-jhipster/jdl';
-import { DETEKT_CONFIG_FILE } from './kotlin-constants.js';
 
 const { GRADLE } = buildToolTypes;
 
@@ -26,9 +25,6 @@ export const kotlinAdditionalFiles = {
         {
             condition: generator => generator.buildTool === GRADLE,
             templates: [{ file: 'gradle/kotlin.gradle' }],
-        },
-        {
-            templates: [{ file: `${DETEKT_CONFIG_FILE}` }],
         },
     ],
 };

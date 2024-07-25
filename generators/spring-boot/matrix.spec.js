@@ -27,7 +27,7 @@ describe('Matrix test of SubGenerator kotlin of kotlin JHipster blueprint', () =
                     })
                     .withJHipsterLookup()
                     .withParentBlueprintLookup()
-                    .withMockedGenerators(['jhipster-kotlin:ktlint']);
+                    .withMockedGenerators(['jhipster-kotlin:ktlint', 'jhipster-kotlin:detekt']);
             });
 
             it('should succeed', () => {
