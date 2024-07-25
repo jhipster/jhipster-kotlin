@@ -6,15 +6,9 @@ import { command as springBootCommand } from 'generator-jhipster/generators/spri
 const command = {
     ...springBootCommand,
     configs: {
-        skipKtlintFormat: {
-            cli: {
-                desc: 'Skip ktlintFormat',
-                type: Boolean,
-            },
-            scope: 'generator',
-        },
         ...springBootCommand.configs,
     },
+    import: ['jhipster-kotlin:ktlint'],
 };
 
 export default command;

@@ -23,9 +23,11 @@ describe('Matrix test of SubGenerator kotlin of kotlin JHipster blueprint', () =
                     .withOptions({
                         ignoreNeedlesError: true,
                         blueprints: 'kotlin',
+                        skipKtlintFormat: true,
                     })
                     .withJHipsterLookup()
-                    .withParentBlueprintLookup();
+                    .withParentBlueprintLookup()
+                    .withMockedGenerators(['jhipster-kotlin:ktlint']);
             });
 
             it('should succeed', () => {

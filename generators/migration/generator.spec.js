@@ -2,19 +2,20 @@ import { beforeAll, describe, expect, it } from 'vitest';
 
 import { defaultHelpers as helpers, result } from 'generator-jhipster/testing';
 
-describe('SubGenerator kotlin of kotlin JHipster blueprint', () => {
+const SUB_GENERATOR = 'migration';
+const SUB_GENERATOR_NAMESPACE = `jhipster-kotlin:${SUB_GENERATOR}`;
+
+describe('SubGenerator migration of kotlin JHipster blueprint', () => {
     describe('run', () => {
         beforeAll(async function () {
             await helpers
-                .run('jhipster:spring-boot')
+                .run(SUB_GENERATOR_NAMESPACE)
                 .withJHipsterConfig()
                 .withOptions({
                     ignoreNeedlesError: true,
-                    blueprints: 'kotlin',
                 })
                 .withJHipsterLookup()
-                .withParentBlueprintLookup()
-                .withMockedGenerators(['jhipster-kotlin:ktlint']);
+                .withParentBlueprintLookup();
         });
 
         it('should succeed', () => {
