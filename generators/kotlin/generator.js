@@ -151,7 +151,7 @@ export default class extends BaseApplicationGenerator {
                     source.addJavaDefinition({
                         versions: [{ name: 'kotlin', version: application.javaDependencies.kotlin }],
                         dependencies: [
-                            { groupId: 'org.jetbrains.kotlin', artifactId: 'kotlin-stdlib' },
+                            { groupId: 'org.jetbrains.kotlin', artifactId: 'kotlin-stdlib-jdk8' },
                             { groupId: 'org.jetbrains.kotlin', artifactId: 'kotlin-reflect' },
                             { groupId: 'org.jetbrains.kotlin', artifactId: 'kotlin-test-junit', scope: 'test' },
                             {
