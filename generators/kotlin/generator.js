@@ -61,6 +61,7 @@ export default class extends BaseApplicationGenerator {
             async writeKotlinFiles({ application }) {
                 await this.writeFiles({
                     blocks: [
+                        { templates: ['.editorconfig.jhi.kotlin'] },
                         {
                             condition: ctx => ctx.buildToolGradle,
                             templates: [{ file: 'gradle/kotlin.gradle' }],
