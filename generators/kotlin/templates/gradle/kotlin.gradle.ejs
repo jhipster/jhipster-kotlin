@@ -29,8 +29,9 @@ apply plugin: "kotlin-jpa" // See https://kotlinlang.org/docs/reference/compiler
 apply plugin: "org.jlleitschuh.gradle.ktlint"
 
 dependencies {
-    implementation "org.jetbrains.kotlin:kotlin-stdlib-jdk8:${kotlin_version}"
-    implementation "org.jetbrains.kotlin:kotlin-reflect:${kotlin_version}"
+    implementation platform("org.jetbrains.kotlin:kotlin-bom:${kotlin_version}")
+    implementation "org.jetbrains.kotlin:kotlin-stdlib-jdk8"
+    implementation "org.jetbrains.kotlin:kotlin-reflect"
 
     <%_ if (reactive) { _%>
     implementation "org.jetbrains.kotlinx:kotlinx-coroutines-debug"
@@ -47,9 +48,9 @@ dependencies {
     kapt "com.datastax.oss:java-driver-mapper-processor:${cassandraDriverVersion}"
     <%_ } _%>
 
-    testImplementation "org.jetbrains.kotlin:kotlin-test-junit:${kotlin_version}"
+    testImplementation "org.jetbrains.kotlin:kotlin-test-junit"
 
-    testImplementation "org.mockito.kotlin:mockito-kotlin:<%= MOCKITO_KOTLIN_VERSION %>"
+    testImplementation "org.mockito.kotlin:mockito-kotlin:<%= javaDependencies['mockito-kotlin'] %>"
 }<%_ if (databaseTypeSql) { %>
 
 allOpen {
@@ -60,7 +61,7 @@ allOpen {
 
 [compileKotlin, compileTestKotlin]*.with {
     kotlinOptions {
-        jvmTarget = "<%= JAVA_VERSION %>"
+        jvmTarget = "<%= javaVersion %>"
         javaParameters = true
         freeCompilerArgs = ["-Xjvm-default=all"]
     }

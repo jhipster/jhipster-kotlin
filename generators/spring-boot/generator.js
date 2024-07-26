@@ -1,16 +1,13 @@
 import { dirname, join } from 'path';
 import { fileURLToPath } from 'url';
-import { transform, passthrough } from '@yeoman/transform';
 import BaseApplicationGenerator from 'generator-jhipster/generators/spring-boot';
 import { prepareSqlApplicationProperties } from 'generator-jhipster/generators/spring-data-relational/support';
 import { files as entityServerFiles } from 'jhipster-7-templates/esm/generators/entity-server';
 import { getEnumInfo } from 'generator-jhipster/generators/base-application/support';
 import { files as serverFiles } from 'jhipster-7-templates/esm/generators/server';
 
-import { kotlinAdditionalFiles } from './files.js';
 import migration from './migration.cjs';
 import { serverFiles as sqlFiles } from './files-sql.js';
-import { KOTLIN_VERSION, MAPSTRUCT_VERSION, MAVEN_ANTRUN_VERSION, MOCKITO_KOTLIN_VERSION } from './kotlin-constants.js';
 import { entityCouchbaseFiles } from './entity-files-couchbase.js';
 
 const { jhipsterConstants, jhipster7DockerContainers } = migration;
@@ -22,7 +19,6 @@ const {
     JACOCO_VERSION,
     JIB_VERSION,
     GRADLE_VERSION,
-    JAVA_VERSION,
     JAVA_COMPATIBLE_VERSIONS,
     JHIPSTER_DEPENDENCIES_VERSION,
     JACKSON_DATABIND_NULLABLE_VERSION,
@@ -62,6 +58,8 @@ const customizeSpringBootFiles = file => {
     return file;
 };
 
+const JAVA_VERSION = '11';
+
 export default class extends BaseApplicationGenerator {
     constructor(args, options, features) {
         super(args, options, { ...features, jhipster7Migration: true, checkBlueprint: true, inheritTasks: true });
@@ -74,12 +72,13 @@ export default class extends BaseApplicationGenerator {
     }
 
     async beforeQueue() {
-        await this.dependsOnJHipster('server');
         await this.dependsOnJHipster('jhipster:java:build-tool', {
             // We want to use v7 build-tool templates
             generatorOptions: { skipPriorities: ['writing', 'postWriting'] },
         });
         await this.dependsOnJHipster('jhipster-kotlin:migration');
+        await this.dependsOnJHipster('jhipster-kotlin:kotlin');
+        await this.dependsOnJHipster('server');
         await this.dependsOnJHipster('jhipster-kotlin:ktlint');
     }
 
@@ -130,8 +129,6 @@ export default class extends BaseApplicationGenerator {
             ...super.loading,
             async applyKotlinDefaults({ application }) {
                 Object.assign(application, {
-                    // We don't want to use to write any Java files
-                    backendTypeJavaAny: false,
                     // syncUserWithIdp disabled is not supported by kotlin blueprint
                     syncUserWithIdp: application.authenticationType === 'oauth2',
                 });
@@ -171,7 +168,6 @@ export default class extends BaseApplicationGenerator {
                     javaDir: application.packageFolder,
 
                     DOCKER_COMPOSE_FORMAT_VERSION,
-                    MOCKITO_KOTLIN_VERSION,
                     GRADLE_VERSION,
                     SPRING_BOOT_VERSION,
                     LIQUIBASE_VERSION,
@@ -257,38 +253,6 @@ export default class extends BaseApplicationGenerator {
                     serviceDiscoveryType: application.serviceDiscoveryType === 'no' ? false : application.serviceDiscoveryType,
                 });
             },
-            async defaultTemplateTask({ application }) {
-                this.queueTransformStream(
-                    {
-                        name: 'removing remaining java files',
-                        filter: file => file.path.endsWith('.java'),
-                        refresh: true,
-                    },
-                    transform(file => {
-                        this.log.warn(`Remaining java file ${file.path} removed`);
-                    }),
-                );
-
-                if (application.buildToolGradle) {
-                    this.queueTransformStream(
-                        {
-                            name: 'updating gradle files',
-                            filter: file => file.path.endsWith('.gradle'),
-                            refresh: false,
-                        },
-                        passthrough(file => {
-                            file.contents = Buffer.from(
-                                file.contents
-                                    .toString()
-                                    .replaceAll('classes/java/main', 'classes/kotlin/main')
-                                    .replaceAll('html.enabled =', 'html.required =')
-                                    .replaceAll('xml.enabled =', 'xml.required =')
-                                    .replaceAll('csv.enabled =', 'csv.required ='),
-                            );
-                        }),
-                    );
-                }
-            },
         });
     }
 
@@ -302,10 +266,6 @@ export default class extends BaseApplicationGenerator {
                     sections: serverFiles,
                     context: application,
                     customizeTemplatePath: customizeSpringBootFiles,
-                });
-                await this.writeFiles({
-                    sections: kotlinAdditionalFiles,
-                    context: application,
                 });
             },
             async writeSqlFiles({ application }) {
@@ -407,275 +367,10 @@ export default class extends BaseApplicationGenerator {
 
     get [BaseApplicationGenerator.POST_WRITING]() {
         return this.asPostWritingTaskGroup({
-            removeScripts({ application }) {
-                if (application.applicationTypeGateway || application.gatewayServerPort) {
-                    // Readiness port is not correctly exposed in gateways
-                    // Don't wait for readiness state
-                    const scriptsStorage = this.packageJson.createStorage('scripts');
-                    scriptsStorage.delete('pree2e:headless');
-                }
-            },
-            async customizeGradle({ application, source }) {
-                if (application.buildToolGradle) {
-                    source.applyFromGradle({
-                        script: 'gradle/kotlin.gradle',
-                    });
-
-                    source.addGradleProperty({ property: 'kotlin_version', value: KOTLIN_VERSION });
-                    source.addGradleProperty({ property: 'mapstruct_version', value: MAPSTRUCT_VERSION });
-
-                    source.addGradlePluginToBuildScript({
-                        group: 'org.jetbrains.kotlin',
-                        name: 'kotlin-gradle-plugin',
-                        version: '${kotlin_version}',
-                    });
-                    source.addGradlePluginToBuildScript({
-                        group: 'org.jetbrains.kotlin',
-                        name: 'kotlin-allopen',
-                        version: '${kotlin_version}',
-                    });
-                    if (application.databaseTypeSql) {
-                        source.addGradlePluginToBuildScript({
-                            group: 'org.jetbrains.kotlin',
-                            name: 'kotlin-noarg',
-                            version: '${kotlin_version}',
-                        });
-                    }
-
-                    /*
-                    // JHipster 8 based configuration
-                    source.addJavaDefinition({
-                        versions: [
-                            { name: 'kotlin', version: KOTLIN_VERSION },
-                        ],
-                    });
-
-                    source.addGradleDependencyCatalogPlugins([
-                        { pluginName: 'kotlin-jvm', id: 'org.jetbrains.kotlin.jvm', 'version.ref': 'kotlin', addToBuild: true },
-                        {
-                            pluginName: 'kotlin-allopen',
-                            id: 'org.jetbrains.kotlin.plugin.allopen',
-                            'version.ref': 'kotlin',
-                            addToBuild: true,
-                        },
-                    ]);
-                    if (application.databaseTypeSql) {
-                        source.addGradleDependencyCatalogPlugins([
-                            {
-                                pluginName: 'kotlin-noarg',
-                                id: 'org.jetbrains.kotlin.plugin.noarg',
-                                'version.ref': 'kotlin',
-                                addToBuild: true,
-                            },
-                        ]);
-                    }
-                    */
-                }
-            },
-
             async customizeMaven({ application, source }) {
                 if (application.buildToolMaven) {
-                    source.mergeMavenPomContent({
-                        project: {
-                            build: {
-                                sourceDirectory: SERVER_MAIN_SRC_KOTLIN_DIR,
-                                testSourceDirectory: SERVER_TEST_SRC_KOTLIN_DIR,
-                            },
-                        },
-                    });
-
-                    source.addJavaDefinition({
-                        versions: [
-                            { name: 'kotlin', version: KOTLIN_VERSION },
-                            { name: 'mapstruct', version: MAPSTRUCT_VERSION },
-                            { name: 'maven-antrun-plugin', version: MAVEN_ANTRUN_VERSION },
-                            { name: 'modernizer-maven-plugin', version: '2.6.0' },
-                        ],
-                        dependencies: [
-                            { groupId: 'org.jetbrains.kotlin', artifactId: 'kotlin-stdlib-jdk8' },
-                            { groupId: 'org.jetbrains.kotlinx', artifactId: 'kotlinx-coroutines-debug' },
-                            { groupId: 'org.jetbrains.kotlinx', artifactId: 'kotlinx-coroutines-reactor' },
-                            { groupId: 'io.projectreactor.kotlin', artifactId: 'reactor-kotlin-extensions' },
-                            { groupId: 'com.fasterxml.jackson.datatype', artifactId: 'jackson-datatype-json-org' },
-                            { groupId: 'org.jetbrains.kotlin', artifactId: 'kotlin-reflect', versionRef: 'kotlin' },
-                            { groupId: 'org.jetbrains.kotlin', artifactId: 'kotlin-test-junit', versionRef: 'kotlin', scope: 'test' },
-                            {
-                                groupId: 'org.mockito.kotlin',
-                                artifactId: 'mockito-kotlin',
-                                version: MOCKITO_KOTLIN_VERSION,
-                                scope: 'test',
-                            },
-                        ],
-                    });
-
-                    // NOTE: Add proper indentation of the configuration tag
-                    const kotlinOther = `                <executions>
-                    <execution>
-                        <id>kapt</id>
-                        <goals>
-                            <goal>kapt</goal>
-                        </goals>
-                        <configuration>
-                            <sourceDirs>
-                                <sourceDir>$\{project.basedir}/src/main/kotlin</sourceDir>
-                                <sourceDir>$\{project.basedir}/src/main/java</sourceDir>
-                            </sourceDirs>
-                            <annotationProcessorPaths>
-                                <annotationProcessorPath>
-                                    <groupId>org.mapstruct</groupId>
-                                    <artifactId>mapstruct-processor</artifactId>
-                                    <version>$\{mapstruct.version}</version>
-                                </annotationProcessorPath>
-                                ${
-                                    application.databaseTypeSql
-                                        ? `<!-- For JPA static metamodel generation -->
-                                <annotationProcessorPath>
-                                    <groupId>org.hibernate</groupId>
-                                    <artifactId>hibernate-jpamodelgen</artifactId>
-                                    <version>$\{hibernate.version}</version>
-                                </annotationProcessorPath>
-                                <annotationProcessorPath>
-                                    <groupId>org.glassfish.jaxb</groupId>
-                                    <artifactId>jaxb-runtime</artifactId>
-                                    <version>$\{jaxb-runtime.version}</version>
-                                </annotationProcessorPath>`
-                                        : ''
-                                }
-                                ${
-                                    application.databaseTypeCassandra
-                                        ? `
-                                <annotationProcessorPath>
-                                    <groupId>com.datastax.oss</groupId>
-                                    <artifactId>java-driver-mapper-processor</artifactId>
-                                    <version>$\{cassandra-driver.version}</version>
-                                </annotationProcessorPath>`
-                                        : ''
-                                }
-                            </annotationProcessorPaths>
-                        </configuration>
-                    </execution>
-                    <execution>
-                        <id>compile</id>
-                        <phase>process-sources</phase>
-                        <goals>
-                            <goal>compile</goal>
-                        </goals>
-                        <configuration>
-                            <sourceDirs>
-                                <sourceDir>$\{project.basedir}/src/main/kotlin</sourceDir>
-                                <sourceDir>$\{project.basedir}/src/main/java</sourceDir>
-                            </sourceDirs>
-                        </configuration>
-                    </execution>
-                    <execution>
-                        <id>test-compile</id>
-                        <phase>process-test-sources</phase>
-                        <goals>
-                            <goal>test-compile</goal>
-                        </goals>
-                        <configuration>
-                            <sourceDirs>
-                                <sourceDir>$\{project.basedir}/src/test/kotlin</sourceDir>
-                                <sourceDir>$\{project.basedir}/src/test/java</sourceDir>
-                            </sourceDirs>
-                        </configuration>
-                    </execution>
-                </executions>
-                <configuration>
-                    <jvmTarget>$\{java.version}</jvmTarget>
-                    <javaParameters>true</javaParameters>
-                    <args>
-                        <arg>-Xjvm-default=all</arg>
-                    </args>
-                    <compilerPlugins>
-                        <plugin>spring</plugin>${
-                            application.databaseTypeSql
-                                ? `
-                        <plugin>jpa</plugin>
-                        <plugin>all-open</plugin>`
-                                : ''
-                        }
-                    </compilerPlugins>${
-                        application.databaseTypeSql
-                            ? `<pluginOptions>
-                        <!-- Each annotation is placed on its own line -->
-                        <option>all-open:annotation=javax.persistence.Entity</option>
-                        <option>all-open:annotation=javax.persistence.MappedSuperclass</option>
-                        <option>all-open:annotation=javax.persistence.Embeddable</option>
-                    </pluginOptions>`
-                            : ''
-                    }
-                </configuration>
-                <dependencies>
-                    <dependency>
-                        <groupId>org.jetbrains.kotlin</groupId>
-                        <artifactId>kotlin-maven-allopen</artifactId>
-                        <version>$\{kotlin.version}</version>
-                    </dependency>
-                    ${
-                        application.databaseTypeSql
-                            ? `<dependency>
-                        <groupId>org.jetbrains.kotlin</groupId>
-                        <artifactId>kotlin-maven-noarg</artifactId>
-                        <version>$\{kotlin.version}</version>
-                    </dependency>`
-                            : ''
-                    }
-                </dependencies>`;
-
-                    const defaultCompileOther = `                <executions>
-                    <!-- Replacing default-compile as it is treated specially by maven -->
-                    <execution>
-                        <id>default-compile</id>
-                        <phase>none</phase>
-                    </execution>
-                    <!-- Replacing default-testCompile as it is treated specially by maven -->
-                    <execution>
-                        <id>default-testCompile</id>
-                        <phase>none</phase>
-                    </execution>
-                    <execution>
-                        <id>java-compile</id>
-                        <phase>compile</phase>
-                        <goals>
-                            <goal>compile</goal>
-                        </goals>
-                    </execution>
-                    <execution>
-                        <id>java-test-compile</id>
-                        <phase>test-compile</phase>
-                        <goals>
-                            <goal>testCompile</goal>
-                        </goals>
-                    </execution>
-                </executions>
-                <configuration>
-                    <proc>none</proc>
-                </configuration>`;
-
                     source.addMavenDefinition({
-                        properties: [
-                            { property: 'modernizer.failOnViolations', value: 'false' },
-                            { property: 'sonar.coverage.jacoco.xmlReportPaths', value: '${jacoco.reportFolder}/jacoco.xml' },
-                        ],
-                        dependencyManagement: [
-                            { groupId: 'org.jetbrains.kotlin', artifactId: 'kotlin-stdlib', version: '${kotlin.version}' },
-                            { groupId: 'org.jetbrains.kotlin', artifactId: 'kotlin-stdlib-jdk8', version: '${kotlin.version}' },
-                        ],
-                        plugins: [
-                            {
-                                groupId: 'org.jetbrains.kotlin',
-                                artifactId: 'kotlin-maven-plugin',
-                                version: '${kotlin.version}',
-                                additionalContent: kotlinOther,
-                            },
-                            {
-                                groupId: 'org.apache.maven.plugins',
-                                artifactId: 'maven-compiler-plugin',
-                                version: '${maven-compiler-plugin.version}',
-                                additionalContent: defaultCompileOther,
-                            },
-                        ],
+                        properties: [{ property: 'modernizer.failOnViolations', value: 'false' }],
                     });
                 }
             },

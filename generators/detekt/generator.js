@@ -1,5 +1,6 @@
 import BaseApplicationGenerator from 'generator-jhipster/generators/base-application';
-import { DETEKT_CONFIG_FILE, MAVEN_ANTRUN_VERSION } from '../spring-boot/kotlin-constants.js';
+
+const DETEKT_CONFIG_FILE = 'detekt-config.yml';
 
 export default class extends BaseApplicationGenerator {
     constructor(args, opts, features) {
@@ -75,7 +76,7 @@ export default class extends BaseApplicationGenerator {
                 if (application.buildToolMaven) {
                     source.addJavaDefinition({
                         versions: [
-                            { name: 'maven-antrun-plugin', version: MAVEN_ANTRUN_VERSION },
+                            { name: 'maven-antrun-plugin', version: application.javaDependencies['maven-antrun-plugin'] },
                             { name: 'detekt', version: application.javaDependencies['detekt-cli'] },
                         ],
                     });
