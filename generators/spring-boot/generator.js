@@ -18,6 +18,7 @@ const {
     HIBERNATE_VERSION,
     JACOCO_VERSION,
     JIB_VERSION,
+    GRADLE_VERSION,
     JAVA_COMPATIBLE_VERSIONS,
     JHIPSTER_DEPENDENCIES_VERSION,
     JACKSON_DATABIND_NULLABLE_VERSION,
@@ -58,7 +59,6 @@ const customizeSpringBootFiles = file => {
 };
 
 const JAVA_VERSION = '11';
-const GRADLE_VERSION = '8.9';
 
 export default class extends BaseApplicationGenerator {
     constructor(args, options, features) {
@@ -169,7 +169,6 @@ export default class extends BaseApplicationGenerator {
 
                     DOCKER_COMPOSE_FORMAT_VERSION,
                     GRADLE_VERSION,
-                    gradleVersion: GRADLE_VERSION,
                     SPRING_BOOT_VERSION,
                     LIQUIBASE_VERSION,
                     HIBERNATE_VERSION,
