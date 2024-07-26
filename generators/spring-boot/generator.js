@@ -10,14 +10,7 @@ import { files as serverFiles } from 'jhipster-7-templates/esm/generators/server
 import { kotlinAdditionalFiles } from './files.js';
 import migration from './migration.cjs';
 import { serverFiles as sqlFiles } from './files-sql.js';
-import {
-    DETEKT_CONFIG_FILE,
-    DETEKT_VERSION,
-    KOTLIN_VERSION,
-    MAPSTRUCT_VERSION,
-    MAVEN_ANTRUN_VERSION,
-    MOCKITO_KOTLIN_VERSION,
-} from './kotlin-constants.js';
+import { KOTLIN_VERSION, MAPSTRUCT_VERSION, MAVEN_ANTRUN_VERSION, MOCKITO_KOTLIN_VERSION } from './kotlin-constants.js';
 import { entityCouchbaseFiles } from './entity-files-couchbase.js';
 
 const { jhipsterConstants, jhipster7DockerContainers } = migration;
@@ -178,7 +171,6 @@ export default class extends BaseApplicationGenerator {
                     javaDir: application.packageFolder,
 
                     DOCKER_COMPOSE_FORMAT_VERSION,
-                    DETEKT_CONFIG_FILE,
                     MOCKITO_KOTLIN_VERSION,
                     GRADLE_VERSION,
                     SPRING_BOOT_VERSION,
@@ -431,7 +423,6 @@ export default class extends BaseApplicationGenerator {
 
                     source.addGradleProperty({ property: 'kotlin_version', value: KOTLIN_VERSION });
                     source.addGradleProperty({ property: 'mapstruct_version', value: MAPSTRUCT_VERSION });
-                    source.addGradleProperty({ property: 'detekt_version', value: DETEKT_VERSION });
 
                     source.addGradlePluginToBuildScript({
                         group: 'org.jetbrains.kotlin',
@@ -450,24 +441,17 @@ export default class extends BaseApplicationGenerator {
                             version: '${kotlin_version}',
                         });
                     }
-                    source.addGradlePluginToBuildScript({
-                        group: 'io.gitlab.arturbosch.detekt',
-                        name: 'detekt-gradle-plugin',
-                        version: '${detekt_version}',
-                    });
 
                     /*
                     // JHipster 8 based configuration
                     source.addJavaDefinition({
                         versions: [
                             { name: 'kotlin', version: KOTLIN_VERSION },
-                            { name: 'detekt', version: DETEKT_VERSION },
                         ],
                     });
 
                     source.addGradleDependencyCatalogPlugins([
                         { pluginName: 'kotlin-jvm', id: 'org.jetbrains.kotlin.jvm', 'version.ref': 'kotlin', addToBuild: true },
-                        { pluginName: 'detekt', id: 'io.gitlab.arturbosch.detekt', version: DETEKT_VERSION, addToBuild: true },
                         {
                             pluginName: 'kotlin-allopen',
                             id: 'org.jetbrains.kotlin.plugin.allopen',
@@ -505,7 +489,6 @@ export default class extends BaseApplicationGenerator {
                             { name: 'kotlin', version: KOTLIN_VERSION },
                             { name: 'mapstruct', version: MAPSTRUCT_VERSION },
                             { name: 'maven-antrun-plugin', version: MAVEN_ANTRUN_VERSION },
-                            { name: 'detekt', version: DETEKT_VERSION },
                             { name: 'modernizer-maven-plugin', version: '2.6.0' },
                         ],
                         dependencies: [
@@ -670,48 +653,9 @@ export default class extends BaseApplicationGenerator {
                     <proc>none</proc>
                 </configuration>`;
 
-                    const antRunOther = `                <executions>
-                    <execution>
-                        <!-- This can be run separately with mvn antrun:run@detekt -->
-                        <id>detekt</id>
-                        <phase>verify</phase>
-                        <configuration>
-                            <target name="detekt">
-                                <!-- See https://arturbosch.github.io/detekt/cli.html for more options-->
-                                <java taskname="detekt" dir="$\{basedir}"
-                                      fork="true"
-                                      failonerror="false"
-                                      classname="io.gitlab.arturbosch.detekt.cli.Main"
-                                      classpathref="maven.plugin.classpath">
-                                    <arg value="--input"/>
-                                    <arg value="$\{project.basedir}/src/main/kotlin"/>
-                                    <arg value="--report"/>
-                                    <arg value="xml:$\{detekt.xmlReportFile}"/>
-                                    <arg value="--config"/>
-                                    <arg value="$\{detekt.configFile}"/>
-                                </java>
-                            </target>
-                        </configuration>
-                        <goals>
-                            <goal>run</goal>
-                        </goals>
-                    </execution>
-                </executions>
-                <dependencies>
-                    <dependency>
-                        <groupId>io.gitlab.arturbosch.detekt</groupId>
-                        <artifactId>detekt-cli</artifactId>
-                        <version>$\{detekt.version}</version>
-                    </dependency>
-                    <!-- additional 3rd party ruleset(s) can be specified here -->
-                </dependencies>`;
-
                     source.addMavenDefinition({
                         properties: [
                             { property: 'modernizer.failOnViolations', value: 'false' },
-                            { property: 'detekt.configFile', value: `$\{project.basedir}/${DETEKT_CONFIG_FILE}` },
-                            { property: 'detekt.xmlReportFile', value: '${project.build.directory}/detekt-reports/detekt.xml' },
-                            { property: 'sonar.kotlin.detekt.reportPaths', value: '${detekt.xmlReportFile}' },
                             { property: 'sonar.coverage.jacoco.xmlReportPaths', value: '${jacoco.reportFolder}/jacoco.xml' },
                         ],
                         dependencyManagement: [
@@ -730,12 +674,6 @@ export default class extends BaseApplicationGenerator {
                                 artifactId: 'maven-compiler-plugin',
                                 version: '${maven-compiler-plugin.version}',
                                 additionalContent: defaultCompileOther,
-                            },
-                            {
-                                groupId: 'org.apache.maven.plugins',
-                                artifactId: 'maven-antrun-plugin',
-                                version: '${maven-antrun-plugin.version}',
-                                additionalContent: antRunOther,
                             },
                         ],
                     });
