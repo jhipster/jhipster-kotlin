@@ -3,8 +3,13 @@ import { chmod, mkdir, rm } from 'node:fs/promises';
 import { platform } from 'node:os';
 import { join } from 'node:path';
 import { pipeline } from 'node:stream/promises';
+
 import BaseApplicationGenerator from 'generator-jhipster/generators/base-application';
+import { autoCrlfTransform } from 'generator-jhipster/generators/bootstrap/support';
 import axios from 'axios';
+import { createCommitTransform } from 'mem-fs-editor/transform';
+import { createConflicterTransform, createYoResolveTransform } from '@yeoman/conflicter';
+
 import { createKtlintTransform, filterKtlintTransformFiles } from './internal/ktlint-transform.js';
 
 export default class extends BaseApplicationGenerator {
@@ -64,6 +69,12 @@ export default class extends BaseApplicationGenerator {
             async defaultTemplateTask({ control }) {
                 if (!this.options.skipKtlintFormat) {
                     const destinationPath = this.destinationPath();
+
+                    this.queueCommitTransformStream({
+                        name: 'commiting .editorconfig with ktlint configuration',
+                        filter: file => file.path.startsWith(destinationPath) && file.path.endsWith('.editorconfig'),
+                    });
+
                     this.queueTransformStream(
                         {
                             name: 'formating using ktlint',
@@ -94,7 +105,14 @@ export default class extends BaseApplicationGenerator {
 
     get [BaseApplicationGenerator.POST_WRITING]() {
         return this.asPostWritingTaskGroup({
-            async postWriting({ application }) {
+            editEditorconfigFile() {
+                this.editFile('.editorconfig', content =>
+                    content.includes('[*.{kt,kts}]')
+                        ? content
+                        : `${content}\n[*.{kt,kts}]\nindent_size = 4\nktlint_standard_no-wildcard-imports = disabled\n`,
+                );
+            },
+            async addNpmScript({ application }) {
                 const command = application.buildToolGradle ? './gradlew :ktlintFormat' : './mvnw ktlint:format';
                 this.packageJson.merge({
                     scripts: {
@@ -143,5 +161,31 @@ export default class extends BaseApplicationGenerator {
                 }
             },
         });
+    }
+
+    async queueCommitTransformStream(options, ...transforms) {
+        const skipYoResolveTransforms = [];
+        if (!this.options.skipYoResolve) {
+            skipYoResolveTransforms.push(createYoResolveTransform());
+        }
+
+        const autoCrlfTransforms = [];
+        if (this.jhipsterConfig.autoCrlf) {
+            autoCrlfTransforms.push(await autoCrlfTransform({ baseDir: this.destinationPath() }));
+        }
+
+        this.queueTransformStream(
+            {
+                refresh: false,
+                ...options,
+                // Disable progress since it blocks stdin.
+                disabled: true,
+            },
+            ...skipYoResolveTransforms,
+            ...transforms,
+            ...autoCrlfTransforms,
+            createConflicterTransform(this.env.adapter, { ...this.env.conflicterOptions }),
+            createCommitTransform(),
+        );
     }
 }
