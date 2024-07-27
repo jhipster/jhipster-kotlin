@@ -410,7 +410,15 @@ export default class extends BaseApplicationGenerator {
                     this.editFile('build.gradle', content =>
                         content.replace('\n    implementation "io.micrometer:micrometer-registry-prometheus-simpleclient"', ''),
                     );
-                    this.editFile('gradle/profile_dev.gradle', content => content.replace("\n        excludes = ['time']", ''));
+                    this.editFile('gradle/profile_dev.gradle', content =>
+                        content.replace(
+                            "\n        excludes = ['time']",
+                            `
+        properties {
+            time = null
+        }`,
+                        ),
+                    );
                 }
             },
             async customizeMaven({ application, source }) {
