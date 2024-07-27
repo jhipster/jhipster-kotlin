@@ -152,9 +152,6 @@ _%>
 interface UserRepository : <% if (databaseTypeSql) { %>JpaRepository<<%= asEntity('User') %>, <%= user.primaryKey.type %>><% } %><% if (reactive && !databaseTypeCouchbase) { %>Reactive<% } %><% if (databaseTypeMongodb) { %>MongoRepository<<%= asEntity('User') %>, String><% } %><% if (databaseTypeNeo4j) { %>Neo4jRepository<<%= asEntity('User') %>, String><% } %><% if (databaseTypeCouchbase) { %>JHipsterCouchbaseRepository<<%= asEntity('User') %>, String><%if (searchEngineCouchbase) { %>, CouchbaseSearchRepository<<%= asEntity('User') %>, String><% } } %> {
 
     <%_ if (!authenticationTypeOauth2) { _%>
-    <%_ if (databaseTypeCouchbase) { _%>
-    @JvmDefault
-    <%_ } _%>
     fun findOneByActivationKey(activationKey: String): <%= optionalOrMono %><<%= asEntity('User') %>><% if (databaseTypeCouchbase) { %> {
         return findIdByActivationKey(activationKey)
         .map(User::id)
@@ -166,9 +163,6 @@ interface UserRepository : <% if (databaseTypeSql) { %>JpaRepository<<%= asEntit
     <%_ } _%>
     <%_ if (!authenticationTypeOauth2) { _%>
 
-        <%_ if (databaseTypeCouchbase) { _%>
-    @JvmDefault
-        <%_ } _%>
     fun findAllByActivatedIsFalseAndActivationKeyIsNotNullAndCreatedDateBefore(dateTime: Instant): <%= listOrFlux %><<%= asEntity('User') %>><% if (databaseTypeCouchbase) { %> {
         return findAllById(toIds(findAllIdsByActivatedIsFalseAndActivationKeyIsNotNullAndCreatedDateBefore(dateTime)<%= toListSuffix %>))
     }
@@ -180,7 +174,6 @@ interface UserRepository : <% if (databaseTypeSql) { %>JpaRepository<<%= asEntit
 
     <%_ if (!authenticationTypeOauth2) { _%>
         <%_ if (databaseTypeCouchbase) { _%>
-    @JvmDefault
         <%_ } _%>
     fun findOneByResetKey(resetKey: String): <%= optionalOrMono %><<%= asEntity('User') %>><% if (databaseTypeCouchbase) { %> {
         return findIdByResetKey(resetKey)
@@ -199,9 +192,6 @@ interface UserRepository : <% if (databaseTypeSql) { %>JpaRepository<<%= asEntit
     @Cacheable(cacheNames = [USERS_BY_EMAIL_CACHE])
             <%_ } _%>
         <%_ } _%>
-        <%_ if (databaseTypeCouchbase) { _%>
-    @JvmDefault
-        <%_ } _%>
     fun findOneByEmailIgnoreCase(email: String?): <%= optionalOrMono %><<%= asEntity('User') %>><% if (databaseTypeCouchbase) { %> {
         return findIdByEmailIgnoreCase(email!!)
             .map(User::id)
@@ -217,7 +207,6 @@ interface UserRepository : <% if (databaseTypeSql) { %>JpaRepository<<%= asEntit
         <%_ if (cacheManagerIsAvailable) { _%>
     @Cacheable(cacheNames = [USERS_BY_LOGIN_CACHE])
         <%_ } _%>
-    @JvmDefault
     fun findOneByLogin(login: String): <%= optionalOrMono %><<%= asEntity('User') %>> {
         return findById(login)
     }
@@ -257,7 +246,6 @@ interface UserRepository : <% if (databaseTypeSql) { %>JpaRepository<<%= asEntit
         <%_ } _%>
 
         <%_ if (databaseTypeCouchbase) { _%>
-    @JvmDefault
     fun findAllByActivatedIsTrue(pageable: Pageable): Flux<User>{
         return findAllById(toIds(findAllIdsByActivatedIsTrue(pageable)))
     }
@@ -271,7 +259,6 @@ interface UserRepository : <% if (databaseTypeSql) { %>JpaRepository<<%= asEntit
     override fun count(): Mono<Long>
     <% } else { %>
         <%_ if (databaseTypeCouchbase) { _%>
-    @JvmDefault
     fun findAllByActivatedIsTrue(pageable: Pageable): Page<<%= asEntity('User') %>> {
         val page = findAllIdsByActivatedIsTrue(pageable);
         return PageImpl<<%= asEntity('User') %>>(findAllById(toIds(page.content)), pageable, page.totalElements)
