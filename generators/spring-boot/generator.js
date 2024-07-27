@@ -43,21 +43,6 @@ const convertToKotlinFile = file =>
         .replace(SERVER_MAIN_SRC_DIR, SERVER_MAIN_SRC_KOTLIN_DIR)
         .replace(SERVER_TEST_SRC_DIR, SERVER_TEST_SRC_KOTLIN_DIR);
 
-const customizeSpringBootFiles = file => {
-    const { destinationFile } = file;
-    // Ignore docker files, use updated docker files from v8 jhipster:docker generator
-    if (
-        destinationFile.includes('src/main/docker') &&
-        !destinationFile.includes('src/main/docker/jhipster-control-center.yml') &&
-        !destinationFile.includes('src/main/docker/jib') &&
-        !destinationFile.includes('src/main/docker/grafana') &&
-        !destinationFile.includes('src/main/docker/monitoring.yml')
-    ) {
-        return undefined;
-    }
-    return file;
-};
-
 const JAVA_VERSION = '11';
 
 export default class extends BaseApplicationGenerator {
@@ -72,10 +57,6 @@ export default class extends BaseApplicationGenerator {
     }
 
     async beforeQueue() {
-        await this.dependsOnJHipster('jhipster:java:build-tool', {
-            // We want to use v7 build-tool templates
-            generatorOptions: { skipPriorities: ['writing', 'postWriting'] },
-        });
         await this.dependsOnJHipster('jhipster-kotlin:migration');
         await this.dependsOnJHipster('jhipster-kotlin:kotlin');
         await this.dependsOnJHipster('server');
@@ -94,7 +75,7 @@ export default class extends BaseApplicationGenerator {
                 ) {
                     await this.composeWithJHipster('liquibase', {
                         // We want to use v7 liquibase templates.
-                        generatorOptions: { skipPriorities: ['writing', 'postWriting'] },
+                        generatorOptions: { skipPriorities: ['postWriting'] },
                     });
                 }
             },
@@ -103,10 +84,10 @@ export default class extends BaseApplicationGenerator {
 
                 await this.composeWithJHipster('docker');
 
-                const generatorOptions = { skipPriorities: ['writing', 'postWriting', 'writingEntities', 'postWritingEntities'] };
+                const generatorOptions = { skipPriorities: ['postWriting', 'writingEntities', 'postWritingEntities'] };
                 if (applicationType === 'gateway') {
                     // Use gateway package.json scripts.
-                    await this.composeWithJHipster('jhipster:spring-cloud:gateway', { generatorOptions: { skipPriorities: ['writing'] } });
+                    await this.composeWithJHipster('jhipster:spring-cloud:gateway');
                 }
 
                 if (databaseType === 'sql') {
@@ -134,11 +115,72 @@ export default class extends BaseApplicationGenerator {
                 });
 
                 application.customizeTemplatePaths.push(file => {
-                    const { resolvedSourceFile, sourceFile, destinationFile } = file;
-                    if (sourceFile.includes('package-info.java')) {
+                    const { resolvedSourceFile, sourceFile, destinationFile, namespace } = file;
+                    if (
+                        sourceFile.includes('package-info.java') ||
+                        [
+                            'jhipster:java:domain',
+                            'jhipster:spring-cloud:gateway',
+                            'jhipster:spring-data-cassandra',
+                            'jhipster:spring-data-couchbase',
+                            'jhipster:spring-data-mongodb',
+                            'jhipster:spring-data-neo4j',
+                            'jhipster:spring-data-relational',
+                        ].includes(namespace)
+                    ) {
                         return undefined;
                     }
-                    if (resolvedSourceFile.includes('.java')) {
+
+                    // Use master.xml from jhipster 7 templates
+                    if (sourceFile.includes('master.xml')) {
+                        return namespace === 'jhipster:liquibase' ? undefined : file;
+                    }
+
+                    if (namespace === 'jhipster-kotlin:spring-boot') {
+                        // Already resolved kotlin files
+                        if (resolvedSourceFile.endsWith('.kt') || resolvedSourceFile.includes('.kt.')) {
+                            return file;
+                        }
+
+                        // Use docker-compose files from docker generator
+                        if (
+                            sourceFile.includes('src/main/docker') &&
+                            !sourceFile.includes('src/main/docker/jhipster-control-center.yml') &&
+                            !sourceFile.includes('src/main/docker/jib') &&
+                            !sourceFile.includes('src/main/docker/grafana') &&
+                            !sourceFile.includes('src/main/docker/monitoring.yml')
+                        ) {
+                            return undefined;
+                        }
+
+                        // Use wrappers scripts from maven/gradle generators
+                        if (
+                            ['mvnw', 'mvnw.cmd', 'gradlew', 'gradlew.bat'].includes(sourceFile) ||
+                            sourceFile.includes('.mvnw') ||
+                            sourceFile.includes('gradle/wrapper/')
+                        ) {
+                            return undefined;
+                        }
+
+                        // Use liquibase templates from liquibase generator
+                        if (sourceFile.includes('src/main/resources/liquibase')) {
+                            return undefined;
+                        }
+                    }
+
+                    // Don't use liquibase.gradle from liquibase generator
+                    if (['gradle/liquibase.gradle'].includes(sourceFile)) {
+                        return undefined;
+                    }
+
+                    /*
+                    // Ignore convention plugins
+                    if (sourceFile.includes('buildSrc')) {
+                        return undefined;
+                    }
+                    */
+
+                    if (sourceFile.includes('.java')) {
                         return {
                             ...file,
                             resolvedSourceFile: this.templatePath(convertToKotlinFile(sourceFile)),
@@ -210,6 +252,16 @@ export default class extends BaseApplicationGenerator {
 
                 applicationDefaults({
                     __override__: true,
+                    gradleVersion: '7.6.4',
+                });
+
+                Object.assign(application.javaDependencies, {
+                    'spring-boot': '2.7.3',
+                    'spring-boot-dependencies': '2.7.3',
+                });
+
+                applicationDefaults({
+                    __override__: true,
                     // V7 templates expects prodDatabaseType to be set for non SQL databases
                     prodDatabaseType: ({ prodDatabaseType, databaseType }) => prodDatabaseType ?? databaseType,
                     // V7 templates expects false instead of 'no'
@@ -265,7 +317,6 @@ export default class extends BaseApplicationGenerator {
                 await this.writeFiles({
                     sections: serverFiles,
                     context: application,
-                    customizeTemplatePath: customizeSpringBootFiles,
                 });
             },
             async writeSqlFiles({ application }) {
@@ -305,6 +356,7 @@ export default class extends BaseApplicationGenerator {
                     customizeTemplatePath: file =>
                         file.sourceFile.includes('.java')
                             ? {
+                                  ...file,
                                   resolvedSourceFile: this.templatePath(`couchbase/${convertToKotlinFile(file.sourceFile)}`),
                                   destinationFile: convertToKotlinFile(file.destinationFile),
                               }
@@ -367,10 +419,18 @@ export default class extends BaseApplicationGenerator {
 
     get [BaseApplicationGenerator.POST_WRITING]() {
         return this.asPostWritingTaskGroup({
+            ...super.postWriting,
+            addJHipsterBomDependencies: undefined,
+            addSpringdoc: undefined,
+            addSpringBootPlugin: undefined,
+            addFeignReactor: undefined,
             async customizeMaven({ application, source }) {
                 if (application.buildToolMaven) {
                     source.addMavenDefinition({
-                        properties: [{ property: 'modernizer.failOnViolations', value: 'false' }],
+                        properties: [
+                            { property: 'modernizer-maven-plugin.version', value: application.javaDependencies['modernizer-maven-plugin'] },
+                            { property: 'modernizer.failOnViolations', value: 'false' },
+                        ],
                     });
                 }
             },

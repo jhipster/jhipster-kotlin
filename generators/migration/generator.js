@@ -3,29 +3,8 @@ import { createNeedleCallback } from 'generator-jhipster/generators/base/support
 import { passthrough } from '@yeoman/transform';
 
 export default class extends BaseApplicationGenerator {
-    get [BaseApplicationGenerator.DEFAULT]() {
-        return this.asDefaultTaskGroup({
-            async defaultTask({ application }) {
-                if (application.buildToolGradle) {
-                    this.queueTransformStream(
-                        {
-                            name: 'updating gradle files',
-                            filter: file => file.path.endsWith('.gradle'),
-                            refresh: false,
-                        },
-                        passthrough(file => {
-                            file.contents = Buffer.from(
-                                file.contents
-                                    .toString()
-                                    .replaceAll('html.enabled =', 'html.required =')
-                                    .replaceAll('xml.enabled =', 'xml.required =')
-                                    .replaceAll('csv.enabled =', 'csv.required ='),
-                            );
-                        }),
-                    );
-                }
-            },
-        });
+    async beforeQueue() {
+        await this.dependsOnJHipster('jhipster:java:build-tool');
     }
 
     get [BaseApplicationGenerator.PREPARING]() {
@@ -46,6 +25,31 @@ export default class extends BaseApplicationGenerator {
                             }),
                         );
                     };
+                }
+            },
+        });
+    }
+
+    get [BaseApplicationGenerator.DEFAULT]() {
+        return this.asDefaultTaskGroup({
+            async defaultTask({ application }) {
+                if (application.buildToolGradle) {
+                    this.queueTransformStream(
+                        {
+                            name: 'updating gradle files',
+                            filter: file => file.path.endsWith('.gradle'),
+                            refresh: false,
+                        },
+                        passthrough(file => {
+                            file.contents = Buffer.from(
+                                file.contents
+                                    .toString()
+                                    .replaceAll('html.enabled =', 'html.required =')
+                                    .replaceAll('xml.enabled =', 'xml.required =')
+                                    .replaceAll('csv.enabled =', 'csv.required ='),
+                            );
+                        }),
+                    );
                 }
             },
         });

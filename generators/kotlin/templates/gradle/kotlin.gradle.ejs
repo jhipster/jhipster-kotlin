@@ -51,14 +51,20 @@ dependencies {
     testImplementation "org.jetbrains.kotlin:kotlin-test-junit"
 
     testImplementation "org.mockito.kotlin:mockito-kotlin:<%= javaDependencies['mockito-kotlin'] %>"
-}<%_ if (databaseTypeSql) { %>
+}
 
+kapt {
+    correctErrorTypes true
+}
+
+<%_ if (databaseTypeSql) { _%>
 allOpen {
     annotation("javax.persistence.Entity")
     annotation("javax.persistence.MappedSuperclass")
     annotation("javax.persistence.Embeddable")
-}<%_ } %>
+}
 
+<%_ } _%>
 [compileKotlin, compileTestKotlin]*.with {
     kotlinOptions {
         jvmTarget = "<%= javaVersion %>"
@@ -70,7 +76,6 @@ allOpen {
 ktlint {
     //See more options: https://github.com/JLLeitschuh/ktlint-gradle#configuration
     ignoreFailures = true
-    disabledRules = ["no-wildcard-imports", "filename"]
 }
 
 if (OperatingSystem.current().isWindows()) {
@@ -81,9 +86,8 @@ if (OperatingSystem.current().isWindows()) {
     }
 }
 
-//Reformat code before compilation
+// Reformat code before compilation
 compileKotlin.dependsOn ktlintFormat
-
 
 jacocoTestReport {
     // Add Kotlin sources to Jacoco source dirs

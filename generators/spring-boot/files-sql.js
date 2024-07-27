@@ -74,17 +74,6 @@ const sqlFiles = {
             ],
         },
     ],
-    liquibase: [
-        {
-            path: KOTLIN_MAIN_SRC_DIR,
-            templates: [
-                {
-                    file: 'package/config/LiquibaseConfiguration.kt',
-                    renameTo: generator => `${generator.javaDir}config/LiquibaseConfiguration.kt`,
-                },
-            ],
-        },
-    ],
     hibernate: [
         {
             condition: generator => !generator.reactive,
