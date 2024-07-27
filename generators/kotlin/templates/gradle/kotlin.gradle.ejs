@@ -26,8 +26,6 @@ apply plugin: "kotlin-allopen" // See https://kotlinlang.org/docs/reference/comp
 apply plugin: "kotlin-jpa" // See https://kotlinlang.org/docs/reference/compiler-plugins.html#jpa-support
 <%_ } _%>
 
-apply plugin: "org.jlleitschuh.gradle.ktlint"
-
 dependencies {
     implementation platform("org.jetbrains.kotlin:kotlin-bom:${kotlin_version}")
     implementation "org.jetbrains.kotlin:kotlin-stdlib-jdk8"
@@ -51,17 +49,27 @@ dependencies {
     testImplementation "org.jetbrains.kotlin:kotlin-test-junit"
 
     testImplementation "org.mockito.kotlin:mockito-kotlin:<%= javaDependencies['mockito-kotlin'] %>"
-}<%_ if (databaseTypeSql) { %>
+}
+
+kotlin {
+    jvmToolchain(<%= javaVersion %>)
+}
+
+kapt {
+    correctErrorTypes true
+}
+
+<%_ if (databaseTypeSql) { _%>
 
 allOpen {
     annotation("javax.persistence.Entity")
     annotation("javax.persistence.MappedSuperclass")
     annotation("javax.persistence.Embeddable")
-}<%_ } %>
+}
+<%_ } _%>
 
 [compileKotlin, compileTestKotlin]*.with {
     kotlinOptions {
-        jvmTarget = "<%= javaVersion %>"
         javaParameters = true
         freeCompilerArgs = ["-Xjvm-default=all"]
     }
@@ -70,7 +78,6 @@ allOpen {
 ktlint {
     //See more options: https://github.com/JLLeitschuh/ktlint-gradle#configuration
     ignoreFailures = true
-    disabledRules = ["no-wildcard-imports", "filename"]
 }
 
 if (OperatingSystem.current().isWindows()) {
@@ -81,9 +88,8 @@ if (OperatingSystem.current().isWindows()) {
     }
 }
 
-//Reformat code before compilation
-compileKotlin.dependsOn ktlintFormat
-
+// Reformat code before compilation
+// compileKotlin.dependsOn ktlintCheck
 
 jacocoTestReport {
     // Add Kotlin sources to Jacoco source dirs

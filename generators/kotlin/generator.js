@@ -76,6 +76,28 @@ export default class extends BaseApplicationGenerator {
     get [BaseApplicationGenerator.POST_WRITING]() {
         return this.asPostWritingTaskGroup({
             async customizeGradle({ application, source }) {
+                source.addJavaDefinition({
+                    versions: [{ name: 'kotlin', version: application.javaDependencies.kotlin }],
+                    dependencies: [
+                        { groupId: 'org.jetbrains.kotlin', artifactId: 'kotlin-stdlib-jdk8' },
+                        { groupId: 'org.jetbrains.kotlin', artifactId: 'kotlin-reflect' },
+                        { groupId: 'org.jetbrains.kotlin', artifactId: 'kotlin-test-junit', scope: 'test' },
+                        {
+                            groupId: 'org.mockito.kotlin',
+                            artifactId: 'mockito-kotlin',
+                            version: application.javaDependencies['mockito-kotlin'],
+                            scope: 'test',
+                        },
+                        {
+                            groupId: 'org.jetbrains.kotlin',
+                            artifactId: 'kotlin-bom',
+                            versionRef: 'kotlin',
+                            type: 'pom',
+                            scope: 'import',
+                        },
+                    ],
+                });
+
                 if (application.buildToolGradle) {
                     source.applyFromGradle({
                         script: 'gradle/kotlin.gradle',
@@ -83,6 +105,7 @@ export default class extends BaseApplicationGenerator {
 
                     source.addGradleProperty({ property: 'kotlin_version', value: application.javaDependencies.kotlin });
 
+                    /*
                     source.addGradlePluginToBuildScript({
                         group: 'org.jetbrains.kotlin',
                         name: 'kotlin-gradle-plugin',
@@ -104,15 +127,9 @@ export default class extends BaseApplicationGenerator {
                             });
                         }
                     }
+                        */
 
-                    /*
                     // JHipster 8 based configuration
-                    source.addJavaDefinition({
-                        versions: [
-                            { name: 'kotlin', version: KOTLIN_VERSION },
-                        ],
-                    });
-
                     source.addGradleDependencyCatalogPlugins([
                         { pluginName: 'kotlin-jvm', id: 'org.jetbrains.kotlin.jvm', 'version.ref': 'kotlin', addToBuild: true },
                         // Required for Spring plugin
@@ -134,7 +151,6 @@ export default class extends BaseApplicationGenerator {
                             },
                         ]);
                     }
-                    */
                 }
             },
             async customizeMaven({ application, source }) {
@@ -148,20 +164,6 @@ export default class extends BaseApplicationGenerator {
                         },
                     });
 
-                    source.addJavaDefinition({
-                        versions: [{ name: 'kotlin', version: application.javaDependencies.kotlin }],
-                        dependencies: [
-                            { groupId: 'org.jetbrains.kotlin', artifactId: 'kotlin-stdlib-jdk8' },
-                            { groupId: 'org.jetbrains.kotlin', artifactId: 'kotlin-reflect' },
-                            { groupId: 'org.jetbrains.kotlin', artifactId: 'kotlin-test-junit', scope: 'test' },
-                            {
-                                groupId: 'org.mockito.kotlin',
-                                artifactId: 'mockito-kotlin',
-                                version: application.javaDependencies['mockito-kotlin'],
-                                scope: 'test',
-                            },
-                        ],
-                    });
                     if (application.reactive) {
                         source.addJavaDefinition({
                             dependencies: [
@@ -173,15 +175,6 @@ export default class extends BaseApplicationGenerator {
                     }
 
                     source.addMavenDefinition({
-                        dependencyManagement: [
-                            {
-                                groupId: 'org.jetbrains.kotlin',
-                                artifactId: 'kotlin-bom',
-                                version: '${kotlin.version}',
-                                type: 'pom',
-                                scope: 'import',
-                            },
-                        ],
                         plugins: [
                             {
                                 groupId: 'org.apache.maven.plugins',

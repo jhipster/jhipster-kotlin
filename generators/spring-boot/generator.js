@@ -43,21 +43,6 @@ const convertToKotlinFile = file =>
         .replace(SERVER_MAIN_SRC_DIR, SERVER_MAIN_SRC_KOTLIN_DIR)
         .replace(SERVER_TEST_SRC_DIR, SERVER_TEST_SRC_KOTLIN_DIR);
 
-const customizeSpringBootFiles = file => {
-    const { destinationFile } = file;
-    // Ignore docker files, use updated docker files from v8 jhipster:docker generator
-    if (
-        destinationFile.includes('src/main/docker') &&
-        !destinationFile.includes('src/main/docker/jhipster-control-center.yml') &&
-        !destinationFile.includes('src/main/docker/jib') &&
-        !destinationFile.includes('src/main/docker/grafana') &&
-        !destinationFile.includes('src/main/docker/monitoring.yml')
-    ) {
-        return undefined;
-    }
-    return file;
-};
-
 const JAVA_VERSION = '11';
 
 export default class extends BaseApplicationGenerator {
@@ -72,10 +57,6 @@ export default class extends BaseApplicationGenerator {
     }
 
     async beforeQueue() {
-        await this.dependsOnJHipster('jhipster:java:build-tool', {
-            // We want to use v7 build-tool templates
-            generatorOptions: { skipPriorities: ['writing', 'postWriting'] },
-        });
         await this.dependsOnJHipster('jhipster-kotlin:migration');
         await this.dependsOnJHipster('jhipster-kotlin:kotlin');
         await this.dependsOnJHipster('server');
@@ -94,19 +75,25 @@ export default class extends BaseApplicationGenerator {
                 ) {
                     await this.composeWithJHipster('liquibase', {
                         // We want to use v7 liquibase templates.
-                        generatorOptions: { skipPriorities: ['writing', 'postWriting'] },
+                        generatorOptions: { skipPriorities: ['postWriting'] },
                     });
                 }
             },
             async composing() {
-                const { applicationType, databaseType } = this.jhipsterConfigWithDefaults;
+                const { applicationType, databaseType, clientFramework, skipClient } = this.jhipsterConfigWithDefaults;
 
                 await this.composeWithJHipster('docker');
+                await this.composeWithJHipster('jhipster:java:jib');
+                await this.composeWithJHipster('jhipster:java:code-quality');
 
-                const generatorOptions = { skipPriorities: ['writing', 'postWriting', 'writingEntities', 'postWritingEntities'] };
+                if (!skipClient && clientFramework !== 'no') {
+                    await this.composeWithJHipster('jhipster:java:node');
+                }
+
+                const generatorOptions = { skipPriorities: ['postWriting', 'writingEntities', 'postWritingEntities'] };
                 if (applicationType === 'gateway') {
                     // Use gateway package.json scripts.
-                    await this.composeWithJHipster('jhipster:spring-cloud:gateway', { generatorOptions: { skipPriorities: ['writing'] } });
+                    await this.composeWithJHipster('jhipster:spring-cloud:gateway');
                 }
 
                 if (databaseType === 'sql') {
@@ -134,11 +121,57 @@ export default class extends BaseApplicationGenerator {
                 });
 
                 application.customizeTemplatePaths.push(file => {
-                    const { resolvedSourceFile, sourceFile, destinationFile } = file;
-                    if (sourceFile.includes('package-info.java')) {
+                    const { sourceFile, destinationFile, namespace } = file;
+                    if (sourceFile.includes('LiquibaseConfiguration')) {
+                        console.log(file);
+                    }
+                    if (
+                        sourceFile.includes('package-info.java') ||
+                        [
+                            'jhipster:java:domain',
+                            'jhipster:spring-cloud:gateway',
+                            'jhipster:spring-data-cassandra',
+                            'jhipster:spring-data-couchbase',
+                            'jhipster:spring-data-mongodb',
+                            'jhipster:spring-data-neo4j',
+                            'jhipster:spring-data-relational',
+                        ].includes(namespace)
+                    ) {
                         return undefined;
                     }
-                    if (resolvedSourceFile.includes('.java')) {
+                    if (namespace === 'jhipster-kotlin:spring-boot') {
+                        if (
+                            sourceFile.includes('src/main/docker') &&
+                            !sourceFile.includes('src/main/docker/jhipster-control-center.yml') &&
+                            !sourceFile.includes('src/main/docker/jib') &&
+                            !sourceFile.includes('src/main/docker/grafana') &&
+                            !sourceFile.includes('src/main/docker/monitoring.yml')
+                        ) {
+                            return undefined;
+                        }
+
+                        if (
+                            ['npmw', 'npmw.cmd', 'gradlew', 'gradlew.bat', 'gradle/docker.gradle', 'gradle/sonar.gradle'].includes(
+                                sourceFile,
+                            ) ||
+                            sourceFile.includes('gradle/wrapper/') ||
+                            sourceFile.includes('LiquibaseConfiguration')
+                        ) {
+                            return undefined;
+                        }
+
+                        if (
+                            ['pom.xml'].includes(sourceFile) ||
+                            sourceFile.endsWith('.gradle') ||
+                            sourceFile.includes('src/main/resources/liquibase')
+                        ) {
+                            return {
+                                ...file,
+                                resolvedSourceFile: this.fetchFromInstalledJHipster('server', 'templates', sourceFile),
+                            };
+                        }
+                    }
+                    if (sourceFile.includes('.java')) {
                         return {
                             ...file,
                             resolvedSourceFile: this.templatePath(convertToKotlinFile(sourceFile)),
@@ -208,6 +241,10 @@ export default class extends BaseApplicationGenerator {
                 // Kotlin templates uses devDatabaseType* without sql filtering.
                 prepareSqlApplicationProperties({ application });
 
+                Object.assign(application.javaDependencies, {
+                    'spring-boot': '2.7.3',
+                });
+
                 applicationDefaults({
                     __override__: true,
                     // V7 templates expects prodDatabaseType to be set for non SQL databases
@@ -265,7 +302,6 @@ export default class extends BaseApplicationGenerator {
                 await this.writeFiles({
                     sections: serverFiles,
                     context: application,
-                    customizeTemplatePath: customizeSpringBootFiles,
                 });
             },
             async writeSqlFiles({ application }) {
@@ -367,6 +403,16 @@ export default class extends BaseApplicationGenerator {
 
     get [BaseApplicationGenerator.POST_WRITING]() {
         return this.asPostWritingTaskGroup({
+            ...super.postWriting,
+            addSpringdoc: undefined,
+            customizeGradle({ application }) {
+                if (application.buildToolGradle) {
+                    this.editFile('build.gradle', content =>
+                        content.replace('\n    implementation "io.micrometer:micrometer-registry-prometheus-simpleclient"', ''),
+                    );
+                    this.editFile('gradle/profile_dev.gradle', content => content.replace("\n        excludes = ['time']", ''));
+                }
+            },
             async customizeMaven({ application, source }) {
                 if (application.buildToolMaven) {
                     source.addMavenDefinition({
