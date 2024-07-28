@@ -68,28 +68,18 @@ export default class extends BaseApplicationGenerator {
             async composingTemplateTask() {
                 await this.composeCurrentJHipsterCommand();
             },
-            async liquibase() {
-                if (
-                    this.jhipsterConfigWithDefaults.databaseType === 'sql' ||
-                    this.jhipsterConfigWithDefaults.databaseMigration === 'liquibase'
-                ) {
-                    await this.composeWithJHipster('liquibase', {
-                        // We want to use v7 liquibase templates.
-                        generatorOptions: { skipPriorities: ['postWriting'] },
-                    });
-                }
-            },
+            ...super.composing,
             async composing() {
                 const { applicationType, databaseType } = this.jhipsterConfigWithDefaults;
 
                 await this.composeWithJHipster('docker');
 
-                const generatorOptions = { skipPriorities: ['postWriting', 'writingEntities', 'postWritingEntities'] };
                 if (applicationType === 'gateway') {
                     // Use gateway package.json scripts.
                     await this.composeWithJHipster('jhipster:spring-cloud:gateway');
                 }
 
+                const generatorOptions = { skipPriorities: ['postWriting'] };
                 if (databaseType === 'sql') {
                     await this.composeWithJHipster('jhipster:spring-data-relational', { generatorOptions });
                 } else if (databaseType === 'cassandra') {
