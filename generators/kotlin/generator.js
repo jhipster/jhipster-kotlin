@@ -77,67 +77,47 @@ export default class extends BaseApplicationGenerator {
         return this.asPostWritingTaskGroup({
             async customizeGradle({ application, source }) {
                 if (application.buildToolGradle) {
+                    source.addGradleDependencyCatalogVersion({ name: 'kotlin', version: application.javaDependencies.kotlin });
+
                     source.applyFromGradle({
                         script: 'gradle/kotlin.gradle',
                     });
 
-                    source.addGradleProperty({ property: 'kotlin_version', value: application.javaDependencies.kotlin });
-
-                    source.addGradlePlugin({ id: 'org.jetbrains.kotlin.jvm', version: '${kotlin_version}' });
-                    // source.addGradleDependencyCatalogPlugin({ id: 'org.jetbrains.kotlin.jvm', 'version.ref': 'kotlin_version' });
-
-                    source.addGradlePluginToBuildScript({
-                        group: 'org.jetbrains.kotlin',
-                        name: 'kotlin-gradle-plugin',
-                        version: '${kotlin_version}',
+                    source.addGradleDependencyCatalogPlugin({
+                        pluginName: 'kotlin',
+                        id: 'org.jetbrains.kotlin.jvm',
+                        'version.ref': 'kotlin',
+                        addToBuild: true,
                     });
+                    source.addGradleDependencyCatalogPlugin({
+                        pluginName: 'kotlin-kapt',
+                        id: 'org.jetbrains.kotlin.kapt',
+                        'version.ref': 'kotlin',
+                        addToBuild: true,
+                    });
+
                     if (application.backendTypeSpringBoot) {
-                        // Required for Spring plugin
-                        source.addGradlePluginToBuildScript({
-                            group: 'org.jetbrains.kotlin',
-                            name: 'kotlin-allopen',
-                            version: '${kotlin_version}',
+                        source.addGradleDependencyCatalogPlugin({
+                            pluginName: 'kotlin-spring',
+                            id: 'org.jetbrains.kotlin.plugin.spring',
+                            'version.ref': 'kotlin',
+                            addToBuild: true,
                         });
                         if (application.databaseTypeSql) {
-                            // Required for JPA plugin
-                            source.addGradlePluginToBuildScript({
-                                group: 'org.jetbrains.kotlin',
-                                name: 'kotlin-noarg',
-                                version: '${kotlin_version}',
+                            source.addGradleDependencyCatalogPlugin({
+                                pluginName: 'kotlin-jpa',
+                                id: 'org.jetbrains.kotlin.plugin.jpa',
+                                'version.ref': 'kotlin',
+                                addToBuild: true,
+                            });
+                            source.addGradleDependencyCatalogPlugin({
+                                pluginName: 'kotlin-allopen',
+                                id: 'org.jetbrains.kotlin.plugin.allopen',
+                                'version.ref': 'kotlin',
+                                addToBuild: true,
                             });
                         }
                     }
-
-                    /*
-                    // JHipster 8 based configuration
-                    source.addJavaDefinition({
-                        versions: [
-                            { name: 'kotlin', version: KOTLIN_VERSION },
-                        ],
-                    });
-
-                    source.addGradleDependencyCatalogPlugins([
-                        { pluginName: 'kotlin-jvm', id: 'org.jetbrains.kotlin.jvm', 'version.ref': 'kotlin', addToBuild: true },
-                        // Required for Spring plugin
-                        {
-                            pluginName: 'kotlin-allopen',
-                            id: 'org.jetbrains.kotlin.plugin.allopen',
-                            'version.ref': 'kotlin',
-                            addToBuild: true,
-                        },
-                    ]);
-                    if (application.databaseTypeSql) {
-                        // Required for JPA plugin
-                        source.addGradleDependencyCatalogPlugins([
-                            {
-                                pluginName: 'kotlin-noarg',
-                                id: 'org.jetbrains.kotlin.plugin.noarg',
-                                'version.ref': 'kotlin',
-                                addToBuild: true,
-                            },
-                        ]);
-                    }
-                    */
                 }
             },
             async customizeMaven({ application, source }) {

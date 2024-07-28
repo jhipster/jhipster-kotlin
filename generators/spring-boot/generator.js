@@ -240,6 +240,11 @@ export default class extends BaseApplicationGenerator {
                 // Kotlin templates uses devDatabaseType* without sql filtering.
                 prepareSqlApplicationProperties({ application });
 
+                applicationDefaults({
+                    __override__: true,
+                    gradleVersion: '7.6.4',
+                });
+
                 Object.assign(application.javaDependencies, {
                     'spring-boot': '2.7.3',
                     'spring-boot-dependencies': '2.7.3',

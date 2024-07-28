@@ -122,15 +122,14 @@ export default class extends BaseApplicationGenerator {
             },
             addDependencies({ application, source }) {
                 if (application.buildToolGradle) {
-                    source.addGradlePluginToBuildScript({
-                        group: 'org.jlleitschuh.gradle',
-                        name: 'ktlint-gradle',
-                        version: application.javaDependencies['ktlint-gradle'],
-                    });
-
-                    /* JHipster 8 based configuration
-                    source.addGradleDependencyCatalogPlugins([{ pluginName: 'ktlint', id: 'org.jlleitschuh.gradle.ktlint', version: KTLINT_GRADLE_VERSION, addToBuild: true }]);
-                    */
+                    source.addGradleDependencyCatalogPlugins([
+                        {
+                            pluginName: 'ktlint',
+                            id: 'org.jlleitschuh.gradle.ktlint',
+                            version: application.javaDependencies['ktlint-gradle'],
+                            addToBuild: true,
+                        },
+                    ]);
                 } else {
                     source.addJavaDefinition({
                         versions: [{ name: 'ktlint-maven-plugin', version: application.javaDependencies['ktlint-maven'] }],

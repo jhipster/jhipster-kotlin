@@ -72,6 +72,7 @@ export default class extends BaseApplicationGenerator {
                     // JHipster 8 have needles fixed
                     this.editFile('build.gradle', contents => contents.replaceAll('//jhipster', '// jhipster'));
                     if (application.databaseTypeSql) {
+                        const { javaDependencies } = application;
                         this.editFile('build.gradle', contents =>
                             contents.replace(
                                 '\nconfigurations {',
@@ -79,7 +80,10 @@ export default class extends BaseApplicationGenerator {
                             ),
                         );
                         this.editFile('gradle.properties', contents =>
-                            contents.replace('liquibasePluginVersion=2.1.1', 'liquibasePluginVersion=2.2.2'),
+                            contents
+                                .replace(/liquibasePluginVersion=(.*)/, 'liquibasePluginVersion=2.2.2')
+                                .replace(/(checkstyleVersion)=(.*)/, `$1=${javaDependencies.checkstyle}`)
+                                .replace(/(noHttpCheckstyleVersion)=(.*)/, `$1=${javaDependencies['nohttp-checkstyle']}`),
                         );
                     }
                     this.editFile('settings.gradle', contents => contents.replaceAll('//jhipster', '// jhipster'));
