@@ -44,6 +44,8 @@ export default class extends BaseApplicationGenerator {
                             file.contents = Buffer.from(
                                 file.contents
                                     .toString()
+                                    .replaceAll(/reportOn (.*)/g, 'testResults.from($1)')
+                                    .replaceAll('destinationDir =', 'destinationDirectory =')
                                     .replaceAll('html.enabled =', 'html.required =')
                                     .replaceAll('xml.enabled =', 'xml.required =')
                                     .replaceAll('csv.enabled =', 'csv.required ='),
@@ -69,6 +71,17 @@ export default class extends BaseApplicationGenerator {
                 if (application.buildToolGradle) {
                     // JHipster 8 have needles fixed
                     this.editFile('build.gradle', contents => contents.replaceAll('//jhipster', '// jhipster'));
+                    if (application.databaseTypeSql) {
+                        this.editFile('build.gradle', contents =>
+                            contents.replace(
+                                '\nconfigurations {',
+                                '\nconfigurations {\n    liquibaseRuntime.extendsFrom sourceSets.main.compileClasspath\n',
+                            ),
+                        );
+                        this.editFile('gradle.properties', contents =>
+                            contents.replace('liquibasePluginVersion=2.1.1', 'liquibasePluginVersion=2.2.2'),
+                        );
+                    }
                     this.editFile('settings.gradle', contents => contents.replaceAll('//jhipster', '// jhipster'));
                 }
             },
