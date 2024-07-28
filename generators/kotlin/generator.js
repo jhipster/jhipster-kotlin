@@ -83,6 +83,9 @@ export default class extends BaseApplicationGenerator {
 
                     source.addGradleProperty({ property: 'kotlin_version', value: application.javaDependencies.kotlin });
 
+                    source.addGradlePlugin({ id: 'org.jetbrains.kotlin.jvm', version: '${kotlin_version}' });
+                    // source.addGradleDependencyCatalogPlugin({ id: 'org.jetbrains.kotlin.jvm', 'version.ref': 'kotlin_version' });
+
                     source.addGradlePluginToBuildScript({
                         group: 'org.jetbrains.kotlin',
                         name: 'kotlin-gradle-plugin',
