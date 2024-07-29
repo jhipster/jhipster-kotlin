@@ -96,7 +96,10 @@ export default class extends BaseApplicationGenerator {
         return this.asWritingTaskGroup({
             async writing({ application }) {
                 await this.writeFiles({
-                    blocks: [{ templates: ['.gitignore.jhi.ktlint'] }],
+                    blocks: [
+                        { templates: ['.gitignore.jhi.ktlint'] },
+                        { condition: ctx => ctx.buildToolGradle, templates: ['gradle/ktlint.gradle'] },
+                    ],
                     context: application,
                 });
             },
@@ -122,6 +125,8 @@ export default class extends BaseApplicationGenerator {
             },
             addDependencies({ application, source }) {
                 if (application.buildToolGradle) {
+                    source.applyFromGradle({ script: 'gradle/ktlint.gradle' });
+
                     source.addGradleDependencyCatalogPlugins([
                         {
                             pluginName: 'ktlint',
