@@ -49,22 +49,12 @@ export default class extends BaseApplicationGenerator {
                 if (application.buildToolGradle) {
                     source.applyFromGradle({ script: 'gradle/detekt.gradle' });
 
-                    source.addGradleProperty({ property: 'detekt_version', value: application.javaDependencies['detekt-gradle'] });
-
-                    source.addGradlePlugin({ id: 'io.gitlab.arturbosch.detekt', version: '${detekt_version}' });
-
-                    /*
-                    // JHipster 8 based configuration
-                    source.addJavaDefinition({
-                        versions: [
-                            { name: 'detekt', version: DETEKT_VERSION },
-                        ],
+                    source.addGradleDependencyCatalogPlugin({
+                        pluginName: 'detekt',
+                        id: 'io.gitlab.arturbosch.detekt',
+                        version: application.javaDependencies['detekt-gradle'],
+                        addToBuild: true,
                     });
-
-                    source.addGradleDependencyCatalogPlugins([
-                        { pluginName: 'detekt', id: 'io.gitlab.arturbosch.detekt', version: application.javaDependencies['detekt-gradle'], addToBuild: true },
-                    ]);
-                    */
                 }
             },
 
