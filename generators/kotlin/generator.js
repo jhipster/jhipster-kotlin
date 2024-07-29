@@ -120,12 +120,6 @@ export default class extends BaseApplicationGenerator {
                                 'version.ref': 'kotlin',
                                 addToBuild: true,
                             });
-                            source.addGradleDependencyCatalogPlugin({
-                                pluginName: 'kotlin-allopen',
-                                id: 'org.jetbrains.kotlin.plugin.allopen',
-                                'version.ref': 'kotlin',
-                                addToBuild: true,
-                            });
                         }
                     }
                 }
@@ -302,16 +296,7 @@ export default class extends BaseApplicationGenerator {
                                             <plugin>all-open</plugin>`
                                                     : ''
                                             }
-                                        </compilerPlugins>${
-                                            application.databaseTypeSql
-                                                ? `<pluginOptions>
-                                            <!-- Each annotation is placed on its own line -->
-                                            <option>all-open:annotation=javax.persistence.Entity</option>
-                                            <option>all-open:annotation=javax.persistence.MappedSuperclass</option>
-                                            <option>all-open:annotation=javax.persistence.Embeddable</option>
-                                        </pluginOptions>`
-                                                : ''
-                                        }
+                                        </compilerPlugins>
                                     </configuration>
                                     <dependencies>
                                         <dependency>
