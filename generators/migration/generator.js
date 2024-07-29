@@ -1,5 +1,4 @@
 import BaseApplicationGenerator from 'generator-jhipster/generators/base-application';
-import { createNeedleCallback } from 'generator-jhipster/generators/base/support';
 import { passthrough } from '@yeoman/transform';
 
 export default class extends BaseApplicationGenerator {
@@ -14,17 +13,6 @@ export default class extends BaseApplicationGenerator {
                     // Add a noop needles for spring-gateway generator
                     source.addJavaDefinition = () => {};
                     source.addJavaDependencies = () => {};
-
-                    // JHipster 7 does not support buildScript add for migration
-                    source.addGradlePluginToBuildScript = ({ group, name, version }) => {
-                        this.editFile(
-                            'build.gradle',
-                            createNeedleCallback({
-                                needle: 'gradle-buildscript-dependency',
-                                contentToAdd: `classpath "${group}:${name}:${version}"`,
-                            }),
-                        );
-                    };
                 }
             },
         });
