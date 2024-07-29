@@ -6,6 +6,7 @@ import { files as entityServerFiles } from 'jhipster-7-templates/esm/generators/
 import { getEnumInfo } from 'generator-jhipster/generators/base-application/support';
 import { files as serverFiles } from 'jhipster-7-templates/esm/generators/server';
 
+import { convertToKotlinFile } from '../kotlin/support/files.js';
 import migration from './migration.cjs';
 import { serverFiles as sqlFiles } from './files-sql.js';
 import { entityCouchbaseFiles } from './entity-files-couchbase.js';
@@ -25,8 +26,6 @@ const {
     DOCKER_ELASTICSEARCH_CONTAINER,
     ELASTICSEARCH_VERSION,
     MAIN_DIR,
-    SERVER_MAIN_SRC_DIR,
-    SERVER_TEST_SRC_DIR,
     TEST_DIR,
 } = jhipsterConstants;
 
@@ -36,12 +35,6 @@ const jhipster7TemplatesPackage = dirname(fileURLToPath(import.meta.resolve('jhi
 
 const SERVER_MAIN_SRC_KOTLIN_DIR = `${MAIN_DIR}kotlin/`;
 const SERVER_TEST_SRC_KOTLIN_DIR = `${TEST_DIR}kotlin/`;
-
-const convertToKotlinFile = file =>
-    file
-        .replace('.java', '.kt')
-        .replace(SERVER_MAIN_SRC_DIR, SERVER_MAIN_SRC_KOTLIN_DIR)
-        .replace(SERVER_TEST_SRC_DIR, SERVER_TEST_SRC_KOTLIN_DIR);
 
 const JAVA_VERSION = '11';
 
