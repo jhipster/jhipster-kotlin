@@ -83,17 +83,27 @@ export default class extends BaseApplicationGenerator {
                         script: 'gradle/kotlin.gradle',
                     });
 
-                    source.addGradleDependencyCatalogPlugin({
-                        pluginName: 'kotlin',
-                        id: 'org.jetbrains.kotlin.jvm',
+                    source.addGradleDependencyCatalogPlugins([
+                        {
+                            pluginName: 'kotlin',
+                            id: 'org.jetbrains.kotlin.jvm',
+                            'version.ref': 'kotlin',
+                            addToBuild: true,
+                        },
+                        {
+                            pluginName: 'kotlin-kapt',
+                            id: 'org.jetbrains.kotlin.kapt',
+                            'version.ref': 'kotlin',
+                            addToBuild: true,
+                        },
+                    ]);
+
+                    source.addGradleDependencyCatalogLibrary({
+                        libraryName: 'kotlin-bom',
+                        group: 'org.jetbrains.kotlin',
+                        name: 'kotlin-bom',
+                        scope: 'implementation platform',
                         'version.ref': 'kotlin',
-                        addToBuild: true,
-                    });
-                    source.addGradleDependencyCatalogPlugin({
-                        pluginName: 'kotlin-kapt',
-                        id: 'org.jetbrains.kotlin.kapt',
-                        'version.ref': 'kotlin',
-                        addToBuild: true,
                     });
 
                     if (application.backendTypeSpringBoot) {
