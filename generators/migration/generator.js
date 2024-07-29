@@ -1,8 +1,23 @@
 import BaseApplicationGenerator from 'generator-jhipster/generators/base-application';
-import { createNeedleCallback } from 'generator-jhipster/generators/base/support';
 import { passthrough } from '@yeoman/transform';
 
 export default class extends BaseApplicationGenerator {
+    async beforeQueue() {
+        await this.dependsOnJHipster('jhipster:java:build-tool');
+    }
+
+    get [BaseApplicationGenerator.PREPARING]() {
+        return this.asPreparingTaskGroup({
+            async source({ application, source }) {
+                if (application.buildToolGradle) {
+                    // Add a noop needles for spring-gateway generator
+                    source.addJavaDefinition = () => {};
+                    source.addJavaDependencies = () => {};
+                }
+            },
+        });
+    }
+
     get [BaseApplicationGenerator.DEFAULT]() {
         return this.asDefaultTaskGroup({
             async defaultTask({ application }) {
@@ -17,35 +32,14 @@ export default class extends BaseApplicationGenerator {
                             file.contents = Buffer.from(
                                 file.contents
                                     .toString()
+                                    .replaceAll(/reportOn (.*)/g, 'testResults.from($1)')
+                                    .replaceAll('destinationDir =', 'destinationDirectory =')
                                     .replaceAll('html.enabled =', 'html.required =')
                                     .replaceAll('xml.enabled =', 'xml.required =')
                                     .replaceAll('csv.enabled =', 'csv.required ='),
                             );
                         }),
                     );
-                }
-            },
-        });
-    }
-
-    get [BaseApplicationGenerator.PREPARING]() {
-        return this.asPreparingTaskGroup({
-            async source({ application, source }) {
-                if (application.buildToolGradle) {
-                    // Add a noop needles for spring-gateway generator
-                    source.addJavaDefinition = () => {};
-                    source.addJavaDependencies = () => {};
-
-                    // JHipster 7 does not support buildScript add for migration
-                    source.addGradlePluginToBuildScript = ({ group, name, version }) => {
-                        this.editFile(
-                            'build.gradle',
-                            createNeedleCallback({
-                                needle: 'gradle-buildscript-dependency',
-                                contentToAdd: `classpath "${group}:${name}:${version}"`,
-                            }),
-                        );
-                    };
                 }
             },
         });
@@ -65,6 +59,21 @@ export default class extends BaseApplicationGenerator {
                 if (application.buildToolGradle) {
                     // JHipster 8 have needles fixed
                     this.editFile('build.gradle', contents => contents.replaceAll('//jhipster', '// jhipster'));
+                    if (application.databaseTypeSql) {
+                        const { javaDependencies } = application;
+                        this.editFile('build.gradle', contents =>
+                            contents.replace(
+                                '\nconfigurations {',
+                                '\nconfigurations {\n    liquibaseRuntime.extendsFrom sourceSets.main.compileClasspath\n',
+                            ),
+                        );
+                        this.editFile('gradle.properties', contents =>
+                            contents
+                                .replace(/liquibasePluginVersion=(.*)/, 'liquibasePluginVersion=2.2.2')
+                                .replace(/(checkstyleVersion)=(.*)/, `$1=${javaDependencies.checkstyle}`)
+                                .replace(/(noHttpCheckstyleVersion)=(.*)/, `$1=${javaDependencies['nohttp-checkstyle']}`),
+                        );
+                    }
                     this.editFile('settings.gradle', contents => contents.replaceAll('//jhipster', '// jhipster'));
                 }
             },

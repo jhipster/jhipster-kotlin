@@ -18,47 +18,41 @@
 -%>
 import org.gradle.internal.os.OperatingSystem
 
-apply plugin: "kotlin" // Required for Kotlin integration
-apply plugin: "kotlin-kapt" // Required for annotations processing
-apply plugin: "kotlin-spring" // See https://kotlinlang.org/docs/reference/compiler-plugins.html#spring-support
-<%_ if (databaseTypeSql) { _%>
-apply plugin: "kotlin-allopen" // See https://kotlinlang.org/docs/reference/compiler-plugins.html#using-in-gradle
-apply plugin: "kotlin-jpa" // See https://kotlinlang.org/docs/reference/compiler-plugins.html#jpa-support
-<%_ } _%>
-
-apply plugin: "org.jlleitschuh.gradle.ktlint"
-
 dependencies {
-    implementation platform("org.jetbrains.kotlin:kotlin-bom:${kotlin_version}")
     implementation "org.jetbrains.kotlin:kotlin-stdlib-jdk8"
     implementation "org.jetbrains.kotlin:kotlin-reflect"
 
-    <%_ if (reactive) { _%>
+<%_ if (reactive) { _%>
     implementation "org.jetbrains.kotlinx:kotlinx-coroutines-debug"
     implementation "org.jetbrains.kotlinx:kotlinx-coroutines-reactor"
     implementation "io.projectreactor.kotlin:reactor-kotlin-extensions"
-    <%_ } _%>
 
+<%_ } _%>
     kapt "org.mapstruct:mapstruct-processor:${mapstructVersion}"
-    <%_ if (databaseTypeSql) { _%>
+<%_ if (databaseTypeSql) { _%>
     kapt "org.hibernate:hibernate-jpamodelgen:${hibernateVersion}"
     kapt "org.glassfish.jaxb:jaxb-runtime:${jaxbRuntimeVersion}"
-    <%_ } _%>
-    <%_ if (databaseTypeCassandra) { _%>
+<%_ } _%>
+<%_ if (databaseTypeCassandra) { _%>
     kapt "com.datastax.oss:java-driver-mapper-processor:${cassandraDriverVersion}"
-    <%_ } _%>
+<%_ } _%>
 
     testImplementation "org.jetbrains.kotlin:kotlin-test-junit"
-
     testImplementation "org.mockito.kotlin:mockito-kotlin:<%= javaDependencies['mockito-kotlin'] %>"
-}<%_ if (databaseTypeSql) { %>
+}
 
+kapt {
+    correctErrorTypes true
+}
+
+<%_ if (databaseTypeSql) { _%>
 allOpen {
     annotation("javax.persistence.Entity")
     annotation("javax.persistence.MappedSuperclass")
     annotation("javax.persistence.Embeddable")
-}<%_ } %>
+}
 
+<%_ } _%>
 [compileKotlin, compileTestKotlin]*.with {
     kotlinOptions {
         jvmTarget = "<%= javaVersion %>"
@@ -70,7 +64,6 @@ allOpen {
 ktlint {
     //See more options: https://github.com/JLLeitschuh/ktlint-gradle#configuration
     ignoreFailures = true
-    disabledRules = ["no-wildcard-imports", "filename"]
 }
 
 if (OperatingSystem.current().isWindows()) {
@@ -81,9 +74,8 @@ if (OperatingSystem.current().isWindows()) {
     }
 }
 
-//Reformat code before compilation
+// Reformat code before compilation
 compileKotlin.dependsOn ktlintFormat
-
 
 jacocoTestReport {
     // Add Kotlin sources to Jacoco source dirs
