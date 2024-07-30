@@ -87,7 +87,11 @@ data class Authority(
     <%_ if (databaseTypeSql && !reactive) { _%>
     @Column(length = 50)
     <%_ } _%>
-    var name: String? = null
+    var name: String? = null,
+<%_ if (databaseTypeSql && reactive) { _%>
+    @Transient
+    private var isPersisted: Boolean = false,
+<%_ } _%>
 
 ) : Serializable<% if (databaseTypeSql && reactive) { %>, Persistable<String><% } %> {
 
@@ -104,10 +108,9 @@ data class Authority(
     <%_ if (databaseTypeSql && reactive) { _%>
     override fun getId() = name
 
-    @Transient
     override fun isNew() = !this.isPersisted
 
-    fun setIsPersisted(): <%= persistClass %> {
+    fun setIsPersisted(): Authority {
         this.isPersisted = true
         return this
     }
