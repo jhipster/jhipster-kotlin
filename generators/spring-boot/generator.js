@@ -53,6 +53,7 @@ export default class extends BaseApplicationGenerator {
         await this.dependsOnJHipster('jhipster-kotlin:migration');
         await this.dependsOnJHipster('jhipster-kotlin:kotlin');
         await this.dependsOnJHipster('server');
+        await this.dependsOnJHipster('jhipster:java:domain');
         await this.dependsOnJHipster('jhipster-kotlin:ktlint');
     }
 
@@ -133,7 +134,6 @@ export default class extends BaseApplicationGenerator {
                     // Ignore files from generators
                     file =>
                         [
-                            'jhipster:java:domain',
                             'jhipster:spring-cloud:gateway',
                             'jhipster:spring-data-cassandra',
                             'jhipster:spring-data-couchbase',
@@ -146,7 +146,9 @@ export default class extends BaseApplicationGenerator {
                     // Kotling blueprint does not implements these files
                     file => {
                         const sourceBasename = basename(file.sourceFile);
-                        return ['_persistClass_Asserts.java', '_persistClass_TestSamples.java'].includes(sourceBasename) ? undefined : file;
+                        return ['_persistClass_Asserts.java', '_persistClass_TestSamples.java', 'AssertUtils.java'].includes(sourceBasename)
+                            ? undefined
+                            : file;
                     },
                     file => {
                         let { resolvedSourceFile, sourceFile, destinationFile, namespace } = file;
@@ -159,6 +161,7 @@ export default class extends BaseApplicationGenerator {
                             sourceFile = isKotlinGeneratorFile(file)
                                 ? convertToKotlinFile(sourceFile)
                                 : join(namespace.split(':').pop(), convertToKotlinFile(sourceFile));
+
                             return {
                                 ...file,
                                 sourceFile,
@@ -365,6 +368,13 @@ export default class extends BaseApplicationGenerator {
                         sections: entityServerFiles,
                         context: { ...application, ...entity, entity },
                         rootTemplatesPath: application.reactive ? ['reactive', ''] : [''],
+                        customizeTemplatePath: file => {
+                            const sourceBasename = basename(file.sourceFile);
+                            // Files migrated to modularized templates
+                            return ['Entity.java.jhi', 'Entity.java.jhi.javax_validation', 'EntityTest.java'].includes(sourceBasename)
+                                ? undefined
+                                : file;
+                        },
                     });
 
                     if (application.databaseTypeCouchbase) {
