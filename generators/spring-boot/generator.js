@@ -2,8 +2,9 @@ import { basename, dirname, join } from 'path';
 import { fileURLToPath } from 'url';
 import BaseApplicationGenerator from 'generator-jhipster/generators/spring-boot';
 import { prepareSqlApplicationProperties } from 'generator-jhipster/generators/spring-data-relational/support';
-import { files as entityServerFiles } from 'jhipster-7-templates/esm/generators/entity-server';
 import { getEnumInfo } from 'generator-jhipster/generators/base-application/support';
+import { createNeedleCallback } from 'generator-jhipster/generators/base/support';
+import { files as entityServerFiles } from 'jhipster-7-templates/esm/generators/entity-server';
 import { files as serverFiles } from 'jhipster-7-templates/esm/generators/server';
 
 import { convertToKotlinFile } from '../kotlin/support/files.js';
@@ -267,6 +268,35 @@ export default class extends BaseApplicationGenerator {
                     // V7 templates expects false instead of 'no'
                     searchEngine: ({ searchEngine }) => (searchEngine === 'no' ? false : searchEngine),
                 });
+            },
+            addCacheNeedles({ source, application }) {
+                if (application.cacheProviderEhcache) {
+                    const cacheConfigurationFile = `src/main/kotlin/${application.packageFolder}config/CacheConfiguration.kt`;
+                    const needle = `${application.cacheProvider}-add-entry`;
+                    const useJcacheConfiguration = application.cacheProviderRedis;
+                    const addEntryToCacheCallback = entry =>
+                        createNeedleCallback({
+                            needle,
+                            contentToAdd: `createCache(cm, ${entry}${useJcacheConfiguration ? ', jcacheConfiguration' : ''});`,
+                        });
+
+                    source.addEntryToCache = ({ entry }) => this.editFile(cacheConfigurationFile, addEntryToCacheCallback(entry));
+                    source.addEntityToCache = ({ entityAbsoluteClass, relationships }) => {
+                        const entry = `${entityAbsoluteClass}.class.getName()`;
+                        this.editFile(
+                            cacheConfigurationFile,
+                            addEntryToCacheCallback(entry),
+                            ...(relationships ?? [])
+                                .filter(rel => rel.collection)
+                                .map(rel => addEntryToCacheCallback(`${entry} + ".${rel.propertyName}"`)),
+                        );
+                    };
+                } else {
+                    // Add noop
+                    source.addEntryToCache = () => {};
+                    // Add noop
+                    source.addEntityToCache = () => {};
+                }
             },
         });
     }

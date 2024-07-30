@@ -2,18 +2,26 @@ import BaseApplicationGenerator from 'generator-jhipster/generators/base-applica
 import { passthrough } from '@yeoman/transform';
 
 export default class extends BaseApplicationGenerator {
-    async beforeQueue() {
-        await this.dependsOnJHipster('jhipster:java:build-tool');
-    }
-
     get [BaseApplicationGenerator.PREPARING]() {
         return this.asPreparingTaskGroup({
             async source({ application, source }) {
-                if (application.buildToolGradle) {
-                    // Add a noop needles for spring-gateway generator
-                    source.addJavaDefinition = () => {};
-                    source.addJavaDependencies = () => {};
-                }
+                this.queueTaskGroup(
+                    {
+                        postWriting() {
+                            source.addAllowBlockingCallsInside = () => undefined;
+                            source.addApplicationPropertiesContent = () => undefined;
+                            source.addIntegrationTestAnnotation = () => undefined;
+                            source.addTestSpringFactory = () => undefined;
+
+                            if (application.buildToolGradle) {
+                                // Add a noop needles for spring-gateway generator
+                                source.addJavaDefinition = () => {};
+                                source.addJavaDependencies = () => {};
+                            }
+                        },
+                    },
+                    { queueName: this.runningState.queueName },
+                );
             },
         });
     }
