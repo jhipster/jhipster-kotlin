@@ -277,7 +277,7 @@ export default class extends BaseApplicationGenerator {
             },
             prepareEntityForKotlin({ entity }) {
                 const { primaryKey } = entity;
-                if (primaryKey) {
+                if (primaryKey && primaryKey.name === 'id') {
                     // Kotlin does not support string ids specifications.
                     primaryKey.javaBuildSpecification = 'buildRangeSpecification';
                     for (const field of primaryKey.fields) {
