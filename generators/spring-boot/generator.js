@@ -116,6 +116,8 @@ export default class extends BaseApplicationGenerator {
                             file.sourceFile.includes('gradle/wrapper/'))
                             ? undefined
                             : file,
+                    // Ignore gradle convention plugins
+                    file => (file.sourceFile.includes('buildSrc/src/main/groovy/') ? undefined : file),
                     // Ignore files from generators
                     file =>
                         [
