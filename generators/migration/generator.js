@@ -5,23 +5,22 @@ export default class extends BaseApplicationGenerator {
     get [BaseApplicationGenerator.PREPARING]() {
         return this.asPreparingTaskGroup({
             async source({ application, source }) {
-                this.queueTaskGroup(
-                    {
-                        postWriting() {
-                            source.addAllowBlockingCallsInside = () => undefined;
-                            source.addApplicationPropertiesContent = () => undefined;
-                            source.addIntegrationTestAnnotation = () => undefined;
-                            source.addTestSpringFactory = () => undefined;
+                this.queueTask({
+                    method: () => {
+                        source.addAllowBlockingCallsInside = () => undefined;
+                        source.addApplicationPropertiesContent = () => undefined;
+                        source.addIntegrationTestAnnotation = () => undefined;
+                        source.addTestSpringFactory = () => undefined;
 
-                            if (application.buildToolGradle) {
-                                // Add a noop needles for spring-gateway generator
-                                source.addJavaDefinition = () => {};
-                                source.addJavaDependencies = () => {};
-                            }
-                        },
+                        if (application.buildToolGradle) {
+                            // Add a noop needles for spring-gateway generator
+                            source.addJavaDefinition = () => {};
+                            source.addJavaDependencies = () => {};
+                        }
                     },
-                    { queueName: this.runningState.queueName },
-                );
+                    taskName: `${this.runningState.methodName}(delayed)`,
+                    queueName: this.runningState.queueName,
+                });
             },
         });
     }
