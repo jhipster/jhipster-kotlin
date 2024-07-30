@@ -69,7 +69,7 @@ export default class extends BaseApplicationGenerator {
             async composing(...args) {
                 const { skipPriorities } = this.options;
                 this.options.skipPriorities = ['postWriting'];
-                mainComposing.composing.call(this, ...args);
+                await mainComposing.composing.call(this, ...args);
                 this.options.skipPriorities = skipPriorities;
             },
         });
