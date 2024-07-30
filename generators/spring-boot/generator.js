@@ -25,13 +25,11 @@ const {
     DOCKER_ELASTICSEARCH_CONTAINER,
     ELASTICSEARCH_VERSION,
     MAIN_DIR,
-    TEST_DIR,
 } = jhipsterConstants;
 
 const jhipster7TemplatesPackage = dirname(fileURLToPath(import.meta.resolve('jhipster-7-templates/package.json')));
 
 const SERVER_MAIN_SRC_KOTLIN_DIR = `${MAIN_DIR}kotlin/`;
-const SERVER_TEST_SRC_KOTLIN_DIR = `${TEST_DIR}kotlin/`;
 
 const JAVA_VERSION = '11';
 
@@ -55,33 +53,23 @@ export default class extends BaseApplicationGenerator {
     }
 
     get [BaseApplicationGenerator.COMPOSING]() {
+        const mainComposing = super.composing;
         return this.asComposingTaskGroup({
             async composingTemplateTask() {
                 await this.composeCurrentJHipsterCommand();
             },
-            ...super.composing,
-            async composing() {
-                const { applicationType, databaseType } = this.jhipsterConfigWithDefaults;
-
-                await this.composeWithJHipster('docker');
-
-                if (applicationType === 'gateway') {
+            async composeGateway() {
+                if (this.jhipsterConfigWithDefaults.applicationType === 'gateway') {
                     // Use gateway package.json scripts.
                     await this.composeWithJHipster('jhipster:spring-cloud:gateway');
                 }
-
-                const generatorOptions = { skipPriorities: ['postWriting'] };
-                if (databaseType === 'sql') {
-                    await this.composeWithJHipster('jhipster:spring-data-relational', { generatorOptions });
-                } else if (databaseType === 'cassandra') {
-                    await this.composeWithJHipster('jhipster:spring-data-cassandra', { generatorOptions });
-                } else if (databaseType === 'couchbase') {
-                    await this.composeWithJHipster('jhipster:spring-data-couchbase', { generatorOptions });
-                } else if (databaseType === 'mongodb') {
-                    await this.composeWithJHipster('jhipster:spring-data-mongodb', { generatorOptions });
-                } else if (databaseType === 'neo4j') {
-                    await this.composeWithJHipster('jhipster:spring-data-neo4j', { generatorOptions });
-                }
+            },
+            ...mainComposing,
+            async composing(...args) {
+                const { skipPriorities } = this.options;
+                this.options.skipPriorities = ['postWriting'];
+                mainComposing.composing.call(this, ...args);
+                this.options.skipPriorities = skipPriorities;
             },
         });
     }
@@ -136,15 +124,36 @@ export default class extends BaseApplicationGenerator {
                             'jhipster:spring-data-mongodb',
                             'jhipster:spring-data-neo4j',
                             'jhipster:spring-data-relational',
-                        ].includes(file.namespace)
+                            'jhipster:spring-data-elasticsearch',
+                            'jhipster:spring-cloud-stream:kafka',
+                            'jhipster:spring-cloud-stream:pulsar',
+                            'jhipster:gatling',
+                            'jhipster:cucumber',
+                            'jhipster:spring-cache',
+                        ].includes(file.namespace) && !file.sourceFile.includes('_entityPackage_')
                             ? undefined
                             : file,
                     // Kotling blueprint does not implements these files
                     file => {
                         const sourceBasename = basename(file.sourceFile);
-                        return ['_persistClass_Asserts.java', '_persistClass_TestSamples.java', 'AssertUtils.java'].includes(sourceBasename)
+                        return [
+                            '_persistClass_Asserts.java',
+                            '_persistClass_TestSamples.java',
+                            'AssertUtils.java',
+                            '_entityClass_Repository_r2dbc.java',
+                        ].includes(sourceBasename)
                             ? undefined
                             : file;
+                    },
+                    file => {
+                        // Use v8 files due to needles
+                        if (file.sourceFile.includes('resources/logback')) {
+                            return {
+                                ...file,
+                                resolvedSourceFile: this.fetchFromInstalledJHipster('server/templates/', file.sourceFile),
+                            };
+                        }
+                        return file;
                     },
                     file => {
                         let { resolvedSourceFile, sourceFile, destinationFile, namespace } = file;
@@ -154,9 +163,18 @@ export default class extends BaseApplicationGenerator {
                         }
 
                         if (sourceFile.includes('.java')) {
-                            sourceFile = isKotlinGeneratorFile(file)
-                                ? convertToKotlinFile(sourceFile)
-                                : join(namespace.split(':').pop(), convertToKotlinFile(sourceFile));
+                            const isCommonFile = filename => {
+                                const sourceBasename = basename(filename);
+                                return (
+                                    file.namespace !== 'spring-data-couchbase' &&
+                                    ['_entityClass_Repository.java', '_entityClass_Repository_reactive.java'].includes(sourceBasename)
+                                );
+                            };
+
+                            sourceFile =
+                                isKotlinGeneratorFile(file) || isCommonFile(sourceFile)
+                                    ? convertToKotlinFile(sourceFile)
+                                    : join(namespace.split(':').pop(), convertToKotlinFile(sourceFile));
 
                             return {
                                 ...file,
@@ -337,7 +355,18 @@ export default class extends BaseApplicationGenerator {
                         customizeTemplatePath: file => {
                             const sourceBasename = basename(file.sourceFile);
                             // Files migrated to modularized templates
-                            return ['Entity.java.jhi', 'Entity.java.jhi.javax_validation', 'EntityTest.java'].includes(sourceBasename)
+                            return [
+                                'EntityTest.java',
+                                'EntityRepository.java',
+                                'EntityRepository_reactive.java',
+                                'EntityRowMapper.java',
+                                'EntitySqlHelper_reactive.java',
+                                'EntityRepositoryInternalImpl_reactive.java',
+                                'EntityCallback.java',
+                                'EntitySqlHelper_reactive.java',
+                                'EntityRepositoryInternalImpl_reactive.java',
+                                'EntitySearchRepository.java',
+                            ].includes(sourceBasename) || sourceBasename.startsWith('Entity.java.jhi')
                                 ? undefined
                                 : file;
                         },
