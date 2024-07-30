@@ -399,6 +399,8 @@ export default class extends BaseApplicationGenerator {
                                 'EntityRepositoryInternalImpl_reactive.java',
                                 'EntityCallback.java',
                                 'EntitySqlHelper_reactive.java',
+                                'EntityRepositoryWithBagRelationships.java',
+                                'EntityRepositoryWithBagRelationshipsImpl.java',
                                 'EntityRepositoryInternalImpl_reactive.java',
                                 'EntitySearchRepository.java',
                             ].includes(sourceBasename) || sourceBasename.startsWith('Entity.java.jhi')
