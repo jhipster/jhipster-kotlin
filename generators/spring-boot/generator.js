@@ -103,10 +103,10 @@ export default class extends BaseApplicationGenerator {
                     // Remove package-info.java files
                     file => (file.sourceFile.includes('package-info.java') ? undefined : file),
                     file => {
-                        // Passthrough non liquibase files
-                        if (!file.sourceFile.includes('src/main/resources/config/liquibase')) return file;
                         // Don't use liquibase.gradle from liquibase generator
                         if (['gradle/liquibase.gradle'].includes(file.sourceFile)) return undefined;
+                        // Passthrough non liquibase files
+                        if (!file.sourceFile.includes('src/main/resources/config/liquibase')) return file;
                         // Use master.xml from jhipster 7 templates
                         if (file.sourceFile.includes('master.xml')) return file.namespace === 'jhipster:liquibase' ? undefined : file;
                         // Use liquibase templates from liquibase generator
