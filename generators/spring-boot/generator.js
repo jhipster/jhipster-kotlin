@@ -282,12 +282,12 @@ export default class extends BaseApplicationGenerator {
                             const addEntryToCacheCallback = entry =>
                                 createNeedleCallback({
                                     needle,
-                                    contentToAdd: `createCache(cm, ${entry}${useJcacheConfiguration ? ', jcacheConfiguration' : ''});`,
+                                    contentToAdd: `createCache(cm, ${entry}${useJcacheConfiguration ? ', jcacheConfiguration' : ''})`,
                                 });
 
                             source.addEntryToCache = ({ entry }) => this.editFile(cacheConfigurationFile, addEntryToCacheCallback(entry));
                             source.addEntityToCache = ({ entityAbsoluteClass, relationships }) => {
-                                const entry = `${entityAbsoluteClass}.class.getName()`;
+                                const entry = `${entityAbsoluteClass}::class.java.name`;
                                 this.editFile(
                                     cacheConfigurationFile,
                                     addEntryToCacheCallback(entry),
