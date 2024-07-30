@@ -59,7 +59,9 @@ export default class extends BaseApplicationGenerator {
             async composingTemplateTask() {
                 await this.composeCurrentJHipsterCommand();
             },
-            async composeGateway() {
+            async composeWithPostWriting() {
+                await this.composeWithJHipster('docker');
+
                 if (this.jhipsterConfigWithDefaults.applicationType === 'gateway') {
                     // Use gateway package.json scripts.
                     await this.composeWithJHipster('jhipster:spring-cloud:gateway');
