@@ -64,6 +64,9 @@ export default class extends BaseApplicationGenerator {
                 }
             },
             async postWritingTemplateTask({ application }) {
+                this.editFile('src/main/resources/logback-spring.xml', contents => contents.replaceAll('jakarta.', 'javax.'));
+                this.editFile('src/test/resources/logback.xml', contents => contents.replaceAll('jakarta.', 'javax.'));
+
                 if (application.buildToolGradle) {
                     // JHipster 8 have needles fixed
                     this.editFile('build.gradle', contents => contents.replaceAll('//jhipster', '// jhipster'));
