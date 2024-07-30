@@ -275,6 +275,16 @@ export default class extends BaseApplicationGenerator {
                     entity.jpaMetamodelFiltering = false;
                 }
             },
+            prepareEntityForKotlin({ entity }) {
+                const { primaryKey } = entity;
+                if (primaryKey) {
+                    // Kotlin does not support string ids specifications.
+                    primaryKey.javaBuildSpecification = 'buildRangeSpecification';
+                    for (const field of primaryKey.fields) {
+                        field.fieldJavaBuildSpecification = 'buildRangeSpecification';
+                    }
+                }
+            },
         });
     }
 
