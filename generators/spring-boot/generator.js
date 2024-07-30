@@ -156,13 +156,14 @@ export default class extends BaseApplicationGenerator {
                         }
 
                         if (sourceFile.includes('.java')) {
-                            resolvedSourceFile =
-                                namespace === 'jhipster-kotlin:spring-boot'
-                                    ? this.templatePath(convertToKotlinFile(sourceFile))
-                                    : this.templatePath(namespace.split(':').pop(), convertToKotlinFile(sourceFile));
+                            sourceFile = isKotlinGeneratorFile(file)
+                                ? convertToKotlinFile(sourceFile)
+                                : join(namespace.split(':').pop(), convertToKotlinFile(sourceFile));
                             return {
                                 ...file,
-                                resolvedSourceFile,
+                                sourceFile,
+                                javaResolvedSourceFile: resolvedSourceFile,
+                                resolvedSourceFile: this.templatePath(sourceFile),
                                 destinationFile: convertToKotlinFile(destinationFile),
                             };
                         }
