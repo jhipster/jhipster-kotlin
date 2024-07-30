@@ -152,7 +152,7 @@ import org.springframework.security.test.context.support.WithMockUser
 <%_ if (databaseTypeSql && !reactive) { _%>
 import org.springframework.transaction.annotation.Transactional
 <%_ } _%>
-<%_ if (fieldsContainBlob) { _%>
+<%_ if (anyFieldIsBlobDerived) { _%>
 import org.springframework.util.Base64Utils
 <%_ } _%>
 <%_ if (reactive && (implementsEagerLoadApis || searchEngineElasticsearch)) { _%>
@@ -163,32 +163,32 @@ import org.springframework.validation.Validator
 <%_ if (databaseTypeSql && !reactive) { _%>
 import javax.persistence.EntityManager
 <%_ } _%>
-<%_ if (fieldsContainBigDecimal) { _%>
+<%_ if (anyFieldIsBigDecimal) { _%>
 import java.math.BigDecimal
 <%_ } _%>
-<%_ if (fieldsContainBlob&& databaseTypeCassandra) { _%>
+<%_ if (anyFieldIsBlobDerived&& databaseTypeCassandra) { _%>
 import java.nio.ByteBuffer
 <%_ } _%>
-<%_ if (reactive || fieldsContainDuration) { _%>
+<%_ if (reactive || anyFieldIsDuration) { _%>
 import java.time.Duration
 <%_ } _%>
-<%_ if (fieldsContainLocalDate) { _%>
+<%_ if (anyFieldIsLocalDate) { _%>
 import java.time.LocalDate
 <%_ } _%>
-<%_ if (fieldsContainInstant|| fieldsContainZonedDateTime) { _%>
+<%_ if (anyFieldIsInstant|| anyFieldIsZonedDateTime) { _%>
 import java.time.Instant
 <%_ } _%>
-<%_ if (fieldsContainZonedDateTime) { _%>
+<%_ if (anyFieldIsZonedDateTime) { _%>
 import java.time.ZonedDateTime
 import java.time.ZoneOffset
 <%_ } _%>
-<%_ if (fieldsContainLocalDate|| fieldsContainZonedDateTime) { _%>
+<%_ if (anyFieldIsLocalDate|| anyFieldIsZonedDateTime) { _%>
 import java.time.ZoneId
 <%_ } _%>
-<%_ if (fieldsContainInstant) { _%>
+<%_ if (anyFieldIsInstant) { _%>
 import java.time.temporal.ChronoUnit
 <%_ } _%>
-<%_ if (fieldsContainUUID || primaryKey.typeString || otherEntityPrimaryKeyTypesIncludesUUID) { _%>
+<%_ if (anyFieldIsUUID || primaryKey.typeString || otherEntityPrimaryKeyTypesIncludesUUID) { _%>
 import java.util.UUID
 <%_ } _%>
 <%_ if (!embedded && primaryKey.hasLong) { _%>
@@ -202,7 +202,7 @@ import org.hamcrest.Matchers.hasItem
 <%_ if (reactive) { _%>
 import org.hamcrest.Matchers.`is`
 <%_ } _%>
-<%_ if (testsNeedCsrf) { _%>
+<%_ if (authenticationUsesCsrf) { _%>
     <%_ if (reactive) { _%>
 import org.springframework.security.test.web.reactive.server.SecurityMockServerConfigurers.csrf
     <%_ } else { _%>
@@ -318,7 +318,7 @@ class <%= entityClass %>ResourceIT {
     }
 
     <%_ } _%>
-    <%_ if (reactive && testsNeedCsrf) { _%>
+    <%_ if (reactive && authenticationUsesCsrf) { _%>
     @BeforeEach
     fun setupCsrf() {
         webTestClient = webTestClient.mutateWith(csrf())
@@ -364,7 +364,7 @@ class <%= entityClass %>ResourceIT {
             .expectStatus().isCreated
         <%_ } else { _%>
         rest<%= entityClass %>MockMvc.perform(
-            post(ENTITY_API_URL)<% if (testsNeedCsrf) { %>.with(csrf())<% }%>
+            post(ENTITY_API_URL)<% if (authenticationUsesCsrf) { %>.with(csrf())<% }%>
                 .contentType(MediaType.APPLICATION_JSON)
                 .content(convertObjectToJsonBytes(<%= restInstance %>))
         ).andExpect(status().isCreated)
@@ -428,7 +428,7 @@ class <%= entityClass %>ResourceIT {
             .expectStatus().isBadRequest
         <%_ } else { _%>
         rest<%= entityClass %>MockMvc.perform(
-            post(ENTITY_API_URL)<% if (testsNeedCsrf) { %>.with(csrf())<% }%>
+            post(ENTITY_API_URL)<% if (authenticationUsesCsrf) { %>.with(csrf())<% }%>
                 .contentType(MediaType.APPLICATION_JSON)
                 .content(convertObjectToJsonBytes(<%= restInstance %>))
         ).andExpect(status().isBadRequest)
@@ -495,7 +495,7 @@ class <%= entityClass %>ResourceIT {
             .exchange()
             .expectStatus().isOk
         <%_ } else { _%>
-        rest<%= entityClass %>MockMvc.perform(put(ENTITY_API_URL_ID, <%_ if (dtoMapstruct) { _%>updated<%= dtoClass %> <%_ } else { _%> updated<%= persistClass %> <%_ } _%>.<%= primaryKey.name %>)<% if (testsNeedCsrf) { %>.with(csrf())<% }%>
+        rest<%= entityClass %>MockMvc.perform(put(ENTITY_API_URL_ID, <%_ if (dtoMapstruct) { _%>updated<%= dtoClass %> <%_ } else { _%> updated<%= persistClass %> <%_ } _%>.<%= primaryKey.name %>)<% if (authenticationUsesCsrf) { %>.with(csrf())<% }%>
             .contentType(MediaType.APPLICATION_JSON)
             .content(convertObjectToJsonBytes(<%_ if (dtoMapstruct) { _%>updated<%= dtoClass %> <%_ } else { _%> updated<%= persistClass %> <%_ } _%>)))
             .andExpect(status().isOk)
@@ -547,7 +547,7 @@ class <%= entityClass %>ResourceIT {
             .expectStatus().isBadRequest
         <%_ } else { _%>
         rest<%= entityClass %>MockMvc.perform(
-            post(ENTITY_API_URL)<% if (testsNeedCsrf) { %>.with(csrf())<% }%>
+            post(ENTITY_API_URL)<% if (authenticationUsesCsrf) { %>.with(csrf())<% }%>
                 .contentType(MediaType.APPLICATION_JSON)
                 .content(convertObjectToJsonBytes(<%= restInstance %>))
         ).andExpect(status().isBadRequest)
@@ -574,7 +574,7 @@ class <%= entityClass %>ResourceIT {
         // Initialize the database
         <%_ if (!primaryKey.derived) { _%>
             <%_ for (field of primaryKey.fields.filter(f => !f.autoGenerateByRepository)) { _%>
-                <%= persistInstance %>.<%= field.fieldName %> = <%- getJavaValueGeneratorForType(field.fieldType) %>
+                <%= persistInstance %>.<%= field.fieldName %> = <%- field.javaValueGenerator %>
             <%_ } _%>
         <%_ } _%>
         <%= entityInstance %>Repository.save(<%= persistInstance %>)<%= callBlock %>
@@ -617,7 +617,7 @@ class <%= entityClass %>ResourceIT {
         // Initialize the database
         <%_ if (!primaryKey.derived) { _%>
             <%_ for (field of primaryKey.fields.filter(f => !f.autoGenerateByRepository)) { _%>
-                <%= persistInstance %>.<%= field.fieldName %> = <%- getJavaValueGeneratorForType(field.fieldType) %>
+                <%= persistInstance %>.<%= field.fieldName %> = <%- field.javaValueGenerator %>
             <%_ } _%>
         <%_ } _%>
         <%= entityInstance %>Repository.<%= saveMethod %>(<%= persistInstance %>)<%= callBlock %>
@@ -709,7 +709,7 @@ class <%= entityClass %>ResourceIT {
         // Initialize the database
         <%_ if (!primaryKey.derived) { _%>
             <%_ for (field of primaryKey.fields.filter(f => !f.autoGenerateByRepository)) { _%>
-                <%= persistInstance %>.<%= field.fieldName %> = <%- getJavaValueGeneratorForType(field.fieldType) %>
+                <%= persistInstance %>.<%= field.fieldName %> = <%- field.javaValueGenerator %>
             <%_ } _%>
         <%_ } _%>
         <%= entityInstance %>Repository.<%= saveMethod %>(<%= persistInstance %>)<%= callBlock %>
@@ -768,7 +768,7 @@ class <%= entityClass %>ResourceIT {
       <%_ } _%>
     }
     <%_ fieldsToTest.forEach((searchBy) => { /* we can't filter by all the fields. */ _%>
-        <%_ if (isFilterableType(searchBy.fieldType)) { _%>
+        <%_ if (searchBy.filterableField) { _%>
     @Test<%= transactionalAnnotation %>
     <% if (!reactive) { %>@Throws(Exception::class)<% } %>
     fun getAll<%= entityClassPlural %>By<%= searchBy.fieldInJavaBeanMethod %>IsEqualToSomething() {
@@ -1097,7 +1097,7 @@ class <%= entityClass %>ResourceIT {
         // Initialize the database
         <%_ if (!primaryKey.derived) { _%>
             <%_ for (field of primaryKey.fields.filter(f => !f.autoGenerateByRepository)) { _%>
-                <%= persistInstance %>.<%= field.fieldName %> = <%- getJavaValueGeneratorForType(field.fieldType) %>
+                <%= persistInstance %>.<%= field.fieldName %> = <%- field.javaValueGenerator %>
             <%_ } _%>
         <%_ } _%>
         <%= entityInstance %>Repository.<%= saveMethod %>(<%= persistInstance %>)<%= callBlock %>
@@ -1132,7 +1132,7 @@ class <%= entityClass %>ResourceIT {
             .expectStatus().isOk
         <%_ } else { _%>
         rest<%= entityClass %>MockMvc.perform(
-            put(ENTITY_API_URL_ID, <%= (dtoMapstruct ? asDto(entityInstance) : 'updated' + persistClass) %>.<%= primaryKey.name %>)<% if (testsNeedCsrf) { %>.with(csrf())<% }%>
+            put(ENTITY_API_URL_ID, <%= (dtoMapstruct ? asDto(entityInstance) : 'updated' + persistClass) %>.<%= primaryKey.name %>)<% if (authenticationUsesCsrf) { %>.with(csrf())<% }%>
                 .contentType(MediaType.APPLICATION_JSON)
                 .content(convertObjectToJsonBytes(<% if (dtoMapstruct) { %><%= dtoInstance %><% } else { %>updated<%= persistClass %><% } %>))
         ).andExpect(status().isOk)
@@ -1200,7 +1200,7 @@ class <%= entityClass %>ResourceIT {
             .exchange()
             .expectStatus().isBadRequest
         <%_ } else { _%>
-        rest<%= entityClass %>MockMvc.perform(put(ENTITY_API_URL_ID, <%= restInstance %>.<%= primaryKey.name %>)<% if (testsNeedCsrf) { %>.with(csrf())<% }%>
+        rest<%= entityClass %>MockMvc.perform(put(ENTITY_API_URL_ID, <%= restInstance %>.<%= primaryKey.name %>)<% if (authenticationUsesCsrf) { %>.with(csrf())<% }%>
             .contentType(MediaType.APPLICATION_JSON)
             .content(convertObjectToJsonBytes(<%= restInstance %>)))
             .andExpect(status().isBadRequest)
@@ -1235,7 +1235,7 @@ class <%= entityClass %>ResourceIT {
         // If url ID doesn't match entity ID, it will throw BadRequestAlertException
         <%_ if (!reactive) { _%>
         rest<%= entityClass %>MockMvc.perform(
-            put(ENTITY_API_URL_ID, <%= getJavaValueGeneratorForType(primaryKey.type) %>)<% if (testsNeedCsrf) { %>.with(csrf())<% }%>
+            put(ENTITY_API_URL_ID, <%= getJavaValueGeneratorForType(primaryKey.type) %>)<% if (authenticationUsesCsrf) { %>.with(csrf())<% }%>
                 .contentType(MediaType.APPLICATION_JSON)
                 .content(convertObjectToJsonBytes(<%= restInstance %>))
         ).andExpect(status().isBadRequest)
@@ -1281,7 +1281,7 @@ class <%= entityClass %>ResourceIT {
             .exchange()
             .expectStatus().isEqualTo(405)
         <%_ } else { _%>
-        rest<%= entityClass %>MockMvc.perform(put(ENTITY_API_URL)<% if (testsNeedCsrf) { %>.with(csrf())<% } %>
+        rest<%= entityClass %>MockMvc.perform(put(ENTITY_API_URL)<% if (authenticationUsesCsrf) { %>.with(csrf())<% } %>
             .contentType(MediaType.APPLICATION_JSON)
             .content(convertObjectToJsonBytes(<%= restInstance %>)))
             .andExpect(status().isMethodNotAllowed)
@@ -1313,12 +1313,12 @@ class <%= entityClass %>ResourceIT {
     fun partialUpdate<%= entityClass %>WithPatch() {
          <%_ if (!primaryKey.derived) { _%>
             <%_ for (field of primaryKey.fields.filter(f => !f.autoGenerateByRepository)) { _%>
-                <%= persistInstance %>.<%= field.fieldName %> = <%- getJavaValueGeneratorForType(field.fieldType) %>
+                <%= persistInstance %>.<%= field.fieldName %> = <%- field.javaValueGenerator %>
             <%_ } _%>
         <%_ } _%>
         <%= entityInstance %>Repository.<%= saveMethod %>(<%= persistInstance %>)<%= callBlock %>
         <% const fieldsToIncludeInPartialPatchTest = fieldsToTest.map(field => prepareFieldForPatchTest(field, () => faker.datatype.boolean())); %>
-        <%- include('/partials/it_patch_update.partial.kt.ejs', {fields: fieldsToIncludeInPartialPatchTest, saveMethod, asEntity, callBlock, callListBlock, getPrimaryKeyValue, testsNeedCsrf}); -%>
+        <%- include('/partials/it_patch_update.partial.kt.ejs', {fields: fieldsToIncludeInPartialPatchTest, saveMethod, asEntity, callBlock, callListBlock, getPrimaryKeyValue, authenticationUsesCsrf}); -%>
     }
 
     @Test<%= transactionalAnnotation %>
@@ -1326,12 +1326,12 @@ class <%= entityClass %>ResourceIT {
     fun fullUpdate<%= entityClass %>WithPatch() {
         <%_ if (!primaryKey.derived) { _%>
             <%_ for (field of primaryKey.fields.filter(f => !f.autoGenerateByRepository)) { _%>
-                <%= persistInstance %>.<%= field.fieldName %> = <%- getJavaValueGeneratorForType(field.fieldType) %>
+                <%= persistInstance %>.<%= field.fieldName %> = <%- field.javaValueGenerator %>
             <%_ } _%>
         <%_ } _%>
         <%= entityInstance %>Repository.<%= saveMethod %>(<%= persistInstance %>)<%= callBlock %>
         <% const fieldsToIncludeInFullPatchTest = fieldsToTest.map(field => prepareFieldForPatchTest(field, () => true)); %>
-        <%- include('/partials/it_patch_update.partial.kt.ejs', {fields: fieldsToIncludeInFullPatchTest, saveMethod, asEntity, callBlock, callListBlock, getPrimaryKeyValue, testsNeedCsrf}); -%>
+        <%- include('/partials/it_patch_update.partial.kt.ejs', {fields: fieldsToIncludeInFullPatchTest, saveMethod, asEntity, callBlock, callListBlock, getPrimaryKeyValue, authenticationUsesCsrf}); -%>
     }
 
     @Test<%= transactionalAnnotation %>
@@ -1356,7 +1356,7 @@ class <%= entityClass %>ResourceIT {
             .exchange()
             .expectStatus().isBadRequest
         <%_ } else { _%>
-        rest<%= entityClass %>MockMvc.perform(patch(ENTITY_API_URL_ID, <%= (dtoMapstruct ? asDto(entityInstance) : asEntity(entityInstance)) %>.<%= primaryKey.name %>)<% if (testsNeedCsrf) { %>.with(csrf())<% }%>
+        rest<%= entityClass %>MockMvc.perform(patch(ENTITY_API_URL_ID, <%= (dtoMapstruct ? asDto(entityInstance) : asEntity(entityInstance)) %>.<%= primaryKey.name %>)<% if (authenticationUsesCsrf) { %>.with(csrf())<% }%>
             .contentType("application/merge-patch+json")
             .content(convertObjectToJsonBytes(<%= (dtoMapstruct ? asDto(entityInstance) : asEntity(entityInstance)) %>)))
             .andExpect(status().isBadRequest)
@@ -1396,7 +1396,7 @@ class <%= entityClass %>ResourceIT {
             .exchange()
             .expectStatus().isBadRequest
         <%_ } else { _%>
-        rest<%= entityClass %>MockMvc.perform(patch(ENTITY_API_URL_ID, <%= getJavaValueGeneratorForType(primaryKey.type) %>)<% if (testsNeedCsrf) { %>.with(csrf())<% } %>
+        rest<%= entityClass %>MockMvc.perform(patch(ENTITY_API_URL_ID, <%= getJavaValueGeneratorForType(primaryKey.type) %>)<% if (authenticationUsesCsrf) { %>.with(csrf())<% } %>
             .contentType("application/merge-patch+json")
             .content(convertObjectToJsonBytes(<%= (dtoMapstruct ? asDto(entityInstance) : asEntity(entityInstance)) %>)))
             .andExpect(status().isBadRequest)
@@ -1436,7 +1436,7 @@ class <%= entityClass %>ResourceIT {
             .exchange()
             .expectStatus().isEqualTo(405)
         <%_ } else { _%>
-        rest<%= entityClass %>MockMvc.perform(patch(ENTITY_API_URL)<% if (testsNeedCsrf) { %>.with(csrf())<% } %>
+        rest<%= entityClass %>MockMvc.perform(patch(ENTITY_API_URL)<% if (authenticationUsesCsrf) { %>.with(csrf())<% } %>
             .contentType("application/merge-patch+json")
             .content(convertObjectToJsonBytes(<%= (dtoMapstruct ? asDto(entityInstance) : asEntity(entityInstance)) %>)))
             .andExpect(status().isMethodNotAllowed)
@@ -1460,7 +1460,7 @@ class <%= entityClass %>ResourceIT {
         // Initialize the database
         <%_ if (!primaryKey.derived) { _%>
             <%_ for (field of primaryKey.fields.filter(f => !f.autoGenerateByRepository)) { _%>
-                <%= persistInstance %>.<%= field.fieldName %> = <%- getJavaValueGeneratorForType(field.fieldType) %>
+                <%= persistInstance %>.<%= field.fieldName %> = <%- field.javaValueGenerator %>
             <%_ } _%>
         <%_ } _%>
         <%= entityInstance %>Repository.<%= saveMethod %>(<%= persistInstance %>)<%= callBlock %>
@@ -1481,7 +1481,7 @@ class <%= entityClass %>ResourceIT {
             .expectStatus().isNoContent
         <%_ } else { _%>
         rest<%= entityClass %>MockMvc.perform(
-            delete(ENTITY_API_URL_ID, <%= persistInstance %>.<%= primaryKey.name %><% if (primaryKey.typeUUID && databaseTypeSql) { %>.toString()<% } %>)<% if (testsNeedCsrf) { %>.with(csrf())<% }%>
+            delete(ENTITY_API_URL_ID, <%= persistInstance %>.<%= primaryKey.name %><% if (primaryKey.typeUUID && databaseTypeSql) { %>.toString()<% } %>)<% if (authenticationUsesCsrf) { %>.with(csrf())<% }%>
                 .accept(MediaType.APPLICATION_JSON)
         ).andExpect(status().isNoContent)
         <%_ } _%>
@@ -1510,7 +1510,7 @@ class <%= entityClass %>ResourceIT {
         // Initialize the database
         <%_ if (!primaryKey.derived) { _%>
             <%_ for (field of primaryKey.fields.filter(f => !f.autoGenerateByRepository)) { _%>
-                <%= persistInstance %>.<%= field.fieldName %> = <%- getJavaValueGeneratorForType(field.fieldType) %>
+                <%= persistInstance %>.<%= field.fieldName %> = <%- field.javaValueGenerator %>
             <%_ } _%>
         <%_ } _%>
         <%= persistInstance %> = <%= entityInstance %>Repository.<%= saveMethod %>(<%= persistInstance %>)<%= callBlock %>
@@ -1557,7 +1557,7 @@ class <%= entityClass %>ResourceIT {
             const defaultValueName = 'DEFAULT_' + field.fieldNameUnderscored.toUpperCase();
             const updatedValueName = 'UPDATED_' + field.fieldNameUnderscored.toUpperCase();
             const smallerValueName = 'SMALLER_' + field.fieldNameUnderscored.toUpperCase();
-            const needsSmallerValueName = jpaMetamodelFiltering && isFilterableType(field.fieldType)
+            const needsSmallerValueName = jpaMetamodelFiltering && field.filterableField
                 && (field.fieldTypeNumeric || field.fieldTypeDuration || field.fieldTypeLocalDate || field.fieldTypeZonedDateTime);
 
             let defaultValue = 1;

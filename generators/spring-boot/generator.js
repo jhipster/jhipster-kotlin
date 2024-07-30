@@ -1,4 +1,4 @@
-import { dirname, join } from 'path';
+import { basename, dirname, join } from 'path';
 import { fileURLToPath } from 'url';
 import BaseApplicationGenerator from 'generator-jhipster/generators/spring-boot';
 import { prepareSqlApplicationProperties } from 'generator-jhipster/generators/spring-data-relational/support';
@@ -6,6 +6,7 @@ import { files as entityServerFiles } from 'jhipster-7-templates/esm/generators/
 import { getEnumInfo } from 'generator-jhipster/generators/base-application/support';
 import { files as serverFiles } from 'jhipster-7-templates/esm/generators/server';
 
+import { convertToKotlinFile } from '../kotlin/support/files.js';
 import migration from './migration.cjs';
 import { serverFiles as sqlFiles } from './files-sql.js';
 import { entityCouchbaseFiles } from './entity-files-couchbase.js';
@@ -25,8 +26,6 @@ const {
     DOCKER_ELASTICSEARCH_CONTAINER,
     ELASTICSEARCH_VERSION,
     MAIN_DIR,
-    SERVER_MAIN_SRC_DIR,
-    SERVER_TEST_SRC_DIR,
     TEST_DIR,
 } = jhipsterConstants;
 
@@ -36,12 +35,6 @@ const jhipster7TemplatesPackage = dirname(fileURLToPath(import.meta.resolve('jhi
 
 const SERVER_MAIN_SRC_KOTLIN_DIR = `${MAIN_DIR}kotlin/`;
 const SERVER_TEST_SRC_KOTLIN_DIR = `${TEST_DIR}kotlin/`;
-
-const convertToKotlinFile = file =>
-    file
-        .replace('.java', '.kt')
-        .replace(SERVER_MAIN_SRC_DIR, SERVER_MAIN_SRC_KOTLIN_DIR)
-        .replace(SERVER_TEST_SRC_DIR, SERVER_TEST_SRC_KOTLIN_DIR);
 
 const JAVA_VERSION = '11';
 
@@ -104,10 +97,41 @@ export default class extends BaseApplicationGenerator {
                     syncUserWithIdp: application.authenticationType === 'oauth2',
                 });
 
-                application.customizeTemplatePaths.push(file => {
-                    const { resolvedSourceFile, sourceFile, destinationFile, namespace } = file;
-                    if (
-                        sourceFile.includes('package-info.java') ||
+                const isKotlinGeneratorFile = file => file.namespace === 'jhipster-kotlin:spring-boot';
+
+                application.customizeTemplatePaths.unshift(
+                    // Remove package-info.java files
+                    file => (file.sourceFile.includes('package-info.java') ? undefined : file),
+                    file => {
+                        // Don't use liquibase.gradle from liquibase generator
+                        if (['gradle/liquibase.gradle'].includes(file.sourceFile)) return undefined;
+                        // Passthrough non liquibase files
+                        if (!file.sourceFile.includes('src/main/resources/config/liquibase')) return file;
+                        // Use master.xml from jhipster 7 templates
+                        if (file.sourceFile.includes('master.xml')) return file.namespace === 'jhipster:liquibase' ? undefined : file;
+                        // Use liquibase templates from liquibase generator
+                        return file.namespace === 'jhipster:liquibase' ? file : undefined;
+                    },
+                    // Use docker-compose files from docker generator
+                    file =>
+                        isKotlinGeneratorFile(file) &&
+                        file.sourceFile.includes('src/main/docker') &&
+                        !file.sourceFile.includes('src/main/docker/jhipster-control-center.yml') &&
+                        !file.sourceFile.includes('src/main/docker/jib') &&
+                        !file.sourceFile.includes('src/main/docker/grafana') &&
+                        !file.sourceFile.includes('src/main/docker/monitoring.yml')
+                            ? undefined
+                            : file,
+                    // Use wrappers scripts from maven/gradle generators
+                    file =>
+                        isKotlinGeneratorFile(file) &&
+                        ([('mvnw', 'mvnw.cmd', 'gradlew', 'gradlew.bat')].includes(file.sourceFile) ||
+                            file.sourceFile.includes('.mvnw') ||
+                            file.sourceFile.includes('gradle/wrapper/'))
+                            ? undefined
+                            : file,
+                    // Ignore files from generators
+                    file =>
                         [
                             'jhipster:java:domain',
                             'jhipster:spring-cloud:gateway',
@@ -116,69 +140,36 @@ export default class extends BaseApplicationGenerator {
                             'jhipster:spring-data-mongodb',
                             'jhipster:spring-data-neo4j',
                             'jhipster:spring-data-relational',
-                        ].includes(namespace)
-                    ) {
-                        return undefined;
-                    }
-
-                    // Use master.xml from jhipster 7 templates
-                    if (sourceFile.includes('master.xml')) {
-                        return namespace === 'jhipster:liquibase' ? undefined : file;
-                    }
-
-                    if (namespace === 'jhipster-kotlin:spring-boot') {
+                        ].includes(file.namespace)
+                            ? undefined
+                            : file,
+                    // Kotling blueprint does not implements these files
+                    file => {
+                        const sourceBasename = basename(file.sourceFile);
+                        return ['_persistClass_Asserts.java', '_persistClass_TestSamples.java'].includes(sourceBasename) ? undefined : file;
+                    },
+                    file => {
+                        let { resolvedSourceFile, sourceFile, destinationFile, namespace } = file;
                         // Already resolved kotlin files
                         if (resolvedSourceFile.endsWith('.kt') || resolvedSourceFile.includes('.kt.')) {
                             return file;
                         }
 
-                        // Use docker-compose files from docker generator
-                        if (
-                            sourceFile.includes('src/main/docker') &&
-                            !sourceFile.includes('src/main/docker/jhipster-control-center.yml') &&
-                            !sourceFile.includes('src/main/docker/jib') &&
-                            !sourceFile.includes('src/main/docker/grafana') &&
-                            !sourceFile.includes('src/main/docker/monitoring.yml')
-                        ) {
-                            return undefined;
+                        if (sourceFile.includes('.java')) {
+                            sourceFile = isKotlinGeneratorFile(file)
+                                ? convertToKotlinFile(sourceFile)
+                                : join(namespace.split(':').pop(), convertToKotlinFile(sourceFile));
+                            return {
+                                ...file,
+                                sourceFile,
+                                javaResolvedSourceFile: resolvedSourceFile,
+                                resolvedSourceFile: this.templatePath(sourceFile),
+                                destinationFile: convertToKotlinFile(destinationFile),
+                            };
                         }
-
-                        // Use wrappers scripts from maven/gradle generators
-                        if (
-                            ['mvnw', 'mvnw.cmd', 'gradlew', 'gradlew.bat'].includes(sourceFile) ||
-                            sourceFile.includes('.mvnw') ||
-                            sourceFile.includes('gradle/wrapper/')
-                        ) {
-                            return undefined;
-                        }
-
-                        // Use liquibase templates from liquibase generator
-                        if (sourceFile.includes('src/main/resources/liquibase')) {
-                            return undefined;
-                        }
-                    }
-
-                    // Don't use liquibase.gradle from liquibase generator
-                    if (['gradle/liquibase.gradle'].includes(sourceFile)) {
-                        return undefined;
-                    }
-
-                    /*
-                    // Ignore convention plugins
-                    if (sourceFile.includes('buildSrc')) {
-                        return undefined;
-                    }
-                    */
-
-                    if (sourceFile.includes('.java')) {
-                        return {
-                            ...file,
-                            resolvedSourceFile: this.templatePath(convertToKotlinFile(sourceFile)),
-                            destinationFile: convertToKotlinFile(destinationFile),
-                        };
-                    }
-                    return file;
-                });
+                        return file;
+                    },
+                );
             },
             async migration({ application, applicationDefaults }) {
                 // Downgrade elasticsearch to 7.17.4
@@ -282,6 +273,16 @@ export default class extends BaseApplicationGenerator {
                 // V7 templates are not compatible with jpaMetamodelFiltering for reactive
                 if (this.jhipsterConfig.reactive && entity.jpaMetamodelFiltering) {
                     entity.jpaMetamodelFiltering = false;
+                }
+            },
+            prepareEntityForKotlin({ entity }) {
+                const { primaryKey } = entity;
+                if (primaryKey && primaryKey.name === 'id') {
+                    // Kotlin does not support string ids specifications.
+                    primaryKey.javaBuildSpecification = 'buildRangeSpecification';
+                    for (const field of primaryKey.fields) {
+                        field.fieldJavaBuildSpecification = 'buildRangeSpecification';
+                    }
                 }
             },
         });

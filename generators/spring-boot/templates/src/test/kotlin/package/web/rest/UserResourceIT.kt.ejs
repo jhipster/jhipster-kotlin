@@ -34,7 +34,7 @@ import <%= packageName %>.config.SYSTEM_ACCOUNT
 <%_ if (!databaseTypeCassandra && !databaseTypeCouchbase) { _%>
 import <%= packageName %>.domain.Authority
 <%_ } _%>
-import <%= packageName %>.domain.<%= asEntity('User') %>
+import <%= packageName %>.domain.<%= user.persistClass %>
 <%_ if (databaseTypeSql && reactive) { _%>
 import <%= packageName %>.repository.AuthorityRepository
 <%_ } _%>
@@ -44,7 +44,7 @@ import <%= packageName %>.repository.search.UserSearchRepository
 <%_ } _%>
 import <%= packageName %>.security.ADMIN
 import <%= packageName %>.security.USER
-import <%= packageName %>.service.dto.<%= asDto('AdminUser') %>
+import <%= packageName %>.service.dto.<%= user.adminUserDto %>
 <%_ if (databaseTypeSql && reactive) { _%>
 import <%= packageName %>.repository.EntityManager
 <%_ } _%>
@@ -61,7 +61,7 @@ import org.springframework.boot.test.autoconfigure.web.reactive.AutoConfigureWeb
 <%_ } else { _%>
 import org.springframework.boot.test.autoconfigure.web.servlet.AutoConfigureMockMvc
 <%_ } _%>
-<%_ if (cacheManagerIsAvailable) { _%>
+<%_ if (cacheProviderAny) { _%>
 import org.springframework.cache.CacheManager
 <%_ } _%>
 <%_ if (cacheProviderMemcached ) { _%>
@@ -98,11 +98,11 @@ import org.assertj.core.api.Assertions.assertThat
 <%_ if (reactive && searchEngineElasticsearch) { _%>
 import org.mockito.Mockito.*
 <%_ } _%>
-<%_ if (reactive && testsNeedCsrf) { _%>
+<%_ if (reactive && authenticationUsesCsrf) { _%>
 import org.springframework.security.test.web.reactive.server.SecurityMockServerConfigurers.csrf
 <%_ } else if (!reactive) { _%>
 import org.hamcrest.Matchers.hasItem
-<%_ if (testsNeedCsrf) { _%>
+<%_ if (authenticationUsesCsrf) { _%>
 import org.springframework.security.test.web.servlet.request.SecurityMockMvcRequestPostProcessors.csrf
 <%_ } _%>
 import org.springframework.test.web.servlet.request.MockMvcRequestBuilders.delete
@@ -112,12 +112,12 @@ import org.springframework.test.web.servlet.request.MockMvcRequestBuilders.put
 import org.springframework.test.web.servlet.result.MockMvcResultMatchers.content
 import org.springframework.test.web.servlet.result.MockMvcResultMatchers.jsonPath
 import org.springframework.test.web.servlet.result.MockMvcResultMatchers.status
-<%_ } else if (testsNeedCsrf) { _%>
+<%_ } else if (authenticationUsesCsrf) { _%>
 import org.springframework.security.test.web.reactive.server.SecurityMockServerConfigurers.csrf
 <%_ } _%>
 
 import kotlin.test.assertNotNull
-<%_ if (cacheManagerIsAvailable) { _%>
+<%_ if (cacheProviderAny) { _%>
 import kotlin.test.assertNull
 <%_ } _%>
 
@@ -155,7 +155,7 @@ class UserResourceIT {
     @Autowired
     private lateinit var em: EntityManager
     <%_ } _%>
-    <%_ if (cacheManagerIsAvailable) { _%>
+    <%_ if (cacheProviderAny) { _%>
 
     @Autowired
     private lateinit var cacheManager: CacheManager
@@ -168,9 +168,9 @@ class UserResourceIT {
     private lateinit var restUserMockMvc: MockMvc
     <%_ } _%>
 
-    private lateinit var user: <%= asEntity('User') %>
+    private lateinit var user: <%= user.persistClass %>
 
-    <%_ if (cacheManagerIsAvailable) { _%>
+    <%_ if (cacheProviderAny) { _%>
     @BeforeEach
     fun setup() {
         cacheManager.getCache(UserRepository.USERS_BY_LOGIN_CACHE)!!.clear()
@@ -178,7 +178,7 @@ class UserResourceIT {
     }
 
     <%_ } _%>
-    <%_ if (reactive && testsNeedCsrf) { _%>
+    <%_ if (reactive && authenticationUsesCsrf) { _%>
     @BeforeEach
     fun setupCsrf() {
         webTestClient = webTestClient.mutateWith(csrf())
@@ -224,7 +224,7 @@ class UserResourceIT {
         restUserMockMvc.perform(
             post("/api/admin/users")
                 .contentType(MediaType.APPLICATION_JSON)
-                .content(convertObjectToJsonBytes(managedUserVM))<% if (testsNeedCsrf) { %>
+                .content(convertObjectToJsonBytes(managedUserVM))<% if (authenticationUsesCsrf) { %>
                 .with(csrf())<% } %>
         )
             .andExpect(status().isCreated)
@@ -292,7 +292,7 @@ class UserResourceIT {
         restUserMockMvc.perform(
             post("/api/admin/users")
                 .contentType(MediaType.APPLICATION_JSON)
-                .content(convertObjectToJsonBytes(managedUserVM))<% if (testsNeedCsrf) { %>
+                .content(convertObjectToJsonBytes(managedUserVM))<% if (authenticationUsesCsrf) { %>
                 .with(csrf())<% } %>
         )
             .andExpect(status().isBadRequest)
@@ -349,7 +349,7 @@ class UserResourceIT {
         restUserMockMvc.perform(
             post("/api/admin/users")
                 .contentType(MediaType.APPLICATION_JSON)
-                .content(convertObjectToJsonBytes(managedUserVM))<% if (testsNeedCsrf) { %>
+                .content(convertObjectToJsonBytes(managedUserVM))<% if (authenticationUsesCsrf) { %>
                 .with(csrf())<% } %>
         )
             .andExpect(status().isBadRequest)
@@ -403,7 +403,7 @@ class UserResourceIT {
         restUserMockMvc.perform(
             post("/api/admin/users")
                 .contentType(MediaType.APPLICATION_JSON)
-                .content(convertObjectToJsonBytes(managedUserVM))<% if (testsNeedCsrf) { %>
+                .content(convertObjectToJsonBytes(managedUserVM))<% if (authenticationUsesCsrf) { %>
                 .with(csrf())<% } %>
         )
             .andExpect(status().isBadRequest)
@@ -440,7 +440,7 @@ class UserResourceIT {
             .exchange()
             .expectStatus().isOk
             .expectHeader().contentType(MediaType.APPLICATION_JSON)
-            .returnResult(<%= asDto('AdminUser') %>::class.java).responseBody.blockFirst()
+            .returnResult(<%= user.adminUserDto %>::class.java).responseBody.blockFirst()
 
         assertNotNull(foundUser)
         assertThat(foundUser.login).isEqualTo(DEFAULT_LOGIN)
@@ -498,7 +498,7 @@ class UserResourceIT {
         <%_ if (searchEngineElasticsearch) { _%>
         userSearchRepository.save(user)
         <%_ } _%>
-        <%_ if (cacheManagerIsAvailable) { _%>
+        <%_ if (cacheProviderAny) { _%>
 
         assertNull(cacheManager.getCache(UserRepository.USERS_BY_LOGIN_CACHE)!!.get(user.login!!))
         <%_ } _%>
@@ -537,7 +537,7 @@ class UserResourceIT {
         if (cacheManager !is NoOpCacheManager) {
             assertThat(cacheManager.getCache(UserRepository.USERS_BY_LOGIN_CACHE)!!.get(user.login!!)).isNotNull
         }
-        <%_ } else if (cacheManagerIsAvailable) { _%>
+        <%_ } else if (cacheProviderAny) { _%>
 
         assertNotNull(cacheManager.getCache(UserRepository.USERS_BY_LOGIN_CACHE)!!.get(user.login!!))
         <%_ } _%>
@@ -613,7 +613,7 @@ class UserResourceIT {
         restUserMockMvc.perform(
             put("/api/admin/users")
                 .contentType(MediaType.APPLICATION_JSON)
-                .content(convertObjectToJsonBytes(managedUserVM))<% if (testsNeedCsrf) { %>
+                .content(convertObjectToJsonBytes(managedUserVM))<% if (authenticationUsesCsrf) { %>
                 .with(csrf())<% } %>
         )
             .andExpect(status().isOk)
@@ -683,7 +683,7 @@ class UserResourceIT {
         restUserMockMvc.perform(
             put("/api/admin/users")
                 .contentType(MediaType.APPLICATION_JSON)
-                .content(convertObjectToJsonBytes(managedUserVM))<% if (testsNeedCsrf) { %>
+                .content(convertObjectToJsonBytes(managedUserVM))<% if (authenticationUsesCsrf) { %>
                 .with(csrf())<% } %>
         )
             .andExpect(status().isOk)
@@ -720,7 +720,7 @@ class UserResourceIT {
         userSearchRepository.save(user)
         <%_ } _%>
 
-        val anotherUser = <%= asEntity('User') %>(
+        val anotherUser = <%= user.persistClass %>(
             <%_ if (databaseTypeCassandra) { _%>
             id = UUID.randomUUID().toString(),
             <%_ } _%>
@@ -778,7 +778,7 @@ class UserResourceIT {
         restUserMockMvc.perform(
             put("/api/admin/users")
                 .contentType(MediaType.APPLICATION_JSON)
-                .content(convertObjectToJsonBytes(managedUserVM))<% if (testsNeedCsrf) { %>
+                .content(convertObjectToJsonBytes(managedUserVM))<% if (authenticationUsesCsrf) { %>
                 .with(csrf())<% } %>
         )
             .andExpect(status().isBadRequest)
@@ -802,7 +802,7 @@ class UserResourceIT {
         userSearchRepository.save(user)
         <%_ } _%>
 
-        val anotherUser = <%= asEntity('User') %>(
+        val anotherUser = <%= user.persistClass %>(
             <%_ if (databaseTypeCassandra) { _%>
             id = UUID.randomUUID().toString(),
             <%_ } _%>
@@ -860,7 +860,7 @@ class UserResourceIT {
         restUserMockMvc.perform(
             put("/api/admin/users")
                 .contentType(MediaType.APPLICATION_JSON)
-                .content(convertObjectToJsonBytes(managedUserVM))<% if (testsNeedCsrf) { %>
+                .content(convertObjectToJsonBytes(managedUserVM))<% if (authenticationUsesCsrf) { %>
                 .with(csrf())<% } %>
         )
             .andExpect(status().isBadRequest)
@@ -894,12 +894,12 @@ class UserResourceIT {
         <%_ } else { _%>
         restUserMockMvc.perform(
             delete("/api/admin/users/{login}", user.login)
-                .accept(MediaType.APPLICATION_JSON)<% if (testsNeedCsrf) { %>
+                .accept(MediaType.APPLICATION_JSON)<% if (authenticationUsesCsrf) { %>
                 .with(csrf())<% } %>
         )
             .andExpect(status().isNoContent)
         <%_ } _%>
-        <%_ if (cacheManagerIsAvailable) { _%>
+        <%_ if (cacheProviderAny) { _%>
 
         assertNull(cacheManager.getCache(UserRepository.USERS_BY_LOGIN_CACHE)!!.get(user.login!!))
         <%_ } _%>
@@ -912,11 +912,11 @@ class UserResourceIT {
     @Test
     @Throws(Exception::class)
     fun testUserEquals() {
-        equalsVerifier(<%= asEntity('User') %>::class)
-        val user1 = <%= asEntity('User') %>(id = DEFAULT_ID)
-        val user2 = <%= asEntity('User') %>(id = user1.id)
+        equalsVerifier(<%= user.persistClass %>::class)
+        val user1 = <%= user.persistClass %>(id = DEFAULT_ID)
+        val user2 = <%= user.persistClass %>(id = user1.id)
         assertThat(user1).isEqualTo(user2)
-        user2.id = <%- getPrimaryKeyValue(user.primaryKey.type, databaseType, 2) %>
+        user2.id = <%- this.getPrimaryKeyValue(user.primaryKey.type, databaseType, 2) %>
         assertThat(user1).isNotEqualTo(user2)
         user1.id = null
         assertThat(user1).isNotEqualTo(user2)
@@ -924,7 +924,7 @@ class UserResourceIT {
 
     @Test
     fun testUserDTOtoUser() {
-        val userDTO = <%= asDto('AdminUser') %>(
+        val userDTO = <%= user.adminUserDto %>(
             id = DEFAULT_ID,
             login = DEFAULT_LOGIN,
             firstName = DEFAULT_FIRSTNAME,
@@ -1036,7 +1036,7 @@ class UserResourceIT {
         <%_ if (databaseTypeCouchbase){ _%>
         private const val DEFAULT_ID = DEFAULT_LOGIN
         <%_ } else { _%>
-        private const val DEFAULT_ID = <%- getPrimaryKeyValue(user.primaryKey.type) %>
+        private const val DEFAULT_ID = <%- this.getPrimaryKeyValue(user.primaryKey.type) %>
         <%_ } _%>
 
         <%_ if (!authenticationTypeOauth2) { _%>
@@ -1078,8 +1078,8 @@ class UserResourceIT {
          * if they test an entity which has a required relationship to the User entity.
          */
         @JvmStatic
-        fun createEntity(<% if (databaseTypeSql) { %>em: EntityManager?<% } %>): <%= asEntity('User') %> {
-            return <%= asEntity('User') %>(
+        fun createEntity(<% if (databaseTypeSql) { %>em: EntityManager?<% } %>): <%= user.persistClass %> {
+            return <%= user.persistClass %>(
                 <%_ if (databaseTypeCassandra || (authenticationTypeOauth2 && !databaseTypeCouchbase)) { _%>
                 id = UUID.randomUUID().toString(),
                 <%_ } _%>
@@ -1110,7 +1110,7 @@ class UserResourceIT {
         fun deleteEntities(em: EntityManager) {
             try {
                 em.deleteAll("<%= jhiTablePrefix %>_user_authority").block()
-                em.deleteAll(<%= asEntity('User') %>::class.java).block()
+                em.deleteAll(<%= user.persistClass %>::class.java).block()
             } catch (e: Exception) {
                 // It can fail, if other entities are still referring this - it will be removed later.
             }
@@ -1121,7 +1121,7 @@ class UserResourceIT {
          * Setups the database with one user.
          */
         @JvmStatic
-        fun initTestUser(userRepository: UserRepository<% if (databaseTypeSql ) { %>, em: EntityManager<% } _%>): <%= asEntity('User') %> {
+        fun initTestUser(userRepository: UserRepository<% if (databaseTypeSql ) { %>, em: EntityManager<% } _%>): <%= user.persistClass %> {
             <%_ if (databaseTypeSql && reactive) { _%>
             userRepository.deleteAllUserAuthorities().block()
             <%_ } _%>
@@ -1135,7 +1135,7 @@ class UserResourceIT {
         }
     }
 
-    fun assertPersistedUsers(userAssertion: (List<<%= asEntity('User') %>>) -> Unit) {
+    fun assertPersistedUsers(userAssertion: (List<<%= user.persistClass %>>) -> Unit) {
         <%_ if (databaseTypeCouchbase) { _%>
         // The security filter chain clears the security context after remote calls
         SecurityContextHolder.setContext(TestSecurityContextHolder.getContext())

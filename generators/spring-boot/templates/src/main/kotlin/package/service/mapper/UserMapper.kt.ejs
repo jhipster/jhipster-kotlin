@@ -21,9 +21,9 @@ package <%= packageName %>.service.mapper
 <%_ if (databaseTypeSql || databaseTypeMongodb || databaseTypeNeo4j) { _%>
 import <%= packageName %>.domain.Authority
 <%_ } _%>
-import <%= packageName %>.domain.<%= asEntity('User') %>
-import <%= packageName %>.service.dto.<%= asDto('AdminUser') %>
-import <%= packageName %>.service.dto.<%= asDto('User') %>
+import <%= packageName %>.domain.<%= user.persistClass %>
+import <%= packageName %>.service.dto.<%= user.adminUserDto %>
+import <%= packageName %>.service.dto.<%= user.restClass %>
 
 import org.springframework.stereotype.Service
 
@@ -33,7 +33,7 @@ import org.mapstruct.Mapping
 import org.mapstruct.Named
 
 /**
- * Mapper for the entity [<%= asEntity('User') %>] and its DTO called [<%= asDto('User') %>].
+ * Mapper for the entity [<%= user.persistClass %>] and its DTO called [<%= user.restClass %>].
  *
  * Normal mappers are generated using MapStruct, this one is hand-coded as MapStruct
  * support is still in beta, and requires a manual step with an IDE.
@@ -41,29 +41,29 @@ import org.mapstruct.Named
 @Service
 class UserMapper {
 
-    fun usersToUserDTOs(users: List<<%= asEntity('User') %>?>): MutableList<<%= asDto('User') %>> =
+    fun usersToUserDTOs(users: List<<%= user.persistClass %>?>): MutableList<<%= user.restClass %>> =
         users.asSequence()
             .filterNotNull()
             .mapTo(mutableListOf()) { userToUserDTO(it) }
 
-    fun userToUserDTO(user: <%= asEntity('User') %>): <%= asDto('User') %> = <%= asDto('User') %>(user)
+    fun userToUserDTO(user: <%= user.persistClass %>): <%= user.restClass %> = <%= user.restClass %>(user)
 
-    fun usersToAdminUserDTOs(users: List<<%= asEntity('User') %>>): MutableList<<%= asDto('AdminUser') %>> =
+    fun usersToAdminUserDTOs(users: List<<%= user.persistClass %>>): MutableList<<%= user.adminUserDto %>> =
         users.asSequence()
             .filterNotNull()
             .mapTo(mutableListOf()) { userToAdminUserDTO(it) }
 
-    fun userToAdminUserDTO(user: <%= asEntity('User') %>) = <%= asDto('AdminUser') %>(user)
+    fun userToAdminUserDTO(user: <%= user.persistClass %>) = <%= user.adminUserDto %>(user)
 
-    fun userDTOsToUsers(userDTOs: List<<%= asDto('AdminUser') %>?>) =
+    fun userDTOsToUsers(userDTOs: List<<%= user.adminUserDto %>?>) =
         userDTOs.asSequence()
             .mapNotNullTo(mutableListOf()) { userDTOToUser(it) }
 
-    fun userDTOToUser(userDTO: <%= asDto('AdminUser') %>?) =
+    fun userDTOToUser(userDTO: <%= user.adminUserDto %>?) =
         when (userDTO) {
             null -> null
             else -> {
-                <%= asEntity('User') %>(
+                <%= user.persistClass %>(
                     id = userDTO.id,
                     login = userDTO.login,
                     firstName = userDTO.firstName,
@@ -94,16 +94,16 @@ class UserMapper {
         authoritiesAsString?.filterNotNullTo(mutableSetOf()) ?: mutableSetOf()
     <%_ } _%>
 
-    fun userFromId(id: <%= user.primaryKey.type %>?) = id?.let { <%= asEntity('User') %>(id = it) }
+    fun userFromId(id: <%= user.primaryKey.type %>?) = id?.let { <%= user.persistClass %>(id = it) }
 
     @Named("id")
     @BeanMapping(ignoreByDefault = true)
     @Mapping(target = "id", source = "id")
-    fun toDtoId(user: <%= asEntity('User') %>?): <%= asDto('User') %>? {
+    fun toDtoId(user: <%= user.persistClass %>?): <%= user.restClass %>? {
         if (user == null) {
             return null
         }
-        val userDto = <%= asDto('User') %>()
+        val userDto = <%= user.restClass %>()
         userDto.id = user.id
         return userDto
     }
@@ -111,12 +111,12 @@ class UserMapper {
     @Named("idSet")
     @BeanMapping(ignoreByDefault = true)
     @Mapping(target = "id", source = "id")
-    fun toDtoIdSet(users: Set<<%= asEntity('User') %>>?): Set<<%= asDto('User') %>>? {
+    fun toDtoIdSet(users: Set<<%= user.persistClass %>>?): Set<<%= user.restClass %>>? {
         if ( users == null ) {
-            return emptySet<<%= asDto('User') %>>()
+            return emptySet<<%= user.restClass %>>()
         }
 
-        val userSet = hashSetOf<<%= asDto('User') %>>()
+        val userSet = hashSetOf<<%= user.restClass %>>()
         users.forEach {
             this.toDtoId(it)?.let {
                 userSet.add(it)
@@ -131,11 +131,11 @@ class UserMapper {
         Mapping(target = "id", source = "id"),
         Mapping(target = "login", source = "login")
     )
-    fun toDtoLogin(user: <%= asEntity('User') %>?): <%= asDto('User') %>? {
+    fun toDtoLogin(user: <%= user.persistClass %>?): <%= user.restClass %>? {
         if (user == null) {
             return null
         }
-        val userDto = <%= asDto('User') %>()
+        val userDto = <%= user.restClass %>()
         userDto.id = user.id
         userDto.login = user.login
         return userDto
@@ -147,12 +147,12 @@ class UserMapper {
         Mapping(target = "id", source = "id"),
         Mapping(target = "login", source = "login")
     )
-    fun toDtoLoginSet(users: Set<<%= asEntity('User') %>>?): Set<<%= asDto('User') %>>? {
+    fun toDtoLoginSet(users: Set<<%= user.persistClass %>>?): Set<<%= user.restClass %>>? {
         if ( users == null ) {
-            return emptySet<<%= asDto('User') %>>()
+            return emptySet<<%= user.restClass %>>()
         }
 
-        val userSet = hashSetOf<<%= asDto('User') %>>()
+        val userSet = hashSetOf<<%= user.restClass %>>()
         users.forEach {
             this.toDtoLogin(it)?.let {
                 userSet.add(it)

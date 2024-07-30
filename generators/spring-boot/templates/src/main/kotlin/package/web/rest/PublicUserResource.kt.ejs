@@ -33,7 +33,7 @@ import org.springframework.data.domain.Sort
 import java.util.Collections
 <%_ } _%>
 import <%= packageName %>.service.UserService
-import <%= packageName %>.service.dto.<%= asDto('User') %>
+import <%= packageName %>.service.dto.<%= user.restClass %>
 
 <%_ if (databaseTypeSql || databaseTypeMongodb || databaseTypeNeo4j || databaseTypeCouchbase) { _%>
 import tech.jhipster.web.util.PaginationUtil
@@ -112,7 +112,7 @@ class PublicUserResource(
     @GetMapping("/users")
     <%_ if (databaseTypeSql || databaseTypeMongodb || databaseTypeNeo4j || databaseTypeCouchbase) { _%>
         <%_ if (reactive) { _%>
-    fun getAllPublicUsers(request: ServerHttpRequest, @org.springdoc.api.annotations.ParameterObject pageable: Pageable): Mono<ResponseEntity<Flux<<%= asDto('User') %>>>> {
+    fun getAllPublicUsers(request: ServerHttpRequest, @org.springdoc.api.annotations.ParameterObject pageable: Pageable): Mono<ResponseEntity<Flux<<%= user.restClass %>>>> {
         log.debug("REST request to get all public User names")
         <%_ if (!authenticationTypeOauth2) { _%>
         if (!onlyContainsAllowedProperties(pageable)) {
@@ -121,12 +121,12 @@ class PublicUserResource(
         <%_ } _%>
 
         return userService.countManagedUsers()
-            .map { PageImpl<<%= asDto('User') %>>(listOf(), pageable, it)  }
+            .map { PageImpl<<%= user.restClass %>>(listOf(), pageable, it)  }
             .map { PaginationUtil.generatePaginationHttpHeaders(UriComponentsBuilder.fromHttpRequest(request), it) }
             .map { ResponseEntity.ok().headers(it).body(userService.getAllPublicUsers(pageable)) }
     }
         <%_ } else { _%>
-    fun getAllPublicUsers(@org.springdoc.api.annotations.ParameterObject pageable: Pageable):  ResponseEntity<List<<%= asDto('User') %>>> {
+    fun getAllPublicUsers(@org.springdoc.api.annotations.ParameterObject pageable: Pageable):  ResponseEntity<List<<%= user.restClass %>>> {
         log.debug("REST request to get all public User names")
         <%_ if (!authenticationTypeOauth2) { _%>
         if (!onlyContainsAllowedProperties(pageable)) {
@@ -152,7 +152,7 @@ class PublicUserResource(
     fun getAuthorities() = userService.getAuthorities()<% if (reactive) { %>.collectList()<% } %>
 
     <%_ } else { /* Cassandra */ _%>
-    fun getAllPublicUsers(): <% if (reactive) { %>Flux<% } else { %>List<% } %><<%= asDto('User') %>> = userService.getAllPublicUsers()
+    fun getAllPublicUsers(): <% if (reactive) { %>Flux<% } else { %>List<% } %><<%= user.restClass %>> = userService.getAllPublicUsers()
 
     <%_ } _%>
 
@@ -165,20 +165,20 @@ class PublicUserResource(
      * @return the result of the search.
      */
     @GetMapping("/_search/users/{query}")
-    fun search(@PathVariable query: String): <% if(reactive) { %>Mono<Mutable<% } %>List<<%= asDto('User') %>><% if(reactive) { %>><% } %> {
+    fun search(@PathVariable query: String): <% if(reactive) { %>Mono<Mutable<% } %>List<<%= user.restClass %>><% if(reactive) { %>><% } %> {
         <%/* TODO fix this */%>
     <%_ if (searchEngineElasticsearch) { _%>
         <%_ if (reactive) { _%>
-        return userSearchRepository.search(query).map { <%= asDto('User') %>(it) }.collectList()
+        return userSearchRepository.search(query).map { <%= user.restClass %>(it) }.collectList()
         <%_ } else { _%>
-        return userSearchRepository.search(query).map { <%= asDto('User') %>(it) }
+        return userSearchRepository.search(query).map { <%= user.restClass %>(it) }
         <%_ } _%>
     <%_ } else { _%>
         <%_ if (reactive) { _%>
-        return userRepository.search(query).map { <%= asDto('User') %>(it) }.collectList()
+        return userRepository.search(query).map { <%= user.restClass %>(it) }.collectList()
          <%_ } else { _%>
         return userRepository.search(query)
-            .map { <%= asDto('User') %>(it) }
+            .map { <%= user.restClass %>(it) }
          <%_ } _%>
     <%_ } _%>
     }

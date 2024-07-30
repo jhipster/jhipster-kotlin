@@ -27,7 +27,7 @@ import <%= packageName %>.config.DEFAULT_LANGUAGE
 import <%= packageName %>.domain.PersistentToken
 <%_ } _%>
 <%_ if (!databaseTypeNo) { _%>
-import <%= packageName %>.domain.<%= asEntity('User') %>
+import <%= packageName %>.domain.<%= user.persistClass %>
 <%_ } _%>
 <%_ if ((databaseTypeSql || databaseTypeMongodb || databaseTypeNeo4j || databaseTypeCouchbase) && authenticationTypeSession && !reactive) { _%>
 import <%= packageName %>.repository.PersistentTokenRepository
@@ -170,7 +170,7 @@ class UserServiceIT {
     <%_ } _%>
     <%_ if (!databaseTypeNo) { _%>
 
-    private lateinit var user: <%= asEntity('User') %>
+    private lateinit var user: <%= user.persistClass %>
     <%_ } _%>
     <%_ if (authenticationTypeOauth2 ) { _%>
 
@@ -192,7 +192,7 @@ class UserServiceIT {
         userRepository.deleteAll()<% if (reactive) { %>.block()<% } %>
         <%_ } _%>
         <%_ if (!databaseTypeNo) { _%>
-        user = <%= asEntity('User') %>(
+        user = <%= user.persistClass %>(
             <%_ if (databaseTypeCassandra) { _%>
             id = UUID.randomUUID().toString(),
             <%_ } _%>
@@ -404,7 +404,7 @@ class UserServiceIT {
     <%_ } _%>
     <%_ if ((databaseTypeSql || databaseTypeNeo4j || databaseTypeMongodb || databaseTypeCouchbase) && authenticationTypeSession && !reactive) { _%>
 
-    private fun generateUserToken(user: <%= asEntity('User') %>, tokenSeries: String, localDate: LocalDate) {
+    private fun generateUserToken(user: <%= user.persistClass %>, tokenSeries: String, localDate: LocalDate) {
         val token = PersistentToken(
             series = tokenSeries,
             <%_ if (databaseTypeCouchbase) { _%>

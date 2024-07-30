@@ -24,7 +24,7 @@ import <%= packageName %>.security.USER
 <%_ if (authenticationTypeOauth2) { _%>
 import <%= packageName %>.config.TestSecurityConfiguration
 <%_ } _%>
-import <%= packageName %>.domain.<%= asEntity('User') %>
+import <%= packageName %>.domain.<%= user.persistClass %>
 import <%= packageName %>.repository.UserRepository
 <%_ if (searchEngineElasticsearch) { _%>
 import <%= packageName %>.repository.search.UserSearchRepository
@@ -40,7 +40,7 @@ import org.springframework.boot.test.autoconfigure.web.reactive.AutoConfigureWeb
 <%_ } else { _%>
 import org.springframework.boot.test.autoconfigure.web.servlet.AutoConfigureMockMvc
 <%_ } _%>
-<%_ if (cacheManagerIsAvailable) { _%>
+<%_ if (cacheProviderAny) { _%>
 import org.springframework.cache.CacheManager
 <%_ } _%>
 <%_ if (cacheProviderMemcached ) { _%>
@@ -53,7 +53,7 @@ import org.springframework.security.test.context.TestSecurityContextHolder
 <%_ } _%>
 import org.springframework.security.test.context.support.WithMockUser
 <%_ if (reactive) { _%>
-import <%= packageName %>.service.dto.<%= asDto('User') %>
+import <%= packageName %>.service.dto.<%= user.restClass %>
 import org.springframework.test.web.reactive.server.WebTestClient
 <%_ } else { _%>
 import org.springframework.test.web.servlet.MockMvc
@@ -82,7 +82,7 @@ import org.assertj.core.api.Assertions.assertThat
 <%_ if (reactive && searchEngineElasticsearch) { _%>
 import org.mockito.Mockito.*
 <%_ } _%>
-<%_ if (reactive && testsNeedCsrf) { _%>
+<%_ if (reactive && authenticationUsesCsrf) { _%>
 import org.springframework.security.test.web.reactive.server.SecurityMockServerConfigurers.csrf
 <%_ } else if (!reactive) { _%>
     <%_ if (databaseTypeSql || databaseTypeMongodb || databaseTypeNeo4j || databaseTypeCouchbase) { _%>
@@ -129,7 +129,7 @@ class PublicUserResourceIT {
     @Autowired
     private lateinit var em: EntityManager
     <%_ } _%>
-    <%_ if (cacheManagerIsAvailable) { _%>
+    <%_ if (cacheProviderAny) { _%>
 
     @Autowired
     private lateinit var cacheManager: CacheManager
@@ -142,9 +142,9 @@ class PublicUserResourceIT {
     private lateinit var restUserMockMvc: MockMvc
     <%_ } _%>
 
-    private lateinit var user: <%= asEntity('User') %>
+    private lateinit var user: <%= user.persistClass %>
 
-    <%_ if (cacheManagerIsAvailable) { _%>
+    <%_ if (cacheProviderAny) { _%>
     @BeforeEach
     fun setup() {
         cacheManager.getCache(UserRepository.USERS_BY_LOGIN_CACHE).clear()
@@ -152,7 +152,7 @@ class PublicUserResourceIT {
     }
 
     <%_ } _%>
-    <%_ if (reactive && testsNeedCsrf) { _%>
+    <%_ if (reactive && authenticationUsesCsrf) { _%>
     @BeforeEach
     fun setupCsrf() {
         webTestClient = webTestClient.mutateWith(csrf())
@@ -182,7 +182,7 @@ class PublicUserResourceIT {
             .exchange()
             .expectStatus().isOk
             .expectHeader().contentType(MediaType.APPLICATION_JSON)
-            .returnResult(<%= asDto('User') %>::class.java).responseBody.blockFirst()
+            .returnResult(<%= user.restClass %>::class.java).responseBody.blockFirst()
 
         assertThat(foundUser.login).isEqualTo(DEFAULT_LOGIN)
         <%_ for (field of user.fields.filter(field => !field.builtIn && field.relatedByOtherEntity)) { _%>

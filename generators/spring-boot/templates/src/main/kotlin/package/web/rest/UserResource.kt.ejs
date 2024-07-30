@@ -19,13 +19,13 @@
 package <%= packageName %>.web.rest
 
 import <%= packageName %>.config.LOGIN_REGEX
-import <%= packageName %>.domain.<%= asEntity('User') %>
+import <%= packageName %>.domain.<%= user.persistClass %>
 import <%= packageName %>.repository.UserRepository
 import <%= packageName %>.security.ADMIN
 import <%= packageName %>.service.MailService
 import org.springframework.data.domain.Sort
 import <%= packageName %>.service.UserService
-import <%= packageName %>.service.dto.<%= asDto('AdminUser') %>
+import <%= packageName %>.service.dto.<%= user.adminUserDto %>
 import <%= packageName %>.web.rest.errors.BadRequestAlertException
 import <%= packageName %>.web.rest.errors.EmailAlreadyUsedException
 import <%= packageName %>.web.rest.errors.LoginAlreadyUsedException
@@ -142,7 +142,7 @@ class UserResource(
     <%_ if (!reactive) { _%>
     @Throws(URISyntaxException::class)
     <%_ } _%>
-    fun createUser(@Valid @RequestBody userDTO: <%= asDto('AdminUser') %>): <% if (reactive) { %>Mono<ResponseEntity<<%= asEntity('User') %>>><% } else { %>ResponseEntity<<%= asEntity('User') %>><% } %> {
+    fun createUser(@Valid @RequestBody userDTO: <%= user.adminUserDto %>): <% if (reactive) { %>Mono<ResponseEntity<<%= user.persistClass %>>><% } else { %>ResponseEntity<<%= user.persistClass %>><% } %> {
         log.debug("REST request to save User : $userDTO")
 
         if (userDTO.id != null) {
@@ -201,7 +201,7 @@ class UserResource(
     @PutMapping("/users")
     @PreAuthorize("hasAuthority(\"$ADMIN\")")
     <%_ if (reactive) { _%>
-    fun updateUser(@Valid @RequestBody userDTO: <%= asDto('AdminUser') %>) : Mono<ResponseEntity<<%= asDto('AdminUser') %>>> {
+    fun updateUser(@Valid @RequestBody userDTO: <%= user.adminUserDto %>) : Mono<ResponseEntity<<%= user.adminUserDto %>>> {
         log.debug("REST request to update User : $userDTO")
         return userRepository.findOneByEmailIgnoreCase(userDTO.email!!)
             .filter { user -> user.id != userDTO.id }
@@ -227,7 +227,7 @@ class UserResource(
                     .body(user)
             }
     <%_ } else { _%>
-    fun updateUser(@Valid @RequestBody userDTO: <%= asDto('AdminUser') %>): ResponseEntity<<%= asDto('AdminUser') %>> {
+    fun updateUser(@Valid @RequestBody userDTO: <%= user.adminUserDto %>): ResponseEntity<<%= user.adminUserDto %>> {
         log.debug("REST request to update User : $userDTO")
         var existingUser = userRepository.findOneByEmailIgnoreCase(userDTO.email)
         if (existingUser.isPresent && existingUser.get().id != userDTO.id) {
@@ -262,19 +262,19 @@ class UserResource(
     fun getAllUsers(
         request: ServerHttpRequest,
         @org.springdoc.api.annotations.ParameterObject pageable: Pageable
-    ): Mono<ResponseEntity<Flux<<%= asDto('AdminUser') %>>>> {
+    ): Mono<ResponseEntity<Flux<<%= user.adminUserDto %>>>> {
         log.debug("REST request to get all User for an admin")
         if (!onlyContainsAllowedProperties(pageable)) {
             return Mono.just(ResponseEntity.badRequest().build())
         }
 
         return userService.countManagedUsers()
-            .map { total -> PageImpl(mutableListOf<<%= asDto('AdminUser') %>>(), pageable, total!!) }
+            .map { total -> PageImpl(mutableListOf<<%= user.adminUserDto %>>(), pageable, total!!) }
             .map { page -> PaginationUtil.generatePaginationHttpHeaders(UriComponentsBuilder.fromHttpRequest(request), page) }
             .map { headers -> ResponseEntity.ok().headers(headers).body(userService.getAllManagedUsers(pageable)) }
     }
         <%_ } else { _%>
-    fun getAllUsers(@org.springdoc.api.annotations.ParameterObject pageable: Pageable): ResponseEntity<List<<%= asDto('AdminUser') %>>> {
+    fun getAllUsers(@org.springdoc.api.annotations.ParameterObject pageable: Pageable): ResponseEntity<List<<%= user.adminUserDto %>>> {
         log.debug("REST request to get all User for an admin")
         if (!onlyContainsAllowedProperties(pageable)) {
             return ResponseEntity.badRequest().build()
@@ -300,17 +300,17 @@ class UserResource(
     @GetMapping("/users/{login}")
     @PreAuthorize("hasAuthority(\"$ADMIN\")")
     <%_ if (reactive) { _%>
-    fun getUser(@PathVariable login: String): Mono<<%= asDto('AdminUser') %>> {
+    fun getUser(@PathVariable login: String): Mono<<%= user.adminUserDto %>> {
         log.debug("REST request to get User : $login")
         return userService.getUserWithAuthoritiesByLogin(login)
-            .map { <%= asDto('AdminUser') %>(it) }
+            .map { <%= user.adminUserDto %>(it) }
             .switchIfEmpty(Mono.error(ResponseStatusException(HttpStatus.NOT_FOUND)))
     <%_ } else { _%>
-    fun getUser(@PathVariable @Pattern(regexp = LOGIN_REGEX) login: String): ResponseEntity<<%= asDto('AdminUser') %>> {
+    fun getUser(@PathVariable @Pattern(regexp = LOGIN_REGEX) login: String): ResponseEntity<<%= user.adminUserDto %>> {
         log.debug("REST request to get User : $login")
         return ResponseUtil.wrapOrNotFound(
             userService.getUserWithAuthoritiesByLogin(login)
-                .map { <%= asDto('AdminUser') %>(it) })
+                .map { <%= user.adminUserDto %>(it) })
     <%_ } _%>
     }
 
