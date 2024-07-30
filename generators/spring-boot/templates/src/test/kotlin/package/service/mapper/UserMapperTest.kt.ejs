@@ -18,9 +18,9 @@
 -%>
 package <%= packageName %>.service.mapper
 
-import <%= packageName %>.domain.<%= asEntity('User') %>
-import <%= packageName %>.service.dto.<%= asDto('AdminUser') %>
-import <%= packageName %>.service.dto.<%= asDto('User') %>
+import <%= packageName %>.domain.<%= user.persistClass %>
+import <%= packageName %>.service.dto.<%= user.adminUserDto %>
+import <%= packageName %>.service.dto.<%= user.restClass %>
 <%_ if (!authenticationTypeOauth2) { _%>
 import org.apache.commons.lang3.RandomStringUtils
 <%_ } _%>
@@ -39,7 +39,7 @@ private const val DEFAULT_LOGIN = "johndoe"
 <%_ if (databaseTypeCouchbase){ _%>
 private const val DEFAULT_ID = DEFAULT_LOGIN
 <%_ } else { _%>
-private const val DEFAULT_ID = <%- getPrimaryKeyValue(user.primaryKey.type) %>
+private const val DEFAULT_ID = <%- this.getPrimaryKeyValue(user.primaryKey.type) %>
 <%_ } _%>
 
 /**
@@ -49,13 +49,13 @@ class UserMapperTest {
 
     private lateinit var userMapper: UserMapper
 
-    private lateinit var user: <%= asEntity('User') %>
-    private lateinit var userDto: <%= asDto('AdminUser') %>
+    private lateinit var user: <%= user.persistClass %>
+    private lateinit var userDto: <%= user.adminUserDto %>
 
     @BeforeEach
     fun init() {
         userMapper = UserMapper()
-        user = <%= asEntity('User') %>(
+        user = <%= user.persistClass %>(
             login = DEFAULT_LOGIN,
             <%_ if (!authenticationTypeOauth2) { _%>
             password = RandomStringUtils.randomAlphanumeric(60),
@@ -70,7 +70,7 @@ class UserMapperTest {
             langKey = "en"
         )
 
-        userDto = <%= asDto('AdminUser') %>(user)
+        userDto = <%= user.adminUserDto %>(user)
     }
 
     @Test

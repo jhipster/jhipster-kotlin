@@ -18,7 +18,7 @@
 -%>
 package <%= packageName %>.config
 
-<%_ if (cacheProviderEhCache) { _%>
+<%_ if (cacheProviderEhcache) { _%>
 import java.time.Duration
 
 import org.ehcache.config.builders.CacheConfigurationBuilder
@@ -54,7 +54,7 @@ import com.hazelcast.core.HazelcastInstance
 
 import org.slf4j.LoggerFactory
 <%_ } _%>
-<%_ if (cacheProviderEhCache || cacheProviderCaffeine) { _%>
+<%_ if (cacheProviderEhcache || cacheProviderCaffeine) { _%>
 import org.springframework.boot.autoconfigure.cache.JCacheManagerCustomizer
     <%_ if (enableHibernateCache) { _%>
 import org.springframework.boot.autoconfigure.orm.jpa.HibernatePropertiesCustomizer
@@ -168,7 +168,7 @@ import tech.jhipster.config.JHipsterProperties
 @EnableCaching
 class CacheConfiguration(<%_ if (!cacheProviderNo) { _%>
     @Autowired val gitProperties: GitProperties?,
-    @Autowired val buildProperties: BuildProperties?<% } %><% if (cacheProviderEhCache || cacheProviderCaffeine) { %>,
+    @Autowired val buildProperties: BuildProperties?<% } %><% if (cacheProviderEhcache || cacheProviderCaffeine) { %>,
     private val jHipsterProperties: JHipsterProperties<% } else if (cacheProviderHazelcast) { %>,
     private val env: Environment<% if (serviceDiscoveryAny) { %>,
     private val serverProperties: ServerProperties,
@@ -177,12 +177,12 @@ class CacheConfiguration(<%_ if (!cacheProviderNo) { _%>
     @Autowired(required = false) val discoveryClient: DiscoveryClient?,
     @Autowired(required = false) val registration: Registration?<% } %><% } %>
 ) {
-    <%_ if (cacheProviderEhCache || cacheProviderCaffeine) { _%>
+    <%_ if (cacheProviderEhcache || cacheProviderCaffeine) { _%>
 
     private val jcacheConfiguration: javax.cache.configuration.Configuration<Any, Any>
 
     init {
-        <%_ if (cacheProviderEhCache) { _%>
+        <%_ if (cacheProviderEhcache) { _%>
         val ehcache = jHipsterProperties.cache.ehcache
 
         jcacheConfiguration = Eh107Configuration.fromEhcacheCacheConfiguration(
@@ -222,16 +222,16 @@ class CacheConfiguration(<%_ if (!cacheProviderNo) { _%>
             createCache(cm, <%= packageName %>.repository.UserRepository.USERS_BY_LOGIN_CACHE)
             createCache(cm, <%= packageName %>.repository.UserRepository.USERS_BY_EMAIL_CACHE)
                 <%_ if (enableHibernateCache) { _%>
-            createCache(cm, <%= packageName %>.domain.<%= asEntity('User') %>::class.java.name)
+            createCache(cm, <%= packageName %>.domain.<%= user.persistClass %>::class.java.name)
             createCache(cm, <%= packageName %>.domain.Authority::class.java.name)
-            createCache(cm, <%= packageName %>.domain.<%= asEntity('User') %>::class.java.name + ".authorities")
+            createCache(cm, <%= packageName %>.domain.<%= user.persistClass %>::class.java.name + ".authorities")
                     <%_ if (authenticationTypeSession) { _%>
             createCache(cm, <%= packageName %>.domain.PersistentToken::class.java.name)
-            createCache(cm, <%= packageName %>.domain.<%= asEntity('User') %>::class.java.name + ".persistentTokens")
+            createCache(cm, <%= packageName %>.domain.<%= user.persistClass %>::class.java.name + ".persistentTokens")
                     <%_ } _%>
                 <%_ } _%>
             <%_ } _%>
-            <%_ if (cacheProviderEhCache) { _%>
+            <%_ if (cacheProviderEhcache) { _%>
             // jhipster-needle-ehcache-add-entry
             <%_ } _%>
             <%_ if (cacheProviderCaffeine) { _%>
@@ -731,12 +731,12 @@ class CacheConfiguration(<%_ if (!cacheProviderNo) { _%>
             createCache(it, <%= packageName %>.repository.UserRepository.USERS_BY_LOGIN_CACHE, jcacheConfiguration)
             createCache(it, <%= packageName %>.repository.UserRepository.USERS_BY_EMAIL_CACHE, jcacheConfiguration)
                 <%_ if (enableHibernateCache) { _%>
-            createCache(it, <%= packageName %>.domain.<%= asEntity('User') %>::class.java.name, jcacheConfiguration)
+            createCache(it, <%= packageName %>.domain.<%= user.persistClass %>::class.java.name, jcacheConfiguration)
             createCache(it, <%= packageName %>.domain.Authority::class.java.name, jcacheConfiguration)
-            createCache(it, <%= packageName %>.domain.<%= asEntity('User') %>::class.java.name + ".authorities", jcacheConfiguration)
+            createCache(it, <%= packageName %>.domain.<%= user.persistClass %>::class.java.name + ".authorities", jcacheConfiguration)
                     <%_ if (authenticationTypeSession) { _%>
             createCache(it, <%= packageName %>.domain.PersistentToken::class.java.name, jcacheConfiguration)
-            createCache(it, <%= packageName %>.domain.<%= asEntity('User') %>::class.java.name + ".persistentTokens", jcacheConfiguration)
+            createCache(it, <%= packageName %>.domain.<%= user.persistClass %>::class.java.name + ".persistentTokens", jcacheConfiguration)
                     <%_ } _%>
                 <%_ } _%>
             <%_ } _%>

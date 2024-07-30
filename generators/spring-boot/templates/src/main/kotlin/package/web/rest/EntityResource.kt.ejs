@@ -88,7 +88,7 @@ import reactor.core.publisher.Flux
 import reactor.core.publisher.Mono
 <%_ } _%>
 
-<%_ if (validation) { _%>
+<%_ if (anyPropertyHasValidation) { _%>
 import javax.validation.Valid
 import javax.validation.constraints.NotNull
 <%_ } _%>
@@ -157,7 +157,7 @@ _%><%- include('../../common/inject_template', {viaService: viaService, construc
      * @throws URISyntaxException if the Location URI syntax is incorrect.
      */
     @PostMapping("/<%= entityApiUrl %>")
-    fun create<%= entityClass %>(<% if (validation) { %>@Valid <% } %>@RequestBody <%= instanceName %>: <%= instanceType %>): <% if (reactive) { %>Mono<<% } %>ResponseEntity<<%= instanceType %>><% if (reactive) { %>><% } %> {
+    fun create<%= entityClass %>(<% if (anyPropertyHasValidation) { %>@Valid <% } %>@RequestBody <%= instanceName %>: <%= instanceType %>): <% if (reactive) { %>Mono<<% } %>ResponseEntity<<%= instanceType %>><% if (reactive) { %>><% } %> {
         log.debug("REST request to save <%= entityClass %> : $<%= instanceName %>")
         if (<%= instanceName %>.<%= primaryKey.name %> != null) {
             throw BadRequestAlertException(
@@ -216,7 +216,7 @@ _%><%- include('../../common/inject_template', {viaService: viaService, construc
     @PutMapping("/<%= entityApiUrl %>/{<%= primaryKey.name %>}")
     fun update<%= entityClass %>(
         @PathVariable(value = "<%= primaryKey.name %>", required = false) <%= primaryKey.name %>: <%= primaryKey.type %>,
-        <% if (validation) { %>@Valid <% } %>@RequestBody <%= instanceName %>: <%= instanceType %>
+        <% if (anyPropertyHasValidation) { %>@Valid <% } %>@RequestBody <%= instanceName %>: <%= instanceType %>
     ): <% if (reactive) { %>Mono<<% } %>ResponseEntity<<%= instanceType %>><% if (reactive) { %>><% } %> {
         log.debug("REST request to update <%= entityClass %> : {}, {}", <%= primaryKey.name %>, <%= instanceName %>)
         if (<%= instanceName %>.<%= primaryKey.name %> == null) {
@@ -289,7 +289,7 @@ _%><%- include('../../common/inject_template', {viaService: viaService, construc
     @Throws(URISyntaxException::class)
     fun partialUpdate<%= entityClass %>(
         @PathVariable(value = "<%= primaryKey.name %>", required = false) <%= primaryKey.name %>: <%= primaryKey.type %>,
-        <% if (validation) { %>@NotNull <% } %>@RequestBody <%= instanceName %>:<%= instanceType %>
+        <% if (anyPropertyHasValidation) { %>@NotNull <% } %>@RequestBody <%= instanceName %>:<%= instanceType %>
     ): <% if (reactive) { %>Mono<<% } %>ResponseEntity<<%= instanceType %>><% if (reactive) { %>><% } %> {
         log.debug("REST request to partial update <%= entityClass %> partially : {}, {}", <%= primaryKey.name %>, <%= instanceName %>)
         if (<%= instanceName %>.<%= primaryKey.name %> == null) {

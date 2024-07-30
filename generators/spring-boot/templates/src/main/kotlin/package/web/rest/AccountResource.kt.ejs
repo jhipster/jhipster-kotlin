@@ -23,7 +23,7 @@ package <%= packageName %>.web.rest
 import <%= packageName %>.security.getCurrentUserLogin
     <%_ } _%>
 import <%= packageName %>.service.UserService
-import <%= packageName %>.service.dto.<%= asDto('AdminUser') %>
+import <%= packageName %>.service.dto.<%= user.adminUserDto %>
 
 import org.slf4j.LoggerFactory
 import org.springframework.security.authentication.AbstractAuthenticationToken
@@ -58,7 +58,7 @@ class AccountResource(private val userService: UserService) {
      * @throws AccountResourceException `500 (Internal Server Error)` if the user couldn't be returned.
      */
     @GetMapping("/account")
-    fun getAccount(principal: Principal?): <% if (reactive) { %>Mono<<%= asDto('AdminUser') %>><% } else { %><%= asDto('AdminUser') %><% } %> =
+    fun getAccount(principal: Principal?): <% if (reactive) { %>Mono<<%= user.adminUserDto %>><% } else { %><%= user.adminUserDto %><% } %> =
         if (principal is AbstractAuthenticationToken) {
             userService.getUserFromAuthentication(principal)
         } else {
@@ -189,7 +189,7 @@ import <%= packageName %>.security.getCurrentUserLogin
 import <%= packageName %>.service.MailService
 import <%= packageName %>.service.UserService
 import <%= packageName %>.service.dto.PasswordChangeDTO
-import <%= packageName %>.service.dto.<%= asDto('AdminUser') %>
+import <%= packageName %>.service.dto.<%= user.adminUserDto %>
 import <%= packageName %>.web.rest.errors.EmailAlreadyUsedException
 import <%= packageName %>.web.rest.errors.InvalidPasswordException
 import <%= packageName %>.web.rest.errors.LoginAlreadyUsedException
@@ -314,9 +314,9 @@ class AccountResource(
      * @throws RuntimeException `500 (Internal Server Error)` if the user couldn't be returned.
      */
     @GetMapping("/account")
-    fun getAccount(): <% if (reactive) { %>Mono<<%= asDto('AdminUser') %>><% } else { %><%= asDto('AdminUser') %><% } %> =
+    fun getAccount(): <% if (reactive) { %>Mono<<%= user.adminUserDto %>><% } else { %><%= user.adminUserDto %><% } %> =
         userService.getUserWithAuthorities()
-            .map { <%= asDto('AdminUser') %>(it) }
+            .map { <%= user.adminUserDto %>(it) }
             <%_ if (reactive) { _%>
             .switchIfEmpty(Mono.error(AccountResourceException("User could not be found")))
             <%_ } else { _%>
@@ -332,7 +332,7 @@ class AccountResource(
      */
     @PostMapping("/account")
     <%_ if (reactive) { _%>
-    fun saveAccount(@Valid @RequestBody userDTO: <%= asDto('AdminUser') %>): Mono<Void> =
+    fun saveAccount(@Valid @RequestBody userDTO: <%= user.adminUserDto %>): Mono<Void> =
         getCurrentUserLogin()
             .switchIfEmpty(Mono.error(AccountResourceException("Current user login not found")))
             .flatMap { userLogin ->
@@ -353,7 +353,7 @@ class AccountResource(
                 )
             }
     <%_ } else { _%>
-    fun saveAccount(@Valid @RequestBody userDTO: <%= asDto('AdminUser') %>) {
+    fun saveAccount(@Valid @RequestBody userDTO: <%= user.adminUserDto %>) {
         val userLogin = getCurrentUserLogin()
             .orElseThrow { AccountResourceException("") }
         val existingUser = userRepository.findOneByEmailIgnoreCase(userDTO.email)

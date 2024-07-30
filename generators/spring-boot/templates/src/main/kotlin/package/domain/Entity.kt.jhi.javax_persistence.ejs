@@ -22,7 +22,7 @@
 -%>
 <&_ if (fragment.importSection) { -&>
 import javax.persistence.*
-<%_ if ((databaseTypePostgres && fieldsContainTextBlob) || (fieldsContainUUID && (databaseTypeMysql || databaseTypeMariadb))) { _%>
+<%_ if ((prodDatabaseTypePostgresql && anyFieldHasTextContentType) || (anyFieldIsUUID && (prodDatabaseTypeMysql || prodDatabaseTypeMariadb))) { _%>
 import org.hibernate.annotations.Type
 <%_ } _%>
 <&_ } -&>
@@ -50,7 +50,7 @@ import org.hibernate.annotations.Type
   <%_ } _%>
   <%_ if (field.fieldTypeBytes) { _%>
     @Lob
-    <%_ if (databaseTypePostgres && field.blobContentTypeText) { _%>
+    <%_ if (prodDatabaseTypePostgresql && field.blobContentTypeText) { _%>
     @Type(type = "org.hibernate.type.TextType")
     <%_ } _%>
   <%_ } _%>
@@ -58,7 +58,7 @@ import org.hibernate.annotations.Type
     @Column(name = "<%- field.fieldNameAsDatabaseColumn %>"<% if (field.fieldValidationRequired) { %>, nullable = false<% } %><% if (field.fieldValidationUnique) { %>, unique = true<% } %>)
   <%_ } else if (field.fieldTypeBigDecimal) { _%>
     @Column(name = "<%- field.fieldNameAsDatabaseColumn %>", precision = 21, scale = 2<% if (field.fieldValidationRequired) { %>, nullable = false<% } %><% if (field.fieldValidationUnique) { %>, unique = true<% } %>)
-  <%_ } else if (field.fieldTypeUUID && (databaseTypeMysql || databaseTypeMariadb)) { _%>
+  <%_ } else if (field.fieldTypeUUID && (prodDatabaseTypeMysql || prodDatabaseTypeMariadb)) { _%>
     @Type(type = "uuid-char")
     @Column(name = "<%- field.fieldNameAsDatabaseColumn %>", length = 36<% if (field.fieldValidationRequired) { %>, nullable = false<% } %><% if (field.fieldValidationUnique) { %>, unique = true<% } %>)
   <%_ } else { _%>
