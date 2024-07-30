@@ -133,6 +133,7 @@ export default class extends BaseApplicationGenerator {
                             'jhipster:gatling',
                             'jhipster:cucumber',
                             'jhipster:spring-cache',
+                            'jhipster:spring-websocket',
                         ].includes(file.namespace) && !file.sourceFile.includes('_entityPackage_')
                             ? undefined
                             : file,
