@@ -38,6 +38,7 @@ import org.springframework.data.neo4j.core.schema.Node
 <%_ if (databaseTypeSql) { _%>
     <%_ if (reactive) { _%>
 import org.springframework.data.annotation.Id
+import org.springframework.data.annotation.Transient
 import org.springframework.data.domain.Persistable
 import org.springframework.data.relational.core.mapping.Table
     <%_ } else { _%>
@@ -87,10 +88,15 @@ data class Authority(
     <%_ if (databaseTypeSql && !reactive) { _%>
     @Column(length = 50)
     <%_ } _%>
-    var name: String? = null
+    var name: String? = null,
 
 ) : Serializable<% if (databaseTypeSql && reactive) { %>, Persistable<String><% } %> {
 
+<%_ if (databaseTypeSql && reactive) { _%>
+    @Transient
+    private var isPersisted: Boolean = false
+
+<%_ } _%>
     override fun equals(other: Any?): Boolean {
         if (this === other) return true
         if (other !is Authority) return false
@@ -104,7 +110,12 @@ data class Authority(
     <%_ if (databaseTypeSql && reactive) { _%>
     override fun getId() = name
 
-    override fun isNew() = true
+    override fun isNew() = !this.isPersisted
+
+    fun setIsPersisted(): Authority {
+        this.isPersisted = true
+        return this
+    }
     <%_ } _%>
 
     companion object {

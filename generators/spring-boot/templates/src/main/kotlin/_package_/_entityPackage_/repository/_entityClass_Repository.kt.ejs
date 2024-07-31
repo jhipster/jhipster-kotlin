@@ -1,0 +1,118 @@
+<%#
+ Copyright 2013-2024 the original author or authors from the JHipster project.
+
+ This file is part of the JHipster project, see https://www.jhipster.tech/
+ for more information.
+
+ Licensed under the Apache License, Version 2.0 (the "
+ you may not use this file except in compliance with the License.
+ You may obtain a copy of the License at
+
+      http://www.apache.org/licenses/LICENSE-2.0
+
+ Unless required by applicable law or agreed to in writing, software
+ distributed under the License is distributed on an "AS IS" BASIS,
+ WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
+ See the License for the specific language governing permissions and
+ limitations under the License.
+-%>
+package <%= entityAbsolutePackage %>.repository
+
+import <%= entityAbsolutePackage %>.domain.<%= persistClass %>
+<%_ if (implementsEagerLoadApis) { _%>
+import org.springframework.data.domain.Page
+import org.springframework.data.domain.Pageable
+<%_ } _%>
+<%_ if (databaseTypeSql) { _%>
+import org.springframework.data.jpa.repository.JpaRepository
+    <%_ if (jpaMetamodelFiltering) { _%>
+import org.springframework.data.jpa.repository.JpaSpecificationExecutor
+    <%_ } _%>
+import org.springframework.data.jpa.repository.Query
+    <%_ if (implementsEagerLoadApis) { _%>
+import org.springframework.data.repository.query.Param
+    <%_ } _%>
+<%_ } _%>
+<%_ if (databaseTypeMongodb) { _%>
+import org.springframework.data.mongodb.repository.Query
+import org.springframework.data.mongodb.repository.MongoRepository
+<%_ } _%>
+<%_ if (databaseTypeNeo4j) { _%>
+import org.springframework.data.neo4j.repository.<% if (reactive) { %>Reactive<% } %>Neo4jRepository
+<%_ } _%>
+<%_ if (databaseTypeCassandra) { _%>
+import org.springframework.data.cassandra.repository.CassandraRepository
+<%_ } _%>
+import org.springframework.stereotype.Repository
+<%_ if (databaseTypeSql || databaseTypeMongodb) { _%>
+    <%_ if (implementsEagerLoadApis) { _%>
+import java.util.Optional
+    <%_ } _%>
+<%_ } _%>
+<%_ if (primaryKey.typeUUID) { _%>
+
+import java.util.UUID
+<%_ } _%>
+
+/**
+ * <%= springDataDescription %> repository for the <%= persistClass %> entity.
+<%_ if (containsBagRelationships && databaseTypeSql) { _%>
+ *
+ * When extending this class, extend <%= entityClass %>RepositoryWithBagRelationships too.
+ * For more information refer to https://github.com/jhipster/generator-jhipster/issues/17990.
+<%_ } _%>
+ */
+<%_ if (!implementsEagerLoadApis) { _%>
+@Suppress("unused")
+<%_ } _%>
+@Repository
+interface <%=entityClass%>Repository : <% if (containsBagRelationships && databaseTypeSql) { %><%= entityClass %>RepositoryWithBagRelationships, <% } %><% if (databaseTypeSql) { %>JpaRepository<% } %><% if (databaseTypeMongodb) { %>MongoRepository<% } %><% if (databaseTypeNeo4j) { %><% if (reactive) { %>Reactive<% } %>Neo4jRepository<% } %><% if (databaseTypeCassandra) { %>CassandraRepository<% } %><<%=persistClass%>, <%= primaryKey.type %>><% if (jpaMetamodelFiltering) { %>, JpaSpecificationExecutor<<%= persistClass %>><% } %><% if (searchEngineCouchbase) { %>, SearchCouchbaseRepository<<%= persistClass %>, <%= primaryKey.type %>><% } %> {
+    <%_ for (const relationship of relationships) { _%>
+        <%_ if (relationship.relationshipManyToOne && relationship.otherEntityName === 'user' && databaseTypeSql) { _%>
+
+    @Query("select <%= entityInstanceDbSafe %> from <%= persistClass %> <%= entityInstanceDbSafe %> where <%= entityInstanceDbSafe %>.<%= relationship.relationshipFieldName %>.login = ?#{principal.<% if (authenticationTypeOauth2) { %>preferredUsername<% } else { %>username<% } %>}")
+    fun findBy<%= relationship.relationshipNameCapitalized %>IsCurrentUser(): MutableList<<%= persistClass %>>
+    <%_ } } _%>
+    <%_ if (implementsEagerLoadApis) { _%>
+        <%_ if (databaseTypeSql) { _%>
+
+            <%_ const containsToOneEagerRelationship = relationships.some(relationship => relationship.relationshipEagerLoad && !relationship.bagRelationship); _%>
+    fun findOneWithEagerRelationships(<%= primaryKey.name %>: <%= primaryKey.type %>): Optional<<%= persistClass %>>  {
+        return <% if (containsBagRelationships) { %>this.fetchBagRelationships(<% } %>this.<% if (containsToOneEagerRelationship) { %>findOneWithToOneRelationships<% } else { %>findById<% } %>(<%= primaryKey.name %>)<%  if (containsBagRelationships) { %>)<% } %>
+    }
+
+    fun findAllWithEagerRelationships(): MutableList<<%= persistClass %>> {
+        return <% if (containsBagRelationships) { %>this.fetchBagRelationships(<% } %>this.<% if (containsToOneEagerRelationship) { %>findAllWithToOneRelationships<% } else { %>findAll<% } %>()<%  if (containsBagRelationships) { %>)<% } %>
+    }
+
+    fun findAllWithEagerRelationships(pageable: Pageable): Page<<%= persistClass %>> {
+        return <% if (containsBagRelationships) { %>this.fetchBagRelationships(<% } %>this.<% if (containsToOneEagerRelationship) { %>findAllWithToOneRelationships<% } else { %>findAll<% } %>(pageable)<%  if (containsBagRelationships) { %>)<% } %>
+    }
+    <%_ if (containsToOneEagerRelationship) { _%>
+
+    @Query(value = "select distinct <%= entityInstanceDbSafe %> from <%= persistClass %> <%= entityInstanceDbSafe %><% for (const relationship of relationships) {
+    if (relationship.relationshipEagerLoad && !relationship.bagRelationship) { %> left join fetch <%= entityInstanceDbSafe %>.<%= relationship.reference.name %><% } } %>",
+        countQuery = "select count(distinct <%= entityInstanceDbSafe %>) from <%= persistClass %> <%= entityInstanceDbSafe %>")
+    fun findAllWithToOneRelationships(pageable: Pageable): Page<<%= persistClass %>>
+
+    @Query("select distinct <%= entityInstanceDbSafe %> from <%= persistClass %> <%= entityInstanceDbSafe %><% for (const relationship of relationships) {
+    if (relationship.relationshipEagerLoad && !relationship.bagRelationship) { %> left join fetch <%= entityInstanceDbSafe %>.<%= relationship.reference.name %><% } } %>")
+    fun findAllWithToOneRelationships(): MutableList<<%= persistClass %>>
+
+    @Query("select <%= entityInstanceDbSafe %> from <%= persistClass %> <%= entityInstanceDbSafe %><% for (const relationship of relationships) {
+    if (relationship.relationshipEagerLoad && !relationship.bagRelationship) { %> left join fetch <%= entityInstanceDbSafe %>.<%= relationship.reference.name %><% } } %> where <%= entityInstanceDbSafe %>.id =:id")
+    fun findOneWithToOneRelationships(@Param("id") id: <%= primaryKey.type %>): Optional<<%= persistClass %>>
+        <%_ } _%>
+    <%_ } else if (databaseTypeMongodb)  { _%>
+
+    @Query("{}")
+    fun findAllWithEagerRelationships(pageable: Pageable): Page<<%= persistClass %>>
+
+    @Query("{}")
+    fun findAllWithEagerRelationships(): MutableList<<%= persistClass %>>
+
+    @Query("{'id': ?0}")
+    fun findOneWithEagerRelationships(id: <%= primaryKey.type %>): Optional<<%= persistClass %>>
+    <%_ } _%>
+<%_ } _%>
+}

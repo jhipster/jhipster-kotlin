@@ -2,18 +2,25 @@ import BaseApplicationGenerator from 'generator-jhipster/generators/base-applica
 import { passthrough } from '@yeoman/transform';
 
 export default class extends BaseApplicationGenerator {
-    async beforeQueue() {
-        await this.dependsOnJHipster('jhipster:java:build-tool');
-    }
-
     get [BaseApplicationGenerator.PREPARING]() {
         return this.asPreparingTaskGroup({
             async source({ application, source }) {
-                if (application.buildToolGradle) {
-                    // Add a noop needles for spring-gateway generator
-                    source.addJavaDefinition = () => {};
-                    source.addJavaDependencies = () => {};
-                }
+                this.queueTask({
+                    method: () => {
+                        source.addAllowBlockingCallsInside = () => undefined;
+                        source.addApplicationPropertiesContent = () => undefined;
+                        source.addIntegrationTestAnnotation = () => undefined;
+                        source.addTestSpringFactory = () => undefined;
+
+                        if (application.buildToolGradle) {
+                            // Add a noop needles for spring-gateway generator
+                            source.addJavaDefinition = () => {};
+                            source.addJavaDependencies = () => {};
+                        }
+                    },
+                    taskName: `${this.runningState.methodName}(delayed)`,
+                    queueName: this.runningState.queueName,
+                });
             },
         });
     }
@@ -56,6 +63,9 @@ export default class extends BaseApplicationGenerator {
                 }
             },
             async postWritingTemplateTask({ application }) {
+                this.editFile('src/main/resources/logback-spring.xml', contents => contents.replaceAll('jakarta.', 'javax.'));
+                this.editFile('src/test/resources/logback.xml', contents => contents.replaceAll('jakarta.', 'javax.'));
+
                 if (application.buildToolGradle) {
                     // JHipster 8 have needles fixed
                     this.editFile('build.gradle', contents => contents.replaceAll('//jhipster', '// jhipster'));

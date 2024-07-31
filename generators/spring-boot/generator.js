@@ -2,14 +2,14 @@ import { basename, dirname, join } from 'path';
 import { fileURLToPath } from 'url';
 import BaseApplicationGenerator from 'generator-jhipster/generators/spring-boot';
 import { prepareSqlApplicationProperties } from 'generator-jhipster/generators/spring-data-relational/support';
-import { files as entityServerFiles } from 'jhipster-7-templates/esm/generators/entity-server';
 import { getEnumInfo } from 'generator-jhipster/generators/base-application/support';
+import { createNeedleCallback } from 'generator-jhipster/generators/base/support';
+import { files as entityServerFiles } from 'jhipster-7-templates/esm/generators/entity-server';
 import { files as serverFiles } from 'jhipster-7-templates/esm/generators/server';
 
 import { convertToKotlinFile } from '../kotlin/support/files.js';
 import migration from './migration.cjs';
 import { serverFiles as sqlFiles } from './files-sql.js';
-import { entityCouchbaseFiles } from './entity-files-couchbase.js';
 
 const { jhipsterConstants, jhipster7DockerContainers } = migration;
 const {
@@ -26,15 +26,11 @@ const {
     DOCKER_ELASTICSEARCH_CONTAINER,
     ELASTICSEARCH_VERSION,
     MAIN_DIR,
-    TEST_DIR,
 } = jhipsterConstants;
-
-const { couchbaseFiles } = migration;
 
 const jhipster7TemplatesPackage = dirname(fileURLToPath(import.meta.resolve('jhipster-7-templates/package.json')));
 
 const SERVER_MAIN_SRC_KOTLIN_DIR = `${MAIN_DIR}kotlin/`;
-const SERVER_TEST_SRC_KOTLIN_DIR = `${TEST_DIR}kotlin/`;
 
 const JAVA_VERSION = '11';
 
@@ -53,37 +49,30 @@ export default class extends BaseApplicationGenerator {
         await this.dependsOnJHipster('jhipster-kotlin:migration');
         await this.dependsOnJHipster('jhipster-kotlin:kotlin');
         await this.dependsOnJHipster('server');
+        await this.dependsOnJHipster('jhipster:java:domain');
         await this.dependsOnJHipster('jhipster-kotlin:ktlint');
     }
 
     get [BaseApplicationGenerator.COMPOSING]() {
+        const mainComposing = super.composing;
         return this.asComposingTaskGroup({
             async composingTemplateTask() {
                 await this.composeCurrentJHipsterCommand();
             },
-            ...super.composing,
-            async composing() {
-                const { applicationType, databaseType } = this.jhipsterConfigWithDefaults;
-
+            async composeWithPostWriting() {
                 await this.composeWithJHipster('docker');
 
-                if (applicationType === 'gateway') {
+                if (this.jhipsterConfigWithDefaults.applicationType === 'gateway') {
                     // Use gateway package.json scripts.
                     await this.composeWithJHipster('jhipster:spring-cloud:gateway');
                 }
-
-                const generatorOptions = { skipPriorities: ['postWriting'] };
-                if (databaseType === 'sql') {
-                    await this.composeWithJHipster('jhipster:spring-data-relational', { generatorOptions });
-                } else if (databaseType === 'cassandra') {
-                    await this.composeWithJHipster('jhipster:spring-data-cassandra', { generatorOptions });
-                } else if (databaseType === 'couchbase') {
-                    await this.composeWithJHipster('jhipster:spring-data-couchbase', { generatorOptions });
-                } else if (databaseType === 'mongodb') {
-                    await this.composeWithJHipster('jhipster:spring-data-mongodb', { generatorOptions });
-                } else if (databaseType === 'neo4j') {
-                    await this.composeWithJHipster('jhipster:spring-data-neo4j', { generatorOptions });
-                }
+            },
+            ...mainComposing,
+            async composing(...args) {
+                const { skipPriorities } = this.options;
+                this.options.skipPriorities = ['postWriting'];
+                await mainComposing.composing.call(this, ...args);
+                this.options.skipPriorities = skipPriorities;
             },
         });
     }
@@ -130,23 +119,47 @@ export default class extends BaseApplicationGenerator {
                             file.sourceFile.includes('gradle/wrapper/'))
                             ? undefined
                             : file,
+                    // Ignore gradle convention plugins
+                    file => (file.sourceFile.includes('buildSrc/src/main/groovy/') ? undefined : file),
                     // Ignore files from generators
                     file =>
                         [
-                            'jhipster:java:domain',
                             'jhipster:spring-cloud:gateway',
                             'jhipster:spring-data-cassandra',
-                            'jhipster:spring-data-couchbase',
                             'jhipster:spring-data-mongodb',
                             'jhipster:spring-data-neo4j',
                             'jhipster:spring-data-relational',
-                        ].includes(file.namespace)
+                            'jhipster:spring-data-elasticsearch',
+                            'jhipster:spring-cloud-stream:kafka',
+                            'jhipster:spring-cloud-stream:pulsar',
+                            'jhipster:gatling',
+                            'jhipster:cucumber',
+                            'jhipster:spring-cache',
+                            'jhipster:spring-websocket',
+                        ].includes(file.namespace) && !file.sourceFile.includes('_entityPackage_')
                             ? undefined
                             : file,
                     // Kotling blueprint does not implements these files
                     file => {
                         const sourceBasename = basename(file.sourceFile);
-                        return ['_persistClass_Asserts.java', '_persistClass_TestSamples.java'].includes(sourceBasename) ? undefined : file;
+                        return [
+                            '_persistClass_Asserts.java',
+                            '_persistClass_TestSamples.java',
+                            'AssertUtils.java',
+                            '_entityClass_Repository_r2dbc.java',
+                        ].includes(sourceBasename)
+                            ? undefined
+                            : file;
+                    },
+                    file => {
+                        // Use v8 files due to needles
+                        if (file.sourceFile.includes('resources/logback')) {
+                            return {
+                                ...file,
+                                resolvedSourceFile: this.fetchFromInstalledJHipster('server/templates/', file.sourceFile),
+                            };
+                        }
+                        return file;
                     },
                     file => {
                         let { resolvedSourceFile, sourceFile, destinationFile, namespace } = file;
@@ -156,9 +169,24 @@ export default class extends BaseApplicationGenerator {
                         }
 
                         if (sourceFile.includes('.java')) {
-                            sourceFile = isKotlinGeneratorFile(file)
-                                ? convertToKotlinFile(sourceFile)
-                                : join(namespace.split(':').pop(), convertToKotlinFile(sourceFile));
+                            // Kotlint User template does not implements Persistable api. Ignore for now.
+                            if (application.user && destinationFile.endsWith('UserCallback.java')) {
+                                return undefined;
+                            }
+
+                            const isCommonFile = filename => {
+                                const sourceBasename = basename(filename);
+                                return (
+                                    file.namespace !== 'spring-data-couchbase' &&
+                                    ['_entityClass_Repository.java', '_entityClass_Repository_reactive.java'].includes(sourceBasename)
+                                );
+                            };
+
+                            sourceFile =
+                                isKotlinGeneratorFile(file) || isCommonFile(sourceFile)
+                                    ? convertToKotlinFile(sourceFile)
+                                    : join(namespace.split(':').pop(), convertToKotlinFile(sourceFile));
+
                             return {
                                 ...file,
                                 sourceFile,
@@ -249,6 +277,41 @@ export default class extends BaseApplicationGenerator {
                     searchEngine: ({ searchEngine }) => (searchEngine === 'no' ? false : searchEngine),
                 });
             },
+            addCacheNeedles({ source, application }) {
+                this.queueTask({
+                    method: () => {
+                        if (application.cacheProviderEhcache) {
+                            const cacheConfigurationFile = `src/main/kotlin/${application.packageFolder}config/CacheConfiguration.kt`;
+                            const needle = `${application.cacheProvider}-add-entry`;
+                            const useJcacheConfiguration = application.cacheProviderRedis;
+                            const addEntryToCacheCallback = entry =>
+                                createNeedleCallback({
+                                    needle,
+                                    contentToAdd: `createCache(cm, ${entry}${useJcacheConfiguration ? ', jcacheConfiguration' : ''})`,
+                                });
+
+                            source.addEntryToCache = ({ entry }) => this.editFile(cacheConfigurationFile, addEntryToCacheCallback(entry));
+                            source.addEntityToCache = ({ entityAbsoluteClass, relationships }) => {
+                                const entry = `${entityAbsoluteClass}::class.java.name`;
+                                this.editFile(
+                                    cacheConfigurationFile,
+                                    addEntryToCacheCallback(entry),
+                                    ...(relationships ?? [])
+                                        .filter(rel => rel.collection)
+                                        .map(rel => addEntryToCacheCallback(`${entry} + ".${rel.propertyName}"`)),
+                                );
+                            };
+                        } else {
+                            // Add noop
+                            source.addEntryToCache = () => {};
+                            // Add noop
+                            source.addEntityToCache = () => {};
+                        }
+                    },
+                    taskName: `${this.runningState.methodName}(delayed)`,
+                    queueName: this.runningState.queueName,
+                });
+            },
         });
     }
 
@@ -308,6 +371,11 @@ export default class extends BaseApplicationGenerator {
                 await this.writeFiles({
                     sections: serverFiles,
                     context: application,
+                    customizeTemplatePath: file => {
+                        const sourceBasename = basename(file.sourceFile);
+                        // Files migrated to modularized templates
+                        return ['DatabaseConfiguration_couchbase.java'].includes(sourceBasename) ? undefined : file;
+                    },
                 });
             },
             async writeSqlFiles({ application }) {
@@ -317,41 +385,6 @@ export default class extends BaseApplicationGenerator {
                     sections: sqlFiles,
                     rootTemplatesPath: application.reactive ? ['sql/reactive', 'sql/common'] : ['sql/common'],
                     context: application,
-                });
-            },
-            cleanupCouchbaseFiles({ application }) {
-                if (!application.databaseTypeCouchbase) return;
-
-                if (this.isJhipsterVersionLessThan('7.1.1')) {
-                    this.removeFile(
-                        `${SERVER_MAIN_SRC_KOTLIN_DIR}${application.packageFolder}repository/CustomReactiveCouchbaseRepository.kt`,
-                    );
-                    this.removeFile(`${SERVER_TEST_SRC_KOTLIN_DIR}${application.packageFolder}config/DatabaseConfigurationIT.kt`);
-                    this.removeFile(`${SERVER_MAIN_SRC_KOTLIN_DIR}${application.packageFolder}repository/N1qlCouchbaseRepository.kt`);
-                    this.removeFile(
-                        `${SERVER_MAIN_SRC_KOTLIN_DIR}${application.packageFolder}repository/ReactiveN1qlCouchbaseRepository.kt`,
-                    );
-                    this.removeFile(`${SERVER_MAIN_SRC_KOTLIN_DIR}${application.packageFolder}repository/CustomN1qlCouchbaseRepository.kt`);
-                    this.removeFile(`${SERVER_MAIN_SRC_KOTLIN_DIR}${application.packageFolder}repository/CustomCouchbaseRepository.kt`);
-                    this.removeFile(`${SERVER_MAIN_SRC_KOTLIN_DIR}${application.packageFolder}repository/SearchCouchbaseRepository.kt`);
-                    this.removeFile(`${SERVER_TEST_SRC_KOTLIN_DIR}${application.packageFolder}repository/CustomCouchbaseRepositoryTest.kt`);
-                }
-            },
-            async writeCouchbaseFiles({ application }) {
-                if (!application.databaseTypeCouchbase) return;
-
-                await this.writeFiles({
-                    sections: couchbaseFiles,
-                    context: application,
-                    rootTemplatesPath: ['couchbase'],
-                    customizeTemplatePath: file =>
-                        file.sourceFile.includes('.java')
-                            ? {
-                                  ...file,
-                                  resolvedSourceFile: this.templatePath(`couchbase/${convertToKotlinFile(file.sourceFile)}`),
-                                  destinationFile: convertToKotlinFile(file.destinationFile),
-                              }
-                            : file,
                 });
             },
         });
@@ -365,15 +398,27 @@ export default class extends BaseApplicationGenerator {
                         sections: entityServerFiles,
                         context: { ...application, ...entity, entity },
                         rootTemplatesPath: application.reactive ? ['reactive', ''] : [''],
+                        customizeTemplatePath: file => {
+                            const sourceBasename = basename(file.sourceFile);
+                            // Files migrated to modularized templates
+                            return [
+                                'EntityTest.java',
+                                'EntityRepository.java',
+                                'EntityRepository_reactive.java',
+                                'EntityRowMapper.java',
+                                'EntitySqlHelper_reactive.java',
+                                'EntityRepositoryInternalImpl_reactive.java',
+                                'EntityCallback.java',
+                                'EntitySqlHelper_reactive.java',
+                                'EntityRepositoryWithBagRelationships.java',
+                                'EntityRepositoryWithBagRelationshipsImpl.java',
+                                'EntityRepositoryInternalImpl_reactive.java',
+                                'EntitySearchRepository.java',
+                            ].includes(sourceBasename) || sourceBasename.startsWith('Entity.java.jhi')
+                                ? undefined
+                                : file;
+                        },
                     });
-
-                    if (application.databaseTypeCouchbase) {
-                        await this.writeFiles({
-                            sections: entityCouchbaseFiles,
-                            context: { ...application, ...entity, entity },
-                            rootTemplatesPath: 'couchbase',
-                        });
-                    }
                 }
             },
 

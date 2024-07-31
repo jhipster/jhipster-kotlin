@@ -40,7 +40,7 @@ _%>
 import <%= entityAbsoluteClass %>
 import <%= entityAbsolutePackage %>.service.dto.<%= dtoClass %>
 
-<%_ for (const otherEntity of _.uniq(dtoRelationships.map(relationship => relationship.otherEntity).filter(otherEntity => otherEntity !== entity))) { _%>
+<%_ for (const otherEntity of this._.uniq(dtoRelationships.map(relationship => relationship.otherEntity).filter(otherEntity => otherEntity !== entity))) { _%>
 import <%= otherEntity.entityAbsoluteClass.replace('undefined',entityAbsolutePackage ) %>
 import <%= otherEntity.entityAbsolutePackage || entityAbsolutePackage %>.service.dto.<%= otherEntity.dtoClass %>
 <%_ } _%>
@@ -66,7 +66,7 @@ interface <%= entityClass %>Mapper :
         const mappings = [];
         for (relationship of dtoRelationships) {
             renMapAnotEnt = true;
-            let qualifiedByName = relationship.otherEntity.entityInstance + _.upperFirst(relationship.otherEntityField);
+            let qualifiedByName = relationship.otherEntity.entityInstance + this._.upperFirst(relationship.otherEntityField);
             qualifiedByName = qualifiedByName + (relationship.collection ? 'Set' : '');
             mappings.push(`Mapping(target = "${relationship.propertyName}", source = "${relationship.propertyName}", qualifiedByName=["${qualifiedByName}"])`);
         }
@@ -117,7 +117,7 @@ interface <%= entityClass %>Mapper :
     <%_
         const mappings3 = [];
         for (const {otherEntity, relatedField, collection} of otherEntitiesFields) {
-             const mapperName = otherEntity.entityInstance + _.upperFirst(relatedField.propertyName);
+             const mapperName = otherEntity.entityInstance + this._.upperFirst(relatedField.propertyName);
     _%>
 
     @Named("<%= mapperName %>")
@@ -137,14 +137,14 @@ interface <%= entityClass %>Mapper :
         <%-  [...new Set(mappings3)].join(',') %>
     )
     <%_ } _%>
-    fun toDto<%= _.upperFirst(mapperName) %>(<%= otherEntity.persistInstance %>: <%- otherEntity.persistClass %>): <%- otherEntity.dtoClass %>
+    fun toDto<%= this._.upperFirst(mapperName) %>(<%= otherEntity.persistInstance %>: <%- otherEntity.persistClass %>): <%- otherEntity.dtoClass %>
 
     <%_ if (collection) { _%>
-        <%_ const collectionMapperName = otherEntity.entityInstance + _.upperFirst(relatedField.propertyName) + 'Set'; _%>
+        <%_ const collectionMapperName = otherEntity.entityInstance + this._.upperFirst(relatedField.propertyName) + 'Set'; _%>
 
     @Named("<%= collectionMapperName %>")
-    fun toDto<%= _.upperFirst(mapperName) %>Set(<%= otherEntity.persistInstance %>: Set<<%- otherEntity.persistClass %>>): Set<<%- otherEntity.dtoClass %>> {
-        return <%= otherEntity.persistInstance %>.map(this::toDto<%= _.upperFirst(mapperName) %>).toSet()
+    fun toDto<%= this._.upperFirst(mapperName) %>Set(<%= otherEntity.persistInstance %>: Set<<%- otherEntity.persistClass %>>): Set<<%- otherEntity.dtoClass %>> {
+        return <%= otherEntity.persistInstance %>.map(this::toDto<%= this._.upperFirst(mapperName) %>).toSet()
     }
     <%_ } _%>
 
