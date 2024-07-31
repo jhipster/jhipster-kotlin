@@ -1,7 +1,8 @@
 import { beforeAll, describe, expect, it } from 'vitest';
 import { isMatch } from 'lodash-es';
-
 import { defaultHelpers as helpers, result, buildServerMatrix, entitiesServerSamples } from 'generator-jhipster/testing';
+
+import { entityWithBagRelationship, entityWithCriteriaAndDto, entityWithEnum } from '../../test/entities.js';
 
 const databaseType = ['sql', 'mongodb', 'cassandra', 'couchbase', 'neo4j'];
 
@@ -14,6 +15,9 @@ describe('Matrix test of SubGenerator kotlin of kotlin JHipster blueprint', () =
         ) {
             config.websocket = false;
         }
+        if (isMatch(config, { websocket: true })) {
+            config.websocket = 'spring-websocket';
+        }
         if (isMatch(config, { skipUserManagement: false, applicationType: 'microservice' })) {
             config.skipUserManagement = true;
         }
@@ -21,7 +25,12 @@ describe('Matrix test of SubGenerator kotlin of kotlin JHipster blueprint', () =
             beforeAll(async function () {
                 await helpers
                     .run('jhipster:spring-boot')
-                    .withJHipsterConfig(config, entitiesServerSamples)
+                    .withJHipsterConfig(config, [
+                        ...entitiesServerSamples,
+                        entityWithCriteriaAndDto,
+                        entityWithEnum,
+                        entityWithBagRelationship,
+                    ])
                     .withOptions({
                         ignoreNeedlesError: true,
                         blueprints: 'kotlin',
