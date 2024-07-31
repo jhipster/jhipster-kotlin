@@ -9,7 +9,6 @@ import { files as serverFiles } from 'jhipster-7-templates/esm/generators/server
 
 import { convertToKotlinFile } from '../kotlin/support/files.js';
 import migration from './migration.cjs';
-import { serverFiles as sqlFiles } from './files-sql.js';
 
 const { jhipsterConstants, jhipster7DockerContainers } = migration;
 const {
@@ -86,8 +85,6 @@ export default class extends BaseApplicationGenerator {
                     syncUserWithIdp: application.authenticationType === 'oauth2',
                 });
 
-                const isKotlinGeneratorFile = file => file.namespace === 'jhipster-kotlin:spring-boot';
-
                 application.customizeTemplatePaths.unshift(
                     // Remove package-info.java files
                     file => (file.sourceFile.includes('package-info.java') ? undefined : file),
@@ -101,41 +98,15 @@ export default class extends BaseApplicationGenerator {
                         // Use liquibase templates from liquibase generator
                         return file.namespace === 'jhipster:liquibase' ? file : undefined;
                     },
-                    // Use docker-compose files from docker generator
-                    file =>
-                        isKotlinGeneratorFile(file) &&
-                        file.sourceFile.includes('src/main/docker') &&
-                        !file.sourceFile.includes('src/main/docker/jhipster-control-center.yml') &&
-                        !file.sourceFile.includes('src/main/docker/jib') &&
-                        !file.sourceFile.includes('src/main/docker/grafana') &&
-                        !file.sourceFile.includes('src/main/docker/monitoring.yml')
-                            ? undefined
-                            : file,
-                    // Use wrappers scripts from maven/gradle generators
-                    file =>
-                        isKotlinGeneratorFile(file) &&
-                        ([('mvnw', 'mvnw.cmd', 'gradlew', 'gradlew.bat')].includes(file.sourceFile) ||
-                            file.sourceFile.includes('.mvnw') ||
-                            file.sourceFile.includes('gradle/wrapper/'))
-                            ? undefined
-                            : file,
                     // Ignore gradle convention plugins
                     file => (file.sourceFile.includes('buildSrc/src/main/groovy/') ? undefined : file),
                     // Ignore files from generators
                     file =>
                         [
                             'jhipster:spring-cloud:gateway',
-                            'jhipster:spring-data-cassandra',
-                            'jhipster:spring-data-mongodb',
-                            'jhipster:spring-data-neo4j',
-                            'jhipster:spring-data-relational',
-                            'jhipster:spring-data-elasticsearch',
                             'jhipster:spring-cloud-stream:kafka',
                             'jhipster:spring-cloud-stream:pulsar',
                             'jhipster:gatling',
-                            'jhipster:cucumber',
-                            'jhipster:spring-cache',
-                            'jhipster:spring-websocket',
                         ].includes(file.namespace) && !file.sourceFile.includes('_entityPackage_')
                             ? undefined
                             : file,
@@ -147,6 +118,9 @@ export default class extends BaseApplicationGenerator {
                             '_persistClass_TestSamples.java',
                             'AssertUtils.java',
                             '_entityClass_Repository_r2dbc.java',
+                            'ElasticsearchExceptionMapper.java',
+                            'ElasticsearchExceptionMapperTest.java',
+                            'QuerySyntaxException.java',
                         ].includes(sourceBasename)
                             ? undefined
                             : file;
@@ -168,22 +142,52 @@ export default class extends BaseApplicationGenerator {
                             return file;
                         }
 
-                        if (sourceFile.includes('.java')) {
+                        if (
+                            sourceFile.includes('.java') ||
+                            // Use local files with updated jhipster 7 templates for these files
+                            ['application-testprod.yml', 'application-testdev.yml'].includes(basename(file.sourceFile))
+                        ) {
                             // Kotlint User template does not implements Persistable api. Ignore for now.
                             if (application.user && destinationFile.endsWith('UserCallback.java')) {
                                 return undefined;
                             }
 
+                            const sourceBasename = basename(sourceFile);
+                            if (
+                                file.namespace === 'jhipster:spring-data-relational' &&
+                                ['UserSqlHelper_reactive.java', 'ColumnConverter_reactive.java', 'EntityManager_reactive.java'].includes(
+                                    sourceBasename,
+                                )
+                            ) {
+                                sourceFile = sourceFile.replace('_reactive', '');
+                            }
+
                             const isCommonFile = filename => {
                                 const sourceBasename = basename(filename);
-                                return (
-                                    file.namespace !== 'spring-data-couchbase' &&
-                                    ['_entityClass_Repository.java', '_entityClass_Repository_reactive.java'].includes(sourceBasename)
-                                );
+                                if (['_entityClass_Repository.java', '_entityClass_Repository_reactive.java'].includes(sourceBasename)) {
+                                    return file.namespace !== 'spring-data-couchbase';
+                                }
+                                return ['TestContainersSpringContextCustomizerFactory.java'].includes(sourceBasename);
                             };
 
+                            // TestContainersSpringContextCustomizerFactory uses a single template for modularized (dbs) and non-modularized (kafka, etc) templates
+                            if (sourceFile.endsWith('TestContainersSpringContextCustomizerFactory.java')) {
+                                if (isCommonFile(sourceFile)) {
+                                    // Use updated path
+                                    sourceFile = sourceFile.replace('/package/', '/_package_/');
+                                }
+                                // Convert *TestContainersSpringContextCustomizerFactory to TestContainersSpringContextCustomizerFactory
+                                const adjustTestContainersSpringContextCustomizerFactoryFile = filename =>
+                                    filename.replace(
+                                        /(\w*)TestContainersSpringContextCustomizerFactory.java/,
+                                        'TestContainersSpringContextCustomizerFactory.java',
+                                    );
+                                sourceFile = adjustTestContainersSpringContextCustomizerFactoryFile(sourceFile);
+                                destinationFile = adjustTestContainersSpringContextCustomizerFactoryFile(destinationFile);
+                            }
+
                             sourceFile =
-                                isKotlinGeneratorFile(file) || isCommonFile(sourceFile)
+                                file.namespace === 'jhipster-kotlin:spring-boot' || isCommonFile(sourceFile)
                                     ? convertToKotlinFile(sourceFile)
                                     : join(namespace.split(':').pop(), convertToKotlinFile(sourceFile));
 
@@ -372,19 +376,82 @@ export default class extends BaseApplicationGenerator {
                     sections: serverFiles,
                     context: application,
                     customizeTemplatePath: file => {
-                        const sourceBasename = basename(file.sourceFile);
-                        // Files migrated to modularized templates
-                        return ['DatabaseConfiguration_couchbase.java'].includes(sourceBasename) ? undefined : file;
-                    },
-                });
-            },
-            async writeSqlFiles({ application }) {
-                if (!application.databaseTypeSql) return;
+                        const { sourceFile } = file;
+                        // Use docker-compose files from docker generator
+                        if (
+                            sourceFile.includes('src/main/docker') &&
+                            !sourceFile.includes('src/main/docker/jhipster-control-center.yml') &&
+                            !sourceFile.includes('src/main/docker/jib') &&
+                            !sourceFile.includes('src/main/docker/grafana') &&
+                            !sourceFile.includes('src/main/docker/monitoring.yml')
+                        ) {
+                            return undefined;
+                        }
 
-                await this.writeFiles({
-                    sections: sqlFiles,
-                    rootTemplatesPath: application.reactive ? ['sql/reactive', 'sql/common'] : ['sql/common'],
-                    context: application,
+                        // Use wrappers scripts from maven/gradle generators
+                        if (file.sourceFile.includes('.mvnw') || file.sourceFile.includes('gradle/wrapper/')) {
+                            return undefined;
+                        }
+
+                        const sourceBasename = basename(sourceFile);
+
+                        // Ignore files migrated to modularized templates
+                        return [
+                            // jhipster:java:node
+                            'npmw',
+                            'npmw.cmd',
+                            // jhipster:maven
+                            'mvnw',
+                            'mvnw.cmd',
+                            // jhipster:gradle
+                            'gradlew',
+                            'gradlew.bat',
+                            // jhipster:spring-data-couchbase
+                            'DatabaseConfiguration_couchbase.java',
+                            // jhipster:spring-data-cassandra
+                            'DatabaseConfiguration_cassandra.java',
+                            'EmbeddedCassandra.java',
+                            'CassandraTestContainer.java',
+                            'CassandraKeyspaceIT.java',
+                            // jhipster:spring-data-mongodb
+                            'DatabaseConfiguration_mongodb.java',
+                            'EmbeddedMongo.java',
+                            'MongoDbTestContainer.java',
+                            'InitialSetupMigration.java',
+                            // jhipster:spring-data-neo4j
+                            'DatabaseConfiguration_neo4j.java',
+                            'EmbeddedNeo4j.java',
+                            'Neo4jTestContainer.java',
+                            'Neo4jMigrations.java',
+                            // jhipster:spring-data-elasticsearch
+                            'ElasticsearchConfiguration.java',
+                            'EmbeddedElasticsearch.java',
+                            'ElasticsearchTestContainer.java',
+                            'ElasticsearchTestConfiguration.java',
+                            'UserSearchRepository.java',
+                            // jhipster:spring-data-relational
+                            'DatabaseConfiguration_sql.java',
+                            // jhipster:cucumber
+                            'CucumberIT.java',
+                            'StepDefs.java',
+                            'UserStepDefs.java',
+                            'CucumberTestContextConfiguration.java',
+                            'user.feature',
+                            'gitkeep',
+                            // jhipster:spring-cache
+                            'CacheConfiguration.java',
+                            'CacheFactoryConfiguration.java',
+                            'EmbeddedRedis.java',
+                            'RedisTestContainer.java',
+                            // jhipster:spring-websocket
+                            'WebsocketConfiguration.java',
+                            'WebsocketSecurityConfiguration.java',
+                            'ActivityService.java',
+                            'ActivityDTO.java',
+                        ].includes(sourceBasename)
+                            ? undefined
+                            : file;
+                    },
                 });
             },
         });

@@ -75,7 +75,7 @@ class TestContainersSpringContextCustomizerFactory: ContextCustomizerFactory {
     <%_ if (devDatabaseTypeMysql || devDatabaseTypeMariadb || devDatabaseTypeMssql || devDatabaseTypePostgres) { _%>
         private var devTestContainer: SqlTestContainer? = null
     <%_ } _%>
-    <%_ if (prodDatabaseTypeMysql || prodDatabaseTypeMariadb || prodDatabaseTypeMssql || prodDatabaseTypePostgres) { _%>
+    <%_ if (prodDatabaseTypeMysql || prodDatabaseTypeMariadb || prodDatabaseTypeMssql || prodDatabaseTypePostgresql) { _%>
         private var prodTestContainer: SqlTestContainer? = null
     <%_ } _%>
     }
@@ -155,23 +155,23 @@ class TestContainersSpringContextCustomizerFactory: ContextCustomizerFactory {
                     }
                     devTestContainer?.let {
 <%_ if (reactive) { _%>
-                        testValues = testValues.and("spring.r2dbc.url=" + it.getTestContainer().jdbcUrl.replace("jdbc", "r2dbc")<% if (devDatabaseTypeMysql) { %>.replace("mysql", "mariadb")<% } else if (devDatabaseTypeMssql) { %>.replace("encrypt=false", "")<% } %> + "<%- getDBCExtraOption(devDatabaseType) %>")
+                        testValues = testValues.and("spring.r2dbc.url=" + it.getTestContainer().jdbcUrl.replace("jdbc", "r2dbc")<% if (devDatabaseTypeMysql) { %>.replace("mysql", "mariadb")<% } else if (devDatabaseTypeMssql) { %>.replace("encrypt=false", "")<% } %> + "<%- prodDatabaseExtraOptions %>")
                         testValues = testValues.and("spring.r2dbc.username=" + it.getTestContainer().username)
                         testValues = testValues.and("spring.r2dbc.password=" + it.getTestContainer().password)
-                        testValues = testValues.and("spring.liquibase.url=" + it.getTestContainer().jdbcUrl + "<%- getDBCExtraOption(devDatabaseType) %>" )
+                        testValues = testValues.and("spring.liquibase.url=" + it.getTestContainer().jdbcUrl + "<%- prodDatabaseExtraOptions %>" )
 <%_ } else { _%>
-                        testValues = testValues.and("spring.datasource.url=" + it.getTestContainer().jdbcUrl + "<%- getDBCExtraOption(devDatabaseType) %>")
+                        testValues = testValues.and("spring.datasource.url=" + it.getTestContainer().jdbcUrl + "<%- prodDatabaseExtraOptions %>")
                         testValues = testValues.and("spring.datasource.username=" + it.getTestContainer().username)
                         testValues = testValues.and("spring.datasource.password=" + it.getTestContainer().password)
 <%_ } _%>
                     }
                 }
 <%_ } _%>
-<%_ if (prodDatabaseTypeMysql || prodDatabaseTypeMariadb || prodDatabaseTypeMssql || prodDatabaseTypePostgres) { _%>
+<%_ if (prodDatabaseTypeMysql || prodDatabaseTypeMariadb || prodDatabaseTypeMssql || prodDatabaseTypePostgresql) { _%>
                 if (context.environment.activeProfiles.asList().contains("test${JHipsterConstants.SPRING_PROFILE_PRODUCTION}")) {
                     if (null == prodTestContainer) {
                         try {
-                            val containerClass = Class.forName("${javaClass.packageName}.<% if (prodDatabaseTypeMysql) { %>Mysql<% } else if (prodDatabaseTypeMariadb) { %>Mariadb<% } else if (prodDatabaseTypeMssql) { %>MsSql<% } else if (prodDatabaseTypePostgres) { %>PostgreSql<% } %>TestContainer") as (Class<out SqlTestContainer>)
+                            val containerClass = Class.forName("${javaClass.packageName}.<% if (prodDatabaseTypeMysql) { %>Mysql<% } else if (prodDatabaseTypeMariadb) { %>Mariadb<% } else if (prodDatabaseTypeMssql) { %>MsSql<% } else if (prodDatabaseTypePostgresql) { %>PostgreSql<% } %>TestContainer") as (Class<out SqlTestContainer>)
                             prodTestContainer = beanFactory.createBean(containerClass)
                             beanFactory.registerSingleton(containerClass.name, prodTestContainer)
                             // (beanFactory as (DefaultListableBeanFactory)).registerDisposableBean(containerClass.name, prodTestContainer)
@@ -181,12 +181,12 @@ class TestContainersSpringContextCustomizerFactory: ContextCustomizerFactory {
                     }
                     prodTestContainer?.let {
 <%_ if (reactive) { _%>
-                        testValues = testValues.and("spring.r2dbc.url=" + it.getTestContainer().jdbcUrl.replace("jdbc", "r2dbc")<% if (prodDatabaseTypeMysql) { %>.replace("mysql", "mariadb")<% } else if (prodDatabaseTypeMssql) { %>.replace("encrypt=false", "")<% } %> + "<%- getDBCExtraOption(prodDatabaseType) %>")
+                        testValues = testValues.and("spring.r2dbc.url=" + it.getTestContainer().jdbcUrl.replace("jdbc", "r2dbc")<% if (prodDatabaseTypeMysql) { %>.replace("mysql", "mariadb")<% } else if (prodDatabaseTypeMssql) { %>.replace("encrypt=false", "")<% } %> + "<%- prodDatabaseExtraOptions %>")
                         testValues = testValues.and("spring.r2dbc.username=" + it.getTestContainer().username)
                         testValues = testValues.and("spring.r2dbc.password=" + it.getTestContainer().password)
-                        testValues = testValues.and("spring.liquibase.url=" + it.getTestContainer().jdbcUrl  + "<%- getDBCExtraOption(prodDatabaseType) %>")
+                        testValues = testValues.and("spring.liquibase.url=" + it.getTestContainer().jdbcUrl  + "<%- prodDatabaseExtraOptions %>")
 <%_ } else { _%>
-                        testValues = testValues.and("spring.datasource.url=" + it.getTestContainer().jdbcUrl + "<%- getDBCExtraOption(prodDatabaseType) %>")
+                        testValues = testValues.and("spring.datasource.url=" + it.getTestContainer().jdbcUrl + "<%- prodDatabaseExtraOptions %>")
                         testValues = testValues.and("spring.datasource.username=" + it.getTestContainer().username)
                         testValues = testValues.and("spring.datasource.password=" + it.getTestContainer().password)
 <%_ } _%>

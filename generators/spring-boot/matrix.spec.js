@@ -17,6 +17,9 @@ describe('Matrix test of SubGenerator kotlin of kotlin JHipster blueprint', () =
         if (isMatch(config, { skipUserManagement: false, applicationType: 'microservice' })) {
             config.skipUserManagement = true;
         }
+        if (isMatch(config, { databaseType: 'couchbase', searchEngine: 'elasticsearch' })) {
+            config.searchEngine = 'couchbase';
+        }
         describe(name, () => {
             beforeAll(async function () {
                 await helpers
