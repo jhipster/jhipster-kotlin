@@ -41,6 +41,7 @@ export default class extends BaseApplicationGenerator {
             this.templatePath(),
             join(jhipster7TemplatesPackage, 'generators/server/templates/'),
             join(jhipster7TemplatesPackage, 'generators/entity-server/templates/'),
+            this.fetchFromInstalledJHipster('java/generators/domain/templates/'),
         ];
     }
 
@@ -519,7 +520,7 @@ export default class extends BaseApplicationGenerator {
                                 {
                                     templates: [
                                         {
-                                            file: `${SERVER_MAIN_SRC_KOTLIN_DIR}_package_/_entityPackage_/domain/enumeration/_enumName_.java`,
+                                            file: 'src/main/java/_package_/_entityPackage_/domain/enumeration/_enumName_.java',
                                             renameTo: () =>
                                                 `${SERVER_MAIN_SRC_KOTLIN_DIR}${entity.entityAbsoluteFolder}/domain/enumeration/${field.fieldType}.java`,
                                         },
