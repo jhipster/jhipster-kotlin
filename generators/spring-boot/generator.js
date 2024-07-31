@@ -154,7 +154,7 @@ export default class extends BaseApplicationGenerator {
 
                             const sourceBasename = basename(sourceFile);
                             if (
-                                file.namespace === 'jhipster:spring-data-relational' &&
+                                namespace === 'jhipster:spring-data-relational' &&
                                 ['UserSqlHelper_reactive.java', 'ColumnConverter_reactive.java', 'EntityManager_reactive.java'].includes(
                                     sourceBasename,
                                 )
@@ -162,10 +162,14 @@ export default class extends BaseApplicationGenerator {
                                 sourceFile = sourceFile.replace('_reactive', '');
                             }
 
+                            if (namespace === 'jhipster-kotlin:spring-boot') {
+                                sourceFile = sourceFile.replace('/package/', '/_package_/');
+                            }
+
                             const isCommonFile = filename => {
                                 const sourceBasename = basename(filename);
                                 if (['_entityClass_Repository.java', '_entityClass_Repository_reactive.java'].includes(sourceBasename)) {
-                                    return file.namespace !== 'spring-data-couchbase';
+                                    return namespace !== 'spring-data-couchbase';
                                 }
                                 return ['TestContainersSpringContextCustomizerFactory.java'].includes(sourceBasename);
                             };
@@ -190,16 +194,15 @@ export default class extends BaseApplicationGenerator {
                                 file.namespace === 'jhipster-kotlin:spring-boot' || isCommonFile(sourceFile)
                                     ? 'kotlin'
                                     : namespace.split(':').pop();
+
                             if (sourceBasename === '_enumName_.java') {
                                 if (namespace === 'jhipster:java:domain') {
                                     throw new Error('Drop writeEnumFiles task and this condition');
                                 }
                                 templateRoot = 'domain';
                             }
+
                             sourceFile = join(templateRoot, convertToKotlinFile(sourceFile));
-                            if (namespace === 'jhipster-kotlin:spring-boot') {
-                                sourceFile = sourceFile.replace('/package/', '/_package_/');
-                            }
 
                             return {
                                 ...file,
