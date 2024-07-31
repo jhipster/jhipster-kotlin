@@ -125,9 +125,6 @@ export default class extends BaseApplicationGenerator {
                     file =>
                         [
                             'jhipster:spring-cloud:gateway',
-                            'jhipster:spring-data-cassandra',
-                            'jhipster:spring-data-mongodb',
-                            'jhipster:spring-data-neo4j',
                             'jhipster:spring-data-relational',
                             'jhipster:spring-data-elasticsearch',
                             'jhipster:spring-cloud-stream:kafka',
@@ -174,12 +171,24 @@ export default class extends BaseApplicationGenerator {
                                 return undefined;
                             }
 
+                            // TestContainersSpringContextCustomizerFactory uses a single template for modularized (dbs) and non-modularized (kafka, etc) templates
+                            if (sourceFile.endsWith('TestContainersSpringContextCustomizerFactory.java')) {
+                                sourceFile = sourceFile
+                                    // Use updated path.
+                                    .replace('/package/', '/_package_/')
+                                    // Convert *TestContainersSpringContextCustomizerFactory to TestContainersSpringContextCustomizerFactory
+                                    .replace(
+                                        /(\w*)TestContainersSpringContextCustomizerFactory.java/,
+                                        'TestContainersSpringContextCustomizerFactory.java',
+                                    );
+                            }
+
                             const isCommonFile = filename => {
                                 const sourceBasename = basename(filename);
-                                return (
-                                    file.namespace !== 'spring-data-couchbase' &&
-                                    ['_entityClass_Repository.java', '_entityClass_Repository_reactive.java'].includes(sourceBasename)
-                                );
+                                if (['_entityClass_Repository.java', '_entityClass_Repository_reactive.java'].includes(sourceBasename)) {
+                                    return file.namespace !== 'spring-data-couchbase';
+                                }
+                                return ['TestContainersSpringContextCustomizerFactory.java'].includes(sourceBasename);
                             };
 
                             sourceFile =
@@ -374,7 +383,23 @@ export default class extends BaseApplicationGenerator {
                     customizeTemplatePath: file => {
                         const sourceBasename = basename(file.sourceFile);
                         // Files migrated to modularized templates
-                        return ['DatabaseConfiguration_couchbase.java'].includes(sourceBasename) ? undefined : file;
+                        return [
+                            'DatabaseConfiguration_couchbase.java',
+                            'DatabaseConfiguration_cassandra.java',
+                            'EmbeddedCassandra.java',
+                            'CassandraTestContainer.java',
+                            'CassandraKeyspaceIT.java',
+                            'DatabaseConfiguration_mongodb.java',
+                            'EmbeddedMongo.java',
+                            'MongoDbTestContainer.java',
+                            'InitialSetupMigration.java',
+                            'DatabaseConfiguration_neo4j.java',
+                            'EmbeddedNeo4j.java',
+                            'Neo4jTestContainer.java',
+                            'Neo4jMigrations.java',
+                        ].includes(sourceBasename)
+                            ? undefined
+                            : file;
                     },
                 });
             },
