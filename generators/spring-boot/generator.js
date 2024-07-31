@@ -86,8 +86,6 @@ export default class extends BaseApplicationGenerator {
                     syncUserWithIdp: application.authenticationType === 'oauth2',
                 });
 
-                const isKotlinGeneratorFile = file => file.namespace === 'jhipster-kotlin:spring-boot';
-
                 application.customizeTemplatePaths.unshift(
                     // Remove package-info.java files
                     file => (file.sourceFile.includes('package-info.java') ? undefined : file),
@@ -101,24 +99,6 @@ export default class extends BaseApplicationGenerator {
                         // Use liquibase templates from liquibase generator
                         return file.namespace === 'jhipster:liquibase' ? file : undefined;
                     },
-                    // Use docker-compose files from docker generator
-                    file =>
-                        isKotlinGeneratorFile(file) &&
-                        file.sourceFile.includes('src/main/docker') &&
-                        !file.sourceFile.includes('src/main/docker/jhipster-control-center.yml') &&
-                        !file.sourceFile.includes('src/main/docker/jib') &&
-                        !file.sourceFile.includes('src/main/docker/grafana') &&
-                        !file.sourceFile.includes('src/main/docker/monitoring.yml')
-                            ? undefined
-                            : file,
-                    // Use wrappers scripts from maven/gradle generators
-                    file =>
-                        isKotlinGeneratorFile(file) &&
-                        ([('mvnw', 'mvnw.cmd', 'gradlew', 'gradlew.bat')].includes(file.sourceFile) ||
-                            file.sourceFile.includes('.mvnw') ||
-                            file.sourceFile.includes('gradle/wrapper/'))
-                            ? undefined
-                            : file,
                     // Ignore gradle convention plugins
                     file => (file.sourceFile.includes('buildSrc/src/main/groovy/') ? undefined : file),
                     // Ignore files from generators
@@ -126,7 +106,6 @@ export default class extends BaseApplicationGenerator {
                         [
                             'jhipster:spring-cloud:gateway',
                             'jhipster:spring-data-relational',
-                            'jhipster:spring-data-elasticsearch',
                             'jhipster:spring-cloud-stream:kafka',
                             'jhipster:spring-cloud-stream:pulsar',
                             'jhipster:gatling',
@@ -144,6 +123,9 @@ export default class extends BaseApplicationGenerator {
                             '_persistClass_TestSamples.java',
                             'AssertUtils.java',
                             '_entityClass_Repository_r2dbc.java',
+                            'ElasticsearchExceptionMapper.java',
+                            'ElasticsearchExceptionMapperTest.java',
+                            'QuerySyntaxException.java',
                         ].includes(sourceBasename)
                             ? undefined
                             : file;
@@ -192,7 +174,7 @@ export default class extends BaseApplicationGenerator {
                             };
 
                             sourceFile =
-                                isKotlinGeneratorFile(file) || isCommonFile(sourceFile)
+                                file.namespace === 'jhipster-kotlin:spring-boot' || isCommonFile(sourceFile)
                                     ? convertToKotlinFile(sourceFile)
                                     : join(namespace.split(':').pop(), convertToKotlinFile(sourceFile));
 
@@ -381,22 +363,56 @@ export default class extends BaseApplicationGenerator {
                     sections: serverFiles,
                     context: application,
                     customizeTemplatePath: file => {
-                        const sourceBasename = basename(file.sourceFile);
-                        // Files migrated to modularized templates
+                        const { sourceFile } = file;
+                        // Use docker-compose files from docker generator
+                        if (
+                            sourceFile.includes('src/main/docker') &&
+                            !sourceFile.includes('src/main/docker/jhipster-control-center.yml') &&
+                            !sourceFile.includes('src/main/docker/jib') &&
+                            !sourceFile.includes('src/main/docker/grafana') &&
+                            !sourceFile.includes('src/main/docker/monitoring.yml')
+                        ) {
+                            return undefined;
+                        }
+
+                        // Use wrappers scripts from maven/gradle generators
+                        if (file.sourceFile.includes('.mvnw') || file.sourceFile.includes('gradle/wrapper/')) {
+                            return undefined;
+                        }
+
+                        const sourceBasename = basename(sourceFile);
+
+                        // Ignore files migrated to modularized templates
                         return [
+                            // jhipster:maven
+                            'mvnw',
+                            'mvnw.cmd',
+                            // jhipster:gradle
+                            'gradlew',
+                            'gradlew.bat',
+                            // jhipster:spring-data-couchbase
                             'DatabaseConfiguration_couchbase.java',
+                            // jhipster:spring-data-cassandra
                             'DatabaseConfiguration_cassandra.java',
                             'EmbeddedCassandra.java',
                             'CassandraTestContainer.java',
                             'CassandraKeyspaceIT.java',
+                            // jhipster:spring-data-mongodb
                             'DatabaseConfiguration_mongodb.java',
                             'EmbeddedMongo.java',
                             'MongoDbTestContainer.java',
                             'InitialSetupMigration.java',
+                            // jhipster:spring-data-neo4j
                             'DatabaseConfiguration_neo4j.java',
                             'EmbeddedNeo4j.java',
                             'Neo4jTestContainer.java',
                             'Neo4jMigrations.java',
+                            // jhipster:spring-data-elasticsearch
+                            'ElasticsearchConfiguration.java',
+                            'EmbeddedElasticsearch.java',
+                            'ElasticsearchTestContainer.java',
+                            'ElasticsearchTestConfiguration.java',
+                            'UserSearchRepository.java',
                         ].includes(sourceBasename)
                             ? undefined
                             : file;
