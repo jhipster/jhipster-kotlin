@@ -169,6 +169,11 @@ export default class extends BaseApplicationGenerator {
                         }
 
                         if (sourceFile.includes('.java')) {
+                            // Kotlint User template does not implements Persistable api. Ignore for now.
+                            if (application.user && destinationFile.endsWith('UserCallback.java')) {
+                                return undefined;
+                            }
+
                             const isCommonFile = filename => {
                                 const sourceBasename = basename(filename);
                                 return (
