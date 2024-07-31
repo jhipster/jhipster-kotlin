@@ -367,11 +367,9 @@ export default class extends BaseApplicationGenerator {
     }
 
     get [BaseApplicationGenerator.WRITING]() {
-        const { resetFakeDataSeed, generateKeyStore } = super.writing;
         return this.asWritingTaskGroup({
-            resetFakeDataSeed,
-            generateKeyStore,
-            async writingTemplateTask({ application }) {
+            ...super.writing,
+            async writeFiles({ application }) {
                 await this.writeFiles({
                     sections: serverFiles,
                     context: application,
