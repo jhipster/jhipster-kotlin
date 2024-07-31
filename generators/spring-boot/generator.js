@@ -197,6 +197,9 @@ export default class extends BaseApplicationGenerator {
                                 templateRoot = 'domain';
                             }
                             sourceFile = join(templateRoot, convertToKotlinFile(sourceFile));
+                            if (namespace === 'jhipster-kotlin:spring-boot') {
+                                sourceFile = sourceFile.replace('/package/', '/_package_/');
+                            }
 
                             return {
                                 ...file,
@@ -457,8 +460,7 @@ export default class extends BaseApplicationGenerator {
                             'ActivityDTO.java',
                         ].includes(sourceBasename)
                             ? undefined
-                            : // Use updated path
-                              { ...file, sourceFile: file.sourceFile.replace('/package/', '/_package_/') };
+                            : file;
                     },
                 });
             },
@@ -491,8 +493,7 @@ export default class extends BaseApplicationGenerator {
                                 'EntitySearchRepository.java',
                             ].includes(sourceBasename) || sourceBasename.startsWith('Entity.java.jhi')
                                 ? undefined
-                                : // Use updated path
-                                  { ...file, sourceFile: file.sourceFile.replace('/package/', '/_package_/') };
+                                : file;
                         },
                     });
                 }
