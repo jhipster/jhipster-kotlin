@@ -138,7 +138,7 @@ export default class extends BaseApplicationGenerator {
                     file => {
                         let { resolvedSourceFile, sourceFile, destinationFile, namespace } = file;
                         // Already resolved kotlin files
-                        if (resolvedSourceFile.endsWith('.kt') || resolvedSourceFile.includes('.kt.')) {
+                        if (resolvedSourceFile && (resolvedSourceFile.endsWith('.kt') || resolvedSourceFile.includes('.kt.'))) {
                             return file;
                         }
 
@@ -186,10 +186,17 @@ export default class extends BaseApplicationGenerator {
                                 destinationFile = adjustTestContainersSpringContextCustomizerFactoryFile(destinationFile);
                             }
 
-                            sourceFile =
+                            let templateRoot =
                                 file.namespace === 'jhipster-kotlin:spring-boot' || isCommonFile(sourceFile)
-                                    ? convertToKotlinFile(sourceFile)
-                                    : join(namespace.split(':').pop(), convertToKotlinFile(sourceFile));
+                                    ? 'kotlin'
+                                    : namespace.split(':').pop();
+                            if (sourceBasename === '_enumName_.java') {
+                                if (namespace === 'jhipster:java:domain') {
+                                    throw new Error('Drop writeEnumFiles task and this condition');
+                                }
+                                templateRoot = 'domain';
+                            }
+                            sourceFile = join(templateRoot, convertToKotlinFile(sourceFile));
 
                             return {
                                 ...file,
@@ -450,7 +457,8 @@ export default class extends BaseApplicationGenerator {
                             'ActivityDTO.java',
                         ].includes(sourceBasename)
                             ? undefined
-                            : file;
+                            : // Use updated path
+                              { ...file, sourceFile: file.sourceFile.replace('/package/', '/_package_/') };
                     },
                 });
             },
@@ -483,7 +491,8 @@ export default class extends BaseApplicationGenerator {
                                 'EntitySearchRepository.java',
                             ].includes(sourceBasename) || sourceBasename.startsWith('Entity.java.jhi')
                                 ? undefined
-                                : file;
+                                : // Use updated path
+                                  { ...file, sourceFile: file.sourceFile.replace('/package/', '/_package_/') };
                         },
                     });
                 }
@@ -493,6 +502,7 @@ export default class extends BaseApplicationGenerator {
                 for (const entity of entities.filter(entity => !entity.skipServer)) {
                     for (const field of entity.fields.filter(field => field.fieldIsEnum)) {
                         const enumInfo = {
+                            ...application,
                             ...getEnumInfo(field, entity.clientRootFolder),
                             frontendAppName: entity.frontendAppName,
                             packageName: application.packageName,
@@ -505,9 +515,9 @@ export default class extends BaseApplicationGenerator {
                                 {
                                     templates: [
                                         {
-                                            file: `${SERVER_MAIN_SRC_KOTLIN_DIR}package/domain/enumeration/Enum.kt`,
+                                            file: `${SERVER_MAIN_SRC_KOTLIN_DIR}_package_/_entityPackage_/domain/enumeration/_enumName_.java`,
                                             renameTo: () =>
-                                                `${SERVER_MAIN_SRC_KOTLIN_DIR}${entity.entityAbsoluteFolder}/domain/enumeration/${field.fieldType}.kt`,
+                                                `${SERVER_MAIN_SRC_KOTLIN_DIR}${entity.entityAbsoluteFolder}/domain/enumeration/${field.fieldType}.java`,
                                         },
                                     ],
                                 },
