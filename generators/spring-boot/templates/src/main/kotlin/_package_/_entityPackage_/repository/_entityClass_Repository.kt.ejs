@@ -38,7 +38,7 @@ import org.springframework.data.mongodb.repository.Query
 import org.springframework.data.mongodb.repository.MongoRepository
 <%_ } _%>
 <%_ if (databaseTypeNeo4j) { _%>
-import org.springframework.data.neo4j.repository.Neo4jRepository
+import org.springframework.data.neo4j.repository.<% if (reactive) { %>Reactive<% } %>Neo4jRepository
 <%_ } _%>
 <%_ if (databaseTypeCassandra) { _%>
 import org.springframework.data.cassandra.repository.CassandraRepository
@@ -66,7 +66,7 @@ import java.util.UUID
 @Suppress("unused")
 <%_ } _%>
 @Repository
-interface <%=entityClass%>Repository : <% if (containsBagRelationships && databaseTypeSql) { %><%= entityClass %>RepositoryWithBagRelationships, <% } %><% if (databaseTypeSql) { %>JpaRepository<% } %><% if (databaseTypeMongodb) { %>MongoRepository<% } %><% if (databaseTypeNeo4j) { %>Neo4jRepository<% } %><% if (databaseTypeCassandra) { %>CassandraRepository<% } %><<%=persistClass%>, <%= primaryKey.type %>><% if (jpaMetamodelFiltering) { %>, JpaSpecificationExecutor<<%= persistClass %>><% } %><% if (searchEngineCouchbase) { %>, SearchCouchbaseRepository<<%= persistClass %>, <%= primaryKey.type %>><% } %> {
+interface <%=entityClass%>Repository : <% if (containsBagRelationships && databaseTypeSql) { %><%= entityClass %>RepositoryWithBagRelationships, <% } %><% if (databaseTypeSql) { %>JpaRepository<% } %><% if (databaseTypeMongodb) { %>MongoRepository<% } %><% if (databaseTypeNeo4j) { %><% if (reactive) { %>Reactive<% } %>Neo4jRepository<% } %><% if (databaseTypeCassandra) { %>CassandraRepository<% } %><<%=persistClass%>, <%= primaryKey.type %>><% if (jpaMetamodelFiltering) { %>, JpaSpecificationExecutor<<%= persistClass %>><% } %><% if (searchEngineCouchbase) { %>, SearchCouchbaseRepository<<%= persistClass %>, <%= primaryKey.type %>><% } %> {
     <%_ for (const relationship of relationships) { _%>
         <%_ if (relationship.relationshipManyToOne && relationship.otherEntityName === 'user' && databaseTypeSql) { _%>
 
