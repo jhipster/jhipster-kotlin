@@ -107,9 +107,6 @@ export default class extends BaseApplicationGenerator {
                             'jhipster:spring-cloud-stream:kafka',
                             'jhipster:spring-cloud-stream:pulsar',
                             'jhipster:gatling',
-                            'jhipster:cucumber',
-                            'jhipster:spring-cache',
-                            'jhipster:spring-websocket',
                         ].includes(file.namespace) && !file.sourceFile.includes('_entityPackage_')
                             ? undefined
                             : file,
@@ -400,6 +397,9 @@ export default class extends BaseApplicationGenerator {
 
                         // Ignore files migrated to modularized templates
                         return [
+                            // jhipster:java:node
+                            'npmw',
+                            'npmw.cmd',
                             // jhipster:maven
                             'mvnw',
                             'mvnw.cmd',
@@ -431,6 +431,23 @@ export default class extends BaseApplicationGenerator {
                             'UserSearchRepository.java',
                             // jhipster:spring-data-relational
                             'DatabaseConfiguration_sql.java',
+                            // jhipster:cucumber
+                            'CucumberIT.java',
+                            'StepDefs.java',
+                            'UserStepDefs.java',
+                            'CucumberTestContextConfiguration.java',
+                            'user.feature',
+                            'gitkeep',
+                            // jhipster:spring-cache
+                            'CacheConfiguration.java',
+                            'CacheFactoryConfiguration.java',
+                            'EmbeddedRedis.java',
+                            'RedisTestContainer.java',
+                            // jhipster:spring-websocket
+                            'WebsocketConfiguration.java',
+                            'WebsocketSecurityConfiguration.java',
+                            'ActivityService.java',
+                            'ActivityDTO.java',
                         ].includes(sourceBasename)
                             ? undefined
                             : file;
