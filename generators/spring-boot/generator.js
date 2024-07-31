@@ -527,6 +527,15 @@ export default class extends BaseApplicationGenerator {
             addFeignReactor: undefined,
             async customizeMaven({ application, source }) {
                 if (application.buildToolMaven) {
+                    if (application.reactive) {
+                        this.editFile('pom.xml', contents =>
+                            contents.replace(
+                                '<arg value="--include-engine"/>',
+                                '<jvmarg value="-XX:+AllowRedefinitionToAddDeleteMethods"/><arg value="--include-engine"/>',
+                            ),
+                        );
+                    }
+
                     source.addMavenDefinition({
                         properties: [
                             { property: 'modernizer-maven-plugin.version', value: application.javaDependencies['modernizer-maven-plugin'] },
