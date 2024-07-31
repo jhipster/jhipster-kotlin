@@ -9,7 +9,6 @@ import { files as serverFiles } from 'jhipster-7-templates/esm/generators/server
 
 import { convertToKotlinFile } from '../kotlin/support/files.js';
 import migration from './migration.cjs';
-import { serverFiles as sqlFiles } from './files-sql.js';
 
 const { jhipsterConstants, jhipster7DockerContainers } = migration;
 const {
@@ -105,7 +104,6 @@ export default class extends BaseApplicationGenerator {
                     file =>
                         [
                             'jhipster:spring-cloud:gateway',
-                            'jhipster:spring-data-relational',
                             'jhipster:spring-cloud-stream:kafka',
                             'jhipster:spring-cloud-stream:pulsar',
                             'jhipster:gatling',
@@ -147,22 +145,24 @@ export default class extends BaseApplicationGenerator {
                             return file;
                         }
 
-                        if (sourceFile.includes('.java')) {
+                        if (
+                            sourceFile.includes('.java') ||
+                            // Use local files with updated jhipster 7 templates for these files
+                            ['application-testprod.yml', 'application-testdev.yml'].includes(basename(file.sourceFile))
+                        ) {
                             // Kotlint User template does not implements Persistable api. Ignore for now.
                             if (application.user && destinationFile.endsWith('UserCallback.java')) {
                                 return undefined;
                             }
 
-                            // TestContainersSpringContextCustomizerFactory uses a single template for modularized (dbs) and non-modularized (kafka, etc) templates
-                            if (sourceFile.endsWith('TestContainersSpringContextCustomizerFactory.java')) {
-                                sourceFile = sourceFile
-                                    // Use updated path.
-                                    .replace('/package/', '/_package_/')
-                                    // Convert *TestContainersSpringContextCustomizerFactory to TestContainersSpringContextCustomizerFactory
-                                    .replace(
-                                        /(\w*)TestContainersSpringContextCustomizerFactory.java/,
-                                        'TestContainersSpringContextCustomizerFactory.java',
-                                    );
+                            const sourceBasename = basename(sourceFile);
+                            if (
+                                file.namespace === 'jhipster:spring-data-relational' &&
+                                ['UserSqlHelper_reactive.java', 'ColumnConverter_reactive.java', 'EntityManager_reactive.java'].includes(
+                                    sourceBasename,
+                                )
+                            ) {
+                                sourceFile = sourceFile.replace('_reactive', '');
                             }
 
                             const isCommonFile = filename => {
@@ -172,6 +172,22 @@ export default class extends BaseApplicationGenerator {
                                 }
                                 return ['TestContainersSpringContextCustomizerFactory.java'].includes(sourceBasename);
                             };
+
+                            // TestContainersSpringContextCustomizerFactory uses a single template for modularized (dbs) and non-modularized (kafka, etc) templates
+                            if (sourceFile.endsWith('TestContainersSpringContextCustomizerFactory.java')) {
+                                if (isCommonFile(sourceFile)) {
+                                    // Use updated path
+                                    sourceFile = sourceFile.replace('/package/', '/_package_/');
+                                }
+                                // Convert *TestContainersSpringContextCustomizerFactory to TestContainersSpringContextCustomizerFactory
+                                const adjustTestContainersSpringContextCustomizerFactoryFile = filename =>
+                                    filename.replace(
+                                        /(\w*)TestContainersSpringContextCustomizerFactory.java/,
+                                        'TestContainersSpringContextCustomizerFactory.java',
+                                    );
+                                sourceFile = adjustTestContainersSpringContextCustomizerFactoryFile(sourceFile);
+                                destinationFile = adjustTestContainersSpringContextCustomizerFactoryFile(destinationFile);
+                            }
 
                             sourceFile =
                                 file.namespace === 'jhipster-kotlin:spring-boot' || isCommonFile(sourceFile)
@@ -413,19 +429,12 @@ export default class extends BaseApplicationGenerator {
                             'ElasticsearchTestContainer.java',
                             'ElasticsearchTestConfiguration.java',
                             'UserSearchRepository.java',
+                            // jhipster:spring-data-relational
+                            'DatabaseConfiguration_sql.java',
                         ].includes(sourceBasename)
                             ? undefined
                             : file;
                     },
-                });
-            },
-            async writeSqlFiles({ application }) {
-                if (!application.databaseTypeSql) return;
-
-                await this.writeFiles({
-                    sections: sqlFiles,
-                    rootTemplatesPath: application.reactive ? ['sql/reactive', 'sql/common'] : ['sql/common'],
-                    context: application,
                 });
             },
         });
