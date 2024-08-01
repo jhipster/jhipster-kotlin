@@ -9,7 +9,6 @@ const command = {
         ...springBootCommand.configs,
     },
     import: ['jhipster-kotlin:ktlint'],
-    compose: ['jhipster-kotlin:detekt'],
 };
 
 export default command;

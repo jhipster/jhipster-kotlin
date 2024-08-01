@@ -38,7 +38,7 @@ const command = {
     configs: {
         sampleName: {
             prompt: gen => ({
-                when: !gen.all && existsSync(gen.templatePath(gen.samplesFolder)),
+                when: !gen.jdlSamples && !gen.appSample && !gen.all && existsSync(gen.templatePath(gen.samplesFolder)),
                 type: 'list',
                 message: 'which sample do you want to generate?',
                 choices: async () => getSamples(gen.templatePath(gen.samplesFolder)),

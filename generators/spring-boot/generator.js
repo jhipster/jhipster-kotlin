@@ -35,7 +35,7 @@ const JAVA_COMPATIBLE_VERSIONS = ['17'];
 
 export default class extends BaseApplicationGenerator {
     constructor(args, options, features) {
-        super(args, options, { ...features, jhipster7Migration: true, checkBlueprint: true, inheritTasks: true });
+        super(args, options, { ...features, jhipster7Migration: true, checkBlueprint: true, inheritTasks: true, queueCommandTasks: true });
 
         this.jhipsterTemplatesFolders = [
             this.templatePath(),
@@ -55,8 +55,8 @@ export default class extends BaseApplicationGenerator {
     get [BaseApplicationGenerator.COMPOSING]() {
         const mainComposing = super.composing;
         return this.asComposingTaskGroup({
-            async composingTemplateTask() {
-                await this.composeCurrentJHipsterCommand();
+            async composeDetekt() {
+                await this.composeWithJHipster('jhipster-kotlin:detekt');
             },
             async composeWithPostWriting() {
                 await this.composeWithJHipster('docker');
@@ -121,6 +121,8 @@ export default class extends BaseApplicationGenerator {
                             'ElasticsearchExceptionMapper.java',
                             'ElasticsearchExceptionMapperTest.java',
                             'QuerySyntaxException.java',
+                            '_enumName_.java',
+                            '_persistClass_.java.jhi.jackson_identity_info.ejs',
                         ].includes(sourceBasename)
                             ? undefined
                             : file;
