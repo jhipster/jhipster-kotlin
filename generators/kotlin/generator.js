@@ -122,6 +122,17 @@ export default class extends BaseApplicationGenerator {
                             });
                         }
                     }
+
+                    if (application.enableSwaggerCodegen) {
+                        this.editFile(
+                            'build.gradle',
+                            content => `${content}
+tasks.withType(org.jetbrains.kotlin.gradle.internal.KaptGenerateStubsTask.class).configureEach {
+    dependsOn 'openApiGenerate'
+}
+`,
+                        );
+                    }
                 }
             },
             async customizeMaven({ application, source }) {
