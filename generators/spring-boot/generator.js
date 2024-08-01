@@ -35,7 +35,7 @@ const JAVA_COMPATIBLE_VERSIONS = ['17'];
 
 export default class extends BaseApplicationGenerator {
     constructor(args, options, features) {
-        super(args, options, { ...features, jhipster7Migration: true, checkBlueprint: true, inheritTasks: true });
+        super(args, options, { ...features, jhipster7Migration: true, checkBlueprint: true, inheritTasks: true, queueCommandTasks: true });
 
         this.jhipsterTemplatesFolders = [
             this.templatePath(),
@@ -55,8 +55,8 @@ export default class extends BaseApplicationGenerator {
     get [BaseApplicationGenerator.COMPOSING]() {
         const mainComposing = super.composing;
         return this.asComposingTaskGroup({
-            async composingTemplateTask() {
-                await this.composeCurrentJHipsterCommand();
+            async composeDetekt() {
+                await this.composeWithJHipster('jhipster-kotlin:detekt');
             },
             async composeWithPostWriting() {
                 await this.composeWithJHipster('docker');
@@ -121,6 +121,8 @@ export default class extends BaseApplicationGenerator {
                             'ElasticsearchExceptionMapper.java',
                             'ElasticsearchExceptionMapperTest.java',
                             'QuerySyntaxException.java',
+                            '_enumName_.java',
+                            '_persistClass_.java.jhi.jackson_identity_info.ejs',
                         ].includes(sourceBasename)
                             ? undefined
                             : file;
@@ -282,38 +284,34 @@ export default class extends BaseApplicationGenerator {
                 });
             },
             addCacheNeedles({ source, application }) {
-                this.queueTask({
-                    method: () => {
-                        if (application.cacheProviderEhcache) {
-                            const cacheConfigurationFile = `src/main/kotlin/${application.packageFolder}config/CacheConfiguration.kt`;
-                            const needle = `${application.cacheProvider}-add-entry`;
-                            const useJcacheConfiguration = application.cacheProviderRedis;
-                            const addEntryToCacheCallback = entry =>
-                                createNeedleCallback({
-                                    needle,
-                                    contentToAdd: `createCache(cm, ${entry}${useJcacheConfiguration ? ', jcacheConfiguration' : ''})`,
-                                });
+                this.delayTask(() => {
+                    if (application.cacheProviderEhcache) {
+                        const cacheConfigurationFile = `src/main/kotlin/${application.packageFolder}config/CacheConfiguration.kt`;
+                        const needle = `${application.cacheProvider}-add-entry`;
+                        const useJcacheConfiguration = application.cacheProviderRedis;
+                        const addEntryToCacheCallback = entry =>
+                            createNeedleCallback({
+                                needle,
+                                contentToAdd: `createCache(cm, ${entry}${useJcacheConfiguration ? ', jcacheConfiguration' : ''})`,
+                            });
 
-                            source.addEntryToCache = ({ entry }) => this.editFile(cacheConfigurationFile, addEntryToCacheCallback(entry));
-                            source.addEntityToCache = ({ entityAbsoluteClass, relationships }) => {
-                                const entry = `${entityAbsoluteClass}::class.java.name`;
-                                this.editFile(
-                                    cacheConfigurationFile,
-                                    addEntryToCacheCallback(entry),
-                                    ...(relationships ?? [])
-                                        .filter(rel => rel.collection)
-                                        .map(rel => addEntryToCacheCallback(`${entry} + ".${rel.propertyName}"`)),
-                                );
-                            };
-                        } else {
-                            // Add noop
-                            source.addEntryToCache = () => {};
-                            // Add noop
-                            source.addEntityToCache = () => {};
-                        }
-                    },
-                    taskName: `${this.runningState.methodName}(delayed)`,
-                    queueName: this.runningState.queueName,
+                        source.addEntryToCache = ({ entry }) => this.editFile(cacheConfigurationFile, addEntryToCacheCallback(entry));
+                        source.addEntityToCache = ({ entityAbsoluteClass, relationships }) => {
+                            const entry = `${entityAbsoluteClass}::class.java.name`;
+                            this.editFile(
+                                cacheConfigurationFile,
+                                addEntryToCacheCallback(entry),
+                                ...(relationships ?? [])
+                                    .filter(rel => rel.collection)
+                                    .map(rel => addEntryToCacheCallback(`${entry} + ".${rel.propertyName}"`)),
+                            );
+                        };
+                    } else {
+                        // Add noop
+                        source.addEntryToCache = () => {};
+                        // Add noop
+                        source.addEntityToCache = () => {};
+                    }
                 });
             },
         });
@@ -544,6 +542,14 @@ export default class extends BaseApplicationGenerator {
                     });
                 }
             },
+        });
+    }
+
+    delayTask(method) {
+        this.queueTask({
+            method,
+            taskName: `${this.runningState.methodName}(delayed)`,
+            queueName: this.runningState.queueName,
         });
     }
 }
