@@ -284,38 +284,34 @@ export default class extends BaseApplicationGenerator {
                 });
             },
             addCacheNeedles({ source, application }) {
-                this.queueTask({
-                    method: () => {
-                        if (application.cacheProviderEhcache) {
-                            const cacheConfigurationFile = `src/main/kotlin/${application.packageFolder}config/CacheConfiguration.kt`;
-                            const needle = `${application.cacheProvider}-add-entry`;
-                            const useJcacheConfiguration = application.cacheProviderRedis;
-                            const addEntryToCacheCallback = entry =>
-                                createNeedleCallback({
-                                    needle,
-                                    contentToAdd: `createCache(cm, ${entry}${useJcacheConfiguration ? ', jcacheConfiguration' : ''})`,
-                                });
+                this.delayTask(() => {
+                    if (application.cacheProviderEhcache) {
+                        const cacheConfigurationFile = `src/main/kotlin/${application.packageFolder}config/CacheConfiguration.kt`;
+                        const needle = `${application.cacheProvider}-add-entry`;
+                        const useJcacheConfiguration = application.cacheProviderRedis;
+                        const addEntryToCacheCallback = entry =>
+                            createNeedleCallback({
+                                needle,
+                                contentToAdd: `createCache(cm, ${entry}${useJcacheConfiguration ? ', jcacheConfiguration' : ''})`,
+                            });
 
-                            source.addEntryToCache = ({ entry }) => this.editFile(cacheConfigurationFile, addEntryToCacheCallback(entry));
-                            source.addEntityToCache = ({ entityAbsoluteClass, relationships }) => {
-                                const entry = `${entityAbsoluteClass}::class.java.name`;
-                                this.editFile(
-                                    cacheConfigurationFile,
-                                    addEntryToCacheCallback(entry),
-                                    ...(relationships ?? [])
-                                        .filter(rel => rel.collection)
-                                        .map(rel => addEntryToCacheCallback(`${entry} + ".${rel.propertyName}"`)),
-                                );
-                            };
-                        } else {
-                            // Add noop
-                            source.addEntryToCache = () => {};
-                            // Add noop
-                            source.addEntityToCache = () => {};
-                        }
-                    },
-                    taskName: `${this.runningState.methodName}(delayed)`,
-                    queueName: this.runningState.queueName,
+                        source.addEntryToCache = ({ entry }) => this.editFile(cacheConfigurationFile, addEntryToCacheCallback(entry));
+                        source.addEntityToCache = ({ entityAbsoluteClass, relationships }) => {
+                            const entry = `${entityAbsoluteClass}::class.java.name`;
+                            this.editFile(
+                                cacheConfigurationFile,
+                                addEntryToCacheCallback(entry),
+                                ...(relationships ?? [])
+                                    .filter(rel => rel.collection)
+                                    .map(rel => addEntryToCacheCallback(`${entry} + ".${rel.propertyName}"`)),
+                            );
+                        };
+                    } else {
+                        // Add noop
+                        source.addEntryToCache = () => {};
+                        // Add noop
+                        source.addEntityToCache = () => {};
+                    }
                 });
             },
         });
@@ -546,6 +542,14 @@ export default class extends BaseApplicationGenerator {
                     });
                 }
             },
+        });
+    }
+
+    delayTask(method) {
+        this.queueTask({
+            method,
+            taskName: `${this.runningState.methodName}(delayed)`,
+            queueName: this.runningState.queueName,
         });
     }
 }

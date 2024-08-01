@@ -5,21 +5,17 @@ export default class extends BaseApplicationGenerator {
     get [BaseApplicationGenerator.PREPARING]() {
         return this.asPreparingTaskGroup({
             async source({ application, source }) {
-                this.queueTask({
-                    method: () => {
-                        source.addAllowBlockingCallsInside = () => undefined;
-                        source.addApplicationPropertiesContent = () => undefined;
-                        source.addIntegrationTestAnnotation = () => undefined;
-                        source.addTestSpringFactory = () => undefined;
+                this.delayTask(() => {
+                    source.addAllowBlockingCallsInside = () => undefined;
+                    source.addApplicationPropertiesContent = () => undefined;
+                    source.addIntegrationTestAnnotation = () => undefined;
+                    source.addTestSpringFactory = () => undefined;
 
-                        if (application.buildToolGradle) {
-                            // Add a noop needles for spring-gateway generator
-                            source.addJavaDefinition = () => {};
-                            source.addJavaDependencies = () => {};
-                        }
-                    },
-                    taskName: `${this.runningState.methodName}(delayed)`,
-                    queueName: this.runningState.queueName,
+                    if (application.buildToolGradle) {
+                        // Add a noop needles for spring-gateway generator
+                        source.addJavaDefinition = () => {};
+                        source.addJavaDependencies = () => {};
+                    }
                 });
             },
         });
@@ -87,6 +83,14 @@ export default class extends BaseApplicationGenerator {
                     this.editFile('settings.gradle', contents => contents.replaceAll('//jhipster', '// jhipster'));
                 }
             },
+        });
+    }
+
+    delayTask(method) {
+        this.queueTask({
+            method,
+            taskName: `${this.runningState.methodName}(delayed)`,
+            queueName: this.runningState.queueName,
         });
     }
 }
