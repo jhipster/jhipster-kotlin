@@ -19,7 +19,6 @@ const {
     JACOCO_VERSION,
     JIB_VERSION,
     GRADLE_VERSION,
-    JAVA_COMPATIBLE_VERSIONS,
     JHIPSTER_DEPENDENCIES_VERSION,
     JACKSON_DATABIND_NULLABLE_VERSION,
     DOCKER_ELASTICSEARCH_CONTAINER,
@@ -31,7 +30,8 @@ const jhipster7TemplatesPackage = dirname(fileURLToPath(import.meta.resolve('jhi
 
 const SERVER_MAIN_SRC_KOTLIN_DIR = `${MAIN_DIR}kotlin/`;
 
-const JAVA_VERSION = '11';
+const JAVA_VERSION = '17';
+const JAVA_COMPATIBLE_VERSIONS = ['17'];
 
 export default class extends BaseApplicationGenerator {
     constructor(args, options, features) {
@@ -269,8 +269,8 @@ export default class extends BaseApplicationGenerator {
                 });
 
                 Object.assign(application.javaDependencies, {
-                    'spring-boot': '2.7.3',
-                    'spring-boot-dependencies': '2.7.3',
+                    'spring-boot': SPRING_BOOT_VERSION,
+                    'spring-boot-dependencies': SPRING_BOOT_VERSION,
                 });
 
                 applicationDefaults({
@@ -527,6 +527,15 @@ export default class extends BaseApplicationGenerator {
             addFeignReactor: undefined,
             async customizeMaven({ application, source }) {
                 if (application.buildToolMaven) {
+                    if (application.reactive) {
+                        this.editFile('pom.xml', contents =>
+                            contents.replace(
+                                '<arg value="--include-engine"/>',
+                                '<jvmarg value="-XX:+AllowRedefinitionToAddDeleteMethods"/><arg value="--include-engine"/>',
+                            ),
+                        );
+                    }
+
                     source.addMavenDefinition({
                         properties: [
                             { property: 'modernizer-maven-plugin.version', value: application.javaDependencies['modernizer-maven-plugin'] },
