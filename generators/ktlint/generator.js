@@ -135,6 +135,17 @@ export default class extends BaseApplicationGenerator {
                             addToBuild: true,
                         },
                     ]);
+
+                    if (application.enableSwaggerCodegen) {
+                        this.editFile(
+                            'build.gradle',
+                            content => `${content}
+tasks.named('runKtlintFormatOverMainSourceSet').configure {
+    dependsOn 'openApiGenerate'
+}
+`,
+                        );
+                    }
                 } else {
                     source.addJavaDefinition({
                         versions: [{ name: 'ktlint-maven-plugin', version: application.javaDependencies['ktlint-maven'] }],

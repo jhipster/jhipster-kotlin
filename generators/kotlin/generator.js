@@ -122,6 +122,18 @@ export default class extends BaseApplicationGenerator {
                             });
                         }
                     }
+
+                    if (application.enableSwaggerCodegen) {
+                        this.editFile(
+                            'build.gradle',
+                            content => `${content}
+tasks.withType(org.jetbrains.kotlin.gradle.internal.KaptGenerateStubsTask.class).configureEach {
+    dependsOn 'openApiGenerate'
+}
+`,
+                        );
+                        this.editFile('gradle/swagger.gradle', content => content.replace(', useSpringBoot3: "true"', ''));
+                    }
                 }
             },
             async customizeMaven({ application, source }) {
@@ -317,6 +329,10 @@ export default class extends BaseApplicationGenerator {
                             },
                         ],
                     });
+
+                    if (application.enableSwaggerCodegen) {
+                        this.editFile('pom.xml', content => content.replace('<useSpringBoot3>true</useSpringBoot3>', ''));
+                    }
                 }
             },
         });

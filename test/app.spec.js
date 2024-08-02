@@ -1902,7 +1902,6 @@ describe('JHipster generator for App generator', () => {
                 runResult.assertFile(expectedFiles.jwtServer);
                 runResult.assertFile(expectedFiles.microservice);
                 runResult.assertFile(expectedFiles.feignConfig);
-                runResult.assertFile(expectedFiles.microserviceGradle);
                 runResult.assertFile(expectedFiles.eureka);
                 runResult.assertNoFile(expectedFiles.consul);
                 runResult.assertNoFile(expectedFiles.userManagementServer);
