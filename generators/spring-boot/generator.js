@@ -122,7 +122,7 @@ export default class extends BaseApplicationGenerator {
                             'ElasticsearchExceptionMapperTest.java',
                             'QuerySyntaxException.java',
                             '_enumName_.java',
-                            '_persistClass_.java.jhi.jackson_identity_info.ejs',
+                            '_persistClass_.java.jhi.jackson_identity_info',
                         ].includes(sourceBasename)
                             ? undefined
                             : file;
