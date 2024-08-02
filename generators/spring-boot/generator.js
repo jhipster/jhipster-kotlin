@@ -177,6 +177,7 @@ export default class extends BaseApplicationGenerator {
                                 destinationFile = adjustTestContainersSpringContextCustomizerFactoryFile(destinationFile);
                             }
 
+                            sourceFile = sourceFile.replace('/java/package/', '/java/_package_/');
                             sourceFile =
                                 file.namespace === 'jhipster-kotlin:spring-boot' || isCommonFile(sourceFile)
                                     ? convertToKotlinFile(sourceFile)
@@ -508,6 +509,7 @@ export default class extends BaseApplicationGenerator {
                 for (const entity of entities.filter(entity => !entity.skipServer)) {
                     for (const field of entity.fields.filter(field => field.fieldIsEnum)) {
                         const enumInfo = {
+                            ...application,
                             ...getEnumInfo(field, entity.clientRootFolder),
                             frontendAppName: entity.frontendAppName,
                             packageName: application.packageName,
@@ -520,7 +522,7 @@ export default class extends BaseApplicationGenerator {
                                 {
                                     templates: [
                                         {
-                                            file: `${SERVER_MAIN_SRC_KOTLIN_DIR}package/domain/enumeration/Enum.kt`,
+                                            file: `${SERVER_MAIN_SRC_KOTLIN_DIR}_package_/domain/enumeration/Enum.kt`,
                                             renameTo: () =>
                                                 `${SERVER_MAIN_SRC_KOTLIN_DIR}${entity.entityAbsoluteFolder}/domain/enumeration/${field.fieldType}.kt`,
                                         },
