@@ -417,9 +417,10 @@ class SecurityConfiguration(
                 if (jwt.hasClaim("given_name") && jwt.hasClaim("family_name")) {
                     return Mono.just(jwt)
                 } else {
-                    return users.get(jwt.subject) { _ ->
-                        val webClient = WebClient.create()
-                        webClient
+                    // TODO retreive and get from users cache
+                    // users.get(jwt.subject) { _ ->
+                    return WebClient
+                            .create()
                             .get()
                             .uri(userInfoUri)
                             .headers { it.setBearerAuth(token) }
@@ -452,7 +453,6 @@ class SecurityConfiguration(
                                     }
                                     .build()
                             }
-                    }
                 }
             }
         }
