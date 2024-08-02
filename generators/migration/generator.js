@@ -36,6 +36,10 @@ export default class extends BaseApplicationGenerator {
                                 .replaceAll('jackson-datatype-hibernate6', 'jackson-datatype-hibernate5')
                                 .replaceAll('org.apache.cassandra', 'com.datastax.oss')
                                 // Gradle only
+                                .replace(
+                                    'importMappings = [Problem:"org.zalando.problem.Problem"]',
+                                    'importMappings = [Problem:"org.springframework.http.ProblemDetail"]',
+                                )
                                 .replace('hibernate-jcache"', 'hibernate-jcache:${hibernateVersion}"')
                                 .replace(
                                     "excludes = ['time']",
@@ -45,7 +49,6 @@ export default class extends BaseApplicationGenerator {
                                 )
                                 // Maven only
                                 .replaceAll('<classifier>jakarta</classifier>', '')
-                                .replace('<useSpringBoot3>true</useSpringBoot3>', '')
                                 .replace(
                                     '<skipValidateSpec>false</skipValidateSpec>',
                                     '<importMappings>Problem=org.zalando.problem.Problem</importMappings><skipValidateSpec>false</skipValidateSpec>',

@@ -281,6 +281,8 @@ export default class extends BaseApplicationGenerator {
                     'feign-reactor-bom': '3.3.0',
                     'spring-cloud-dependencies': '2021.0.3',
                     'neo4j-migrations-spring-boot-starter': '1.10.1',
+                    'gradle-openapi-generator': '6.0.1',
+                    'openapi-generator-maven-plugin': '6.0.1',
                 });
                 Object.assign(application.springBootDependencies, {
                     'spring-boot-dependencies': SPRING_BOOT_VERSION,
@@ -460,7 +462,7 @@ export default class extends BaseApplicationGenerator {
                             // jhipster:java:code-quality
                             'sonar.gradle',
                             // jhipster:java:openapi-generator v7.6.1
-                            'swagger.gradle',
+                            // 'swagger.gradle',
                         ].includes(sourceBasename)
                             ? undefined
                             : file;
@@ -629,11 +631,7 @@ export default class extends BaseApplicationGenerator {
                         properties: [
                             { property: 'modernizer-maven-plugin.version', value: application.javaDependencies['modernizer-maven-plugin'] },
                             { property: 'modernizer.failOnViolations', value: 'false' },
-                            { property: 'jaxb-runtime.version', value: '4.0.0' },
                             { property: 'spring-boot.version', value: application.javaDependencies['spring-boot'] },
-                            { property: 'liquibase-hibernate5.version', value: application.javaDependencies.liquibase },
-                            { property: 'liquibase.version', value: application.javaDependencies.liquibase },
-                            { property: 'hibernate.version', value: application.javaDependencies.hibernate },
                         ],
                         dependencies: [
                             {
@@ -651,6 +649,17 @@ export default class extends BaseApplicationGenerator {
                             },
                         ],
                     });
+
+                    if (application.databaseTypeSql) {
+                        source.addMavenDefinition({
+                            properties: [
+                                { property: 'jaxb-runtime.version', value: '4.0.0' },
+                                { property: 'liquibase-hibernate5.version', value: application.javaDependencies.liquibase },
+                                { property: 'liquibase.version', value: application.javaDependencies.liquibase },
+                                { property: 'hibernate.version', value: application.javaDependencies.hibernate },
+                            ],
+                        });
+                    }
                 }
             },
         });

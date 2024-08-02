@@ -32,10 +32,8 @@ const expectedFiles = {
         'settings.gradle',
         'gradlew',
         'gradlew.bat',
-        'gradle/docker.gradle',
         'gradle/profile_dev.gradle',
         'gradle/profile_prod.gradle',
-        'gradle/sonar.gradle',
         'gradle/wrapper/gradle-wrapper.jar',
         'gradle/wrapper/gradle-wrapper.properties',
         'checkstyle.xml',
@@ -268,8 +266,6 @@ const expectedFiles = {
         `${SERVER_MAIN_SRC_DIR}com/mycompany/myapp/client/UserFeignClientInterceptor.kt`,
         'package.json',
     ],
-
-    microserviceGradle: ['gradle/docker.gradle'],
 
     dockerServices: [`${DOCKER_DIR}app.yml`, `${DOCKER_DIR}sonar.yml`, `${DOCKER_DIR}jhipster-control-center.yml`],
 

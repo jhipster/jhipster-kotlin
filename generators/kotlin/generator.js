@@ -132,6 +132,7 @@ tasks.withType(org.jetbrains.kotlin.gradle.internal.KaptGenerateStubsTask.class)
 }
 `,
                         );
+                        this.editFile('gradle/swagger.gradle', content => content.replace(', useSpringBoot3: "true"', ''));
                     }
                 }
             },
@@ -328,6 +329,10 @@ tasks.withType(org.jetbrains.kotlin.gradle.internal.KaptGenerateStubsTask.class)
                             },
                         ],
                     });
+
+                    if (application.enableSwaggerCodegen) {
+                        this.editFile('pom.xml', content => content.replace('<useSpringBoot3>true</useSpringBoot3>', ''));
+                    }
                 }
             },
         });
