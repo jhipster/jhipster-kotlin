@@ -12,7 +12,7 @@ import {
     buildToolTypes,
     databaseTypes,
 } from 'generator-jhipster/jdl';
-import migration from '../generators/spring-boot/migration.cjs';
+import migration from '../generators/spring-boot-v2/migration.cjs';
 
 import expectedFiles from './utils/expected-files.js';
 

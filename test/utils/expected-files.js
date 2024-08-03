@@ -1,4 +1,4 @@
-import migration from '../../generators/spring-boot/migration.cjs';
+import migration from '../../generators/spring-boot-v2/migration.cjs';
 
 const { jhipsterConstants: constants } = migration;
 
