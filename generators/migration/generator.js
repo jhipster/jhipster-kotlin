@@ -1,3 +1,4 @@
+import { basename } from 'node:path';
 import BaseApplicationGenerator from 'generator-jhipster/generators/base-application';
 import { passthrough } from '@yeoman/transform';
 
@@ -20,7 +21,7 @@ export default class extends BaseApplicationGenerator {
                 this.queueTransformStream(
                     {
                         name: 'updating build files',
-                        filter: file => file.path.endsWith('.gradle') || file.path.endsWith('pom.xml'),
+                        filter: file => file.path.endsWith('.gradle') || ['libs.versions.toml', 'pom.xml'].includes(basename(file.path)),
                         refresh: false,
                     },
                     passthrough(file => {
@@ -35,6 +36,10 @@ export default class extends BaseApplicationGenerator {
                                 .replaceAll('mongodb-springdata-v4-driver', 'mongodb-springdata-v3-driver')
                                 .replaceAll('jackson-datatype-hibernate6', 'jackson-datatype-hibernate5')
                                 .replaceAll('org.apache.cassandra', 'com.datastax.oss')
+                                .replaceAll('springdoc-openapi-starter-webflux-api', 'springdoc-openapi-webflux-core')
+                                .replaceAll('springdoc.openapi.starter.webflux.api', 'springdoc.openapi.webflux.core')
+                                .replaceAll('springdoc-openapi-starter-webmvc-api', 'springdoc-openapi-webmvc-core')
+                                .replaceAll('springdoc.openapi.starter.webmvc.api', 'springdoc.openapi.webmvc.core')
                                 // Gradle only
                                 .replace(
                                     'importMappings = [Problem:"org.zalando.problem.Problem"]',

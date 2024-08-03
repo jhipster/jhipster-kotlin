@@ -1,5 +1,6 @@
 import { basename, dirname, join } from 'path';
 import { fileURLToPath } from 'url';
+// Use spring-boot as parent due to this context in generators
 import BaseApplicationGenerator from 'generator-jhipster/generators/spring-boot';
 import { prepareSqlApplicationProperties } from 'generator-jhipster/generators/spring-data-relational/support';
 import { getEnumInfo } from 'generator-jhipster/generators/base-application/support';
@@ -36,7 +37,14 @@ const JAVA_COMPATIBLE_VERSIONS = ['17'];
 
 export default class extends BaseApplicationGenerator {
     constructor(args, options, features) {
-        super(args, options, { ...features, jhipster7Migration: true, checkBlueprint: true, inheritTasks: true, queueCommandTasks: true });
+        super(args, options, {
+            ...features,
+            sbsBlueprint: true,
+            jhipster7Migration: true,
+            checkBlueprint: true,
+            inheritTasks: true,
+            queueCommandTasks: true,
+        });
 
         this.jhipsterTemplatesFolders = [
             this.templatePath(),
@@ -45,11 +53,14 @@ export default class extends BaseApplicationGenerator {
         ];
     }
 
+    async _postConstruct() {
+        // Use _postConstruct so kotlin will be queued before jhipster:spring-boot dependencies
+        await this.dependsOnJHipster('jhipster:java:bootstrap');
+        await this.dependsOnJHipster('jhipster-kotlin:kotlin');
+    }
+
     async beforeQueue() {
         await this.dependsOnJHipster('jhipster-kotlin:migration');
-        await this.dependsOnJHipster('jhipster-kotlin:kotlin');
-        await this.dependsOnJHipster('server');
-        await this.dependsOnJHipster('jhipster:java:domain');
         await this.dependsOnJHipster('jhipster-kotlin:ktlint');
     }
 
@@ -58,13 +69,11 @@ export default class extends BaseApplicationGenerator {
             async composeDetekt() {
                 await this.composeWithJHipster('jhipster-kotlin:detekt');
             },
-            ...super.composing,
         });
     }
 
     get [BaseApplicationGenerator.LOADING]() {
         return this.asLoadingTaskGroup({
-            ...super.loading,
             async applyKotlinDefaults({ application }) {
                 Object.assign(application, {
                     // syncUserWithIdp disabled is not supported by kotlin blueprint
@@ -85,6 +94,7 @@ export default class extends BaseApplicationGenerator {
                     // Ignore files from generators
                     file =>
                         [
+                            'jhipster:spring-boot',
                             'jhipster:spring-cloud:gateway',
                             'jhipster:spring-cloud-stream:kafka',
                             'jhipster:spring-cloud-stream:pulsar',
@@ -243,7 +253,6 @@ export default class extends BaseApplicationGenerator {
 
     get [BaseApplicationGenerator.PREPARING]() {
         return this.asPreparingTaskGroup({
-            ...super.preparing,
             blockhound({ application, source }) {
                 source.addAllowBlockingCallsInside = ({ classPath, method }) => {
                     if (!application.reactive) throw new Error('Blockhound is only supported by reactive applications');
@@ -257,7 +266,7 @@ export default class extends BaseApplicationGenerator {
                     );
                 };
             },
-            async preparingTemplateTask({ applicationDefaults }) {
+            async kotlinDefaults({ applicationDefaults }) {
                 applicationDefaults({
                     __override__: true,
                     // Enabled by default if backendTypeJavaAny, apply for Kotlin as well
@@ -284,6 +293,7 @@ export default class extends BaseApplicationGenerator {
                     'neo4j-migrations-spring-boot-starter': '1.10.1',
                     'gradle-openapi-generator': '6.0.1',
                     'openapi-generator-maven-plugin': '6.0.1',
+                    springdoc: '1.6.11',
                 });
                 Object.assign(application.springBootDependencies, {
                     'spring-boot-dependencies': SPRING_BOOT_VERSION,
@@ -298,6 +308,7 @@ export default class extends BaseApplicationGenerator {
                 });
             },
             addCacheNeedles({ source, application }) {
+                // Needle added in jhipster:spring-cache, delay to override it.
                 this.delayTask(() => {
                     if (application.cacheProviderEhcache) {
                         const cacheConfigurationFile = `src/main/kotlin/${application.packageFolder}config/CacheConfiguration.kt`;
@@ -333,7 +344,6 @@ export default class extends BaseApplicationGenerator {
 
     get [BaseApplicationGenerator.LOADING_ENTITIES]() {
         return this.asLoadingEntitiesTaskGroup({
-            ...super.loadingEntities,
             migration({ application }) {
                 if (application.authority) {
                     // V8 rest api is not compatible with current authority api.
@@ -345,7 +355,6 @@ export default class extends BaseApplicationGenerator {
 
     get [BaseApplicationGenerator.POST_PREPARING_EACH_ENTITY]() {
         return this.asPostPreparingEachEntityTaskGroup({
-            ...super.postPreparingEachEntity,
             migration({ entity }) {
                 // V7 templates expects false instead of 'no'
                 entity.searchEngine = entity.searchEngine === 'no' ? false : entity.searchEngine;
@@ -369,7 +378,6 @@ export default class extends BaseApplicationGenerator {
 
     get [BaseApplicationGenerator.DEFAULT]() {
         return this.asDefaultTaskGroup({
-            ...super.default,
             migration({ application }) {
                 Object.assign(application, {
                     serviceDiscoveryType: application.serviceDiscoveryType === 'no' ? false : application.serviceDiscoveryType,
@@ -380,7 +388,6 @@ export default class extends BaseApplicationGenerator {
 
     get [BaseApplicationGenerator.WRITING]() {
         return this.asWritingTaskGroup({
-            ...super.writing,
             async writeFiles({ application }) {
                 await this.writeFiles({
                     sections: serverFiles,
@@ -505,6 +512,7 @@ export default class extends BaseApplicationGenerator {
                 }
             },
 
+            // Can be dropped for jhipster 8.7.0
             async writeEnumFiles({ application, entities }) {
                 for (const entity of entities.filter(entity => !entity.skipServer)) {
                     for (const field of entity.fields.filter(field => field.fieldIsEnum)) {
@@ -539,26 +547,6 @@ export default class extends BaseApplicationGenerator {
 
     get [BaseApplicationGenerator.POST_WRITING]() {
         return this.asPostWritingTaskGroup({
-            ...super.postWriting,
-            addJHipsterBomDependencies({ application, source }) {
-                const { applicationTypeGateway, applicationTypeMicroservice, serviceDiscoveryAny, messageBrokerAny, javaDependencies } =
-                    application;
-                if (applicationTypeGateway || applicationTypeMicroservice || serviceDiscoveryAny || messageBrokerAny) {
-                    source.addJavaDependencies?.([
-                        {
-                            groupId: 'org.springframework.cloud',
-                            artifactId: 'spring-cloud-dependencies',
-                            type: 'pom',
-                            scope: 'import',
-                            version: javaDependencies['spring-cloud-dependencies'],
-                        },
-                    ]);
-                }
-            },
-            addSpringdoc({ application, source }) {
-                const springdocDependency = `springdoc-openapi-${application.reactive ? 'webflux' : 'webmvc'}-core`;
-                source.addJavaDependencies?.([{ groupId: 'org.springdoc', artifactId: springdocDependency, version: '1.6.11' }]);
-            },
             async customizeDependencies({ application, source }) {
                 source.addJavaDefinition({
                     dependencies: [
