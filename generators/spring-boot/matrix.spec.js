@@ -15,9 +15,7 @@ const databaseType = ['sql', 'mongodb', 'cassandra', 'couchbase', 'neo4j'];
 
 let matrix = buildServerMatrix({ databaseType });
 matrix = extendMatrix(matrix, { messageBroker: ['no', 'kafka'] });
-matrix = extendFilteredMatrix(matrix, ({ applicationType }) => applicationType === 'microservice', {
-    feignClient: [true],
-});
+matrix = extendFilteredMatrix(matrix, config => config.applicationType === 'microservice' && !config.reactive, { feignClient: [true] });
 
 describe('Matrix test of SubGenerator kotlin of kotlin JHipster blueprint', () => {
     Object.entries(matrix).forEach(([name, config], _idx) => {
