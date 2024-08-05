@@ -28,7 +28,7 @@ describe('Matrix test of SubGenerator kotlin of kotlin JHipster blueprint', () =
             beforeAll(async function () {
                 await helpers
                     .run('jhipster:spring-boot')
-                    .withJHipsterConfig(config, [
+                    .withJHipsterConfig({ ...config, skipClient: true }, [
                         ...entitiesServerSamples,
                         entityWithCriteriaAndDto,
                         entityWithEnum,
