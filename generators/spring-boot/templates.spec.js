@@ -23,7 +23,9 @@ describe('test if kotlin templates has a matching java template', async () => {
                 // Partials reworked
                 !file.includes('relationship_validators.ejs') &&
                 // Modularized file in JHipster 8
-                !file.includes('_entityClass_Repository'),
+                !file.includes('_entityClass_Repository') &&
+                // Mapped to KafkaResourceIT_imperative
+                !file.includes('KafkaResourceIT_reactive'),
         )) {
             const javaTemplate = file.replace('.kt', '.java').replace('kotlin/_package_', 'java/_package_');
             const possibleTemplates = [];
@@ -39,7 +41,13 @@ describe('test if kotlin templates has a matching java template', async () => {
                 if (['domain'].includes(folder)) {
                     possibleTemplates.push(join(jhipster8Generators, 'java/generators', folder, 'templates', javaTemplateRelativePath));
                 } else if (['gateway'].includes(folder)) {
-                    possibleTemplates.push(join(jhipster8Generators, 'spring-cloud/generators', folder, 'templates', javaTemplateRelativePath));
+                    possibleTemplates.push(
+                        join(jhipster8Generators, 'spring-cloud/generators', folder, 'templates', javaTemplateRelativePath),
+                    );
+                } else if (['kafka'].includes(folder)) {
+                    possibleTemplates.push(
+                        join(jhipster8Generators, 'spring-cloud-stream/generators', folder, 'templates', javaTemplateRelativePath),
+                    );
                 } else {
                     possibleTemplates.push(join(jhipster8Generators, folder, 'templates', javaTemplateRelativePath));
                 }

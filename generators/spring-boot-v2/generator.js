@@ -255,6 +255,17 @@ export default class extends BaseApplicationGenerator {
                             'AuthorizationHeaderUtilTest.java',
                             'AuthorizationHeaderUtil.java',
                             'OAuthIdpTokenResponseDTO.java',
+                            // jhipster:spring-cloud-stream:kafka
+                            'KafkaTestContainer.java',
+                            'EmbeddedKafka.java',
+                            'EmbeddedKafka.java',
+                            'EmbeddedKafka.java',
+                            'KafkaResource.java',
+                            'KafkaResourceIT.java',
+                            'KafkaResource_reactive.java',
+                            'KafkaResourceIT_reactive.java',
+                            'KafkaSseConsumer.java',
+                            'KafkaSseProducer.java',
                             // jhipster:java:openapi-generator v7.6.1
                             // 'swagger.gradle',
                         ].includes(sourceBasename)
