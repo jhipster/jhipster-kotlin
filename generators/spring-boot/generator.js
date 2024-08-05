@@ -52,16 +52,6 @@ export default class extends BaseApplicationGenerator {
                 application.customizeTemplatePaths.unshift(
                     // Remove package-info.java files
                     file => (file.sourceFile.includes('package-info.java') ? undefined : file),
-                    // Ignore files from generators
-                    file =>
-                        [
-                            'jhipster:spring-cloud:gateway',
-                            'jhipster:feign-client',
-                            'jhipster:spring-cloud-stream:kafka',
-                            'jhipster:spring-cloud-stream:pulsar',
-                        ].includes(file.namespace) && !file.sourceFile.includes('buildSrc')
-                            ? undefined
-                            : file,
                     // Kotling blueprint does not implements these files
                     file => {
                         const sourceBasename = basename(file.sourceFile);
@@ -126,6 +116,7 @@ export default class extends BaseApplicationGenerator {
                                 destinationFile = adjustTestContainersSpringContextCustomizerFactoryFile(destinationFile);
                             }
 
+                            sourceFile = sourceFile.replace('KafkaConsumer_reactive', 'KafkaConsumer_imperative');
                             sourceFile = convertToKotlinFile(sourceFile);
                             destinationFile = convertToKotlinFile(destinationFile);
                         }
@@ -146,6 +137,27 @@ export default class extends BaseApplicationGenerator {
                             : javaResolvedSourceFile;
 
                         return { ...file, sourceFile, javaResolvedSourceFile, resolvedSourceFile, destinationFile };
+                    },
+                    // Adjust feign-client and kafka destinationFile for jhipster 7 paths
+                    file => {
+                        if (!['jhipster:feign-client', 'jhipster:spring-cloud-stream:kafka'].includes(file.namespace)) return file;
+                        const renamedFiles = file => {
+                            for (const fileMap of [
+                                ['security/oauth2/AuthorizationHeaderUtilTest.', 'client/AuthorizationHeaderUtilTest.'],
+                                ['security/oauth2/AuthorizationHeaderUtil.', 'client/AuthorizationHeaderUtil.'],
+                                ['security/oauth2/OAuthIdpTokenResponseDTO.', 'client/OAuthIdpTokenResponseDTO.'],
+                                ['config/KafkaSseConsumer.', 'broker/KafkaConsumer.'],
+                                ['config/KafkaSseProducer.', 'broker/KafkaProducer.'],
+                            ]) {
+                                // Files renamed in v8
+                                file = file.replace(...fileMap.reverse());
+                            }
+                            return file;
+                        };
+                        return {
+                            ...file,
+                            destinationFile: renamedFiles(file.destinationFile),
+                        };
                     },
                 );
             },

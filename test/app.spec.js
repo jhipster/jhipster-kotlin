@@ -702,6 +702,7 @@ describe('JHipster generator for App generator', () => {
                         buildTool: MAVEN,
                         rememberMeKey: '5c37379956bd1242f5636c8cb322c2966ad81277',
                         serverSideOptions: [],
+                        feignClient: true,
                     })
                     .withJHipsterLookup()
                     .withParentBlueprintLookup()
@@ -1796,6 +1797,7 @@ describe('JHipster generator for App generator', () => {
                         buildTool: MAVEN,
                         rememberMeKey: '5c37379956bd1242f5636c8cb322c2966ad81277',
                         serverSideOptions: [],
+                        feignClient: true,
                     })
                     .withJHipsterLookup()
                     .withParentBlueprintLookup()
@@ -1891,6 +1893,7 @@ describe('JHipster generator for App generator', () => {
                         serverSideOptions: [],
                         skipClient: true,
                         skipUserManagement: true,
+                        feignClient: true,
                     })
                     .withJHipsterLookup()
                     .withParentBlueprintLookup()

@@ -97,6 +97,9 @@ export default class extends BaseApplicationGenerator {
                                 ['EntityDTO', '_dtoClass_'],
                                 [/\/Entity(.*)\./, '/_entityClass_$1.'],
                                 ['/BaseEntityMapper.', '/EntityMapper.'],
+                                ['JWT_UserFeignClientInterceptor.', 'UserFeignClientInterceptor_jwt.'],
+                                ['OAuth2UserClientFeignConfiguration.', 'OAuth2InterceptedFeignConfiguration.'],
+                                ['OAuth2_UserFeignClientInterceptor.', 'TokenRelayRequestInterceptor.'],
                             ]) {
                                 // Files renamed in v8
                                 sourceFile = sourceFile.replace(...fileMap);
@@ -184,6 +187,12 @@ export default class extends BaseApplicationGenerator {
                             'gradlew.bat',
                             // jhipster:java:docker
                             'entrypoint.sh',
+                            // jhipster:spring-cloud:gateway
+                            'JWTRelayGatewayFilterFactory.java',
+                            'ModifyServersOpenApiFilter.java',
+                            'GatewayResource.java',
+                            'RouteVM.java',
+                            'ModifyServersOpenApiFilterTest.java',
                             // jhipster:spring-data-couchbase
                             'DatabaseConfiguration_couchbase.java',
                             // jhipster:spring-data-cassandra
@@ -235,6 +244,28 @@ export default class extends BaseApplicationGenerator {
                             'docker.gradle',
                             // jhipster:java:code-quality
                             'sonar.gradle',
+                            // jhipster:feign-client
+                            'AuthorizedFeignClient.java',
+                            'OAuth2InterceptedFeignConfiguration.java',
+                            'TokenRelayRequestInterceptor.java',
+                            'FeignConfiguration.java',
+                            'JWT_UserFeignClientInterceptor.java',
+                            'OAuth2UserClientFeignConfiguration.java',
+                            'OAuth2_UserFeignClientInterceptor.java',
+                            'AuthorizationHeaderUtilTest.java',
+                            'AuthorizationHeaderUtil.java',
+                            'OAuthIdpTokenResponseDTO.java',
+                            // jhipster:spring-cloud-stream:kafka
+                            'KafkaTestContainer.java',
+                            'EmbeddedKafka.java',
+                            'EmbeddedKafka.java',
+                            'EmbeddedKafka.java',
+                            'KafkaResource.java',
+                            'KafkaResourceIT.java',
+                            'KafkaResource_reactive.java',
+                            'KafkaResourceIT_reactive.java',
+                            'KafkaSseConsumer.java',
+                            'KafkaSseProducer.java',
                             // jhipster:java:openapi-generator v7.6.1
                             // 'swagger.gradle',
                         ].includes(sourceBasename)

@@ -224,7 +224,6 @@ const expectedFiles = {
         `${SERVER_MAIN_SRC_DIR}com/mycompany/myapp/domain/User.kt`,
         `${SERVER_MAIN_SRC_DIR}com/mycompany/myapp/security/oauth2/JwtGrantedAuthorityConverter.kt`,
         `${SERVER_MAIN_SRC_DIR}com/mycompany/myapp/security/oauth2/AudienceValidator.kt`,
-        `${SERVER_MAIN_SRC_DIR}com/mycompany/myapp/security/oauth2/OAuthIdpTokenResponseDTO.kt`,
         `${SERVER_MAIN_SRC_DIR}com/mycompany/myapp/web/rest/AccountResource.kt`,
         `${DOCKER_DIR}keycloak.yml`,
     ],
@@ -262,8 +261,6 @@ const expectedFiles = {
     microservice: [
         `${SERVER_MAIN_RES_DIR}static/index.html`,
         `${SERVER_MAIN_SRC_DIR}com/mycompany/myapp/config/SecurityConfiguration.kt`,
-        `${SERVER_MAIN_SRC_DIR}com/mycompany/myapp/config/FeignConfiguration.kt`,
-        `${SERVER_MAIN_SRC_DIR}com/mycompany/myapp/client/UserFeignClientInterceptor.kt`,
         'package.json',
     ],
 
