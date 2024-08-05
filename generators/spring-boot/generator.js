@@ -55,7 +55,6 @@ export default class extends BaseApplicationGenerator {
                     // Ignore files from generators
                     file =>
                         [
-                            'jhipster:spring-cloud:gateway',
                             'jhipster:feign-client',
                             'jhipster:spring-cloud-stream:kafka',
                             'jhipster:spring-cloud-stream:pulsar',

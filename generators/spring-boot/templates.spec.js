@@ -38,6 +38,8 @@ describe('test if kotlin templates has a matching java template', async () => {
                 javaTemplateRelativePath = relative(join(__dirname, 'templates', folder), javaTemplate);
                 if (['domain'].includes(folder)) {
                     possibleTemplates.push(join(jhipster8Generators, 'java/generators', folder, 'templates', javaTemplateRelativePath));
+                } else if (['gateway'].includes(folder)) {
+                    possibleTemplates.push(join(jhipster8Generators, 'spring-cloud/generators', folder, 'templates', javaTemplateRelativePath));
                 } else {
                     possibleTemplates.push(join(jhipster8Generators, folder, 'templates', javaTemplateRelativePath));
                 }
