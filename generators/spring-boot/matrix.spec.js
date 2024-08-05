@@ -1,13 +1,26 @@
 import { beforeAll, describe, expect, it } from 'vitest';
 import { isMatch } from 'lodash-es';
-import { defaultHelpers as helpers, result, buildServerMatrix, entitiesServerSamples } from 'generator-jhipster/testing';
+import {
+    defaultHelpers as helpers,
+    result,
+    buildServerMatrix,
+    entitiesServerSamples,
+    extendMatrix,
+    extendFilteredMatrix,
+} from 'generator-jhipster/testing';
 
 import { entityWithBagRelationship, entityWithCriteriaAndDto, entityWithEnum } from '../../test/entities.js';
 
 const databaseType = ['sql', 'mongodb', 'cassandra', 'couchbase', 'neo4j'];
 
+let matrix = buildServerMatrix({ databaseType });
+matrix = extendMatrix(matrix, { messageBroker: ['no', 'kafka'] });
+matrix = extendFilteredMatrix(matrix, ({ applicationType }) => applicationType === 'microservice', {
+    feignClient: [true],
+});
+
 describe('Matrix test of SubGenerator kotlin of kotlin JHipster blueprint', () => {
-    Object.entries(buildServerMatrix({ databaseType })).forEach(([name, config], _idx) => {
+    Object.entries(matrix).forEach(([name, config], _idx) => {
         // if (_idx !== 0) return;
         if (
             isMatch(config, { websocket: true, applicationType: 'gateway' }) ||
