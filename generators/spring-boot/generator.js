@@ -54,11 +54,8 @@ export default class extends BaseApplicationGenerator {
                     file => (file.sourceFile.includes('package-info.java') ? undefined : file),
                     // Ignore files from generators
                     file =>
-                        [
-                            'jhipster:feign-client',
-                            'jhipster:spring-cloud-stream:kafka',
-                            'jhipster:spring-cloud-stream:pulsar',
-                        ].includes(file.namespace) && !file.sourceFile.includes('buildSrc')
+                        ['jhipster:spring-cloud-stream:kafka', 'jhipster:spring-cloud-stream:pulsar'].includes(file.namespace) &&
+                        !file.sourceFile.includes('buildSrc')
                             ? undefined
                             : file,
                     // Kotling blueprint does not implements these files
@@ -145,6 +142,25 @@ export default class extends BaseApplicationGenerator {
                             : javaResolvedSourceFile;
 
                         return { ...file, sourceFile, javaResolvedSourceFile, resolvedSourceFile, destinationFile };
+                    },
+                    // Adjust feign-client for jhipster 7 paths
+                    file => {
+                        if (file.namespace !== 'jhipster:feign-client') return file;
+                        const renamedFiles = file => {
+                            for (const fileMap of [
+                                ['security/oauth2/AuthorizationHeaderUtilTest.', 'client/AuthorizationHeaderUtilTest.'],
+                                ['security/oauth2/AuthorizationHeaderUtil.', 'client/AuthorizationHeaderUtil.'],
+                                ['security/oauth2/OAuthIdpTokenResponseDTO.', 'client/OAuthIdpTokenResponseDTO.'],
+                            ]) {
+                                // Files renamed in v8
+                                file = file.replace(...fileMap.reverse());
+                            }
+                            return file;
+                        };
+                        return {
+                            ...file,
+                            destinationFile: renamedFiles(file.destinationFile),
+                        };
                     },
                 );
             },

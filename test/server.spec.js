@@ -96,6 +96,7 @@ describe('JHipster server generator', () => {
                     skipKtlintFormat: true,
                     skipClient: true,
                     applicationType: MICROSERVICE,
+                    feignClient: true,
                 })
                 .withJHipsterConfig({
                     baseName: 'jhipster',

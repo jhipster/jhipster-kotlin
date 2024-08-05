@@ -97,6 +97,9 @@ export default class extends BaseApplicationGenerator {
                                 ['EntityDTO', '_dtoClass_'],
                                 [/\/Entity(.*)\./, '/_entityClass_$1.'],
                                 ['/BaseEntityMapper.', '/EntityMapper.'],
+                                ['JWT_UserFeignClientInterceptor.', 'UserFeignClientInterceptor_jwt.'],
+                                ['OAuth2UserClientFeignConfiguration.', 'OAuth2InterceptedFeignConfiguration.'],
+                                ['OAuth2_UserFeignClientInterceptor.', 'TokenRelayRequestInterceptor.'],
                             ]) {
                                 // Files renamed in v8
                                 sourceFile = sourceFile.replace(...fileMap);
@@ -241,6 +244,17 @@ export default class extends BaseApplicationGenerator {
                             'docker.gradle',
                             // jhipster:java:code-quality
                             'sonar.gradle',
+                            // jhipster:feign-client
+                            'AuthorizedFeignClient.java',
+                            'OAuth2InterceptedFeignConfiguration.java',
+                            'TokenRelayRequestInterceptor.java',
+                            'FeignConfiguration.java',
+                            'JWT_UserFeignClientInterceptor.java',
+                            'OAuth2UserClientFeignConfiguration.java',
+                            'OAuth2_UserFeignClientInterceptor.java',
+                            'AuthorizationHeaderUtilTest.java',
+                            'AuthorizationHeaderUtil.java',
+                            'OAuthIdpTokenResponseDTO.java',
                             // jhipster:java:openapi-generator v7.6.1
                             // 'swagger.gradle',
                         ].includes(sourceBasename)
