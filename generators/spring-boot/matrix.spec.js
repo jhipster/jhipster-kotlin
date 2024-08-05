@@ -28,7 +28,7 @@ describe('Matrix test of SubGenerator kotlin of kotlin JHipster blueprint', () =
             beforeAll(async function () {
                 await helpers
                     .run('jhipster:spring-boot')
-                    .withJHipsterConfig({ ...config, skipClient: true }, [
+                    .withJHipsterConfig(config, [
                         ...entitiesServerSamples,
                         entityWithCriteriaAndDto,
                         entityWithEnum,
@@ -41,7 +41,7 @@ describe('Matrix test of SubGenerator kotlin of kotlin JHipster blueprint', () =
                     })
                     .withJHipsterLookup()
                     .withParentBlueprintLookup()
-                    .withMockedGenerators(['jhipster-kotlin:ktlint', 'jhipster-kotlin:detekt']);
+                    .withMockedGenerators(['jhipster-kotlin:ktlint', 'jhipster-kotlin:detekt', 'jhipster:client', 'jhipster:languages']);
             });
 
             it('should succeed', () => {
