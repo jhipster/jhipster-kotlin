@@ -2,8 +2,9 @@
  * @type {import('generator-jhipster').JHipsterCommandDefinition}
  */
 const command = {
+    options: {},
     configs: {},
-    import: ['jhipster-kotlin:ktlint'],
+    arguments: {},
 };
 
 export default command;

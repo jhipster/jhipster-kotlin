@@ -61,13 +61,17 @@ export default class extends BaseApplicationGenerator {
             async writeKotlinFiles({ application }) {
                 await this.writeFiles({
                     blocks: [
-                        { templates: ['.editorconfig.jhi.kotlin'] },
+                        { templates: ['.editorconfig.jhi.kotlin', `src/main/kotlin/_package_/GeneratedByJHipster.kt`] },
                         {
                             condition: ctx => ctx.buildToolGradle,
                             templates: [{ file: 'gradle/kotlin.gradle' }],
                         },
                     ],
                     context: application,
+                    customizeTemplatePath: file => ({
+                        ...file,
+                        destinationFile: file.destinationFile.replace('_package_/', application.packageFolder),
+                    }),
                 });
             },
         });
