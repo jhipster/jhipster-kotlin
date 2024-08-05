@@ -19,7 +19,7 @@
 package <%= packageName %>.web.rest
 
 import <%= packageName %>.config.LOGIN_REGEX
-import <%= packageName %>.domain.<%= user.persistClass %>
+import <%= user.entityAbsoluteClass %>
 import <%= packageName %>.repository.UserRepository
 import <%= packageName %>.security.ADMIN
 import <%= packageName %>.service.MailService
@@ -87,7 +87,7 @@ import org.elasticsearch.index.query.QueryBuilders.queryStringQuery
 /**
  * REST controller for managing users.
  *
- * This class accesses the {@link <%= packageName %>.domain.<%= user.persistClass %>} entity, and needs to fetch its collection of authorities.
+ * This class accesses the {@link <%= user.entityAbsoluteClass %>} entity, and needs to fetch its collection of authorities.
  *
  * For a normal use-case, it would be better to have an eager relationship between User and Authority,
  * and send everything to the client side: there would be no View Model and DTO, a lot less code, and an outer-join
@@ -230,11 +230,11 @@ class UserResource(
     fun updateUser(@Valid @RequestBody userDTO: <%= user.adminUserDto %>): ResponseEntity<<%= user.adminUserDto %>> {
         log.debug("REST request to update User : $userDTO")
         var existingUser = userRepository.findOneByEmailIgnoreCase(userDTO.email)
-        if (existingUser.isPresent && existingUser.get().id != userDTO.id) {
+        if (existingUser.isPresent && existingUser.orElseThrow().id != userDTO.id) {
             throw EmailAlreadyUsedException()
         }
         existingUser = userRepository.findOneByLogin(userDTO.login!!.lowercase())
-        if (existingUser.isPresent && existingUser.get().id != userDTO.id) {
+        if (existingUser.isPresent && existingUser.orElseThrow().id != userDTO.id) {
             throw LoginAlreadyUsedException()
         }
         val updatedUser = userService.updateUser(userDTO)
