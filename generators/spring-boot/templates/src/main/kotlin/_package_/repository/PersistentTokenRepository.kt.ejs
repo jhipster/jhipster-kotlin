@@ -35,7 +35,7 @@ import com.datastax.oss.driver.api.mapper.annotations.Mapper
 import com.datastax.oss.driver.api.mapper.annotations.Select
 <%_ } _%>
 import <%= packageName %>.domain.PersistentToken
-import <%= packageName %>.domain.<%= user.persistClass %>
+import <%= user.entityAbsoluteClass %>
 <%_ if (!databaseTypeCassandra) { _%>
 import java.time.LocalDate
 <%_ } _%>
@@ -69,7 +69,7 @@ import java.util.Optional
  */
  <%_ if (['sql', 'mongodb', 'neo4j'].includes(databaseType)) { _%>
 interface PersistentTokenRepository : <% if (databaseTypeSql) { %>JpaRepository<% } %><% if (databaseTypeMongodb) { %>MongoRepository<% } %><% if (databaseTypeNeo4j) { %>Neo4jRepository<% } %><% if (databaseTypeCouchbase) { %>N1qlCouchbaseRepository<% } %><PersistentToken, String> {
-    fun findByUser(user: User): List<PersistentToken>
+    fun findByUser(user: <%= user.persistClass %>): List<PersistentToken>
 
     fun findByTokenDateBefore(localDate: LocalDate): List<PersistentToken>
 }

@@ -21,9 +21,9 @@ package <%= packageName %>.service.mapper
 <%_ if (databaseTypeSql || databaseTypeMongodb || databaseTypeNeo4j) { _%>
 import <%= packageName %>.domain.Authority
 <%_ } _%>
-import <%= packageName %>.domain.<%= user.persistClass %>
+import <%= user.entityAbsoluteClass %>
 import <%= packageName %>.service.dto.<%= user.adminUserDto %>
-import <%= packageName %>.service.dto.<%= user.restClass %>
+import <%= packageName %>.service.dto.<%= user.dtoClass %>
 
 import org.springframework.stereotype.Service
 
@@ -33,7 +33,7 @@ import org.mapstruct.Mapping
 import org.mapstruct.Named
 
 /**
- * Mapper for the entity [<%= user.persistClass %>] and its DTO called [<%= user.restClass %>].
+ * Mapper for the entity [<%= user.persistClass %>] and its DTO called [<%= user.dtoClass %>].
  *
  * Normal mappers are generated using MapStruct, this one is hand-coded as MapStruct
  * support is still in beta, and requires a manual step with an IDE.
@@ -41,12 +41,12 @@ import org.mapstruct.Named
 @Service
 class UserMapper {
 
-    fun usersToUserDTOs(users: List<<%= user.persistClass %>?>): MutableList<<%= user.restClass %>> =
+    fun usersToUserDTOs(users: List<<%= user.persistClass %>?>): MutableList<<%= user.dtoClass %>> =
         users.asSequence()
             .filterNotNull()
             .mapTo(mutableListOf()) { userToUserDTO(it) }
 
-    fun userToUserDTO(user: <%= user.persistClass %>): <%= user.restClass %> = <%= user.restClass %>(user)
+    fun userToUserDTO(user: <%= user.persistClass %>): <%= user.dtoClass %> = <%= user.dtoClass %>(user)
 
     fun usersToAdminUserDTOs(users: List<<%= user.persistClass %>>): MutableList<<%= user.adminUserDto %>> =
         users.asSequence()
@@ -99,11 +99,11 @@ class UserMapper {
     @Named("id")
     @BeanMapping(ignoreByDefault = true)
     @Mapping(target = "id", source = "id")
-    fun toDtoId(user: <%= user.persistClass %>?): <%= user.restClass %>? {
+    fun toDtoId(user: <%= user.persistClass %>?): <%= user.dtoClass %>? {
         if (user == null) {
             return null
         }
-        val userDto = <%= user.restClass %>()
+        val userDto = <%= user.dtoClass %>()
         userDto.id = user.id
         return userDto
     }
@@ -111,12 +111,12 @@ class UserMapper {
     @Named("idSet")
     @BeanMapping(ignoreByDefault = true)
     @Mapping(target = "id", source = "id")
-    fun toDtoIdSet(users: Set<<%= user.persistClass %>>?): Set<<%= user.restClass %>>? {
+    fun toDtoIdSet(users: Set<<%= user.persistClass %>>?): Set<<%= user.dtoClass %>>? {
         if ( users == null ) {
-            return emptySet<<%= user.restClass %>>()
+            return emptySet<<%= user.dtoClass %>>()
         }
 
-        val userSet = hashSetOf<<%= user.restClass %>>()
+        val userSet = hashSetOf<<%= user.dtoClass %>>()
         users.forEach {
             this.toDtoId(it)?.let {
                 userSet.add(it)
@@ -131,11 +131,11 @@ class UserMapper {
         Mapping(target = "id", source = "id"),
         Mapping(target = "login", source = "login")
     )
-    fun toDtoLogin(user: <%= user.persistClass %>?): <%= user.restClass %>? {
+    fun toDtoLogin(user: <%= user.persistClass %>?): <%= user.dtoClass %>? {
         if (user == null) {
             return null
         }
-        val userDto = <%= user.restClass %>()
+        val userDto = <%= user.dtoClass %>()
         userDto.id = user.id
         userDto.login = user.login
         return userDto
@@ -147,12 +147,12 @@ class UserMapper {
         Mapping(target = "id", source = "id"),
         Mapping(target = "login", source = "login")
     )
-    fun toDtoLoginSet(users: Set<<%= user.persistClass %>>?): Set<<%= user.restClass %>>? {
+    fun toDtoLoginSet(users: Set<<%= user.persistClass %>>?): Set<<%= user.dtoClass %>>? {
         if ( users == null ) {
-            return emptySet<<%= user.restClass %>>()
+            return emptySet<<%= user.dtoClass %>>()
         }
 
-        val userSet = hashSetOf<<%= user.restClass %>>()
+        val userSet = hashSetOf<<%= user.dtoClass %>>()
         users.forEach {
             this.toDtoLogin(it)?.let {
                 userSet.add(it)

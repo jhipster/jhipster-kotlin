@@ -100,6 +100,8 @@ export default class extends BaseApplicationGenerator {
                                 ['JWT_UserFeignClientInterceptor.', 'UserFeignClientInterceptor_jwt.'],
                                 ['OAuth2UserClientFeignConfiguration.', 'OAuth2InterceptedFeignConfiguration.'],
                                 ['OAuth2_UserFeignClientInterceptor.', 'TokenRelayRequestInterceptor.'],
+                                ['UserJWTController', 'AuthenticateController'],
+                                ['TokenProviderSecurityMetersTests', 'TokenAuthenticationSecurityMetersIT'],
                             ]) {
                                 // Files renamed in v8
                                 sourceFile = sourceFile.replace(...fileMap);

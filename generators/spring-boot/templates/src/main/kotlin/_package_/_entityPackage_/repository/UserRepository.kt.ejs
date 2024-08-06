@@ -21,7 +21,7 @@ package <%= packageName %>.repository
 <%_ if (databaseTypeSql && reactive) { _%>
 import <%= packageName %>.domain.Authority
 <%_ } _%>
-import <%= packageName %>.domain.<%= user.persistClass %>
+import <%= user.entityAbsoluteClass %>
 
 <%_ if (databaseTypeCassandra) { _%>
 import com.datastax.oss.driver.api.core.CqlIdentifier
@@ -155,7 +155,7 @@ interface UserRepository : <% if (databaseTypeSql) { %>JpaRepository<<%= user.pe
     fun findOneByActivationKey(activationKey: String): <%= optionalOrMono %><<%= user.persistClass %>><% if (databaseTypeCouchbase) { %> {
         return findIdByActivationKey(activationKey)
         .map(User::id)
-        .flatMap(this::findById);
+        .flatMap(this::findById)
     }
     @Query(FIND_IDS_QUERY + " AND activationKey = $1")
     fun findIdByActivationKey(activationKey: String): <%= optionalOrMono %><User>
@@ -195,7 +195,7 @@ interface UserRepository : <% if (databaseTypeSql) { %>JpaRepository<<%= user.pe
     fun findOneByEmailIgnoreCase(email: String?): <%= optionalOrMono %><<%= user.persistClass %>><% if (databaseTypeCouchbase) { %> {
         return findIdByEmailIgnoreCase(email!!)
             .map(User::id)
-            .flatMap(this::findById);
+            .flatMap(this::findById)
     }
 
     @Query(FIND_IDS_QUERY + " AND LOWER(email) = LOWER($1)")
@@ -260,7 +260,7 @@ interface UserRepository : <% if (databaseTypeSql) { %>JpaRepository<<%= user.pe
     <% } else { %>
         <%_ if (databaseTypeCouchbase) { _%>
     fun findAllByActivatedIsTrue(pageable: Pageable): Page<<%= user.persistClass %>> {
-        val page = findAllIdsByActivatedIsTrue(pageable);
+        val page = findAllIdsByActivatedIsTrue(pageable)
         return PageImpl<<%= user.persistClass %>>(findAllById(toIds(page.content)), pageable, page.totalElements)
     }
 
@@ -416,7 +416,7 @@ class UserRepositoryInternalImpl(val db: DatabaseClient, val r2dbcEntityTemplate
         user.authorities = tuples.filter { it.t2.isPresent }
             .map {
                 val authority = Authority()
-                authority.name = it.t2.get()
+                authority.name = it.t2.orElseThrow()
                 authority
             }.toMutableSet()
         return user

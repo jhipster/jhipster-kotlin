@@ -111,7 +111,7 @@ class <%= entityClass %>RepositoryInternalImpl(
     converter
 ), <%= entityClass %>RepositoryInternal {
 
-    private val db: DatabaseClient = template.databaseClient;
+    private val db: DatabaseClient = template.databaseClient
 
     companion object {
         private val entityTable = Table.aliased("<%= entityTableName %>", EntityManager.ENTITY_ALIAS)
@@ -152,11 +152,11 @@ class <%= entityClass %>RepositoryInternalImpl(
 
     override fun findById(id: <%= primaryKey.type %>?): Mono<<%= persistClass %>> {
         <%_ if (primaryKey.type != 'Long') {  _%>
-        val whereClause = Conditions.isEqual(entityTable.column("<%= primaryKey.fields[0].columnName %>"), Conditions.just(StringUtils.wrap(id.toString(), "'")));
+        val whereClause = Conditions.isEqual(entityTable.column("<%= primaryKey.fields[0].columnName %>"), Conditions.just(StringUtils.wrap(id.toString(), "'")))
         <%_ } else { _%>
-        val whereClause = Conditions.isEqual(entityTable.column("<%= primaryKey.fields[0].columnName %>"), Conditions.just(id.toString()));
+        val whereClause = Conditions.isEqual(entityTable.column("<%= primaryKey.fields[0].columnName %>"), Conditions.just(id.toString()))
         <%_ }_%>
-        return createQuery(null, whereClause).one();
+        return createQuery(null, whereClause).one()
     }
 
     <%_ if (implementsEagerLoadApis) { _%>
@@ -212,7 +212,7 @@ class <%= entityClass %>RepositoryInternalImpl(
 
     protected fun deleteRelations(entityId: <%= primaryKey.type %>?): Mono<Void> {
         <%_ relationships.filter(function(rel) {
-                return (rel.relationshipManyToMany  && rel.ownerSide);
+                return (rel.relationshipManyToMany  && rel.ownerSide)
         }).forEach(function(rel, idx) { _%>
             <%_ if (idx === 0) { _%>
         return entityManager.deleteFromLinkTable(<%= rel.relationshipName %>Link, entityId)

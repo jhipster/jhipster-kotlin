@@ -17,9 +17,9 @@ describe('test if kotlin templates has a matching java template', async () => {
         for (const file of files.filter(
             file =>
                 // Partials reworked
-                !file.includes('/common/') &&
-                // Partials reworked
-                !file.includes('/partials/') &&
+                !file.includes('field_validators.ejs') &&
+                // Removed partial
+                !file.includes('update_template.ejs') &&
                 // Partials reworked
                 !file.includes('relationship_validators.ejs') &&
                 // Modularized file in JHipster 8
@@ -30,7 +30,7 @@ describe('test if kotlin templates has a matching java template', async () => {
             const javaTemplate = file.replace('.kt', '.java').replace('kotlin/_package_', 'java/_package_');
             const possibleTemplates = [];
             let javaTemplateRelativePath;
-            if (['src', 'partials', 'reactive'].includes(folder)) {
+            if (['src', '_global_partials_entity_', 'reactive'].includes(folder)) {
                 javaTemplateRelativePath = relative(join(__dirname, 'templates'), javaTemplate);
                 possibleTemplates.push(
                     join(jhipster8Generators, 'server/templates', javaTemplateRelativePath),
