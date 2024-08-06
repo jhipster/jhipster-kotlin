@@ -18,168 +18,6 @@ limitations under the License.
 -%>
 package <%= packageName %>.web.rest
 
-<%_ if (authenticationTypeOauth2) { _%>
-    <%_ if (reactive) { _%>
-import <%= packageName %>.security.getCurrentUserLogin
-    <%_ } _%>
-import <%= packageName %>.service.UserService
-import <%= packageName %>.service.dto.<%= user.adminUserDto %>
-
-import org.slf4j.LoggerFactory
-import org.springframework.security.authentication.AbstractAuthenticationToken
-import org.springframework.web.bind.annotation.GetMapping
-import org.springframework.web.bind.annotation.RequestMapping
-import org.springframework.web.bind.annotation.RestController
-<%_ if (reactive) { _%>
-import org.springframework.web.server.ServerWebExchange
-import reactor.core.publisher.Mono
-<%_ } else { _%>
-import javax.servlet.http.HttpServletRequest
-<%_ } _%>
-
-import java.security.Principal
-
-/**
- * REST controller for managing the current user's account.
- */
-@RestController
-@RequestMapping("/api")
-class AccountResource(private val userService: UserService) {
-
-    internal class AccountResourceException(message: String) : RuntimeException(message)
-
-    private val log = LoggerFactory.getLogger(javaClass)
-
-    /**
-     * `GET  /account` : get the current user.
-     *
-     * @param principal the current user; resolves to `null` if not authenticated.
-     * @return the current user.
-     * @throws AccountResourceException `500 (Internal Server Error)` if the user couldn't be returned.
-     */
-    @GetMapping("/account")
-    fun getAccount(principal: Principal?): <% if (reactive) { %>Mono<<%= user.adminUserDto %>><% } else { %><%= user.adminUserDto %><% } %> =
-        if (principal is AbstractAuthenticationToken) {
-            userService.getUserFromAuthentication(principal)
-        } else {
-            throw AccountResourceException("User could not be found")
-        }
-
-    /**
-    * {@code GET  /authenticate} : check if the user is authenticated, and return its login.
-    *
-    * @param request the HTTP request.
-    * @return the login if the user is authenticated.
-    */
-    @GetMapping("/authenticate")
-    <%_ if (reactive) { _%>
-    fun isAuthenticated(request: ServerWebExchange): Mono<String?> {
-        log.debug("REST request to check if the current user is authenticated")
-        return request.getPrincipal<Principal>().map(Principal::getName)
-    <%_ } else { _%>
-    fun isAuthenticated(request: HttpServletRequest): String? {
-        log.debug("REST request to check if the current user is authenticated")
-        return request.remoteUser
-    <%_ } _%>
-    }
-
-    companion object {
-        private const val serialVersionUID = 1L
-    }
-}
-<%_ } else if (skipUserManagement) { _%>
-<%_ if (!reactive) { _%>
-import <%= packageName %>.security.getCurrentUserLogin
-<%_ } _%>
-import com.fasterxml.jackson.annotation.JsonCreator
-import org.slf4j.Logger
-import org.slf4j.LoggerFactory
-import org.springframework.security.core.GrantedAuthority
-<%_ if (reactive) { _%>
-import org.springframework.security.core.context.ReactiveSecurityContextHolder
-import org.springframework.security.core.context.SecurityContext
-import org.springframework.security.core.userdetails.UserDetails
-<%_ } else { _%>
-import org.springframework.security.core.context.SecurityContextHolder
-<%_ } _%>
-import org.springframework.web.bind.annotation.GetMapping
-import org.springframework.web.bind.annotation.RequestMapping
-import org.springframework.web.bind.annotation.RestController
-<%_ if (reactive) { _%>
-import org.springframework.web.server.ServerWebExchange
-import reactor.core.publisher.Mono
-<%_ } else { _%>
-import javax.servlet.http.HttpServletRequest
-<%_ } _%>
-
-@RestController
-@RequestMapping("/api")
-class AccountResource {
-
-    private val log = LoggerFactory.getLogger(javaClass)
-
-    internal class AccountResourceException : RuntimeException()
-
-    /**
-     * {@code GET  /account} : get the current user.
-     *
-     * @return the current user.
-     * @throws AccountResourceException {@code 500 (Internal Server Error)} if the user couldn't be returned.
-     */
-    @GetMapping("/account")
-    <%_ if (reactive) { _%>
-    fun getAccount(): Mono<UserVM> {
-        return ReactiveSecurityContextHolder.getContext()
-            .map { SecurityContext.getAuthentication(it) }
-            .map { authentication -> {
-                var login = ""
-                if (authentication.principal is UserDetails) {
-                    login = authentication.principal.username
-                } else if (authentication.principal is String) {
-                    login = authentication.principal
-                } else {
-                    throw AccountResourceException()
-                }
-                val authorities = authentication.authorities()
-                    .map { GrantedAuthority.getAuthority(it) }
-                    .toSet()
-                return UserVM(login, authorities)
-            }}
-            .switchIfEmpty(Mono.error(AccountResourceException()))
-    <%_ } else { _%>
-    fun getAccount(): UserVM {
-        val login = getCurrentUserLogin()
-            .orElseThrow { AccountResourceException() }
-        val authorities = SecurityContextHolder.getContext().authentication.authorities
-            .mapNotNullTo(mutableSetOf()) { it.authority }
-        return UserVM(login, authorities)
-    <%_ } _%>
-    }
-
-    /**
-     * {@code GET  /authenticate} : check if the user is authenticated, and return its login.
-     *
-     * @param request the HTTP request.
-     * @return the login if the user is authenticated.
-     */
-    @GetMapping("/authenticate")
-    <%_ if (reactive) { _%>
-    fun isAuthenticated(request: ServerWebExchange): Mono<String?> {
-        log.debug("REST request to check if the current user is authenticated")
-        return request.getPrincipal<Principal>().map(Principal::getName)
-    <%_ } else { _%>
-    fun isAuthenticated(request: HttpServletRequest): String? {
-        log.debug("REST request to check if the current user is authenticated")
-        return request.remoteUser
-    <%_ } _%>
-    }
-
-    data class UserVM @JsonCreator constructor(val login: String, val authorities: Set<String>) {
-
-        fun isActivated() = true
-    }
-}
-<%_ } else { _%>
 <%_ if (authenticationTypeSession && !reactive) { _%>
 import <%= packageName %>.domain.PersistentToken
 import <%= packageName %>.repository.PersistentTokenRepository
@@ -217,7 +55,7 @@ import org.springframework.web.server.ServerWebExchange
 import reactor.core.publisher.Mono
 <%_ } _%>
 
-<%_ if (!reactive) { _%>
+<%_ if (!reactive && !authenticationTypeJwt) { _%>
 import javax.servlet.http.HttpServletRequest
 <%_ } _%>
 import javax.validation.Valid
@@ -289,6 +127,7 @@ class AccountResource(
         <%_ } _%>
     }
 
+    <%_ if (!authenticationTypeJwt) { _%>
     /**
      * `GET  /authenticate` : check if the user is authenticated, and return its login.
      *
@@ -306,6 +145,8 @@ class AccountResource(
         return request.remoteUser
     <%_ } _%>
     }
+
+    <%_ } _%>
 
     /**
      * `GET  /account` : get the current user.
@@ -357,7 +198,7 @@ class AccountResource(
         val userLogin = getCurrentUserLogin()
             .orElseThrow { AccountResourceException("") }
         val existingUser = userRepository.findOneByEmailIgnoreCase(userDTO.email)
-        if (existingUser.isPresent && !existingUser.get().login.equals(userLogin, ignoreCase = true)) {
+        if (existingUser.isPresent && !existingUser.orElseThrow().login.equals(userLogin, ignoreCase = true)) {
             throw EmailAlreadyUsedException()
         }
         val user = userRepository.findOneByLogin(userLogin)
@@ -455,7 +296,7 @@ class AccountResource(
     fun requestPasswordReset(@RequestBody mail: String) {
         val user = userService.requestPasswordReset(mail)
         if (user.isPresent()) {
-            mailService.sendPasswordResetMail(user.get())
+            mailService.sendPasswordResetMail(user.orElseThrow())
         } else {
             // Pretend the request has been successful to prevent checking which emails really exist
             // but log that an invalid attempt has been made
@@ -491,4 +332,3 @@ class AccountResource(
 }
 
 private fun isPasswordLengthInvalid(password: String?) = password.isNullOrEmpty() || password.length < ManagedUserVM.PASSWORD_MIN_LENGTH || password.length > ManagedUserVM.PASSWORD_MAX_LENGTH
-<%_ } _%>

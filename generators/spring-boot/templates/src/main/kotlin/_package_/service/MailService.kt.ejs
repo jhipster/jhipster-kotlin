@@ -27,14 +27,16 @@ import java.util.Locale
 import javax.mail.MessagingException
 
 import org.slf4j.LoggerFactory
+import org.springframework.beans.factory.annotation.Autowired
 import org.springframework.context.MessageSource
+import org.springframework.context.annotation.Lazy
 import org.springframework.mail.MailException
 import org.springframework.mail.javamail.JavaMailSender
 import org.springframework.mail.javamail.MimeMessageHelper
 import org.springframework.scheduling.annotation.Async
 import org.springframework.stereotype.Service
 import org.thymeleaf.context.Context
-import org.thymeleaf.spring5.SpringTemplateEngine
+import org.thymeleaf.spring6.SpringTemplateEngine
 
 private const val USER = "user"
 private const val BASE_URL = "baseUrl"
@@ -53,6 +55,10 @@ class MailService(
 ) {
 
     private val log = LoggerFactory.getLogger(javaClass)
+
+    @Autowired
+    @Lazy
+    private lateinit var self: MailService
 
     @Async
     fun sendEmail(to: String, subject: String, content: String, isMultipart: Boolean, isHtml: Boolean) {
@@ -91,26 +97,26 @@ class MailService(
         }
         val content = templateEngine.process(templateName, context)
         val subject = messageSource.getMessage(titleKey, null, locale)
-        sendEmail(user.email!!, subject, content, isMultipart = false, isHtml = true)
+        self.sendEmail(user.email!!, subject, content, isMultipart = false, isHtml = true)
     }
     <%_ if (!authenticationTypeOauth2) { _%>
 
     @Async
     fun sendActivationEmail(user: <%= user.persistClass %>) {
         log.debug("Sending activation email to '${user.email}'")
-        sendEmailFromTemplate(user, "mail/activationEmail", "email.activation.title")
+        self.sendEmailFromTemplate(user, "mail/activationEmail", "email.activation.title")
     }
 
     @Async
     fun sendCreationEmail(user: <%= user.persistClass %>) {
         log.debug("Sending creation email to '${user.email}'")
-        sendEmailFromTemplate(user, "mail/creationEmail", "email.activation.title")
+        self.sendEmailFromTemplate(user, "mail/creationEmail", "email.activation.title")
     }
 
     @Async
     fun sendPasswordResetMail(user: <%= user.persistClass %>) {
         log.debug("Sending password reset email to '${user.email}'")
-        sendEmailFromTemplate(user, "mail/passwordResetEmail", "email.reset.title")
+        self.sendEmailFromTemplate(user, "mail/passwordResetEmail", "email.reset.title")
     }
     <%_ } _%>
 }

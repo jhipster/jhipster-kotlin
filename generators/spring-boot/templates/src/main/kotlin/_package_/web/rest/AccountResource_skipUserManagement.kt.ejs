@@ -1,0 +1,174 @@
+<%#
+Copyright 2013-2024 the original author or authors from the JHipster project.
+
+This file is part of the JHipster project, see https://www.jhipster.tech/
+for more information.
+
+Licensed under the Apache License, Version 2.0 (the "
+you may not use this file except in compliance with the License.
+You may obtain a copy of the License at
+
+     http://www.apache.org/licenses/LICENSE-2.0
+
+Unless required by applicable law or agreed to in writing, software
+distributed under the License is distributed on an "AS IS" BASIS,
+WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
+See the License for the specific language governing permissions and
+limitations under the License.
+-%>
+package <%= packageName %>.web.rest
+
+<%_ if (reactive) { _%>
+import reactor.core.publisher.Mono
+<%_ } else { _%>
+import javax.servlet.http.HttpServletRequest
+<%_ } _%>
+
+<%_ if (authenticationTypeOauth2) { _%>
+import org.springframework.security.oauth2.client.authentication.OAuth2AuthenticationToken
+    <%_ if (reactive) { _%>
+import org.springframework.web.server.ServerWebExchange
+    <%_ } _%>
+<%_ } _%>
+<%_ if (authenticationTypeOauth2 || authenticationTypeJwt) { _%>
+import java.security.Principal
+import org.springframework.security.oauth2.server.resource.authentication.JwtAuthenticationToken
+import org.springframework.security.authentication.AbstractAuthenticationToken
+<%_ } else { _%>
+    <%_ if (reactive) { _%>
+import java.security.Principal
+import org.springframework.web.server.ServerWebExchange
+import org.springframework.security.core.context.ReactiveSecurityContextHolder
+import org.springframework.security.core.context.SecurityContext
+import org.springframework.security.core.userdetails.UserDetails
+    <%_ } else { _%>
+import <%= packageName %>.security.SecurityUtils
+import org.springframework.security.core.context.SecurityContextHolder
+    <%_ } _%>
+<%_ } _%>
+
+import com.fasterxml.jackson.annotation.JsonCreator
+import org.slf4j.Logger
+import org.slf4j.LoggerFactory
+import org.springframework.security.core.GrantedAuthority
+import org.springframework.web.bind.annotation.GetMapping
+import org.springframework.web.bind.annotation.RequestMapping
+import org.springframework.web.bind.annotation.RestController
+
+import java.util.Set
+import java.util.stream.Collectors
+
+@RestController
+@RequestMapping("/api")
+class AccountResource {
+
+    private val log = LoggerFactory.getLogger(javaClass)
+
+    internal class AccountResourceException <% if (authenticationTypeOauth2 || authenticationTypeJwt) { %>(message: String) <% } %> : RuntimeException(<% if (authenticationTypeOauth2 || authenticationTypeJwt) { %>(message) <% } %>)
+    
+    /**
+     * {@code GET  /account} : get the current user.
+     *
+<%_ if (authenticationTypeOauth2 || authenticationTypeJwt) { _%>
+     * @param principal the current user; resolves to {@code null} if not authenticated.
+<%_ } _%>
+     * @return the current user.
+     * @throws AccountResourceException {@code 500 (Internal Server Error)} if the user couldn't be returned.
+     */
+    @GetMapping("/account")
+<%_ if (reactive) { _%>
+        <%_ if (authenticationTypeOauth2 || authenticationTypeJwt) { _%>
+    fun getAccount(principal: Principal):  Mono<UserVM>{
+        if (principal is AbstractAuthenticationToken) {
+            return Mono.just(getUserFromAuthentication(principal as AbstractAuthenticationToken))
+        } else {
+            throw AccountResourceException("User could not be found")
+        }
+    }
+        <%_ } else { _%>
+    fun getAccount(): Mono<UserVM> {
+        return ReactiveSecurityContextHolder.getContext()
+            .map { SecurityContext.getAuthentication(it) }
+            .map { authentication -> {
+                var login = ""
+                if (authentication.principal is UserDetails) {
+                    login = authentication.principal.username
+                } else if (authentication.principal is String) {
+                    login = authentication.principal
+                } else {
+                    throw AccountResourceException()
+                }
+                val authorities = authentication.authorities()
+                    .map { GrantedAuthority.getAuthority(it) }
+                    .toSet()
+                return UserVM(login, authorities)
+                }
+            }
+            .switchIfEmpty(Mono.error(AccountResourceException()))
+    }
+    <%_ } _%>
+<%_ } else { _%>
+    <%_ if (authenticationTypeOauth2 || authenticationTypeJwt) { _%>
+      fun getAccount(principal: Principal): UserVM {
+          if (principal is AbstractAuthenticationToken) {
+              return getUserFromAuthentication(principal as AbstractAuthenticationToken)
+          } else {
+              throw AccountResourceException("User could not be found")
+          }
+      }
+    <%_ } else { _%>
+    fun getAccount(): UserVM {
+        val login = getCurrentUserLogin()
+            .orElseThrow { AccountResourceException() }
+        val authorities = SecurityContextHolder.getContext().authentication.authorities
+            .mapNotNullTo(mutableSetOf()) { it.authority }
+        return UserVM(login, authorities)
+    }
+    <%_ } _%>
+<%_ } _%>
+
+<%_ if (!authenticationTypeJwt) { _%>
+    /**
+     * {@code GET  /authenticate} : check if the user is authenticated, and return its login.
+     *
+     * @param request the HTTP request.
+     * @return the login if the user is authenticated.
+     */
+    @GetMapping("/authenticate")
+    <%_ if (reactive) { _%>
+    fun isAuthenticated(request: ServerWebExchange): Mono<String?> {
+        log.debug("REST request to check if the current user is authenticated")
+        return request.getPrincipal<Principal>().map(Principal::getName)
+    }
+    <%_ } else { _%>
+    fun isAuthenticated(request: HttpServletRequest): String? {
+        log.debug("REST request to check if the current user is authenticated")
+        return request.remoteUser
+    }
+    <%_ } _%>
+<%_ } _%>
+
+    data class UserVM @JsonCreator constructor(val login: String, val authorities: Set<String>) {
+
+        fun isActivated() = true
+    }
+
+    <%_ if (authenticationTypeOauth2 || authenticationTypeJwt) { _%>
+  
+        private fun getUserFromAuthentication(authToken: AbstractAuthenticationToken): UserVM{
+            if (
+      <%_ if (authenticationTypeOauth2) { _%>
+                !(authToken is OAuth2AuthenticationToken) &&
+      <%_ } _%>
+                !(authToken is JwtAuthenticationToken)
+            ) {
+                throw IllegalArgumentException("AuthenticationToken is not OAuth2 or JWT!")
+            }
+    
+            return UserVM(
+                authToken.name,
+                authToken.authorities.stream().map(GrantedAuthority::getAuthority).collect(Collectors.toSet())
+            );
+        }
+    <%_ } _%>
+}

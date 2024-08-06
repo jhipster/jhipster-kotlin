@@ -20,14 +20,6 @@ package <%= packageName %>.config
 
 import java.util.*
 
-<%_ if (databaseTypeCassandra) { _%>
-import org.cassandraunit.CQLDataLoader
-<%_ } _%>
-<%_ if (databaseTypeSql) { _%>
-import java.util.Arrays
-import tech.jhipster.config.JHipsterConstants
-<%_ } _%>
-
 import org.slf4j.Logger
 import org.slf4j.LoggerFactory
 import org.springframework.beans.factory.config.ConfigurableListableBeanFactory
@@ -39,44 +31,20 @@ import org.springframework.test.context.ContextCustomizer
 import org.springframework.test.context.ContextCustomizerFactory
 import org.springframework.beans.factory.support.DefaultListableBeanFactory
 import org.springframework.boot.test.util.TestPropertyValues
-<%_ if (databaseTypeCassandra) { _%>
-import org.testcontainers.containers.CassandraContainer
-<%_ } _%>
-<%_ if (messageBrokerKafka) { _%>
-import org.testcontainers.containers.KafkaContainer
-<%_ } _%>
 
 class TestContainersSpringContextCustomizerFactory: ContextCustomizerFactory {
 
     private val log = LoggerFactory.getLogger(TestContainersSpringContextCustomizerFactory::class.java)
 
     companion object {
-    <%_ if (cacheProviderRedis) { _%>
-        private var redisBean: RedisTestContainer? = null
-    <%_ } _%>
-    <%_ if (messageBrokerKafka) { _%>
-        private var kafkaBean: KafkaTestContainer? = null
-    <%_ } _%>
     <%_ if (databaseTypeMongodb) { _%>
         private var mongoDbBean: MongoDbTestContainer? = null
-    <%_ } _%>
-    <%_ if (databaseTypeCassandra) { _%>
-        private var cassandraBean: CassandraTestContainer? = null
     <%_ } _%>
     <%_ if (searchEngineElasticsearch) { _%>
         private var elasticsearchBean: ElasticsearchTestContainer? = null
     <%_ } _%>
     <%_ if (databaseTypeCouchbase || searchEngineCouchbase) { _%>
         private var couchbaseBean: CouchbaseTestContainer? = null
-    <%_ } _%>
-    <%_ if (databaseTypeNeo4j) { _%>
-        private var neo4jBean: Neo4jTestContainer? = null
-    <%_ } _%>
-    <%_ if (devDatabaseTypeMysql || devDatabaseTypeMariadb || devDatabaseTypeMssql || devDatabaseTypePostgres) { _%>
-        private var devTestContainer: SqlTestContainer? = null
-    <%_ } _%>
-    <%_ if (prodDatabaseTypeMysql || prodDatabaseTypeMariadb || prodDatabaseTypeMssql || prodDatabaseTypePostgresql) { _%>
-        private var prodTestContainer: SqlTestContainer? = null
     <%_ } _%>
     }
 
@@ -119,133 +87,6 @@ class TestContainersSpringContextCustomizerFactory: ContextCustomizerFactory {
                 mongoDbBean?.let {
                     testValues = testValues.and("spring.data.mongodb.uri=" + it.getMongoDBContainer().replicaSetUrl)
                 }
-            }
-<%_ } _%>
-<%_ if (cacheProviderRedis) { _%>
-            val redisAnnotation = AnnotatedElementUtils.findMergedAnnotation(testClass, EmbeddedRedis::class.java)
-            if (null != redisAnnotation) {
-                log.debug("detected the EmbeddedRedis annotation on class {}", testClass.name)
-                log.info("Warming up the redis database")
-                if (null == redisBean) {
-                    redisBean = beanFactory.createBean(RedisTestContainer::class.java)
-                    beanFactory.registerSingleton(RedisTestContainer::class.java.name, redisBean)
-                    // (beanFactory as (DefaultListableBeanFactory)).registerDisposableBean(RedisTestContainer::class.java.name, redisBean)
-                }
-                redisBean?.let {
-                    testValues = testValues.and("jhipster.cache.redis.server=redis://" + it.getRedisContainer()?.containerIpAddress + ":" + it.getRedisContainer()?.getMappedPort(6379))
-                }
-            }
-<%_ } _%>
-<%_ if (databaseTypeSql) { _%>
-            val sqlAnnotation = AnnotatedElementUtils.findMergedAnnotation(testClass, EmbeddedSQL::class.java)
-            if (null != sqlAnnotation) {
-                log.debug("detected the EmbeddedSQL annotation on class {}", testClass.name)
-                log.info("Warming up the sql database")
-    <%_ if (devDatabaseTypeMysql || devDatabaseTypeMariadb || devDatabaseTypeMssql || devDatabaseTypePostgres) { _%>
-                if (context.environment.activeProfiles.contains("test${JHipsterConstants.SPRING_PROFILE_DEVELOPMENT}")) {
-                    if (null == devTestContainer) {
-                        try {
-                            val containerClass =  Class.forName("${javaClass.packageName}.<% if (devDatabaseTypeMysql) { %>Mysql<% } else if (devDatabaseTypeMariadb) { %>Mariadb<% } else if (devDatabaseTypeMssql) { %>MsSql<% } else if (devDatabaseTypePostgres) { %>PostgreSql<% } %>TestContainer") as (Class<out SqlTestContainer>)
-                            devTestContainer = beanFactory.createBean(containerClass)
-                            beanFactory.registerSingleton(containerClass.name, devTestContainer)
-                            // (beanFactory as DefaultListableBeanFactory).registerDisposableBean(containerClass.name, devTestContainer)
-                        } catch (e: ClassNotFoundException) {
-                            throw RuntimeException(e)
-                        }
-                    }
-                    devTestContainer?.let {
-<%_ if (reactive) { _%>
-                        testValues = testValues.and("spring.r2dbc.url=" + it.getTestContainer().jdbcUrl.replace("jdbc", "r2dbc")<% if (devDatabaseTypeMysql) { %>.replace("mysql", "mariadb")<% } else if (devDatabaseTypeMssql) { %>.replace("encrypt=false", "")<% } %> + "<%- prodDatabaseExtraOptions %>")
-                        testValues = testValues.and("spring.r2dbc.username=" + it.getTestContainer().username)
-                        testValues = testValues.and("spring.r2dbc.password=" + it.getTestContainer().password)
-                        testValues = testValues.and("spring.liquibase.url=" + it.getTestContainer().jdbcUrl + "<%- prodDatabaseExtraOptions %>" )
-<%_ } else { _%>
-                        testValues = testValues.and("spring.datasource.url=" + it.getTestContainer().jdbcUrl + "<%- prodDatabaseExtraOptions %>")
-                        testValues = testValues.and("spring.datasource.username=" + it.getTestContainer().username)
-                        testValues = testValues.and("spring.datasource.password=" + it.getTestContainer().password)
-<%_ } _%>
-                    }
-                }
-<%_ } _%>
-<%_ if (prodDatabaseTypeMysql || prodDatabaseTypeMariadb || prodDatabaseTypeMssql || prodDatabaseTypePostgresql) { _%>
-                if (context.environment.activeProfiles.asList().contains("test${JHipsterConstants.SPRING_PROFILE_PRODUCTION}")) {
-                    if (null == prodTestContainer) {
-                        try {
-                            val containerClass = Class.forName("${javaClass.packageName}.<% if (prodDatabaseTypeMysql) { %>Mysql<% } else if (prodDatabaseTypeMariadb) { %>Mariadb<% } else if (prodDatabaseTypeMssql) { %>MsSql<% } else if (prodDatabaseTypePostgresql) { %>PostgreSql<% } %>TestContainer") as (Class<out SqlTestContainer>)
-                            prodTestContainer = beanFactory.createBean(containerClass)
-                            beanFactory.registerSingleton(containerClass.name, prodTestContainer)
-                            // (beanFactory as (DefaultListableBeanFactory)).registerDisposableBean(containerClass.name, prodTestContainer)
-                        } catch (e: ClassNotFoundException) {
-                            throw RuntimeException(e)
-                        }
-                    }
-                    prodTestContainer?.let {
-<%_ if (reactive) { _%>
-                        testValues = testValues.and("spring.r2dbc.url=" + it.getTestContainer().jdbcUrl.replace("jdbc", "r2dbc")<% if (prodDatabaseTypeMysql) { %>.replace("mysql", "mariadb")<% } else if (prodDatabaseTypeMssql) { %>.replace("encrypt=false", "")<% } %> + "<%- prodDatabaseExtraOptions %>")
-                        testValues = testValues.and("spring.r2dbc.username=" + it.getTestContainer().username)
-                        testValues = testValues.and("spring.r2dbc.password=" + it.getTestContainer().password)
-                        testValues = testValues.and("spring.liquibase.url=" + it.getTestContainer().jdbcUrl  + "<%- prodDatabaseExtraOptions %>")
-<%_ } else { _%>
-                        testValues = testValues.and("spring.datasource.url=" + it.getTestContainer().jdbcUrl + "<%- prodDatabaseExtraOptions %>")
-                        testValues = testValues.and("spring.datasource.username=" + it.getTestContainer().username)
-                        testValues = testValues.and("spring.datasource.password=" + it.getTestContainer().password)
-<%_ } _%>
-                    }
-                }
-<%_ } _%>
-            }
-<%_ } _%>
-
-<%_ if (databaseTypeCassandra) { _%>
-    val cassandraAnnotation = AnnotatedElementUtils.findMergedAnnotation(testClass, EmbeddedCassandra::class.java)
-    if (null != cassandraAnnotation) {
-        log.debug("detected the EmbeddedCassandra annotation on class {}", testClass.name)
-        log.info("Warming up the cassandra database")
-        if (null == cassandraBean) {
-            cassandraBean = beanFactory.createBean(CassandraTestContainer::class.java)
-            beanFactory.registerSingleton(CassandraTestContainer::class.java.name, cassandraBean)
-            // (beanFactory as (DefaultListableBeanFactory)).registerDisposableBean(CassandraTestContainer::class.java.name, cassandraBean)
-        }
-        cassandraBean?.let {
-            testValues = testValues.and("spring.data.cassandra.port=" +  it.getCassandraContainer().getMappedPort(CassandraContainer.CQL_PORT))
-                .and("spring.data.cassandra.contact-points=" +  it.getCassandraContainer().host)
-                .and("spring.data.cassandra.keyspace-name=" + CQLDataLoader.DEFAULT_KEYSPACE_NAME)
-                .and("spring.data.cassandra.local-datacenter=" + it.getCassandraContainer().cluster.metadata.allHosts.iterator().next().datacenter)
-                .and("spring.data.cassandra.cluster-name=" + it.getCassandraContainer().cluster.metadata.clusterName)
-        }
-    }
-<%_ } _%>
-<%_ if (databaseTypeNeo4j) { _%>
-            val neo4jAnnotation = AnnotatedElementUtils.findMergedAnnotation(testClass, EmbeddedNeo4j::class.java)
-            if (null != neo4jAnnotation) {
-                log.debug("detected the EmbeddedNeo4j annotation on class {}", testClass.name)
-                log.info("Warming up the neo4j database")
-                if (null == neo4jBean) {
-                    neo4jBean = beanFactory.createBean(Neo4jTestContainer::class.java)
-                    beanFactory.registerSingleton(Neo4jTestContainer::class.java.name, neo4jBean)
-                    // (beanFactory as (DefaultListableBeanFactory)).registerDisposableBean(Neo4jTestContainer::class.java.name, neo4jBean)
-                }
-                neo4jBean?.let {
-                    testValues =
-                        testValues.and(
-                            "spring.neo4j.uri=" + it.getNeo4jContainer()?.boltUrl
-                        )
-                }
-            }
-<%_ } _%>
-<%_ if (messageBrokerKafka) { _%>
-    val kafkaAnnotation = AnnotatedElementUtils.findMergedAnnotation(testClass, EmbeddedKafka::class.java)
-    if (null != kafkaAnnotation) {
-        log.debug("detected the EmbeddedKafka annotation on class {}", testClass.name)
-        log.info("Warming up the kafka broker")
-        if (null == kafkaBean) {
-            kafkaBean = beanFactory.createBean(KafkaTestContainer::class.java)
-            beanFactory.registerSingleton(KafkaTestContainer::class.java.name, kafkaBean)
-            // (beanFactory as (DefaultListableBeanFactory)).registerDisposableBean(KafkaTestContainer::class.java.name, kafkaBean)
-        }
-        kafkaBean?.let {
-            testValues = testValues.and("spring.cloud.stream.kafka.binder.brokers=" + it.getKafkaContainer().host + ':' + it.getKafkaContainer().getMappedPort(KafkaContainer.KAFKA_PORT))
-        }
     }
 <%_ } _%>
 <%_ if (searchEngineElasticsearch) { _%>
@@ -269,5 +110,4 @@ class TestContainersSpringContextCustomizerFactory: ContextCustomizerFactory {
             testValues.applyTo(context)
         }
     }
-
 }

@@ -42,8 +42,8 @@ import <%= packageName %>.security.ADMIN
 import <%= packageName %>.security.USER
 import <%= packageName %>.service.UserService
 import <%= packageName %>.service.dto.PasswordChangeDTO
-import <%= packageName %>.service.dto.<%= user.restClass %>
 import <%= packageName %>.service.dto.<%= user.adminUserDto %>
+import <%= packageName %>.service.dto.<%= user.dtoClass %>
 import <%= packageName %>.web.rest.vm.KeyAndPasswordVM
 import <%= packageName %>.web.rest.vm.ManagedUserVM
 import org.apache.commons.lang3.RandomStringUtils
@@ -96,7 +96,6 @@ import org.mockito.Mockito.*
 import org.hamcrest.Matchers.containsString
 import org.hamcrest.Matchers.hasItem
 <%_ } _%>
-import <%= packageName %>.web.rest.TEST_USER_LOGIN
 <%_ if (reactive) { _%>
     <%_ if (authenticationUsesCsrf) { _%>
 import org.springframework.security.test.web.reactive.server.SecurityMockServerConfigurers.csrf
@@ -129,7 +128,6 @@ import <%= packageName %>.config.SYSTEM_ACCOUNT
 <%_ } else { _%>
 @AutoConfigureMockMvc
 <%_ } _%>
-@WithMockUser(value = TEST_USER_LOGIN)
 @IntegrationTest
 class AccountResourceIT {
 
@@ -196,6 +194,7 @@ class AccountResourceIT {
     }
 
     @Test
+    @WithMockUser(TEST_USER_LOGIN)
     <%_ if (reactive) { _%>
     fun testAuthenticatedUser() {
         accountWebTestClient
@@ -208,10 +207,7 @@ class AccountResourceIT {
     @Throws(Exception::class)
     fun testAuthenticatedUser() {
         restAccountMockMvc.perform(get("/api/authenticate")
-            .with { request ->
-                request.remoteUser = TEST_USER_LOGIN
-                request
-            }
+            .with(request -> request)
             .accept(MediaType.APPLICATION_JSON))
             .andExpect(status().isOk)
             .andExpect(content().string(TEST_USER_LOGIN))
@@ -219,6 +215,7 @@ class AccountResourceIT {
     }
 
     @Test
+    @WithMockUser(TEST_USER_LOGIN)
     <%_ if (!reactive) { _%>
     @Throws(Exception::class)
     <%_ } _%>
@@ -278,13 +275,17 @@ class AccountResourceIT {
         accountWebTestClient.get().uri("/api/account")
             .accept(MediaType.APPLICATION_JSON)
             .exchange()
-            .expectStatus().isEqualTo(HttpStatus.INTERNAL_SERVER_ERROR)
+            <%_ if (authenticationTypeSession) { _%>
+            .expectStatus().isEqualTo(HttpStatus.OK);
+             <%_ } else { _%>
+            .expectStatus().isEqualTo(HttpStatus.UNAUTHORIZED);
+            <%_ } _%>
     <%_ } else { _%>
     @Throws(Exception::class)
     fun testGetUnknownAccount() {
         restAccountMockMvc.perform(get("/api/account")
             .accept(MediaType.APPLICATION_PROBLEM_JSON))
-            .andExpect(status().isInternalServerError)
+            .andExpect(status().isUnauthorized)
     <%_ } _%>
     }
 
@@ -564,8 +565,8 @@ class AccountResourceIT {
 
         val testUser = userRepository.findOneByEmailIgnoreCase("alice2@example.com")<% if (reactive) { %>.blockOptional()<% } %>
         assertThat(testUser).isPresent
-        testUser.get().activated = true
-        userRepository.save(testUser.get())<% if (reactive) { %>.block()<% } %>
+        testUser.orElseThrow().activated = true
+        userRepository.save(testUser.orElseThrow())<% if (reactive) { %>.block()<% } %>
 
         // Second (already activated) user
         <%_ if (reactive) { _%>
@@ -698,10 +699,10 @@ class AccountResourceIT {
 
         val testUser4 = userRepository.findOneByLogin("test-register-duplicate-email-3")<% if (reactive) { %>.blockOptional()<% } %>
         assertThat(testUser4).isPresent
-        assertThat(testUser4.get().email).isEqualTo("test-register-duplicate-email@example.com")
+        assertThat(testUser4.orElseThrow().email).isEqualTo("test-register-duplicate-email@example.com")
 
-        testUser4.get().activated = true
-        userService.updateUser((<%= user.adminUserDto %>(testUser4.get())))<% if (reactive) { %>.block()<% } %>
+        testUser4.orElseThrow().activated = true
+        userService.updateUser((<%= user.adminUserDto %>(testUser4.orElseThrow())))<% if (reactive) { %>.block()<% } %>
 
         // Register 4th (already activated) user
         <%_ if (reactive) { _%>
@@ -759,8 +760,8 @@ class AccountResourceIT {
 
         val userDup = userRepository.findOne<% if (databaseTypeSql) { %>WithAuthorities<% } %>ByLogin("badguy")<% if (reactive) { %>.blockOptional()<% } %>
         assertThat(userDup).isPresent
-        assertThat(userDup.get().authorities).hasSize(1)
-        assertContains(userDup.get().authorities, <% if (databaseTypeSql || databaseTypeMongodb || databaseTypeNeo4j) { %>authorityRepository.findById(USER).<% if (reactive) { %>block<% } else { %>get<% } %>()<% } %><% if (databaseTypeCassandra || databaseTypeCouchbase) { %>USER<% } %>)
+        assertThat(userDup.orElseThrow().authorities).hasSize(1)
+        assertContains(userDup.orElseThrow().authorities, <% if (databaseTypeSql || databaseTypeMongodb || databaseTypeNeo4j) { %>authorityRepository.findById(USER).<% if (reactive) { %>block<% } else { %>get<% } %>()<% } %><% if (databaseTypeCassandra || databaseTypeCouchbase) { %>USER<% } %>)
     }
 
     @Test<% if (databaseTypeSql && !reactive) { %>

@@ -44,6 +44,9 @@ import org.springframework.data.annotation.Id
 import org.springframework.data.annotation.Transient
 import org.springframework.data.relational.core.mapping.Column
 import org.springframework.data.relational.core.mapping.Table
+    <%_ if (requiresPersistableImplementation) { _%>
+import org.springframework.data.domain.Persistable;
+    <%_ } _%>
 <%_ } _%>
 <%_ if (databaseTypeMongodb) { _%>
 import org.springframework.data.annotation.Id
@@ -140,7 +143,7 @@ import org.springframework.data.couchbase.core.mapping.id.GenerationStrategy.USE
 <%_ if (searchEngineElasticsearch) { _%>
 @org.springframework.data.elasticsearch.annotations.Document(indexName = "user")
 <%_ } _%>
-class <%= user.persistClass %> (
+class <%= user.persistClass %>  (
 <%_ if (databaseTypeSql) { _%>
 
     @Id
@@ -149,7 +152,7 @@ class <%= user.persistClass %> (
     @GeneratedValue(strategy = GenerationType.IDENTITY)
         <%_ } else if (user.primaryKey.fields[0].jpaGeneratedValue === 'sequence') { _%>
     @GeneratedValue(strategy = GenerationType.SEQUENCE, generator = "sequenceGenerator")
-    @SequenceGenerator(name = "sequenceGenerator")
+    @SequenceGenerator(name = "sequenceGenerator"<% if (user.primaryKey.fields[0].liquibaseCustomSequenceGenerator) { %>, sequenceName = "<%- user.primaryKey.fields[0].jpaSequenceGeneratorName %>"<% } %>)
         <%_ } else if (user.primaryKey.fields[0].jpaGeneratedValue) { _%>
     @GeneratedValue
         <%_ } _%>
@@ -162,7 +165,11 @@ class <%= user.persistClass %> (
     <%_ if (!authenticationTypeOauth2) { _%>
     @GeneratedValue(UUIDStringGenerator::class)
     <%_ } _%>
+    <%_ if (databaseMigrationLiquibase) { _%>
+    @Property("id")
+    <%_ } else { _%>
     @Property("user_id")
+    <%_ } _%>
 <%_ } else { _%>
 <%_ if (databaseTypeMongodb || databaseTypeCouchbase) { _%>
 
@@ -207,6 +214,9 @@ class <%= user.persistClass %> (
     <%_ } _%>
     <%_ if (databaseTypeSql && reactive) { _%>
     @Column("password_hash")
+    <%_ } _%>
+    <%_ if (databaseTypeNeo4j && databaseMigrationLiquibase) { _%>
+    @Property("password_hash")
     <%_ } _%>
     var password: String? = null,
 <%_ } _%>
@@ -386,9 +396,9 @@ class <%= user.persistClass %> (
     <% if (databaseTypeSql && reactive) { %>
     @Transient
     <% } %>
-    <% if (['sql', 'mongodb', 'neo4j'].includes(databaseType)) { %>
+    <% if (databaseTypeSql || databaseTypeMongodb || databaseTypeNeo4j) { %>
     var authorities: MutableSet<Authority> = mutableSetOf()
-    <% } else if (['cassandra', 'couchbase'].includes(databaseType)) { %>
+    <% } else { %>
     var authorities: MutableSet<String> = mutableSetOf()
     <% } %><% if (authenticationTypeSession && databaseTypeSql && !reactive) { %>,
 
@@ -398,12 +408,17 @@ class <%= user.persistClass %> (
     @Cache(usage = CacheConcurrencyStrategy.READ_WRITE)
     <%_ } _%>
     var persistentTokens: MutableSet<PersistentToken> = mutableSetOf()<% } %><% if (databaseTypeSql || databaseTypeMongodb || databaseTypeNeo4j || databaseTypeCouchbase) { %>,
+    <%_ if (databaseTypeSql && reactive && requiresPersistableImplementation) { _%>
+
+    @Transient
+    var isPersisted: Boolean = true,
+    <%_ } _%>
     createdBy: String? = null,
     createdDate: Instant? = Instant.now(),
     lastModifiedBy: String? = null,
     lastModifiedDate: Instant? = Instant.now()
 <%_ } _%>
-) : <% if (databaseTypeSql || databaseTypeMongodb || databaseTypeNeo4j || databaseTypeCouchbase) { %>AbstractAuditingEntity<<%= user.primaryKey.type %>>(createdBy, createdDate, lastModifiedBy, lastModifiedDate), <% } %>Serializable {
+) : <% if (databaseTypeSql || databaseTypeMongodb || databaseTypeNeo4j || databaseTypeCouchbase) { %>AbstractAuditingEntity<<%= user.primaryKey.type %>>(createdBy, createdDate, lastModifiedBy, lastModifiedDate), <% } %>Serializable<% if (databaseTypeSql && reactive && requiresPersistableImplementation) { %>, Persistable<<% if (user.primaryKey.hasUUID) { %>UUID<% } else { %>String<% } %>><% } %>  {
 
 <%_ if (databaseTypeSql && reactive) { _%>
     @PersistenceConstructor
@@ -465,7 +480,7 @@ class <%= user.persistClass %> (
 
     override fun equals(other: Any?): Boolean {
         if (this === other) return true
-        if (other !is <%= user.persistClass %>) return false
+        if (other !is <%= user.persistClass %> ) return false
         if (other.id == null || id == null) return false
 
         return id == other.id
@@ -474,7 +489,7 @@ class <%= user.persistClass %> (
     override fun hashCode() = 31
 
     override fun toString() =
-        "<%= user.persistClass %>{" +
+        "<%= user.persistClass %> {" +
             "login='" + login + '\'' +
             ", firstName='" + firstName + '\'' +
             ", lastName='" + lastName + '\'' +

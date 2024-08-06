@@ -1,0 +1,89 @@
+<%#
+Copyright 2013-2024 the original author or authors from the JHipster project.
+
+This file is part of the JHipster project, see https://www.jhipster.tech/
+for more information.
+
+Licensed under the Apache License, Version 2.0 (the "
+you may not use this file except in compliance with the License.
+You may obtain a copy of the License at
+
+     http://www.apache.org/licenses/LICENSE-2.0
+
+Unless required by applicable law or agreed to in writing, software
+distributed under the License is distributed on an "AS IS" BASIS,
+WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
+See the License for the specific language governing permissions and
+limitations under the License.
+-%>
+package <%= packageName %>.web.rest
+
+<%_ if (reactive) { _%>
+import <%= packageName %>.security.getCurrentUserLogin
+<%_ } _%>
+import <%= packageName %>.service.UserService
+import <%= packageName %>.service.dto.<%= user.adminUserDto %>
+
+import org.slf4j.LoggerFactory
+import org.springframework.security.authentication.AbstractAuthenticationToken
+import org.springframework.web.bind.annotation.GetMapping
+import org.springframework.web.bind.annotation.RequestMapping
+import org.springframework.web.bind.annotation.RestController
+<%_ if (reactive) { _%>
+import org.springframework.web.server.ServerWebExchange
+import reactor.core.publisher.Mono
+<%_ } else { _%>
+import javax.servlet.http.HttpServletRequest
+<%_ } _%>
+
+import java.security.Principal
+
+/**
+ * REST controller for managing the current user's account.
+ */
+@RestController
+@RequestMapping("/api")
+class AccountResource(private val userService: UserService) {
+
+    internal class AccountResourceException(message: String) : RuntimeException(message)
+
+    private val log = LoggerFactory.getLogger(javaClass)
+
+    /**
+     * `GET  /account` : get the current user.
+     *
+     * @param principal the current user; resolves to `null` if not authenticated.
+     * @return the current user.
+     * @throws AccountResourceException `500 (Internal Server Error)` if the user couldn't be returned.
+     */
+    @GetMapping("/account")
+    fun getAccount(principal: Principal?): <% if (reactive) { %>Mono<<%= user.adminUserDto %>><% } else { %><%= user.adminUserDto %><% } %> =
+        if (principal is AbstractAuthenticationToken) {
+            userService.getUserFromAuthentication(principal)
+        } else {
+            throw AccountResourceException("User could not be found")
+        }
+
+    /**
+    * {@code GET  /authenticate} : check if the user is authenticated, and return its login.
+    *
+    * @param request the HTTP request.
+    * @return the login if the user is authenticated.
+    */
+    @GetMapping("/authenticate")
+    <%_ if (reactive) { _%>
+    fun isAuthenticated(request: ServerWebExchange): Mono<String?> {
+        log.debug("REST request to check if the current user is authenticated")
+        return request.getPrincipal<Principal>().map(Principal::getName)
+    }
+    <%_ } else { _%>
+    fun isAuthenticated(request: HttpServletRequest): String? {
+        log.debug("REST request to check if the current user is authenticated")
+        return request.remoteUser
+    }
+    <%_ } _%>
+
+    companion object {
+        private const val serialVersionUID = 1L
+    }
+}
