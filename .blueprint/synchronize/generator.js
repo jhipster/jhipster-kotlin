@@ -25,7 +25,6 @@ import { passthrough } from '@yeoman/transform';
 import { convertToKotlinFile } from '../../generators/kotlin/support/index.js';
 
 const __dirname = dirname(fileURLToPath(import.meta.url));
-// const jhipster7TemplatesPackage = dirname(fileURLToPath(import.meta.resolve('jhipster-7-templates/package.json')));
 const jhipster8Generators = join(__dirname, '../../node_modules/generator-jhipster/dist/generators');
 
 export default class SynchronizeGenerator extends BaseGenerator {
