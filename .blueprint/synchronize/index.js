@@ -16,16 +16,5 @@
  * See the License for the specific language governing permissions and
  * limitations under the License.
  */
-
-const defaultCommands = {
-    'generate-sample': {
-        desc: 'Generate a test sample',
-        blueprint: '@jhipster/jhipster-dev',
-    },
-    synchronize: {
-        desc: 'Synchronize templates from generator-jhipster',
-        blueprint: '@jhipster/jhipster-dev',
-    },
-};
-
-export default defaultCommands;
+export { default } from './generator.js';
+export { default as command } from './command.js';
