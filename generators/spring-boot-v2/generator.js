@@ -32,6 +32,27 @@ export default class extends BaseApplicationGenerator {
             migrateApplicationTask,
             ignoreSpringBootV3Files({ application }) {
                 application.customizeTemplatePaths.push(
+                    // Adjust feign-client and kafka destinationFile for jhipster 7 paths
+                    file => {
+                        if (!['jhipster:feign-client', 'jhipster:spring-cloud-stream:kafka'].includes(file.namespace)) return file;
+                        const renamedFiles = file => {
+                            for (const fileMap of [
+                                ['security/oauth2/AuthorizationHeaderUtilTest.', 'client/AuthorizationHeaderUtilTest.'],
+                                ['security/oauth2/AuthorizationHeaderUtil.', 'client/AuthorizationHeaderUtil.'],
+                                ['security/oauth2/OAuthIdpTokenResponseDTO.', 'client/OAuthIdpTokenResponseDTO.'],
+                                ['config/KafkaSseConsumer.', 'broker/KafkaConsumer.'],
+                                ['config/KafkaSseProducer.', 'broker/KafkaProducer.'],
+                            ]) {
+                                // Files renamed in v8
+                                file = file.replace(...fileMap.reverse());
+                            }
+                            return file;
+                        };
+                        return {
+                            ...file,
+                            destinationFile: renamedFiles(file.destinationFile),
+                        };
+                    },
                     // ignore files from jhipster:spring-boot
                     file => (file.namespace === 'jhipster:spring-boot' ? undefined : file),
                     file => {
