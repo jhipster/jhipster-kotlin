@@ -120,9 +120,6 @@ export default class extends BaseApplicationGenerator {
 
                         const isCommonFile = filename => {
                             const sourceBasename = basename(filename);
-                            if (['_entityClass_Repository.kt', '_entityClass_Repository_reactive.kt'].includes(sourceBasename)) {
-                                return ns !== 'spring-data-couchbase';
-                            }
                             return ['TestContainersSpringContextCustomizerFactory.kt'].includes(sourceBasename);
                         };
 
