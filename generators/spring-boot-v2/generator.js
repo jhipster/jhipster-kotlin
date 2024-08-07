@@ -329,13 +329,14 @@ export default class extends BaseApplicationGenerator {
                                 {
                                     templates: [
                                         {
-                                            file: `${SERVER_MAIN_SRC_KOTLIN_DIR}_package_/domain/enumeration/Enum.kt`,
+                                            file: `${SERVER_MAIN_SRC_KOTLIN_DIR}_package_/_entityPackage_/domain/enumeration/_enumName_.kt`,
                                             renameTo: () =>
                                                 `${SERVER_MAIN_SRC_KOTLIN_DIR}${entity.entityAbsoluteFolder}/domain/enumeration/${field.fieldType}.kt`,
                                         },
                                     ],
                                 },
                             ],
+                            rootTemplatesPath: ['../../spring-boot/templates/domain/'],
                             context: enumInfo,
                         });
                     }

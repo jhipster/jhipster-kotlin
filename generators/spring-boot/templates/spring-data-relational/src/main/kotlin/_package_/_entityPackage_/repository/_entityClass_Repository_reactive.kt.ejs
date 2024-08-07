@@ -19,34 +19,13 @@
 package <%= entityAbsolutePackage %>.repository
 
 import <%= entityAbsolutePackage %>.domain.<%= persistClass %>
-<%_ if (databaseTypeCassandra) { _%>
-import org.springframework.data.cassandra.repository.ReactiveCassandraRepository
-<%_ } _%>
-<%_ if (databaseTypeNeo4j) { _%>
-import org.springframework.data.neo4j.repository.ReactiveNeo4jRepository
-import org.springframework.data.neo4j.repository.query.Query
-<%_ } _%>
-<%_ if (!paginationNo || implementsEagerLoadApis || databaseTypeSql) { _%>
 import org.springframework.data.domain.Pageable
-<%_ } _%>
-<%_ if (databaseTypeSql) { _%>
 import org.springframework.data.r2dbc.repository.Query
 import org.springframework.data.repository.reactive.ReactiveCrudRepository
 import org.springframework.data.relational.core.query.Criteria
-<%_ } _%>
-<%_ if (databaseTypeMongodb) { _%>
-    <%_ if (implementsEagerLoadApis) { _%>
-import org.springframework.data.mongodb.repository.Query
-    <%_ } _%>
-import org.springframework.data.mongodb.repository.ReactiveMongoRepository
-<%_ } _%>
 import org.springframework.stereotype.Repository
-<%_ if (databaseTypeSql || !paginationNo || implementsEagerLoadApis) { _%>
 import reactor.core.publisher.Flux
-<%_ } _%>
-<%_ if (implementsEagerLoadApis || databaseTypeSql) { _%>
 import reactor.core.publisher.Mono
-<%_ } _%>
 <%_ if (primaryKey.typeUUID) { _%>
 
 import java.util.UUID
@@ -57,70 +36,42 @@ import java.util.UUID
 */
 @SuppressWarnings("unused")
 @Repository
-interface <%= entityClass %>Repository: <% if (databaseTypeSql) { %>ReactiveCrud<% } if (databaseTypeMongodb) { %>ReactiveMongo<% } if (databaseTypeNeo4j) { %>ReactiveNeo4j<% } if (databaseTypeCassandra) { %>ReactiveCassandra<% } %>Repository<<%= persistClass %>, <%= primaryKey.type %>><% if (searchEngineCouchbase) { %>, SearchCouchbaseRepository<<%= persistClass %>, <%= primaryKey.type %>><% } %><% if (databaseTypeSql) { %>, <%= entityClass %>RepositoryInternal<% } %>  {
+interface <%= entityClass %>Repository: ReactiveCrudRepository<<%= persistClass %>, <%= primaryKey.type %>>, <%= entityClass %>RepositoryInternal  {
 
 <%_ if (!paginationNo) { _%>
-    <% if (databaseTypeSql) { %>override<% } %> fun findAllBy(pageable: Pageable?): Flux<<%= persistClass %>>
+    override fun findAllBy(pageable: Pageable?): Flux<<%= persistClass %>>
+
 <%_ } _%>
 <%_ if (implementsEagerLoadApis) { _%>
-    <%_ if (databaseTypeMongodb) { _%>
-
-    @Query("<%= (databaseTypeMongodb) ? '{}' : '#{#n1ql.selectEntity} WHERE #{#n1ql.filter}' %>")
-    fun findAllWithEagerRelationships(pageable: Pageable): Flux<<%= persistClass %>>
-
-    @Query("<%= (databaseTypeMongodb) ? '{}' : '#{#n1ql.selectEntity} WHERE #{#n1ql.filter}' %>")
-    fun findAllWithEagerRelationships(): Flux<<%= persistClass %>>
-
-    @Query("<%- (databaseTypeMongodb) ? "{'id': ?0}" : "#{#n1ql.selectEntity} USE KEYS $1 WHERE #{#n1ql.filter}" %>")
-    fun findOneWithEagerRelationships(id: <%= primaryKey.type %>): Mono<<%= persistClass %>>
-    <%_ } _%>
-    <%_ if (databaseTypeNeo4j) { _%>
-    @Query("MATCH (n:<%= persistClass %>)<-[]-(m) RETURN n,m")
-    fun findAllWithEagerRelationships(pageable: Pageable): Flux<<%= persistClass %>>
-
-    @Query("MATCH (n:<%= persistClass %>)<-[]-(m) RETURN n,m")
-    fun findAllWithEagerRelationships(): Flux<<%= persistClass %>>
-
-    @Query("MATCH (e:<%= persistClass %> {id: $id}) RETURN e")
-    fun findOneWithEagerRelationships(id: <%= primaryKey.type %>): Mono<<%= persistClass %>>
-    <%_ } _%>
-<%_ } _%>
-
-<%_ if (databaseTypeSql) { _%>
-    <%_ if (implementsEagerLoadApis) { _%>
-
     override fun findOneWithEagerRelationships(id: <%= primaryKey.type %>?): Mono<<%= persistClass %>>
 
     override fun findAllWithEagerRelationships(): Flux<<%= persistClass %>>
 
     override fun findAllWithEagerRelationships(page: Pageable): Flux<<%= persistClass %>>
 
-    <%_ } _%>
-
-    <%_ for (const relationship of relationships) {
-            let relationshipName = relationship.relationshipName;
-            let ownerSide = relationship.ownerSide; _%>
-        <%_ if (relationship.relationshipManyToOne || (relationship.relationshipOneToOne && ownerSide)) { _%>
-
+<%_ } _%>
+<%_ for (const relationship of relationships) {
+      let relationshipName = relationship.relationshipName;
+      let ownerSide = relationship.ownerSide; _%>
+  <%_ if (relationship.relationshipManyToOne || (relationship.relationshipOneToOne && ownerSide)) { _%>
     @Query("SELECT * FROM <%= entityTableName %> entity WHERE entity.<%= relationship.joinColumnNames[0] %> = :id")
     fun findBy<%= relationship.relationshipNameCapitalized %>(id: <%= primaryKey.type %>): Flux<<%= persistClass %>>
 
     @Query("SELECT * FROM <%= entityTableName %> entity WHERE entity.<%= relationship.joinColumnNames[0] %> IS NULL")
     fun findAllWhere<%= relationship.relationshipNameCapitalized %>IsNull(): Flux<<%= persistClass %>>
-        <%_ } else if (relationship.shouldWriteJoinTable) { _%>
 
+  <%_ } else if (relationship.shouldWriteJoinTable) { _%>
     @Query("SELECT entity.* FROM <%= entityTableName %> entity JOIN <%= relationship.joinTable.name %> joinTable ON entity.<%= primaryKey.fields[0].columnName %> = joinTable.<%= relationship.joinColumnNames[0] %> WHERE joinTable.<%= relationship.joinColumnNames[0] %> = :id")
     fun findBy<%= relationship.relationshipNameCapitalized %>(id: <%= primaryKey.type %>): Flux<<%= persistClass %>>
-        <%_ } else if (relationship.relationshipOneToOne && ownerSide === false) {
+  <%_ } else if (relationship.relationshipOneToOne && ownerSide === false) {
             let otherEntityRelationshipName = relationship.otherEntityRelationshipName;
             let otherEntityTableName = relationship.otherEntityTableName;
-        _%>
-
+  _%>
     @Query("SELECT * FROM <%= entityTableName %> entity WHERE entity.<%= primaryKey.fields[0].columnName  %> not in (select <%= relationship.joinColumnNames[0]%> from <%= otherEntityTableName %>)")
     fun findAllWhere<%= relationship.relationshipNameCapitalized %>IsNull(): Flux<<%= persistClass %>>
-        <%_ } _%>
-    <%_ } _%>
 
+  <%_ } _%>
+<%_ } _%>
     override fun <S:<%= persistClass %>> save(entity: S): Mono<S>
 
     override fun findAll(): Flux<<%= persistClass %>>
@@ -143,8 +94,7 @@ interface <%= entityClass %>RepositoryInternal {
     // this is not supported at the moment because of https://github.com/jhipster/generator-jhipster/issues/18269
     // fun findAllBy(pageable: Pageable, criteria: Criteria): Flux<<%= persistClass %>>
 
-    <%_ if (implementsEagerLoadApis) { _%>
-
+<%_ if (implementsEagerLoadApis) { _%>
     fun findOneWithEagerRelationships(id: <%= primaryKey.type %>?): Mono<<%= persistClass %>>
 
     fun findAllWithEagerRelationships(): Flux<<%= persistClass %>>
@@ -153,6 +103,5 @@ interface <%= entityClass %>RepositoryInternal {
 
     fun deleteById(id: <%= primaryKey.type %>?): Mono<Void>
 
-    <%_ } _%>
 <%_ } _%>
 }
