@@ -49,7 +49,7 @@ if (databaseTypeSql && reactive) {
 }
 
 let idValue = `${persistInstance}.${primaryKey.name}`;
-if (primaryKey.typeLong || primaryKey.typeInteger`) {
+if (primaryKey.typeLong || primaryKey.typeInteger) {
     idValue = idValue + '?.toInt()';
 } else if (primaryKey.typeUUID) {
     idValue = idValue + '.toString()';
@@ -600,7 +600,7 @@ class <%= entityClass %>ResourceIT {
         // Initialize the database
         <%_ if (!primaryKey.derived) { _%>
             <%_ for (field of primaryKey.fields.filter(f => !f.autoGenerateByRepository)) { _%>
-                <%= persistInstance %>.<%= field.fieldName %> = <%- this.getJavaValueGeneratorForType(field.fieldType) %>
+                <%= persistInstance %>.<%= field.fieldName %> = <%- field.javaValueGenerator %>
             <%_ } _%>
         <%_ } _%>
         <%= entityInstance %>Repository.save(<%= persistInstance %>)<%= callBlock %>
@@ -643,7 +643,7 @@ class <%= entityClass %>ResourceIT {
         // Initialize the database
         <%_ if (!primaryKey.derived) { _%>
             <%_ for (field of primaryKey.fields.filter(f => !f.autoGenerateByRepository)) { _%>
-                <%= persistInstance %>.<%= field.fieldName %> = <%- this.getJavaValueGeneratorForType(field.fieldType) %>
+                <%= persistInstance %>.<%= field.fieldName %> = <%- field.javaValueGenerator %>
             <%_ } _%>
         <%_ } _%>
         <%= entityInstance %>Repository.<%= saveMethod %>(<%= persistInstance %>)<%= callBlock %>
@@ -735,7 +735,7 @@ class <%= entityClass %>ResourceIT {
         // Initialize the database
         <%_ if (!primaryKey.derived) { _%>
             <%_ for (field of primaryKey.fields.filter(f => !f.autoGenerateByRepository)) { _%>
-                <%= persistInstance %>.<%= field.fieldName %> = <%- this.getJavaValueGeneratorForType(field.fieldType) %>
+                <%= persistInstance %>.<%= field.fieldName %> = <%- field.javaValueGenerator %>
             <%_ } _%>
         <%_ } _%>
         <%= entityInstance %>Repository.<%= saveMethod %>(<%= persistInstance %>)<%= callBlock %>
@@ -794,7 +794,7 @@ class <%= entityClass %>ResourceIT {
       <%_ } _%>
     }
     <%_ fieldsToTest.forEach((searchBy) => { /* we can't filter by all the fields. */ _%>
-        <%_ if (isFilterableType(searchBy.fieldType)) { _%>
+        <%_ if (searchBy.filterableField) { _%>
     @Test<%= transactionalAnnotation %>
     <% if (!reactive) { %>@Throws(Exception::class)<% } %>
     fun getAll<%= entityClassPlural %>By<%= searchBy.fieldInJavaBeanMethod %>IsEqualToSomething() {
@@ -1123,7 +1123,7 @@ class <%= entityClass %>ResourceIT {
         // Initialize the database
         <%_ if (!primaryKey.derived) { _%>
             <%_ for (field of primaryKey.fields.filter(f => !f.autoGenerateByRepository)) { _%>
-                <%= persistInstance %>.<%= field.fieldName %> = <%- this.getJavaValueGeneratorForType(field.fieldType) %>
+                <%= persistInstance %>.<%= field.fieldName %> = <%- field.javaValueGenerator %>
             <%_ } _%>
         <%_ } _%>
         <%= entityInstance %>Repository.<%= saveMethod %>(<%= persistInstance %>)<%= callBlock %>
@@ -1339,7 +1339,7 @@ class <%= entityClass %>ResourceIT {
     fun partialUpdate<%= entityClass %>WithPatch() {
          <%_ if (!primaryKey.derived) { _%>
             <%_ for (field of primaryKey.fields.filter(f => !f.autoGenerateByRepository)) { _%>
-                <%= persistInstance %>.<%= field.fieldName %> = <%- this.getJavaValueGeneratorForType(field.fieldType) %>
+                <%= persistInstance %>.<%= field.fieldName %> = <%- field.javaValueGenerator %>
             <%_ } _%>
         <%_ } _%>
         <%= entityInstance %>Repository.<%= saveMethod %>(<%= persistInstance %>)<%= callBlock %>
@@ -1352,7 +1352,7 @@ class <%= entityClass %>ResourceIT {
     fun fullUpdate<%= entityClass %>WithPatch() {
         <%_ if (!primaryKey.derived) { _%>
             <%_ for (field of primaryKey.fields.filter(f => !f.autoGenerateByRepository)) { _%>
-                <%= persistInstance %>.<%= field.fieldName %> = <%- this.getJavaValueGeneratorForType(field.fieldType) %>
+                <%= persistInstance %>.<%= field.fieldName %> = <%- field.javaValueGenerator %>
             <%_ } _%>
         <%_ } _%>
         <%= entityInstance %>Repository.<%= saveMethod %>(<%= persistInstance %>)<%= callBlock %>
@@ -1486,7 +1486,7 @@ class <%= entityClass %>ResourceIT {
         // Initialize the database
         <%_ if (!primaryKey.derived) { _%>
             <%_ for (field of primaryKey.fields.filter(f => !f.autoGenerateByRepository)) { _%>
-                <%= persistInstance %>.<%= field.fieldName %> = <%- this.getJavaValueGeneratorForType(field.fieldType) %>
+                <%= persistInstance %>.<%= field.fieldName %> = <%- field.javaValueGenerator %>
             <%_ } _%>
         <%_ } _%>
         <%= entityInstance %>Repository.<%= saveMethod %>(<%= persistInstance %>)<%= callBlock %>
@@ -1536,7 +1536,7 @@ class <%= entityClass %>ResourceIT {
         // Initialize the database
         <%_ if (!primaryKey.derived) { _%>
             <%_ for (field of primaryKey.fields.filter(f => !f.autoGenerateByRepository)) { _%>
-                <%= persistInstance %>.<%= field.fieldName %> = <%- this.getJavaValueGeneratorForType(field.fieldType) %>
+                <%= persistInstance %>.<%= field.fieldName %> = <%- field.javaValueGenerator %>
             <%_ } _%>
         <%_ } _%>
         <%= persistInstance %> = <%= entityInstance %>Repository.<%= saveMethod %>(<%= persistInstance %>)<%= callBlock %>
