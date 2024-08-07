@@ -2,11 +2,7 @@
 
 ## To run the application in development
 
-### Step 1 👍 : install [yeoman](https://yeoman.io/)
-
-`npm install -g yo | yarn global add yo`
-
-### Step 2 ✌️ : to setup JHipster-Kotlin generator
+### Step 1 ✌️ : to setup JHipster-Kotlin generator
 
 `git clone https://github.com/jhipster/jhipster-kotlin`
 
@@ -18,7 +14,7 @@
 
 ( 🏁 Kudos, you just setup JHipster-Kotlin and linked to it locally )
 
-### Step 3 🤟 : before generating your application, go to your application folder
+### Step 2 🤟 : before generating your application, go to your application folder
 
 `yarn link "generator-jhipster-kotlin"`
 
@@ -31,6 +27,19 @@ or
 ✨✨✨✨ You are rocking ✨✨✨✨
 
 Fix / Code / Document and create a pull request 💯
+
+### Synchronizing generator-jhipster templates
+
+Run:
+
+```sh
+khipster synchronize
+```
+
+In the conflict resolution, check diff and press `i` if the template is synchronized.
+`i` choice will add that file to be ignored in `.yo-resolve` file.
+
+When synchronization is done revert `.yo-resolve` file to the initial previous state.
 
 ### Regular Contributor Guidelines
 
