@@ -89,22 +89,23 @@ export default class extends BaseApplicationGenerator {
                             return file;
                         }
 
+                        if (sourceFile.includes('spring.factories')) {
+                            return undefined;
+                        }
+
                         if (sourceFile.includes('.java')) {
                             // Kotlint User template does not implements Persistable api. Ignore for now.
                             if (application.user && destinationFile.endsWith('UserCallback.java')) {
                                 return undefined;
                             }
 
-                            // TestContainersSpringContextCustomizerFactory uses a single template for modularized (dbs) and non-modularized (kafka, etc) templates
-                            if (sourceFile.endsWith('TestContainersSpringContextCustomizerFactory.java')) {
-                                // Convert *TestContainersSpringContextCustomizerFactory to TestContainersSpringContextCustomizerFactory
-                                const adjustTestContainersSpringContextCustomizerFactoryFile = filename =>
-                                    filename.replace(
-                                        /(\w*)TestContainersSpringContextCustomizerFactory.java/,
-                                        'TestContainersSpringContextCustomizerFactory.java',
-                                    );
-                                sourceFile = adjustTestContainersSpringContextCustomizerFactoryFile(sourceFile);
-                                destinationFile = adjustTestContainersSpringContextCustomizerFactoryFile(destinationFile);
+                            if (
+                                sourceFile.endsWith('/TestContainersSpringContextCustomizerFactory.java') &&
+                                !application.databaseTypeMongodb &&
+                                !application.searchEngineElasticsearch &&
+                                !application.databaseTypeCouchbase
+                            ) {
+                                return undefined;
                             }
 
                             for (const fileMap of [

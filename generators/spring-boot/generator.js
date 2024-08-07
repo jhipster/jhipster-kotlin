@@ -68,28 +68,11 @@ export default class extends BaseApplicationGenerator {
                                 return undefined;
                             }
 
-                            // TestContainersSpringContextCustomizerFactory uses a single template for modularized (dbs) and non-modularized (kafka, etc) templates
-                            if (sourceFile.endsWith('TestContainersSpringContextCustomizerFactory.java')) {
-                                // Convert *TestContainersSpringContextCustomizerFactory to TestContainersSpringContextCustomizerFactory
-                                const adjustTestContainersSpringContextCustomizerFactoryFile = filename =>
-                                    filename.replace(
-                                        /(\w*)TestContainersSpringContextCustomizerFactory.java/,
-                                        'TestContainersSpringContextCustomizerFactory.java',
-                                    );
-                                sourceFile = adjustTestContainersSpringContextCustomizerFactoryFile(sourceFile);
-                                destinationFile = adjustTestContainersSpringContextCustomizerFactoryFile(destinationFile);
-                            }
-
                             sourceFile = convertToKotlinFile(sourceFile);
                             destinationFile = convertToKotlinFile(destinationFile);
                         }
 
-                        const isCommonFile = filename => {
-                            const sourceBasename = basename(filename);
-                            return ['TestContainersSpringContextCustomizerFactory.kt'].includes(sourceBasename);
-                        };
-
-                        const prefix = ns === 'jhipster:spring-boot' || isCommonFile(sourceFile) ? '' : ns.split(':').pop();
+                        const prefix = ns === 'jhipster:spring-boot' ? '' : ns.split(':').pop();
                         sourceFile = join(prefix, sourceFile);
                         let resolvedSourceFile = this.templatePath(sourceFile);
                         if (!existsSync(`${resolvedSourceFile}.ejs`)) {
