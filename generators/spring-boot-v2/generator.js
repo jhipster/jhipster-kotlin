@@ -32,6 +32,27 @@ export default class extends BaseApplicationGenerator {
             migrateApplicationTask,
             ignoreSpringBootV3Files({ application }) {
                 application.customizeTemplatePaths.push(
+                    // Adjust feign-client and kafka destinationFile for jhipster 7 paths
+                    file => {
+                        if (!['jhipster:feign-client', 'jhipster:spring-cloud-stream:kafka'].includes(file.namespace)) return file;
+                        const renamedFiles = file => {
+                            for (const fileMap of [
+                                ['security/oauth2/AuthorizationHeaderUtilTest.', 'client/AuthorizationHeaderUtilTest.'],
+                                ['security/oauth2/AuthorizationHeaderUtil.', 'client/AuthorizationHeaderUtil.'],
+                                ['security/oauth2/OAuthIdpTokenResponseDTO.', 'client/OAuthIdpTokenResponseDTO.'],
+                                ['config/KafkaSseConsumer.', 'broker/KafkaConsumer.'],
+                                ['config/KafkaSseProducer.', 'broker/KafkaProducer.'],
+                            ]) {
+                                // Files renamed in v8
+                                file = file.replace(...fileMap.reverse());
+                            }
+                            return file;
+                        };
+                        return {
+                            ...file,
+                            destinationFile: renamedFiles(file.destinationFile),
+                        };
+                    },
                     // ignore files from jhipster:spring-boot
                     file => (file.namespace === 'jhipster:spring-boot' ? undefined : file),
                     file => {
@@ -68,22 +89,23 @@ export default class extends BaseApplicationGenerator {
                             return file;
                         }
 
+                        if (sourceFile.includes('spring.factories')) {
+                            return undefined;
+                        }
+
                         if (sourceFile.includes('.java')) {
                             // Kotlint User template does not implements Persistable api. Ignore for now.
                             if (application.user && destinationFile.endsWith('UserCallback.java')) {
                                 return undefined;
                             }
 
-                            // TestContainersSpringContextCustomizerFactory uses a single template for modularized (dbs) and non-modularized (kafka, etc) templates
-                            if (sourceFile.endsWith('TestContainersSpringContextCustomizerFactory.java')) {
-                                // Convert *TestContainersSpringContextCustomizerFactory to TestContainersSpringContextCustomizerFactory
-                                const adjustTestContainersSpringContextCustomizerFactoryFile = filename =>
-                                    filename.replace(
-                                        /(\w*)TestContainersSpringContextCustomizerFactory.java/,
-                                        'TestContainersSpringContextCustomizerFactory.java',
-                                    );
-                                sourceFile = adjustTestContainersSpringContextCustomizerFactoryFile(sourceFile);
-                                destinationFile = adjustTestContainersSpringContextCustomizerFactoryFile(destinationFile);
+                            if (
+                                sourceFile.endsWith('/TestContainersSpringContextCustomizerFactory.java') &&
+                                !application.databaseTypeMongodb &&
+                                !application.searchEngineElasticsearch &&
+                                !application.databaseTypeCouchbase
+                            ) {
+                                return undefined;
                             }
 
                             for (const fileMap of [

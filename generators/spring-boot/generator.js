@@ -1,4 +1,4 @@
-import { basename, join } from 'path';
+import { join } from 'path';
 import { existsSync } from 'fs';
 // Use spring-boot as parent due to this context in generators
 import BaseApplicationGenerator from 'generator-jhipster/generators/base-application';
@@ -54,39 +54,6 @@ export default class extends BaseApplicationGenerator {
                     file => (file.sourceFile.includes('package-info.java') ? undefined : file),
                     // Kotling blueprint does not implements these files
                     file => {
-                        const sourceBasename = basename(file.sourceFile);
-                        return [
-                            '_persistClass_Asserts.java',
-                            '_persistClass_TestSamples.java',
-                            'AssertUtils.java',
-                            '_entityClass_Repository_r2dbc.java',
-                            'ElasticsearchExceptionMapper.java',
-                            'ElasticsearchExceptionMapperTest.java',
-                            'QuerySyntaxException.java',
-                            '_enumName_.java',
-                            '_persistClass_.java.jhi.jackson_identity_info',
-                            '_entityClass_GatlingTest.java',
-                            '_entityClass_CriteriaTest.java',
-
-                            'AccountResource_skipUserManagement.java',
-                            'TestAuthenticationResource.java',
-                            'SpaWebFilter_imperative.java',
-                            'SpaWebFilterIT_imperative.java',
-                            'SecurityJwtConfiguration.java',
-                            'AuthenticationIntegrationTest.java',
-                            'JwtAuthenticationTestUtils.java',
-                            'AuthenticationIntegrationTest.java',
-                            'SecurityInMemoryConfiguration.java',
-                            'TokenAuthenticationIT.java',
-                            'CRLFLogConverterTest.java',
-                            'SpaWebFilterIT_reactive.java',
-                            'SpaWebFilterTestController_reactive.java',
-                            'AccountResource_oauth2.java',
-                        ].includes(sourceBasename)
-                            ? undefined
-                            : file;
-                    },
-                    file => {
                         // We don't want to handle spring-boot-v2 templates here
                         if (file.namespace === 'jhipster-kotlin:spring-boot-v2') return file;
                         let { resolvedSourceFile: javaResolvedSourceFile, sourceFile, destinationFile, namespace: ns } = file;
@@ -101,57 +68,22 @@ export default class extends BaseApplicationGenerator {
                                 return undefined;
                             }
 
-                            // TestContainersSpringContextCustomizerFactory uses a single template for modularized (dbs) and non-modularized (kafka, etc) templates
-                            if (sourceFile.endsWith('TestContainersSpringContextCustomizerFactory.java')) {
-                                // Convert *TestContainersSpringContextCustomizerFactory to TestContainersSpringContextCustomizerFactory
-                                const adjustTestContainersSpringContextCustomizerFactoryFile = filename =>
-                                    filename.replace(
-                                        /(\w*)TestContainersSpringContextCustomizerFactory.java/,
-                                        'TestContainersSpringContextCustomizerFactory.java',
-                                    );
-                                sourceFile = adjustTestContainersSpringContextCustomizerFactoryFile(sourceFile);
-                                destinationFile = adjustTestContainersSpringContextCustomizerFactoryFile(destinationFile);
-                            }
-
-                            sourceFile = sourceFile.replace('KafkaConsumer_reactive', 'KafkaConsumer_imperative');
                             sourceFile = convertToKotlinFile(sourceFile);
                             destinationFile = convertToKotlinFile(destinationFile);
                         }
 
-                        const isCommonFile = filename => {
-                            const sourceBasename = basename(filename);
-                            return ['TestContainersSpringContextCustomizerFactory.kt'].includes(sourceBasename);
-                        };
-
-                        const prefix = ns === 'jhipster:spring-boot' || isCommonFile(sourceFile) ? '' : ns.split(':').pop();
+                        const prefix = ns === 'jhipster:spring-boot' ? '' : ns.split(':').pop();
                         sourceFile = join(prefix, sourceFile);
-                        const resolvedSourceInBlueprint = this.templatePath(sourceFile);
-                        const resolvedSourceFile = existsSync(`${resolvedSourceInBlueprint}.ejs`)
-                            ? resolvedSourceInBlueprint
-                            : javaResolvedSourceFile;
+                        let resolvedSourceFile = this.templatePath(sourceFile);
+                        if (!existsSync(`${resolvedSourceFile}.ejs`)) {
+                            if (resolvedSourceFile.includes('.kt')) {
+                                // Ignore v8 file if it does not exist
+                                return undefined;
+                            }
+                            resolvedSourceFile = javaResolvedSourceFile;
+                        }
 
                         return { ...file, sourceFile, javaResolvedSourceFile, resolvedSourceFile, destinationFile };
-                    },
-                    // Adjust feign-client and kafka destinationFile for jhipster 7 paths
-                    file => {
-                        if (!['jhipster:feign-client', 'jhipster:spring-cloud-stream:kafka'].includes(file.namespace)) return file;
-                        const renamedFiles = file => {
-                            for (const fileMap of [
-                                ['security/oauth2/AuthorizationHeaderUtilTest.', 'client/AuthorizationHeaderUtilTest.'],
-                                ['security/oauth2/AuthorizationHeaderUtil.', 'client/AuthorizationHeaderUtil.'],
-                                ['security/oauth2/OAuthIdpTokenResponseDTO.', 'client/OAuthIdpTokenResponseDTO.'],
-                                ['config/KafkaSseConsumer.', 'broker/KafkaConsumer.'],
-                                ['config/KafkaSseProducer.', 'broker/KafkaProducer.'],
-                            ]) {
-                                // Files renamed in v8
-                                file = file.replace(...fileMap.reverse());
-                            }
-                            return file;
-                        };
-                        return {
-                            ...file,
-                            destinationFile: renamedFiles(file.destinationFile),
-                        };
                     },
                 );
             },
@@ -160,6 +92,13 @@ export default class extends BaseApplicationGenerator {
 
     get [BaseApplicationGenerator.PREPARING]() {
         return this.asPreparingTaskGroup({
+            addApplicationPropertiesNeedles({ source }) {
+                source.addApplicationPropertiesContent = () => undefined;
+                source.addApplicationPropertiesProperty = () => undefined;
+            },
+            addSpringIntegrationTest({ source }) {
+                source.addIntegrationTestAnnotation = () => undefined;
+            },
             blockhound({ application, source }) {
                 source.addAllowBlockingCallsInside = ({ classPath, method }) => {
                     if (!application.reactive) throw new Error('Blockhound is only supported by reactive applications');

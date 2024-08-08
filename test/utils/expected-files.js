@@ -83,7 +83,6 @@ const expectedFiles = {
         `${SERVER_TEST_SRC_DIR}com/mycompany/myapp/web/rest/errors/ExceptionTranslatorTestController.kt`,
         `${SERVER_TEST_RES_DIR}config/application.yml`,
         `${SERVER_TEST_SRC_DIR}com/mycompany/myapp/config/AsyncSyncConfiguration.kt`,
-        `${SERVER_TEST_SRC_DIR}com/mycompany/myapp/config/TestContainersSpringContextCustomizerFactory.kt`,
         `${SERVER_TEST_RES_DIR}META-INF/spring.factories`,
         `${SERVER_TEST_RES_DIR}testcontainers.properties`,
         `${SERVER_TEST_RES_DIR}logback.xml`,
@@ -130,7 +129,6 @@ const expectedFiles = {
         `${DOCKER_DIR}redis/Redis-Cluster.Dockerfile`,
         `${SERVER_TEST_SRC_DIR}/com/mycompany/myapp/config/EmbeddedRedis.kt`,
         `${SERVER_TEST_SRC_DIR}/com/mycompany/myapp/config/RedisTestContainer.kt`,
-        `${SERVER_TEST_SRC_DIR}/com/mycompany/myapp/config/TestContainersSpringContextCustomizerFactory.kt`,
     ],
 
     gatling: [`${TEST_DIR}gatling/conf/gatling.conf`],
@@ -233,7 +231,6 @@ const expectedFiles = {
         `${SERVER_MAIN_SRC_DIR}com/mycompany/myapp/config/KafkaSseProducer.kt`,
         `${SERVER_MAIN_SRC_DIR}com/mycompany/myapp/web/rest/JhipsterKafkaResource.kt`,
         `${SERVER_TEST_SRC_DIR}com/mycompany/myapp/web/rest/JhipsterKafkaResourceIT.kt`,
-        `${SERVER_TEST_SRC_DIR}com/mycompany/myapp/config/TestContainersSpringContextCustomizerFactory.kt`,
         `${SERVER_TEST_SRC_DIR}com/mycompany/myapp/config/KafkaTestContainer.kt`,
         `${DOCKER_DIR}kafka.yml`,
         `${SERVER_TEST_RES_DIR}testcontainers.properties`,
@@ -275,7 +272,6 @@ const expectedFiles = {
     mysql: [
         `${SERVER_TEST_SRC_DIR}com/mycompany/myapp/config/SqlTestContainer.kt`,
         `${SERVER_TEST_SRC_DIR}com/mycompany/myapp/config/MysqlTestContainer.kt`,
-        `${SERVER_TEST_SRC_DIR}com/mycompany/myapp/config/TestContainersSpringContextCustomizerFactory.kt`,
         `${SERVER_TEST_SRC_DIR}com/mycompany/myapp/config/EmbeddedSQL.kt`,
         `${SERVER_TEST_RES_DIR}testcontainers.properties`,
         `${SERVER_TEST_RES_DIR}META-INF/spring.factories`,
@@ -286,7 +282,6 @@ const expectedFiles = {
     mariadb: [
         `${SERVER_TEST_SRC_DIR}com/mycompany/myapp/config/SqlTestContainer.kt`,
         `${SERVER_TEST_SRC_DIR}com/mycompany/myapp/config/MariadbTestContainer.kt`,
-        `${SERVER_TEST_SRC_DIR}com/mycompany/myapp/config/TestContainersSpringContextCustomizerFactory.kt`,
         `${SERVER_TEST_SRC_DIR}com/mycompany/myapp/config/EmbeddedSQL.kt`,
         `${SERVER_TEST_RES_DIR}testcontainers.properties`,
         `${SERVER_TEST_RES_DIR}META-INF/spring.factories`,
@@ -300,7 +295,6 @@ const expectedFiles = {
     mssql: [
         `${SERVER_TEST_SRC_DIR}com/mycompany/myapp/config/SqlTestContainer.kt`,
         `${SERVER_TEST_SRC_DIR}com/mycompany/myapp/config/MsSqlTestContainer.kt`,
-        `${SERVER_TEST_SRC_DIR}com/mycompany/myapp/config/TestContainersSpringContextCustomizerFactory.kt`,
         `${SERVER_TEST_SRC_DIR}com/mycompany/myapp/config/EmbeddedSQL.kt`,
         `${SERVER_TEST_RES_DIR}testcontainers.properties`,
         `${SERVER_TEST_RES_DIR}META-INF/spring.factories`,
@@ -311,7 +305,6 @@ const expectedFiles = {
     postgresql: [
         `${SERVER_TEST_SRC_DIR}com/mycompany/myapp/config/SqlTestContainer.kt`,
         `${SERVER_TEST_SRC_DIR}com/mycompany/myapp/config/PostgreSqlTestContainer.kt`,
-        `${SERVER_TEST_SRC_DIR}com/mycompany/myapp/config/TestContainersSpringContextCustomizerFactory.kt`,
         `${SERVER_TEST_SRC_DIR}com/mycompany/myapp/config/EmbeddedSQL.kt`,
         `${SERVER_TEST_RES_DIR}testcontainers.properties`,
         `${SERVER_TEST_RES_DIR}META-INF/spring.factories`,
@@ -356,7 +349,6 @@ const expectedFiles = {
     neo4j: [
         `${SERVER_TEST_SRC_DIR}com/mycompany/myapp/config/EmbeddedNeo4j.kt`,
         `${SERVER_TEST_SRC_DIR}com/mycompany/myapp/config/Neo4jTestContainer.kt`,
-        `${SERVER_TEST_SRC_DIR}com/mycompany/myapp/config/TestContainersSpringContextCustomizerFactory.kt`,
         `${SERVER_TEST_RES_DIR}testcontainers.properties`,
         `${SERVER_TEST_RES_DIR}META-INF/spring.factories`,
         `${SERVER_MAIN_RES_DIR}config/neo4j/migrations/user__admin.json`,
@@ -372,7 +364,6 @@ const expectedFiles = {
         `${SERVER_MAIN_RES_DIR}config/cql/drop-keyspace.cql`,
         `${SERVER_MAIN_RES_DIR}config/cql/changelog/00000000000000_create-tables.cql`,
         `${SERVER_MAIN_RES_DIR}config/cql/changelog/00000000000001_insert_default_users.cql`,
-        `${SERVER_TEST_SRC_DIR}com/mycompany/myapp/config/TestContainersSpringContextCustomizerFactory.kt`,
         `${SERVER_TEST_SRC_DIR}com/mycompany/myapp/config/CassandraTestContainer.kt`,
         `${SERVER_TEST_SRC_DIR}com/mycompany/myapp/CassandraKeyspaceIT.kt`,
         `${DOCKER_DIR}cassandra/Cassandra-Migration.Dockerfile`,

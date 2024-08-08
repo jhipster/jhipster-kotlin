@@ -3,18 +3,6 @@ import BaseApplicationGenerator from 'generator-jhipster/generators/base-applica
 import { passthrough } from '@yeoman/transform';
 
 export default class extends BaseApplicationGenerator {
-    get [BaseApplicationGenerator.PREPARING]() {
-        return this.asPreparingTaskGroup({
-            async source({ source }) {
-                this.delayTask(() => {
-                    source.addApplicationPropertiesContent = () => undefined;
-                    source.addIntegrationTestAnnotation = () => undefined;
-                    source.addTestSpringFactory = () => undefined;
-                });
-            },
-        });
-    }
-
     get [BaseApplicationGenerator.DEFAULT]() {
         return this.asDefaultTaskGroup({
             async defaultTask() {
