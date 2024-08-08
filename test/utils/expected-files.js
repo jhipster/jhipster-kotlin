@@ -62,7 +62,6 @@ const expectedFiles = {
         `${SERVER_MAIN_SRC_DIR}com/mycompany/myapp/config/DatabaseConfiguration.kt`,
         `${SERVER_MAIN_SRC_DIR}com/mycompany/myapp/config/DateTimeFormatConfiguration.kt`,
         `${SERVER_MAIN_SRC_DIR}com/mycompany/myapp/config/JacksonConfiguration.kt`,
-        `${SERVER_MAIN_SRC_DIR}com/mycompany/myapp/config/LocaleConfiguration.kt`,
         `${SERVER_MAIN_SRC_DIR}com/mycompany/myapp/config/LoggingAspectConfiguration.kt`,
         `${SERVER_MAIN_SRC_DIR}com/mycompany/myapp/config/SecurityConfiguration.kt`,
         `${SERVER_MAIN_SRC_DIR}com/mycompany/myapp/config/WebConfigurer.kt`,
@@ -84,7 +83,6 @@ const expectedFiles = {
         `${SERVER_TEST_RES_DIR}config/application.yml`,
         `${SERVER_TEST_SRC_DIR}com/mycompany/myapp/config/AsyncSyncConfiguration.kt`,
         `${SERVER_TEST_RES_DIR}META-INF/spring.factories`,
-        `${SERVER_TEST_RES_DIR}testcontainers.properties`,
         `${SERVER_TEST_RES_DIR}logback.xml`,
     ],
 
@@ -198,23 +196,12 @@ const expectedFiles = {
 
     jwtServer: [
         `${SERVER_MAIN_SRC_DIR}com/mycompany/myapp/management/SecurityMetersService.kt`,
-        `${SERVER_MAIN_SRC_DIR}com/mycompany/myapp/security/jwt/JWTConfigurer.kt`,
-        `${SERVER_MAIN_SRC_DIR}com/mycompany/myapp/security/jwt/JWTFilter.kt`,
-        `${SERVER_MAIN_SRC_DIR}com/mycompany/myapp/security/jwt/TokenProvider.kt`,
         `${SERVER_TEST_SRC_DIR}com/mycompany/myapp/management/SecurityMetersServiceTests.kt`,
-        `${SERVER_TEST_SRC_DIR}com/mycompany/myapp/security/jwt/JWTFilterTest.kt`,
-        `${SERVER_TEST_SRC_DIR}com/mycompany/myapp/security/jwt/TokenProviderTest.kt`,
-        `${SERVER_TEST_SRC_DIR}com/mycompany/myapp/security/jwt/TokenProviderSecurityMetersTests.kt`,
     ],
 
     jwtServerGateway: [
         `${SERVER_MAIN_SRC_DIR}com/mycompany/myapp/management/SecurityMetersService.kt`,
-        `${SERVER_MAIN_SRC_DIR}com/mycompany/myapp/security/jwt/JWTFilter.kt`,
-        `${SERVER_MAIN_SRC_DIR}com/mycompany/myapp/security/jwt/TokenProvider.kt`,
         `${SERVER_TEST_SRC_DIR}com/mycompany/myapp/management/SecurityMetersServiceTests.kt`,
-        `${SERVER_TEST_SRC_DIR}com/mycompany/myapp/security/jwt/JWTFilterTest.kt`,
-        `${SERVER_TEST_SRC_DIR}com/mycompany/myapp/security/jwt/TokenProviderTest.kt`,
-        `${SERVER_TEST_SRC_DIR}com/mycompany/myapp/security/jwt/TokenProviderSecurityMetersTests.kt`,
     ],
 
     oauth2: [
@@ -227,13 +214,10 @@ const expectedFiles = {
     ],
 
     messageBroker: [
-        `${SERVER_MAIN_SRC_DIR}com/mycompany/myapp/config/KafkaSseConsumer.kt`,
-        `${SERVER_MAIN_SRC_DIR}com/mycompany/myapp/config/KafkaSseProducer.kt`,
         `${SERVER_MAIN_SRC_DIR}com/mycompany/myapp/web/rest/JhipsterKafkaResource.kt`,
         `${SERVER_TEST_SRC_DIR}com/mycompany/myapp/web/rest/JhipsterKafkaResourceIT.kt`,
         `${SERVER_TEST_SRC_DIR}com/mycompany/myapp/config/KafkaTestContainer.kt`,
         `${DOCKER_DIR}kafka.yml`,
-        `${SERVER_TEST_RES_DIR}testcontainers.properties`,
     ],
 
     swaggerCodegen: [`${SERVER_MAIN_RES_DIR}swagger/api.yml`],
@@ -261,7 +245,7 @@ const expectedFiles = {
         'package.json',
     ],
 
-    dockerServices: [`${DOCKER_DIR}app.yml`, `${DOCKER_DIR}sonar.yml`, `${DOCKER_DIR}jhipster-control-center.yml`],
+    dockerServices: [`${DOCKER_DIR}app.yml`, `${DOCKER_DIR}sonar.yml`],
 
     hibernateTimeZoneConfig: [
         `${SERVER_TEST_SRC_DIR}com/mycompany/myapp/config/timezone/HibernateTimeZoneIT.kt`,
@@ -273,7 +257,6 @@ const expectedFiles = {
         `${SERVER_TEST_SRC_DIR}com/mycompany/myapp/config/SqlTestContainer.kt`,
         `${SERVER_TEST_SRC_DIR}com/mycompany/myapp/config/MysqlTestContainer.kt`,
         `${SERVER_TEST_SRC_DIR}com/mycompany/myapp/config/EmbeddedSQL.kt`,
-        `${SERVER_TEST_RES_DIR}testcontainers.properties`,
         `${SERVER_TEST_RES_DIR}META-INF/spring.factories`,
         `${SERVER_MAIN_SRC_DIR}com/mycompany/myapp/config/LiquibaseConfiguration.kt`,
         `${DOCKER_DIR}mysql.yml`,
@@ -283,7 +266,6 @@ const expectedFiles = {
         `${SERVER_TEST_SRC_DIR}com/mycompany/myapp/config/SqlTestContainer.kt`,
         `${SERVER_TEST_SRC_DIR}com/mycompany/myapp/config/MariadbTestContainer.kt`,
         `${SERVER_TEST_SRC_DIR}com/mycompany/myapp/config/EmbeddedSQL.kt`,
-        `${SERVER_TEST_RES_DIR}testcontainers.properties`,
         `${SERVER_TEST_RES_DIR}META-INF/spring.factories`,
         `${SERVER_MAIN_SRC_DIR}com/mycompany/myapp/config/LiquibaseConfiguration.kt`,
         `${DOCKER_DIR}mariadb.yml`,
@@ -296,7 +278,6 @@ const expectedFiles = {
         `${SERVER_TEST_SRC_DIR}com/mycompany/myapp/config/SqlTestContainer.kt`,
         `${SERVER_TEST_SRC_DIR}com/mycompany/myapp/config/MsSqlTestContainer.kt`,
         `${SERVER_TEST_SRC_DIR}com/mycompany/myapp/config/EmbeddedSQL.kt`,
-        `${SERVER_TEST_RES_DIR}testcontainers.properties`,
         `${SERVER_TEST_RES_DIR}META-INF/spring.factories`,
         `${SERVER_MAIN_SRC_DIR}com/mycompany/myapp/config/LiquibaseConfiguration.kt`,
         `${DOCKER_DIR}mssql.yml`,
@@ -306,7 +287,6 @@ const expectedFiles = {
         `${SERVER_TEST_SRC_DIR}com/mycompany/myapp/config/SqlTestContainer.kt`,
         `${SERVER_TEST_SRC_DIR}com/mycompany/myapp/config/PostgreSqlTestContainer.kt`,
         `${SERVER_TEST_SRC_DIR}com/mycompany/myapp/config/EmbeddedSQL.kt`,
-        `${SERVER_TEST_RES_DIR}testcontainers.properties`,
         `${SERVER_TEST_RES_DIR}META-INF/spring.factories`,
         `${SERVER_MAIN_SRC_DIR}com/mycompany/myapp/config/LiquibaseConfiguration.kt`,
         `${DOCKER_DIR}postgresql.yml`,
@@ -330,7 +310,6 @@ const expectedFiles = {
         `${DOCKER_DIR}mongodb-cluster.yml`,
         `${DOCKER_DIR}mongodb/MongoDB.Dockerfile`,
         `${DOCKER_DIR}mongodb/scripts/init_replicaset.js`,
-        `${SERVER_TEST_RES_DIR}testcontainers.properties`,
     ],
 
     couchbase: [
@@ -349,7 +328,6 @@ const expectedFiles = {
     neo4j: [
         `${SERVER_TEST_SRC_DIR}com/mycompany/myapp/config/EmbeddedNeo4j.kt`,
         `${SERVER_TEST_SRC_DIR}com/mycompany/myapp/config/Neo4jTestContainer.kt`,
-        `${SERVER_TEST_RES_DIR}testcontainers.properties`,
         `${SERVER_TEST_RES_DIR}META-INF/spring.factories`,
         `${SERVER_MAIN_RES_DIR}config/neo4j/migrations/user__admin.json`,
         `${SERVER_MAIN_RES_DIR}config/neo4j/migrations/user__user.json`,
@@ -372,7 +350,6 @@ const expectedFiles = {
         `${DOCKER_DIR}cassandra-cluster.yml`,
         `${DOCKER_DIR}cassandra-migration.yml`,
         `${DOCKER_DIR}cassandra.yml`,
-        `${SERVER_TEST_RES_DIR}testcontainers.properties`,
     ],
 
     elasticsearch: [

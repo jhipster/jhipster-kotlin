@@ -20,7 +20,6 @@ export default class extends BaseApplicationGenerator {
     }
 
     async _postConstruct() {
-        await this.dependsOnJHipster('jhipster-kotlin:migration');
         // Use _postConstruct so kotlin will be queued before jhipster:spring-boot dependencies
         await this.dependsOnJHipster('jhipster:java:bootstrap');
         await this.dependsOnJHipster('jhipster-kotlin:kotlin');
@@ -34,9 +33,6 @@ export default class extends BaseApplicationGenerator {
         return this.asComposingTaskGroup({
             async composeDetekt() {
                 await this.composeWithJHipster('jhipster-kotlin:detekt');
-            },
-            async composeSpringBootV2() {
-                await this.composeWithJHipster('jhipster-kotlin:spring-boot-v2');
             },
         });
     }
