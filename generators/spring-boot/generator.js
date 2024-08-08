@@ -184,6 +184,42 @@ export default class extends BaseApplicationGenerator {
         });
     }
 
+    get [BaseApplicationGenerator.WRITING_ENTITIES]() {
+        return this.asWritingEntitiesTaskGroup({
+            // Can be dropped for jhipster 8.7.0
+            async writeEnumFiles({ application, entities }) {
+                for (const entity of entities.filter(entity => !entity.skipServer)) {
+                    for (const field of entity.fields.filter(field => field.fieldIsEnum)) {
+                        const enumInfo = {
+                            ...application,
+                            ...getEnumInfo(field, entity.clientRootFolder),
+                            frontendAppName: entity.frontendAppName,
+                            packageName: application.packageName,
+                            javaPackageSrcDir: application.javaPackageSrcDir,
+                            entityJavaPackageFolder: entity.entityJavaPackageFolder,
+                            entityAbsolutePackage: entity.entityAbsolutePackage || application.packageName,
+                        };
+                        await this.writeFiles({
+                            blocks: [
+                                {
+                                    templates: [
+                                        {
+                                            file: `${SERVER_MAIN_SRC_KOTLIN_DIR}_package_/_entityPackage_/domain/enumeration/_enumName_.kt`,
+                                            renameTo: () =>
+                                                `${SERVER_MAIN_SRC_KOTLIN_DIR}${entity.entityAbsoluteFolder}/domain/enumeration/${field.fieldType}.kt`,
+                                        },
+                                    ],
+                                },
+                            ],
+                            rootTemplatesPath: ['../../spring-boot/templates/domain/'],
+                            context: enumInfo,
+                        });
+                    }
+                }
+            },
+        });
+    }
+
     get [BaseApplicationGenerator.POST_WRITING]() {
         return this.asPostWritingTaskGroup({
             async customizeMaven({ application, source }) {
