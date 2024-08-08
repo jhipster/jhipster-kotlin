@@ -185,7 +185,7 @@ _%><%- include('../../_partials_entity_/inject_template', {viaService: viaServic
         <%= instanceName %>.<%= field.fieldName %> = UUID.randomUUID()
             <%_ } _%>
        <%_ } _%>
-<%- include('/_global_partials_entity_/save_template', {asEntity, asDto, viaService: viaService, returnDirectly: false, isUsingMapsId: isUsingMapsId, mapsIdAssoc: mapsIdAssoc, isController: true, noReturn: false}); -%>
+<%- include('/_global_partials_entity_/save_template', {viaService: viaService, returnDirectly: false, isUsingMapsId: isUsingMapsId, mapsIdAssoc: mapsIdAssoc, isController: true, noReturn: false}); -%>
         <%_ if (reactive) { _%>
             .map { result ->
                 try {
@@ -325,7 +325,7 @@ _%><%- include('../../_partials_entity_/inject_template', {viaService: viaServic
                 <%_ } _%>
             <% } %>
         <%_ } _%>
-<%- include('../../_partials_entity_/patch_template', {asEntity, asDto, isService: false, viaService: viaService}); -%>
+<%- include('../../_partials_entity_/patch_template', {isService: false, viaService: viaService}); -%>
             <%_ if (reactive) { _%>
         result
             .switchIfEmpty(Mono.error(ResponseStatusException(HttpStatus.NOT_FOUND)))
@@ -360,7 +360,7 @@ _%><%- include('../../_partials_entity_/inject_template', {viaService: viaServic
      */
     @GetMapping("/<%= entityApiUrl %>")<%_ if (databaseTypeSql && isUsingMapsId&& !viaService) { %>
     @Transactional(readOnly = true)<%_ } _%>
-    <%- include('../../_partials_entity_/get_all_template', {asEntity, asDto, viaService}); -%>
+    <%- include('../../_partials_entity_/get_all_template', {viaService}); -%>
 
     <%_ if (reactive && paginationNo) { _%>
     /**
@@ -392,7 +392,7 @@ _%><%- include('../../_partials_entity_/inject_template', {viaService: viaServic
     @Transactional(readOnly = true)
     <%_ } _%>
     fun get<%= entityClass %>(@PathVariable id: <%= primaryKey.type %>): <% if (reactive) { %>Mono<<% } %>ResponseEntity<<%= instanceType %>><% if (reactive) { %>><% } %> {
-        log.debug("REST request to get <%= entityClass %> : $id")<%- include('../../_partials_entity_/get_template', {asEntity, asDto, viaService, returnDirectly:false, implementsEagerLoadApis}); -%>
+        log.debug("REST request to get <%= entityClass %> : $id")<%- include('../../_partials_entity_/get_template', {viaService, returnDirectly:false, implementsEagerLoadApis}); -%>
         return ResponseUtil.wrapOrNotFound(<%= instanceName %>)
     }
 <%_ if (!readOnly) { _%>
@@ -437,6 +437,6 @@ _%><%- include('../../_partials_entity_/inject_template', {viaService: viaServic
     <%_ } _%>
      * @return the result of the search.
      */
-    @GetMapping("/_search/<%= entityApiUrl %>")<%- include('../../_partials_entity_/search_template', {asEntity, asDto, viaService}); -%>
+    @GetMapping("/_search/<%= entityApiUrl %>")<%- include('../../_partials_entity_/search_template', {viaService}); -%>
 <%_ } _%>
 }
