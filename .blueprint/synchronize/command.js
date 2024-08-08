@@ -16,16 +16,25 @@
  * See the License for the specific language governing permissions and
  * limitations under the License.
  */
-
-const defaultCommands = {
-    'generate-sample': {
-        desc: 'Generate a test sample',
-        blueprint: '@jhipster/jhipster-dev',
+const command = {
+    configs: {
+        newFiles: {
+            description: 'Add new files only',
+            cli: {
+                type: Boolean,
+            },
+            scope: 'generator',
+        },
+        convert: {
+            description: 'Apply Partial Java files to Kotlin files convertion',
+            cli: {
+                type: Boolean,
+                alias: 'c',
+            },
+            scope: 'generator',
+        },
     },
-    synchronize: {
-        desc: 'Synchronize templates from generator-jhipster',
-        blueprint: '@jhipster/jhipster-dev',
-    },
+    import: [],
 };
 
-export default defaultCommands;
+export default command;
