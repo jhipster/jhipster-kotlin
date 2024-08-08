@@ -41,6 +41,11 @@ In the conflict resolution, check diff and press `i` if the template is synchron
 
 When synchronization is done revert `.yo-resolve` file to the initial previous state.
 
+Tips:
+
+-   Avoid changing ejs flow control code for a cleaner diff against original java template
+-   In the confict resolution diff, you can edit the original file and press `r` to recreate the diff.
+
 ### Regular Contributor Guidelines
 
 These are some of the guidelines that we would like you to follow if you are a regular contributor to the project
