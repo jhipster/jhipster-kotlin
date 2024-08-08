@@ -3,8 +3,10 @@ import { existsSync } from 'fs';
 // Use spring-boot as parent due to this context in generators
 import BaseApplicationGenerator from 'generator-jhipster/generators/base-application';
 import { createNeedleCallback } from 'generator-jhipster/generators/base/support';
+import { getEnumInfo } from 'generator-jhipster/generators/base-application/support';
 
 import { convertToKotlinFile } from '../kotlin/support/files.js';
+import { SERVER_MAIN_SRC_KOTLIN_DIR } from '../kotlin/support/constants.js';
 import { KOTLIN_TEST_SRC_DIR } from './kotlin-constants.js';
 
 export default class extends BaseApplicationGenerator {
