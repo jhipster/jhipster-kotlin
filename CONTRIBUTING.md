@@ -28,7 +28,31 @@ or
 
 Fix / Code / Document and create a pull request 💯
 
-### Synchronizing generator-jhipster templates
+## Generating samples
+
+Default maven application:
+
+```
+khipster --defaults --skip-install
+```
+
+Default gradle application:
+
+```
+khipster --build gradle --defaults --skip-install
+```
+
+CI samples:
+
+```
+khipster generate-sample --app-sample sample-name
+```
+
+Tips:
+
+-   Ktlint formatting is slow, disable with `--skip-ktlint-format`
+
+## Synchronizing generator-jhipster templates
 
 Run:
 
