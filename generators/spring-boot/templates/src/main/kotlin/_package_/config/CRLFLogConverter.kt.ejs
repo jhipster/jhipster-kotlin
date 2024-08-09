@@ -39,7 +39,8 @@ class CRLFLogConverter : CompositeConverter<ILoggingEvent>() {
 
     override fun transform(event: ILoggingEvent, inStr: String): String {
         val element = ELEMENTS[firstOption]
-        if ((event.marker != null && event.marker.contains(CRLF_SAFE_MARKER)) || isLoggerSafe(event)) {
+        val markers = event.markerList
+        if ((markers != null && !markers.isEmpty() && markers[0].contains(CRLF_SAFE_MARKER)) || isLoggerSafe(event)) {
             return inStr
         }
         val replacement = if (element == null) "_" else toAnsiString("_", element)

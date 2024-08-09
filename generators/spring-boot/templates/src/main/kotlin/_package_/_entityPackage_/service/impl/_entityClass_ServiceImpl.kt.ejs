@@ -86,7 +86,7 @@ import org.elasticsearch.index.query.QueryBuilders.queryStringQuery
 @Service<% if (databaseTypeSql) { %>
 @Transactional<% } %>
 class <%= serviceClassName %>(
-    <%- include('../../_partials_entity_/inject_template', {asEntity, asDto, viaService: false, constructorName: serviceClassName, queryService: false, isUsingMapsId: isUsingMapsId, mapsIdAssoc: mapsIdAssoc, isController: false, noReturn: false}); -%>
+    <%- include('../../_partials_entity_/inject_template', {viaService: false, constructorName: serviceClassName, queryService: false, isUsingMapsId: isUsingMapsId, mapsIdAssoc: mapsIdAssoc, isController: false, noReturn: false}); -%>
 )<% if (serviceImpl) { %> : <%= entityClass %>Service<% } %> {
 
     private val log = LoggerFactory.getLogger(javaClass)
@@ -101,7 +101,7 @@ class <%= serviceClassName %>(
      <%_ } _%>
     <% if (serviceImpl) { _%>override <% } %>fun save(<%= instanceName %>: <%= instanceType %>): <% if (reactive) { %>Mono<<% } %><%= instanceType %><% if (reactive) { %>><% } %> {
         log.debug("Request to save <%= entityClass %> : $<%= instanceName %>")
-<%- include('/_global_partials_entity_/save_template', {asEntity, asDto, viaService: false, returnDirectly: true, isUsingMapsId: isUsingMapsId, mapsIdAssoc: mapsIdAssoc, isController: false, isPersisted: false, noReturn: false}); -%>
+<%- include('/_global_partials_entity_/save_template', {viaService: false, returnDirectly: true, isUsingMapsId: isUsingMapsId, mapsIdAssoc: mapsIdAssoc, isController: false, isPersisted: false, noReturn: false}); -%>
     }
 
     <%_ if (!serviceImpl) { _%>
@@ -127,7 +127,7 @@ class <%= serviceClassName %>(
     <%_ } _%>
     <% if (serviceImpl) { %>override <% } %>fun partialUpdate(<%= instanceName %>: <%= instanceType %>): <% if (reactive) { %>Mono<<% } else { %>Optional<<% } %><%= instanceType %>> {
         log.debug("Request to partially update <%= entityClass %> : {}", <%= instanceName %>)
-<%- include('../../_partials_entity_/patch_template', {asEntity, asDto, isService: true, viaService: false}); -%>
+<%- include('../../_partials_entity_/patch_template', {isService: true, viaService: false}); -%>
     }
 
     <%_ if (!serviceImpl) { _%>
@@ -165,7 +165,7 @@ class <%= serviceClassName %>(
         <%= entityInstance %>Repository.findAllWithEagerRelationships(pageable)<% if (!dtoMapstruct) { %><% } else { %>.map(<%= entityToDtoReference %>)<% } %>
 
     <%_ } _%>
-<%- include('../../_partials_entity_/get_filtered_template', {asEntity, asDto}); -%>
+<%- include('../../_partials_entity_/get_filtered_template'); -%>
 <%_ if (reactive) { _%>
     <%_ if (!serviceImpl) { _%>
     /**
@@ -198,7 +198,7 @@ class <%= serviceClassName %>(
     @Transactional(readOnly = true)
     <%_ } _%>
     <% if (serviceImpl) { %>override <% } %>fun findOne(id: <%= primaryKey.type %>): <%= optionalOrMono %><<%= instanceType %>> {
-        log.debug("Request to get <%= entityClass %> : $id")<%- include('../../_partials_entity_/get_template', {asEntity, asDto, viaService: false, returnDirectly:true, implementsEagerLoadApis}); -%>
+        log.debug("Request to get <%= entityClass %> : $id")<%- include('../../_partials_entity_/get_template', {viaService: false, returnDirectly:true, implementsEagerLoadApis}); -%>
     }
 
     <%_ if (!serviceImpl) { _%>

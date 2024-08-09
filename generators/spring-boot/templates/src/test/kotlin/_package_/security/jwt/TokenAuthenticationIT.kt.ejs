@@ -1,0 +1,96 @@
+package <%= packageName %>.security.jwt
+
+import <%= packageName %>.security.jwt.JwtAuthenticationTestUtils.*
+
+import org.junit.jupiter.api.Test
+import org.springframework.beans.factory.annotation.Autowired
+import org.springframework.beans.factory.annotation.Value
+
+<%_ if (reactive) { %>
+import <%= packageName %>.IntegrationTest
+import org.springframework.boot.test.autoconfigure.web.reactive.AutoConfigureWebTestClient
+import org.springframework.test.web.reactive.server.WebTestClient
+
+@AutoConfigureWebTestClient(timeout = IntegrationTest.DEFAULT_TIMEOUT)
+<%_ } else { _%>
+import org.springframework.http.HttpHeaders.AUTHORIZATION
+import org.springframework.test.web.servlet.result.MockMvcResultMatchers.*
+
+import org.springframework.boot.test.autoconfigure.web.servlet.AutoConfigureMockMvc
+import org.springframework.test.web.servlet.MockMvc
+import org.springframework.test.web.servlet.request.MockMvcRequestBuilders
+
+@AutoConfigureMockMvc
+<%_ } _%>
+@AuthenticationIntegrationTest
+class TokenAuthenticationIT {
+
+    @Autowired
+<%_ if (reactive) { _%>
+    private lateinit var webTestClient: WebTestClient
+<%_ } else { _%>
+    private lateinit var mvc: MockMvc
+<%_ } _%>
+
+    @Value("\${jhipster.security.authentication.jwt.base64-secret}")
+    private lateinit var jwtKey: String
+
+    @Test
+    @Throws(Exception::class)
+    fun testLoginWithValidToken() {
+        expectOk(JwtAuthenticationTestUtils.createValidToken(jwtKey))
+    }
+
+    @Test
+    @Throws(Exception::class)
+    fun testReturnFalseWhenJWThasInvalidSignature() {
+        expectUnauthorized(JwtAuthenticationTestUtils.createTokenWithDifferentSignature())
+    }
+
+    @Test
+    @Throws(Exception::class)
+    fun testReturnFalseWhenJWTisMalformed() {
+        expectUnauthorized(JwtAuthenticationTestUtils.createSignedInvalidJwt(jwtKey))
+    }
+
+    @Test
+    @Throws(Exception::class)
+    fun testReturnFalseWhenJWTisExpired() {
+        expectUnauthorized(JwtAuthenticationTestUtils.createExpiredToken(jwtKey))
+    }
+<%_ if (reactive) { %>
+
+    private fun expectOk(token: String) {
+        webTestClient
+            .get()
+            .uri("/api/authenticate")
+            .headers { headers -> headers.setBearerAuth(token) }
+            .exchange()
+            .expectStatus()
+            .isOk()
+    }
+
+    private fun expectUnauthorized(token: String) {
+        webTestClient
+            .get()
+            .uri("/api/authenticate")
+            .headers{ headers -> headers.setBearerAuth(token) }
+            .exchange()
+            .expectStatus()
+            .isUnauthorized()
+    }
+<%_ } else { _%>
+
+    @Throws(Exception::class)
+    private fun expectOk(token: String) {
+        mvc.perform(MockMvcRequestBuilders.get("/api/authenticate").header(HttpHeaders.AUTHORIZATION, JwtAuthenticationTestUtils.BEARER + token)).andExpect(MockMvcResultMatchers.status().isOk())
+    }
+
+    @Throws(Exception::class)
+    private fun expectUnauthorized(token: String) {
+        mvc
+            .perform(MockMvcRequestBuilders.get("/api/authenticate").header(HttpHeaders.AUTHORIZATION, JwtAuthenticationTestUtils.BEARER + token))
+            .andExpect(MockMvcResultMatchers.status().isUnauthorized())
+    }
+<%_ } _%>
+}

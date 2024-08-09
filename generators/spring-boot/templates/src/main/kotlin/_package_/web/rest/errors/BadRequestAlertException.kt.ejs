@@ -18,32 +18,32 @@
 -%>
 package <%= packageName %>.web.rest.errors
 
-import org.zalando.problem.AbstractThrowableProblem
-import org.zalando.problem.Exceptional
-import org.zalando.problem.Status
-
+import org.springframework.http.HttpStatus
+import org.springframework.web.ErrorResponseException
+import tech.jhipster.web.rest.errors.ProblemDetailWithCause
+import tech.jhipster.web.rest.errors.ProblemDetailWithCause.ProblemDetailWithCauseBuilder
 import java.net.URI
 
-@SuppressWarnings("java:S110") // Inheritance tree of classes should not be too deep
-open class BadRequestAlertException(type: URI, defaultMessage: String, val entityName: String, val errorKey: String) :
-    AbstractThrowableProblem(
-        type, defaultMessage, Status.BAD_REQUEST, null, null, null,
-        getAlertParameters(entityName, errorKey)
-    ) {
+// Inheritance tree of classes should not be too deep
+open class BadRequestAlertException(type: URI?, defaultMessage: String?, val entityName: String?, val errorKey: String) : ErrorResponseException(
+    HttpStatus.BAD_REQUEST,
+    ProblemDetailWithCauseBuilder
+        .instance()
+        .withStatus(HttpStatus.BAD_REQUEST.value())
+        .withType(type)
+        .withTitle(defaultMessage)
+        .withProperty("message", "error.$errorKey")
+        .withProperty("params", entityName)
+        .build(),
+    null
+) {
 
-    constructor(defaultMessage: String, entityName: String, errorKey: String) :
-        this(DEFAULT_TYPE, defaultMessage, entityName, errorKey)
+    constructor(defaultMessage: String?, entityName: String?, errorKey: String) : this(ErrorConstants.DEFAULT_TYPE, defaultMessage, entityName, errorKey)
 
-    override fun getCause(): Exceptional? = super.cause
+    val problemDetailWithCause: ProblemDetailWithCause
+        get() = body as ProblemDetailWithCause
 
     companion object {
-
         private const val serialVersionUID = 1L
-
-        private fun getAlertParameters(entityName: String, errorKey: String) =
-            mutableMapOf<String, Any>(
-                "message" to "error.$errorKey",
-                "params" to entityName
-            )
     }
 }

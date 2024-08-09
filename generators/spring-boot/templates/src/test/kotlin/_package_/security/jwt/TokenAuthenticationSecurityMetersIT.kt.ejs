@@ -18,179 +18,112 @@
 -%>
 package <%= packageName %>.security.jwt
 
-import <%= packageName %>.security.ANONYMOUS
-import <%= packageName %>.management.SecurityMetersService
-
-import io.jsonwebtoken.Jwts
-import io.jsonwebtoken.SignatureAlgorithm
-import io.jsonwebtoken.io.Decoders
-import io.jsonwebtoken.security.Keys
+import <%= packageName %>.security.jwt.JwtAuthenticationTestUtils.*
+import org.assertj.core.api.Assertions.assertThat
 
 import io.micrometer.core.instrument.Counter
 import io.micrometer.core.instrument.MeterRegistry
-import io.micrometer.core.instrument.simple.SimpleMeterRegistry
-
-import org.junit.jupiter.api.BeforeEach
+import java.util.Collection
 import org.junit.jupiter.api.Test
+import org.springframework.beans.factory.annotation.Autowired
+import org.springframework.beans.factory.annotation.Value
 
-import org.springframework.security.authentication.UsernamePasswordAuthenticationToken
-import org.springframework.security.core.Authentication
-import org.springframework.security.core.GrantedAuthority
-import org.springframework.security.core.authority.SimpleGrantedAuthority
-import org.springframework.test.util.ReflectionTestUtils
-import tech.jhipster.config.JHipsterProperties
+<%_ if (reactive) { _%>
+import <%= packageName %>.IntegrationTest
+import org.springframework.boot.test.autoconfigure.web.reactive.AutoConfigureWebTestClient
+import org.springframework.test.web.reactive.server.WebTestClient
 
-import java.security.Key
-import java.util.Date
+@AutoConfigureWebTestClient(timeout = IntegrationTest.DEFAULT_TIMEOUT)
+<%_ } else { _%>
+import org.springframework.http.HttpHeaders.AUTHORIZATION
+import org.springframework.boot.test.autoconfigure.web.servlet.AutoConfigureMockMvc
+import org.springframework.test.web.servlet.MockMvc
+import org.springframework.test.web.servlet.request.MockMvcRequestBuilders
 
-import org.assertj.core.api.Assertions.assertThat
+@AutoConfigureMockMvc
+<%_ } _%>
+@AuthenticationIntegrationTest
+class TokenAuthenticationSecurityMetersIT {
 
-private const val ONE_MINUTE = 60000
-private const val INVALID_TOKENS_METER_EXPECTED_NAME = "security.authentication.invalid-tokens"
+    companion object {
+        private const val INVALID_TOKENS_METER_EXPECTED_NAME = "security.authentication.invalid-tokens"
+    }
 
-class TokenProviderSecurityMetersTests {
+    @Autowired
+<%_ if (reactive) { _%>
+    private lateinit var webTestClient: WebTestClient
+<%_ } else { _%>
+    private lateinit var mvc: MockMvc
+<%_ } _%>
 
+    @Value("\${jhipster.security.authentication.jwt.base64-secret}")
+    private lateinit var jwtKey: String
+
+    @Autowired
     private lateinit var meterRegistry: MeterRegistry
 
-    private lateinit var tokenProvider: TokenProvider
-
-
-    @BeforeEach
-    fun setup() {
-        val jHipsterProperties = JHipsterProperties()
-        val base64Secret = "fd54a45s65fds737b9aafcb3412e07ed99b267f33413274720ddbb7f6c5e64e9f14075f2d7ed041592f0b7657baf8"
-        jHipsterProperties.security.authentication.jwt.base64Secret = base64Secret
-
-        meterRegistry = SimpleMeterRegistry()
-
-        val securityMetersService = SecurityMetersService(meterRegistry)
-
-        tokenProvider = TokenProvider(jHipsterProperties, securityMetersService)
-        val key = Keys.hmacShaKeyFor(Decoders.BASE64.decode(base64Secret))
-
-        ReflectionTestUtils.setField(tokenProvider, "key", key)
-        ReflectionTestUtils.setField(tokenProvider, "tokenValidityInMilliseconds", ONE_MINUTE)
-    }
-
     @Test
+    @Throws(Exception::class)
     fun testValidTokenShouldNotCountAnything() {
         val counters = meterRegistry.find(INVALID_TOKENS_METER_EXPECTED_NAME).counters()
-
-        assertThat(aggregate(counters)).isZero()
-
-        val validToken = createValidToken()
-
-        tokenProvider.validateToken(validToken)
-
-        assertThat(aggregate(counters)).isZero()
+        val count = aggregate(counters)
+        tryToAuthenticate(JwtAuthenticationTestUtils.createValidToken(jwtKey))
+        Assertions.assertThat(aggregate(counters)).isEqualTo(count)
     }
 
     @Test
+    @Throws(Exception::class)
     fun testTokenExpiredCount() {
-        assertThat(meterRegistry.get(INVALID_TOKENS_METER_EXPECTED_NAME)
-            .tag("cause", "expired")
-            .counter().count()).isZero()
-
-        val expiredToken = createExpiredToken()
-
-        tokenProvider.validateToken(expiredToken)
-
-        assertThat(meterRegistry.get(INVALID_TOKENS_METER_EXPECTED_NAME)
-            .tag("cause", "expired")
-            .counter().count()).isEqualTo(1.0)
+        val count = meterRegistry[INVALID_TOKENS_METER_EXPECTED_NAME].tag("cause", "expired").counter().count()
+        tryToAuthenticate(JwtAuthenticationTestUtils.createExpiredToken(jwtKey))
+        Assertions.assertThat(meterRegistry[INVALID_TOKENS_METER_EXPECTED_NAME].tag("cause", "expired").counter().count()).isEqualTo(count + 1)
     }
 
     @Test
-    fun testTokenUnsupportedCount() {
-        assertThat(meterRegistry.get(INVALID_TOKENS_METER_EXPECTED_NAME)
-            .tag("cause", "unsupported")
-            .counter().count()).isZero()
-
-        val unsupportedToken = createUnsupportedToken()
-
-        tokenProvider.validateToken(unsupportedToken)
-
-        assertThat(meterRegistry.get(INVALID_TOKENS_METER_EXPECTED_NAME)
-            .tag("cause", "unsupported")
-            .counter().count()).isEqualTo(1.0)
-    }
-
-    @Test
+    @Throws(Exception::class)
     fun testTokenSignatureInvalidCount() {
-        assertThat(meterRegistry.get(INVALID_TOKENS_METER_EXPECTED_NAME)
-            .tag("cause", "invalid-signature")
-            .counter().count()).isZero()
-
-        val tokenWithDifferentSignature = createTokenWithDifferentSignature()
-
-        tokenProvider.validateToken(tokenWithDifferentSignature)
-
-        assertThat(meterRegistry.get(INVALID_TOKENS_METER_EXPECTED_NAME)
-            .tag("cause", "invalid-signature")
-            .counter().count()).isEqualTo(1.0)
+        val count = meterRegistry[INVALID_TOKENS_METER_EXPECTED_NAME].tag("cause", "invalid-signature").counter().count()
+        tryToAuthenticate(JwtAuthenticationTestUtils.createTokenWithDifferentSignature())
+        Assertions.assertThat(meterRegistry[INVALID_TOKENS_METER_EXPECTED_NAME].tag("cause", "invalid-signature").counter().count())
+            .isEqualTo(count + 1)
     }
 
     @Test
+    @Throws(Exception::class)
     fun testTokenMalformedCount() {
-        assertThat(meterRegistry.get(INVALID_TOKENS_METER_EXPECTED_NAME)
-            .tag("cause", "malformed")
-            .counter().count()).isZero()
-
-        val malformedToken = createMalformedToken()
-
-        tokenProvider.validateToken(malformedToken)
-
-        assertThat(meterRegistry.get(INVALID_TOKENS_METER_EXPECTED_NAME)
-            .tag("cause", "malformed")
-            .counter().count()).isEqualTo(1.0)
+        val count = meterRegistry[INVALID_TOKENS_METER_EXPECTED_NAME].tag("cause", "malformed").counter().count()
+        tryToAuthenticate(JwtAuthenticationTestUtils.createSignedInvalidJwt(jwtKey))
+        Assertions.assertThat(meterRegistry[INVALID_TOKENS_METER_EXPECTED_NAME].tag("cause", "malformed").counter().count()).isEqualTo(count + 1)
     }
 
-    private fun createValidToken(): String {
-        val authentication = createAuthentication()
-
-        return tokenProvider.createToken(authentication, false)
+    @Test
+    @Throws(Exception::class)
+    fun testTokenInvalidCount() {
+        val count = meterRegistry[INVALID_TOKENS_METER_EXPECTED_NAME].tag("cause", "malformed").counter().count()
+        tryToAuthenticate(JwtAuthenticationTestUtils.createInvalidToken(jwtKey))
+        Assertions.assertThat(meterRegistry[INVALID_TOKENS_METER_EXPECTED_NAME].tag("cause", "malformed").counter().count()).isEqualTo(count + 1)
     }
+<%_ if (reactive) { _%>
 
-    private fun createExpiredToken(): String {
-        ReflectionTestUtils.setField(tokenProvider, "tokenValidityInMilliseconds", -ONE_MINUTE)
-
-        val authentication = createAuthentication()
-
-        return tokenProvider.createToken(authentication, false)
+    private fun tryToAuthenticate(token: String) {
+        webTestClient
+            .get()
+            .uri("/api/authenticate")
+            .headers { headers -> headers.setBearerAuth(token) }
+            .exchange()
+            .returnResult(String::class.java)
+            .getResponseBody()
+            .blockLast()
     }
+<%_ } else { _%>
 
-    private fun createAuthentication(): Authentication {
-        val authorities = listOf(SimpleGrantedAuthority(ANONYMOUS))
-        return UsernamePasswordAuthenticationToken("anonymous", "anonymous", authorities)
+    @Throws(Exception::class)
+    private fun tryToAuthenticate(token: String) {
+        mvc.perform(MockMvcRequestBuilders.get("/api/authenticate").header(HttpHeaders.AUTHORIZATION, JwtAuthenticationTestUtils.BEARER + token))
     }
-
-    private fun createUnsupportedToken(): String {
-        val key = ReflectionTestUtils.getField(tokenProvider, "key") as Key
-
-        return Jwts.builder().setPayload("payload").signWith(key, SignatureAlgorithm.HS256).compact()
-    }
-
-    private fun createMalformedToken(): String {
-        val validToken = createValidToken()
-
-        return "X$validToken"
-    }
-
-    private fun createTokenWithDifferentSignature(): String {
-        val otherKey = Keys.hmacShaKeyFor(
-            Decoders.BASE64.decode("Xfd54a45s65fds737b9aafcb3412e07ed99b267f33413274720ddbb7f6c5e64e9f14075f2d7ed041592f0b7657baf8")
-        )
-
-        return Jwts
-            .builder()
-            .setSubject("anonymous")
-            .signWith(otherKey, SignatureAlgorithm.HS512)
-            .setExpiration(Date(Date().time + ONE_MINUTE))
-            .compact()
-    }
+<%_ } _%>
 
     private fun aggregate(counters: Collection<Counter>): Double {
-        return counters.sumOf(Counter::count)
+        return counters.stream().mapToDouble { obj: Counter -> obj.count() }.sum()
     }
-
 }
