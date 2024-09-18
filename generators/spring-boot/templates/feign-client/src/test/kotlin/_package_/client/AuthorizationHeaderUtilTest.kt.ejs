@@ -18,12 +18,22 @@ This file is part of the JHipster project, see https://jhipster.github.io/
 -%>
 package <%= packageName %>.security.oauth2
 
+import org.junit.jupiter.api.Assertions.fail
+import org.mockito.ArgumentMatchers.*
+import org.mockito.Mockito.*
+
+import java.time.Duration
+import java.time.Instant
+import java.util.List
+import java.util.Map
+import java.util.Optional
 import org.assertj.core.api.Assertions
 import org.junit.jupiter.api.BeforeEach
 import org.junit.jupiter.api.Test
+import org.junit.jupiter.api.extension.ExtendWith
 import org.mockito.InjectMocks
 import org.mockito.Mock
-import org.mockito.MockitoAnnotations
+import org.mockito.junit.jupiter.MockitoExtension
 import org.springframework.boot.web.client.RestTemplateBuilder
 import org.springframework.http.RequestEntity
 import org.springframework.http.ResponseEntity
@@ -44,17 +54,10 @@ import org.springframework.security.oauth2.server.resource.authentication.JwtAut
 import org.springframework.web.client.ResponseErrorHandler
 import org.springframework.web.client.RestTemplate
 
-import java.time.Duration
-import java.time.Instant
-import java.util.Optional
-
-import org.junit.jupiter.api.Assertions.fail
-import org.mockito.ArgumentMatchers.*
-import org.mockito.Mockito.*
-
 /**
  * Test class for the [AuthorizationHeaderUtil] utility class.
  */
+@ExtendWith(MockitoExtension::class)
 class AuthorizationHeaderUtilTest {
 
     companion object {
@@ -69,12 +72,7 @@ class AuthorizationHeaderUtilTest {
 
     @BeforeEach
     fun setup() {
-        MockitoAnnotations.openMocks(this)
         SecurityContextHolder.setContext(securityContext)
-
-        doReturn(restTemplateBuilder).`when`(restTemplateBuilder).additionalMessageConverters(any(HttpMessageConverter::class.java))
-        doReturn(restTemplateBuilder).`when`(restTemplateBuilder).errorHandler(any(ResponseErrorHandler::class.java))
-        doReturn(restTemplateBuilder).`when`(restTemplateBuilder).basicAuthentication(anyString(), anyString())
     }
 
     @Test
@@ -102,10 +100,8 @@ class AuthorizationHeaderUtilTest {
     @Test
     fun getAuthorizationHeader_OAuth2Authentication_InvalidClient() {
         val oauth2Token = getTestOAuth2AuthenticationToken("INVALID")
-        val authorizedClient = getTestOAuth2AuthorizedClient()
 
         doReturn(oauth2Token).`when`(securityContext).authentication
-        doReturn(authorizedClient).`when`(clientService).loadAuthorizedClient<OAuth2AuthorizedClient>(eq(VALID_REGISTRATION_ID), eq(SUB_VALUE))
 
         Assertions.assertThatThrownBy {
             authorizationHeaderUtil.getAuthorizationHeader()
@@ -126,6 +122,11 @@ class AuthorizationHeaderUtilTest {
 
     @Test
     fun getAuthorizationHeader_OAuth2Authentication_RefreshToken() {
+
+        doReturn(restTemplateBuilder).`when`(restTemplateBuilder).additionalMessageConverters(any(HttpMessageConverter::class.java))
+        doReturn(restTemplateBuilder).`when`(restTemplateBuilder).errorHandler(any(ResponseErrorHandler::class.java))
+        doReturn(restTemplateBuilder).`when`(restTemplateBuilder).basicAuthentication(anyString(), anyString())
+
         val oauth2Token = getTestOAuth2AuthenticationToken(VALID_REGISTRATION_ID)
         val authorizedClient = getTestOAuth2AuthorizedClient(true)
 
@@ -143,6 +144,11 @@ class AuthorizationHeaderUtilTest {
 
     @Test
     fun getAuthorizationHeader_OAuth2Authentication_RefreshToken_NoRefreshToken() {
+
+        doReturn(restTemplateBuilder).`when`(restTemplateBuilder).additionalMessageConverters(any(HttpMessageConverter::class.java))
+        doReturn(restTemplateBuilder).`when`(restTemplateBuilder).errorHandler(any(ResponseErrorHandler::class.java))
+        doReturn(restTemplateBuilder).`when`(restTemplateBuilder).basicAuthentication(anyString(), anyString())
+
         val oauth2Token = getTestOAuth2AuthenticationToken(VALID_REGISTRATION_ID)
         val authorizedClient = getTestOAuth2AuthorizedClient(true)
 
@@ -160,6 +166,11 @@ class AuthorizationHeaderUtilTest {
 
     @Test
     fun getAuthorizationHeader_OAuth2Authentication_RefreshTokenFails() {
+
+        doReturn(restTemplateBuilder).`when`(restTemplateBuilder).additionalMessageConverters(any(HttpMessageConverter::class.java))
+        doReturn(restTemplateBuilder).`when`(restTemplateBuilder).errorHandler(any(ResponseErrorHandler::class.java))
+        doReturn(restTemplateBuilder).`when`(restTemplateBuilder).basicAuthentication(anyString(), anyString())
+
         val oauth2Token = getTestOAuth2AuthenticationToken(VALID_REGISTRATION_ID)
         val authorizedClient = getTestOAuth2AuthorizedClient(true)
 
@@ -196,7 +207,7 @@ class AuthorizationHeaderUtilTest {
                 .authorizationGrantType(AuthorizationGrantType.AUTHORIZATION_CODE)
                 .clientId("web-app")
                 .clientSecret("secret")
-                .redirectUriTemplate("/login/oauth2/code/oidc")
+                .redirectUri("/login/oauth2/code/oidc")
                 .authorizationUri("http://localhost:8080/auth/realms/master/protocol/openid-connect/auth")
                 .tokenUri("https://localhost:8080/auth/realms/master/protocol/openid-connect/token")
                 .build(),

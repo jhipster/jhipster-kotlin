@@ -33,7 +33,7 @@ import org.springframework.data.domain.Sort
 import java.util.Collections
 <%_ } _%>
 import <%= packageName %>.service.UserService
-import <%= packageName %>.service.dto.<%= user.restClass %>
+import <%= packageName %>.service.dto.<%= user.dtoClass %>
 
 <%_ if (databaseTypeSql || databaseTypeMongodb || databaseTypeNeo4j || databaseTypeCouchbase) { _%>
 import tech.jhipster.web.util.PaginationUtil
@@ -75,10 +75,7 @@ import java.util.Arrays
 import java.util.*
 <%_ } _%>
 <%_ if (searchEngineElasticsearch && !reactive) { _%>
-import java.util.stream.Collectors
 import java.util.stream.StreamSupport
-
-import org.elasticsearch.index.query.QueryBuilders.*
 <%_ } _%>
 
 @RestController
@@ -101,18 +98,20 @@ class PublicUserResource(
     private val log = LoggerFactory.getLogger(javaClass)
 
     /**
-     * {@code GET /users} : get all users with only the public informations - calling this are allowed for anyone.
-     *<% if (databaseTypeSql || databaseTypeMongodb || databaseTypeNeo4j || databaseTypeCouchbase) { %>
-        <%_ if (reactive) { _%>
+     * {@code GET /users} : get all users with only public information - calling this method is allowed for anyone.
+<%_ if (databaseTypeSql || databaseTypeMongodb || databaseTypeNeo4j || databaseTypeCouchbase) { _%>
+     *
+    <%_ if (reactive) { _%>
      * @param request a {@link ServerHttpRequest} request.
-        <%_ } _%>
-     * @param pageable the pagination information.<% } %>
+    <%_ } _%>
+     * @param pageable the pagination information.
+<%_ } _%>
      * @return the {@link ResponseEntity} with status {@code 200 (OK)} and with body all users.
      */
     @GetMapping("/users")
     <%_ if (databaseTypeSql || databaseTypeMongodb || databaseTypeNeo4j || databaseTypeCouchbase) { _%>
         <%_ if (reactive) { _%>
-    fun getAllPublicUsers(request: ServerHttpRequest, @org.springdoc.api.annotations.ParameterObject pageable: Pageable): Mono<ResponseEntity<Flux<<%= user.restClass %>>>> {
+    fun getAllPublicUsers(request: ServerHttpRequest, @org.springdoc.core.annotations.ParameterObject pageable: Pageable): Mono<ResponseEntity<Flux<<%= user.dtoClass %>>>> {
         log.debug("REST request to get all public User names")
         <%_ if (!authenticationTypeOauth2) { _%>
         if (!onlyContainsAllowedProperties(pageable)) {
@@ -121,12 +120,12 @@ class PublicUserResource(
         <%_ } _%>
 
         return userService.countManagedUsers()
-            .map { PageImpl<<%= user.restClass %>>(listOf(), pageable, it)  }
+            .map { PageImpl<<%= user.dtoClass %>>(listOf(), pageable, it)  }
             .map { PaginationUtil.generatePaginationHttpHeaders(UriComponentsBuilder.fromHttpRequest(request), it) }
             .map { ResponseEntity.ok().headers(it).body(userService.getAllPublicUsers(pageable)) }
     }
         <%_ } else { _%>
-    fun getAllPublicUsers(@org.springdoc.api.annotations.ParameterObject pageable: Pageable):  ResponseEntity<List<<%= user.restClass %>>> {
+    fun getAllPublicUsers(@org.springdoc.core.annotations.ParameterObject pageable: Pageable):  ResponseEntity<List<<%= user.dtoClass %>>> {
         log.debug("REST request to get all public User names")
         <%_ if (!authenticationTypeOauth2) { _%>
         if (!onlyContainsAllowedProperties(pageable)) {
@@ -152,33 +151,37 @@ class PublicUserResource(
     fun getAuthorities() = userService.getAuthorities()<% if (reactive) { %>.collectList()<% } %>
 
     <%_ } else { /* Cassandra */ _%>
-    fun getAllPublicUsers(): <% if (reactive) { %>Flux<% } else { %>List<% } %><<%= user.restClass %>> = userService.getAllPublicUsers()
+    fun getAllPublicUsers(): <% if (reactive) { %>Flux<% } else { %>List<% } %><<%= user.dtoClass %>> = userService.getAllPublicUsers()
 
     <%_ } _%>
 
-    <%_ if (!!searchEngine) { _%>
+    <%_ if (searchEngineAny) { _%>
 
     /**
-     * {@code SEARCH /_search/users/:query} : search for the User corresponding to the query.
-     *
-     * @param query the query to search.
-     * @return the result of the search.
-     */
-    @GetMapping("/_search/users/{query}")
-    fun search(@PathVariable query: String): <% if(reactive) { %>Mono<Mutable<% } %>List<<%= user.restClass %>><% if(reactive) { %>><% } %> {
-        <%/* TODO fix this */%>
+    * {@code SEARCH /users/_search/:query} : search for the User corresponding to the query.
+    *
+    * @param query the query to search.
+    * @return the result of the search.
+    */
+    @GetMapping("/users/_search/{query}")
+    fun search(@PathVariable query: String): <% if(reactive) { %>Mono<Mutable<% } %>List<<%= user.dtoClass %>><% if(reactive) { %>><% } %> {
     <%_ if (searchEngineElasticsearch) { _%>
         <%_ if (reactive) { _%>
-        return userSearchRepository.search(query).map { <%= user.restClass %>(it) }.collectList()
+        return userSearchRepository.search(query).map { <%= user.dtoClass %>(it) }.collectList()
         <%_ } else { _%>
-        return userSearchRepository.search(query).map { <%= user.restClass %>(it) }
+        return StreamSupport
+            .stream(userSearchRepository.search(query).spliterator(), false)
+            .map { <%= user.dtoClass %>(it) }
+            .toList()
         <%_ } _%>
     <%_ } else { _%>
         <%_ if (reactive) { _%>
-        return userRepository.search(query).map { <%= user.restClass %>(it) }.collectList()
+        return userRepository.search(query).map { <%= user.dtoClass %>(it) }.collectList()
          <%_ } else { _%>
-        return userRepository.search(query)
-            .map { <%= user.restClass %>(it) }
+        return StreamSupport
+            .stream(userRepository.search(query).spliterator(), false)
+            .map { <%= user.dtoClass %>(it) }
+            .toList();
          <%_ } _%>
     <%_ } _%>
     }

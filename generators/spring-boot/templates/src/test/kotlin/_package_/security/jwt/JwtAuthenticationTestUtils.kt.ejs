@@ -1,0 +1,132 @@
+package <%= packageName %>.security.jwt
+
+import <%= packageName %>.security.SecurityUtils.AUTHORITIES_KEY
+import <%= packageName %>.security.SecurityUtils.JWT_ALGORITHM
+
+import com.nimbusds.jose.jwk.source.ImmutableSecret
+import com.nimbusds.jose.util.Base64
+import io.micrometer.core.instrument.MeterRegistry
+import io.micrometer.core.instrument.simple.SimpleMeterRegistry
+import java.time.Instant
+import java.util.Collections
+import javax.crypto.Mac
+import javax.crypto.SecretKey
+import javax.crypto.spec.SecretKeySpec
+import org.springframework.context.annotation.Bean
+import org.springframework.security.crypto.codec.Hex
+import org.springframework.security.oauth2.jwt.JwsHeader
+import org.springframework.security.oauth2.jwt.JwtClaimsSet
+import org.springframework.security.oauth2.jwt.JwtEncoder
+import org.springframework.security.oauth2.jwt.JwtEncoderParameters
+import org.springframework.security.oauth2.jwt.NimbusJwtEncoder
+<%_ if (!reactive) { _%>
+import org.springframework.web.servlet.handler.HandlerMappingIntrospector
+<%_ } _%>
+<%_ if (reactive && generateBuiltInUserEntity) { _%>
+import <%= packageName %>.repository.UserRepository
+<%_ } _%>
+<%_ if (reactive) { _%>
+import org.springframework.boot.test.mock.mockito.MockBean
+import org.springframework.security.core.userdetails.ReactiveUserDetailsService
+<%_ } _%>
+
+class JwtAuthenticationTestUtils {
+<%_ if (!reactive) { _%>
+
+    @Bean
+    private fun mvcHandlerMappingIntrospector(): HandlerMappingIntrospector {
+        return HandlerMappingIntrospector()
+    }
+<%_ } _%>
+<%_ if (applicationTypeMicroservice && !reactive) { _%>
+
+    @Bean
+    private fun authenticationResource(): TestAuthenticationResource {
+        return TestAuthenticationResource()
+    }
+<%_ } _%>
+
+    @Bean
+    private fun meterRegistry(): MeterRegistry {
+        return SimpleMeterRegistry()
+    }
+<%_ if (reactive) { _%>
+
+    @MockBean
+    private lateinit var userDetailsService: ReactiveUserDetailsService
+<%_ } _%>
+<%_ if (reactive && generateBuiltInUserEntity) { _%>
+
+    @MockBean
+    private lateinit var userRepository: UserRepository
+<%_ } _%>
+
+    companion object {
+        <%_ if (!reactive) { _%>
+        const val BEARER = "Bearer "
+        <%_ } _%>
+
+        fun createValidToken(jwtKey: String): String {
+            return createValidTokenForUser(jwtKey, "anonymous")
+        }
+
+        fun createValidTokenForUser(jwtKey: String, user: String?): String {
+            val encoder = jwtEncoder(jwtKey)
+            val now = Instant.now()
+            val claims = JwtClaimsSet
+                .builder()
+                .issuedAt(now)
+                .expiresAt(now.plusSeconds(60))
+                .subject(user)
+                .claims { customClain: MutableMap<String, Any> -> customClain[SecurityUtils.AUTHORITIES_KEY] = listOf("ROLE_ADMIN") }
+                .build()
+            val jwsHeader = JwsHeader.with(SecurityUtils.JWT_ALGORITHM).build()
+            return encoder.encode(JwtEncoderParameters.from(jwsHeader, claims)).tokenValue
+        }
+
+        fun createTokenWithDifferentSignature(): String {
+            val encoder = jwtEncoder("Xfd54a45s65fds737b9aafcb3412e07ed99b267f33413274720ddbb7f6c5e64e9f14075f2d7ed041592f0b7657baf8")
+            val now = Instant.now()
+            val past = now.plusSeconds(60)
+            val claims = JwtClaimsSet.builder().issuedAt(now).expiresAt(past).subject("anonymous").build()
+            val jwsHeader = JwsHeader.with(SecurityUtils.JWT_ALGORITHM).build()
+            return encoder.encode(JwtEncoderParameters.from(jwsHeader, claims)).tokenValue
+        }
+
+        fun createExpiredToken(jwtKey: String): String {
+            val encoder = jwtEncoder(jwtKey)
+            val now = Instant.now()
+            val past = now.minusSeconds(600)
+            val claims = JwtClaimsSet.builder().issuedAt(past).expiresAt(past.plusSeconds(1)).subject("anonymous").build()
+            val jwsHeader = JwsHeader.with(SecurityUtils.JWT_ALGORITHM).build()
+            return encoder.encode(JwtEncoderParameters.from(jwsHeader, claims)).tokenValue
+        }
+
+        @Throws(Exception::class)
+        fun createInvalidToken(jwtKey: String): String {
+            return createValidToken(jwtKey).substring(1)
+        }
+
+        @Throws(Exception::class)
+        fun createSignedInvalidJwt(jwtKey: String): String {
+            return calculateHMAC("foo", jwtKey)
+        }
+
+        private fun jwtEncoder(jwtKey: String): JwtEncoder {
+            return NimbusJwtEncoder(ImmutableSecret(getSecretKey(jwtKey)))
+        }
+
+        private fun getSecretKey(jwtKey: String): SecretKey {
+            val keyBytes = Base64.from(jwtKey).decode()
+            return SecretKeySpec(keyBytes, 0, keyBytes.size, SecurityUtils.JWT_ALGORITHM.getName())
+        }
+
+        @Throws(Exception::class)
+        private fun calculateHMAC(data: String, key: String): String {
+            val secretKeySpec = SecretKeySpec(Base64.from(key).decode(), "HmacSHA512")
+            val mac = Mac.getInstance("HmacSHA512")
+            mac.init(secretKeySpec)
+            return String(Hex.encode(mac.doFinal(data.toByteArray())))
+        }
+    }
+}

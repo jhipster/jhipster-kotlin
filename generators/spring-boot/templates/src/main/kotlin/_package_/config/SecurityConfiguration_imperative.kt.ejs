@@ -18,246 +18,263 @@
 -%>
 package <%= packageName %>.config
 
-import <%= packageName %>.security.ADMIN
-    <%_ if (authenticationTypeOauth2 && !applicationTypeMicroservice) { _%>
-import <%= packageName %>.security.extractAuthorityFromClaims
-    <%_ } _%>
-    <%_ if (authenticationTypeJwt) { _%>
-import <%= packageName %>.security.jwt.JWTConfigurer
-import <%= packageName %>.security.jwt.TokenProvider
-    <%_ } _%>
+import <%= packageName %>.security.*
 import tech.jhipster.config.JHipsterProperties
-    <%_ if (authenticationTypeSession) { _%>
-import tech.jhipster.security.AjaxAuthenticationFailureHandler
-import tech.jhipster.security.AjaxAuthenticationSuccessHandler
-import tech.jhipster.security.AjaxLogoutSuccessHandler
-    <%_ } _%>
 
+<%_ if (authenticationTypeSession || devDatabaseTypeH2Any) { _%>
+import org.springframework.security.web.util.matcher.AntPathRequestMatcher.antMatcher
+
+<%_ } _%>
 import org.springframework.context.annotation.Bean
-import org.springframework.context.annotation.Import
-    <%_ if (authenticationTypeOauth2) { _%>
+import org.springframework.context.annotation.Configuration
+<%_ if (authenticationTypeOauth2) { _%>
 import org.springframework.core.convert.converter.Converter
-    <%_ } _%>
-    <%_ if (!applicationTypeMicroservice || !authenticationTypeOauth2) { _%>
+<%_ } _%>
+<%_ if (devDatabaseTypeH2Any) { _%>
+import org.springframework.core.env.Environment
+import org.springframework.core.env.Profiles
+import tech.jhipster.config.JHipsterConstants
+<%_ } _%>
+<%_ if (authenticationTypeJwt) { _%>
 import org.springframework.http.HttpMethod
-    <%_ } _%>
-import org.springframework.security.config.annotation.method.configuration.EnableGlobalMethodSecurity
+import org.springframework.security.config.Customizer
+<%_ } _%>
+import org.springframework.security.config.annotation.method.configuration.EnableMethodSecurity
 import org.springframework.security.config.annotation.web.builders.HttpSecurity
-import org.springframework.security.config.annotation.web.configuration.EnableWebSecurity
+<%_ if (!skipClient) { _%>
+import org.springframework.security.config.annotation.web.configurers.HeadersConfigurer.FrameOptionsConfig
+<%_ } _%>
 import org.springframework.security.web.SecurityFilterChain
-    <%_ if (authenticationTypeJwt || (authenticationTypeOauth2 && applicationTypeMicroservice)) { _%>
+<%_ if (!skipClient || authenticationUsesCsrf) { _%>
+import org.springframework.security.web.authentication.www.BasicAuthenticationFilter
+<%_ } _%>
+<%_ if (authenticationUsesCsrf) { _%>
+import tech.jhipster.web.filter.CookieCsrfFilter
+<%_ } _%>
+<%_ if (!skipClient) { _%>
+import <%= packageName %>.web.filter.SpaWebFilter
+<%_ } _%>
+<%_ if (authenticationTypeJwt || (authenticationTypeOauth2 && applicationTypeMicroservice)) { _%>
 import org.springframework.security.config.http.SessionCreationPolicy
-    <%_ } _%>
-    <%_ if (!authenticationTypeOauth2 && !skipUserManagement) { _%>
+<%_ } _%>
+<%_ if (generateUserManagement) { _%>
 import org.springframework.security.crypto.bcrypt.BCryptPasswordEncoder
-    <%_ } _%>
-    <%_ if (authenticationTypeOauth2) { _%>
+import org.springframework.security.crypto.password.PasswordEncoder
+<%_ } _%>
+<%_ if (authenticationTypeOauth2) { _%>
 import <%= packageName %>.security.oauth2.AudienceValidator
+import <%= packageName %>.security.SecurityUtils
 import org.springframework.security.authentication.AbstractAuthenticationToken
 import org.springframework.security.oauth2.core.DelegatingOAuth2TokenValidator
-import org.springframework.security.oauth2.jwt.Jwt
-import org.springframework.security.oauth2.jwt.JwtDecoder
-import org.springframework.security.oauth2.jwt.JwtDecoders
-import org.springframework.security.oauth2.jwt.JwtValidators
-import org.springframework.security.oauth2.jwt.NimbusJwtDecoder
+import org.springframework.security.oauth2.core.OAuth2TokenValidator
+import org.springframework.security.oauth2.jwt.*
 import org.springframework.security.oauth2.server.resource.authentication.JwtAuthenticationConverter
 import org.springframework.beans.factory.annotation.Value
 import org.springframework.security.core.GrantedAuthority
-        <%_ if (!applicationTypeMicroservice) { _%>
+  <%_ if (!applicationTypeMicroservice) { _%>
 import org.springframework.security.core.authority.mapping.GrantedAuthoritiesMapper
 import org.springframework.security.oauth2.core.oidc.user.OidcUserAuthority
-        <%_ } _%>
-    <%_ } _%>
-    <%_ if (authenticationTypeSession) { _%>
-        <%_ if (!skipUserManagement) { _%>
+  <%_ } _%>
+import java.util.*
+<%_ } _%>
+<%_ if (authenticationTypeSession) { _%>
+import org.springframework.http.HttpStatus
+import org.springframework.security.web.authentication.HttpStatusEntryPoint
+import org.springframework.security.web.authentication.logout.HttpStatusReturningLogoutSuccessHandler
+import org.springframework.security.web.util.matcher.OrRequestMatcher
+  <%_ if (generateUserManagement) { _%>
 import org.springframework.security.web.authentication.RememberMeServices
-        <%_ } _%>
+  <%_ } _%>
+<%_ } _%>
+<%_ if (authenticationUsesCsrf && !applicationTypeMicroservice) { _%>
 import org.springframework.security.web.csrf.CookieCsrfTokenRepository
-import org.springframework.security.web.csrf.CsrfFilter
-    <%_ } _%>
-    <%_ if (authenticationTypeOauth2 && !applicationTypeMicroservice) { _%>
-import org.springframework.security.web.csrf.CookieCsrfTokenRepository
-import org.springframework.security.web.csrf.CsrfFilter
-    <%_ } _%>
-    <%_ if (authenticationTypeOauth2) { _%>
+import org.springframework.security.web.csrf.CsrfTokenRequestAttributeHandler
+<%_ } _%>
+<%_ if (authenticationTypeOauth2) { _%>
 import <%= packageName %>.security.oauth2.JwtGrantedAuthorityConverter
-    <%_ } _%>
-    <%_ if (authenticationTypeJwt && !applicationTypeMicroservice) { _%>
-import org.springframework.security.web.authentication.UsernamePasswordAuthenticationFilter
-    <%_ } _%>
-    <%_ if (authenticationTypeOauth2 && applicationTypeMonolith) { _%>
+<%_ } _%>
+<%_ if (authenticationTypeJwt) { _%>
+import org.springframework.security.oauth2.server.resource.web.BearerTokenAuthenticationEntryPoint
+import org.springframework.security.oauth2.server.resource.web.access.BearerTokenAccessDeniedHandler
+<%_ } _%>
+<%_ if (authenticationTypeOauth2 && applicationTypeMonolith) { _%>
 import org.springframework.security.oauth2.client.registration.ClientRegistrationRepository
 import org.springframework.boot.web.client.RestTemplateBuilder
 import <%= packageName %>.security.oauth2.CustomClaimConverter
-    <%_ } _%>
+<%_ } _%>
 <%_ if(!skipClient) { _%>
 import org.springframework.security.web.header.writers.ReferrerPolicyHeaderWriter
 <%_ } _%>
-<%_ if (!applicationTypeMicroservice) { _%>
-import org.springframework.web.filter.CorsFilter
-<%_ } _%>
-import org.zalando.problem.spring.web.advice.security.SecurityProblemSupport
+import org.springframework.security.web.servlet.util.matcher.MvcRequestMatcher
+import org.springframework.web.servlet.handler.HandlerMappingIntrospector
 
-@EnableWebSecurity
-@EnableGlobalMethodSecurity(prePostEnabled = true, securedEnabled = true)
+<%_ if (authenticationTypeOauth2 || !applicationTypeMicroservice) { _%>
+import org.springframework.security.config.Customizer.withDefaults
+<%_ } _%>
+
+@Configuration
+@EnableMethodSecurity(securedEnabled = true)
 @Import(SecurityProblemSupport::class)
 class SecurityConfiguration(
-    private val jHipsterProperties: JHipsterProperties,
-    <%_ if (authenticationTypeSession && !skipUserManagement) { _%>
+<%_ if (devDatabaseTypeH2Any) { _%>
+    private val Environment env,
+<%_ } _%>
+<%_ if (authenticationTypeSession && generateUserManagement) { _%>
     private val rememberMeServices: RememberMeServices,
-    <%_ } _%>
-    <%_ if (authenticationTypeJwt) { _%>
-    private val tokenProvider: TokenProvider,
-    <%_ } _%>
-    <%_ if (!applicationTypeMicroservice) { _%>
-    private val corsFilter: CorsFilter,
-    <%_ } _%>
-    private val problemSupport: SecurityProblemSupport
+<%_ } _%>
+    private val jHipsterProperties: JHipsterProperties,
 ) {
-    <%_ if (authenticationTypeOauth2) { _%>
+<%_ if (authenticationTypeOauth2) { _%>
 
     @Value("\${spring.security.oauth2.client.provider.oidc.issuer-uri}")
     private lateinit var issuerUri: String
-    <%_ } _%>
-    <%_ if (authenticationTypeSession) { _%>
+<%_ } _%>
 
-    @Bean
-    fun ajaxAuthenticationSuccessHandler() = AjaxAuthenticationSuccessHandler()
-
-    @Bean
-    fun ajaxAuthenticationFailureHandler() = AjaxAuthenticationFailureHandler()
-
-    @Bean
-    fun ajaxLogoutSuccessHandler() = AjaxLogoutSuccessHandler()
-    <%_ } _%>
-    <%_ if (!authenticationTypeOauth2 && !skipUserManagement) { _%>
+<%_ if (generateUserManagement) { _%>
 
     @Bean
     fun passwordEncoder() = BCryptPasswordEncoder()
-    <%_ } _%>
+<%_ } _%>
 
     @Bean
     @Throws(Exception::class)
-    fun filterChain(http: HttpSecurity): SecurityFilterChain {
+    fun filterChain(http: HttpSecurity, mvc: MvcRequestMatcher.Builder): SecurityFilterChain {
         http
-            .csrf()
-<%_ if (devDatabaseTypeH2Any) { _%>
-            .ignoringAntMatchers("/h2-console/**")
-<%_ } _%>
-            <%_ if (['session','oauth2'].includes(authenticationType) && !applicationTypeMicroservice) { _%>
-            .csrfTokenRepository(CookieCsrfTokenRepository.withHttpOnlyFalse())
-        .and()
-            <%_ } else { _%>
-            .disable()
-            <%_ } _%>
-            <%_ if (!applicationTypeMicroservice) { _%>
-                <%_ if (authenticationTypeJwt) { _%>
-            .addFilterBefore(corsFilter, UsernamePasswordAuthenticationFilter::class.java)
-                <%_ } else if (authenticationTypeSession || authenticationTypeOauth2) { _%>
-            .addFilterBefore(corsFilter, CsrfFilter::class.java)
-                <%_ } _%>
-            <%_ } _%>
-            .exceptionHandling()
-            .authenticationEntryPoint(problemSupport)
-            .accessDeniedHandler(problemSupport)
-            <%_ if (authenticationTypeSession) { _%>
-                <%_ if (!skipUserManagement) { _%>
-        .and()
-            .rememberMe()
-            .rememberMeServices(rememberMeServices)
-            .rememberMeParameter("remember-me")
-            .key(jHipsterProperties.security.rememberMe.key)
-                <%_ } _%>
-        .and()
-            .formLogin()
-            .loginProcessingUrl("/api/authentication")
-            .successHandler(ajaxAuthenticationSuccessHandler())
-            .failureHandler(ajaxAuthenticationFailureHandler())
-            .permitAll()
-        .and()
-            .logout()
-            .logoutUrl("/api/logout")
-            .logoutSuccessHandler(ajaxLogoutSuccessHandler())
-            .permitAll()
-            <%_ } _%>
-<%_ if (!skipClient) { _%>
-        .and()
-            .headers()
-            .contentSecurityPolicy(jHipsterProperties.security.contentSecurityPolicy)
-        .and()
-            .referrerPolicy(ReferrerPolicyHeaderWriter.ReferrerPolicy.STRICT_ORIGIN_WHEN_CROSS_ORIGIN)
-        .and()
-            .permissionsPolicy().policy("camera=(), fullscreen=(self), geolocation=(), gyroscope=(), magnetometer=(), microphone=(), midi=(), payment=(), sync-xhr=()")
-        .and()
-            .frameOptions().sameOrigin()
-<%_ } _%>
-        <%_ if (authenticationTypeJwt || (authenticationTypeOauth2 && applicationTypeMicroservice)) { _%>
-            .and()
-            .sessionManagement()
-            .sessionCreationPolicy(SessionCreationPolicy.STATELESS)
-        <%_ } _%>
-            .and()
-            .authorizeRequests()
 <%_ if (!applicationTypeMicroservice) { _%>
-            .antMatchers(HttpMethod.OPTIONS, "/**").permitAll()
-    <%_ if (!skipClient) { _%>
-            .antMatchers("/app/**/*.{js,html}").permitAll()
-            .antMatchers("/i18n/**").permitAll()
-            .antMatchers("/content/**").permitAll()
-    <%_ } _%>
-            .antMatchers("/swagger-ui/**").permitAll()
-            .antMatchers("/test/**").permitAll()
+            .cors(withDefaults())
 <%_ } _%>
-    <%_ if (devDatabaseTypeH2Any) { _%>
-            .antMatchers("/h2-console/**").permitAll()
+            .csrf(csrf -> csrf
+<%_ if (authenticationUsesCsrf && !applicationTypeMicroservice) { _%>
+                .csrfTokenRepository(CookieCsrfTokenRepository.withHttpOnlyFalse())
+                // See https://stackoverflow.com/q/74447118/65681
+                .csrfTokenRequestHandler(CsrfTokenRequestAttributeHandler()))
+<%_ } else { _%>
+                .disable())
+<%_ } _%>
+<%_ if (!skipClient) { _%>
+            .addFilterAfter(SpaWebFilter(), BasicAuthenticationFilter::class.java)
+<%_ } _%>
+<%_ if (!applicationTypeMicroservice) { _%>
+  <%_ if (authenticationUsesCsrf) { _%>
+            .addFilterAfter(CookieCsrfFilter(), BasicAuthenticationFilter::class.java)
+  <%_ } _%>
+<%_ } _%>
+<%_ if (!skipClient) { _%>
+            .headers(headers -> headers
+                .contentSecurityPolicy(csp -> csp.policyDirectives(jHipsterProperties.security.contentSecurityPolicy))
+                .frameOptions(FrameOptionsConfig::sameOrigin)
+                .referrerPolicy(referrer -> referrer.policy(ReferrerPolicyHeaderWriter.ReferrerPolicy.STRICT_ORIGIN_WHEN_CROSS_ORIGIN))
+                .permissionsPolicy(permissions ->
+                    permissions.policy("camera=(), fullscreen=(self), geolocation=(), gyroscope=(), magnetometer=(), microphone=(), midi=(), payment=(), sync-xhr=()")))
+<%_ } _%>
+            .authorizeHttpRequests(authz ->
+                // prettier-ignore
+                authz
+<%_ if (!skipClient) { _%>
+                    .requestMatchers(mvc.pattern("/index.html"), mvc.pattern("/*.js"), mvc.pattern("/*.txt"), mvc.pattern("/*.json"), mvc.pattern("/*.map"), mvc.pattern("/*.css")).permitAll()
+                    .requestMatchers(mvc.pattern("/*.ico"), mvc.pattern("/*.png"), mvc.pattern("/*.svg"), mvc.pattern("/*.webapp")).permitAll()
+  <%_ if (clientFrameworkVue) { _%>
+                    .requestMatchers(mvc.pattern("/assets/**")).permitAll()
+    <%_ if (microfrontend) { _%>
+                    .requestMatchers(mvc.pattern("/app/**")).permitAll()
+                    .requestMatchers(mvc.pattern("/i18n/**")).permitAll()
     <%_ } _%>
-            .antMatchers("/api/authenticate").permitAll()
-            <%_ if (!authenticationTypeOauth2 && !skipUserManagement) { _%>
-            .antMatchers("/api/register").permitAll()
-            .antMatchers("/api/activate").permitAll()
-            .antMatchers("/api/account/reset-password/init").permitAll()
-            .antMatchers("/api/account/reset-password/finish").permitAll()
-            <%_ } _%>
-            <%_ if (authenticationTypeOauth2) { _%>
-            .antMatchers("/authorize").authenticated()
-            .antMatchers("/api/auth-info").permitAll()
-            <%_ } _%>
-            .antMatchers("/api/admin/**").hasAuthority(ADMIN)
-            .antMatchers("/api/**").authenticated()
-            <%_ if (communicationSpringWebsocket) { _%>
-            .antMatchers("/websocket/**").authenticated()
-            <%_ } _%>
-            .antMatchers("/management/health").permitAll()
-            .antMatchers("/management/health/**").permitAll()
-            .antMatchers("/management/info").permitAll()
-            .antMatchers("/management/prometheus").permitAll()
-            .antMatchers("/management/**").hasAuthority(ADMIN)
-        <%_ if (authenticationTypeJwt) { _%>
-            <%_ if (applicationTypeMonolith) { _%>
-        .and()
-            .httpBasic()
-            <%_ } _%>
-        .and()
-            .apply(securityConfigurerAdapter())
-        <%_ } else if (authenticationTypeOauth2) { _%>
-            <%_ if (applicationTypeMonolith) { _%>
-        .and()
-            .oauth2Login()
-            <%_ } _%>
-        .and()
-            .oauth2ResourceServer()
-                .jwt()
-                .jwtAuthenticationConverter(authenticationConverter())
-                .and()
-            .and()
-                .oauth2Client()
-        <%_ } _%>
+  <%_ } else { _%>
+                    .requestMatchers(mvc.pattern("/app/**")).permitAll()
+                    .requestMatchers(mvc.pattern("/i18n/**")).permitAll()
+  <%_ } _%>
+                    .requestMatchers(mvc.pattern("/content/**")).permitAll()
+                    .requestMatchers(mvc.pattern("/swagger-ui/**")).permitAll()
+<%_ } _%>
+<%_ if (authenticationTypeJwt) { _%>
+                    .requestMatchers(mvc.pattern(HttpMethod.POST, "/api/authenticate")).permitAll()
+                    .requestMatchers(mvc.pattern(HttpMethod.GET, "/api/authenticate")).permitAll()
+<%_ } else { _%>
+                    .requestMatchers(mvc.pattern("/api/authenticate")).permitAll()
+<%_ } _%>
+<%_ if (generateUserManagement) { _%>
+                    .requestMatchers(mvc.pattern("/api/register")).permitAll()
+                    .requestMatchers(mvc.pattern("/api/activate")).permitAll()
+                    .requestMatchers(mvc.pattern("/api/account/reset-password/init")).permitAll()
+                    .requestMatchers(mvc.pattern("/api/account/reset-password/finish")).permitAll()
+<%_ } _%>
+<%_ if (authenticationTypeOauth2) { _%>
+                    .requestMatchers(mvc.pattern("/api/auth-info")).permitAll()
+<%_ } _%>
+                    .requestMatchers(mvc.pattern("/api/admin/**")).hasAuthority(ADMIN)
+                    .requestMatchers(mvc.pattern("/api/**")).authenticated()
+<%_ if (communicationSpringWebsocket) { _%>
+                    .requestMatchers(mvc.pattern("/websocket/**")).authenticated()
+<%_ } _%>
+                    .requestMatchers(mvc.pattern("/v3/api-docs/**")).hasAuthority(ADMIN)
+                    .requestMatchers(mvc.pattern("/management/health")).permitAll()
+                    .requestMatchers(mvc.pattern("/management/health/**")).permitAll()
+                    .requestMatchers(mvc.pattern("/management/info")).permitAll()
+                    .requestMatchers(mvc.pattern("/management/prometheus")).permitAll()
+                    .requestMatchers(mvc.pattern("/management/**")).hasAuthority(ADMIN))
+<%_ if (authenticationTypeSession) { _%>
+  <%_ if (generateUserManagement) { _%>
+            .rememberMe(rememberMe ->
+                rememberMe
+                    .rememberMeServices(rememberMeServices)
+                    .rememberMeParameter("remember-me")
+                    .key(jHipsterProperties.security.rememberMe.key)
+            )
+  <%_ } _%>
+            .exceptionHandling(exceptionHanding ->
+                exceptionHanding.defaultAuthenticationEntryPointFor(
+                    HttpStatusEntryPoint(HttpStatus.UNAUTHORIZED),
+                    OrRequestMatcher(
+  <%_ if (communicationSpringWebsocket) { _%>
+                        antMatcher("/websocket/**"),
+  <%_ } _%>
+                        antMatcher("/api/**")
+                    )
+                )
+            )
+            .formLogin(formLogin ->
+                formLogin
+                    .loginPage("/")
+                    .loginProcessingUrl("/api/authentication")
+                    .successHandler((request, response, authentication) -> response.setStatus(HttpStatus.OK.value()))
+                    .failureHandler((request, response, exception) -> response.setStatus(HttpStatus.UNAUTHORIZED.value()))
+                    .permitAll()
+            )
+            .logout(logout ->
+                logout.logoutUrl("/api/logout").logoutSuccessHandler(HttpStatusReturningLogoutSuccessHandler()).permitAll());
+<%_ } else if (authenticationTypeJwt) { _%>
+            .sessionManagement(session -> session.sessionCreationPolicy(SessionCreationPolicy.STATELESS))
+            .exceptionHandling((exceptions) -> exceptions
+				.authenticationEntryPoint(BearerTokenAuthenticationEntryPoint())
+				.accessDeniedHandler(BearerTokenAccessDeniedHandler()))
+            .oauth2ResourceServer(oauth2 -> oauth2.jwt(Customizer.withDefaults()));
+<%_ } else if (authenticationTypeOauth2) { _%>
+  <%_ if (applicationTypeMonolith) { _%>
+            .oauth2Login(withDefaults())
+  <%_ } else if (applicationTypeMicroservice) { _%>
+            .sessionManagement(session -> session.sessionCreationPolicy(SessionCreationPolicy.STATELESS))
+  <%_ } _%>
+            .oauth2ResourceServer(oauth2 -> oauth2
+                .jwt(jwt -> jwt
+                    .jwtAuthenticationConverter(authenticationConverter())))
+            .oauth2Client();
+<%_ } _%>
+<%_ if (devDatabaseTypeH2Any) { _%>
+        if (env.acceptsProfiles(Profiles.of(JHipsterConstants.SPRING_PROFILE_DEVELOPMENT))) {
+            http
+  <%_ if (authenticationUsesCsrf && !applicationTypeMicroservice) { _%>
+                .csrf(csrf -> csrf.ignoringRequestMatchers(antMatcher("/h2-console/**")))
+  <%_ } _%>
+                .authorizeHttpRequests(authz -> authz.requestMatchers(antMatcher("/h2-console/**")).permitAll());
+        }
+<%_ } _%>
         return http.build()
     }
-    <%_ if (authenticationTypeJwt) { _%>
 
-    private fun securityConfigurerAdapter() = JWTConfigurer(tokenProvider)
-    <%_ } _%>
+    @Bean
+    fun mvc(introspector: HandlerMappingIntrospector): MvcRequestMatcher.Builder = 
+        MvcRequestMatcher.Builder(introspector)
+
     <%_ if (authenticationTypeOauth2) { _%>
 
     fun authenticationConverter(): Converter<Jwt, AbstractAuthenticationToken> {

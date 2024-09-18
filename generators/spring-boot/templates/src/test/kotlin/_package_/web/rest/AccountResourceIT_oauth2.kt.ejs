@@ -72,7 +72,6 @@ import org.springframework.transaction.annotation.Transactional
 <%_ } else { _%>
 @AutoConfigureMockMvc
 <%_ } _%>
-@WithMockUser(value = TEST_USER_LOGIN)
 @IntegrationTest
 class AccountResourceIT {
 
@@ -124,7 +123,9 @@ class AccountResourceIT {
             .expectHeader().contentType(MediaType.APPLICATION_JSON_VALUE)
             .expectBody()
             .jsonPath("$.login").isEqualTo("jane")
+    <%_ if (generateBuiltInUserEntity) { _%>
             .jsonPath("$.email").isEqualTo("jane.doe@jhipster.com")
+    <%_ } _%>
             .jsonPath("$.authorities").isEqualTo(ADMIN)
     <%_ } else { _%>
         TestSecurityContextHolder
@@ -138,7 +139,9 @@ class AccountResourceIT {
                 .andExpect(status().isOk)
                 .andExpect(content().contentType(MediaType.APPLICATION_JSON_VALUE))
                 .andExpect(jsonPath("\$.login").value(TEST_USER_LOGIN))
+    <%_ if (generateBuiltInUserEntity) { _%>
                 .andExpect(jsonPath("\$.email").value("john.doe@jhipster.com"))
+    <%_ } _%>
                 .andExpect(jsonPath("\$.authorities").value(ADMIN))
     <%_ } _%>
     }
@@ -150,11 +153,11 @@ class AccountResourceIT {
         webTestClient.get().uri("/api/account")
             .accept(MediaType.APPLICATION_JSON)
             .exchange()
-            .expectStatus().is5xxServerError()
+            .expectStatus().is3xxServerError()
     <%_ } else { _%>
         restAccountMockMvc.perform(get("/api/account")
             .accept(MediaType.APPLICATION_JSON))
-            .andExpect(status().isInternalServerError())
+            .andExpect(status().isUnauthorized())
     <%_ } _%>
     }
 
@@ -178,6 +181,7 @@ class AccountResourceIT {
     }
 
     @Test
+    @WithMockUser(TEST_USER_LOGIN)
     <% if (!reactive) { %>@Throws(Exception::class)<% } %>
     <%_ if (reactive) { _%>
     fun testAuthenticatedUser() {
@@ -190,10 +194,7 @@ class AccountResourceIT {
     <%_ } else { _%>
     fun testAuthenticatedUser() {
         restAccountMockMvc.perform(get("/api/authenticate")
-            .with { request ->
-                request.remoteUser = TEST_USER_LOGIN
-                request
-            }
+            .with(request -> request)
             .accept(MediaType.APPLICATION_JSON))
             .andExpect(status().isOk)
             .andExpect(content().string(TEST_USER_LOGIN))
