@@ -1,6 +1,7 @@
-import { vi } from 'vitest';
+import { fileURLToPath } from 'node:url';
 import { defineDefaults } from 'generator-jhipster/testing';
 
 defineDefaults({
-    mockFactory: () => vi.fn(),
+    blueprint: 'generator-jhipster-kotlin',
+    blueprintPackagePath: fileURLToPath(new URL('./', import.meta.url)),
 });

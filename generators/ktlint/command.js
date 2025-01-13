@@ -1,7 +1,6 @@
-/**
- * @type {import('generator-jhipster').JHipsterCommandDefinition}
- */
-const command = {
+import { asCommand } from 'generator-jhipster';
+
+export default asCommand({
     options: {},
     configs: {
         skipKtlintFormat: {
@@ -13,6 +12,4 @@ const command = {
         },
     },
     arguments: {},
-};
-
-export default command;
+});
