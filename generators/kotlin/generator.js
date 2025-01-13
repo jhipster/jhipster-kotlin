@@ -1,5 +1,5 @@
 import BaseApplicationGenerator from 'generator-jhipster/generators/base-application';
-import { transform, passthrough } from '@yeoman/transform';
+import { passthrough, transform } from '@yeoman/transform';
 import { SERVER_MAIN_SRC_KOTLIN_DIR, SERVER_TEST_SRC_KOTLIN_DIR } from './support/index.js';
 
 export default class extends BaseApplicationGenerator {

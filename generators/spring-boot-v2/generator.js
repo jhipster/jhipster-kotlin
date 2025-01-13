@@ -83,7 +83,8 @@ export default class extends BaseApplicationGenerator {
                     file => {
                         // We will only handle spring-boot-v2 here
                         if (file.namespace !== 'jhipster-kotlin:spring-boot-v2') return file;
-                        let { resolvedSourceFile, sourceFile, destinationFile } = file;
+                        const { destinationFile } = file;
+                        let { resolvedSourceFile, sourceFile } = file;
                         // Already resolved kotlin files
                         if (resolvedSourceFile && (resolvedSourceFile.endsWith('.kt') || resolvedSourceFile.includes('.kt.'))) {
                             return file;

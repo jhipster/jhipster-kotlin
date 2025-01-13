@@ -17,7 +17,7 @@
  * limitations under the License.
  */
 
-import { JAVA_SERVER_TEST_RESOURCES_DIR, JAVA_MAIN_RESOURCES_DIR } from 'generator-jhipster';
+import { JAVA_MAIN_RESOURCES_DIR, JAVA_SERVER_TEST_RESOURCES_DIR } from 'generator-jhipster';
 
 const MAIN_DIR = 'src/main/';
 const TEST_DIR = 'src/test/';
