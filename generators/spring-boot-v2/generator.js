@@ -75,7 +75,7 @@ export default class extends BaseApplicationGenerator {
                         ) {
                             return {
                                 ...file,
-                                resolvedSourceFile: this.fetchFromInstalledJHipster('server/templates/', file.sourceFile),
+                                resolvedSourceFile: this.fetchFromInstalledJHipster('spring-boot/templates/', file.sourceFile),
                             };
                         }
                         return file;
