@@ -30,15 +30,15 @@ export default class extends BaseApplicationGenerator {
     get [BaseApplicationGenerator.PREPARING]() {
         return this.asPreparingTaskGroup({
             migrateApplicationTask,
-            ignoreDockerCompose({ source }) {
+            ignoreDockerComposeIntegration({ source }) {
                 const { addGradleDependency, addMavenDependency } = source;
                 if (addGradleDependency) {
-                    source.addGradleDependency = (...[arg0, args]) =>
-                        arg0.artifactId === 'spring-boot-docker-compose' ? undefined : addGradleDependency(arg0, ...args);
+                    source.addGradleDependency = (...args) =>
+                        args[0]?.artifactId === 'spring-boot-docker-compose' ? undefined : addGradleDependency(...args);
                 }
                 if (addMavenDependency) {
                     source.addMavenDependency = (...[arg0, args]) =>
-                        arg0.artifactId === 'spring-boot-docker-compose' ? undefined : addMavenDependency(arg0, ...args);
+                        args[0]?.artifactId === 'spring-boot-docker-compose' ? undefined : addMavenDependency(...args);
                 }
             },
             ignoreSpringBootV3Files({ application }) {
