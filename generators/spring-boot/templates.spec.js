@@ -56,7 +56,7 @@ describe('test if kotlin templates has a matching java template', async () => {
             it(`java jhipster template should exist: ${javaTemplateRelativePath}`, async () => {
                 expect(
                     possibleTemplates.some(template => existsSync(template)),
-                    `none of files were found: ${possibleTemplates}`,
+                    `none of files were found: ${possibleTemplates}, it was removed in generator-jhipster?`,
                 ).toBeTruthy();
             });
         }
