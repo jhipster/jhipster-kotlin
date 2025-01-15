@@ -100,13 +100,6 @@ export default class extends BaseApplicationGenerator {
             addSpringIntegrationTest({ source }) {
                 source.addIntegrationTestAnnotation = () => undefined;
             },
-            ignoreDockerCompose({ source }) {
-                const { addGradleDependency, addMavenDependency } = source;
-                source.addGradleDependency = args =>
-                    args.artifactId === 'spring-boot-docker-compose' ? undefined : addGradleDependency(args);
-                source.addMavenDependency = args =>
-                    args.artifactId === 'spring-boot-docker-compose' ? undefined : addMavenDependency(args);
-            },
             blockhound({ application, source }) {
                 source.addAllowBlockingCallsInside = ({ classPath, method }) => {
                     if (!application.reactive) throw new Error('Blockhound is only supported by reactive applications');

@@ -30,6 +30,13 @@ export default class extends BaseApplicationGenerator {
     get [BaseApplicationGenerator.PREPARING]() {
         return this.asPreparingTaskGroup({
             migrateApplicationTask,
+            ignoreDockerCompose({ source }) {
+                const { addGradleDependency, addMavenDependency } = source;
+                source.addGradleDependency = args =>
+                    args.artifactId === 'spring-boot-docker-compose' ? undefined : addGradleDependency(args);
+                source.addMavenDependency = args =>
+                    args.artifactId === 'spring-boot-docker-compose' ? undefined : addMavenDependency(args);
+            },
             ignoreSpringBootV3Files({ application }) {
                 application.customizeTemplatePaths.push(
                     // Adjust feign-client and kafka destinationFile for jhipster 7 paths
