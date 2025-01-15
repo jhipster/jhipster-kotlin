@@ -198,6 +198,29 @@ export default class extends BaseApplicationGenerator {
                     });
                 }
             },
+            customizeGradle({ application }) {
+                if (!application.buildToolGradle || !application.devDatabaseTypeH2Any) return;
+                let dbConfigPrefix;
+                if (application.prodDatabaseTypeMariadb) {
+                    dbConfigPrefix = 'Mariadb';
+                } else if (application.prodDatabaseTypeMssql) {
+                    dbConfigPrefix = 'MsSql';
+                } else if (application.prodDatabaseTypeMysql) {
+                    dbConfigPrefix = 'Mysql';
+                } else if (application.prodDatabaseTypePostgresql) {
+                    dbConfigPrefix = 'PostgreSql';
+                }
+                if (dbConfigPrefix) {
+                    this.editFile(
+                        'gradle/profile_dev.gradle',
+                        content => `${content}
+tasks.withType<KotlinCompile> {
+    exclude("${application.packageFolder}/config/${dbConfigPrefix}TestContainer.kt'")
+}
+`,
+                    );
+                }
+            },
         });
     }
 

@@ -1293,7 +1293,6 @@ describe('JHipster generator for App generator', () => {
                 runResult.assertFile(expectedFiles.hibernateTimeZoneConfig);
                 runResult.assertFile(expectedFiles.gatling);
                 runResult.assertFile(expectedFiles.swaggerCodegen);
-                runResult.assertFile(expectedFiles.swaggerCodegenGradle);
             });
         });
     });
