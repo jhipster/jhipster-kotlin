@@ -214,10 +214,8 @@ export default class extends BaseApplicationGenerator {
                             'entrypoint.sh',
                             // jhipster:spring-cloud:gateway
                             'JWTRelayGatewayFilterFactory.java',
-                            'ModifyServersOpenApiFilter.java',
                             'GatewayResource.java',
                             'RouteVM.java',
-                            'ModifyServersOpenApiFilterTest.java',
                             // jhipster:spring-data-couchbase
                             'DatabaseConfiguration_couchbase.java',
                             // jhipster:spring-data-cassandra
