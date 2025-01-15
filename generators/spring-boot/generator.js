@@ -214,8 +214,12 @@ export default class extends BaseApplicationGenerator {
                     this.editFile(
                         'gradle/profile_dev.gradle',
                         content => `${content}
-tasks.withType<KotlinCompile> {
-    exclude("${application.packageFolder}/config/${dbConfigPrefix}TestContainer.kt'")
+sourceSets {
+    main {
+        kotlin {
+            exclude("${application.packageFolder}/config/${dbConfigPrefix}TestContainer.kt")
+        }
+    }
 }
 `,
                     );
