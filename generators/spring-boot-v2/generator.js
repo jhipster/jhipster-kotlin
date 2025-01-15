@@ -483,8 +483,8 @@ export default class extends BaseApplicationGenerator {
                     }
                 }
             },
-            foo({ application }) {
-                if (application.enableSwaggerCodegen) {
+            migrateOpenApi({ application }) {
+                if (application.enableSwaggerCodegen && application.buildToolGradle) {
                     this.editFile('buildSrc/src/main/groovy/jhipster.openapi-generator-conventions.gradle', content =>
                         content.replace(', useSpringBoot3: "true"', ''),
                     );
