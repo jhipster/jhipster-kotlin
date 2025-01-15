@@ -149,7 +149,6 @@ tasks.withType(org.jetbrains.kotlin.gradle.internal.KaptGenerateStubsTask.class)
 }
 `,
                         );
-                        this.editFile('gradle/swagger.gradle', content => content.replace(', useSpringBoot3: "true"', ''));
                     }
                 }
             },

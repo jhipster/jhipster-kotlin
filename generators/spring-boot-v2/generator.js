@@ -301,7 +301,7 @@ export default class extends BaseApplicationGenerator {
                             'KafkaSseConsumer.java',
                             'KafkaSseProducer.java',
                             // jhipster:java:openapi-generator v7.6.1
-                            // 'swagger.gradle',
+                            'swagger.gradle',
                         ].includes(sourceBasename)
                             ? undefined
                             : file;
@@ -481,6 +481,13 @@ export default class extends BaseApplicationGenerator {
                             ],
                         });
                     }
+                }
+            },
+            foo({ application }) {
+                if (application.enableSwaggerCodegen) {
+                    this.editFile('buildSrc/src/main/groovy/jhipster.openapi-generator-conventions.gradle', content =>
+                        content.replace(', useSpringBoot3: "true"', ''),
+                    );
                 }
             },
         });
