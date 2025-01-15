@@ -33,12 +33,12 @@ export default class extends BaseApplicationGenerator {
             ignoreDockerCompose({ source }) {
                 const { addGradleDependency, addMavenDependency } = source;
                 if (addGradleDependency) {
-                    source.addGradleDependency = args =>
-                        args.artifactId === 'spring-boot-docker-compose' ? undefined : addGradleDependency(args);
+                    source.addGradleDependency = (...[arg0, args]) =>
+                        arg0.artifactId === 'spring-boot-docker-compose' ? undefined : addGradleDependency(arg0, ...args);
                 }
                 if (addMavenDependency) {
-                    source.addMavenDependency = args =>
-                        args.artifactId === 'spring-boot-docker-compose' ? undefined : addMavenDependency(args);
+                    source.addMavenDependency = (...[arg0, args]) =>
+                        arg0.artifactId === 'spring-boot-docker-compose' ? undefined : addMavenDependency(arg0, ...args);
                 }
             },
             ignoreSpringBootV3Files({ application }) {
