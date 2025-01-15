@@ -37,7 +37,7 @@ export default class extends BaseApplicationGenerator {
                         args[0]?.artifactId === 'spring-boot-docker-compose' ? undefined : addGradleDependency(...args);
                 }
                 if (addMavenDependency) {
-                    source.addMavenDependency = (...[arg0, args]) =>
+                    source.addMavenDependency = (...args) =>
                         args[0]?.artifactId === 'spring-boot-docker-compose' ? undefined : addMavenDependency(...args);
                 }
             },
