@@ -1,6 +1,6 @@
-import { expect, beforeAll, describe, it } from 'vitest';
+import { beforeAll, describe, expect, it } from 'vitest';
 import { skipPrettierHelpers as helpers, runResult } from 'generator-jhipster/testing';
-import { applicationTypes, authenticationTypes, cacheTypes, buildToolTypes, databaseTypes } from 'generator-jhipster/jdl';
+import { applicationTypes, authenticationTypes, buildToolTypes, cacheTypes, databaseTypes } from 'generator-jhipster/jdl';
 
 const { JWT, OAUTH2 } = authenticationTypes;
 const { MICROSERVICE } = applicationTypes;

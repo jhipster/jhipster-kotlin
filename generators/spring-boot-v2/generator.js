@@ -490,9 +490,7 @@ export default class extends BaseApplicationGenerator {
                         content.replace(', useSpringBoot3: "true"', ''),
                     );
                 } else if (application.buildToolMaven) {
-                    this.editFile('pom.xml', content =>
-                        content.replace('<useSpringBoot3>true</useSpringBoot3>', ''),
-                    );
+                    this.editFile('pom.xml', content => content.replace('<useSpringBoot3>true</useSpringBoot3>', ''));
                 }
             },
         });
