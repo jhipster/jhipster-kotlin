@@ -73,7 +73,7 @@ export default class extends BaseApplicationGenerator {
                             destinationFile = convertToKotlinFile(destinationFile);
                         }
 
-                        const prefix = ns.split(':').pop();
+                        const prefix = ns === 'jhipster:spring-boot' ? '' : ns.split(':').pop();
                         sourceFile = join(prefix, sourceFile);
                         let resolvedSourceFile = this.templatePath(sourceFile);
                         if (!existsSync(`${resolvedSourceFile}.ejs`)) {
