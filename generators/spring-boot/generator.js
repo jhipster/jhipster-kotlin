@@ -198,6 +198,14 @@ export default class extends BaseApplicationGenerator {
                     });
                 }
             },
+            customizeGradleJib({ application }) {
+                if (!application.buildToolGradle) return;
+                // Workaround java.lang.NoClassDefFoundError: kotlin/jvm/internal/Intrinsics in generated image
+                this.editFile(
+                    'buildSrc/src/main/groovy/jhipster.docker-conventions.gradle',
+                    content => content.replace('configurationName = "productionRuntimeClasspath"', ''),
+                );
+            },
             customizeGradle({ application }) {
                 if (!application.buildToolGradle || !application.devDatabaseTypeH2Any) return;
                 let dbConfigPrefix;
