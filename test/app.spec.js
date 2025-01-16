@@ -1,16 +1,16 @@
-import { beforeAll, describe, expect, it } from 'vitest';
+import { expect, beforeAll, describe, it } from 'vitest';
 import { defaultHelpers as helpers, runResult } from 'generator-jhipster/testing';
 import { JAVA_DOCKER_DIR } from 'generator-jhipster';
 
 import {
     applicationTypes,
     authenticationTypes,
-    buildToolTypes,
     cacheTypes,
-    clientFrameworkTypes,
-    databaseTypes,
     serviceDiscoveryTypes,
     testFrameworkTypes,
+    clientFrameworkTypes,
+    buildToolTypes,
+    databaseTypes,
 } from 'generator-jhipster/jdl';
 import migration from '../generators/spring-boot-v2/migration.cjs';
 
@@ -1293,6 +1293,7 @@ describe('JHipster generator for App generator', () => {
                 runResult.assertFile(expectedFiles.hibernateTimeZoneConfig);
                 runResult.assertFile(expectedFiles.gatling);
                 runResult.assertFile(expectedFiles.swaggerCodegen);
+                runResult.assertFile(expectedFiles.swaggerCodegenGradle);
             });
         });
     });

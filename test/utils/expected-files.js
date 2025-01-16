@@ -238,6 +238,8 @@ const expectedFiles = {
 
     swaggerCodegen: [`${SERVER_MAIN_RES_DIR}swagger/api.yml`],
 
+    swaggerCodegenGradle: ['gradle/swagger.gradle'],
+
     gateway: [
         `${SERVER_MAIN_RES_DIR}config/bootstrap.yml`,
         `${SERVER_MAIN_RES_DIR}config/bootstrap-prod.yml`,
