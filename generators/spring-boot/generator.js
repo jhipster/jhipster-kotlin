@@ -215,7 +215,7 @@ export default class extends BaseApplicationGenerator {
                         'gradle/profile_dev.gradle',
                         content => `${content}
 sourceSets {
-    main {
+    test {
         kotlin {
             exclude("src/test/kotlin/${application.packageFolder}config/${dbConfigPrefix}TestContainer.kt")
         }
