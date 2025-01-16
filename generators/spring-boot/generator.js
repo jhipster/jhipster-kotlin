@@ -225,7 +225,7 @@ export default class extends BaseApplicationGenerator {
 sourceSets {
     test {
         kotlin {
-            exclude("src/test/kotlin/${application.packageFolder}config/${dbConfigPrefix}TestContainer.kt")
+            exclude("**/${dbConfigPrefix}TestContainer.kt")
         }
     }
 }
