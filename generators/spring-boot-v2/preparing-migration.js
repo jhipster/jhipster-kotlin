@@ -80,6 +80,7 @@ export const migrateApplicationTask = asWritingTask(async function ({ applicatio
     Object.assign(application.dockerContainers, {
         elasticsearchTag: ELASTICSEARCH_VERSION,
         elasticsearch: `${DOCKER_ELASTICSEARCH_CONTAINER}:${ELASTICSEARCH_VERSION}`,
+        ...jhipster7DockerContainers,
     });
 
     Object.assign(application.javaDependencies, javaDependenciesOverrides);
@@ -88,7 +89,7 @@ export const migrateApplicationTask = asWritingTask(async function ({ applicatio
     });
 
     const dockerContainersVersions = Object.fromEntries(
-        Object.entries({ ...application.dockerContainers, ...jhipster7DockerContainers }).map(([containerName, container]) => [
+        Object.entries(application.dockerContainers).map(([containerName, container]) => [
             `DOCKER_${this._.snakeCase(containerName).toUpperCase().replace('_4_', '4')}`,
             container,
         ]),
