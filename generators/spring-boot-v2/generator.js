@@ -30,6 +30,17 @@ export default class extends BaseApplicationGenerator {
     get [BaseApplicationGenerator.PREPARING]() {
         return this.asPreparingTaskGroup({
             migrateApplicationTask,
+            ignoreDockerComposeIntegration({ source }) {
+                const { addGradleDependency, addMavenDependency } = source;
+                if (addGradleDependency) {
+                    source.addGradleDependency = (...args) =>
+                        args[0]?.artifactId === 'spring-boot-docker-compose' ? undefined : addGradleDependency(...args);
+                }
+                if (addMavenDependency) {
+                    source.addMavenDependency = (...args) =>
+                        args[0]?.artifactId === 'spring-boot-docker-compose' ? undefined : addMavenDependency(...args);
+                }
+            },
             ignoreSpringBootV3Files({ application }) {
                 application.customizeTemplatePaths.push(
                     // Adjust feign-client and kafka destinationFile for jhipster 7 paths
@@ -75,7 +86,7 @@ export default class extends BaseApplicationGenerator {
                         ) {
                             return {
                                 ...file,
-                                resolvedSourceFile: this.fetchFromInstalledJHipster('server/templates/', file.sourceFile),
+                                resolvedSourceFile: this.fetchFromInstalledJHipster('spring-boot/templates/', file.sourceFile),
                             };
                         }
                         return file;
@@ -83,7 +94,8 @@ export default class extends BaseApplicationGenerator {
                     file => {
                         // We will only handle spring-boot-v2 here
                         if (file.namespace !== 'jhipster-kotlin:spring-boot-v2') return file;
-                        let { resolvedSourceFile, sourceFile, destinationFile } = file;
+                        const { destinationFile } = file;
+                        let { resolvedSourceFile, sourceFile } = file;
                         // Already resolved kotlin files
                         if (resolvedSourceFile && (resolvedSourceFile.endsWith('.kt') || resolvedSourceFile.includes('.kt.'))) {
                             return file;
@@ -213,10 +225,8 @@ export default class extends BaseApplicationGenerator {
                             'entrypoint.sh',
                             // jhipster:spring-cloud:gateway
                             'JWTRelayGatewayFilterFactory.java',
-                            'ModifyServersOpenApiFilter.java',
                             'GatewayResource.java',
                             'RouteVM.java',
-                            'ModifyServersOpenApiFilterTest.java',
                             // jhipster:spring-data-couchbase
                             'DatabaseConfiguration_couchbase.java',
                             // jhipster:spring-data-cassandra
@@ -291,7 +301,7 @@ export default class extends BaseApplicationGenerator {
                             'KafkaSseConsumer.java',
                             'KafkaSseProducer.java',
                             // jhipster:java:openapi-generator v7.6.1
-                            // 'swagger.gradle',
+                            'swagger.gradle',
                         ].includes(sourceBasename)
                             ? undefined
                             : file;
@@ -471,6 +481,16 @@ export default class extends BaseApplicationGenerator {
                             ],
                         });
                     }
+                }
+            },
+            migrateOpenApi({ application }) {
+                if (!application.enableSwaggerCodegen) return;
+                if (application.buildToolGradle) {
+                    this.editFile('buildSrc/src/main/groovy/jhipster.openapi-generator-conventions.gradle', content =>
+                        content.replace(', useSpringBoot3: "true"', ''),
+                    );
+                } else if (application.buildToolMaven) {
+                    this.editFile('pom.xml', content => content.replace('<useSpringBoot3>true</useSpringBoot3>', ''));
                 }
             },
         });

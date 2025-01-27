@@ -1,12 +1,12 @@
 import { beforeAll, describe, expect, it } from 'vitest';
 import { isMatch } from 'lodash-es';
 import {
-    defaultHelpers as helpers,
-    result,
     buildServerMatrix,
     entitiesServerSamples,
-    extendMatrix,
     extendFilteredMatrix,
+    extendMatrix,
+    defaultHelpers as helpers,
+    result,
 } from 'generator-jhipster/testing';
 
 import { entityWithBagRelationship, entityWithCriteriaAndDto, entityWithEnum } from '../../test/entities.js';
