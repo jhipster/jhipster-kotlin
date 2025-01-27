@@ -207,7 +207,6 @@ const expectedFiles = {
     oauth2: [
         `${SERVER_MAIN_SRC_DIR}com/mycompany/myapp/config/SecurityConfiguration.kt`,
         `${SERVER_MAIN_SRC_DIR}com/mycompany/myapp/domain/User.kt`,
-        `${SERVER_MAIN_SRC_DIR}com/mycompany/myapp/security/oauth2/JwtGrantedAuthorityConverter.kt`,
         `${SERVER_MAIN_SRC_DIR}com/mycompany/myapp/security/oauth2/AudienceValidator.kt`,
         `${SERVER_MAIN_SRC_DIR}com/mycompany/myapp/web/rest/AccountResource.kt`,
         `${DOCKER_DIR}keycloak.yml`,
@@ -226,8 +225,6 @@ const expectedFiles = {
         `${SERVER_MAIN_RES_DIR}config/bootstrap.yml`,
         `${SERVER_MAIN_RES_DIR}config/bootstrap-prod.yml`,
         `${SERVER_TEST_RES_DIR}config/bootstrap.yml`,
-        `${SERVER_MAIN_SRC_DIR}com/mycompany/myapp/web/filter/ModifyServersOpenApiFilter.kt`,
-        `${SERVER_TEST_SRC_DIR}com/mycompany/myapp/web/filter/ModifyServersOpenApiFilterTest.kt`,
         `${SERVER_MAIN_SRC_DIR}com/mycompany/myapp/web/rest/vm/RouteVM.kt`,
         `${SERVER_MAIN_SRC_DIR}com/mycompany/myapp/web/rest/GatewayResource.kt`,
     ],
