@@ -1,9 +1,6 @@
-/**
- * @type {import('generator-jhipster').JHipsterCommandDefinition}
- */
-const command = {
+import { asCommand } from 'generator-jhipster';
+
+export default asCommand({
     configs: {},
     import: ['jhipster-kotlin:ktlint'],
-};
-
-export default command;
+});

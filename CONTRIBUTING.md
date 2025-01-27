@@ -28,7 +28,31 @@ or
 
 Fix / Code / Document and create a pull request 💯
 
-### Synchronizing generator-jhipster templates
+## Generating samples
+
+Default maven application:
+
+```
+khipster --defaults --skip-install
+```
+
+Default gradle application:
+
+```
+khipster --build gradle --defaults --skip-install
+```
+
+CI samples:
+
+```
+khipster generate-sample --app-sample sample-name
+```
+
+Tips:
+
+- Ktlint formatting is slow, disable with `--skip-ktlint-format`
+
+## Synchronizing generator-jhipster templates
 
 Run:
 
@@ -43,19 +67,19 @@ When synchronization is done revert `.yo-resolve` file to the initial previous s
 
 Tips:
 
--   Avoid changing ejs flow control code for a cleaner diff against original java template
--   In the confict resolution diff, you can edit the original file and press `r` to recreate the diff.
+- Avoid changing ejs flow control code for a cleaner diff against original java template
+- In the confict resolution diff, you can edit the original file and press `r` to recreate the diff.
 
 ### Regular Contributor Guidelines
 
 These are some of the guidelines that we would like you to follow if you are a regular contributor to the project
 or joined the [JHipster team](https://www.jhipster.tech/team/).
 
--   We recommend not committing directly to main, but always submit changes through PRs.
--   Before merging, try to get at least one review on the PR.
--   Add appropriate labels to issues and PRs that you create (if you have permission to do so).
--   Follow the project's [policies](https://www.jhipster.tech/policies/#-policies).
--   Follow the project's [Code of Conduct](https://github.com/jhipster/generator-jhipster/blob/main/CODE_OF_CONDUCT.md)
-    and be polite and helpful to users when answering questions/bug reports and when reviewing PRs.
--   We work on our free time so we have no obligation nor commitment. Work/life balance is important, so don't
-    feel tempted to put in all your free time fixing something.
+- We recommend not committing directly to main, but always submit changes through PRs.
+- Before merging, try to get at least one review on the PR.
+- Add appropriate labels to issues and PRs that you create (if you have permission to do so).
+- Follow the project's [policies](https://www.jhipster.tech/policies/#-policies).
+- Follow the project's [Code of Conduct](https://github.com/jhipster/generator-jhipster/blob/main/CODE_OF_CONDUCT.md)
+  and be polite and helpful to users when answering questions/bug reports and when reviewing PRs.
+- We work on our free time so we have no obligation nor commitment. Work/life balance is important, so don't
+  feel tempted to put in all your free time fixing something.

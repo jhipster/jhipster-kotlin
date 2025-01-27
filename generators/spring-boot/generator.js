@@ -54,7 +54,8 @@ export default class extends BaseApplicationGenerator {
                     file => {
                         // We don't want to handle spring-boot-v2 templates here
                         if (file.namespace === 'jhipster-kotlin:spring-boot-v2') return file;
-                        let { resolvedSourceFile: javaResolvedSourceFile, sourceFile, destinationFile, namespace: ns } = file;
+                        const { resolvedSourceFile: javaResolvedSourceFile, namespace: ns } = file;
+                        let { sourceFile, destinationFile } = file;
                         // Already resolved kotlin files
                         if (javaResolvedSourceFile && (javaResolvedSourceFile.endsWith('.kt') || javaResolvedSourceFile.includes('.kt.'))) {
                             return file;
@@ -229,6 +230,43 @@ export default class extends BaseApplicationGenerator {
                     source.addMavenDefinition({
                         properties: [{ property: 'modernizer.failOnViolations', value: 'false' }],
                     });
+                }
+            },
+            customizeGradleJib({ application }) {
+                if (!application.buildToolGradle) return;
+                // Workaround java.lang.NoClassDefFoundError: kotlin/jvm/internal/Intrinsics in generated image
+                this.editFile('buildSrc/src/main/groovy/jhipster.docker-conventions.gradle', content =>
+                    content.replace(
+                        'configurationName = "productionRuntimeClasspath"',
+                        '// configurationName = "productionRuntimeClasspath"',
+                    ),
+                );
+            },
+            customizeGradle({ application }) {
+                if (!application.buildToolGradle || !application.devDatabaseTypeH2Any) return;
+                let dbConfigPrefix;
+                if (application.prodDatabaseTypeMariadb) {
+                    dbConfigPrefix = 'Mariadb';
+                } else if (application.prodDatabaseTypeMssql) {
+                    dbConfigPrefix = 'MsSql';
+                } else if (application.prodDatabaseTypeMysql) {
+                    dbConfigPrefix = 'Mysql';
+                } else if (application.prodDatabaseTypePostgresql) {
+                    dbConfigPrefix = 'PostgreSql';
+                }
+                if (dbConfigPrefix) {
+                    this.editFile(
+                        'gradle/profile_dev.gradle',
+                        content => `${content}
+sourceSets {
+    test {
+        kotlin {
+            exclude("**/${dbConfigPrefix}TestContainer.kt")
+        }
+    }
+}
+`,
+                    );
                 }
             },
         });

@@ -1,5 +1,6 @@
 import BaseApplicationGenerator from 'generator-jhipster/generators/base-application';
-import { transform, passthrough } from '@yeoman/transform';
+import { passthrough, transform } from '@yeoman/transform';
+import { getPrimaryKeyValue } from 'generator-jhipster/generators/server/support';
 import { SERVER_MAIN_SRC_KOTLIN_DIR, SERVER_TEST_SRC_KOTLIN_DIR } from './support/index.js';
 
 export default class extends BaseApplicationGenerator {
@@ -51,6 +52,18 @@ export default class extends BaseApplicationGenerator {
                             file.contents = Buffer.from(file.contents.toString().replaceAll('classes/java/main', 'classes/kotlin/main'));
                         }),
                     );
+                }
+            },
+            async postPreparingEntity({ application, entities }) {
+                for (const entity of entities) {
+                    if (entity.primaryKey) {
+                        entity.resetFakerSeed(`${application.baseName}post-prepare-server`);
+                        entity.primaryKey.kotlinSampleValues ??= [
+                            getPrimaryKeyValue(entity.primaryKey, application.databaseType, 1),
+                            getPrimaryKeyValue(entity.primaryKey, application.databaseType, 2),
+                            getPrimaryKeyValue(entity.primaryKey, application.databaseType, entity.faker.number.int({ min: 10, max: 100 })),
+                        ];
+                    }
                 }
             },
         });
@@ -136,7 +149,6 @@ tasks.withType(org.jetbrains.kotlin.gradle.internal.KaptGenerateStubsTask.class)
 }
 `,
                         );
-                        this.editFile('gradle/swagger.gradle', content => content.replace(', useSpringBoot3: "true"', ''));
                     }
                 }
             },
