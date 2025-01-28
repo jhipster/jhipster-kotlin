@@ -357,7 +357,7 @@ class AccountResource(
         val userLogin = getCurrentUserLogin()
             .orElseThrow { AccountResourceException("") }
         val existingUser = userRepository.findOneByEmailIgnoreCase(userDTO.email)
-        if (existingUser.isPresent && !existingUser.get().login.equals(userLogin, ignoreCase = true)) {
+        if (existingUser.isPresent && !existingUser.orElseThrow().login.equals(userLogin, ignoreCase = true)) {
             throw EmailAlreadyUsedException()
         }
         val user = userRepository.findOneByLogin(userLogin)
@@ -455,7 +455,7 @@ class AccountResource(
     fun requestPasswordReset(@RequestBody mail: String) {
         val user = userService.requestPasswordReset(mail)
         if (user.isPresent()) {
-            mailService.sendPasswordResetMail(user.get())
+            mailService.sendPasswordResetMail(user.orElseThrow())
         } else {
             // Pretend the request has been successful to prevent checking which emails really exist
             // but log that an invalid attempt has been made
