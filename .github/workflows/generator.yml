@@ -1,71 +1,17 @@
-#
-# Copyright the original author or authors from the JHipster project.
-#
-# This file is part of the JHipster project, see https://www.jhipster.tech/
-# for more information.
-#
-# Licensed under the Apache License, Version 2.0 (the "License");
-# you may not use this file except in compliance with the License.
-# You may obtain a copy of the License at
-#
-#      https://www.apache.org/licenses/LICENSE-2.0
-#
-# Unless required by applicable law or agreed to in writing, software
-# distributed under the License is distributed on an "AS IS" BASIS,
-# WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
-# See the License for the specific language governing permissions and
-# limitations under the License.
-#
-
 name: Generator
-concurrency:
-    # Group PRs by head_ref, push to main branch by commit id, and others branch by ref.
-    group: ${{ github.workflow }}-${{ github.head_ref || (github.ref == 'refs/heads/main' && github.sha) || github.ref }}
-    cancel-in-progress: true
-on:
-    push:
-        branches-ignore:
-            - 'dependabot/**'
-    pull_request:
-        types: [closed, opened, synchronize, reopened]
-        branches:
-            - '*'
+on: [push, pull_request]
+permissions:
+    contents: read
 jobs:
-    check-npm-test:
-        if: >-
-            github.event.action != 'closed'
-        runs-on: ubuntu-20.04
-        timeout-minutes: 20
-        strategy:
-            fail-fast: false
+    kotlin:
+        name: npm-test
+        runs-on: ubuntu-latest
+        timeout-minutes: 10
         steps:
             - uses: actions/checkout@v4
             - uses: actions/setup-node@v4
               with:
-                  node-version: 20
-            - name: 'SETUP: load npm cache'
-              uses: actions/cache@v4
-              with:
-                  path: |
-                      ~/.npm
-                      ~/.cache/Cypress/
-                  key: ${{ runner.os }}-node-${{ steps.get-date.outputs.date }}-${{ hashFiles('generator-jhipster/package-lock.json') }}
-                  restore-keys: |
-                      ${{ runner.os }}-node-${{ steps.get-date.outputs.date }}-
-                      ${{ runner.os }}-node-${{ steps.get-date.outputs.date }}
-            - run: git --no-pager log -n 10 --graph --pretty='%Cred%h%Creset -%C(yellow)%d%Creset %s %Cgreen(%cr) %C(bold blue) <%an>%Creset' --abbrev-commit
-              shell: bash
-            - name: Config git variables
-              env:
-                  KHI_SCRIPTS: ./test-integration/scripts
-              run: $KHI_SCRIPTS/04-git-config.sh
-              shell: bash
+                  node-version: 22
+                  cache: 'npm'
             - run: npm ci
-            - run: npm i -g .
-            - run: npm test
-              if: >-
-                  !contains(github.event.head_commit.message, '[ci skip]') &&
-                  !contains(github.event.head_commit.message, '[skip ci]') &&
-                  !contains(github.event.pull_request.title, '[skip ci]') &&
-                  !contains(github.event.pull_request.title, '[ci skip]') &&
-                  (github.event.pull_request.draft == false || !contains(github.event.pull_request.labels.*.name, 'pr: skip-ci'))
+            - run: npm run test

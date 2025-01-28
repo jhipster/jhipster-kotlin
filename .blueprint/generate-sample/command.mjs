@@ -77,7 +77,7 @@ const command = {
                 if (gen.appSample && gen.appSample !== 'jdl') {
                     let { appSample } = gen;
                     appSample = workflowSamples[appSample]?.['app-sample'] ?? appSample;
-                    gen.samplesFolder = `json-samples/${appSample}`;
+                    gen.samplesFolder = `_json-samples/${appSample}`;
                     gen.entrypointGenerator = 'app';
                 }
             },
@@ -96,7 +96,7 @@ const command = {
                 }
                 if (jdlSamples) {
                     const [app, ...entities] = jdlSamples.split(',');
-                    gen.samplesFolder = `jdl-samples/${app}`;
+                    gen.samplesFolder = `_jdl-samples/${app}`;
                     gen.generatorArgs = '*.jdl';
                     if (entities && entities.length > 0) {
                         gen.supportingSamples.push(...entities.map(entity => `${entity}.jdl`));
