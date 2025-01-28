@@ -37,6 +37,18 @@ const command = {
                 message: 'which sample do you want to generate?',
                 choices: async () => getSamples(gen.templatePath(gen.samplesFolder)),
             }),
+            configure: gen => {
+                const sample = workflowSamples[gen.sampleName];
+                if (!sample) {
+                    throw new Error(`Sample ${gen.sampleName} not found`);
+                }
+
+                gen.sampleName = undefined;
+                gen.appSample = sample['app-sample'];
+                gen.jdlSamples = sample['jdl-samples'];
+                gen.jdlEntities = sample['jdl-entity'];
+                gen.entityType = sample.entity;
+            },
             scope: 'generator',
         },
         all: {
