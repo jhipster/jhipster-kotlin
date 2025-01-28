@@ -12,7 +12,6 @@ const blueprint = packageFolderName.startsWith('jhipster-') ? `generator-${packa
 
 (async () => {
     const { runJHipster, done, logger } = await import('generator-jhipster/cli');
-    const { printLogo } = await import('./logo.mjs');
     const executableName = Object.keys(bin)[0];
 
     runJHipster({
@@ -23,8 +22,12 @@ const blueprint = packageFolderName.startsWith('jhipster-') ? `generator-${packa
         blueprints: {
             [blueprint]: version,
         },
-        printLogo,
+        printBlueprintLogo: () => {
+            console.log('===================== JHipster Kotlin =====================');
+            console.log('');
+        },
         lookups: [{ packagePaths: [packagePath] }],
+        ...require('./cli-customizations.cjs'),
     }).catch(done);
 
     process.on('unhandledRejection', up => {

@@ -22,6 +22,10 @@ const defaultCommands = {
         desc: 'Generate a test sample',
         blueprint: '@jhipster/jhipster-dev',
     },
+    'github-build-matrix': {
+        desc: 'Build a matrix of jobs for github actions',
+        blueprint: '@jhipster/jhipster-dev',
+    },
     synchronize: {
         desc: 'Synchronize templates from generator-jhipster',
         blueprint: '@jhipster/jhipster-dev',

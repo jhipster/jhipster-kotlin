@@ -17,14 +17,8 @@
  * limitations under the License.
  */
 import { existsSync, readdirSync } from 'node:fs';
+import { entitiesByType, workflowSamples } from '../generate-sample/support/index.mjs';
 import { getSamples } from './get-samples.mjs';
-import { entitiesByType, workflowSamples } from './support/index.mjs';
-
-const updateSampleName = sample =>
-    sample.replace('ngx', 'ng').replace('ms-ng-eureka-oauth2-mongodb-caffeine', 'ms-ng-oauth2-mongodb-caffeine');
-
-const revertSampleName = sample =>
-    sample.replace('ng-', 'ngx-').replace('ms-ng-oauth2-mongodb-caffeine', 'ms-ng-eureka-oauth2-mongodb-caffeine');
 
 /**
  * @type {import('generator-jhipster').JHipsterCommandDefinition}
@@ -81,11 +75,9 @@ const command = {
             },
             configure: gen => {
                 if (gen.appSample && gen.appSample !== 'jdl') {
-                    gen.appSample = revertSampleName(gen.appSample);
-
                     let { appSample } = gen;
                     appSample = workflowSamples[appSample]?.['app-sample'] ?? appSample;
-                    gen.samplesFolder = `json-samples/${updateSampleName(appSample)}`;
+                    gen.samplesFolder = `json-samples/${appSample}`;
                     gen.entrypointGenerator = 'app';
                 }
             },
@@ -98,9 +90,13 @@ const command = {
                 env: 'JHI_JDL_APP',
             },
             configure: gen => {
-                if (gen.jdlSamples) {
-                    const [app, ...entities] = gen.jdlSamples.split(',');
-                    gen.samplesFolder = `jdl-samples/${updateSampleName(app)}`;
+                let { jdlSamples } = gen;
+                if (!jdlSamples && gen.appSample) {
+                    jdlSamples = workflowSamples[gen.appSample]?.['jdl-samples'];
+                }
+                if (jdlSamples) {
+                    const [app, ...entities] = jdlSamples.split(',');
+                    gen.samplesFolder = `jdl-samples/${app}`;
                     gen.generatorArgs = '*.jdl';
                     if (entities && entities.length > 0) {
                         gen.supportingSamples.push(...entities.map(entity => `${entity}.jdl`));
