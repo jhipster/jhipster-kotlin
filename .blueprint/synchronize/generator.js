@@ -4,7 +4,7 @@
  * This file is part of the JHipster project, see https://www.jhipster.tech/
  * for more information.
  *
- * Licensed under the Apache License, Version 2.0 (the "License");
+ * Licensed under the Apache License, Version 2.0 (the "License")
  * you may not use this file except in compliance with the License.
  * You may obtain a copy of the License at
  *
@@ -50,6 +50,9 @@ export default class SynchronizeGenerator extends BaseGenerator {
                                 .replaceAll(';\n', '\n')
                                 .replaceAll('\nimport static ', '\nimport ')
                                 .replaceAll('public class ', 'class ')
+                                .replaceAll('public abstract class ', 'abstract class ')
+                                .replaceAll('new ', '')
+                                .replaceAll('::class', '::class.java')
                                 .replaceAll('.class', '::class')
                                 .replaceAll(/ (?:extends|implements) (\w+)/g, ' : $1')
                                 .replaceAll(/ (?:extends|implements) /g, ' : ')
@@ -57,6 +60,7 @@ export default class SynchronizeGenerator extends BaseGenerator {
                                 .replaceAll(/\n( {4})(private |)?(?:final )?(\w+) (\w+)(\n| = )/g, '\n$1$2lateinit var $4: $3$5')
                                 .replaceAll(/private static final (\w+) /g, 'private val ')
                                 .replaceAll(/(?:public |protected )?(\w+) (\w+)\((.*)\) {/g, 'fun $2($3): $1 {')
+                                .replaceAll(' {}\n', '\n')
                                 .replaceAll(': void', ''),
                         );
                     }),
