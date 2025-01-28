@@ -60,6 +60,17 @@ export default class extends BaseApplicationGenerator {
                         file.contents = Buffer.from(file.contents.toString().replaceAll('jakarta.', 'javax.'));
                     }),
                 );
+
+                this.queueTransformStream(
+                    {
+                        name: 'reverting kt files to javax',
+                        filter: file => file.path.endsWith('.kt'),
+                        refresh: false,
+                    },
+                    passthrough(file => {
+                        file.contents = Buffer.from(file.contents.toString().replaceAll('import jakarta.', 'import javax.'));
+                    }),
+                );
             },
         });
     }
