@@ -76,11 +76,19 @@ const javaDependenciesOverrides = {
 };
 
 export const migrateApplicationTask = asWritingTask(async function ({ application, applicationDefaults }) {
-    // Downgrade elasticsearch to 7.17.4
+    const { cassandra, mongodb, postgresql, couchbase, mariadb, mysql, neo4j, mssql } = jhipster7DockerContainers;
+    // Downgrade db and elasticsearch
     Object.assign(application.dockerContainers, {
         elasticsearchTag: ELASTICSEARCH_VERSION,
         elasticsearch: `${DOCKER_ELASTICSEARCH_CONTAINER}:${ELASTICSEARCH_VERSION}`,
-        ...jhipster7DockerContainers,
+        cassandra,
+        mongodb,
+        postgresql,
+        couchbase,
+        mariadb,
+        mysql,
+        neo4j,
+        mssql,
     });
 
     Object.assign(application.javaDependencies, javaDependenciesOverrides);
