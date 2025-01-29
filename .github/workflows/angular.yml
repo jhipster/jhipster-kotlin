@@ -30,90 +30,56 @@ on:
         types: [closed, opened, synchronize, reopened]
         branches:
             - '*'
+permissions:
+    contents: read
+env:
+    FORCE_COLOR: 2
 jobs:
     build-matrix:
-        runs-on: ubuntu-20.04
+        runs-on: ubuntu-latest
         outputs:
             matrix: ${{ steps.build.outputs.matrix }}
-            client: ${{ steps.build.outputs.client }}
-            server: ${{ steps.build.outputs.server }}
-            any: ${{ steps.build.outputs.any }}
-            workflow-angular: ${{ steps.build.outputs.workflow-angular }}
-            workflow-react: ${{ steps.build.outputs.workflow-react }}
-            workflow-vue: ${{ steps.build.outputs.workflow-vue }}
         steps:
-            - name: 'SETUP: Checkout generator-jhipster-kotlin'
-              uses: actions/checkout@v4
+            - uses: actions/checkout@v4
+            - uses: actions/setup-node@v4
               with:
-                  fetch-depth: 2
-            - name: 'Build matrix'
-              id: build
-              uses: ./.github/actions/build-matrix
-              with:
-                  workflow-samples-file: angular
-    applications:
-        name: ${{ matrix.name }}
-        runs-on: ${{ matrix.os || 'ubuntu-20.04' }}
+                  node-version: 22
+            - id: build
+              run: |
+                  npm install
+                  ./cli/cli.cjs github-build-matrix angular
+    samples:
+        name: ${{ matrix.job-name || matrix.sample }}
+        runs-on: ${{ matrix.os }}
         needs: build-matrix
         defaults:
             run:
                 working-directory: ${{ github.workspace }}/app
-        if: >-
-            !contains(github.event.head_commit.message, '[react]') &&
-            !contains(github.event.head_commit.message, '[vue]') &&
-            !contains(github.event.pull_request.title, '[react]') &&
-            !contains(github.event.pull_request.title, '[vue]') &&
-            !contains(github.event.head_commit.message, '[ci skip]') &&
-            !contains(github.event.head_commit.message, '[skip ci]') &&
-            !contains(github.event.pull_request.title, '[skip ci]') &&
-            !contains(github.event.pull_request.title, '[ci skip]') &&
-            github.event.action != 'closed' &&
-            !contains(github.event.pull_request.labels.*.name, 'pr: skip-ci')
-        # ktlint takes 8 minutes to run, add additional 15 minutes
-        # https://github.com/pinterest/ktlint/issues/2754
-        timeout-minutes: 40
+        timeout-minutes: 30
         strategy:
             fail-fast: false
-            # Matrix available at https://github.com/jhipster/jhipster-kotlin/tree/main/test-integration/workflow-samples/
             matrix: ${{fromJson(needs.build-matrix.outputs.matrix)}}
         steps:
             #----------------------------------------------------------------------
             # Install all tools and check configuration
             #----------------------------------------------------------------------
-            - name: 'SETUP: Checkout generator-jhipster-kotlin'
-              uses: actions/checkout@v4
+            - uses: actions/checkout@v4
               with:
                   path: jhipster-kotlin
                   fetch-depth: 2
-            - run: npm install
-              working-directory: jhipster-kotlin
-            # workspaces fork the process and lookup blueprints again, link globally to be findable
-            - run: npm link
-              if: matrix.workspaces == 'true'
-              working-directory: jhipster-kotlin
             - uses: jhipster/actions/setup-runner@v0
               with:
-                  node-version: 20
-                  java-version: 17
+                  java-version: ${{ matrix.java-version }}
+                  node-version: ${{ matrix.node-version }}
+                  maven-cache: true
+                  gradle-cache: true
                   binary-dir: ${{ github.workspace }}/jhipster-kotlin/cli
+            - run: npm install
+              working-directory: ${{ github.workspace }}/jhipster-kotlin
             - run: |
                   mkdir -p ~/.gradle
                   echo "org.gradle.warning.mode=all" >> ~/.gradle/gradle.properties
-            - name: 'SETUP: environment'
-              id: setup
-              uses: ./jhipster-kotlin/.github/actions/setup
-              with:
-                  application-sample: ${{ matrix.jhi-app-sample || matrix.app-sample || 'jdl' }}
-                  entities-sample: ${{ matrix.entity || 'none' }}
-                  jdl-entities-sample: ${{ matrix.jdl-entity || '' }}
-                  jdl-sample: ${{ matrix.jdl-samples || '' }}
-                  application-environment: ${{ matrix.environment || 'prod' }}
-                  application-packaging: ${{ (matrix.war == 1 && 'war') || 'jar' }}
-            # Update global NPM for workspaces support
-            #----------------------------------------------------------------------
-            # Install JHipster and generate project+entities
-            #----------------------------------------------------------------------
-            - run: cli.cjs generate-sample --skip-jhipster-dependencies --skip-install --skip-ktlint-format ${{ matrix.extra-args }} ${{ matrix.new-extra-args }}
+            - run: cli.cjs generate-sample ${{ matrix.sample }} --skip-jhipster-dependencies --skip-install --skip-ktlint-format ${{ matrix.extra-args }} ${{ matrix.new-extra-args }}
             - run: cli.cjs info
             #----------------------------------------------------------------------
             # Detect changes against base commit
@@ -126,26 +92,27 @@ jobs:
               with:
                   generator-path: jhipster-kotlin
                   cmd: cli.cjs generate-sample --skip-jhipster-dependencies --skip-install --skip-ktlint-format ${{ matrix.extra-args }}
+              env:
+                  JHI_APP: ${{ matrix.app-sample || 'jdl' }}
+                  JHI_ENTITY: ${{ matrix.entity || 'none' }}
+                  JHI_JDL_ENTITY: ${{ matrix.jdl-entity || '' }}
+                  JHI_JDL_APP: ${{ matrix.jdl-samples || '' }}
             #----------------------------------------------------------------------
             # Launch tests
             #----------------------------------------------------------------------
-            - name: 'TESTS: backend'
+            - run: npm run ci:backend:test
               id: backend
-              if: steps.compare.outputs.equals != 'true' && matrix.skip-backend-tests != 1 && needs.build-matrix.outputs.server != 'false'
-              run: npm run ci:backend:test
+              if: steps.compare.outputs.equals != 'true' && matrix.skip-backend-tests != 1
               continue-on-error: ${{matrix.continue-on-backend-tests-error || false}}
               timeout-minutes: 20
-            - name: 'PREPARE: npm install'
+            - run: ${{ (matrix.workspaces == 'true' && 'npm') || './npmw' }} install
               if: steps.compare.outputs.equals != 'true'
-              run: ${{ (matrix.workspaces == 'true' && 'npm') || './npmw' }} install
               timeout-minutes: 7
-            - name: 'TESTS: packaging'
+            - run: npm run ci:e2e:package
               if: steps.compare.outputs.equals != 'true'
-              run: npm run ci:e2e:package
               timeout-minutes: 7
-            - name: 'TESTS: Start docker-compose containers for e2e tests'
+            - run: npm run ci:e2e:prepare
               if: steps.compare.outputs.equals != 'true'
-              run: npm run ci:e2e:prepare
               timeout-minutes: 5
             - run: npm run preci:e2e:server:start --if-present
             - run: npm run ci:e2e:run --if-present
@@ -153,7 +120,7 @@ jobs:
               if: steps.compare.outputs.equals != 'true'
               timeout-minutes: 20
             # - name: 'TESTS: frontend'
-            #  if: steps.compare.outputs.equals != 'true' && matrix.skip-frontend-tests != 1 && needs.build-matrix.outputs.client != 'false'
+            #  if: steps.compare.outputs.equals != 'true' && matrix.skip-frontend-tests != 1
             #  run: npm run ci:frontend:test
             #  timeout-minutes: 8
             - name: 'BACKEND: Store failure logs'
@@ -171,33 +138,16 @@ jobs:
             - name: Dump docker logs
               if: always()
               uses: jwalton/gh-docker-logs@v2
-            - name: 'ANALYSIS: Sonar analysis'
-              if: >-
-                  github.event_name == 'push' &&
-                  github.repository == 'jhipster/generator-jhipster' &&
-                  matrix.sonar-analyse == 'true' &&
-                  steps.compare.outputs.equals != 'true' &&
-                  matrix.workspaces != 'true' &&
-                  matrix.skip-frontend-tests != 1 &&
-                  needs.build-matrix.outputs.client != 'false' &&
-                  matrix.skip-backend-tests != 1 &&
-                  needs.build-matrix.outputs.server != 'false'
-              run: |
-                  ./mvnw -ntp --batch-mode initialize org.jacoco:jacoco-maven-plugin:prepare-agent sonar:sonar \
-                    -Dsonar.host.url=https://sonarcloud.io \
-                    -Dsonar.projectKey=jhipster-sample-application \
-                    -Dsonar.organization=jhipster \
-                    -Dsonar.login=$SONAR_TOKEN
-              env:
-                  SONAR_TOKEN: ${{ secrets.SONAR_TOKEN }}
     check-angular:
+        permissions:
+            contents: none
         runs-on: ubuntu-latest
-        needs: [applications]
+        needs: [samples]
         if: always()
         steps:
             - run: |
                   echo '${{ toJSON(needs) }}'
-                  if [ 'skipped' == '${{ needs.applications.result }}' ] || [ 'success' == '${{ needs.applications.result }}' ] || [ 'closed' == '${{ github.event.action }}' ]; then
+                  if [ 'skipped' == '${{ needs.samples.result }}' ] || [ 'success' == '${{ needs.samples.result }}' ] || [ 'closed' == '${{ github.event.action }}' ]; then
                     exit 0
                   fi
                   exit 1
