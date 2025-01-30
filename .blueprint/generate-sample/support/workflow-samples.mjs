@@ -1,7 +1,14 @@
 import { readFileSync } from 'fs';
 
-const angularSamples = readFileSync(new URL('../../../test-integration/workflow-samples/angular.json', import.meta.url), 'utf8');
-const reactSamples = readFileSync(new URL('../../../test-integration/workflow-samples/react.json', import.meta.url), 'utf8');
+const prepareSamples = samples => Object.fromEntries(samples.map(({ name, ...sample }) => [name, sample]));
+const addSamplesGroup = (samples, samplesGroup) => samples.map(sample => ({ ...sample, 'samples-group': samplesGroup }));
 
-const samples = [...JSON.parse(angularSamples).include, ...JSON.parse(reactSamples).include];
-export const workflowSamples = Object.fromEntries(samples.map(({ name, ...sample }) => [name, sample]));
+const angularJson = readFileSync(new URL('../templates/_workflow-samples/angular.json', import.meta.url), 'utf8');
+const angularWorkflowSamples = addSamplesGroup(JSON.parse(angularJson).include, 'angular');
+
+const reactJson = readFileSync(new URL('../templates/_workflow-samples/react.json', import.meta.url), 'utf8');
+const reactWorkflowSamples = addSamplesGroup(JSON.parse(reactJson).include, 'react');
+
+export const workflowSamples = prepareSamples([...angularWorkflowSamples, ...reactWorkflowSamples]);
+export const angularSamples = prepareSamples(angularWorkflowSamples);
+export const reactSamples = prepareSamples(reactWorkflowSamples);

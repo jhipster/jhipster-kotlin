@@ -68,7 +68,7 @@ export default class extends BaseGenerator {
                 if (supportingSamples && supportingSamples.length > 0) {
                     this.log.info(`Copying support samples ${supportingSamples}`);
                     this.copyTemplate(supportingSamples, '', {
-                        fromBasePath: this.templatePath('supporting-samples'),
+                        fromBasePath: this.templatePath('_supporting-samples'),
                         globOptions: { dot: true },
                     });
                 }
