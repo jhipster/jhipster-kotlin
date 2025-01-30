@@ -8,27 +8,15 @@
 
 `cd jhipster-kotlin`
 
-`npm install | yarn`
+`npm install`
 
-`npm link | yarn link`
+`npm link -g`
 
-( 🏁 Kudos, you just setup JHipster-Kotlin and linked to it locally )
-
-### Step 2 🤟 : before generating your application, go to your application folder
-
-`yarn link "generator-jhipster-kotlin"`
-
-or
-
-`npm link "generator-jhipster-kotlin"`
-
-( 🏁 Kudos, you have done it. It is the time to generate the application `khipster` )
-
-✨✨✨✨ You are rocking ✨✨✨✨
-
-Fix / Code / Document and create a pull request 💯
+( 🏁 Kudos, you just setup JHipster-Kotlin and created a global link to khipster executable )
 
 ## Generating samples
+
+Create a new folder and generate an application sample using any of the following alternatives.
 
 Default maven application:
 
