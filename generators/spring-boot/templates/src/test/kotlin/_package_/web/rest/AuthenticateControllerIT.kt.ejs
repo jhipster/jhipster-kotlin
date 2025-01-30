@@ -22,7 +22,10 @@ import <%= packageName %>.IntegrationTest
 <%_ if (databaseTypeSql && reactive) { _%>
 import <%= packageName %>.config.SYSTEM_ACCOUNT
 <%_ } _%>
-<%_ if (!skipUserManagement) { _%>
+<%_ if (generateUserManagement) { _%>
+    <%_ if (databaseTypeSql && reactive) { _%>
+import <%= packageName %>.config.Constants
+    <%_ } _%>
 import <%= user.entityAbsoluteClass %>
 import <%= packageName %>.repository.UserRepository
 <%_ } _%>
@@ -35,7 +38,7 @@ import org.springframework.boot.test.autoconfigure.web.reactive.AutoConfigureWeb
 import org.springframework.boot.test.autoconfigure.web.servlet.AutoConfigureMockMvc
 <%_ } _%>
 import org.springframework.http.MediaType
-<%_ if (!skipUserManagement) { _%>
+<%_ if (generateUserManagement) { _%>
 import org.springframework.security.crypto.password.PasswordEncoder
 <%_ } _%>
 <%_ if (reactive) { _%>
@@ -60,7 +63,7 @@ import org.hamcrest.Matchers.*
 <%_ } _%>
 
 /**
- * Integration tests for the [UserJWTController] REST controller.
+ * Integration tests for the [AuthenticateController] REST controller.
  */
  <%_ if (reactive) { _%>
 @AutoConfigureWebTestClient(timeout = IntegrationTest.DEFAULT_TIMEOUT)
@@ -68,9 +71,9 @@ import org.hamcrest.Matchers.*
 @AutoConfigureMockMvc
 <%_ } _%>
 @IntegrationTest
-class UserJWTControllerIT {
+class AuthenticateControllerIT {
 
-<%_ if (!skipUserManagement) { _%>
+<%_ if (generateUserManagement) { _%>
     @Autowired
     private lateinit var userRepository: UserRepository
 
@@ -86,7 +89,7 @@ class UserJWTControllerIT {
     <%_ }  _%>
 
     @Test
-<%_ if (!skipUserManagement) { _%>
+<%_ if (generateUserManagement) { _%>
     <%_ if (databaseTypeSql && !reactive) { _%>
     @Transactional
     <%_ } _%>
@@ -137,7 +140,7 @@ class UserJWTControllerIT {
     }
 
     @Test
-    <%_ if (!skipUserManagement) { _%>
+    <%_ if (generateUserManagement) { _%>
     <%_ if (databaseTypeSql && !reactive) { _%>
     @Transactional
     <%_ } _%>

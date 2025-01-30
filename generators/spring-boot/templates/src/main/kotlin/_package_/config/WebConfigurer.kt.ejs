@@ -42,9 +42,6 @@ import org.springframework.boot.web.servlet.server.ConfigurableServletWebServerF
 <%_ if (reactive && !skipClient) { _%>
 import org.springframework.boot.autoconfigure.web.reactive.ResourceHandlerRegistrationCustomizer
 <%_ } _%>
-<%_ if (messageBrokerKafka) { _%>
-import org.springframework.cloud.stream.annotation.EnableBinding
-<%_ } _%>
 import org.springframework.context.annotation.Bean
 import org.springframework.context.annotation.Configuration
 <%_ if (reactive) { _%>
@@ -71,7 +68,7 @@ import org.springframework.web.cors.UrlBasedCorsConfigurationSource
 import org.springframework.web.filter.CorsFilter
 <%_ } _%>
 <%_ if (reactive) { _%>
-import org.springframework.web.cors.reactive.CorsWebFilter
+import org.springframework.web.cors.reactive.CorsConfigurationSource
 import org.springframework.web.cors.reactive.UrlBasedCorsConfigurationSource
 import org.springframework.web.reactive.config.WebFluxConfigurer
     <%_ if (!skipClient) { _%>
@@ -86,8 +83,8 @@ import org.springframework.web.server.WebExceptionHandler
 import org.springframework.web.server.WebFilter
 import org.springframework.web.server.WebFilterChain
     <%_ } _%>
-import org.zalando.problem.spring.webflux.advice.ProblemExceptionHandler
-import org.zalando.problem.spring.webflux.advice.ProblemHandling
+import <%= packageName %>.web.rest.errors.ExceptionTranslator
+import tech.jhipster.web.rest.errors.ReactiveWebExceptionHandler
     <%_ if (!skipClient) { _%>
 import reactor.core.publisher.Mono
     <%_ } _%>
@@ -114,9 +111,6 @@ import java.util.concurrent.TimeUnit
 /**
  * Configuration of web application with Servlet 3.0 APIs.
  */
-<%_ if (messageBrokerKafka) { _%>
-@EnableBinding(KafkaSseConsumer::class, KafkaSseProducer::class)
-<%_ } _%>
 @Configuration
 class WebConfigurer(
     <% if (!reactive || (devDatabaseTypeH2Any && reactive)) { %>
@@ -192,7 +186,7 @@ class WebConfigurer(
     <%_ } _%>
 
     @Bean
-    fun corsFilter(): Cors<% if (reactive) { %>Web<% } %>Filter {
+    fun <% if (reactive) { %>corsConfigurationSource(): CorsConfigurationSource<% } else { %>corsFilter(): CorsFilter<% } %>{
         val source = UrlBasedCorsConfigurationSource()
         val config = jHipsterProperties.cors
         if (!CollectionUtils.isEmpty(config.allowedOrigins) || ! CollectionUtils.isEmpty(config.allowedOriginPatterns)) {
@@ -209,7 +203,7 @@ class WebConfigurer(
                 <%_ } _%>
             }
         }
-        return Cors<% if (reactive) { %>Web<% } %>Filter(source)
+        return <% if (reactive) { %>source<% } else { %>CorsFilter(source)<% } %>
     }
     <%_ if (reactive) { _%>
 
@@ -225,9 +219,10 @@ class WebConfigurer(
 
     @Bean
     @Order(-2) // The handler must have precedence over WebFluxResponseStatusExceptionHandler and Spring Boot's ErrorWebExceptionHandler
-    fun problemExceptionHandler(mapper: ObjectMapper, problemHandling: ProblemHandling): WebExceptionHandler {
-        return ProblemExceptionHandler(mapper, problemHandling)
+    fun problemExceptionHandler(mapper: ObjectMapper, problemHandling: ExceptionTranslator): WebExceptionHandler {
+        return ReactiveWebExceptionHandler(problemHandling, mapper)
     }
+
         <%_ if (!skipClient) { _%>
 
     @Bean

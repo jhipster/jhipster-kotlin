@@ -49,9 +49,6 @@ import <%= packageName %>.service.dto.<%= user.adminUserDto %>
 import <%= packageName %>.repository.EntityManager
 <%_ } _%>
 import <%= packageName %>.service.mapper.UserMapper
-<%_ if (!authenticationTypeOauth2) { _%>
-import <%= packageName %>.web.rest.vm.ManagedUserVM
-<%_ } _%>
 import org.apache.commons.lang3.RandomStringUtils
 import org.junit.jupiter.api.BeforeEach
 import org.junit.jupiter.api.Test
@@ -200,9 +197,8 @@ class UserResourceIT {
         val databaseSizeBeforeCreate = userRepository.findAll()<% if (reactive) { %>
             .collectList().block()!!<% } %>.size
         // Create the User
-        val managedUserVM = ManagedUserVM().apply {
+        val user = <%= user.adminUserDto %>().apply {
             login = DEFAULT_LOGIN
-            password = DEFAULT_PASSWORD
             firstName = DEFAULT_FIRSTNAME
             lastName = DEFAULT_LASTNAME
             email = DEFAULT_EMAIL
@@ -217,14 +213,14 @@ class UserResourceIT {
         <%_ if (reactive) { _%>
         webTestClient.post().uri("/api/admin/users")
             .contentType(MediaType.APPLICATION_JSON)
-            .bodyValue(convertObjectToJsonBytes(managedUserVM))
+            .bodyValue(convertObjectToJsonBytes(user))
             .exchange()
             .expectStatus().isCreated
         <%_ } else { _%>
         restUserMockMvc.perform(
             post("/api/admin/users")
                 .contentType(MediaType.APPLICATION_JSON)
-                .content(convertObjectToJsonBytes(managedUserVM))<% if (authenticationUsesCsrf) { %>
+                .content(convertObjectToJsonBytes(user))<% if (authenticationUsesCsrf) { %>
                 .with(csrf())<% } %>
         )
             .andExpect(status().isCreated)
@@ -260,7 +256,7 @@ class UserResourceIT {
         val databaseSizeBeforeCreate = userRepository.findAll()<% if (reactive) { %>
             .collectList().block()!!<% } %>.size
 
-        val managedUserVM = ManagedUserVM().apply {
+        val user = <%= user.adminUserDto %>().apply {
             <%_ if (databaseTypeCassandra) { _%>
             id = UUID.randomUUID().toString()
             <%_ } else if (databaseTypeMongodb || databaseTypeNeo4j || databaseTypeCouchbase) { _%>
@@ -269,7 +265,6 @@ class UserResourceIT {
             id = DEFAULT_ID
             <%_ } _%>
             login = DEFAULT_LOGIN
-            password = DEFAULT_PASSWORD
             firstName = DEFAULT_FIRSTNAME
             lastName = DEFAULT_LASTNAME
             email = DEFAULT_EMAIL
@@ -285,14 +280,14 @@ class UserResourceIT {
         <%_ if (reactive) { _%>
         webTestClient.post().uri("/api/admin/users")
             .contentType(MediaType.APPLICATION_JSON)
-            .bodyValue(convertObjectToJsonBytes(managedUserVM))
+            .bodyValue(convertObjectToJsonBytes(user))
             .exchange()
             .expectStatus().isBadRequest
         <%_ } else { _%>
         restUserMockMvc.perform(
             post("/api/admin/users")
                 .contentType(MediaType.APPLICATION_JSON)
-                .content(convertObjectToJsonBytes(managedUserVM))<% if (authenticationUsesCsrf) { %>
+                .content(convertObjectToJsonBytes(user))<% if (authenticationUsesCsrf) { %>
                 .with(csrf())<% } %>
         )
             .andExpect(status().isBadRequest)
@@ -324,9 +319,8 @@ class UserResourceIT {
         val databaseSizeBeforeCreate = userRepository.findAll()<% if (reactive) { %>
             .collectList().block()!!<% } %>.size
 
-        val managedUserVM = ManagedUserVM().apply {
+        val user = <%= user.adminUserDto %>().apply {
             login = DEFAULT_LOGIN // this login should already be used
-            password = DEFAULT_PASSWORD
             firstName = DEFAULT_FIRSTNAME
             lastName = DEFAULT_LASTNAME
             email = "anothermail@localhost"
@@ -342,14 +336,14 @@ class UserResourceIT {
         <%_ if (reactive) { _%>
         webTestClient.post().uri("/api/admin/users")
             .contentType(MediaType.APPLICATION_JSON)
-            .bodyValue(convertObjectToJsonBytes(managedUserVM))
+            .bodyValue(convertObjectToJsonBytes(user))
             .exchange()
             .expectStatus().isBadRequest
         <%_ } else { _%>
         restUserMockMvc.perform(
             post("/api/admin/users")
                 .contentType(MediaType.APPLICATION_JSON)
-                .content(convertObjectToJsonBytes(managedUserVM))<% if (authenticationUsesCsrf) { %>
+                .content(convertObjectToJsonBytes(user))<% if (authenticationUsesCsrf) { %>
                 .with(csrf())<% } %>
         )
             .andExpect(status().isBadRequest)
@@ -378,9 +372,8 @@ class UserResourceIT {
         val databaseSizeBeforeCreate = userRepository.findAll()<% if (reactive) { %>
             .collectList().block()!!<% } %>.size
 
-        val managedUserVM = ManagedUserVM().apply {
+        val user = <%= user.adminUserDto %>().apply {
             login = "anotherlogin"
-            password = DEFAULT_PASSWORD
             firstName = DEFAULT_FIRSTNAME
             lastName = DEFAULT_LASTNAME
             email = DEFAULT_EMAIL // this email should already be used
@@ -396,14 +389,14 @@ class UserResourceIT {
         <%_ if (reactive) { _%>
         webTestClient.post().uri("/api/admin/users")
             .contentType(MediaType.APPLICATION_JSON)
-            .bodyValue(convertObjectToJsonBytes(managedUserVM))
+            .bodyValue(convertObjectToJsonBytes(user))
             .exchange()
             .expectStatus().isBadRequest
         <%_ } else { _%>
         restUserMockMvc.perform(
             post("/api/admin/users")
                 .contentType(MediaType.APPLICATION_JSON)
-                .content(convertObjectToJsonBytes(managedUserVM))<% if (authenticationUsesCsrf) { %>
+                .content(convertObjectToJsonBytes(user))<% if (authenticationUsesCsrf) { %>
                 .with(csrf())<% } %>
         )
             .andExpect(status().isBadRequest)
@@ -582,10 +575,9 @@ class UserResourceIT {
         val updatedUser = userRepository.findById(user.id!!).<% if (reactive) { %>block<% } else { %>get<% } %>()
         assertNotNull(updatedUser)
 
-        val managedUserVM = ManagedUserVM().apply {
+        val user = <%= user.adminUserDto %>().apply {
             id = updatedUser.id
             login = updatedUser.login
-            password = UPDATED_PASSWORD
             firstName = UPDATED_FIRSTNAME
             lastName = UPDATED_LASTNAME
             email = UPDATED_EMAIL
@@ -606,14 +598,14 @@ class UserResourceIT {
         <%_ if (reactive) { _%>
         webTestClient.put().uri("/api/admin/users")
             .contentType(MediaType.APPLICATION_JSON)
-            .bodyValue(convertObjectToJsonBytes(managedUserVM))
+            .bodyValue(convertObjectToJsonBytes(user))
             .exchange()
             .expectStatus().isOk
         <%_ } else { _%>
         restUserMockMvc.perform(
             put("/api/admin/users")
                 .contentType(MediaType.APPLICATION_JSON)
-                .content(convertObjectToJsonBytes(managedUserVM))<% if (authenticationUsesCsrf) { %>
+                .content(convertObjectToJsonBytes(user))<% if (authenticationUsesCsrf) { %>
                 .with(csrf())<% } %>
         )
             .andExpect(status().isOk)
@@ -649,13 +641,12 @@ class UserResourceIT {
             .collectList().block()!!<% } %>.size
 
         // Update the user
-        val updatedUser = userRepository.findById(user.id!!).<% if (reactive) { %>block<% } else { %>get<% } %>()
+        val updatedUser = userRepository.findById(user.id!!).<% if (reactive) { %>block<% } else { %>orElseThrow<% } %>()
         assertNotNull(updatedUser)
 
-        val managedUserVM = ManagedUserVM().apply {
+        val user = <%= user.adminUserDto %>().apply {
             id = updatedUser.id
             login = UPDATED_LOGIN
-            password = UPDATED_PASSWORD
             firstName = UPDATED_FIRSTNAME
             lastName = UPDATED_LASTNAME
             email = UPDATED_EMAIL
@@ -676,14 +667,14 @@ class UserResourceIT {
         <%_ if (reactive) { _%>
         webTestClient.put().uri("/api/admin/users")
             .contentType(MediaType.APPLICATION_JSON)
-            .bodyValue(convertObjectToJsonBytes(managedUserVM))
+            .bodyValue(convertObjectToJsonBytes(user))
             .exchange()
             .expectStatus().isOk
         <%_ } else { _%>
         restUserMockMvc.perform(
             put("/api/admin/users")
                 .contentType(MediaType.APPLICATION_JSON)
-                .content(convertObjectToJsonBytes(managedUserVM))<% if (authenticationUsesCsrf) { %>
+                .content(convertObjectToJsonBytes(user))<% if (authenticationUsesCsrf) { %>
                 .with(csrf())<% } %>
         )
             .andExpect(status().isOk)
@@ -747,10 +738,9 @@ class UserResourceIT {
         val updatedUser = userRepository.findById(user.id!!).<% if (reactive) { %>block<% } else { %>get<% } %>()
         assertNotNull(updatedUser)
 
-        val managedUserVM = ManagedUserVM().apply {
+        val user = <%= user.adminUserDto %>().apply {
             id = updatedUser.id
             login = updatedUser.login
-            password = updatedUser.password
             firstName = updatedUser.firstName
             lastName = updatedUser.lastName
             email = "jhipster@localhost" // this email should already be used by anotherUser
@@ -771,14 +761,14 @@ class UserResourceIT {
         <%_ if (reactive) { _%>
         webTestClient.put().uri("/api/admin/users")
             .contentType(MediaType.APPLICATION_JSON)
-            .bodyValue(convertObjectToJsonBytes(managedUserVM))
+            .bodyValue(convertObjectToJsonBytes(user))
             .exchange()
             .expectStatus().isBadRequest
         <%_ } else { _%>
         restUserMockMvc.perform(
             put("/api/admin/users")
                 .contentType(MediaType.APPLICATION_JSON)
-                .content(convertObjectToJsonBytes(managedUserVM))<% if (authenticationUsesCsrf) { %>
+                .content(convertObjectToJsonBytes(user))<% if (authenticationUsesCsrf) { %>
                 .with(csrf())<% } %>
         )
             .andExpect(status().isBadRequest)
@@ -826,13 +816,12 @@ class UserResourceIT {
         <%_ } _%>
 
         // Update the user
-        val updatedUser = userRepository.findById(user.id!!).<% if (reactive) { %>block<% } else { %>get<% } %>()
+        val updatedUser = userRepository.findById(user.id!!).<% if (reactive) { %>block<% } else { %>orElseThrow<% } %>()
         assertNotNull(updatedUser)
 
-        val managedUserVM = ManagedUserVM().apply {
+        val user = <%= user.adminUserDto %>().apply {
             id = updatedUser.id
             login = "jhipster" // this login should already be used by anotherUser
-            password = updatedUser.password
             firstName = updatedUser.firstName
             lastName = updatedUser.lastName
             email = updatedUser.email
@@ -853,14 +842,14 @@ class UserResourceIT {
         <%_ if (reactive) { _%>
         webTestClient.put().uri("/api/admin/users")
             .contentType(MediaType.APPLICATION_JSON)
-            .bodyValue(convertObjectToJsonBytes(managedUserVM))
+            .bodyValue(convertObjectToJsonBytes(user))
             .exchange()
             .expectStatus().isBadRequest
         <%_ } else { _%>
         restUserMockMvc.perform(
             put("/api/admin/users")
                 .contentType(MediaType.APPLICATION_JSON)
-                .content(convertObjectToJsonBytes(managedUserVM))<% if (authenticationUsesCsrf) { %>
+                .content(convertObjectToJsonBytes(user))<% if (authenticationUsesCsrf) { %>
                 .with(csrf())<% } %>
         )
             .andExpect(status().isBadRequest)

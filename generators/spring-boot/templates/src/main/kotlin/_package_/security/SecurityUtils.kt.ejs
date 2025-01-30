@@ -22,22 +22,21 @@ package <%= packageName %>.security
 
 import org.springframework.security.core.Authentication
 import org.springframework.security.core.GrantedAuthority
-<%_ if (authenticationTypeOauth2) { _%>
-import org.springframework.security.core.authority.SimpleGrantedAuthority
-<%_ } _%>
+import org.springframework.security.core.context.SecurityContext
 <%_ if (reactive) { _%>
 import org.springframework.security.core.context.ReactiveSecurityContextHolder
-import org.springframework.security.core.context.SecurityContext
-<%_ } _%>
-<%_ if (!reactive) { _%>
+<%_ } else { _%>
 import org.springframework.security.core.context.SecurityContextHolder
 <%_ } _%>
 import org.springframework.security.core.userdetails.UserDetails
-<%_ if (authenticationTypeOauth2) { _%>
-import org.springframework.security.oauth2.core.oidc.user.DefaultOidcUser
-import org.springframework.security.oauth2.server.resource.authentication.JwtAuthenticationToken
+<%_ if (authenticationTypeJwt) { _%>
+import org.springframework.security.oauth2.jose.jws.MacAlgorithm
+import org.springframework.security.oauth2.jwt.Jwt
 <%_ } _%>
 <%_ if (authenticationTypeOauth2) { _%>
+import org.springframework.security.core.authority.SimpleGrantedAuthority
+import org.springframework.security.oauth2.core.oidc.user.DefaultOidcUser
+import org.springframework.security.oauth2.server.resource.authentication.JwtAuthenticationToken
 import java.util.*
 import java.util.stream.Collectors
   <%_ if (reactive) { _%>
@@ -58,6 +57,10 @@ import java.util.stream.Stream
 
 <%_ if (authenticationTypeOauth2) { _%>
 const val CLAIMS_NAMESPACE = "https://www.jhipster.tech/"
+<%_ } else if (authenticationTypeJwt) { _%>
+const val JWT_ALGORITHM: MacAlgorithm = MacAlgorithm.HS512
+
+const val AUTHORITIES_KEY: String = "auth";
 <%_ } _%>
 
 /**
@@ -76,29 +79,27 @@ fun getCurrentUserLogin(): <% if (reactive) { %>Mono<% } else { %>Optional<% } %
 
 
 fun extractPrincipal(authentication: Authentication?): String? {
-
-    if(authentication == null) {
+    if (authentication == null) {
         return null
-    <%_ if (authenticationTypeOauth2) { _%>
+    } else if (authentication.principal is UserDetails) {
+        return (authentication.principal as UserDetails).username
+<%_ if (authenticationTypeJwt) { _%>
+    } else if (authentication.principal is Jwt) {
+        return (authentication.principal as Jwt).subject
+<%_ } _%>
+<%_ if (authenticationTypeOauth2) { _%>
     } else if (authentication is JwtAuthenticationToken) {
-        return authentication.token.claims["preferred_username"].toString()
-    <%_ } _%>
-    }
-
-    return when (val principal = authentication.principal) {
-        is UserDetails -> principal.username
-        <%_ if (authenticationTypeOauth2) { _%>
-        is DefaultOidcUser -> {
-            if(principal.attributes.containsKey("preferred_username")) {
-                principal.attributes["preferred_username"].toString()
-            } else {
-                null
-            }
+        return authentication.token.claims["preferred_username"] as String
+    } else if (authentication.principal is DefaultOidcUser) {
+        val attributes = (authentication.principal as DefaultOidcUser).attributes
+        if (attributes.containsKey("preferred_username")) {
+            return attributes["preferred_username"] as String
         }
-        <%_ } _%>
-        is String -> principal
-        else -> null
+<%_ } _%>
+    } else if (authentication.principal is String) {
+        return authentication.principal as String
     }
+    return null
 }
 
 <%_ if (authenticationTypeJwt) { _%>

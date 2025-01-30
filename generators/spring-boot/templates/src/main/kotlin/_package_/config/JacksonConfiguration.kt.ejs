@@ -19,15 +19,14 @@
 package <%= packageName %>.config
 
 <%_ if (databaseTypeSql && !reactive) { _%>
-import com.fasterxml.jackson.datatype.hibernate5.Hibernate5Module
+import com.fasterxml.jackson.datatype.hibernate6.Hibernate6Module
+import com.fasterxml.jackson.datatype.hibernate6.Hibernate6Module.Feature
 <%_ } _%>
 import com.fasterxml.jackson.datatype.jdk8.Jdk8Module
 import com.fasterxml.jackson.datatype.jsr310.JavaTimeModule
 
 import org.springframework.context.annotation.Bean
 import org.springframework.context.annotation.Configuration
-import org.zalando.problem.jackson.ProblemModule
-import org.zalando.problem.violations.ConstraintViolationProblemModule
 
 @Configuration
 class JacksonConfiguration {
@@ -47,18 +46,6 @@ class JacksonConfiguration {
      * Support for Hibernate types in Jackson.
      */
     @Bean
-    fun hibernate5Module() = Hibernate5Module()
+    fun hibernate6Module() = Hibernate6Module().configure(Feature.SERIALIZE_IDENTIFIER_FOR_LAZY_NOT_LOADED_OBJECTS, true)
 <%_ } _%>
-
-    /*
-     * Module for serialization/deserialization of RFC7807 Problem.
-     */
-    @Bean
-    fun problemModule() = ProblemModule()
-
-    /*
-     * Module for serialization/deserialization of ConstraintViolationProblem.
-     */
-    @Bean
-    fun constraintViolationProblemModule() = ConstraintViolationProblemModule()
 }

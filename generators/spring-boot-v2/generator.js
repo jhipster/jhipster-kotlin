@@ -2,16 +2,10 @@ import { basename, dirname, join } from 'path';
 import { fileURLToPath } from 'url';
 import { existsSync } from 'fs';
 import BaseApplicationGenerator from 'generator-jhipster/generators/spring-boot';
-import { getEnumInfo } from 'generator-jhipster/generators/base-application/support';
 import { files as entityServerFiles } from 'jhipster-7-templates/esm/generators/entity-server';
 import { files as serverFiles } from 'jhipster-7-templates/esm/generators/server';
 import { convertToKotlinFile } from '../kotlin/support/files.js';
 import { migrateApplicationTask } from './preparing-migration.js';
-import migration from './migration.cjs';
-
-const { jhipsterConstants } = migration;
-const { MAIN_DIR } = jhipsterConstants;
-const SERVER_MAIN_SRC_KOTLIN_DIR = `${MAIN_DIR}kotlin/`;
 
 const jhipster7TemplatesPackage = dirname(fileURLToPath(import.meta.resolve('jhipster-7-templates/package.json')));
 
@@ -342,38 +336,6 @@ export default class extends BaseApplicationGenerator {
                     });
                 }
             },
-
-            // Can be dropped for jhipster 8.7.0
-            async writeEnumFiles({ application, entities }) {
-                for (const entity of entities.filter(entity => !entity.skipServer)) {
-                    for (const field of entity.fields.filter(field => field.fieldIsEnum)) {
-                        const enumInfo = {
-                            ...application,
-                            ...getEnumInfo(field, entity.clientRootFolder),
-                            frontendAppName: entity.frontendAppName,
-                            packageName: application.packageName,
-                            javaPackageSrcDir: application.javaPackageSrcDir,
-                            entityJavaPackageFolder: entity.entityJavaPackageFolder,
-                            entityAbsolutePackage: entity.entityAbsolutePackage || application.packageName,
-                        };
-                        await this.writeFiles({
-                            blocks: [
-                                {
-                                    templates: [
-                                        {
-                                            file: `${SERVER_MAIN_SRC_KOTLIN_DIR}_package_/_entityPackage_/domain/enumeration/_enumName_.kt`,
-                                            renameTo: () =>
-                                                `${SERVER_MAIN_SRC_KOTLIN_DIR}${entity.entityAbsoluteFolder}/domain/enumeration/${field.fieldType}.kt`,
-                                        },
-                                    ],
-                                },
-                            ],
-                            rootTemplatesPath: ['../../spring-boot/templates/domain/'],
-                            context: enumInfo,
-                        });
-                    }
-                }
-            },
         });
     }
 
@@ -437,8 +399,14 @@ export default class extends BaseApplicationGenerator {
                     source.addGradleProperty({ property: 'mapstructVersion', value: application.javaDependencies.mapstruct });
                     source.addGradleProperty({ property: 'springBootVersion', value: application.javaDependencies['spring-boot'] });
                     if (application.databaseTypeSql) {
-                        source.addGradleProperty({ property: 'liquibase.version', value: application.javaDependencies.liquibase });
-                        source.addGradleProperty({ property: 'hibernateVersion', value: application.javaDependencies.hibernate });
+                        source.addGradleProperty({
+                            property: 'liquibase.version',
+                            value: application.javaManagedProperties['liquibase.version'],
+                        });
+                        source.addGradleProperty({
+                            property: 'hibernateVersion',
+                            value: application.javaManagedProperties['hibernate.version'],
+                        });
                         source.addGradleProperty({ property: 'jaxbRuntimeVersion', value: '4.0.0' });
                     }
                     if (application.databaseTypeCassandra) {

@@ -3,8 +3,10 @@ import { existsSync } from 'fs';
 // Use spring-boot as parent due to this context in generators
 import BaseApplicationGenerator from 'generator-jhipster/generators/base-application';
 import { createNeedleCallback } from 'generator-jhipster/generators/base/support';
+import { getEnumInfo } from 'generator-jhipster/generators/base-application/support';
 
 import { convertToKotlinFile } from '../kotlin/support/files.js';
+import { SERVER_MAIN_SRC_KOTLIN_DIR } from '../kotlin/support/constants.js';
 import { KOTLIN_TEST_SRC_DIR } from './kotlin-constants.js';
 
 export default class extends BaseApplicationGenerator {
@@ -20,7 +22,6 @@ export default class extends BaseApplicationGenerator {
     }
 
     async _postConstruct() {
-        await this.dependsOnJHipster('jhipster-kotlin:migration');
         // Use _postConstruct so kotlin will be queued before jhipster:spring-boot dependencies
         await this.dependsOnJHipster('jhipster:java:bootstrap');
         await this.dependsOnJHipster('jhipster-kotlin:kotlin');
@@ -34,9 +35,6 @@ export default class extends BaseApplicationGenerator {
         return this.asComposingTaskGroup({
             async composeDetekt() {
                 await this.composeWithJHipster('jhipster-kotlin:detekt');
-            },
-            async composeSpringBootV2() {
-                await this.composeWithJHipster('jhipster-kotlin:spring-boot-v2');
             },
         });
     }
@@ -183,6 +181,42 @@ export default class extends BaseApplicationGenerator {
                     primaryKey.javaBuildSpecification = 'buildRangeSpecification';
                     for (const field of primaryKey.fields) {
                         field.fieldJavaBuildSpecification = 'buildRangeSpecification';
+                    }
+                }
+            },
+        });
+    }
+
+    get [BaseApplicationGenerator.WRITING_ENTITIES]() {
+        return this.asWritingEntitiesTaskGroup({
+            // Can be dropped for jhipster 8.7.0
+            async writeEnumFiles({ application, entities }) {
+                for (const entity of entities.filter(entity => !entity.skipServer)) {
+                    for (const field of entity.fields.filter(field => field.fieldIsEnum)) {
+                        const enumInfo = {
+                            ...application,
+                            ...getEnumInfo(field, entity.clientRootFolder),
+                            frontendAppName: entity.frontendAppName,
+                            packageName: application.packageName,
+                            javaPackageSrcDir: application.javaPackageSrcDir,
+                            entityJavaPackageFolder: entity.entityJavaPackageFolder,
+                            entityAbsolutePackage: entity.entityAbsolutePackage || application.packageName,
+                        };
+                        await this.writeFiles({
+                            blocks: [
+                                {
+                                    templates: [
+                                        {
+                                            file: `${SERVER_MAIN_SRC_KOTLIN_DIR}_package_/_entityPackage_/domain/enumeration/_enumName_.kt`,
+                                            renameTo: () =>
+                                                `${SERVER_MAIN_SRC_KOTLIN_DIR}${entity.entityAbsoluteFolder}/domain/enumeration/${field.fieldType}.kt`,
+                                        },
+                                    ],
+                                },
+                            ],
+                            rootTemplatesPath: ['../../spring-boot/templates/domain/'],
+                            context: enumInfo,
+                        });
                     }
                 }
             },

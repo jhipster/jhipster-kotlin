@@ -18,6 +18,8 @@
 -%>
 package <%= packageName %>.web.rest.errors
 
+import org.springframework.core.annotation.AnnotatedElementUtils.findMergedAnnotation
+
 import tech.jhipster.config.JHipsterConstants
 import tech.jhipster.web.util.HeaderUtil
 
@@ -34,27 +36,38 @@ import org.springframework.http.converter.HttpMessageConversionException
 <%_ if (reactive && databaseTypeSql) { _%>
 import org.springframework.stereotype.Component
 <%_ } _%>
-<%_ if (!reactive) { _%>
-import org.springframework.web.bind.MethodArgumentNotValidException
-<%_ } _%>
+import org.springframework.web.ErrorResponseException
 import org.springframework.web.bind.annotation.ControllerAdvice
 import org.springframework.web.bind.annotation.ExceptionHandler
 <%_ if (reactive) { _%>
+<%_ if (!skipUserManagement) { _%>
+import org.springframework.security.core.AuthenticationException
+<%_ } _%>
 import org.springframework.web.bind.support.WebExchangeBindException
 import org.springframework.web.server.ServerWebExchange
+import org.springframework.http.MediaType
+import tech.jhipster.web.rest.errors.ExceptionTranslation
+import org.springframework.web.reactive.result.method.annotation.ResponseEntityExceptionHandler
+import org.springframework.security.core.userdetails.UsernameNotFoundException
 <%_ } _%>
 <%_ if (!reactive) { _%>
 import org.springframework.web.context.request.NativeWebRequest
+import org.springframework.web.context.request.WebRequest
+import org.springframework.web.servlet.mvc.method.annotation.ResponseEntityExceptionHandler
 <%_ } _%>
 import org.springframework.core.env.Environment
-import org.zalando.problem.DefaultProblem
-import org.zalando.problem.Problem
-import org.zalando.problem.ProblemBuilder
-import org.zalando.problem.Status
-import org.zalando.problem.StatusType
-import org.zalando.problem.spring.web<% if (reactive) { %>flux<% } %>.advice.ProblemHandling
-import org.zalando.problem.spring.web<% if (reactive) { %>flux<% } %>.advice.security.SecurityAdviceTrait
-import org.zalando.problem.violations.ConstraintViolationProblem
+import org.springframework.http.HttpHeaders
+import org.springframework.http.HttpStatus
+import org.springframework.http.HttpStatusCode
+import tech.jhipster.web.rest.errors.ProblemDetailWithCause
+import tech.jhipster.web.rest.errors.ProblemDetailWithCause.ProblemDetailWithCauseBuilder
+import org.springframework.security.access.AccessDeniedException
+import org.springframework.web.ErrorResponse
+import org.springframework.web.bind.annotation.ResponseStatus
+import org.springframework.security.authentication.BadCredentialsException
+import org.springframework.lang.Nullable
+import org.springframework.web.bind.MethodArgumentNotValidException
+
 <%_ if (reactive) { _%>
 import reactor.core.publisher.Mono
 <%_ } _%>
@@ -63,11 +76,16 @@ import reactor.core.publisher.Mono
 import jakarta.servlet.http.HttpServletRequest
 <%_ } _%>
 import java.net.URI
+import java.util.List
+import java.util.Arrays
+import java.util.Collection
+import java.util.Map
+import java.util.Optional
 
 private const val FIELD_ERRORS_KEY = "fieldErrors"
 private const val MESSAGE_KEY = "message"
 private const val PATH_KEY = "path"
-private const val VIOLATIONS_KEY = "violations"
+private const val CASUAL_CHAIN_ENABLED = false
 
 /**
  * Controller advice to translate the server side exceptions to client-friendly json structures.
@@ -77,166 +95,241 @@ private const val VIOLATIONS_KEY = "violations"
 <%_ if (databaseTypeSql && reactive) { _%>
 @Component("jhiExceptionTranslator")
 <%_ } _%>
-class ExceptionTranslator(private val env: Environment) : ProblemHandling, SecurityAdviceTrait {
+class ExceptionTranslator(private val env: Environment) : ResponseEntityExceptionHandler()<% if (reactive) { %>, ExceptionTranslation <% }  %> {
 <%_
-let returnType;
-let requestClass;
+let returnType
+let requestClass
+let requestEntityRequestClass
 if (reactive) {
-    returnType = 'Mono<ResponseEntity<Problem>>';
-    requestClass = 'ServerWebExchange';
+    returnType = 'Mono<ResponseEntity<Any>>'
+    requestClass = 'ServerWebExchange'
+    requestEntityRequestClass = 'ServerWebExchange'
 } else {
-    returnType = 'ResponseEntity<Problem>?';
-    requestClass = 'NativeWebRequest';
+    returnType = 'ResponseEntity<Any>'
+    requestClass = 'NativeWebRequest'
+    requestEntityRequestClass = 'WebRequest'
 }
 _%>
 
     @Value("\${jhipster.clientApp.name}")
     private val applicationName: String? = null
 
-    /**
-     * Post-process the Problem payload to add the message key for the front-end if needed.
-     */
-    override fun process(entity: ResponseEntity<Problem>?, request: <%= requestClass %>?): <%- returnType %> {
-        if (entity == null) {
-            <%_ if (reactive) { _%>
-            return Mono.empty()
-            <%_ } else { _%>
-            return null
-            <%_ } _%>
-        }
-        val problem = entity.body
-        if (!(problem is ConstraintViolationProblem || problem is DefaultProblem)) {
-            <%_ if (reactive) { _%>
-            return Mono.just(entity)
-            <%_ } else { _%>
-            return entity
-            <%_ } _%>
-        }
-        <%_ if (!reactive) { _%>
-            val nativeRequest = request?.getNativeRequest(HttpServletRequest::class.java)
-            val requestUri = if (nativeRequest != null) nativeRequest.requestURI else StringUtils.EMPTY
+    @ExceptionHandler
+    <% if (reactive) { %>override<% } %> fun handleAnyException(ex: Throwable, request: <%= requestClass %>): <%- returnType %> {
+        val pdCause = wrapAndCustomizeProblem(ex, request)
+        return handleExceptionInternal(ex as Exception, pdCause, buildHeaders(ex)!!, HttpStatusCode.valueOf(pdCause.status), request)
+    }
+
+    @Nullable
+    override fun handleExceptionInternal(
+        ex: Exception,
+        @Nullable body: Any,
+        headers: HttpHeaders,
+        statusCode: HttpStatusCode,
+        request: <%= requestEntityRequestClass %>
+    ): <%- returnType %> {
+        var body = body
+        body = body ?: wrapAndCustomizeProblem(ex as Throwable, request)
+        <%_ if (reactive) { _%>
+        return if (request.response.isCommitted) {
+            Mono.error(ex)
+        } else Mono.just(
+            ResponseEntity(body, updateContentType(headers), HttpStatusCode.valueOf((body as ProblemDetailWithCause).status))
+        )
+        <%_ } else { _%>
+        return super.handleExceptionInternal(ex, body, headers, statusCode, request)
         <%_ } _%>
+    }
 
-        val builder = Problem.builder()
-            .withType(if (Problem.DEFAULT_TYPE == problem.type) DEFAULT_TYPE else problem.type)
-            .withStatus(problem.status)
-            .withTitle(problem.title)
-            <%_ if (reactive) { _%>
-            .with(PATH_KEY, request!!.request.path.value())
-            <%_ } else { _%>
-            .with(PATH_KEY, requestUri)
-            <%_ } _%>
+    protected fun wrapAndCustomizeProblem(ex: Throwable, request: <%= requestClass %>): ProblemDetailWithCause {
+        return customizeProblem(getProblemDetailWithCause(ex), ex, request)
+    }
 
-        if (problem is ConstraintViolationProblem) {
-            builder
-                .with(VIOLATIONS_KEY, problem.violations)
-                .with(MESSAGE_KEY, ERR_VALIDATION)
-        } else {
-            builder
-                .withCause((problem as DefaultProblem).cause)
-                .withDetail(problem.detail)
-                .withInstance(problem.instance)
-            problem.parameters.forEach { (key, value) -> builder.with(key, value) }
-            if (!problem.parameters.containsKey(MESSAGE_KEY) && problem.status != null) {
-                builder.with(MESSAGE_KEY, "error.http." + problem.status!!.statusCode)
-            }
+    private fun getProblemDetailWithCause(ex: Throwable): ProblemDetailWithCause {
+<%_ if (!skipUserManagement) { _%>
+        if (ex is <%= packageName %>.service.UsernameAlreadyUsedException) return LoginAlreadyUsedException().body as ProblemDetailWithCause
+        if (ex is <%= packageName %>.service.EmailAlreadyUsedException) return EmailAlreadyUsedException().body as ProblemDetailWithCause
+        if (ex is <%= packageName %>.service.InvalidPasswordException) return InvalidPasswordException().body as ProblemDetailWithCause
+        <%_ if (reactive) { _%>
+        if (ex is AuthenticationException) {
+            // Ensure no information about existing users is revealed via failed authentication attempts
+            return ProblemDetailWithCauseBuilder
+                .instance()
+                .withStatus(toStatus(ex).value())
+                .withTitle("Unauthorized")
+                .withDetail("Invalid credentials")
+                .build()
         }
-        return <% if (reactive) { %>Mono.just(<% } %>ResponseEntity<% if (reactive) { %><Problem><% } %>(builder.build(), entity.headers, entity.statusCode)<% if (reactive) { %>)<% } %>
+        <%_ } _%>
+<%_ } _%>
+        return if (ex is ErrorResponseException && ex.body is ProblemDetailWithCause) ex.body as ProblemDetailWithCause else ProblemDetailWithCauseBuilder.instance().withStatus(toStatus(ex).value()).build()
+    }
+
+    protected fun customizeProblem(problem: ProblemDetailWithCause, err: Throwable, request: <%= requestClass %>): ProblemDetailWithCause {
+        if (problem.status <= 0) problem.setStatus(toStatus(err))
+        if (problem.type == URI.create("about:blank")) problem.type = getMappedType(err)
+
+        // higher precedence to Custom/ResponseStatus types
+        val title = extractTitle(err, problem.status)
+        val problemTitle = problem.title
+        if (problemTitle == null || problemTitle != title) {
+            problem.title = title
+        }
+        if (problem.detail == null) {
+            // higher precedence to cause
+            problem.detail = getCustomizedErrorDetails(err)
+        }
+        val problemProperties = problem.properties
+        if (problemProperties == null || !problemProperties.containsKey(MESSAGE_KEY)) problem.setProperty(
+            MESSAGE_KEY,
+            if (getMappedMessageKey(err) != null) getMappedMessageKey(err) else "error.http." + problem.status
+        )
+        if (problemProperties == null || !problemProperties.containsKey(PATH_KEY)) problem.setProperty(PATH_KEY, getPathValue(request))
+        if (err is <% if (reactive) { %> WebExchangeBindException <% } else { %> MethodArgumentNotValidException <% } %>  &&
+            (problemProperties == null || !problemProperties.containsKey(FIELD_ERRORS_KEY))) problem.setProperty(FIELD_ERRORS_KEY, getFieldErrors(err))
+        problem.cause = err.cause?.let { buildCause(it, request).orElse(null) }
+        return problem
+    }
+
+    private fun extractTitle(err: Throwable, statusCode: Int): String? {
+        return if (getCustomizedTitle(err) != null) getCustomizedTitle(err) else extractTitleForResponseStatus(err, statusCode)
+    }
+
+    private fun getFieldErrors(ex: <% if (reactive) { %>WebExchangeBindException<% } else { %>MethodArgumentNotValidException<% } %>): List<FieldErrorVM> {
+        return ex
+            .bindingResult
+            .fieldErrors
+            .stream()
+            .map { f: FieldError ->
+                FieldErrorVM(
+                    f.objectName.replaceFirst("<%= dtoSuffix %>$".toRegex(), ""),
+                    f.field,
+                    if (StringUtils.isNotBlank(f.defaultMessage)) f.defaultMessage else f.code
+                )
+            }
+            .toList()
+    }
+
+    private fun extractTitleForResponseStatus(err: Throwable, statusCode: Int): String {
+        val specialStatus = extractResponseStatus(err)
+        return specialStatus?.reason ?: HttpStatus.valueOf(statusCode).reasonPhrase
+    }
+
+    <%_ if (!reactive) { _%>
+    private fun extractURI(request: <%= requestClass %>): String {
+        val nativeRequest = request.getNativeRequest(HttpServletRequest::class)
+        return nativeRequest != null ? nativeRequest.requestURI : StringUtils.EMPTY
+    }
+    <%_ } _%>
+
+    private fun toStatus(throwable: Throwable): HttpStatus {
+        // Let the ErrorResponse take this responsibility
+        return if (throwable is ErrorResponse) HttpStatus.valueOf(throwable.body.status) else Optional
+            .ofNullable(getMappedStatus(throwable))
+            .orElse(
+                Optional.ofNullable(resolveResponseStatus(throwable)).map { obj: ResponseStatus -> obj.value }.orElse(HttpStatus.INTERNAL_SERVER_ERROR)
+            )
+    }
+
+    private fun extractResponseStatus(throwable: Throwable): ResponseStatus? {
+        return Optional.ofNullable(resolveResponseStatus(throwable)).orElse(null)
+    }
+
+    private fun resolveResponseStatus(type: Throwable?): ResponseStatus {
+        val candidate = AnnotatedElementUtils.findMergedAnnotation(type!!.javaClass, ResponseStatus::class.java)
+        return if (candidate == null && type.cause != null) resolveResponseStatus(type.cause) else candidate!!
+    }
+
+    private fun getMappedType(err: Throwable): URI {
+        return if (err is MethodArgumentNotValidException) ErrorConstants.CONSTRAINT_VIOLATION_TYPE else ErrorConstants.DEFAULT_TYPE
+    }
+
+    private fun getMappedMessageKey(err: Throwable): String? {
+        if (err is MethodArgumentNotValidException) {
+            return ErrorConstants.ERR_VALIDATION
+        <%_ if (!databaseTypeNo && !databaseTypeCassandra) { _%>
+        } else if (err is ConcurrencyFailureException || err.cause is ConcurrencyFailureException) {
+            return ErrorConstants.ERR_CONCURRENCY_FAILURE
+        <%_ } _%>
+        <%_ if (reactive) { _%>
+        } else if (err is WebExchangeBindException) {
+            return ErrorConstants.ERR_VALIDATION
+        <%_ } _%>
+        }
+        return null
+    }
+
+    private fun getCustomizedTitle(err: Throwable): String? {
+        return if (err is MethodArgumentNotValidException) "Method argument not valid" else null
+    }
+
+    private fun getCustomizedErrorDetails(err: Throwable): String? {
+        val activeProfiles: Collection<String> = Arrays.asList(*env.activeProfiles)
+        if (activeProfiles.contains(JHipsterConstants.SPRING_PROFILE_PRODUCTION)) {
+            if (err is HttpMessageConversionException) return "Unable to convert http message"
+        <%_ if (!databaseTypeNo) { _%>
+            if (err is DataAccessException) return "Failure during data access"
+        <%_ } _%>
+            if (containsPackageName(err.message)) return "Unexpected runtime exception"
+        }
+        return if (err.cause != null) err.cause!!.message else err.message
+    }
+
+    private fun getMappedStatus(err: Throwable): HttpStatus? {
+        // Where we disagree with Spring defaults
+        if (err is AccessDeniedException) return HttpStatus.FORBIDDEN
+        <%_ if (!databaseTypeNo && !databaseTypeCassandra) { _%>
+        if (err is ConcurrencyFailureException) return HttpStatus.CONFLICT
+        <%_ } _%>
+        if (err is BadCredentialsException) return HttpStatus.UNAUTHORIZED
+        <%_ if (reactive) { _%>
+        if (err is UsernameNotFoundException) HttpStatus.UNAUTHORIZED
+        <%_ } _%>
+        return null
+    }
+
+    private fun getPathValue(request: <%= requestClass %>): URI {
+        return if (request == null) URI.create("about:blank") else <% if (reactive) { %> request.request.uri <% } else { %> URI.create(extractURI(request))<% } %>
+    }
+
+    private fun buildHeaders(err: Throwable): HttpHeaders? {
+        return if (err is BadRequestAlertException) HeaderUtil.createFailureAlert(
+            applicationName,
+            true,
+            err.entityName,
+            err.errorKey,
+            err.message
+        ) else null
     }
 
     <%_ if (reactive) { _%>
-    override fun handleBindingResult(
-        ex: WebExchangeBindException, request: <%= requestClass %>)
-    : <%- returnType %>  {
-    <%_ } else { _%>
-    override fun handleMethodArgumentNotValid(
-        ex: MethodArgumentNotValidException, request: <%= requestClass %>
-    ): <%- returnType %> {
-    <%_ } _%>
-        val result = ex.bindingResult
-        val fieldErrors = result.fieldErrors.map {
-            FieldErrorVM(
-                it.objectName.replaceFirst(Regex("<%= dtoSuffix %>$"), ""),
-                it.field,
-                if (StringUtils.isNotBlank(it.defaultMessage)) it.defaultMessage else it.code
-            )
+    private fun updateContentType(headers: HttpHeaders): HttpHeaders {
+        var headers: HttpHeaders? = headers
+        if (headers == null) {
+            headers = HttpHeaders()
+            headers.contentType = MediaType.APPLICATION_PROBLEM_JSON
         }
-
-        val problem = Problem.builder()
-            .withType(CONSTRAINT_VIOLATION_TYPE)
-            .withTitle("<%_ if (reactive) { _%>Data binding and validation failure<% } else { %>Method argument not valid<% } %>")
-            .withStatus(<% if (reactive) { %>Status.BAD_REQUEST<% } else { %>defaultConstraintViolationStatus()<% } %>)
-            .with(MESSAGE_KEY, ERR_VALIDATION)
-            .with(FIELD_ERRORS_KEY, fieldErrors)
-            .build()
-        return create(ex, problem, request)
-    }
-
-    <%_ if (!skipUserManagement) { _%>
-    @ExceptionHandler
-    fun handleEmailAlreadyUsedException(ex: <%= packageName %>.service.EmailAlreadyUsedException, request: <%= requestClass %>): <%- returnType %> {
-        val problem = EmailAlreadyUsedException()
-        return create(problem, request, HeaderUtil.createFailureAlert(applicationName,  <%= enableTranslation %>, problem.entityName, problem.errorKey, problem.message))
-    }
-
-    @ExceptionHandler
-    fun handleUsernameAlreadyUsedException(ex: <%= packageName %>.service.UsernameAlreadyUsedException, request: <%= requestClass %>): <%- returnType %> {
-        val problem = LoginAlreadyUsedException()
-        return create(problem, request, HeaderUtil.createFailureAlert(applicationName,  <%= enableTranslation %>, problem.entityName, problem.errorKey, problem.message))
-    }
-
-    @ExceptionHandler
-    fun handleInvalidPasswordException(ex: <%= packageName %>.service.InvalidPasswordException, request: <%= requestClass %>): <%- returnType %> {
-        return create(InvalidPasswordException(), request)
+        return headers
     }
     <%_ } _%>
 
-    @ExceptionHandler
-    fun handleBadRequestAlertException(
-        ex: BadRequestAlertException,
-        request: <%= requestClass %>
-    ): <%- returnType %> =
-        create(
-            ex, request,
-            HeaderUtil.createFailureAlert(applicationName, <%= enableTranslation %>, ex.entityName, ex.errorKey, ex.message)
-        )
-    <%_ if (!databaseTypeNo && !databaseTypeCassandra) { _%>
-
-    @ExceptionHandler
-    fun handleConcurrencyFailure(ex: ConcurrencyFailureException, request: <%= requestClass %>): <%- returnType %> {
-        val problem = Problem.builder()
-            .withStatus(Status.CONFLICT)
-            .with(MESSAGE_KEY, ERR_CONCURRENCY_FAILURE)
-            .build()
-        return create(ex, problem, request)
-    }
-    <%_ } _%>
-
-    override fun prepare(throwable: Throwable, status: StatusType, type: URI): ProblemBuilder {
-        val activeProfiles = env.activeProfiles
-        var detail = throwable.message
-        if (activeProfiles.contains(JHipsterConstants.SPRING_PROFILE_PRODUCTION)) {
-            detail = when (throwable) {
-                is HttpMessageConversionException -> "Unable to convert http message"
-                <%_ if (!databaseTypeNo) { _%>
-                is DataAccessException -> "Failure during data access"
-                <%_ } _%>
-                else -> {
-                    if (containsPackageName(throwable.message)) {
-                        "Unexpected runtime exception"
-                    } else {
-                        throwable.message
-                    }
-                }
-            }
-        }
-        return Problem.builder()
-            .withType(type)
-            .withTitle(status.reasonPhrase)
-            .withStatus(status)
-            .withDetail(detail)
-            .withCause(throwable.cause.takeIf { isCausalChainsEnabled }?.let { toProblem(it) })
+    fun buildCause(throwable: Throwable, request: <%= requestClass %>): Optional<ProblemDetailWithCause> {
+        return if (throwable != null && isCasualChainEnabled) {
+            Optional.of<ProblemDetailWithCause>(customizeProblem(getProblemDetailWithCause(throwable), throwable, request))
+        } else Optional.ofNullable<ProblemDetailWithCause?>(null)
     }
 
-    private fun containsPackageName(message: String?) = listOf("org.", "java.", "net.", "javax.", "com.", "io.", "de.", "<%= packageName %>").any { it == message }
+    private fun containsPackageName(message: String?): Boolean {
+        // This list is for sure not complete
+        return StringUtils.containsAny(message, "org.", "java.", "net.", "jakarta.", "javax.", "com.", "io.", "de.", "<%= packageName %>")
+    }
+
+    companion object {
+        private const val FIELD_ERRORS_KEY = "fieldErrors"
+        private const val MESSAGE_KEY = "message"
+        private const val PATH_KEY = "path"
+        private const val isCasualChainEnabled = false
+    }
+
 }
+
