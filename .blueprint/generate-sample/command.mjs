@@ -16,27 +16,24 @@
  * See the License for the specific language governing permissions and
  * limitations under the License.
  */
-import { existsSync, readdirSync } from 'node:fs';
+import { readdirSync } from 'node:fs';
 import { entitiesByType, workflowSamples } from '../generate-sample/support/index.mjs';
-import { getSamples } from './get-samples.mjs';
 
 /**
  * @type {import('generator-jhipster').JHipsterCommandDefinition}
  */
 const command = {
-    arguments: {
-        sampleName: {
-            type: String,
-        },
-    },
     configs: {
         sampleName: {
+            argument: {
+                type: String,
+            },
             prompt: gen => ({
-                when: !gen.jdlSamples && !gen.appSample && !gen.all && existsSync(gen.templatePath(gen.samplesFolder)),
+                when: !gen.jdlSamples && !gen.appSample && !gen.all,
                 type: 'list',
                 message: 'which sample do you want to generate?',
-                choices: async () => getSamples(gen.templatePath(gen.samplesFolder)),
             }),
+            choices: Object.keys(workflowSamples),
             configure: gen => {
                 const sample = workflowSamples[gen.sampleName];
                 if (!sample) {
