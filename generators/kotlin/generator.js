@@ -1,5 +1,5 @@
 import BaseApplicationGenerator from 'generator-jhipster/generators/base-application';
-import { passthrough, transform } from '@yeoman/transform';
+import { passthrough } from '@yeoman/transform';
 import { getPrimaryKeyValue } from 'generator-jhipster/generators/server/support';
 import { SERVER_MAIN_SRC_KOTLIN_DIR, SERVER_TEST_SRC_KOTLIN_DIR } from './support/index.js';
 
@@ -28,18 +28,6 @@ export default class extends BaseApplicationGenerator {
 
     get [BaseApplicationGenerator.DEFAULT]() {
         return this.asDefaultTaskGroup({
-            async checkForJavaFiles() {
-                this.queueTransformStream(
-                    {
-                        name: 'removing remaining java files',
-                        filter: file => file.path.endsWith('.java'),
-                        refresh: true,
-                    },
-                    transform(file => {
-                        this.log.warn(`Remaining java file ${file.path} removed`);
-                    }),
-                );
-            },
             async convertGradleScripts({ application }) {
                 if (application.buildToolGradle) {
                     this.queueTransformStream(
