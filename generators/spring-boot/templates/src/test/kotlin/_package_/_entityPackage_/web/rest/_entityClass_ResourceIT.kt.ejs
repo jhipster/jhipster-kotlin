@@ -1352,24 +1352,24 @@ class <%= entityClass %>ResourceIT {
   <%_ if (searchEngineElasticsearch) { _%>
         val searchDatabaseSizeBefore = IterableUtil.sizeOf(<%= entityInstance %>SearchRepository.findAll()<%= callListBlock %>)
   <%_ } _%>
-        <%= persistClass %>.<%= primaryKey.name %> = <%= getJavaValueGeneratorForType(primaryKey.type) %>
+        <%= persistInstance %>.<%= primaryKey.name %> = <%= primaryKey.javaValueGenerator %>
 
         <%_ if (dtoMapstruct) { _%>
         // Create the <%= entityClass %>
-        val <%= restClass %> = <%= entityInstance %>Mapper.toDto(<%= persistClass %>)
+        val <%= restInstance %> = <%= entityInstance %>Mapper.toDto(<%= persistInstance %>)
 
         <%_ } _%>
         // If the entity doesn't have an ID, it will throw BadRequestAlertException
         <%_ if (reactive) { _%>
-        webTestClient.patch().uri(ENTITY_API_URL_ID, <%= (dtoMapstruct ? restClass : persistClass) %>.<%= primaryKey.name %>)
+        webTestClient.patch().uri(ENTITY_API_URL_ID, <%= restInstance %>.<%= primaryKey.name %>)
             .contentType(MediaType.valueOf("application/merge-patch+json"))
-            .bodyValue(convertObjectToJsonBytes(<%= (dtoMapstruct ? restClass : persistClass) %>))
+            .bodyValue(convertObjectToJsonBytes(<%= restInstance %>))
             .exchange()
             .expectStatus().isBadRequest
         <%_ } else { _%>
-        rest<%= entityClass %>MockMvc.perform(patch(ENTITY_API_URL_ID, <%= (dtoMapstruct ? restClass : persistClass) %>.<%= primaryKey.name %>)<% if (authenticationUsesCsrf) { %>.with(csrf())<% }%>
+        rest<%= entityClass %>MockMvc.perform(patch(ENTITY_API_URL_ID, <%= restInstance %>.<%= primaryKey.name %>)<% if (authenticationUsesCsrf) { %>.with(csrf())<% }%>
             .contentType("application/merge-patch+json")
-            .content(convertObjectToJsonBytes(<%= (dtoMapstruct ? restClass : persistClass) %>)))
+            .content(convertObjectToJsonBytes(<%= restInstance %>)))
             .andExpect(status().isBadRequest)
         <%_ } _%>
 
@@ -1392,24 +1392,24 @@ class <%= entityClass %>ResourceIT {
   <%_ if (searchEngineElasticsearch) { _%>
         val searchDatabaseSizeBefore = IterableUtil.sizeOf(<%= entityInstance %>SearchRepository.findAll()<%= callListBlock %>)
   <%_ } _%>
-        <%= persistClass %>.<%= primaryKey.name %> = <%= getJavaValueGeneratorForType(primaryKey.type) %>
+        <%= persistInstance %>.<%= primaryKey.name %> = <%= primaryKey.javaValueGenerator %>
 
         <%_ if (dtoMapstruct) { _%>
         // Create the <%= entityClass %>
-        val <%= restClass %> = <%= entityInstance %>Mapper.toDto(<%= persistClass %>)
+        val <%= restInstance %> = <%= entityInstance %>Mapper.toDto(<%= persistInstance %>)
 
         <%_ } _%>
         // If url ID doesn't match entity ID, it will throw BadRequestAlertException
         <%_ if (reactive) { _%>
-        webTestClient.patch().uri(ENTITY_API_URL_ID, <%= getJavaValueGeneratorForType(primaryKey.type) %>)
+        webTestClient.patch().uri(ENTITY_API_URL_ID, <%= primaryKey.javaValueGenerator %>)
             .contentType(MediaType.valueOf("application/merge-patch+json"))
-            .bodyValue(convertObjectToJsonBytes(<%= (dtoMapstruct ? restClass : persistClass) %>))
+            .bodyValue(convertObjectToJsonBytes(<%= restInstance %>))
             .exchange()
             .expectStatus().isBadRequest
         <%_ } else { _%>
-        rest<%= entityClass %>MockMvc.perform(patch(ENTITY_API_URL_ID, <%= getJavaValueGeneratorForType(primaryKey.type) %>)<% if (authenticationUsesCsrf) { %>.with(csrf())<% } %>
+        rest<%= entityClass %>MockMvc.perform(patch(ENTITY_API_URL_ID, <%= primaryKey.javaValueGenerator %>)<% if (authenticationUsesCsrf) { %>.with(csrf())<% } %>
             .contentType("application/merge-patch+json")
-            .content(convertObjectToJsonBytes(<%= (dtoMapstruct ? restClass : persistClass) %>)))
+            .content(convertObjectToJsonBytes(<%= restInstance %>)))
             .andExpect(status().isBadRequest)
         <%_ } _%>
 
@@ -1432,24 +1432,24 @@ class <%= entityClass %>ResourceIT {
     <%_ if (searchEngineElasticsearch) { _%>
         val searchDatabaseSizeBefore = IterableUtil.sizeOf(<%= entityInstance %>SearchRepository.findAll()<%= callListBlock %>);
     <%_ } _%>
-        <%= persistClass %>.<%= primaryKey.name %> = <%= getJavaValueGeneratorForType(primaryKey.type) %>
+        <%= persistInstance %>.<%= primaryKey.name %> = <%= primaryKey.javaValueGenerator %>
 
         <%_ if (dtoMapstruct) { _%>
         // Create the <%= entityClass %>
-        val <%= restClass %> = <%= entityInstance %>Mapper.toDto(<%= persistClass %>)
+        val <%= restInstance %> = <%= entityInstance %>Mapper.toDto(<%= persistInstance %>)
 
         <%_ } _%>
         // If url ID doesn't match entity ID, it will throw BadRequestAlertException
         <%_ if (reactive) { _%>
         webTestClient.patch().uri(ENTITY_API_URL)
             .contentType(MediaType.valueOf("application/merge-patch+json"))
-            .bodyValue(convertObjectToJsonBytes(<%= (dtoMapstruct ? restClass : persistClass) %>))
+            .bodyValue(convertObjectToJsonBytes(<%= restInstance %>))
             .exchange()
             .expectStatus().isEqualTo(405)
         <%_ } else { _%>
         rest<%= entityClass %>MockMvc.perform(patch(ENTITY_API_URL)<% if (authenticationUsesCsrf) { %>.with(csrf())<% } %>
             .contentType("application/merge-patch+json")
-            .content(convertObjectToJsonBytes(<%= (dtoMapstruct ? restClass : persistClass) %>)))
+            .content(convertObjectToJsonBytes(<%= restInstance %>)))
             .andExpect(status().isMethodNotAllowed)
         <%_ } _%>
 
