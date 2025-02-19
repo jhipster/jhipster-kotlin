@@ -110,6 +110,9 @@ export default class extends BaseApplicationGenerator {
                             if (application.user && destinationFile.endsWith('UserCallback.java')) {
                                 return undefined;
                             }
+                            if (application.generateBuiltInAuthorityEntity && destinationFile.endsWith('AuthorityRepository.java')) {
+                                return undefined;
+                            }
 
                             if (
                                 sourceFile.endsWith('/TestContainersSpringContextCustomizerFactory.java') &&

@@ -69,13 +69,14 @@ import <%= entityAbsolutePackage %>.domain.<%= persistClass %>
 <%_
     var imported = [];
     for (relationship of relationships) { // import entities in required relationships
+        const { otherEntity } = relationship;
         const relationshipValidate = relationship.relationshipValidate;
         const otherEntityNameCapitalized = relationship.otherEntityNameCapitalized;
         const isUsingMapsIdL1 = relationship.id;
-        if(imported.indexOf(otherEntityNameCapitalized) === -1 && persistClass !== asEntity(otherEntityNameCapitalized)) {
+        if(imported.indexOf(otherEntityNameCapitalized) === -1 && persistClass !== otherEntity.persistClass) {
             if ((relationshipValidate !== null && relationshipValidate) || jpaMetamodelFiltering || (isUsingMapsIdL1)) {
 _%>
-import <%= entityAbsolutePackage %>.domain.<%= asEntity(otherEntityNameCapitalized) %>
+import <%= entityAbsolutePackage %>.domain.<%= otherEntity.persistClass %>
 <%_         imported.push(otherEntityNameCapitalized);
         } } } _%>
 <%_ if (saveUserSnapshot) { _%>
@@ -194,10 +195,17 @@ import java.time.temporal.ChronoUnit
 <%_ if (anyFieldIsUUID || primaryKey.typeString || otherEntityPrimaryKeyTypesIncludesUUID) { _%>
 import java.util.UUID
 <%_ } _%>
-<%_ if (!embedded && primaryKey.hasLong) { _%>
+<%_ if (!embedded) { _%>
+  <%_ if (primaryKey.hasLong && !readOnly && updatableEntity || primaryKey.hasInteger) { _%>
 import java.util.Random
+  <%_ } _%>
+  <%_ if (primaryKey.hasLong && !readOnly && updatableEntity) { _%>
 import java.util.concurrent.atomic.AtomicLong
+  <%_ } else if (primaryKey.hasInteger) { _%>
+import java.util.concurrent.atomic.AtomicInteger
+  <%_ } _%>
 <%_ } _%>
+
 import java.util.stream.Stream
 
 import org.assertj.core.api.Assertions.assertThat
@@ -924,12 +932,12 @@ class <%= entityClass %>ResourceIT {
         val <%= relationship.relationshipFieldName %> = <%= persistInstance %>.<%= relationship.relationshipName %>
         <%_ } else { _%>
         <%_ if (databaseTypeSql && !reactive) { _%>
-        var <%= relationship.relationshipFieldName %>: <%= asEntity(relationship.otherEntityNameCapitalized) %>
-        if (findAll(em, <%= asEntity(relationship.otherEntityNameCapitalized) %>::class).isEmpty()) {
+        var <%= relationship.relationshipFieldName %>: <%= relationship.otherEntity.persistClass %>
+        if (findAll(em, <%= relationship.otherEntity.persistClass %>::class).isEmpty()) {
             <%= entityInstance %>Repository.saveAndFlush(<%= persistInstance %>)
             <%= relationship.relationshipFieldName %> = <%= createEntityPrefix %><%= relationship.otherEntityNameCapitalized %>ResourceIT.createEntity(em)
         } else {
-            <%= relationship.relationshipFieldName %> = findAll(em, <%= asEntity(relationship.otherEntityNameCapitalized) %>::class)[0]
+            <%= relationship.relationshipFieldName %> = findAll(em, <%= relationship.otherEntity.persistClass %>::class)[0]
         }
         <%_ } else { _%>
         var <%= relationship.relationshipFieldName %> = <%= relationship.otherEntityNameCapitalized %>ResourceIT.createEntity(em)
@@ -1128,14 +1136,14 @@ class <%= entityClass %>ResourceIT {
         <%_ } _%>
 
         <%_ if (reactive) { _%>
-        webTestClient.put().uri(ENTITY_API_URL_ID, <%= (dtoMapstruct ? asDto(entityInstance) : 'updated' + persistClass) %>.<%= primaryKey.name %>)
+        webTestClient.put().uri(ENTITY_API_URL_ID, <%= (dtoMapstruct ? dtoInstance : 'updated' + persistClass) %>.<%= primaryKey.name %>)
             .contentType(MediaType.APPLICATION_JSON)
             .bodyValue(convertObjectToJsonBytes(<%= (dtoMapstruct ? dtoInstance : 'updated' + persistClass) %>))
             .exchange()
             .expectStatus().isOk
         <%_ } else { _%>
         rest<%= entityClass %>MockMvc.perform(
-            put(ENTITY_API_URL_ID, <%= (dtoMapstruct ? asDto(entityInstance) : 'updated' + persistClass) %>.<%= primaryKey.name %>)<% if (authenticationUsesCsrf) { %>.with(csrf())<% }%>
+            put(ENTITY_API_URL_ID, <%= (dtoMapstruct ? dtoInstance : 'updated' + persistClass) %>.<%= primaryKey.name %>)<% if (authenticationUsesCsrf) { %>.with(csrf())<% }%>
                 .contentType(MediaType.APPLICATION_JSON)
                 .content(convertObjectToJsonBytes(<% if (dtoMapstruct) { %><%= dtoInstance %><% } else { %>updated<%= persistClass %><% } %>))
         ).andExpect(status().isOk)
@@ -1188,7 +1196,7 @@ class <%= entityClass %>ResourceIT {
         <%_ if (searchEngineElasticsearch) { _%>
         val searchDatabaseSizeBefore = IterableUtil.sizeOf(<%= entityInstance %>SearchRepository.findAll()<%= callListBlock %>)
         <%_ } _%>
-        <%= persistInstance %>.<%= primaryKey.name %> = <%= getJavaValueGeneratorForType(primaryKey.type) %>
+        <%= persistInstance %>.<%= primaryKey.name %> = <%= primaryKey.javaValueGenerator %>
 
         <%_ if (dtoMapstruct) { _%>
         // Create the <%= entityClass %>
@@ -1228,7 +1236,7 @@ class <%= entityClass %>ResourceIT {
         <%_ if (searchEngineElasticsearch) { _%>
         val searchDatabaseSizeBefore = IterableUtil.sizeOf(<%= entityInstance %>SearchRepository.findAll()<%= callListBlock %>)
         <%_ } _%>
-        <%= persistInstance %>.<%= primaryKey.name %> = <%= getJavaValueGeneratorForType(primaryKey.type) %>
+        <%= persistInstance %>.<%= primaryKey.name %> = <%= primaryKey.javaValueGenerator %>
 
         <%_ if (dtoMapstruct) { _%>
         // Create the <%= entityClass %>
@@ -1238,12 +1246,12 @@ class <%= entityClass %>ResourceIT {
         // If url ID doesn't match entity ID, it will throw BadRequestAlertException
         <%_ if (!reactive) { _%>
         rest<%= entityClass %>MockMvc.perform(
-            put(ENTITY_API_URL_ID, <%= getJavaValueGeneratorForType(primaryKey.type) %>)<% if (authenticationUsesCsrf) { %>.with(csrf())<% }%>
+            put(ENTITY_API_URL_ID, <%= primaryKey.javaValueGenerator %>)<% if (authenticationUsesCsrf) { %>.with(csrf())<% }%>
                 .contentType(MediaType.APPLICATION_JSON)
                 .content(convertObjectToJsonBytes(<%= restInstance %>))
         ).andExpect(status().isBadRequest)
         <%_ } else { _%>
-        webTestClient.put().uri(ENTITY_API_URL_ID, <%= getJavaValueGeneratorForType(primaryKey.type) %>)
+        webTestClient.put().uri(ENTITY_API_URL_ID, <%= primaryKey.javaValueGenerator %>)
             .contentType(MediaType.APPLICATION_JSON)
             .bodyValue(convertObjectToJsonBytes(<%= restInstance %>))
             .exchange()
@@ -1269,7 +1277,7 @@ class <%= entityClass %>ResourceIT {
     <%_ if (searchEngineElasticsearch) { _%>
         val searchDatabaseSizeBefore = IterableUtil.sizeOf(<%= entityInstance %>SearchRepository.findAll()<%= callListBlock %>);
     <%_ } _%>
-        <%= persistInstance %>.<%= primaryKey.name %> = <%= getJavaValueGeneratorForType(primaryKey.type) %>
+        <%= persistInstance %>.<%= primaryKey.name %> = <%= primaryKey.javaValueGenerator %>
 
         <%_ if (dtoMapstruct) { _%>
         // Create the <%= entityClass %>
@@ -1321,7 +1329,7 @@ class <%= entityClass %>ResourceIT {
         <%_ } _%>
         <%= entityInstance %>Repository.<%= saveMethod %>(<%= persistInstance %>)<%= callBlock %>
         <% const fieldsToIncludeInPartialPatchTest = fieldsToTest.map(field => prepareFieldForPatchTest(field, () => faker.datatype.boolean())); %>
-        <%- include('/_global_partials_entity_/it_patch_update.partial.kt.ejs', {fields: fieldsToIncludeInPartialPatchTest, saveMethod, asEntity, callBlock, callListBlock, authenticationUsesCsrf}); -%>
+        <%- include('/_global_partials_entity_/it_patch_update.partial.kt.ejs', {fields: fieldsToIncludeInPartialPatchTest, saveMethod, callBlock, callListBlock, authenticationUsesCsrf}); -%>
     }
 
     @Test<%= transactionalAnnotation %>
@@ -1334,7 +1342,7 @@ class <%= entityClass %>ResourceIT {
         <%_ } _%>
         <%= entityInstance %>Repository.<%= saveMethod %>(<%= persistInstance %>)<%= callBlock %>
         <% const fieldsToIncludeInFullPatchTest = fieldsToTest.map(field => prepareFieldForPatchTest(field, () => true)); %>
-        <%- include('/_global_partials_entity_/it_patch_update.partial.kt.ejs', {fields: fieldsToIncludeInFullPatchTest, saveMethod, asEntity, callBlock, callListBlock, authenticationUsesCsrf}); -%>
+        <%- include('/_global_partials_entity_/it_patch_update.partial.kt.ejs', {fields: fieldsToIncludeInFullPatchTest, saveMethod, callBlock, callListBlock, authenticationUsesCsrf}); -%>
     }
 
     @Test<%= transactionalAnnotation %>
@@ -1344,24 +1352,24 @@ class <%= entityClass %>ResourceIT {
   <%_ if (searchEngineElasticsearch) { _%>
         val searchDatabaseSizeBefore = IterableUtil.sizeOf(<%= entityInstance %>SearchRepository.findAll()<%= callListBlock %>)
   <%_ } _%>
-        <%= asEntity(entityInstance) %>.<%= primaryKey.name %> = <%= getJavaValueGeneratorForType(primaryKey.type) %>
+        <%= persistInstance %>.<%= primaryKey.name %> = <%= primaryKey.javaValueGenerator %>
 
         <%_ if (dtoMapstruct) { _%>
         // Create the <%= entityClass %>
-        val <%= asDto(entityInstance) %> = <%= entityInstance %>Mapper.toDto(<%= asEntity(entityInstance) %>)
+        val <%= restInstance %> = <%= entityInstance %>Mapper.toDto(<%= persistInstance %>)
 
         <%_ } _%>
         // If the entity doesn't have an ID, it will throw BadRequestAlertException
         <%_ if (reactive) { _%>
-        webTestClient.patch().uri(ENTITY_API_URL_ID, <%= (dtoMapstruct ? asDto(entityInstance) : asEntity(entityInstance)) %>.<%= primaryKey.name %>)
+        webTestClient.patch().uri(ENTITY_API_URL_ID, <%= restInstance %>.<%= primaryKey.name %>)
             .contentType(MediaType.valueOf("application/merge-patch+json"))
-            .bodyValue(convertObjectToJsonBytes(<%= (dtoMapstruct ? asDto(entityInstance) : asEntity(entityInstance)) %>))
+            .bodyValue(convertObjectToJsonBytes(<%= restInstance %>))
             .exchange()
             .expectStatus().isBadRequest
         <%_ } else { _%>
-        rest<%= entityClass %>MockMvc.perform(patch(ENTITY_API_URL_ID, <%= (dtoMapstruct ? asDto(entityInstance) : asEntity(entityInstance)) %>.<%= primaryKey.name %>)<% if (authenticationUsesCsrf) { %>.with(csrf())<% }%>
+        rest<%= entityClass %>MockMvc.perform(patch(ENTITY_API_URL_ID, <%= restInstance %>.<%= primaryKey.name %>)<% if (authenticationUsesCsrf) { %>.with(csrf())<% }%>
             .contentType("application/merge-patch+json")
-            .content(convertObjectToJsonBytes(<%= (dtoMapstruct ? asDto(entityInstance) : asEntity(entityInstance)) %>)))
+            .content(convertObjectToJsonBytes(<%= restInstance %>)))
             .andExpect(status().isBadRequest)
         <%_ } _%>
 
@@ -1384,24 +1392,24 @@ class <%= entityClass %>ResourceIT {
   <%_ if (searchEngineElasticsearch) { _%>
         val searchDatabaseSizeBefore = IterableUtil.sizeOf(<%= entityInstance %>SearchRepository.findAll()<%= callListBlock %>)
   <%_ } _%>
-        <%= asEntity(entityInstance) %>.<%= primaryKey.name %> = <%= getJavaValueGeneratorForType(primaryKey.type) %>
+        <%= persistInstance %>.<%= primaryKey.name %> = <%= primaryKey.javaValueGenerator %>
 
         <%_ if (dtoMapstruct) { _%>
         // Create the <%= entityClass %>
-        val <%= asDto(entityInstance) %> = <%= entityInstance %>Mapper.toDto(<%= asEntity(entityInstance) %>)
+        val <%= restInstance %> = <%= entityInstance %>Mapper.toDto(<%= persistInstance %>)
 
         <%_ } _%>
         // If url ID doesn't match entity ID, it will throw BadRequestAlertException
         <%_ if (reactive) { _%>
-        webTestClient.patch().uri(ENTITY_API_URL_ID, <%= getJavaValueGeneratorForType(primaryKey.type) %>)
+        webTestClient.patch().uri(ENTITY_API_URL_ID, <%= primaryKey.javaValueGenerator %>)
             .contentType(MediaType.valueOf("application/merge-patch+json"))
-            .bodyValue(convertObjectToJsonBytes(<%= (dtoMapstruct ? asDto(entityInstance) : asEntity(entityInstance)) %>))
+            .bodyValue(convertObjectToJsonBytes(<%= restInstance %>))
             .exchange()
             .expectStatus().isBadRequest
         <%_ } else { _%>
-        rest<%= entityClass %>MockMvc.perform(patch(ENTITY_API_URL_ID, <%= getJavaValueGeneratorForType(primaryKey.type) %>)<% if (authenticationUsesCsrf) { %>.with(csrf())<% } %>
+        rest<%= entityClass %>MockMvc.perform(patch(ENTITY_API_URL_ID, <%= primaryKey.javaValueGenerator %>)<% if (authenticationUsesCsrf) { %>.with(csrf())<% } %>
             .contentType("application/merge-patch+json")
-            .content(convertObjectToJsonBytes(<%= (dtoMapstruct ? asDto(entityInstance) : asEntity(entityInstance)) %>)))
+            .content(convertObjectToJsonBytes(<%= restInstance %>)))
             .andExpect(status().isBadRequest)
         <%_ } _%>
 
@@ -1424,24 +1432,24 @@ class <%= entityClass %>ResourceIT {
     <%_ if (searchEngineElasticsearch) { _%>
         val searchDatabaseSizeBefore = IterableUtil.sizeOf(<%= entityInstance %>SearchRepository.findAll()<%= callListBlock %>);
     <%_ } _%>
-        <%= asEntity(entityInstance) %>.<%= primaryKey.name %> = <%= getJavaValueGeneratorForType(primaryKey.type) %>
+        <%= persistInstance %>.<%= primaryKey.name %> = <%= primaryKey.javaValueGenerator %>
 
         <%_ if (dtoMapstruct) { _%>
         // Create the <%= entityClass %>
-        val <%= asDto(entityInstance) %> = <%= entityInstance %>Mapper.toDto(<%= asEntity(entityInstance) %>)
+        val <%= restInstance %> = <%= entityInstance %>Mapper.toDto(<%= persistInstance %>)
 
         <%_ } _%>
         // If url ID doesn't match entity ID, it will throw BadRequestAlertException
         <%_ if (reactive) { _%>
         webTestClient.patch().uri(ENTITY_API_URL)
             .contentType(MediaType.valueOf("application/merge-patch+json"))
-            .bodyValue(convertObjectToJsonBytes(<%= (dtoMapstruct ? asDto(entityInstance) : asEntity(entityInstance)) %>))
+            .bodyValue(convertObjectToJsonBytes(<%= restInstance %>))
             .exchange()
             .expectStatus().isEqualTo(405)
         <%_ } else { _%>
         rest<%= entityClass %>MockMvc.perform(patch(ENTITY_API_URL)<% if (authenticationUsesCsrf) { %>.with(csrf())<% } %>
             .contentType("application/merge-patch+json")
-            .content(convertObjectToJsonBytes(<%= (dtoMapstruct ? asDto(entityInstance) : asEntity(entityInstance)) %>)))
+            .content(convertObjectToJsonBytes(<%= restInstance %>)))
             .andExpect(status().isMethodNotAllowed)
         <%_ } _%>
 
@@ -1735,13 +1743,17 @@ class <%= entityClass %>ResourceIT {
         <%_ if (searchEngine !== false) { _%>
         private val ENTITY_SEARCH_API_URL: String = "/api/_search/<%= entityApiUrl %>"
         <%_ } _%>
-    <%_ if (!embedded && primaryKey.hasLong) { _%>
+    <%_ if (!embedded) { _%>
 
+      <%_ if (primaryKey.hasLong && !readOnly && updatableEntity || primaryKey.hasInteger) { _%>
         private val random: Random = Random()
-        private val count: AtomicLong = AtomicLong(random.nextInt().toLong() + ( 2 * Integer.MAX_VALUE ))
+      <%_ } _%>
+      <%_ if (primaryKey.hasLong && !readOnly && updatableEntity) { _%>
+        private val longCount: AtomicLong = AtomicLong(random.nextInt().toLong() + ( 2 * Integer.MAX_VALUE ))
+      <%_ } else if (primaryKey.hasInteger) { _%>
+        private val intCount: AtomicInteger = AtomicInteger(random.nextInt() + ( 2 * Integer.MAX_VALUE ))
+      <%_ } _%>
     <%_ } _%>
-
-
 
         <%_ ['DEFAULT_', 'UPDATED_'].forEach((fieldStatus) => { _%>
 
@@ -1780,6 +1792,7 @@ class <%= entityClass %>ResourceIT {
             <%_
             const alreadyGeneratedEntities = []
             for (relationship of relationships) {
+                const { otherEntity } = relationship;
                 const relationshipValidate = relationship.relationshipValidate;
                 const otherEntityName = relationship.otherEntityName;
                 const otherEntityNameCapitalized = relationship.otherEntityNameCapitalized;
@@ -1800,17 +1813,17 @@ class <%= entityClass %>ResourceIT {
             <%= otherEntityName %>.<%= primaryKey.name %> = "fixed-id-for-tests"
                 <%_ } _%>
         <%_ } else { _%>
-            val <%= otherEntityName %>: <%= asEntity(otherEntityNameCapitalized) %>
+            val <%= otherEntityName %>: <%= otherEntity.persistClass %>
             <%_ if (databaseTypeSql && !reactive) { _%>
                 <%_ if (!isUsingMapsId || fieldStatus !== "UPDATED_") { _%>
-            if (findAll(em, <%= asEntity(otherEntityNameCapitalized) %>::class).isEmpty()) {
+            if (findAll(em, <%= otherEntity.persistClass %>::class).isEmpty()) {
                 <%_ } _%>
                 <%= otherEntityName %> = <%= createEntityPrefix %><%= otherEntityNameCapitalized %>ResourceIT.create<% if (fieldStatus === 'UPDATED_') { %>Updated<% } %>Entity(<% if (databaseTypeSql) { %>em<% } %>)<%= createEntityPostfix %>
                 em.persist(<%= otherEntityName %>)
                 em.flush()
                 <%_ if (!isUsingMapsId || fieldStatus !== "UPDATED_") { _%>
             } else {
-                <%= otherEntityName %> = findAll(em, <%= asEntity(otherEntityNameCapitalized) %>::class)[0]
+                <%= otherEntityName %> = findAll(em, <%= otherEntity.persistClass %>::class)[0]
             }
                 <%_ } _%>
             <%_ } else { _%>

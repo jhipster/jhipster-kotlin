@@ -57,34 +57,48 @@ export default class extends BaseApplicationGenerator {
                         // We don't want to handle spring-boot-v2 templates here
                         if (file.namespace === 'jhipster-kotlin:spring-boot-v2') return file;
                         const { resolvedSourceFile: javaResolvedSourceFile, namespace: ns } = file;
-                        let { sourceFile, destinationFile } = file;
+                        const { sourceFile, destinationFile } = file;
                         // Already resolved kotlin files
                         if (javaResolvedSourceFile && (javaResolvedSourceFile.endsWith('.kt') || javaResolvedSourceFile.includes('.kt.'))) {
                             return file;
                         }
 
-                        if (sourceFile.includes('.java')) {
-                            // Kotlint User template does not implements Persistable api. Ignore for now.
-                            if (application.user && destinationFile.endsWith('UserCallback.java')) {
-                                return undefined;
-                            }
-
-                            sourceFile = convertToKotlinFile(sourceFile);
-                            destinationFile = convertToKotlinFile(destinationFile);
+                        // Kotlint User template does not implements Persistable api. Ignore for now.
+                        if (application.user && destinationFile.endsWith('UserCallback.java')) {
+                            return undefined;
                         }
 
                         const prefix = ns === 'jhipster:spring-boot' ? '' : ns.split(':').pop();
-                        sourceFile = join(prefix, sourceFile);
-                        let resolvedSourceFile = this.templatePath(sourceFile);
-                        if (!existsSync(`${resolvedSourceFile}.ejs`)) {
-                            if (resolvedSourceFile.includes('.kt')) {
-                                // Ignore v8 file if it does not exist
-                                return undefined;
-                            }
-                            resolvedSourceFile = javaResolvedSourceFile;
+                        const kotlinSourceFile = join(prefix, convertToKotlinFile(sourceFile));
+                        const resolvedSourceFile = this.templatePath(kotlinSourceFile);
+
+                        if (!sourceFile.includes('.java')) {
+                            return existsSync(`${resolvedSourceFile}.ejs`) ? { ...file, resolvedSourceFile } : file;
                         }
 
-                        return { ...file, sourceFile, javaResolvedSourceFile, resolvedSourceFile, destinationFile };
+                        if (existsSync(`${resolvedSourceFile}.ejs`)) {
+                            return {
+                                ...file,
+                                sourceFile: kotlinSourceFile,
+                                resolvedSourceFile,
+                                javaResolvedSourceFile,
+                                destinationFile: convertToKotlinFile(destinationFile),
+                            };
+                        }
+
+                        if (resolvedSourceFile.includes('.kt')) {
+                            if (resolvedSourceFile.includes('src/test/')) {
+                                // Ignore test files that are not converted to kotlin
+                                return undefined;
+                            }
+                        }
+
+                        return {
+                            ...file,
+                            javaResolvedSourceFile,
+                            resolvedSourceFile: javaResolvedSourceFile,
+                            destinationFile: convertToKotlinFile(destinationFile, false),
+                        };
                     },
                 );
             },
