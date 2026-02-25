@@ -8,27 +8,15 @@
 
 `cd jhipster-kotlin`
 
-`npm install | yarn`
+`npm install`
 
-`npm link | yarn link`
+`npm link -g`
 
-( 🏁 Kudos, you just setup JHipster-Kotlin and linked to it locally )
-
-### Step 2 🤟 : before generating your application, go to your application folder
-
-`yarn link "generator-jhipster-kotlin"`
-
-or
-
-`npm link "generator-jhipster-kotlin"`
-
-( 🏁 Kudos, you have done it. It is the time to generate the application `khipster` )
-
-✨✨✨✨ You are rocking ✨✨✨✨
-
-Fix / Code / Document and create a pull request 💯
+( 🏁 Kudos, you just setup JHipster-Kotlin and created a global link to khipster executable )
 
 ## Generating samples
+
+Create a new folder and generate an application sample using any of the following alternatives.
 
 Default maven application:
 
@@ -45,7 +33,7 @@ khipster --build gradle --defaults --skip-install
 CI samples:
 
 ```
-khipster generate-sample --app-sample sample-name
+khipster generate-sample
 ```
 
 Tips:
@@ -54,7 +42,13 @@ Tips:
 
 ## Synchronizing generator-jhipster templates
 
-Run:
+KHipster templates are convertions of generator-jhipster templates to kotlin.
+Templates of both projects are written in [EJS](https://ejs.co/#docs).
+
+KHipster templates are placed inside spring-boot's [templates](https://github.com/jhipster/jhipster-kotlin/tree/main/generators/spring-boot/templates) folder with an hierarchy based on generator-jhipster generators.
+KHipster intercepts generator-jhipster writing tasks [replacing java templates with kotlin templates](https://github.com/jhipster/jhipster-kotlin/blob/fa0664034dda3d406dc0d11bff82d4ae1150e838/generators/spring-boot/generator.js#L52-L89).
+
+To make easier to synchronize templates we provide a synchronize dev-blueprint which will place every copy every required template:
 
 ```sh
 khipster synchronize
