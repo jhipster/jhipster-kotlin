@@ -135,6 +135,30 @@ export default class extends BaseApplicationGenerator {
             },
             addSpringIntegrationTest({ source }) {
                 source.addIntegrationTestAnnotation = () => undefined;
+                // generator-jhipster 9.x's spring-boot sub-generators (data-relational, data-couchbase,
+                // data-cassandra, data-neo4j, data-mongodb, data-elasticsearch, cache, oauth2, graalvm)
+                // call source.editJavaFile directly on hardcoded *.java paths to inject annotations/imports
+                // (e.g. IntegrationTest.java), bypassing addIntegrationTestAnnotation above. Those files are
+                // Kotlin here, and the Kotlin templates (see spring-boot/templates/src/test/kotlin/_package_/
+                // IntegrationTest.kt.ejs) already bake the equivalent annotations in statically, so no-op it.
+                source.editJavaFile = () => undefined;
+            },
+            // Overrides jhipster:spring-boot's own updateLanguages task (same name, same priority group,
+            // sbsBlueprint composition): the upstream version hardcodes a *.java path for MailServiceIT,
+            // which doesn't exist here (Kotlin blueprint generates MailServiceIT.kt, which has the same
+            // "jhipster-needle-i18n-language-constant" needle) and crashes the build. Point it at the .kt file.
+            updateLanguages({ application }) {
+                if (!application.enableTranslation || !application.generateUserManagement) return;
+                application.addLanguageCallbacks.push((_newLanguages, allLanguages) => {
+                    this.editFile(
+                        `${KOTLIN_TEST_SRC_DIR}${application.packageFolder}service/MailServiceIT.kt`,
+                        { ignoreNonExisting: this.ignoreNeedlesError },
+                        createNeedleCallback({
+                            contentToAdd: allLanguages.map(language => `"${language.languageTag}"`).join(',\n'),
+                            needle: 'jhipster-needle-i18n-language-constant',
+                        }),
+                    );
+                });
             },
             blockhound({ application, source }) {
                 source.addAllowBlockingCallsInside = ({ classPath, method }) => {
