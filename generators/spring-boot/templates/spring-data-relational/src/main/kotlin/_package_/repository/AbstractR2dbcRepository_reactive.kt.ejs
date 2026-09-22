@@ -1,0 +1,270 @@
+<%#
+ Copyright 2013-2026 the original author or authors from the JHipster project.
+
+ This file is part of the JHipster project, see https://www.jhipster.tech/
+ for more information.
+
+ Licensed under the Apache License, Version 2.0 (the "License")
+ you may not use this file except in compliance with the License.
+ You may obtain a copy of the License at
+
+      https://www.apache.org/licenses/LICENSE-2.0
+
+ Unless required by applicable law or agreed to in writing, software
+ distributed under the License is distributed on an "AS IS" BASIS,
+ WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
+ See the License for the specific language governing permissions and
+ limitations under the License.
+-%>
+package <%= packageName %>.repository
+
+import org.springframework.data.domain.Pageable
+import org.springframework.data.domain.Sort
+import org.springframework.data.r2dbc.convert.R2dbcConverter
+import org.springframework.data.r2dbc.core.R2dbcEntityTemplate
+import org.springframework.data.r2dbc.dialect.R2dbcDialect
+import org.springframework.data.r2dbc.repository.support.SimpleR2dbcRepository
+import org.springframework.data.relational.core.mapping.RelationalPersistentEntity
+import org.springframework.data.relational.core.query.Criteria
+import org.springframework.data.relational.core.query.Query
+import org.springframework.data.relational.repository.support.MappingRelationalEntityInformation
+import org.springframework.r2dbc.core.DatabaseClient
+
+import reactor.core.publisher.Flux
+import reactor.core.publisher.Mono
+
+/**
+ * Base class of the entity repository fragments. On top of [SimpleR2dbcRepository] it populates the eagerly
+ * loaded relationships after the entity query, references the other to-one relationships by id, maintains the
+ * many-to-many join tables, filters by [Criteria] and supports sorting by a related entity property, which
+ * Spring Data R2DBC queries do not support.
+ */
+@Suppress("UNCHECKED_CAST")
+abstract class AbstractR2dbcRepository<T : Any, ID : Any>(
+    private val entityType: Class<T>,
+    protected val template: R2dbcEntityTemplate,
+    converter: R2dbcConverter,
+    private val dialect: R2dbcDialect
+) : SimpleR2dbcRepository<T, ID>(
+    MappingRelationalEntityInformation(
+        converter.mappingContext.getRequiredPersistentEntity(entityType) as RelationalPersistentEntity<T>
+    ),
+    template,
+    converter
+) {
+
+    /**
+     * A many-to-many join table: the table name, the column referencing the entity, the column referencing the
+     * related entity and the function extracting the related ids from the entity.
+     */
+    class JoinTable<T>(val table: String, val entityColumn: String, val referenceColumn: String, val referenceIds: (T) -> Collection<*>)
+
+    protected val db: DatabaseClient = template.databaseClient
+
+    /**
+     * The many-to-many join tables maintained by [save] and [deleteById].
+     */
+    protected open fun joinTables(): List<JoinTable<T>> = listOf()
+
+    /**
+     * Populates the relationships of the entities, see [reference] and [populate].
+     */
+    protected open fun populateRelationships(entities: List<T>): Mono<List<T>> = Mono.just(entities)
+
+    /**
+     * SQL selecting the entity columns (alias `e`) joined with the related tables, used when sorting by a
+     * related entity property.
+     */
+    protected open fun selectWithRelationsSql(): String? = null
+
+    /**
+     * Maps the sort properties to the columns of [selectWithRelationsSql].
+     */
+    protected open fun sortColumns(): Map<String, String> = mapOf()
+
+    override fun findAll(): Flux<T> = populated(super.findAll())
+
+    override fun findById(id: ID): Mono<T> = populated(super.findById(id))
+
+    open fun findAllBy(pageable: Pageable): Flux<T> {
+        if (hasRelationshipSort(pageable.sort)) {
+            return findAllByRelationshipSort(pageable)
+        }
+        return populated(template.select(entityType).matching(Query.empty().with(pageable)).all())
+    }
+
+    open fun findOneWithEagerRelationships(id: ID): Mono<T> = findById(id)
+
+    open fun findAllWithEagerRelationships(): Flux<T> = findAll()
+
+    open fun findAllWithEagerRelationships(page: Pageable): Flux<T> = findAllBy(page)
+
+    protected fun findAllBy(criteria: Criteria, pageable: Pageable?): Flux<T> {
+        var query = Query.query(criteria)
+        if (pageable != null) {
+            if (hasRelationshipSort(pageable.sort)) {
+                throw IllegalArgumentException("Cannot sort by a related entity property when filtering by criteria")
+            }
+            query = query.with(pageable)
+        }
+        return populated(template.select(entityType).matching(query).all())
+    }
+
+    protected fun countBy(criteria: Criteria): Mono<Long> = template.count(Query.query(criteria), entityType)
+
+    override fun <S : T> save(entity: S): Mono<S> {
+        return super.save(entity).flatMap { saved ->
+            Flux.fromIterable(joinTables()).concatMap { joinTable -> updateJoinTable(joinTable, saved) }.then(Mono.just(saved))
+        }
+    }
+
+    override fun deleteById(id: ID): Mono<Void> {
+        return Flux.fromIterable(joinTables()).concatMap { joinTable -> deleteFromJoinTable(joinTable, id) }.then(super.deleteById(id))
+    }
+
+    /**
+     * References a to-one relationship of the entities by a related entity holding only its id, like a lazily loaded
+     * relationship.
+     * @param entities the entities to populate.
+     * @param referenceId extracts the related entity id from an entity.
+     * @param relatedFactory creates a related entity.
+     * @param relatedIdSetter sets the id on a related entity.
+     * @param setter sets the related entity on an entity.
+     */
+    protected fun <R, K : Any> reference(
+        entities: List<T>,
+        referenceId: (T) -> K?,
+        relatedFactory: () -> R,
+        relatedIdSetter: (R, K) -> Unit,
+        setter: (T, R) -> Unit
+    ) {
+        entities.forEach { entity ->
+            val id = referenceId(entity)
+            if (id != null) {
+                val related = relatedFactory()
+                relatedIdSetter(related, id)
+                setter(entity, related)
+            }
+        }
+    }
+
+    /**
+     * Populates a to-one relationship of the entities with a single query.
+     * @param entities the entities to populate.
+     * @param referenceId extracts the related entity id from an entity.
+     * @param relatedType the related entity type.
+     * @param relatedId extracts the id from a related entity.
+     * @param setter sets the related entity on an entity.
+     */
+    protected fun <R, K : Any> populate(
+        entities: List<T>,
+        referenceId: (T) -> K?,
+        relatedType: Class<R>,
+        relatedId: (R) -> K,
+        setter: (T, R?) -> Unit
+    ): Mono<List<T>> {
+        val ids = entities.mapNotNull(referenceId).distinct()
+        if (ids.isEmpty()) {
+            return Mono.just(entities)
+        }
+        val idProperty = mappingEntity(relatedType).requiredIdProperty.name
+        return template
+            .select(relatedType)
+            .matching(Query.query(Criteria.where(idProperty).`in`(ids)))
+            .all()
+            .collectMap(relatedId)
+            .map { related ->
+                entities.forEach { entity -> setter(entity, related[referenceId(entity)]) }
+                entities
+            }
+    }
+
+    /**
+     * Populates a many-to-many relationship of the entities with two queries: the join table rows of the entities and
+     * the related entities.
+     * @param entities the entities to populate.
+     * @param joinTable the join table of the relationship.
+     * @param relatedType the related entity type.
+     * @param relatedId extracts the id from a related entity.
+     * @param setter sets the related entities on an entity.
+     */
+    protected fun <R, K : Any> populate(
+        entities: List<T>,
+        joinTable: JoinTable<T>,
+        relatedType: Class<R>,
+        relatedId: (R) -> K,
+        setter: (T, Set<R>) -> Unit
+    ): Mono<List<T>> {
+        if (entities.isEmpty()) {
+            return Mono.just(entities)
+        }
+        val mappingEntity = mappingEntity(entityType)
+        val entityIdType = mappingEntity.requiredIdProperty.type
+        val entitiesById = LinkedHashMap<Any, T>()
+        entities.forEach { entity -> entitiesById[mappingEntity.getIdentifierAccessor(entity).requiredIdentifier] = entity }
+        val relatedEntity = mappingEntity(relatedType)
+        val relatedIdType = relatedEntity.requiredIdProperty.type as Class<K>
+        val relatedIdProperty = relatedEntity.requiredIdProperty.name
+        return db
+            .sql("SELECT " + joinTable.entityColumn + ", " + joinTable.referenceColumn + " FROM " + joinTable.table + " WHERE " + joinTable.entityColumn + " IN (:entityIds)")
+            .bind("entityIds", entitiesById.keys)
+            .map { row, _ -> (row.get(joinTable.entityColumn, entityIdType) as Any) to (row.get(joinTable.referenceColumn, relatedIdType) as K) }
+            .all()
+            .collectMultimap({ it.first }, { it.second })
+            .flatMap { references ->
+                val ids = references.values.flatten().toSet()
+                val related: Mono<Map<K, R>> = if (ids.isEmpty())
+                    Mono.just(emptyMap())
+                else
+                    template.select(relatedType).matching(Query.query(Criteria.where(relatedIdProperty).`in`(ids))).all().collectMap(relatedId)
+                related.map { relatedById ->
+                    entitiesById.forEach { (id, entity) ->
+                        setter(entity, references.getOrDefault(id, listOf()).mapNotNull { relatedById[it] }.toSet())
+                    }
+                    entities
+                }
+            }
+    }
+
+    private fun populated(entities: Flux<T>): Flux<T> =
+        entities.collectList().flatMap { populateRelationships(it) }.flatMapMany { Flux.fromIterable(it) }
+
+    private fun populated(entity: Mono<T>): Mono<T> =
+        entity.flatMap { found -> populateRelationships(listOf(found)).map { it.first() } }
+
+    private fun hasRelationshipSort(sort: Sort): Boolean = sort.any { it.property.contains(".") }
+
+    private fun findAllByRelationshipSort(pageable: Pageable): Flux<T> {
+        val sortColumns = sortColumns()
+        val orderBy = pageable.sort.joinToString(", ") { order ->
+            val column = sortColumns[order.property] ?: throw IllegalArgumentException("Cannot sort by '${order.property}'")
+            column + if (order.isAscending) " ASC" else " DESC"
+        }
+        var sql = "${selectWithRelationsSql()} ORDER BY $orderBy"
+        if (pageable.isPaged) {
+            sql += " " + dialect.limit().getLimitOffset(pageable.pageSize, pageable.offset)
+        }
+        return populated(db.sql(sql).map { row, metadata -> template.converter.read(entityType, row, metadata) }.all())
+    }
+
+    private fun updateJoinTable(joinTable: JoinTable<T>, entity: T): Mono<Void> {
+        val entityId = mappingEntity(entityType).getIdentifierAccessor(entity as Any).requiredIdentifier
+        return deleteFromJoinTable(joinTable, entityId).then(
+            Flux.fromIterable(joinTable.referenceIds(entity))
+                .concatMap { referenceId ->
+                    db
+                        .sql("INSERT INTO " + joinTable.table + " (" + joinTable.entityColumn + ", " + joinTable.referenceColumn + ") VALUES (:entityId, :referenceId)")
+                        .bind("entityId", entityId)
+                        .bind("referenceId", referenceId as Any)
+                        .then()
+                }
+                .then()
+        )
+    }
+
+    private fun deleteFromJoinTable(joinTable: JoinTable<T>, entityId: Any): Mono<Void> =
+        db.sql("DELETE FROM " + joinTable.table + " WHERE " + joinTable.entityColumn + " = :entityId").bind("entityId", entityId).then()
+
+    private fun mappingEntity(type: Class<*>): RelationalPersistentEntity<*> =
+        template.converter.mappingContext.getRequiredPersistentEntity(type)
+}
