@@ -18,29 +18,20 @@
 -%>
 package <%= packageName %>.config
 
-import org.hibernate.service.ServiceRegistry
-import org.infinispan.hibernate.cache.v53.InfinispanRegionFactory
-import org.infinispan.manager.EmbeddedCacheManager
-import org.springframework.stereotype.Component
+import org.springframework.beans.factory.annotation.Autowired
+import org.springframework.boot.info.BuildProperties
+import org.springframework.boot.info.GitProperties
+import org.springframework.cache.interceptor.KeyGenerator
+import org.springframework.context.annotation.Bean
+import org.springframework.context.annotation.Configuration
+import tech.jhipster.config.cache.PrefixedKeyGenerator
 
-import java.util.Properties
+@Configuration
+class CacheKeyGeneratorConfiguration(
+    @Autowired(required = false) val gitProperties: GitProperties?,
+    @Autowired(required = false) val buildProperties: BuildProperties?
+) {
 
-/**
- * Factory class for initializing Hibernate 2nd-level cache with Infinispan cache.
- *
- */
-@Component
-class CacheFactoryConfiguration: InfinispanRegionFactory {
-
-    constructor(cacheManager: EmbeddedCacheManager): super() {
-        this.cacheManager = cacheManager
-    }
-
-    override fun createCacheManager(properties: Properties?, serviceRegistry: ServiceRegistry?): EmbeddedCacheManager {
-        return cacheManager
-    }
-
-    companion object {
-        private const val serialVersionUID = 1L
-    }
+    @Bean
+    fun keyGenerator(): KeyGenerator = PrefixedKeyGenerator(gitProperties, buildProperties)
 }
