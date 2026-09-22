@@ -1,0 +1,61 @@
+<%#
+ Copyright 2013-2026 the original author or authors from the JHipster project.
+
+ This file is part of the JHipster project, see https://www.jhipster.tech/
+ for more information.
+
+ Licensed under the Apache License, Version 2.0 (the "License")
+ you may not use this file except in compliance with the License.
+ You may obtain a copy of the License at
+
+      https://www.apache.org/licenses/LICENSE-2.0
+
+ Unless required by applicable law or agreed to in writing, software
+ distributed under the License is distributed on an "AS IS" BASIS,
+ WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
+ See the License for the specific language governing permissions and
+ limitations under the License.
+-%>
+package <%= packageName %>.config
+
+import org.slf4j.LoggerFactory
+import org.springframework.boot.test.context.TestConfiguration
+import org.springframework.boot.testcontainers.service.connection.ServiceConnection
+import org.springframework.context.annotation.Bean
+<%_ if (reactive) { _%>
+import org.springframework.test.context.DynamicPropertyRegistrar
+<%_ } _%>
+import <%- testcontainerClassPackage %>.<%- testcontainerClass %>
+import org.testcontainers.containers.output.Slf4jLogConsumer
+
+<%_ const containerType = `${testcontainerClass}${useTestcontainersV1 ? '<*>' : ''}`; _%>
+@TestConfiguration(proxyBeanMethods = false)
+class DatabaseTestcontainer {
+
+    companion object {
+        private val DATABASE_CONTAINER: <%- containerType %> = <%- testcontainerClass %>("<%- testcontainerDockerImageName %>")
+            .withDatabaseName("<%- baseName %>")
+            <%- testcontainerClassInitialization %>
+            .withLogConsumer(Slf4jLogConsumer(LoggerFactory.getLogger(DatabaseTestcontainer::class.java)))
+            .withReuse(true)
+    }
+
+    @Bean
+    @ServiceConnection
+    fun databaseContainer(): <%- containerType %> = DATABASE_CONTAINER
+<%_ if (reactive) { _%>
+
+    @Bean
+    fun databaseProperties(databaseContainer: <%- containerType %>): DynamicPropertyRegistrar {
+        return DynamicPropertyRegistrar { registry ->
+  <%_ if (prodDatabaseExtraOptions) { _%>
+            registry.add("spring.liquibase.url") { databaseContainer.jdbcUrl + "<%- prodDatabaseExtraOptions %>" }
+  <%_ } else { _%>
+            registry.add("spring.liquibase.url", databaseContainer::getJdbcUrl)
+  <%_ } _%>
+            registry.add("spring.liquibase.user", databaseContainer::getUsername)
+            registry.add("spring.liquibase.password", databaseContainer::getPassword)
+        }
+    }
+<%_ } _%>
+}
