@@ -156,7 +156,6 @@ const command = {
             scope: 'generator',
         },
     },
-    options: {},
     import: ['app', 'workspaces'],
 };
 

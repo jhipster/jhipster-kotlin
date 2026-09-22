@@ -18,28 +18,11 @@ export default class extends BaseGenerator {
         super(args, opts, { ...features, jhipsterBootstrap: false });
     }
 
-    get [BaseGenerator.INITIALIZING]() {
-        return this.asInitializingTaskGroup({
-            async parseCommand() {
-                await this.parseCurrentJHipsterCommand();
-            },
-        });
-    }
-
-    get [BaseGenerator.PROMPTING]() {
-        return this.asPromptingTaskGroup({
-            async askForSample() {
-                await this.promptCurrentJHipsterCommand();
-            },
-        });
-    }
-
-    get [BaseGenerator.CONFIGURING]() {
-        return this.asConfiguringTaskGroup({
-            async configureCommand() {
-                await this.configureCurrentJHipsterCommandConfig();
-            },
-        });
+    beforeQueue() {
+        // 9.x removed the public parseCurrentJHipsterCommand()/promptCurrentJHipsterCommand()/
+        // configureCurrentJHipsterCommandConfig() methods; command parsing/prompting/configuring
+        // is now queued automatically via this (still accessible) helper instead.
+        this._queueCurrentJHipsterCommandTasks();
     }
 
     get [BaseGenerator.LOADING]() {

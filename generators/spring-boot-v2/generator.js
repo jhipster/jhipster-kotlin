@@ -20,7 +20,7 @@ const normalizeJhipster7Template = template => {
     if (typeof template !== 'object' || template.noEjs === undefined) {
         return template;
     }
-    const { noEjs, method, ...rest } = template;
+    const { noEjs, method: _method, ...rest } = template;
     return { ...rest, transform: !noEjs };
 };
 const normalizeJhipster7Sections = sections =>

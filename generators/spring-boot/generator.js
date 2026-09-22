@@ -2,8 +2,8 @@ import { existsSync } from 'fs';
 import { join } from 'path';
 
 // Use spring-boot as parent due to this context in generators
-import { createNeedleCallback } from 'generator-jhipster/generators/base-core/support';
 import BaseApplicationGenerator from 'generator-jhipster/generators/base-application';
+import { createNeedleCallback } from 'generator-jhipster/generators/base-core/support';
 
 import { convertToKotlinFile } from '../kotlin/support/files.js';
 
