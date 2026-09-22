@@ -21,13 +21,17 @@ matrix = extendFilteredMatrix(matrix, config => config.applicationType === 'micr
 describe('Matrix test of SubGenerator kotlin of kotlin JHipster blueprint', () => {
     Object.entries(matrix).forEach(([name, config], _idx) => {
         // if (_idx !== 0) return;
+        // generator-jhipster 9.x's own matrix builder produces the real 'spring-websocket' string
+        // value directly (not a `true` placeholder), and its own validation now rejects websocket
+        // support on gateway/microservice applications outright.
         if (
-            isMatch(config, { websocket: true, applicationType: 'gateway' }) ||
-            isMatch(config, { websocket: true, applicationType: 'microservice' })
+            config.websocket &&
+            config.websocket !== 'no' &&
+            (config.applicationType === 'gateway' || config.applicationType === 'microservice')
         ) {
             config.websocket = false;
         }
-        if (isMatch(config, { websocket: true })) {
+        if (config.websocket === true) {
             config.websocket = 'spring-websocket';
         }
         if (isMatch(config, { skipUserManagement: false, applicationType: 'microservice' })) {
@@ -50,6 +54,9 @@ describe('Matrix test of SubGenerator kotlin of kotlin JHipster blueprint', () =
                         ignoreNeedlesError: true,
                         blueprints: 'kotlin',
                         skipKtlintFormat: true,
+                        // Imperative (non-reactive) gateways use Spring Cloud Gateway MVC, which
+                        // generator-jhipster 9.x flags as experimental and refuses without this.
+                        experimental: true,
                     })
                     .withJHipsterGenerators()
                     .withLookups({ packagePaths: [process.cwd()], lookups: ['generators', 'generators/*/generators'] })
