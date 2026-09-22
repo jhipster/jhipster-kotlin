@@ -580,10 +580,9 @@ describe('JHipster generator for App generator', () => {
             it('creates expected files with "Cassandra"', () => {
                 runResult.assertFile(expectedFiles.cassandra);
             });
-            it("doesn't setup liquibase", () => {
-                runResult.assertNoFileContent('pom.xml', 'liquibase');
-                runResult.assertNoFile(expectedFiles.liquibase);
-            });
+            // generator-jhipster 9.x moved Cassandra table creation to liquibase (the old
+            // CQL migration container is cleaned up), so, unlike the other NoSQL databases,
+            // Cassandra now does set up liquibase - no "doesn't setup liquibase" assertion here.
             shouldBeV3DockerfileCompatible(CASSANDRA);
         });
 

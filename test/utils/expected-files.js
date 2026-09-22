@@ -267,19 +267,15 @@ const expectedFiles = {
     ],
 
     mysql: [
-        `${SERVER_TEST_SRC_DIR}com/mycompany/myapp/config/SqlTestContainer.kt`,
-        `${SERVER_TEST_SRC_DIR}com/mycompany/myapp/config/EmbeddedSQL.kt`,
+        `${SERVER_TEST_SRC_DIR}com/mycompany/myapp/config/DatabaseTestcontainer.kt`,
         `${SERVER_TEST_RES_DIR}testcontainers.properties`,
-        `${SERVER_TEST_RES_DIR}META-INF/spring.factories`,
         `${SERVER_MAIN_SRC_DIR}com/mycompany/myapp/config/LiquibaseConfiguration.kt`,
         `${DOCKER_DIR}mysql.yml`,
     ],
 
     mariadb: [
-        `${SERVER_TEST_SRC_DIR}com/mycompany/myapp/config/SqlTestContainer.kt`,
-        `${SERVER_TEST_SRC_DIR}com/mycompany/myapp/config/EmbeddedSQL.kt`,
+        `${SERVER_TEST_SRC_DIR}com/mycompany/myapp/config/DatabaseTestcontainer.kt`,
         `${SERVER_TEST_RES_DIR}testcontainers.properties`,
-        `${SERVER_TEST_RES_DIR}META-INF/spring.factories`,
         `${SERVER_MAIN_SRC_DIR}com/mycompany/myapp/config/LiquibaseConfiguration.kt`,
         `${DOCKER_DIR}mariadb.yml`,
         `${SERVER_TEST_RES_DIR}config/application-testdev.yml`,
@@ -288,19 +284,15 @@ const expectedFiles = {
     ],
 
     mssql: [
-        `${SERVER_TEST_SRC_DIR}com/mycompany/myapp/config/SqlTestContainer.kt`,
-        `${SERVER_TEST_SRC_DIR}com/mycompany/myapp/config/EmbeddedSQL.kt`,
+        `${SERVER_TEST_SRC_DIR}com/mycompany/myapp/config/DatabaseTestcontainer.kt`,
         `${SERVER_TEST_RES_DIR}testcontainers.properties`,
-        `${SERVER_TEST_RES_DIR}META-INF/spring.factories`,
         `${SERVER_MAIN_SRC_DIR}com/mycompany/myapp/config/LiquibaseConfiguration.kt`,
         `${DOCKER_DIR}mssql.yml`,
     ],
 
     postgresql: [
-        `${SERVER_TEST_SRC_DIR}com/mycompany/myapp/config/SqlTestContainer.kt`,
-        `${SERVER_TEST_SRC_DIR}com/mycompany/myapp/config/EmbeddedSQL.kt`,
+        `${SERVER_TEST_SRC_DIR}com/mycompany/myapp/config/DatabaseTestcontainer.kt`,
         `${SERVER_TEST_RES_DIR}testcontainers.properties`,
-        `${SERVER_TEST_RES_DIR}META-INF/spring.factories`,
         `${SERVER_MAIN_SRC_DIR}com/mycompany/myapp/config/LiquibaseConfiguration.kt`,
         `${DOCKER_DIR}postgresql.yml`,
         `${SERVER_TEST_RES_DIR}config/application-testdev.yml`,
@@ -342,7 +334,6 @@ const expectedFiles = {
     neo4j: [
         `${SERVER_TEST_SRC_DIR}com/mycompany/myapp/config/Neo4jTestContainer.kt`,
         `${SERVER_TEST_RES_DIR}testcontainers.properties`,
-        `${SERVER_TEST_RES_DIR}META-INF/spring.factories`,
         `${SERVER_MAIN_RES_DIR}config/neo4j/migrations/user__admin.json`,
         `${SERVER_MAIN_RES_DIR}config/neo4j/migrations/user__user.json`,
         `${DOCKER_DIR}neo4j.yml`,
@@ -358,11 +349,7 @@ const expectedFiles = {
         `${SERVER_MAIN_RES_DIR}config/cql/changelog/00000000000001_insert_default_users.cql`,
         `${SERVER_TEST_SRC_DIR}com/mycompany/myapp/config/CassandraTestContainer.kt`,
         `${SERVER_TEST_SRC_DIR}com/mycompany/myapp/CassandraKeyspaceIT.kt`,
-        `${DOCKER_DIR}cassandra/Cassandra-Migration.Dockerfile`,
-        `${DOCKER_DIR}cassandra/scripts/autoMigrate.sh`,
-        `${DOCKER_DIR}cassandra/scripts/execute-cql.sh`,
         `${DOCKER_DIR}cassandra-cluster.yml`,
-        `${DOCKER_DIR}cassandra-migration.yml`,
         `${DOCKER_DIR}cassandra.yml`,
         `${SERVER_TEST_RES_DIR}testcontainers.properties`,
     ],
