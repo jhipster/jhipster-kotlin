@@ -18,47 +18,52 @@
 -%>
 package <%= packageName %>.config
 
-import org.springframework.beans.factory.DisposableBean
-import org.springframework.beans.factory.InitializingBean
-import org.slf4j.Logger
 import org.slf4j.LoggerFactory
-import org.testcontainers.couchbase.*
+import org.springframework.boot.test.context.TestConfiguration
+import org.springframework.boot.testcontainers.service.connection.ServiceConnection
+import org.springframework.context.annotation.Bean
+import org.springframework.test.context.DynamicPropertyRegistrar
 import org.testcontainers.containers.output.Slf4jLogConsumer
-import org.testcontainers.utility.DockerImageName
+import org.testcontainers.couchbase.BucketDefinition
+import org.testcontainers.couchbase.CouchbaseContainer
+<%_ if (searchEngineCouchbase) { _%>
+import org.testcontainers.couchbase.CouchbaseService
+<%_ } _%>
 
-import java.time.Duration
-
-class CouchbaseTestContainer : InitializingBean, DisposableBean {
-    private val log = LoggerFactory.getLogger(javaClass)
+@TestConfiguration(proxyBeanMethods = false)
+class CouchbaseTestContainer {
 
     companion object {
-        private var couchbaseContainer: CouchbaseContainer? = null
+        const val BUCKET_NAME = "testBucket"
+<%_ if (searchEngineCouchbase) { _%>
+
+        /**
+         * Memory quota, in MB, for the search service.
+         *
+         * Testcontainers defaults every service to its minimum quota (256 MB for search), which is not enough to
+         * host one full-text index per entity: the search service throttles indexing as soon as it goes over the
+         * quota, mutations are never indexed and searches keep returning no result.
+         */
+        private const val SEARCH_QUOTA_MB = 1024
+<%_ } _%>
+
+        private val COUCHBASE_CONTAINER: CouchbaseContainer = CouchbaseContainer("<%= dockerContainers.couchbase %>")
+            .withBucket(BucketDefinition(BUCKET_NAME))
+<%_ if (searchEngineCouchbase) { _%>
+            .withServiceQuota(CouchbaseService.SEARCH, SEARCH_QUOTA_MB)
+<%_ } _%>
+            .withLogConsumer(Slf4jLogConsumer(LoggerFactory.getLogger(CouchbaseTestContainer::class.java)))
     }
 
-    override fun destroy() {
-//        if (null != couchbaseContainer && couchbaseContainer?.isRunning == true) {
-//            couchbaseContainer.stop()
-//        }
-    }
+    @Bean
+    @ServiceConnection
+    fun couchbaseContainer(): CouchbaseContainer = COUCHBASE_CONTAINER
 
-    val bucketName: String
-        get() = "testBucket"
-
-    override fun afterPropertiesSet() {
-        if (null == couchbaseContainer) {
-            val dockerImage = DockerImageName.parse("<%= dockerContainers.couchbase %>")
-                .asCompatibleSubstituteFor("couchbase/server")
-            couchbaseContainer = CouchbaseContainer(dockerImage)
-                .withBucket(BucketDefinition(bucketName))
-                .withServiceQuota(CouchbaseService.SEARCH, 1024)
-                .withLogConsumer(Slf4jLogConsumer(log))
-                .withStartupTimeout(Duration.ofMinutes(15))
-                .withReuse(true)
+    @Bean
+    fun couchbaseProperties(couchbaseContainer: CouchbaseContainer): DynamicPropertyRegistrar {
+        return DynamicPropertyRegistrar { registry ->
+            registry.add("jhipster.database.couchbase.bucket-name") { BUCKET_NAME }
+            registry.add("jhipster.database.couchbase.scope-name") { "testScope" }
         }
-        if (couchbaseContainer?.isRunning != true) {
-            couchbaseContainer?.start()
-        }
     }
-
-    fun getCouchbaseContainer() = couchbaseContainer
 }
