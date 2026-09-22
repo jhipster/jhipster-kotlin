@@ -1,0 +1,202 @@
+<%#
+ Copyright 2013-2026 the original author or authors from the JHipster project.
+
+ This file is part of the JHipster project, see https://www.jhipster.tech/
+ for more information.
+
+ Licensed under the Apache License, Version 2.0 (the "License");
+ you may not use this file except in compliance with the License.
+ You may obtain a copy of the License at
+
+      https://www.apache.org/licenses/LICENSE-2.0
+
+ Unless required by applicable law or agreed to in writing, software
+ distributed under the License is distributed on an "AS IS" BASIS,
+ WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
+ See the License for the specific language governing permissions and
+ limitations under the License.
+-%>
+package <%- packageName %>.aop.logging
+
+import ch.qos.logback.classic.Level
+import ch.qos.logback.classic.Logger
+import ch.qos.logback.classic.spi.ILoggingEvent
+import ch.qos.logback.core.read.ListAppender
+import org.aspectj.lang.ProceedingJoinPoint
+import org.aspectj.lang.Signature
+import org.assertj.core.api.Assertions.assertThat
+import org.assertj.core.api.Assertions.assertThatThrownBy
+import org.junit.jupiter.api.AfterEach
+import org.junit.jupiter.api.BeforeEach
+import org.junit.jupiter.api.Test
+import org.mockito.ArgumentMatchers.any
+import org.mockito.Mockito.mock
+import org.mockito.Mockito.`when`
+import org.slf4j.LoggerFactory
+import org.springframework.core.env.Environment
+import org.springframework.core.env.Profiles
+<%_ if (reactive) { _%>
+import reactor.core.publisher.Flux
+import reactor.core.publisher.Mono
+<%_ } _%>
+
+class LoggingAspectTest {
+
+    private val env = mock(Environment::class.java)
+    private val joinPoint = mock(ProceedingJoinPoint::class.java)
+    private val appender = ListAppender<ILoggingEvent>()
+    private lateinit var aspect: LoggingAspect
+    private lateinit var logger: Logger
+
+    @BeforeEach
+    fun setup() {
+        val signature = mock(Signature::class.java)
+        `when`(signature.declaringTypeName).thenReturn(DECLARING_TYPE)
+        `when`(signature.name).thenReturn(METHOD)
+        `when`(joinPoint.signature).thenReturn(signature)
+        `when`(joinPoint.args).thenReturn(arrayOf("arg"))
+        `when`(env.acceptsProfiles(any(Profiles::class.java))).thenReturn(true)
+
+        logger = LoggerFactory.getLogger(DECLARING_TYPE) as Logger
+        logger.level = Level.DEBUG
+        appender.start()
+        logger.addAppender(appender)
+
+        aspect = LoggingAspect(env)
+    }
+
+    @AfterEach
+    fun teardown() {
+        logger.detachAppender(appender)
+        logger.level = null
+    }
+
+    private fun messages(): List<String> =
+        appender.list.map { it.formattedMessage }
+
+    @Test
+    @Throws(Throwable::class)
+    fun logAroundLogsEnterAndExit() {
+        `when`(joinPoint.proceed()).thenReturn("result")
+
+        val result = aspect.logAround(joinPoint)
+
+        assertThat(result).isEqualTo("result")
+        assertThat(messages()).containsExactly("Enter: loggedMethod() with argument[s] = [arg]", "Exit: loggedMethod() with result = result")
+    }
+
+    @Test
+    @Throws(Throwable::class)
+    fun logAroundRethrowsIllegalArgumentException() {
+        `when`(joinPoint.proceed()).thenThrow(IllegalArgumentException("invalid"))
+
+        assertThatThrownBy { aspect.logAround(joinPoint) }
+            .isInstanceOf(IllegalArgumentException::class.java)
+            .hasMessage("invalid")
+
+        assertThat(messages()).contains("Illegal argument: [arg] in loggedMethod()")
+    }
+<%_ if (reactive) { _%>
+
+    @Test
+    @Throws(Throwable::class)
+    fun logAroundRethrowsAndLogsExceptions() {
+        `when`(joinPoint.proceed()).thenThrow(IllegalStateException("failed"))
+
+        assertThatThrownBy { aspect.logAround(joinPoint) }
+            .isInstanceOf(IllegalStateException::class.java)
+            .hasMessage("failed")
+
+        assertThat(messages()).contains("Exception in loggedMethod() with cause = 'NULL' and exception = 'failed'")
+    }
+
+    @Test
+    @Throws(Throwable::class)
+    fun logAroundLogsMonoResultWhenItCompletes() {
+        `when`(joinPoint.proceed()).thenReturn(Mono.just("result"))
+
+        val result = aspect.logAround(joinPoint)
+
+        assertThat(result).isInstanceOf(Mono::class.java)
+        assertThat(messages()).containsExactly("Enter: loggedMethod() with argument[s] = [arg]")
+
+        assertThat((result as Mono<*>).block()).isEqualTo("result")
+        assertThat(messages()).containsExactly("Enter: loggedMethod() with argument[s] = [arg]", "Exit: loggedMethod() with result = result")
+    }
+
+    @Test
+    @Throws(Throwable::class)
+    fun logAroundLogsFluxCompletion() {
+        `when`(joinPoint.proceed()).thenReturn(Flux.just("first", "second"))
+
+        val result = aspect.logAround(joinPoint)
+
+        assertThat(result).isInstanceOf(Flux::class.java)
+        assertThat((result as Flux<*>).cast(String::class.java).collectList().block()).containsExactly("first", "second")
+        assertThat(messages()).containsExactly("Enter: loggedMethod() with argument[s] = [arg]", "Exit: loggedMethod() with result = completed")
+    }
+
+    @Test
+    @Throws(Throwable::class)
+    fun logAroundLogsMonoErrors() {
+        `when`(joinPoint.proceed()).thenReturn(Mono.error(IllegalStateException("failed")))
+
+        val result = aspect.logAround(joinPoint)
+
+        assertThatThrownBy { (result as Mono<*>).block() }
+            .isInstanceOf(IllegalStateException::class.java)
+            .hasMessage("failed")
+        assertThat(messages()).contains("Exception in loggedMethod() with cause = 'NULL' and exception = 'failed'")
+    }
+
+    @Test
+    @Throws(Throwable::class)
+    fun logAroundLogsMonoIllegalArgumentErrors() {
+        `when`(joinPoint.proceed()).thenReturn(Mono.error(IllegalArgumentException("invalid")))
+
+        val result = aspect.logAround(joinPoint)
+
+        assertThatThrownBy { (result as Mono<*>).block() }
+            .isInstanceOf(IllegalArgumentException::class.java)
+        assertThat(messages()).contains("Illegal argument: [arg] in loggedMethod()")
+    }
+
+    @Test
+    @Throws(Throwable::class)
+    fun logAroundLogsExceptionsWithoutStackTraceOutsideDevProfile() {
+        `when`(env.acceptsProfiles(any(Profiles::class.java))).thenReturn(false)
+        `when`(joinPoint.proceed()).thenReturn(Mono.error(IllegalStateException("failed", RuntimeException("root"))))
+
+        val result = aspect.logAround(joinPoint)
+
+        assertThatThrownBy { (result as Mono<*>).block() }
+            .isInstanceOf(IllegalStateException::class.java)
+        assertThat(messages()).contains("Exception in loggedMethod() with cause = java.lang.RuntimeException: root")
+        assertThat(appender.list).allSatisfy { event -> assertThat(event.throwableProxy).isNull() }
+    }
+<%_ } else { _%>
+
+    @Test
+    fun logAfterThrowingLogsExceptionWithStackTraceInDevProfile() {
+        aspect.logAfterThrowing(joinPoint, IllegalStateException("failed"))
+
+        assertThat(messages()).containsExactly("Exception in loggedMethod() with cause = 'NULL' and exception = 'failed'")
+        assertThat(appender.list.first().throwableProxy).isNotNull()
+    }
+
+    @Test
+    fun logAfterThrowingLogsCauseOnlyOutsideDevProfile() {
+        `when`(env.acceptsProfiles(any(Profiles::class.java))).thenReturn(false)
+
+        aspect.logAfterThrowing(joinPoint, IllegalStateException("failed", RuntimeException("root")))
+
+        assertThat(messages()).containsExactly("Exception in loggedMethod() with cause = java.lang.RuntimeException: root")
+        assertThat(appender.list.first().throwableProxy).isNull()
+    }
+<%_ } _%>
+
+    companion object {
+        private const val DECLARING_TYPE = "<%- packageName %>.service.LoggedService"
+        private const val METHOD = "loggedMethod"
+    }
+}

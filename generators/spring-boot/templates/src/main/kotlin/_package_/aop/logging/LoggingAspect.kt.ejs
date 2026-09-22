@@ -22,13 +22,20 @@ import tech.jhipster.config.JHipsterConstants
 
 import org.aspectj.lang.JoinPoint
 import org.aspectj.lang.ProceedingJoinPoint
+<%_ if (!reactive) { _%>
 import org.aspectj.lang.annotation.AfterThrowing
+<%_ } _%>
 import org.aspectj.lang.annotation.Around
 import org.aspectj.lang.annotation.Aspect
 import org.aspectj.lang.annotation.Pointcut
+import org.slf4j.Logger
 import org.slf4j.LoggerFactory
 import org.springframework.core.env.Environment
 import org.springframework.core.env.Profiles
+<%_ if (reactive) { _%>
+import reactor.core.publisher.Flux
+import reactor.core.publisher.Mono
+<%_ } _%>
 
 /**
  * Aspect for logging execution of service and repository Spring components.
@@ -62,13 +69,14 @@ open class LoggingAspect(private val env: Environment) {
         Unit // Method is empty as this is just a Pointcut, the implementations are in the advices.
 
     /**
-    * Retrieves the {@link Logger} associated to the given {@link JoinPoint}.
-    *
-    * @param joinPoint join point we want the logger for.
-    * @return {@link Logger} associated to the given {@link JoinPoint}.
-    */
-    private fun logger(joinPoint: JoinPoint) = LoggerFactory.getLogger(joinPoint.signature.declaringTypeName)
+     * Retrieves the [Logger] associated to the given [JoinPoint].
+     *
+     * @param joinPoint join point we want the logger for.
+     * @return [Logger] associated to the given [JoinPoint].
+     */
+    private fun logger(joinPoint: JoinPoint): Logger = LoggerFactory.getLogger(joinPoint.signature.declaringTypeName)
 
+<%_ if (!reactive) { _%>
     /**
      * Advice that logs methods throwing exceptions.
      *
@@ -77,50 +85,95 @@ open class LoggingAspect(private val env: Environment) {
      */
     @AfterThrowing(pointcut = "applicationPackagePointcut() && springBeanPointcut()", throwing = "e")
     fun logAfterThrowing(joinPoint: JoinPoint, e: Throwable) {
-        if (env.acceptsProfiles(Profiles.of(JHipsterConstants.SPRING_PROFILE_DEVELOPMENT))) {
-            logger(joinPoint).error(
-                "Exception in {}() with cause = {} and exception = {}",
-                joinPoint.signature.name,
-                if (e.cause != null) e.cause else "NULL",
-                e.message, e
-            )
-        } else {
-            logger(joinPoint).error(
-                "Exception in {}() with cause = {}", joinPoint.signature.name,
-                if (e.cause != null) e.cause else "NULL"
-            )
-        }
+        logException(joinPoint, e)
     }
 
+<%_ } _%>
     /**
-     * Advice that logs when a method is entered and exited.
+     * Advice that logs when a method is entered and exited<%- reactive ? ', and methods throwing exceptions' : '' %>.
+<%_ if (reactive) { _%>
+     *
+     * For reactive return types, the exit or the error is logged when the returned publisher terminates.
+     * Errors are handled here instead of an after throwing advice, which cannot access its join point when the
+     * method is invoked lazily by the reactive transaction interceptor, outside the AOP invocation frame.
+<%_ } _%>
      *
      * @param joinPoint join point for advice.
      * @return result.
-     * @throws Throwable throws [IllegalArgumentException].
+     * @throws Throwable rethrows the exception thrown by the advised method.
      */
     @Around(value = "applicationPackagePointcut() && springBeanPointcut()")
     fun logAround(joinPoint: ProceedingJoinPoint): Any? {
         val log = logger(joinPoint)
         if (log.isDebugEnabled) {
-            log.debug(
-                "Enter: ${joinPoint.signature.name}() with argument[s] = ${joinPoint.args.joinToString()}"
-            )
+            log.debug("Enter: {}() with argument[s] = {}", joinPoint.signature.name, joinPoint.args.contentToString())
         }
         try {
             val result = joinPoint.proceed()
-            if (log.isDebugEnabled) {
-                log.debug(
-                    "Exit: ${joinPoint.signature.name}() with result = $result"
-                )
+<%_ if (reactive) { _%>
+            if (result is Mono<*>) {
+                return result
+                    .doOnSuccess { value -> logExit(log, joinPoint, value) }
+                    .doOnError { e -> logError(log, joinPoint, e) }
             }
+            if (result is Flux<*>) {
+                return result
+                    .doOnComplete { logExit(log, joinPoint, "completed") }
+                    .doOnError { e -> logError(log, joinPoint, e) }
+            }
+<%_ } _%>
+            logExit(log, joinPoint, result)
             return result
-        } catch (e: IllegalArgumentException) {
-            log.error(
-                "Illegal argument: ${joinPoint.args.joinToString()} in ${joinPoint.signature.name}()"
-            )
-
+<%_ if (reactive) { _%>
+        } catch (e: Throwable) {
+            logError(log, joinPoint, e)
             throw e
+        }
+<%_ } else { _%>
+        } catch (e: IllegalArgumentException) {
+            logIllegalArgument(log, joinPoint)
+            throw e
+        }
+<%_ } _%>
+    }
+
+    private fun logExit(log: Logger, joinPoint: JoinPoint, result: Any?) {
+        if (log.isDebugEnabled) {
+            log.debug("Exit: {}() with result = {}", joinPoint.signature.name, result)
+        }
+    }
+<%_ if (reactive) { _%>
+
+    private fun logError(log: Logger, joinPoint: JoinPoint, e: Throwable) {
+        if (e is IllegalArgumentException) {
+            logIllegalArgument(log, joinPoint)
+        } else {
+            logException(joinPoint, e)
+        }
+    }
+<%_ } _%>
+
+    private fun logIllegalArgument(log: Logger, joinPoint: JoinPoint) {
+        if (log.isErrorEnabled) {
+            log.error("Illegal argument: {} in {}()", joinPoint.args.contentToString(), joinPoint.signature.name)
+        }
+    }
+
+    private fun logException(joinPoint: JoinPoint, e: Throwable) {
+        if (env.acceptsProfiles(Profiles.of(JHipsterConstants.SPRING_PROFILE_DEVELOPMENT))) {
+            logger(joinPoint).error(
+                "Exception in {}() with cause = '{}' and exception = '{}'",
+                joinPoint.signature.name,
+                if (e.cause != null) e.cause else "NULL",
+                e.message,
+                e
+            )
+        } else {
+            logger(joinPoint).error(
+                "Exception in {}() with cause = {}",
+                joinPoint.signature.name,
+                if (e.cause != null) e.cause.toString() else "NULL"
+            )
         }
     }
 }
