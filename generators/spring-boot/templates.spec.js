@@ -1,9 +1,10 @@
+import { describe, expect, it } from 'vitest';
+import { existsSync } from 'fs';
 import { readdir } from 'fs/promises';
 import { dirname, join, relative } from 'path';
 import { fileURLToPath } from 'url';
-import { existsSync } from 'fs';
+
 import { globby } from 'globby';
-import { describe, expect, it } from 'vitest';
 
 const __dirname = dirname(fileURLToPath(import.meta.url));
 // const jhipster7TemplatesPackage = dirname(fileURLToPath(import.meta.resolve('jhipster-7-templates/package.json')));

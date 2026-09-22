@@ -4,11 +4,11 @@ import { platform } from 'node:os';
 import { join } from 'node:path';
 import { pipeline } from 'node:stream/promises';
 
+import { createConflicterTransform, createYoResolveTransform } from '@yeoman/conflicter';
+import axios from 'axios';
 import BaseApplicationGenerator from 'generator-jhipster/generators/base-application';
 import { autoCrlfTransform } from 'generator-jhipster/generators/bootstrap/support';
-import axios from 'axios';
 import { createCommitTransform } from 'mem-fs-editor/transform';
-import { createConflicterTransform, createYoResolveTransform } from '@yeoman/conflicter';
 
 import { createKtlintTransform, filterKtlintTransformFiles } from './internal/ktlint-transform.js';
 

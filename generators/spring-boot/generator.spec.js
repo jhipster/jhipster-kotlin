@@ -1,6 +1,7 @@
 import { beforeAll, describe, expect, it } from 'vitest';
 
-import { entitiesServerSamples, defaultHelpers as helpers, result } from 'generator-jhipster/testing';
+import { defaultHelpers as helpers, entitiesServerSamples, result } from 'generator-jhipster/testing';
+
 import { entityWithBagRelationship, entityWithCriteriaAndDto, entityWithEnum } from '../../test/entities.js';
 
 describe('SubGenerator kotlin of kotlin JHipster blueprint', () => {

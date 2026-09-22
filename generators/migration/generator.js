@@ -1,6 +1,7 @@
 import { basename } from 'node:path';
-import BaseApplicationGenerator from 'generator-jhipster/generators/base-application';
+
 import { passthrough } from '@yeoman/transform';
+import BaseApplicationGenerator from 'generator-jhipster/generators/base-application';
 
 export default class extends BaseApplicationGenerator {
     get [BaseApplicationGenerator.DEFAULT]() {

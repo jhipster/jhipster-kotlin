@@ -1,6 +1,6 @@
 import { beforeAll, describe, expect, it } from 'vitest';
 
-import { fromMatrix, defaultHelpers as helpers, result } from 'generator-jhipster/testing';
+import { defaultHelpers as helpers, fromMatrix, result } from 'generator-jhipster/testing';
 
 const SUB_GENERATOR = 'ktlint';
 const SUB_GENERATOR_NAMESPACE = `jhipster-kotlin:${SUB_GENERATOR}`;

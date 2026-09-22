@@ -2,12 +2,12 @@ import migration from '../../generators/spring-boot-v2/migration.cjs';
 
 const { jhipsterConstants: constants } = migration;
 
-const TEST_DIR = constants.TEST_DIR;
-const CLIENT_MAIN_SRC_DIR = constants.CLIENT_MAIN_SRC_DIR;
+const { TEST_DIR } = constants;
+const { CLIENT_MAIN_SRC_DIR } = constants;
 
-const SERVER_MAIN_RES_DIR = constants.SERVER_MAIN_RES_DIR;
-const SERVER_TEST_RES_DIR = constants.SERVER_TEST_RES_DIR;
-const DOCKER_DIR = constants.DOCKER_DIR;
+const { SERVER_MAIN_RES_DIR } = constants;
+const { SERVER_TEST_RES_DIR } = constants;
+const { DOCKER_DIR } = constants;
 const SERVER_MAIN_SRC_DIR = `${constants.MAIN_DIR}kotlin/`;
 const SERVER_TEST_SRC_DIR = `${constants.TEST_DIR}kotlin/`;
 

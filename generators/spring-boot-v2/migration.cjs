@@ -51,4 +51,4 @@ const jhipster7DockerContainers = {
     grafanaWatcher: jhipsterConstants.DOCKER_GRAFANA_WATCHER,
 };
 
-module.exports = { couchbaseFiles, jhipsterConstants, jhipster7DockerContainers };
+module.exports = { couchbaseFiles, jhipster7DockerContainers, jhipsterConstants };

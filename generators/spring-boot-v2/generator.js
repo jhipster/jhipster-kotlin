@@ -1,13 +1,16 @@
+import { existsSync } from 'fs';
 import { basename, dirname, join } from 'path';
 import { fileURLToPath } from 'url';
-import { existsSync } from 'fs';
-import BaseApplicationGenerator from 'generator-jhipster/generators/spring-boot';
+
 import { getEnumInfo } from 'generator-jhipster/generators/base-application/support';
+import BaseApplicationGenerator from 'generator-jhipster/generators/spring-boot';
 import { files as entityServerFiles } from 'jhipster-7-templates/esm/generators/entity-server';
 import { files as serverFiles } from 'jhipster-7-templates/esm/generators/server';
+
 import { convertToKotlinFile } from '../kotlin/support/files.js';
-import { migrateApplicationTask } from './preparing-migration.js';
+
 import migration from './migration.cjs';
+import { migrateApplicationTask } from './preparing-migration.js';
 
 const { jhipsterConstants } = migration;
 const { MAIN_DIR } = jhipsterConstants;

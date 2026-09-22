@@ -17,8 +17,8 @@
  * limitations under the License.
  */
 const chalk = require('chalk');
-const needleServerCache = require('generator-jhipster/generators/server/needle-api/needle-server-cache');
 const constants = require('generator-jhipster/generators/generator-constants');
+const needleServerCache = require('generator-jhipster/generators/server/needle-api/needle-server-cache');
 
 const SERVER_MAIN_SRC_KOTLIN_DIR = `${constants.MAIN_DIR}kotlin/`;
 
@@ -27,7 +27,7 @@ module.exports = class extends needleServerCache {
         this.addEntryToCache(`${packageName}.domain.${entityClass}::class.java.name`, packageFolder, cacheProvider);
         // Add the collections linked to that entity to ehcache
         relationships.forEach(relationship => {
-            const relationshipType = relationship.relationshipType;
+            const { relationshipType } = relationship;
             if (relationshipType === 'one-to-many' || relationship.relationshipManyToMany) {
                 this.addEntryToCache(
                     `${packageName}.domain.${entityClass}::class.java.name + ".${relationship.relationshipFieldNamePlural}"`,

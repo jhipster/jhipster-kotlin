@@ -1,7 +1,6 @@
 import { beforeAll, describe, expect, it } from 'vitest';
-import { defaultHelpers as helpers, runResult } from 'generator-jhipster/testing';
-import { JAVA_DOCKER_DIR } from 'generator-jhipster';
 
+import { JAVA_DOCKER_DIR } from 'generator-jhipster';
 import {
     applicationTypes,
     authenticationTypes,
@@ -12,6 +11,8 @@ import {
     serviceDiscoveryTypes,
     testFrameworkTypes,
 } from 'generator-jhipster/jdl';
+import { defaultHelpers as helpers, runResult } from 'generator-jhipster/testing';
+
 import migration from '../generators/spring-boot-v2/migration.cjs';
 
 import expectedFiles from './utils/expected-files.js';

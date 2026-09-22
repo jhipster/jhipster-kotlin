@@ -1,4 +1,5 @@
 import { join } from 'node:path';
+
 import BaseGenerator from 'generator-jhipster/generators/base';
 import { convertToGitHubMatrix, getGithubOutputFile, getGithubSamplesGroup, setGithubTaskOutput } from 'generator-jhipster/testing';
 
