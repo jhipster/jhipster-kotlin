@@ -1,0 +1,117 @@
+<%#
+ Copyright 2013-2026 the original author or authors from the JHipster project.
+
+ This file is part of the JHipster project, see https://www.jhipster.tech/
+ for more information.
+
+ Licensed under the Apache License, Version 2.0 (the "License")
+ you may not use this file except in compliance with the License.
+ You may obtain a copy of the License at
+
+      https://www.apache.org/licenses/LICENSE-2.0
+
+ Unless required by applicable law or agreed to in writing, software
+ distributed under the License is distributed on an "AS IS" BASIS,
+ WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
+ See the License for the specific language governing permissions and
+ limitations under the License.
+-%>
+package <%= entityAbsolutePackage %>.service.criteria
+
+import org.assertj.core.api.Assertions.assertThat
+import org.assertj.core.api.Condition
+import org.junit.jupiter.api.Test
+
+class <%= entityClass %>CriteriaTest {
+
+    @Test
+    fun new<%= entityClass %>CriteriaHasAllFiltersNullTest() {
+        val <%= persistInstance %>Criteria = <%= entityClass %>Criteria()
+        assertThat(<%= persistInstance %>Criteria).`is`(criteriaFiltersAre { it == null })
+    }
+
+    @Test
+    fun <%= persistInstance %>CriteriaFluentMethodsCreatesFiltersTest() {
+        val <%= persistInstance %>Criteria = <%= entityClass %>Criteria()
+
+        setAllFilters(<%= persistInstance %>Criteria)
+
+        assertThat(<%= persistInstance %>Criteria).`is`(criteriaFiltersAre { it != null })
+    }
+
+    @Test
+    fun <%= persistInstance %>CriteriaCopyCreatesNullFilterTest() {
+        val <%= persistInstance %>Criteria = <%= entityClass %>Criteria()
+        val copy = <%= persistInstance %>Criteria.copy()
+
+        assertThat(<%= persistInstance %>Criteria).satisfies(
+            { criteria -> assertThat(criteria).`is`(copyFiltersAre(copy) { a, b -> if (a == null || a is Boolean) a == b else a !== b && a == b }) },
+            { criteria -> assertThat(criteria).isEqualTo(copy) },
+            { criteria -> assertThat(criteria).hasSameHashCodeAs(copy) },
+        )
+
+        assertThat(copy).satisfies(
+            { criteria -> assertThat(criteria).`is`(criteriaFiltersAre { it == null }) },
+            { criteria -> assertThat(criteria).isEqualTo(<%= persistInstance %>Criteria) },
+        )
+    }
+
+    @Test
+    fun <%= persistInstance %>CriteriaCopyDuplicatesEveryExistingFilterTest() {
+        val <%= persistInstance %>Criteria = <%= entityClass %>Criteria()
+        setAllFilters(<%= persistInstance %>Criteria)
+
+        val copy = <%= persistInstance %>Criteria.copy()
+
+        assertThat(<%= persistInstance %>Criteria).satisfies(
+            { criteria -> assertThat(criteria).`is`(copyFiltersAre(copy) { a, b -> if (a == null || a is Boolean) a == b else a !== b && a == b }) },
+            { criteria -> assertThat(criteria).isEqualTo(copy) },
+            { criteria -> assertThat(criteria).hasSameHashCodeAs(copy) },
+        )
+
+        assertThat(copy).satisfies(
+            { criteria -> assertThat(criteria).`is`(criteriaFiltersAre { it != null }) },
+            { criteria -> assertThat(criteria).isEqualTo(<%= persistInstance %>Criteria) },
+        )
+    }
+
+    @Test
+    fun toStringVerifier() {
+        val <%= persistInstance %>Criteria = <%= entityClass %>Criteria()
+
+        assertThat(<%= persistInstance %>Criteria).hasToString("<%= entityClass %>Criteria{}")
+    }
+
+    companion object {
+        private fun setAllFilters(<%= persistInstance %>Criteria: <%= entityClass %>Criteria) {
+<%_ for (const { propertyJavaFilterName, propertyJavaFilterType } of entityJavaFilterableProperties) { _%>
+            <%= persistInstance %>Criteria.<%= propertyJavaFilterName %> = <%- propertyJavaFilterType %>()
+<%_ } _%>
+            <%= persistInstance %>Criteria.distinct = true
+        }
+
+        private fun criteriaFiltersAre(condition: (Any?) -> Boolean): Condition<<%= entityClass %>Criteria> {
+            return Condition(
+                { criteria ->
+<%_ for (const { propertyJavaFilterName } of entityJavaFilterableProperties) { _%>
+                    condition(criteria.<%= propertyJavaFilterName %>) &&
+<%_ } _%>
+                    condition(criteria.distinct)
+                },
+                "every filter matches",
+            )
+        }
+
+        private fun copyFiltersAre(copy: <%= entityClass %>Criteria, condition: (Any?, Any?) -> Boolean): Condition<<%= entityClass %>Criteria> {
+            return Condition(
+                { criteria ->
+<%_ for (const { propertyJavaFilterName } of entityJavaFilterableProperties) { _%>
+                    condition(criteria.<%= propertyJavaFilterName %>, copy.<%= propertyJavaFilterName %>) &&
+<%_ } _%>
+                    condition(criteria.distinct, copy.distinct)
+                },
+                "every filter matches",
+            )
+        }
+    }
+}
