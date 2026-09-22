@@ -45,7 +45,9 @@ export default class extends BaseApplicationGenerator {
                         async () => {
                             try {
                                 const ktlintVersion = application.javaDependencies['ktlint-cli'];
-                                const ktlintUrl = 'https://github.com/pinterest/ktlint/releases/download/';
+                                // pinterest/ktlint moved to ktlint/ktlint; the old org still redirects, but use the
+                                // canonical URL directly to avoid depending on that redirect.
+                                const ktlintUrl = 'https://github.com/ktlint/ktlint/releases/download/';
 
                                 await mkdir(this.ktlintFolder, { recursive: true });
 
