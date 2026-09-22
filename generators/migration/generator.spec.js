@@ -14,8 +14,8 @@ describe('SubGenerator migration of kotlin JHipster blueprint', () => {
                 .withOptions({
                     ignoreNeedlesError: true,
                 })
-                .withJHipsterLookup()
-                .withParentBlueprintLookup();
+                .withJHipsterGenerators()
+                .withLookups({ packagePaths: [process.cwd()], lookups: ['generators', 'generators/*/generators'] });
         });
 
         it('should succeed', () => {

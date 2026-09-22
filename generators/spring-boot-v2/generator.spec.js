@@ -21,8 +21,8 @@ describe('SubGenerator spring-boot-v2 of kotlin JHipster blueprint', () => {
                     springBootDependencies: {},
                 })
                 .withMockedSource()
-                .withJHipsterLookup()
-                .withParentBlueprintLookup();
+                .withJHipsterGenerators()
+                .withLookups({ packagePaths: [process.cwd()], lookups: ['generators', 'generators/*/generators'] });
         });
 
         it('should succeed', () => {

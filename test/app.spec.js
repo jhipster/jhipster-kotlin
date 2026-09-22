@@ -1,6 +1,11 @@
 import { beforeAll, describe, expect, it } from 'vitest';
 
 import { JAVA_DOCKER_DIR } from 'generator-jhipster';
+import { defaultHelpers as helpers, runResult } from 'generator-jhipster/testing';
+
+import migration from '../generators/spring-boot-v2/migration.cjs';
+
+import expectedFiles from './utils/expected-files.js';
 import {
     applicationTypes,
     authenticationTypes,
@@ -10,12 +15,7 @@ import {
     databaseTypes,
     serviceDiscoveryTypes,
     testFrameworkTypes,
-} from 'generator-jhipster/jdl';
-import { defaultHelpers as helpers, runResult } from 'generator-jhipster/testing';
-
-import migration from '../generators/spring-boot-v2/migration.cjs';
-
-import expectedFiles from './utils/expected-files.js';
+} from './utils/jhipster-types.js';
 
 const { jhipsterConstants: constants } = migration;
 
@@ -80,8 +80,8 @@ describe('JHipster generator for App generator', () => {
                         skipUserManagement: false,
                         serverSideOptions: [],
                     })
-                    .withJHipsterLookup()
-                    .withParentBlueprintLookup()
+                    .withJHipsterGenerators()
+                    .withLookups({ packagePaths: [process.cwd()], lookups: ['generators', 'generators/*/generators'] })
                     .withMockedGenerators(['jhipster-kotlin:ktlint', 'jhipster:languages'])
                     .run();
             });
@@ -130,8 +130,8 @@ describe('JHipster generator for App generator', () => {
                         skipUserManagement: false,
                         serverSideOptions: [],
                     })
-                    .withJHipsterLookup()
-                    .withParentBlueprintLookup()
+                    .withJHipsterGenerators()
+                    .withLookups({ packagePaths: [process.cwd()], lookups: ['generators', 'generators/*/generators'] })
                     .withMockedGenerators(['jhipster-kotlin:ktlint', 'jhipster:languages'])
                     .run();
             });
@@ -174,8 +174,8 @@ describe('JHipster generator for App generator', () => {
                         skipUserManagement: false,
                         serverSideOptions: [],
                     })
-                    .withJHipsterLookup()
-                    .withParentBlueprintLookup()
+                    .withJHipsterGenerators()
+                    .withLookups({ packagePaths: [process.cwd()], lookups: ['generators', 'generators/*/generators'] })
                     .withMockedGenerators(['jhipster-kotlin:ktlint', 'jhipster:languages'])
                     .run();
             });
@@ -222,8 +222,8 @@ describe('JHipster generator for App generator', () => {
                         rememberMeKey: '5c37379956bd1242f5636c8cb322c2966ad81277',
                         serverSideOptions: [],
                     })
-                    .withJHipsterLookup()
-                    .withParentBlueprintLookup()
+                    .withJHipsterGenerators()
+                    .withLookups({ packagePaths: [process.cwd()], lookups: ['generators', 'generators/*/generators'] })
                     .withMockedGenerators(['jhipster-kotlin:ktlint', 'jhipster:languages'])
                     .run();
             });
@@ -267,8 +267,8 @@ describe('JHipster generator for App generator', () => {
                         skipUserManagement: false,
                         serverSideOptions: [],
                     })
-                    .withJHipsterLookup()
-                    .withParentBlueprintLookup()
+                    .withJHipsterGenerators()
+                    .withLookups({ packagePaths: [process.cwd()], lookups: ['generators', 'generators/*/generators'] })
                     .withMockedGenerators(['jhipster-kotlin:ktlint', 'jhipster:languages'])
                     .run();
             });
@@ -315,8 +315,8 @@ describe('JHipster generator for App generator', () => {
                         rememberMeKey: '5c37379956bd1242f5636c8cb322c2966ad81277',
                         serverSideOptions: [],
                     })
-                    .withJHipsterLookup()
-                    .withParentBlueprintLookup()
+                    .withJHipsterGenerators()
+                    .withLookups({ packagePaths: [process.cwd()], lookups: ['generators', 'generators/*/generators'] })
                     .withMockedGenerators(['jhipster-kotlin:ktlint', 'jhipster:languages'])
                     .run();
             });
@@ -360,8 +360,8 @@ describe('JHipster generator for App generator', () => {
                         skipUserManagement: false,
                         serverSideOptions: [],
                     })
-                    .withJHipsterLookup()
-                    .withParentBlueprintLookup()
+                    .withJHipsterGenerators()
+                    .withLookups({ packagePaths: [process.cwd()], lookups: ['generators', 'generators/*/generators'] })
                     .withMockedGenerators(['jhipster-kotlin:ktlint', 'jhipster:languages'])
                     .run();
             });
@@ -385,8 +385,8 @@ describe('JHipster generator for App generator', () => {
                     .withJHipsterConfig({
                         databaseType: 'couchbase',
                     })
-                    .withJHipsterLookup()
-                    .withParentBlueprintLookup()
+                    .withJHipsterGenerators()
+                    .withLookups({ packagePaths: [process.cwd()], lookups: ['generators', 'generators/*/generators'] })
                     .withMockedGenerators(['jhipster-kotlin:ktlint', 'jhipster:languages'])
                     .run();
             });
@@ -429,8 +429,8 @@ describe('JHipster generator for App generator', () => {
                         skipUserManagement: false,
                         serverSideOptions: [],
                     })
-                    .withJHipsterLookup()
-                    .withParentBlueprintLookup()
+                    .withJHipsterGenerators()
+                    .withLookups({ packagePaths: [process.cwd()], lookups: ['generators', 'generators/*/generators'] })
                     .withMockedGenerators(['jhipster-kotlin:ktlint', 'jhipster:languages'])
                     .run();
             });
@@ -477,8 +477,8 @@ describe('JHipster generator for App generator', () => {
                         skipUserManagement: false,
                         serverSideOptions: [],
                     })
-                    .withJHipsterLookup()
-                    .withParentBlueprintLookup()
+                    .withJHipsterGenerators()
+                    .withLookups({ packagePaths: [process.cwd()], lookups: ['generators', 'generators/*/generators'] })
                     .withMockedGenerators(['jhipster-kotlin:ktlint', 'jhipster:languages'])
                     .run();
             });
@@ -525,8 +525,8 @@ describe('JHipster generator for App generator', () => {
                         skipUserManagement: false,
                         serverSideOptions: [],
                     })
-                    .withJHipsterLookup()
-                    .withParentBlueprintLookup()
+                    .withJHipsterGenerators()
+                    .withLookups({ packagePaths: [process.cwd()], lookups: ['generators', 'generators/*/generators'] })
                     .withMockedGenerators(['jhipster-kotlin:ktlint', 'jhipster:languages'])
                     .run();
             });
@@ -571,8 +571,8 @@ describe('JHipster generator for App generator', () => {
                         skipUserManagement: false,
                         serverSideOptions: [],
                     })
-                    .withJHipsterLookup()
-                    .withParentBlueprintLookup()
+                    .withJHipsterGenerators()
+                    .withLookups({ packagePaths: [process.cwd()], lookups: ['generators', 'generators/*/generators'] })
                     .withMockedGenerators(['jhipster-kotlin:ktlint', 'jhipster:languages'])
                     .run();
             });
@@ -617,8 +617,8 @@ describe('JHipster generator for App generator', () => {
                         skipUserManagement: false,
                         serverSideOptions: [],
                     })
-                    .withJHipsterLookup()
-                    .withParentBlueprintLookup()
+                    .withJHipsterGenerators()
+                    .withLookups({ packagePaths: [process.cwd()], lookups: ['generators', 'generators/*/generators'] })
                     .withMockedGenerators(['jhipster-kotlin:ktlint', 'jhipster:languages'])
                     .run();
             });
@@ -660,8 +660,8 @@ describe('JHipster generator for App generator', () => {
                         skipUserManagement: false,
                         searchEngine: 'elasticsearch',
                     })
-                    .withJHipsterLookup()
-                    .withParentBlueprintLookup()
+                    .withJHipsterGenerators()
+                    .withLookups({ packagePaths: [process.cwd()], lookups: ['generators', 'generators/*/generators'] })
                     .withMockedGenerators(['jhipster-kotlin:ktlint', 'jhipster:languages'])
                     .run();
             });
@@ -705,8 +705,8 @@ describe('JHipster generator for App generator', () => {
                         serverSideOptions: [],
                         feignClient: true,
                     })
-                    .withJHipsterLookup()
-                    .withParentBlueprintLookup()
+                    .withJHipsterGenerators()
+                    .withLookups({ packagePaths: [process.cwd()], lookups: ['generators', 'generators/*/generators'] })
                     .withMockedGenerators(['jhipster-kotlin:ktlint', 'jhipster:languages'])
                     .run();
             });
@@ -756,8 +756,8 @@ describe('JHipster generator for App generator', () => {
                         rememberMeKey: '5c37379956bd1242f5636c8cb322c2966ad81277',
                         serverSideOptions: [],
                     })
-                    .withJHipsterLookup()
-                    .withParentBlueprintLookup()
+                    .withJHipsterGenerators()
+                    .withLookups({ packagePaths: [process.cwd()], lookups: ['generators', 'generators/*/generators'] })
                     .withMockedGenerators(['jhipster-kotlin:ktlint', 'jhipster:languages'])
                     .run();
             });
@@ -799,8 +799,8 @@ describe('JHipster generator for App generator', () => {
                         rememberMeKey: '5c37379956bd1242f5636c8cb322c2966ad81277',
                         searchEngine: 'elasticsearch',
                     })
-                    .withJHipsterLookup()
-                    .withParentBlueprintLookup()
+                    .withJHipsterGenerators()
+                    .withLookups({ packagePaths: [process.cwd()], lookups: ['generators', 'generators/*/generators'] })
                     .withMockedGenerators(['jhipster-kotlin:ktlint', 'jhipster:languages'])
                     .run();
             });
@@ -843,8 +843,8 @@ describe('JHipster generator for App generator', () => {
                         rememberMeKey: '5c37379956bd1242f5636c8cb322c2966ad81277',
                         serverSideOptions: [],
                     })
-                    .withJHipsterLookup()
-                    .withParentBlueprintLookup()
+                    .withJHipsterGenerators()
+                    .withLookups({ packagePaths: [process.cwd()], lookups: ['generators', 'generators/*/generators'] })
                     .withMockedGenerators(['jhipster-kotlin:ktlint', 'jhipster:languages'])
                     .run();
             });
@@ -901,8 +901,8 @@ describe('JHipster generator for App generator', () => {
                         testFrameworks: [],
                         withAdminUi: false,
                     })
-                    .withJHipsterLookup()
-                    .withParentBlueprintLookup()
+                    .withJHipsterGenerators()
+                    .withLookups({ packagePaths: [process.cwd()], lookups: ['generators', 'generators/*/generators'] })
                     .withMockedGenerators(['jhipster-kotlin:ktlint', 'jhipster:languages'])
                     .run();
             });
@@ -942,8 +942,8 @@ describe('JHipster generator for App generator', () => {
                         rememberMeKey: '5c37379956bd1242f5636c8cb322c2966ad81277',
                         serverSideOptions: [],
                     })
-                    .withJHipsterLookup()
-                    .withParentBlueprintLookup()
+                    .withJHipsterGenerators()
+                    .withLookups({ packagePaths: [process.cwd()], lookups: ['generators', 'generators/*/generators'] })
                     .withMockedGenerators(['jhipster-kotlin:ktlint', 'jhipster:languages'])
                     .run();
             });
@@ -986,8 +986,8 @@ describe('JHipster generator for App generator', () => {
                         rememberMeKey: '5c37379956bd1242f5636c8cb322c2966ad81277',
                         serverSideOptions: [],
                     })
-                    .withJHipsterLookup()
-                    .withParentBlueprintLookup()
+                    .withJHipsterGenerators()
+                    .withLookups({ packagePaths: [process.cwd()], lookups: ['generators', 'generators/*/generators'] })
                     .withMockedGenerators(['jhipster-kotlin:ktlint', 'jhipster:languages'])
                     .run();
             });
@@ -1031,8 +1031,8 @@ describe('JHipster generator for App generator', () => {
                         rememberMeKey: '5c37379956bd1242f5636c8cb322c2966ad81277',
                         serverSideOptions: [],
                     })
-                    .withJHipsterLookup()
-                    .withParentBlueprintLookup()
+                    .withJHipsterGenerators()
+                    .withLookups({ packagePaths: [process.cwd()], lookups: ['generators', 'generators/*/generators'] })
                     .withMockedGenerators(['jhipster-kotlin:ktlint', 'jhipster:languages'])
                     .run();
             });
@@ -1077,8 +1077,8 @@ describe('JHipster generator for App generator', () => {
                         rememberMeKey: '5c37379956bd1242f5636c8cb322c2966ad81277',
                         serverSideOptions: [],
                     })
-                    .withJHipsterLookup()
-                    .withParentBlueprintLookup()
+                    .withJHipsterGenerators()
+                    .withLookups({ packagePaths: [process.cwd()], lookups: ['generators', 'generators/*/generators'] })
                     .withMockedGenerators(['jhipster-kotlin:ktlint', 'jhipster:languages'])
                     .run();
             });
@@ -1122,8 +1122,8 @@ describe('JHipster generator for App generator', () => {
                         rememberMeKey: '5c37379956bd1242f5636c8cb322c2966ad81277',
                         serverSideOptions: [],
                     })
-                    .withJHipsterLookup()
-                    .withParentBlueprintLookup()
+                    .withJHipsterGenerators()
+                    .withLookups({ packagePaths: [process.cwd()], lookups: ['generators', 'generators/*/generators'] })
                     .withMockedGenerators(['jhipster-kotlin:ktlint', 'jhipster:languages'])
                     .run();
             });
@@ -1173,8 +1173,8 @@ describe('JHipster generator for App generator', () => {
                         languages: ['en'],
                         messageBroker: 'kafka',
                     })
-                    .withJHipsterLookup()
-                    .withParentBlueprintLookup()
+                    .withJHipsterGenerators()
+                    .withLookups({ packagePaths: [process.cwd()], lookups: ['generators', 'generators/*/generators'] })
                     .withMockedGenerators(['jhipster-kotlin:ktlint', 'jhipster:languages'])
                     .run();
             });
@@ -1226,8 +1226,8 @@ describe('JHipster generator for App generator', () => {
                         languages: ['en'],
                         enableSwaggerCodegen: true,
                     })
-                    .withJHipsterLookup()
-                    .withParentBlueprintLookup()
+                    .withJHipsterGenerators()
+                    .withLookups({ packagePaths: [process.cwd()], lookups: ['generators', 'generators/*/generators'] })
                     .withMockedGenerators(['jhipster-kotlin:ktlint', 'jhipster:languages'])
                     .run();
             });
@@ -1279,8 +1279,8 @@ describe('JHipster generator for App generator', () => {
                         languages: ['en'],
                         enableSwaggerCodegen: true,
                     })
-                    .withJHipsterLookup()
-                    .withParentBlueprintLookup()
+                    .withJHipsterGenerators()
+                    .withLookups({ packagePaths: [process.cwd()], lookups: ['generators', 'generators/*/generators'] })
                     .withMockedGenerators(['jhipster-kotlin:ktlint', 'jhipster:languages'])
                     .run();
             });
@@ -1329,8 +1329,8 @@ describe('JHipster generator for App generator', () => {
                         rememberMeKey: '5c37379956bd1242f5636c8cb322c2966ad81277',
                         serverSideOptions: [],
                     })
-                    .withJHipsterLookup()
-                    .withParentBlueprintLookup()
+                    .withJHipsterGenerators()
+                    .withLookups({ packagePaths: [process.cwd()], lookups: ['generators', 'generators/*/generators'] })
                     .withMockedGenerators(['jhipster-kotlin:ktlint', 'jhipster:languages'])
                     .run();
             });
@@ -1372,8 +1372,8 @@ describe('JHipster generator for App generator', () => {
                         rememberMeKey: '5c37379956bd1242f5636c8cb322c2966ad81277',
                         serverSideOptions: [],
                     })
-                    .withJHipsterLookup()
-                    .withParentBlueprintLookup()
+                    .withJHipsterGenerators()
+                    .withLookups({ packagePaths: [process.cwd()], lookups: ['generators', 'generators/*/generators'] })
                     .withMockedGenerators(['jhipster-kotlin:ktlint', 'jhipster:languages'])
                     .run();
             });
@@ -1420,8 +1420,8 @@ describe('JHipster generator for App generator', () => {
                         rememberMeKey: '5c37379956bd1242f5636c8cb322c2966ad81277',
                         serverSideOptions: [],
                     })
-                    .withJHipsterLookup()
-                    .withParentBlueprintLookup()
+                    .withJHipsterGenerators()
+                    .withLookups({ packagePaths: [process.cwd()], lookups: ['generators', 'generators/*/generators'] })
                     .withMockedGenerators(['jhipster-kotlin:ktlint', 'jhipster:languages'])
                     .run();
             });
@@ -1462,8 +1462,8 @@ describe('JHipster generator for App generator', () => {
                         rememberMeKey: '5c37379956bd1242f5636c8cb322c2966ad81277',
                         serverSideOptions: [],
                     })
-                    .withJHipsterLookup()
-                    .withParentBlueprintLookup()
+                    .withJHipsterGenerators()
+                    .withLookups({ packagePaths: [process.cwd()], lookups: ['generators', 'generators/*/generators'] })
                     .withMockedGenerators(['jhipster-kotlin:ktlint', 'jhipster:languages'])
                     .run();
             });
@@ -1511,8 +1511,8 @@ describe('JHipster generator for App generator', () => {
                         nativeLanguage: 'en',
                         languages: ['en'],
                     })
-                    .withJHipsterLookup()
-                    .withParentBlueprintLookup()
+                    .withJHipsterGenerators()
+                    .withLookups({ packagePaths: [process.cwd()], lookups: ['generators', 'generators/*/generators'] })
                     .withMockedGenerators(['jhipster-kotlin:ktlint', 'jhipster:languages'])
                     .run();
             });
@@ -1555,8 +1555,8 @@ describe('JHipster generator for App generator', () => {
                         rememberMeKey: '5c37379956bd1242f5636c8cb322c2966ad81277',
                         serverSideOptions: [],
                     })
-                    .withJHipsterLookup()
-                    .withParentBlueprintLookup()
+                    .withJHipsterGenerators()
+                    .withLookups({ packagePaths: [process.cwd()], lookups: ['generators', 'generators/*/generators'] })
                     .withMockedGenerators(['jhipster-kotlin:ktlint', 'jhipster:languages'])
                     .run();
             });
@@ -1615,8 +1615,8 @@ describe('JHipster generator for App generator', () => {
                         rememberMeKey: '5c37379956bd1242f5636c8cb322c2966ad81277',
                         serverSideOptions: [],
                     })
-                    .withJHipsterLookup()
-                    .withParentBlueprintLookup()
+                    .withJHipsterGenerators()
+                    .withLookups({ packagePaths: [process.cwd()], lookups: ['generators', 'generators/*/generators'] })
                     .withMockedGenerators(['jhipster-kotlin:ktlint', 'jhipster:languages'])
                     .run();
             });
@@ -1661,8 +1661,8 @@ describe('JHipster generator for App generator', () => {
                         rememberMeKey: '5c37379956bd1242f5636c8cb322c2966ad81277',
                         serverSideOptions: [],
                     })
-                    .withJHipsterLookup()
-                    .withParentBlueprintLookup()
+                    .withJHipsterGenerators()
+                    .withLookups({ packagePaths: [process.cwd()], lookups: ['generators', 'generators/*/generators'] })
                     .withMockedGenerators(['jhipster-kotlin:ktlint', 'jhipster:languages'])
                     .run();
             });
@@ -1709,8 +1709,8 @@ describe('JHipster generator for App generator', () => {
                         rememberMeKey: '5c37379956bd1242f5636c8cb322c2966ad81277',
                         serverSideOptions: [],
                     })
-                    .withJHipsterLookup()
-                    .withParentBlueprintLookup()
+                    .withJHipsterGenerators()
+                    .withLookups({ packagePaths: [process.cwd()], lookups: ['generators', 'generators/*/generators'] })
                     .withMockedGenerators(['jhipster-kotlin:ktlint', 'jhipster:languages'])
                     .run();
             });
@@ -1754,8 +1754,8 @@ describe('JHipster generator for App generator', () => {
                         rememberMeKey: '5c37379956bd1242f5636c8cb322c2966ad81277',
                         serverSideOptions: [],
                     })
-                    .withJHipsterLookup()
-                    .withParentBlueprintLookup()
+                    .withJHipsterGenerators()
+                    .withLookups({ packagePaths: [process.cwd()], lookups: ['generators', 'generators/*/generators'] })
                     .withMockedGenerators(['jhipster-kotlin:ktlint', 'jhipster:languages'])
                     .run();
             });
@@ -1799,8 +1799,8 @@ describe('JHipster generator for App generator', () => {
                         serverSideOptions: [],
                         feignClient: true,
                     })
-                    .withJHipsterLookup()
-                    .withParentBlueprintLookup()
+                    .withJHipsterGenerators()
+                    .withLookups({ packagePaths: [process.cwd()], lookups: ['generators', 'generators/*/generators'] })
                     .withMockedGenerators(['jhipster-kotlin:ktlint', 'jhipster:languages'])
                     .run();
             });
@@ -1845,8 +1845,8 @@ describe('JHipster generator for App generator', () => {
                         rememberMeKey: '5c37379956bd1242f5636c8cb322c2966ad81277',
                         serviceDiscoveryType: 'eureka',
                     })
-                    .withJHipsterLookup()
-                    .withParentBlueprintLookup()
+                    .withJHipsterGenerators()
+                    .withLookups({ packagePaths: [process.cwd()], lookups: ['generators', 'generators/*/generators'] })
                     .withMockedGenerators(['jhipster-kotlin:ktlint', 'jhipster:languages'])
                     .run();
             });
@@ -1895,8 +1895,8 @@ describe('JHipster generator for App generator', () => {
                         skipUserManagement: true,
                         feignClient: true,
                     })
-                    .withJHipsterLookup()
-                    .withParentBlueprintLookup()
+                    .withJHipsterGenerators()
+                    .withLookups({ packagePaths: [process.cwd()], lookups: ['generators', 'generators/*/generators'] })
                     .withMockedGenerators(['jhipster-kotlin:ktlint', 'jhipster:languages'])
                     .run();
             });
@@ -1944,8 +1944,8 @@ describe('JHipster generator for App generator', () => {
                         rememberMeKey: '5c37379956bd1242f5636c8cb322c2966ad81277',
                         serverSideOptions: [],
                     })
-                    .withJHipsterLookup()
-                    .withParentBlueprintLookup()
+                    .withJHipsterGenerators()
+                    .withLookups({ packagePaths: [process.cwd()], lookups: ['generators', 'generators/*/generators'] })
                     .withMockedGenerators(['jhipster-kotlin:ktlint', 'jhipster:languages'])
                     .run();
             });
@@ -1989,8 +1989,8 @@ describe('JHipster generator for App generator', () => {
                         rememberMeKey: '5c37379956bd1242f5636c8cb322c2966ad81277',
                         serverSideOptions: [],
                     })
-                    .withJHipsterLookup()
-                    .withParentBlueprintLookup()
+                    .withJHipsterGenerators()
+                    .withLookups({ packagePaths: [process.cwd()], lookups: ['generators', 'generators/*/generators'] })
                     .withMockedGenerators(['jhipster-kotlin:ktlint', 'jhipster:languages'])
                     .run();
             });
@@ -2033,8 +2033,8 @@ describe('JHipster generator for App generator', () => {
                         rememberMeKey: '5c37379956bd1242f5636c8cb322c2966ad81277',
                         serverSideOptions: [],
                     })
-                    .withJHipsterLookup()
-                    .withParentBlueprintLookup()
+                    .withJHipsterGenerators()
+                    .withLookups({ packagePaths: [process.cwd()], lookups: ['generators', 'generators/*/generators'] })
                     .withMockedGenerators(['jhipster-kotlin:ktlint', 'jhipster:languages'])
                     .run();
             });
@@ -2081,8 +2081,8 @@ describe('JHipster generator for App generator', () => {
                         rememberMeKey: '5c37379956bd1242f5636c8cb322c2966ad81277',
                         serverSideOptions: [],
                     })
-                    .withJHipsterLookup()
-                    .withParentBlueprintLookup()
+                    .withJHipsterGenerators()
+                    .withLookups({ packagePaths: [process.cwd()], lookups: ['generators', 'generators/*/generators'] })
                     .withMockedGenerators(['jhipster-kotlin:ktlint', 'jhipster:languages'])
                     .run();
             });
@@ -2124,8 +2124,8 @@ describe('JHipster generator for App generator', () => {
                         rememberMeKey: '5c37379956bd1242f5636c8cb322c2966ad81277',
                         serverSideOptions: [],
                     })
-                    .withJHipsterLookup()
-                    .withParentBlueprintLookup()
+                    .withJHipsterGenerators()
+                    .withLookups({ packagePaths: [process.cwd()], lookups: ['generators', 'generators/*/generators'] })
                     .withMockedGenerators(['jhipster-kotlin:ktlint', 'jhipster:languages'])
                     .run();
             });

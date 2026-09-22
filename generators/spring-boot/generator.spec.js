@@ -14,8 +14,8 @@ describe('SubGenerator kotlin of kotlin JHipster blueprint', () => {
                     ignoreNeedlesError: true,
                     blueprints: 'kotlin',
                 })
-                .withJHipsterLookup()
-                .withParentBlueprintLookup()
+                .withJHipsterGenerators()
+                .withLookups({ packagePaths: [process.cwd()], lookups: ['generators', 'generators/*/generators'] })
                 .withMockedGenerators(['jhipster-kotlin:ktlint']);
         });
 

@@ -51,8 +51,8 @@ describe('Matrix test of SubGenerator kotlin of kotlin JHipster blueprint', () =
                         blueprints: 'kotlin',
                         skipKtlintFormat: true,
                     })
-                    .withJHipsterLookup()
-                    .withParentBlueprintLookup()
+                    .withJHipsterGenerators()
+                    .withLookups({ packagePaths: [process.cwd()], lookups: ['generators', 'generators/*/generators'] })
                     .withMockedGenerators(['jhipster-kotlin:ktlint', 'jhipster-kotlin:detekt', 'jhipster:client', 'jhipster:languages']);
             });
 
