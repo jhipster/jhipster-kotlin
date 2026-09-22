@@ -9,6 +9,26 @@ import { convertToKotlinFile } from '../kotlin/support/files.js';
 
 import { KOTLIN_TEST_SRC_DIR } from './kotlin-constants.js';
 
+// generator-jhipster's `jhipster:spring-boot:*` sub-generator namespaces don't always match
+// the flattened directory names under generators/spring-boot/templates used by the Kotlin
+// blueprint (e.g. namespace segment `cache` vs template directory `spring-cache`). Only
+// namespaces whose last segment differs from its template directory need an entry here;
+// everything else falls back to the last namespace segment (see `prefix` below).
+const NAMESPACE_TO_TEMPLATE_PREFIX = {
+    'jhipster:spring-boot': '',
+    // jwt and oauth2 templates live directly under templates/src, not a dedicated subfolder
+    'jhipster:spring-boot:jwt': '',
+    'jhipster:spring-boot:oauth2': '',
+    'jhipster:spring-boot:cache': 'spring-cache',
+    'jhipster:spring-boot:websocket': 'spring-websocket',
+    'jhipster:spring-boot:data-cassandra': 'spring-data-cassandra',
+    'jhipster:spring-boot:data-couchbase': 'spring-data-couchbase',
+    'jhipster:spring-boot:data-elasticsearch': 'spring-data-elasticsearch',
+    'jhipster:spring-boot:data-mongodb': 'spring-data-mongodb',
+    'jhipster:spring-boot:data-neo4j': 'spring-data-neo4j',
+    'jhipster:spring-boot:data-relational': 'spring-data-relational',
+};
+
 export default class extends BaseApplicationGenerator {
     constructor(args, options, features) {
         super(args, options, {
@@ -70,7 +90,7 @@ export default class extends BaseApplicationGenerator {
                             return undefined;
                         }
 
-                        const prefix = ns === 'jhipster:spring-boot' ? '' : ns.split(':').pop();
+                        const prefix = ns in NAMESPACE_TO_TEMPLATE_PREFIX ? NAMESPACE_TO_TEMPLATE_PREFIX[ns] : ns.split(':').pop();
                         const kotlinSourceFile = join(prefix, convertToKotlinFile(sourceFile));
                         const resolvedSourceFile = this.templatePath(kotlinSourceFile);
 
