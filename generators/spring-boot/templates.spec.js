@@ -45,8 +45,15 @@ const excludedJavaTemplates = new Map([
     ],
 ]);
 
-const exclusionReason = template =>
-    [...excludedJavaTemplates].find(([path]) => (path.endsWith('/') ? template.startsWith(path) : template === path))?.[1];
+const excludedKotlinTemplates = new Map([
+    [
+        'src/test/kotlin/_package_/config/TestContainersSpringContextCustomizerFactory.kt.ejs',
+        "Sourced from jhipster-7-templates (frozen v7.9.4), not generator-jhipster 9.x - it's the legacy spring-boot-v2 migration path's own copy, predating the SqlTestContainersSpringContextCustomizerFactory rename.",
+    ],
+]);
+
+const exclusionReason = (template, excluded) =>
+    [...excluded].find(([path]) => (path.endsWith('/') ? template.startsWith(path) : template === path))?.[1];
 
 const toKotlinTemplatePath = template => template.replaceAll('/java/', '/kotlin/').replace(/\.java(?=[_.]|$)/, '.kt');
 
@@ -61,6 +68,12 @@ describe('test if kotlin templates have a matching java template', async () => {
     ).filter(file => basename(file).includes('.kt'));
 
     for (const kotlinTemplate of kotlinTemplates) {
+        const reason = exclusionReason(kotlinTemplate, excludedKotlinTemplates);
+        if (reason) {
+            it.skip(`${kotlinTemplate}: ${reason}`, () => {});
+            continue;
+        }
+
         const firstSegment = kotlinTemplate.split('/')[0];
         const isSubDir = Boolean(BLUEPRINT_DIR_TO_UPSTREAM_GENERATORS[firstSegment]);
         const bpDir = isSubDir ? firstSegment : '';
@@ -87,7 +100,7 @@ describe('test if upstream java templates have a matching kotlin template', asyn
     ).filter(file => basename(file).includes('.java'));
 
     for (const javaTemplate of javaTemplates) {
-        const reason = exclusionReason(javaTemplate);
+        const reason = exclusionReason(javaTemplate, excludedJavaTemplates);
         if (reason) {
             it.skip(`${javaTemplate}: ${reason}`, () => {});
             continue;
