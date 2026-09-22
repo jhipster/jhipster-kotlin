@@ -117,7 +117,7 @@ const expectedFiles = {
         `${SERVER_TEST_SRC_DIR}com/mycompany/myapp/service/mapper/UserMapperTest.kt`,
     ],
 
-    infinispan: [`${SERVER_MAIN_SRC_DIR}com/mycompany/myapp/config/CacheFactoryConfiguration.kt`],
+    infinispan: [`${SERVER_MAIN_SRC_DIR}com/mycompany/myapp/config/CacheConfiguration.kt`],
 
     memcached: [`${SERVER_MAIN_SRC_DIR}com/mycompany/myapp/config/CacheConfiguration.kt`, `${DOCKER_DIR}memcached.yml`],
 
@@ -127,7 +127,6 @@ const expectedFiles = {
         `${DOCKER_DIR}redis-cluster.yml`,
         `${DOCKER_DIR}redis/connectRedisCluster.sh`,
         `${DOCKER_DIR}redis/Redis-Cluster.Dockerfile`,
-        `${SERVER_TEST_SRC_DIR}/com/mycompany/myapp/config/EmbeddedRedis.kt`,
         `${SERVER_TEST_SRC_DIR}/com/mycompany/myapp/config/RedisTestContainer.kt`,
     ],
 
@@ -227,8 +226,8 @@ const expectedFiles = {
     ],
 
     messageBroker: [
-        `${SERVER_MAIN_SRC_DIR}com/mycompany/myapp/config/KafkaSseConsumer.kt`,
-        `${SERVER_MAIN_SRC_DIR}com/mycompany/myapp/config/KafkaSseProducer.kt`,
+        `${SERVER_MAIN_SRC_DIR}com/mycompany/myapp/broker/KafkaConsumer.kt`,
+        `${SERVER_MAIN_SRC_DIR}com/mycompany/myapp/broker/KafkaProducer.kt`,
         `${SERVER_MAIN_SRC_DIR}com/mycompany/myapp/web/rest/JhipsterKafkaResource.kt`,
         `${SERVER_TEST_SRC_DIR}com/mycompany/myapp/web/rest/JhipsterKafkaResourceIT.kt`,
         `${SERVER_TEST_SRC_DIR}com/mycompany/myapp/config/KafkaTestContainer.kt`,
@@ -269,7 +268,6 @@ const expectedFiles = {
 
     mysql: [
         `${SERVER_TEST_SRC_DIR}com/mycompany/myapp/config/SqlTestContainer.kt`,
-        `${SERVER_TEST_SRC_DIR}com/mycompany/myapp/config/MysqlTestContainer.kt`,
         `${SERVER_TEST_SRC_DIR}com/mycompany/myapp/config/EmbeddedSQL.kt`,
         `${SERVER_TEST_RES_DIR}testcontainers.properties`,
         `${SERVER_TEST_RES_DIR}META-INF/spring.factories`,
@@ -279,7 +277,6 @@ const expectedFiles = {
 
     mariadb: [
         `${SERVER_TEST_SRC_DIR}com/mycompany/myapp/config/SqlTestContainer.kt`,
-        `${SERVER_TEST_SRC_DIR}com/mycompany/myapp/config/MariadbTestContainer.kt`,
         `${SERVER_TEST_SRC_DIR}com/mycompany/myapp/config/EmbeddedSQL.kt`,
         `${SERVER_TEST_RES_DIR}testcontainers.properties`,
         `${SERVER_TEST_RES_DIR}META-INF/spring.factories`,
@@ -292,7 +289,6 @@ const expectedFiles = {
 
     mssql: [
         `${SERVER_TEST_SRC_DIR}com/mycompany/myapp/config/SqlTestContainer.kt`,
-        `${SERVER_TEST_SRC_DIR}com/mycompany/myapp/config/MsSqlTestContainer.kt`,
         `${SERVER_TEST_SRC_DIR}com/mycompany/myapp/config/EmbeddedSQL.kt`,
         `${SERVER_TEST_RES_DIR}testcontainers.properties`,
         `${SERVER_TEST_RES_DIR}META-INF/spring.factories`,
@@ -302,7 +298,6 @@ const expectedFiles = {
 
     postgresql: [
         `${SERVER_TEST_SRC_DIR}com/mycompany/myapp/config/SqlTestContainer.kt`,
-        `${SERVER_TEST_SRC_DIR}com/mycompany/myapp/config/PostgreSqlTestContainer.kt`,
         `${SERVER_TEST_SRC_DIR}com/mycompany/myapp/config/EmbeddedSQL.kt`,
         `${SERVER_TEST_RES_DIR}testcontainers.properties`,
         `${SERVER_TEST_RES_DIR}META-INF/spring.factories`,
@@ -345,7 +340,6 @@ const expectedFiles = {
     ],
 
     neo4j: [
-        `${SERVER_TEST_SRC_DIR}com/mycompany/myapp/config/EmbeddedNeo4j.kt`,
         `${SERVER_TEST_SRC_DIR}com/mycompany/myapp/config/Neo4jTestContainer.kt`,
         `${SERVER_TEST_RES_DIR}testcontainers.properties`,
         `${SERVER_TEST_RES_DIR}META-INF/spring.factories`,

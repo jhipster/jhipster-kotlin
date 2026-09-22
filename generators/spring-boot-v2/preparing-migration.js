@@ -62,19 +62,23 @@ const migrationApplicationDefaults = {
     ELASTICSEARCH_VERSION,
     otherModules: [],
     protractorTests: false,
-    devDatabaseTypeMysql: undefined,
-    devDatabaseTypeMariadb: undefined,
-    devDatabaseTypePostgres: undefined,
-    devDatabaseTypeMssql: undefined,
-    devDatabaseTypeOracle: undefined,
-    devDatabaseTypeH2Disk: undefined,
-    devDatabaseTypeH2Memory: undefined,
-    devDatabaseTypeH2Any: undefined,
-    prodDatabaseTypeMysql: undefined,
-    prodDatabaseTypeMariadb: undefined,
-    prodDatabaseTypeMssql: undefined,
-    prodDatabaseTypePostgresql: undefined,
-    prodDatabaseTypeOracle: undefined,
+    // These must be `false`, not `undefined`: the jhipster7Migration compat proxy treats an
+    // undefined property value the same as a missing one and falls back to its own
+    // deprecated-property mapping (e.g. devDatabaseTypePostgres -> prodDatabaseTypePostgresql),
+    // which silently reintroduces the exact flag we're trying to force off here.
+    devDatabaseTypeMysql: false,
+    devDatabaseTypeMariadb: false,
+    devDatabaseTypePostgres: false,
+    devDatabaseTypeMssql: false,
+    devDatabaseTypeOracle: false,
+    devDatabaseTypeH2Disk: false,
+    devDatabaseTypeH2Memory: false,
+    devDatabaseTypeH2Any: false,
+    prodDatabaseTypeMysql: false,
+    prodDatabaseTypeMariadb: false,
+    prodDatabaseTypeMssql: false,
+    prodDatabaseTypePostgresql: false,
+    prodDatabaseTypeOracle: false,
 };
 
 const javaDependenciesOverrides = {
