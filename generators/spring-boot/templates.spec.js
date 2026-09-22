@@ -1,5 +1,4 @@
 import { describe, expect, it } from 'vitest';
-import { existsSync } from 'fs';
 import { readdir } from 'fs/promises';
 import { dirname, join, relative } from 'path';
 import { fileURLToPath } from 'url';
@@ -29,36 +28,22 @@ describe('test if kotlin templates has a matching java template', async () => {
                 !file.includes('KafkaResourceIT_reactive'),
         )) {
             const javaTemplate = file.replace('.kt', '.java').replace('kotlin/_package_', 'java/_package_');
-            const possibleTemplates = [];
-            let javaTemplateRelativePath;
-            if (['src', '_global_partials_entity_', 'reactive'].includes(folder)) {
-                javaTemplateRelativePath = relative(join(__dirname, 'templates'), javaTemplate);
-                possibleTemplates.push(
-                    join(jhipster8Generators, 'server/templates', javaTemplateRelativePath),
-                    join(jhipster8Generators, 'spring-boot/templates', javaTemplateRelativePath),
-                );
-            } else {
-                javaTemplateRelativePath = relative(join(__dirname, 'templates', folder), javaTemplate);
-                if (['domain'].includes(folder)) {
-                    possibleTemplates.push(join(jhipster8Generators, 'java/generators', folder, 'templates', javaTemplateRelativePath));
-                } else if (['gateway'].includes(folder)) {
-                    possibleTemplates.push(
-                        join(jhipster8Generators, 'spring-cloud/generators', folder, 'templates', javaTemplateRelativePath),
-                    );
-                } else if (['kafka'].includes(folder)) {
-                    possibleTemplates.push(
-                        join(jhipster8Generators, 'spring-cloud-stream/generators', folder, 'templates', javaTemplateRelativePath),
-                    );
-                } else {
-                    possibleTemplates.push(join(jhipster8Generators, folder, 'templates', javaTemplateRelativePath));
-                }
-            }
+            const javaTemplateRelativePath = ['src', '_global_partials_entity_', 'reactive'].includes(folder)
+                ? relative(join(__dirname, 'templates'), javaTemplate)
+                : relative(join(__dirname, 'templates', folder), javaTemplate);
 
             it(`java jhipster template should exist: ${javaTemplateRelativePath}`, async () => {
+                // JHipster's own generators get reorganized across releases (subgenerators move,
+                // get renamed, etc.), so search the whole tree for a matching relative path instead
+                // of hardcoding which generator currently owns it.
+                const matches = await globby(`**/templates/${javaTemplateRelativePath}`, {
+                    cwd: jhipster8Generators,
+                    gitignore: false,
+                });
                 expect(
-                    possibleTemplates.some(template => existsSync(template)),
-                    `none of files were found: ${possibleTemplates}, it was removed in generator-jhipster?`,
-                ).toBeTruthy();
+                    matches,
+                    `none of files were found for ${javaTemplateRelativePath}, it was removed in generator-jhipster?`,
+                ).not.toHaveLength(0);
             });
         }
     }
