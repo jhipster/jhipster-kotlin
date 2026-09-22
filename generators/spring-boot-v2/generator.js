@@ -146,6 +146,23 @@ export default class extends BaseApplicationGenerator {
                                 return undefined;
                             }
 
+                            // jhipster-7-templates' file list always requests the unsuffixed
+                            // AccountResource(IT).java; 9.x split it by auth/user-management
+                            // strategy into 3 files each, so pick the matching one ourselves.
+                            if (sourceFile.endsWith('/AccountResource.java')) {
+                                if (application.authenticationTypeOauth2 && application.generateBuiltInUserEntity) {
+                                    sourceFile = sourceFile.replace('AccountResource.java', 'AccountResource_oauth2.java');
+                                } else if (!application.generateUserManagement) {
+                                    sourceFile = sourceFile.replace('AccountResource.java', 'AccountResource_skipUserManagement.java');
+                                }
+                            } else if (sourceFile.endsWith('/AccountResourceIT.java')) {
+                                if (application.authenticationTypeOauth2) {
+                                    sourceFile = sourceFile.replace('AccountResourceIT.java', 'AccountResourceIT_oauth2.java');
+                                } else if (!application.generateUserManagement) {
+                                    sourceFile = sourceFile.replace('AccountResourceIT.java', 'AccountResourceIT_skipUserManagement.java');
+                                }
+                            }
+
                             for (const fileMap of [
                                 ['/java/package/', '/java/_package_/'],
                                 ['/EntityMapper.', '/_entityClass_Mapper.'],
