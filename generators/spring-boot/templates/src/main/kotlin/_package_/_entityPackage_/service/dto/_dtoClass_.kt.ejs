@@ -19,7 +19,7 @@
 package <%= entityAbsolutePackage %>.service.dto
 
 import java.util.Objects
-<%_ if (typeof javadoc !== 'undefined' || importApiModelProperty) { _%>
+<%_ if (entityApiDescription || restProperties.some(property => property.propertyApiDescription) || importApiModelProperty) { _%>
 import io.swagger.v3.oas.annotations.media.Schema
 <%_ } _%>
 <%_ if (anyFieldIsInstant) { _%>
@@ -27,6 +27,9 @@ import java.time.Instant
 <%_ } _%>
 <%_ if (anyFieldIsLocalDate) { _%>
 import java.time.LocalDate
+<%_ } _%>
+<%_ if (anyFieldIsLocalTime) { _%>
+import java.time.LocalTime
 <%_ } _%>
 <%_ if (anyFieldIsZonedDateTime) { _%>
 import java.time.ZonedDateTime
@@ -50,9 +53,9 @@ import java.util.UUID
 <%_ if (anyFieldIsBlobDerived && databaseTypeSql) { _%>
 import jakarta.persistence.Lob
 <%_ } _%>
-<%_ Object.keys(uniqueEnums).forEach(function(element) { _%>
-import <%= entityAbsolutePackage %>.domain.enumeration.<%= element %>
-<%_ }); _%>
+<%_ for (const enumField of uniqueEnums) { _%>
+import <%= entityAbsolutePackage %>.domain.enumeration.<%= enumField.fieldType %>
+<%_ } _%>
 
 <%_ for (const otherEntity of otherEntities.filter(otherEntity => otherEntity.entityPackage !== entityPackage)) { _%>
 import <%= `${otherEntity.entityAbsolutePackage}.service.dto.${otherEntity.dtoClass}` %>
@@ -61,81 +64,86 @@ import <%= `${otherEntity.entityAbsolutePackage}.service.dto.${otherEntity.dtoCl
 /**
  * A DTO for the [<%= entityAbsolutePackage %>.domain.<%= persistClass %>] entity.
  */
-<%_ if (typeof javadoc !== 'undefined') { _%>
-@Schema(description = "<%- formatAsApiDescription(javadoc) %>")
+<%_ if (entityApiDescription) { _%>
+@Schema(description = "<%- entityApiDescription %>")
 <%_ } _%>
 @SuppressWarnings("common-java:DuplicatedBlocks")
 data class <%= dtoClass %>(
-    <%_
-        const entityClassProperties = [];
-        dtoReferences.forEach(reference => {
-            const classProperty = [];
-            if (typeof reference.doc !== 'undefined') {
-                classProperty.push(formatAsFieldJavadoc(reference.doc));
-            }
-            const field = reference.field;
-            const required = field && field.fieldValidate && field.fieldValidationRequired;
-            if (field) {
-                if (field.fieldValidate) {
-                    classProperty.push(include('/_global_partials_entity_/field_validators', {field, reactive}));
-                }
-            }
-            if (reference.doc) {
-                classProperty.push(`@Schema(description="${formatAsApiDescription(reference.doc)}"${required ? ', required = true': ''})`);
-            }
-            if (field && field.fieldTypeBytes && databaseTypeSql) {
-                classProperty.push('@Lob');
-            }
+<%_
+    const entityClassProperties = [];
+    for (const property of restProperties) {
+        const classProperty = [];
+        if (property.propertyJavadoc) {
+            classProperty.push(property.propertyJavadoc.trim());
+        }
+        const field = property.fieldName ? property : undefined;
+        const relationship = property.relationshipName ? property : undefined;
+        const required = field && field.fieldValidate && field.fieldValidationRequired;
 
-            let property = '';
+        if (field && field.fieldValidate) {
+            const validators = include('/_global_partials_entity_/field_validators', { field, reactive }).trim();
+            if (validators) {
+                classProperty.push(validators);
+            }
+        }
+        if (relationship && relationship.relationshipRequired) {
+            classProperty.push('@get: NotNull');
+        }
+        if (property.propertyApiDescription) {
+            classProperty.push(`@Schema(description = "${property.propertyApiDescription}"${required ? ', requiredMode = Schema.RequiredMode.REQUIRED' : ''})`);
+        }
+        if (property.fieldTypeBytes && databaseTypeSql) {
+            classProperty.push('@Lob');
+        }
 
-            if (field && field.blobContentTypeText) {
-                property = `var ${reference.name}: String? = null`;
-            } else if (reference.collection && reference.relationship) {
-                property = `var ${reference.name}: MutableSet<${reference.relationship.otherEntity.dtoClass}> = mutableSetOf()`;
-            } else if (reference.relationship) {
-                property = `var ${reference.name}: ${reference.relationship.otherEntity.dtoClass}? = null`;
-            } else if (reference.type === 'byte[]') {
-                property = `var ${reference.name}: ByteArray? = null`;
-            } else if (reference.type === 'Integer') {
-                property = `var ${reference.name}: Int? = null`;
+        let propertyDef = '';
+        if (field) {
+            let kotlinType = field.fieldType;
+            if (field.fieldTypeBlobContent === 'text') {
+                kotlinType = 'String';
+            } else if (field.fieldTypeBytes || field.fieldType === 'byte[]') {
+                kotlinType = 'ByteArray';
+            } else if (field.fieldType === 'Integer') {
+                kotlinType = 'Int';
+            }
+            propertyDef = `var ${field.propertyName}: ${kotlinType}? = null`;
+            if (field.fieldWithContentType) {
+                propertyDef += `,\n    var ${field.propertyName}ContentType: String? = null`;
+            }
+        } else if (relationship) {
+            if (relationship.collection) {
+                propertyDef = `var ${relationship.propertyName}: MutableSet<${relationship.otherEntity.dtoClass}> = mutableSetOf()`;
             } else {
-                property = `var ${reference.name}: ${reference.type}? = null`;
+                propertyDef = `var ${relationship.propertyName}: ${relationship.otherEntity.dtoClass}? = null`;
             }
+        }
 
-            if (reference.field && reference.field.fieldWithContentType) {
-                property += `,\n    var ${reference.name}ContentType: String? = null`;
-            }
-
-            classProperty.push(property);
-
-            entityClassProperties.push(classProperty.join('    '));
-        });
-    _%>
-
+        classProperty.push(propertyDef);
+        entityClassProperties.push(classProperty.join('\n    '));
+    }
+_%>
     <%- entityClassProperties.join(',\n\n    ') %>
 ) : Serializable {
 
-    <%_ const idNames = primaryKey ? [...primaryKey.fields.map(f => f.fieldName)] : [] _%>
+    <%_ const idNames = primaryKey ? [...primaryKey.fields.map(f => f.propertyName)] : []; _%>
 
     override fun equals(other: Any?): Boolean {
         if (this === other) return true
         if (other !is <%= dtoClass %>) return false
-        <%_ if (!embedded) { _%>
-        val <%= dtoInstance %> = other
-        if (<%- idNames.map(n => `this.${n} == null`).join(' && ') %>){
-            return false;
-        }
-        return <%- idNames.map(n => `Objects.equals(this.${n}, ${dtoInstance}.${n})`).join(' &&\n            ') %>;
-        <%_ } else { _%>
+        <%_ if (embedded) { _%>
         return false
+        <%_ } else { _%>
+        val <%= dtoInstance %> = other
+        if (<%- idNames.map(n => `this.${n} == null`).join(' && ') %>) {
+            return false
+        }
+        return <%- idNames.map(n => `Objects.equals(this.${n}, ${dtoInstance}.${n})`).join(' &&\n            ') %>
         <%_ } _%>
     }
 
-    override fun hashCode() =  <%_ if (!embedded) { _%>
-        Objects.hash(<%- idNames.map(n => `this.${n}`).join(', ') %>)
+    override fun hashCode(): Int = <%_ if (embedded) { _%>
+        javaClass.hashCode()
     <%_ } else { _%>
-    <%# Todo: Fix this %>
-        31
+        Objects.hash(<%- idNames.map(n => `this.${n}`).join(', ') %>)
     <%_ } _%>
 }
