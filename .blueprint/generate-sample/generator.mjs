@@ -18,13 +18,6 @@ export default class extends BaseGenerator {
         super(args, opts, { ...features, jhipsterBootstrap: false });
     }
 
-    beforeQueue() {
-        // 9.x removed the public parseCurrentJHipsterCommand()/promptCurrentJHipsterCommand()/
-        // configureCurrentJHipsterCommandConfig() methods; command parsing/prompting/configuring
-        // is now queued automatically via this (still accessible) helper instead.
-        this._queueCurrentJHipsterCommandTasks();
-    }
-
     get [BaseGenerator.LOADING]() {
         return this.asLoadingTaskGroup({
             async loadCommand() {
