@@ -139,7 +139,11 @@ export default class extends BaseApplicationGenerator {
             addCacheNeedles({ source, application }) {
                 // Needle added in jhipster:spring-cache, delay to override it.
                 this.delayTask(() => {
-                    if (application.cacheProviderEhcache) {
+                    if (application.cacheProviderEhcache || application.cacheProviderCaffeine || application.cacheProviderRedis) {
+                        // The per-provider CacheConfiguration_<provider>.kt.ejs templates are only used to pick
+                        // which body gets rendered: upstream strips the `_<provider>` suffix from the destination
+                        // file (see replaceEntityFilePathVariables), so the generated file is always named
+                        // CacheConfiguration.kt regardless of the selected cacheProvider.
                         const cacheConfigurationFile = `src/main/kotlin/${application.packageFolder}config/CacheConfiguration.kt`;
                         const needle = `${application.cacheProvider}-add-entry`;
                         const useJcacheConfiguration = application.cacheProviderRedis;
