@@ -1,0 +1,215 @@
+<%#
+ Copyright 2013-2026 the original author or authors from the JHipster project.
+
+ This file is part of the JHipster project, see https://www.jhipster.tech/
+ for more information.
+
+ Licensed under the Apache License, Version 2.0 (the "License");
+ you may not use this file except in compliance with the License.
+ You may obtain a copy of the License at
+
+      https://www.apache.org/licenses/LICENSE-2.0
+
+ Unless required by applicable law or agreed to in writing, software
+ distributed under the License is distributed on an "AS IS" BASIS,
+ WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
+ See the License for the specific language governing permissions and
+ limitations under the License.
+-%>
+package gatling.simulations
+
+import io.gatling.javaapi.core.ChainBuilder
+import io.gatling.javaapi.core.CoreDsl.StringBody
+import io.gatling.javaapi.core.CoreDsl.css
+import io.gatling.javaapi.core.CoreDsl.exec
+import io.gatling.javaapi.core.CoreDsl.rampUsers
+import io.gatling.javaapi.core.CoreDsl.scenario
+import io.gatling.javaapi.core.ScenarioBuilder
+import io.gatling.javaapi.core.Simulation
+import io.gatling.javaapi.http.HttpDsl.header
+import io.gatling.javaapi.http.HttpDsl.headerRegex
+import io.gatling.javaapi.http.HttpDsl.http
+import io.gatling.javaapi.http.HttpDsl.status
+import io.gatling.javaapi.http.HttpProtocolBuilder
+import java.time.Duration
+
+/**
+ * Performance test for the <%- entityClass %> entity.
+ *
+ * @see <a href="https://github.com/jhipster/generator-jhipster/tree/v<%- jhipsterVersion %>/generators/gatling#logging-tips">Logging tips</a>
+ */
+class <%- entityClass %>GatlingTest : Simulation() {
+
+    val baseURL: String = System.getProperty("baseURL") ?: "http://localhost:<%- serverPort %>"
+
+    val httpConf: HttpProtocolBuilder = http
+        .baseUrl(baseURL)
+        .inferHtmlResources()
+        .acceptHeader("*/*")
+        .acceptEncodingHeader("gzip, deflate")
+        .acceptLanguageHeader("fr,fr-fr;q=0.8,en-us;q=0.5,en;q=0.3")
+        .connectionHeader("keep-alive")
+        .userAgentHeader("Mozilla/5.0 (Macintosh; Intel Mac OS X 10.10; rv:33.0) Gecko/20100101 Firefox/33.0")
+        .silentResources() // Silence all resources like css or js so they don't clutter the results
+<%_ if (authenticationTypeOauth2) { _%>
+        .disableFollowRedirect() // We must follow redirects manually to get the xsrf token from the keycloak redirect
+        .disableAutoReferer()
+<%_ } _%>
+
+    val headersHttp: Map<String, String> = mapOf(
+        "Accept" to "application/json",
+    )
+<%_ if (authenticationUsesCsrf) { _%>
+
+    val headersHttpAuthenticated: Map<String, String> = mapOf(
+        "Accept" to "application/json",
+        "X-XSRF-TOKEN" to "\${xsrf_token}",
+    )
+
+    val keycloakHeaders: Map<String, String> = mapOf(
+        "Accept" to "text/html,application/xhtml+xml,application/xml;q=0.9,*/*;q=0.8",
+        "Upgrade-Insecure-Requests" to "1",
+    )
+<%_ } _%>
+<%_ if (authenticationTypeJwt) { _%>
+
+    val headersHttpAuthentication: Map<String, String> = mapOf(
+        "Content-Type" to "application/json",
+        "Accept" to "application/json",
+    )
+
+    val headersHttpAuthenticated: Map<String, String> = mapOf(
+        "Accept" to "application/json",
+        "Authorization" to "\${access_token}",
+    )
+<%_ } _%>
+
+    val scn: ChainBuilder = exec(
+        http("First unauthenticated request")
+            .get("/api/account")
+            .headers(headersHttp)
+<%_ if ((applicationTypeMicroservice || applicationTypeGateway) && authenticationTypeOauth2) { _%>
+            .check(status().`is`(302)),
+<%_ } else { _%>
+            .check(status().`is`(401)),
+<%_ } _%>
+<%_ if (authenticationUsesCsrf) { _%>
+            .check(headerRegex("Set-Cookie", "XSRF-TOKEN=(.*);[\\s]").saveAs("xsrf_token")),
+<%_ } _%>
+    ).exitHereIfFailed()
+        .pause(10)
+        .exec(
+            http("Authentication")
+<%_ if (authenticationTypeSession) { _%>
+                .post("/api/authentication")
+                .headers(headersHttpAuthenticated)
+                .formParam("username", "admin")
+                .formParam("password", "admin")
+                .formParam("remember-me", "true")
+                .formParam("submit", "Login")
+                .check(headerRegex("Set-Cookie", "XSRF-TOKEN=(.*);[\\s]").saveAs("xsrf_token")),
+        ).exitHereIfFailed()
+<%_ } else if (authenticationTypeOauth2) { _%>
+                .get("/oauth2/authorization/oidc")
+                .check(status().`is`(302))
+                .check(header("Location").saveAs("loginUrl")),
+        ).exitHereIfFailed()
+        .pause(2)
+        .exec(
+            http("Login Redirect")
+                .get("\${loginUrl}")
+                .silent()
+                .headers(keycloakHeaders)
+                .check(css("#kc-form-login", "action").saveAs("kc-form-login")),
+        ).exitHereIfFailed()
+        .pause(10)
+        .exec(
+            http("Authenticate")
+                .post("\${kc-form-login}")
+                .silent()
+                .headers(keycloakHeaders)
+                .formParam("username", "admin")
+                .formParam("password", "admin")
+                .formParam("submit", "Login")
+                .check(status().`is`(302))
+                .check(header("Location").saveAs("afterLoginUrl")),
+        ).exitHereIfFailed()
+        .pause(2)
+        .exec(
+            http("After Login Redirect")
+                .get("\${afterLoginUrl}")
+                .silent()
+                .check(status().`is`(302))
+                .check(header("Location").saveAs("finalRedirectUrl"))
+                .check(headerRegex("Set-Cookie", "XSRF-TOKEN=(.*);[\\s]").saveAs("xsrf_token")),
+        )
+        .exec(
+            http("Final Redirect")
+                .get("\${finalRedirectUrl}")
+                .silent()
+                .check(status().`is`(200)),
+        ).exitHereIfFailed()
+<%_ } else if (authenticationTypeJwt) { _%>
+                .post("/api/authenticate")
+                .headers(headersHttpAuthentication)
+                .body(StringBody("{\"username\":\"admin\", \"password\":\"admin\"}")).asJson()
+                .check(header("Authorization").saveAs("access_token")),
+        ).exitHereIfFailed()
+<%_ } _%>
+        .pause(2)
+        .exec(
+            http("Authenticated request")
+                .get("/api/account")
+                .headers(headersHttpAuthenticated)
+                .check(status().`is`(200)),
+        )
+        .pause(10)
+        .repeat(2).on(
+            exec(
+                http("Get all <%- entityInstancePlural %>")
+                    .get("<% if (applicationTypeMicroservice) { %>/services/<%- baseName.toLowerCase() %><% } %>/api/<%- entityApiUrl %>")
+                    .headers(headersHttpAuthenticated)
+                    .check(status().`is`(200)),
+            )
+                .pause(Duration.ofSeconds(10), Duration.ofSeconds(20))
+                .exec(
+                    http("Create new <%- entityInstance %>")
+                        .post("<% if (applicationTypeMicroservice) { %>/services/<%- baseName.toLowerCase() %><% } %>/api/<%- entityApiUrl %>")
+                        .headers(headersHttpAuthenticated)
+                        .body(
+                            StringBody(
+                                "{" +
+<%_ for (const [idx, field] of fields.filter(f => !(f.id && f.autoGenerate)).entries()) { _%>
+                                "<%- idx === 0 ? '' : ', ' %>\"<%- field.fieldName %>\": <% if (field.fieldTypeString) { %>\"SAMPLE_TEXT\"<% } else if (field.fieldTypeNumeric) { %>0<% } else if (field.fieldTypeTemporal) { %>\"2020-01-01T00:00:00.000Z\"<% } else if (field.fieldIsEnum) { %>\"<%- field.enumValues[0].name %>\"<% } else { %>null<% } %>" +
+<%_ } _%>
+                                "}",
+                            ),
+                        ).asJson()
+                        .check(status().`is`(201))
+                        .check(headerRegex("Location", "(.*)").saveAs("new_<%- entityInstance %>_url")),
+                ).exitHereIfFailed()
+                .pause(10)
+                .repeat(5).on(
+                    exec(
+                        http("Get created <%- entityInstance %>")
+                            .get("<% if (applicationTypeMicroservice) { %>/services/<%- baseName.toLowerCase() %><% } %>\${new_<%- entityInstance %>_url}")
+                            .headers(headersHttpAuthenticated),
+                    )
+                        .pause(10),
+                )
+                .exec(
+                    http("Delete created <%- entityInstance %>")
+                        .delete("<% if (applicationTypeMicroservice) { %>/services/<%- baseName.toLowerCase() %><% } %>\${new_<%- entityInstance %>_url}")
+                        .headers(headersHttpAuthenticated),
+                )
+                .pause(10),
+        )
+
+    val users: ScenarioBuilder = scenario("Test the <%- entityClass %> entity").exec(scn)
+
+    init {
+        setUp(
+            users.injectOpen(rampUsers(Integer.getInteger("users", 100)).during(Duration.ofMinutes(Integer.getInteger("ramp", 1).toLong()))),
+        ).protocols(httpConf)
+    }
+}
