@@ -2,7 +2,7 @@ import { existsSync } from 'fs';
 import { join } from 'path';
 
 // Use spring-boot as parent due to this context in generators
-import { createNeedleCallback } from 'generator-jhipster/generators/base/support';
+import { createNeedleCallback } from 'generator-jhipster/generators/base-core/support';
 import BaseApplicationGenerator from 'generator-jhipster/generators/base-application';
 
 import { convertToKotlinFile } from '../kotlin/support/files.js';
@@ -51,7 +51,7 @@ export default class extends BaseApplicationGenerator {
                     syncUserWithIdp: application.authenticationType === 'oauth2',
                 });
 
-                application.customizeTemplatePaths.unshift(
+                (application.customizeTemplatePaths ??= []).unshift(
                     // Remove package-info.java files
                     file => (file.sourceFile.includes('package-info.java') ? undefined : file),
                     // Kotling blueprint does not implements these files

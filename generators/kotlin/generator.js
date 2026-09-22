@@ -10,19 +10,24 @@ export default class extends BaseApplicationGenerator {
     }
 
     async beforeQueue() {
-        await this.dependsOnJHipster('jhipster:java:build-tool');
+        await this.dependsOnJHipster('jhipster:java-simple-application:build-tool');
     }
 
     get [BaseApplicationGenerator.LOADING]() {
         return this.asLoadingTaskGroup({
-            async loadCatalog({ application }) {
-                this.loadJavaDependenciesFromGradleCatalog(application.javaDependencies);
-            },
             async applyKotlinDefaults({ application }) {
                 Object.assign(application, {
                     // We don't want to use to write any Java files
                     backendTypeJavaAny: false,
                 });
+            },
+        });
+    }
+
+    get [BaseApplicationGenerator.PREPARING]() {
+        return this.asPreparingTaskGroup({
+            async loadCatalog({ application }) {
+                this.loadJavaDependenciesFromGradleCatalog(application.javaDependencies);
             },
         });
     }

@@ -4,8 +4,8 @@ import { fileURLToPath } from 'url';
 
 import { getEnumInfo } from 'generator-jhipster/generators/base-application/support';
 import BaseApplicationGenerator from 'generator-jhipster/generators/spring-boot';
-import { files as entityServerFiles } from 'jhipster-7-templates/esm/generators/entity-server';
-import { files as serverFiles } from 'jhipster-7-templates/esm/generators/server';
+import { files as rawEntityServerFiles } from 'jhipster-7-templates/esm/generators/entity-server';
+import { files as rawServerFiles } from 'jhipster-7-templates/esm/generators/server';
 
 import { convertToKotlinFile } from '../kotlin/support/files.js';
 
@@ -13,6 +13,26 @@ import migration from './migration.cjs';
 import { migrateApplicationTask } from './preparing-migration.js';
 
 const { jhipsterConstants } = migration;
+
+// jhipster-7-templates file specs use the legacy `{ file, method: 'copy', noEjs: true }` shape.
+// generator-jhipster 9.x's writeFiles only understands the `transform: false` equivalent.
+const normalizeJhipster7Template = template => {
+    if (typeof template !== 'object' || template.noEjs === undefined) {
+        return template;
+    }
+    const { noEjs, method, ...rest } = template;
+    return { ...rest, transform: !noEjs };
+};
+const normalizeJhipster7Sections = sections =>
+    Object.fromEntries(
+        Object.entries(sections).map(([sectionName, blocks]) => [
+            sectionName,
+            blocks.map(block => ({ ...block, templates: block.templates.map(normalizeJhipster7Template) })),
+        ]),
+    );
+
+const entityServerFiles = normalizeJhipster7Sections(rawEntityServerFiles);
+const serverFiles = normalizeJhipster7Sections(rawServerFiles);
 const { MAIN_DIR } = jhipsterConstants;
 const SERVER_MAIN_SRC_KOTLIN_DIR = `${MAIN_DIR}kotlin/`;
 
@@ -45,7 +65,7 @@ export default class extends BaseApplicationGenerator {
                 }
             },
             ignoreSpringBootV3Files({ application }) {
-                application.customizeTemplatePaths.push(
+                (application.customizeTemplatePaths ??= []).push(
                     // Adjust feign-client and kafka destinationFile for jhipster 7 paths
                     file => {
                         if (!['jhipster:feign-client', 'jhipster:spring-cloud-stream:kafka'].includes(file.namespace)) return file;
@@ -308,6 +328,8 @@ export default class extends BaseApplicationGenerator {
                             'KafkaSseProducer.java',
                             // jhipster:java:openapi-generator v7.6.1
                             'swagger.gradle',
+                            // jhipster:java-simple-application:gradle
+                            'build.gradle',
                         ].includes(sourceBasename)
                             ? undefined
                             : file;

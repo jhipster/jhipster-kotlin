@@ -1,4 +1,5 @@
 import { asWritingTask } from 'generator-jhipster/generators/base-application/support';
+import { getJdbcUrl, getR2dbcUrl } from 'generator-jhipster/generators/spring-boot/generators/data-relational/support';
 
 import migration from './migration.cjs';
 
@@ -34,8 +35,23 @@ const migrationApplicationOverrides = {
 };
 
 const migrationApplicationDefaults = {
+    // v7 templates read dependency versions through the (deprecated even in v7) dependabotPackageJson,
+    // 9.x populates the same information under nodeDependencies.
+    dependabotPackageJson: ctx => ({ devDependencies: ctx.nodeDependencies }),
     DOCKER_COMPOSE_FORMAT_VERSION,
-    GRADLE_VERSION: ctx => ctx.gradleVersion,
+    GRADLE_VERSION: ctx => (ctx.buildToolGradle ? ctx.gradleVersion : undefined),
+    NODE_VERSION: ctx => ctx.nodeVersion,
+    cacheManagerIsAvailable: ctx => ctx.cacheProviderAny,
+    cacheProviderEhCache: ctx => ctx.cacheProviderEhcache,
+    cucumberTests: ctx => ctx.serverTestFrameworksCucumber,
+    LOGIN_REGEX: ctx => ctx.loginRegex,
+    asEntity: ctx => name => `${name}${ctx.entitySuffix}`,
+    getJDBCUrl: () => getJdbcUrl,
+    getR2DBCUrl: () => getR2dbcUrl,
+    getPrettierExtensions: ctx => () => ctx.prettierExtensions,
+    BUILD_DIR: ctx => ctx.temporaryDir,
+    frontendAppName: ctx => ctx.baseName,
+    prodDatabaseTypePostgres: ctx => ctx.prodDatabaseTypePostgresql,
     SPRING_BOOT_VERSION: ctx => ctx.javaDependencies['spring-boot'],
     LIQUIBASE_VERSION: ctx => ctx.javaDependencies.liquibase,
     HIBERNATE_VERSION: ctx => ctx.javaDependencies.hibernate,

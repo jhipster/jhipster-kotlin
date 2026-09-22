@@ -27,9 +27,9 @@ export default class extends BaseApplicationGenerator {
         await this.dependsOnBootstrapApplicationServer();
     }
 
-    get [BaseApplicationGenerator.LOADING]() {
-        return this.asLoadingTaskGroup({
-            async loading({ application }) {
+    get [BaseApplicationGenerator.PREPARING]() {
+        return this.asPreparingTaskGroup({
+            async preparing({ application }) {
                 this.loadJavaDependenciesFromGradleCatalog(application.javaDependencies);
                 this.ktlintFolder = this.destinationPath('.ktlint', application.javaDependencies['ktlint-cli']);
                 this.ktlintExecutable = join(this.ktlintFolder, platform() === 'win32' ? 'ktlint.bat' : 'ktlint');
