@@ -384,7 +384,7 @@ const expectedFiles = {
         `${SERVER_TEST_SRC_DIR}com/mycompany/myapp/cucumber/CucumberTestContextConfiguration.kt`,
         `${SERVER_TEST_SRC_DIR}com/mycompany/myapp/cucumber/stepdefs/UserStepDefs.kt`,
         `${SERVER_TEST_SRC_DIR}com/mycompany/myapp/cucumber/stepdefs/StepDefs.kt`,
-        `${SERVER_TEST_SRC_DIR}com/mycompany/myapp/cucumber/CucumberIT.kt`,
+        `${SERVER_TEST_SRC_DIR}com/mycompany/myapp/cucumber/CucumberTest.kt`,
         `${SERVER_TEST_RES_DIR}cucumber.properties`,
     ],
 
