@@ -153,7 +153,7 @@ export default class extends BaseApplicationGenerator {
                                 ['/SecurityConfiguration.', '/SecurityConfiguration_imperative.'],
                                 ['/ExceptionTranslatorIT.', '/ExceptionTranslatorIT_imperative.'],
                                 ['/LogoutResource.', '/LogoutResource_imperative.'],
-                                ['/SpaWebFilter.', '/SpaWebFilter_reactive.'],
+                                ['/SpaWebFilter.', application.reactive ? '/SpaWebFilter_reactive.' : '/SpaWebFilter_imperative.'],
                                 ['EntityDTO', '_dtoClass_'],
                                 [/\/Entity(.*)\./, '/_entityClass_$1.'],
                                 ['/BaseEntityMapper.', '/EntityMapper.'],
