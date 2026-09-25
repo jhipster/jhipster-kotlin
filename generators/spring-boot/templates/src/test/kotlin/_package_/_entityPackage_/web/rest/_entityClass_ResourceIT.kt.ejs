@@ -42,6 +42,8 @@ if (!reactive && databaseTypeSql) {
 
 let createEntityPrefix = '';
 let createEntityPostfix = '';
+// Reactive SQL tests use Spring Data's R2dbcEntityTemplate (as upstream) instead of the removed v7 EntityManager
+const entityManagerType = databaseTypeSql && reactive ? 'R2dbcEntityTemplate' : 'EntityManager';
 if (databaseTypeSql && reactive) {
     createEntityPrefix = 'em.insert(';
     createEntityPostfix = ').block()';
@@ -84,7 +86,7 @@ import <%= entityAbsolutePackage %>.repository.UserRepository
 <%_ } _%>
 import <%= entityAbsolutePackage %>.repository.<%= entityClass %>Repository
 <%_ if (databaseTypeSql && reactive) { _%>
-import <%= packageName %>.repository.EntityManager
+import org.springframework.data.r2dbc.core.R2dbcEntityTemplate
 <%_ } _%>
 <%_ if (isUsingMapsId&& ( !dtoMapstruct && serviceNo)) { _%>
 import <%= mapsIdAssoc.otherEntity.entityAbsolutePackage %>.repository.<%= mapsIdAssoc.otherEntity.entityNameCapitalized %>Repository
@@ -298,7 +300,7 @@ class <%= entityClass %>ResourceIT {
     <%_ if (databaseTypeSql) { _%>
 
     @Autowired
-    private lateinit var em: EntityManager
+    private lateinit var em: <%= entityManagerType %>
     <%_ } _%>
 
     <%_ if (reactive) { _%>
@@ -486,7 +488,7 @@ class <%= entityClass %>ResourceIT {
         <%_ } break; } _%>
 
         // Load the <%= entityInstance %>
-        val updated<%= persistClass %> = <%= entityInstance %>Repository.findById(<%= persistInstance %>.<%= primaryKey.name %>)<%= reactive ? '.block()' : '.get()' %>
+        val updated<%= persistClass %> = <%= entityInstance %>Repository.findById(<%= persistInstance %>.<%= primaryKey.name %>!!)<%= reactive ? '.block()' : '.get()' %>
         assertThat(updated<%= persistClass %>).isNotNull<% if (databaseTypeSql && !reactive) { %>
         // Disconnect from session so that the updates on updated<%= persistClass %> are not directly saved in db
         em.detach(updated<%= persistClass %>)<% } %>
@@ -1120,7 +1122,7 @@ class <%= entityClass %>ResourceIT {
         val searchDatabaseSizeBefore = IterableUtil.sizeOf(<%= entityInstance %>SearchRepository.findAll()<%= callListBlock %>)
         <%_ } _%>
         // Update the <%= entityInstance %>
-        val updated<%= persistClass %> = <%= entityInstance %>Repository.findById(<%= persistInstance %>.<%= primaryKey.name %>)<%= reactive ? '.block()' : '.get()' %>
+        val updated<%= persistClass %> = <%= entityInstance %>Repository.findById(<%= persistInstance %>.<%= primaryKey.name %>!!)<%= reactive ? '.block()' : '.get()' %>
         <%_ if (databaseTypeSql && !reactive) { _%>
         // Disconnect from session so that the updates on updated<%= persistClass %> are not directly saved in db
         em.detach(updated<%= persistClass %>)
@@ -1625,16 +1627,24 @@ class <%= entityClass %>ResourceIT {
                     // Generate Strings, using pattern
                     try {
                         const patternRegExp = new RegExp(field.fieldValidateRulesPattern);
-                        const randExp = field.createRandexp();
                         // set infinite repetitions max range
                         if (!patternRegExp.test(sampleTextString.replace(/\\"/g, '"').replace(/\\\\/g, '\\'))) {
-                            sampleTextString = randExp.gen().replace(/\\/g, '\\\\').replace(/"/g, '\\"');
+                            sampleTextString = field.generateFakeDataFromPattern().replace(/\\/g, '\\\\').replace(/"/g, '\\"');
                         }
                         if (!patternRegExp.test(updatedTextString.replace(/\\"/g, '"').replace(/\\\\/g, '\\'))) {
-                            updatedTextString = randExp.gen().replace(/\\/g, '\\\\').replace(/"/g, '\\"');
+                            updatedTextString = field.generateFakeDataFromPattern().replace(/\\/g, '\\\\').replace(/"/g, '\\"');
                         }
                     } catch (error) {
                         this.log.warn(`Error generating test value for entity "${entityClass}" field "${field.fieldName}" with pattern "${field.fieldValidateRulesPattern}", generating default values for this field. Detailed error message: "${error.message}".`);
+                    }
+                    // Pattern generators can return the same value twice (e.g. `^\\d+$` generating "3"), and appending
+                    // "B" would then break the pattern, so retry the generator before falling back to that.
+                    for (let attempt = 0; sampleTextString === updatedTextString && attempt < 20; attempt++) {
+                        try {
+                            updatedTextString = field.generateFakeDataFromPattern().replace(/\\/g, '\\\\').replace(/"/g, '\\"');
+                        } catch (error) {
+                            break;
+                        }
                     }
                     if (sampleTextString === updatedTextString) {
                         updatedTextString = updatedTextString + "B";
@@ -1760,7 +1770,7 @@ class <%= entityClass %>ResourceIT {
          * if they test an entity which requires the current entity.
          */
         @JvmStatic
-        fun create<% if (fieldStatus === 'UPDATED_') { _%>Updated<%_ } %>Entity(<% if (databaseTypeSql) { %>em: EntityManager<% } %>): <%= persistClass %> {
+        fun create<% if (fieldStatus === 'UPDATED_') { _%>Updated<%_ } %>Entity(<% if (databaseTypeSql) { %>em: <%= entityManagerType %><% } %>): <%= persistClass %> {
             <%_
                 const filteredFields = fieldsToTest;
                 if (filteredFields.length === 0) {
@@ -1844,13 +1854,13 @@ class <%= entityClass %>ResourceIT {
         <%_ if (databaseTypeSql && reactive) {
             const alreadyGeneratedDeletionCalls = [];
         _%>
-        fun deleteEntities(em: EntityManager) {
+        fun deleteEntities(em: R2dbcEntityTemplate) {
             try {
             <%_ relationships.forEach(function(rel) {
                 if (rel.shouldWriteJoinTable) { _%>
-                    em.deleteAll("<%= rel.joinTable.name %>").block()
+                    em.databaseClient.sql("DELETE FROM <%= rel.joinTable.name %>").then().block()
             <%_ }}); _%>
-                    em.deleteAll(<%= persistClass %>::class.java).block()
+                    em.delete(<%= persistClass %>::class.java).all().block()
             } catch (e: Exception) {
                 // It can fail, if other entities are still referring this - it will be removed later.
             }
