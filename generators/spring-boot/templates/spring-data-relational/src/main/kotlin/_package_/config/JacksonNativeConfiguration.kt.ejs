@@ -50,6 +50,9 @@ class JacksonNativeConfiguration {
 
     <%- // Thanks to @hurelhuyag for contributing the LazyPropertyFilter source. %>
     private class LazyPropertyFilter : PropertyFilter {
+        // Stateless filter, safe to share between mapper instances.
+        override fun snapshot(): PropertyFilter = this
+
 
         override fun serializeAsProperty(pojo: Any, gen: JsonGenerator, ctxt: SerializationContext, writer: PropertyWriter) {
             val initialized = isPropertyInitialized(writer as BeanPropertyWriter, pojo)
@@ -77,7 +80,7 @@ class JacksonNativeConfiguration {
                     isInitialized(prop, bean, OneToMany::class.java, OneToMany::fetch) &&
                     isInitialized(prop, bean, Basic::class.java, Basic::fetch)
 
-            fun <A : java.lang.annotation.Annotation> isInitialized(
+            fun <A : Annotation> isInitialized(
                 prop: BeanPropertyWriter,
                 bean: Any,
                 type: Class<A>,
