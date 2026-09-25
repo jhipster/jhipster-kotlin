@@ -3,8 +3,6 @@ import { beforeAll, describe, expect, it } from 'vitest';
 import { JAVA_DOCKER_DIR } from 'generator-jhipster';
 import { defaultHelpers as helpers, runResult } from 'generator-jhipster/testing';
 
-import migration from '../generators/spring-boot-v2/migration.cjs';
-
 import expectedFiles from './utils/expected-files.js';
 import {
     applicationTypes,
@@ -17,8 +15,6 @@ import {
     testFrameworkTypes,
 } from './utils/jhipster-types.js';
 
-const { jhipsterConstants: constants } = migration;
-
 const { GATEWAY, MICROSERVICE, MONOLITH } = applicationTypes;
 const { CASSANDRA, H2_DISK, H2_MEMORY, MARIADB, MSSQL, MONGODB, MYSQL, NEO4J, POSTGRESQL, SQL } = databaseTypes;
 const { SESSION } = authenticationTypes;
@@ -30,7 +26,7 @@ const { CUCUMBER } = testFrameworkTypes;
 const { ANGULAR, REACT } = clientFrameworkTypes;
 const { GRADLE, MAVEN } = buildToolTypes;
 
-const { MAIN_DIR } = constants;
+const MAIN_DIR = 'src/main/';
 const NO_CACHE_PROVIDER = cacheProviders.NO;
 const SERVER_MAIN_KOTLIN_SRC_DIR = `${MAIN_DIR}kotlin/`;
 
