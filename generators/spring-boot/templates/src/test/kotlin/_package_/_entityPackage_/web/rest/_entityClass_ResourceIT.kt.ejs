@@ -24,8 +24,8 @@ let mapsIdEntity;
 let mapsIdEntityInstance;
 let mapsIdRepoInstance;
 if (isUsingMapsId) {
-    mapsIdEntity = mapsIdAssoc.otherEntityNameCapitalized;
-    mapsIdEntityInstance =  mapsIdEntity.charAt(0).toLowerCase() + mapsIdEntity.slice(1);
+    mapsIdEntity = mapsIdAssoc.otherEntity.entityNameCapitalized;
+    mapsIdEntityInstance = mapsIdAssoc.otherEntity.entityInstance;
     mapsIdRepoInstance = `${mapsIdEntityInstance}Repository`;
 }
 
@@ -71,12 +71,12 @@ import <%= entityAbsolutePackage %>.domain.<%= persistClass %>
     for (relationship of relationships) { // import entities in required relationships
         const { otherEntity } = relationship;
         const relationshipValidate = relationship.relationshipValidate;
-        const otherEntityNameCapitalized = relationship.otherEntityNameCapitalized;
+        const otherEntityNameCapitalized = otherEntity?.entityNameCapitalized ?? relationship.otherEntityNameCapitalized;
         const isUsingMapsIdL1 = relationship.id;
         if(imported.indexOf(otherEntityNameCapitalized) === -1 && persistClass !== otherEntity.persistClass) {
             if ((relationshipValidate !== null && relationshipValidate) || jpaMetamodelFiltering || (isUsingMapsIdL1)) {
 _%>
-import <%= entityAbsolutePackage %>.domain.<%= otherEntity.persistClass %>
+import <%= otherEntity.entityAbsolutePackage ?? entityAbsolutePackage %>.domain.<%= otherEntity.persistClass %>
 <%_         imported.push(otherEntityNameCapitalized);
         } } } _%>
 <%_ if (saveUserSnapshot) { _%>
@@ -87,7 +87,7 @@ import <%= entityAbsolutePackage %>.repository.<%= entityClass %>Repository
 import <%= packageName %>.repository.EntityManager
 <%_ } _%>
 <%_ if (isUsingMapsId&& ( !dtoMapstruct && serviceNo)) { _%>
-import <%= entityAbsolutePackage %>.repository.<%= mapsIdAssoc.otherEntityNameCapitalized %>Repository
+import <%= mapsIdAssoc.otherEntity.entityAbsolutePackage %>.repository.<%= mapsIdAssoc.otherEntity.entityNameCapitalized %>Repository
 <%_ } _%>
 <%_ if (searchEngineElasticsearch) { _%>
 import <%= entityAbsolutePackage %>.repository.search.<%= entityClass %>SearchRepository
@@ -470,8 +470,8 @@ class <%= entityClass %>ResourceIT {
         <%_ } _%>
         <%_ for (relationship of relationships) {
             const relationshipValidate = relationship.relationshipValidate;
-            const otherEntityName = relationship.otherEntityName;
-            const otherEntityNameCapitalized = relationship.otherEntityNameCapitalized;
+            const otherEntityName = relationship.otherEntity?.entityInstance ?? relationship.otherEntityName;
+            const otherEntityNameCapitalized = relationship.otherEntity?.entityNameCapitalized ?? relationship.otherEntityNameCapitalized;
             const mapsIdUse = relationship.id;
             if (mapsIdUse) { _%>
         // Add a new parent entity
@@ -935,12 +935,12 @@ class <%= entityClass %>ResourceIT {
         var <%= relationship.relationshipFieldName %>: <%= relationship.otherEntity.persistClass %>
         if (findAll(em, <%= relationship.otherEntity.persistClass %>::class).isEmpty()) {
             <%= entityInstance %>Repository.saveAndFlush(<%= persistInstance %>)
-            <%= relationship.relationshipFieldName %> = <%= createEntityPrefix %><%= relationship.otherEntityNameCapitalized %>ResourceIT.createEntity(em)
+            <%= relationship.relationshipFieldName %> = <%= createEntityPrefix %><%= relationship.otherEntity?.entityNameCapitalized ?? relationship.otherEntityNameCapitalized %>ResourceIT.createEntity(em)
         } else {
             <%= relationship.relationshipFieldName %> = findAll(em, <%= relationship.otherEntity.persistClass %>::class)[0]
         }
         <%_ } else { _%>
-        var <%= relationship.relationshipFieldName %> = <%= relationship.otherEntityNameCapitalized %>ResourceIT.createEntity(em)
+        var <%= relationship.relationshipFieldName %> = <%= relationship.otherEntity?.entityNameCapitalized ?? relationship.otherEntityNameCapitalized %>ResourceIT.createEntity(em)
         <%_ } _%>
         em.persist(<%= relationship.relationshipFieldName %>)
         em.flush()
@@ -1634,15 +1634,11 @@ class <%= entityClass %>ResourceIT {
                             updatedTextString = randExp.gen().replace(/\\/g, '\\\\').replace(/"/g, '\\"');
                         }
                     } catch (error) {
-                        log(this.chalkRed('Error generating test value for entity "' + entityClass +
-                            '" field "' + field.fieldName + '" with pattern "' + field.fieldValidateRulesPattern +
-                            '", generating default values for this field. Detailed error message: "' + error.message + '".'));
+                        this.log.warn(`Error generating test value for entity "${entityClass}" field "${field.fieldName}" with pattern "${field.fieldValidateRulesPattern}", generating default values for this field. Detailed error message: "${error.message}".`);
                     }
                     if (sampleTextString === updatedTextString) {
                         updatedTextString = updatedTextString + "B";
-                        log(this.chalkRed('Randomly generated first and second test values for entity "' + entityClass +
-                            '" field "' + field.fieldName + '" with pattern "' + field.fieldValidateRulesPattern +
-                            '" in file "' + entityClass + 'ResourceIT" where equal, added symbol "B" to second value.'));
+                        this.log.warn(`Randomly generated first and second test values for entity "${entityClass}" field "${field.fieldName}" with pattern "${field.fieldValidateRulesPattern}" in file "${entityClass}ResourceIT" were equal, added symbol "B" to second value.`);
                     }
                 }
         _%>
@@ -1794,8 +1790,8 @@ class <%= entityClass %>ResourceIT {
             for (relationship of relationships) {
                 const { otherEntity } = relationship;
                 const relationshipValidate = relationship.relationshipValidate;
-                const otherEntityName = relationship.otherEntityName;
-                const otherEntityNameCapitalized = relationship.otherEntityNameCapitalized;
+                const otherEntityName = relationship.otherEntity?.entityInstance ?? relationship.otherEntityName;
+                const otherEntityNameCapitalized = relationship.otherEntity?.entityNameCapitalized ?? relationship.otherEntityNameCapitalized;
                 const relationshipType = relationship.relationshipType;
                 const relationshipName = relationship.relationshipName;
                 const relationshipNamePlural = relationship.relationshipNamePlural;
@@ -1860,7 +1856,7 @@ class <%= entityClass %>ResourceIT {
             }
         <%_ relationships.forEach(function(rel) {
             if ((rel.relationshipValidate|| rel.id) && !alreadyGeneratedDeletionCalls.includes(rel.otherEntityName)) { _%>
-            <%= rel.otherEntityNameCapitalized %>ResourceIT.deleteEntities(em)
+            <%= (rel.otherEntity?.entityNameCapitalized ?? rel.otherEntityNameCapitalized) %>ResourceIT.deleteEntities(em)
                 <%_ alreadyGeneratedDeletionCalls.push(rel.otherEntityName);
                 }
             }); _%>

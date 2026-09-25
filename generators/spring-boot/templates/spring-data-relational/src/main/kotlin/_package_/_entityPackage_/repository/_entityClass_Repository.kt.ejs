@@ -54,8 +54,8 @@ import java.util.UUID
 @Repository
 interface <%=entityClass%>Repository : <% if (containsBagRelationships) { %><%= entityClass %>RepositoryWithBagRelationships, <% } %>JpaRepository<<%=persistClass%>, <%= primaryKey.type %>><% if (jpaMetamodelFiltering) { %>, JpaSpecificationExecutor<<%= persistClass %>><% } %><% if (searchEngineCouchbase) { %>, SearchCouchbaseRepository<<%= persistClass %>, <%= primaryKey.type %>><% } %> {
 <%_ for (const relationship of relationships) { _%>
-  <%_ if (relationship.relationshipManyToOne && relationship.otherEntityName === 'user') { _%>
-    @Query("select <%= entityInstanceDbSafe %> from <%= persistClass %> <%= entityInstanceDbSafe %> where <%= entityInstanceDbSafe %>.<%= relationship.relationshipFieldName %>.login = ?#{principal.<% if (authenticationTypeOauth2) { %>preferredUsername<% } else { %>username<% } %>}")
+  <%_ if (relationship.relationshipManyToOne && relationship.otherEntityUser) { _%>
+    @Query("select <%- entityJpqlInstance %> from <%- persistClass %> <%- entityJpqlInstance %> where <%- entityJpqlInstance %>.<%- relationship.relationshipFieldName %>.login = ?#{authentication.name}")
     fun findBy<%= relationship.relationshipNameCapitalized %>IsCurrentUser(): MutableList<<%= persistClass %>>
 
   <%_ } _%>
@@ -76,17 +76,14 @@ interface <%=entityClass%>Repository : <% if (containsBagRelationships) { %><%= 
     }
   <%_ if (containsToOneEagerRelationship) { _%>
 
-    @Query(value = "select distinct <%= entityInstanceDbSafe %> from <%= persistClass %> <%= entityInstanceDbSafe %><% for (const relationship of relationships) {
-    if (relationship.relationshipEagerLoad && !relationship.bagRelationship) { %> left join fetch <%= entityInstanceDbSafe %>.<%= relationship.reference.name %><% } } %>",
-        countQuery = "select count(distinct <%= entityInstanceDbSafe %>) from <%= persistClass %> <%= entityInstanceDbSafe %>")
+    @Query(value = "select distinct <%- entityJpqlInstance %> from <%- persistClass %> <%- entityJpqlInstance %><%- relationships.filter(r => r.relationshipEagerLoad && !r.bagRelationship).map(r => ` left join fetch ${entityJpqlInstance}.${r.propertyName}`).join('') %>",
+        countQuery = "select count(distinct <%- entityJpqlInstance %>) from <%- persistClass %> <%- entityJpqlInstance %>")
     fun findAllWithToOneRelationships(pageable: Pageable): Page<<%= persistClass %>>
 
-    @Query("select distinct <%= entityInstanceDbSafe %> from <%= persistClass %> <%= entityInstanceDbSafe %><% for (const relationship of relationships) {
-    if (relationship.relationshipEagerLoad && !relationship.bagRelationship) { %> left join fetch <%= entityInstanceDbSafe %>.<%= relationship.reference.name %><% } } %>")
+    @Query("select distinct <%- entityJpqlInstance %> from <%- persistClass %> <%- entityJpqlInstance %><%- relationships.filter(r => r.relationshipEagerLoad && !r.bagRelationship).map(r => ` left join fetch ${entityJpqlInstance}.${r.propertyName}`).join('') %>")
     fun findAllWithToOneRelationships(): MutableList<<%= persistClass %>>
 
-    @Query("select <%= entityInstanceDbSafe %> from <%= persistClass %> <%= entityInstanceDbSafe %><% for (const relationship of relationships) {
-    if (relationship.relationshipEagerLoad && !relationship.bagRelationship) { %> left join fetch <%= entityInstanceDbSafe %>.<%= relationship.reference.name %><% } } %> where <%= entityInstanceDbSafe %>.id =:id")
+    @Query("select <%- entityJpqlInstance %> from <%- persistClass %> <%- entityJpqlInstance %><%- relationships.filter(r => r.relationshipEagerLoad && !r.bagRelationship).map(r => ` left join fetch ${entityJpqlInstance}.${r.propertyName}`).join('') %> where <%- entityJpqlInstance %>.id =:id")
     fun findOneWithToOneRelationships(@Param("id") id: <%= primaryKey.type %>): Optional<<%= persistClass %>>
   <%_ } _%>
 <%_ } _%>

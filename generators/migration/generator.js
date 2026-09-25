@@ -23,6 +23,8 @@ export default class extends BaseApplicationGenerator {
                                 .replaceAll('org.hibernate.orm', 'org.hibernate')
                                 .replaceAll('mongock-springboot-v3', 'mongock-springboot')
                                 .replaceAll('mongodb-springdata-v4-driver', 'mongodb-springdata-v3-driver')
+                                .replaceAll('tools.jackson.datatype', 'com.fasterxml.jackson.datatype')
+                                .replaceAll('jackson-datatype-hibernate7', 'jackson-datatype-hibernate5')
                                 .replaceAll('jackson-datatype-hibernate6', 'jackson-datatype-hibernate5')
                                 .replaceAll('org.apache.cassandra', 'com.datastax.oss')
                                 .replaceAll('springdoc-openapi-starter-webflux-api', 'springdoc-openapi-webflux-core')
@@ -69,7 +71,32 @@ export default class extends BaseApplicationGenerator {
                         refresh: false,
                     },
                     passthrough(file => {
-                        file.contents = Buffer.from(file.contents.toString().replaceAll('import jakarta.', 'import javax.'));
+                        let content = file.contents.toString().replaceAll('import jakarta.', 'import javax.');
+                        content = content.replaceAll(
+                            'import org.springframework.boot.webmvc.test.autoconfigure.AutoConfigureMockMvc',
+                            'import org.springframework.boot.test.autoconfigure.web.servlet.AutoConfigureMockMvc',
+                        );
+                        content = content.replaceAll(
+                            'import org.springframework.boot.webtestclient.autoconfigure.AutoConfigureWebTestClient',
+                            'import org.springframework.boot.test.autoconfigure.web.reactive.AutoConfigureWebTestClient',
+                        );
+                        content = content.replaceAll(
+                            'import org.testcontainers.postgresql.PostgreSQLContainer',
+                            'import org.testcontainers.containers.PostgreSQLContainer',
+                        );
+                        content = content.replaceAll(
+                            'import org.testcontainers.mysql.MySQLContainer',
+                            'import org.testcontainers.containers.MySQLContainer',
+                        );
+                        content = content.replaceAll(
+                            'import org.testcontainers.mariadb.MariaDBContainer',
+                            'import org.testcontainers.containers.MariaDBContainer',
+                        );
+                        content = content.replaceAll(
+                            'import org.testcontainers.mssqlserver.MSSQLServerContainer',
+                            'import org.testcontainers.containers.MSSQLServerContainer',
+                        );
+                        file.contents = Buffer.from(content);
                     }),
                 );
             },

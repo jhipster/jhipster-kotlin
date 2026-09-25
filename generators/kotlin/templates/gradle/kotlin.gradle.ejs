@@ -45,9 +45,10 @@ kapt {
     correctErrorTypes true
 }
 
-tasks.withType(org.jetbrains.kotlin.gradle.tasks.KotlinCompile.class).configureEach {
+tasks.matching { it.name in ['compileKotlin', 'compileTestKotlin'] }.configureEach {
     compilerOptions {
-        jvmTarget = org.jetbrains.kotlin.gradle.dsl.JvmTarget.valueOf("JVM_<%= javaVersion %>")
+        def jvmTargetClass = jvmTarget.get().getClass()
+        jvmTarget.set(jvmTargetClass.valueOf("JVM_<%= javaVersion %>"))
         javaParameters = true
         freeCompilerArgs.add("-Xjvm-default=all")
     }

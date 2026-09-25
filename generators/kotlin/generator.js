@@ -235,6 +235,7 @@ tasks.withType(org.jetbrains.kotlin.gradle.internal.KaptGenerateStubsTask.class)
                                     <executions>
                                         <execution>
                                             <id>kapt</id>
+                                            <phase>generate-sources</phase>
                                             <goals>
                                                 <goal>kapt</goal>
                                             </goals>

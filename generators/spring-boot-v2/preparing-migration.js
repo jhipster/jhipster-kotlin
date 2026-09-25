@@ -16,7 +16,8 @@ const {
 } = jhipsterConstants;
 
 const JAVA_VERSION = '17';
-const JAVA_COMPATIBLE_VERSIONS = ['17'];
+const JAVA_COMPATIBLE_VERSIONS = ['17', '21'];
+const GRADLE_VERSION = '8.10.2';
 
 const migrationApplicationOverrides = {
     jhipsterDependenciesVersion: JHIPSTER_DEPENDENCIES_VERSION,
@@ -25,6 +26,8 @@ const migrationApplicationOverrides = {
     javaCompatibleVersions: JAVA_COMPATIBLE_VERSIONS,
     JAVA_VERSION,
     javaVersion: JAVA_VERSION,
+    GRADLE_VERSION,
+    gradleVersion: GRADLE_VERSION,
     SPRING_BOOT_VERSION,
     // V7 templates expects prodDatabaseType to be set for non SQL databases
     prodDatabaseType: ({ prodDatabaseType, databaseType }) => prodDatabaseType ?? databaseType,

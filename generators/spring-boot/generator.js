@@ -74,6 +74,11 @@ export default class extends BaseApplicationGenerator {
                 (application.customizeTemplatePaths ??= []).unshift(
                     // Remove package-info.java files
                     file => (file.sourceFile.includes('package-info.java') ? undefined : file),
+                    file =>
+                        file.sourceFile.includes('JacksonHibernateConfiguration') ||
+                        file.destinationFile?.includes('JacksonHibernateConfiguration')
+                            ? undefined
+                            : file,
                     // Kotling blueprint does not implements these files
                     file => {
                         // We don't want to handle spring-boot-v2 templates here
@@ -249,6 +254,20 @@ export default class extends BaseApplicationGenerator {
                         field.fieldJavaBuildSpecification = 'buildRangeSpecification';
                     }
                 }
+                if (entity.uniqueEnums) {
+                    const uniqueEnumsObj = {};
+                    for (const enumField of entity.uniqueEnums) {
+                        const fieldType = enumField.fieldType || enumField;
+                        uniqueEnumsObj[fieldType] = typeof enumField === 'object' ? enumField : { fieldType };
+                    }
+                    Object.defineProperty(uniqueEnumsObj, Symbol.iterator, {
+                        enumerable: false,
+                        *value() {
+                            yield* Object.values(this);
+                        },
+                    });
+                    entity.uniqueEnums = uniqueEnumsObj;
+                }
             },
         });
     }
@@ -291,6 +310,7 @@ export default class extends BaseApplicationGenerator {
 sourceSets {
     test {
         kotlin {
+            exclude("**/DatabaseTestcontainer.kt")
             exclude("**/${dbConfigPrefix}TestContainer.kt")
         }
     }

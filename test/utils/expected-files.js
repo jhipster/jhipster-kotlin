@@ -203,7 +203,7 @@ const expectedFiles = {
         `${SERVER_TEST_SRC_DIR}com/mycompany/myapp/management/SecurityMetersServiceTests.kt`,
         `${SERVER_TEST_SRC_DIR}com/mycompany/myapp/security/jwt/JWTFilterTest.kt`,
         `${SERVER_TEST_SRC_DIR}com/mycompany/myapp/security/jwt/TokenProviderTest.kt`,
-        `${SERVER_TEST_SRC_DIR}com/mycompany/myapp/security/jwt/TokenProviderSecurityMetersTests.kt`,
+        `${SERVER_TEST_SRC_DIR}com/mycompany/myapp/security/jwt/TokenAuthenticationSecurityMetersIT.kt`,
     ],
 
     jwtServerGateway: [
@@ -213,7 +213,7 @@ const expectedFiles = {
         `${SERVER_TEST_SRC_DIR}com/mycompany/myapp/management/SecurityMetersServiceTests.kt`,
         `${SERVER_TEST_SRC_DIR}com/mycompany/myapp/security/jwt/JWTFilterTest.kt`,
         `${SERVER_TEST_SRC_DIR}com/mycompany/myapp/security/jwt/TokenProviderTest.kt`,
-        `${SERVER_TEST_SRC_DIR}com/mycompany/myapp/security/jwt/TokenProviderSecurityMetersTests.kt`,
+        `${SERVER_TEST_SRC_DIR}com/mycompany/myapp/security/jwt/TokenAuthenticationSecurityMetersIT.kt`,
     ],
 
     oauth2: [

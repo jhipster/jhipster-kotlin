@@ -56,18 +56,18 @@
 <%_ } _%>
         <archunit-junit5.version><%- javaDependencies['archunit-junit5'] %></archunit-junit5.version>
         <mapstruct.version><%- javaDependencies.mapstruct %></mapstruct.version>
-        <git-commit-id-maven-plugin.version><%- javaDependencies['git-commit-id-maven-plugin'] %></git-commit-id-maven-plugin.version>
-        <lifecycle-mapping.version><%- javaDependencies['lifecycle-mapping'] %></lifecycle-mapping.version>
-        <maven-clean-plugin.version><%- javaDependencies['maven-clean-plugin'] %></maven-clean-plugin.version>
-        <maven-compiler-plugin.version><%- javaDependencies['maven-compiler-plugin'] %></maven-compiler-plugin.version>
-        <maven-enforcer-plugin.version><%- javaDependencies['maven-enforcer-plugin'] %></maven-enforcer-plugin.version>
-        <maven-failsafe-plugin.version><%- javaDependencies['maven-failsafe-plugin'] %></maven-failsafe-plugin.version>
-        <maven-javadoc-plugin.version><%- javaDependencies['maven-javadoc-plugin'] %></maven-javadoc-plugin.version>
-        <maven-jar-plugin.version><%- javaDependencies['maven-jar-plugin'] %></maven-jar-plugin.version>
-        <maven-resources-plugin.version><%- javaDependencies['maven-resources-plugin'] %></maven-resources-plugin.version>
-        <maven-site-plugin.version><%- javaDependencies['maven-site-plugin'] %></maven-site-plugin.version>
-        <maven-surefire-plugin.version><%- javaDependencies['maven-surefire-plugin'] %></maven-surefire-plugin.version>
-        <maven-war-plugin.version><%- javaDependencies['maven-war-plugin'] %></maven-war-plugin.version>
+        <git-commit-id-maven-plugin.version><%- javaDependencies['git-commit-id-maven-plugin'] || '5.0.0' %></git-commit-id-maven-plugin.version>
+        <lifecycle-mapping.version><%- javaDependencies['lifecycle-mapping'] || '1.0.0' %></lifecycle-mapping.version>
+        <maven-clean-plugin.version><%- javaDependencies['maven-clean-plugin'] || '3.2.0' %></maven-clean-plugin.version>
+        <maven-compiler-plugin.version><%- javaDependencies['maven-compiler-plugin'] || '3.10.1' %></maven-compiler-plugin.version>
+        <maven-enforcer-plugin.version><%- javaDependencies['maven-enforcer-plugin'] || '3.1.0' %></maven-enforcer-plugin.version>
+        <maven-failsafe-plugin.version><%- javaDependencies['maven-failsafe-plugin'] || '3.0.0-M7' %></maven-failsafe-plugin.version>
+        <maven-javadoc-plugin.version><%- javaDependencies['maven-javadoc-plugin'] || '3.4.1' %></maven-javadoc-plugin.version>
+        <maven-jar-plugin.version><%- javaDependencies['maven-jar-plugin'] || '3.2.2' %></maven-jar-plugin.version>
+        <maven-resources-plugin.version><%- javaDependencies['maven-resources-plugin'] || '3.3.0' %></maven-resources-plugin.version>
+        <maven-site-plugin.version><%- javaDependencies['maven-site-plugin'] || '3.12.1' %></maven-site-plugin.version>
+        <maven-surefire-plugin.version><%- javaDependencies['maven-surefire-plugin'] || '3.0.0-M7' %></maven-surefire-plugin.version>
+        <maven-war-plugin.version><%- javaDependencies['maven-war-plugin'] || '3.3.2' %></maven-war-plugin.version>
     </properties>
 
     <dependencies>
@@ -79,6 +79,12 @@
             <groupId>com.fasterxml.jackson.datatype</groupId>
             <artifactId>jackson-datatype-jsr310</artifactId>
         </dependency>
+<%_ if (databaseTypeSql && !reactive) { _%>
+        <dependency>
+            <groupId>com.fasterxml.jackson.datatype</groupId>
+            <artifactId>jackson-datatype-hibernate5</artifactId>
+        </dependency>
+<%_ } _%>
 <%_ if (authenticationTypeOauth2) { _%>
         <dependency>
             <groupId>com.github.ben-manes.caffeine</groupId>
@@ -98,10 +104,6 @@
             <artifactId>archunit-junit5-engine</artifactId>
             <version>${archunit-junit5.version}</version>
             <scope>test</scope>
-        </dependency>
-        <dependency>
-            <groupId>io.micrometer</groupId>
-            <artifactId>micrometer-registry-prometheus-simpleclient</artifactId>
         </dependency>
 <%_ if (reactive) { _%>
         <dependency>
@@ -322,6 +324,7 @@
                             <path>
                                 <groupId>org.springframework.boot</groupId>
                                 <artifactId>spring-boot-configuration-processor</artifactId>
+                                <version>${spring-boot.version}</version>
                             </path>
                             <path>
                                 <groupId>org.mapstruct</groupId>
@@ -402,6 +405,11 @@
                 </plugin>
                 <plugin>
                     <groupId>org.apache.maven.plugins</groupId>
+                    <artifactId>maven-resources-plugin</artifactId>
+                    <version>${maven-resources-plugin.version}</version>
+                </plugin>
+                <plugin>
+                    <groupId>org.apache.maven.plugins</groupId>
                     <artifactId>maven-enforcer-plugin</artifactId>
                     <version>${maven-enforcer-plugin.version}</version>
                     <executions>
@@ -465,6 +473,7 @@
                 <plugin>
                     <groupId>org.springframework.boot</groupId>
                     <artifactId>spring-boot-maven-plugin</artifactId>
+                    <version>${spring-boot.version}</version>
                     <executions>
                         <execution>
                             <goals>

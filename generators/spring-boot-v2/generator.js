@@ -38,6 +38,94 @@ const SERVER_MAIN_SRC_KOTLIN_DIR = `${MAIN_DIR}kotlin/`;
 
 const jhipster7TemplatesPackage = dirname(fileURLToPath(import.meta.resolve('jhipster-7-templates/package.json')));
 
+const IGNORED_SPRING_BOOT_V3_DEPENDENCIES = new Set([
+    'spring-boot-docker-compose',
+    'spring-boot-h2console',
+    'spring-boot-starter-aspectj',
+    'spring-boot-starter-jackson',
+    'spring-boot-starter-jackson-test',
+    'spring-boot-starter-liquibase',
+    'spring-boot-starter-security-test',
+    'spring-boot-starter-webmvc-test',
+    'spring-boot-testcontainers',
+    'hibernate-processor',
+    'jackson-datatype-hibernate7',
+    'jackson-module-jaxb-annotations',
+]);
+
+const isIgnoredDependency = dep => {
+    if (!dep) return false;
+    const artifactId = dep.artifactId || (typeof dep === 'string' ? dep : undefined);
+    if (artifactId && IGNORED_SPRING_BOOT_V3_DEPENDENCIES.has(artifactId)) return true;
+    if (dep.module && typeof dep.module === 'string') {
+        const [, artId] = dep.module.split(':');
+        if (IGNORED_SPRING_BOOT_V3_DEPENDENCIES.has(artId)) {
+            return true;
+        }
+    }
+    return false;
+};
+
+const fixDependency = dep => {
+    if (!dep) return dep;
+    if (typeof dep === 'string') {
+        if (dep.startsWith('org.testcontainers:testcontainers-')) {
+            const [groupId, artifactId] = dep.split(':');
+            let mappedArtifactId = artifactId.replace('testcontainers-', '');
+            if (mappedArtifactId === 'mssql') mappedArtifactId = 'mssqlserver';
+            return `${groupId}:${mappedArtifactId}`;
+        }
+        return dep;
+    }
+    if (dep.groupId === 'org.testcontainers') {
+        let { artifactId } = dep;
+        if (artifactId?.startsWith('testcontainers-')) {
+            artifactId = artifactId.replace('testcontainers-', '');
+            if (artifactId === 'mssql') artifactId = 'mssqlserver';
+            return { ...dep, artifactId };
+        }
+    }
+    return dep;
+};
+
+const fixAnnotationProcessor = (proc, isGradle = false) => {
+    if (!proc) return proc;
+    if (proc.artifactId === 'spring-boot-configuration-processor' && !proc.version) {
+        return { ...proc, version: isGradle ? '2.7.3' : '${spring-boot.version}' };
+    }
+    if (proc.artifactId === 'jaxb-runtime' && !proc.version) {
+        return { ...proc, version: isGradle ? '4.0.0' : '${jaxb-runtime.version}' };
+    }
+    return proc;
+};
+
+const filterDependencies = deps => {
+    if (Array.isArray(deps)) {
+        return deps.filter(d => !isIgnoredDependency(d)).map(fixDependency);
+    }
+    if (deps && isIgnoredDependency(deps)) {
+        return undefined;
+    }
+    return fixDependency(deps);
+};
+
+const interceptSourceMethod = (source, methodName, wrapperFactory) => {
+    let currentMethod = source[methodName];
+    Object.defineProperty(source, methodName, {
+        configurable: true,
+        enumerable: true,
+        get() {
+            return currentMethod;
+        },
+        set(newMethod) {
+            currentMethod = typeof newMethod === 'function' ? wrapperFactory(newMethod) : newMethod;
+        },
+    });
+    if (typeof currentMethod === 'function') {
+        currentMethod = wrapperFactory(currentMethod);
+    }
+};
+
 export default class extends BaseApplicationGenerator {
     constructor(args, options, features) {
         super(args, options, { ...features, jhipster7Migration: true });
@@ -53,19 +141,121 @@ export default class extends BaseApplicationGenerator {
     get [BaseApplicationGenerator.PREPARING]() {
         return this.asPreparingTaskGroup({
             migrateApplicationTask,
-            ignoreDockerComposeIntegration({ source }) {
-                const { addGradleDependency, addMavenDependency } = source;
-                if (addGradleDependency) {
-                    source.addGradleDependency = (...args) =>
-                        args[0]?.artifactId === 'spring-boot-docker-compose' ? undefined : addGradleDependency(...args);
-                }
-                if (addMavenDependency) {
-                    source.addMavenDependency = (...args) =>
-                        args[0]?.artifactId === 'spring-boot-docker-compose' ? undefined : addMavenDependency(...args);
-                }
+            ignoreSpringBootV3Dependencies({ source, application }) {
+                const isGradle = application?.buildToolGradle;
+                const fixProc = proc => fixAnnotationProcessor(proc, isGradle);
+
+                const wrapDependencyMethod =
+                    original =>
+                    (deps, ...args) => {
+                        const filtered = filterDependencies(deps);
+                        if (!filtered || (Array.isArray(filtered) && filtered.length === 0)) return undefined;
+                        return original(filtered, ...args);
+                    };
+
+                const wrapCatalogLibrariesMethod =
+                    original =>
+                    (libs, ...args) => {
+                        const filtered = Array.isArray(libs) ? libs.filter(lib => !isIgnoredDependency(lib)).map(fixDependency) : libs;
+                        if (Array.isArray(filtered) && filtered.length === 0) return undefined;
+                        return original(filtered, ...args);
+                    };
+
+                const wrapAnnotationProcessorMethod =
+                    original =>
+                    (proc, ...args) => {
+                        const filtered = filterDependencies(proc);
+                        if (!filtered || (Array.isArray(filtered) && filtered.length === 0)) return undefined;
+                        const fixed = Array.isArray(filtered) ? filtered.map(fixProc) : fixProc(filtered);
+                        return original(fixed, ...args);
+                    };
+
+                const wrapMavenDefinitionMethod =
+                    original =>
+                    (definition, ...args) => {
+                        if (!definition) return original(definition, ...args);
+                        const filteredDef = { ...definition };
+                        if (filteredDef.dependencies) {
+                            filteredDef.dependencies = filteredDef.dependencies.filter(d => !isIgnoredDependency(d)).map(fixDependency);
+                        }
+                        if (filteredDef.dependencyManagement) {
+                            filteredDef.dependencyManagement = filteredDef.dependencyManagement
+                                .filter(d => !isIgnoredDependency(d))
+                                .map(fixDependency);
+                        }
+                        if (filteredDef.annotationProcessors) {
+                            filteredDef.annotationProcessors = filteredDef.annotationProcessors
+                                .filter(d => !isIgnoredDependency(d))
+                                .map(p => fixAnnotationProcessor(p, false));
+                        }
+                        return original(filteredDef, ...args);
+                    };
+
+                const wrapJavaDependenciesMethod =
+                    original =>
+                    (deps, ...args) => {
+                        const filtered = filterDependencies(deps);
+                        if (!filtered || (Array.isArray(filtered) && filtered.length === 0)) return undefined;
+                        const fixed = Array.isArray(filtered) ? filtered.map(fixProc) : fixProc(filtered);
+                        return original(fixed, ...args);
+                    };
+
+                const wrapJavaDefinitionMethod =
+                    original =>
+                    (definition, ...args) => {
+                        if (!definition) return original(definition, ...args);
+                        const filteredDef = { ...definition };
+                        if (filteredDef.dependencies) {
+                            filteredDef.dependencies = filteredDef.dependencies.filter(d => !isIgnoredDependency(d)).map(fixDependency);
+                        }
+                        return original(filteredDef, ...args);
+                    };
+
+                const wrapSpringBootModuleMethod =
+                    original =>
+                    (...modules) => {
+                        const filteredModules = modules.filter(
+                            m =>
+                                !IGNORED_SPRING_BOOT_V3_DEPENDENCIES.has(m) &&
+                                !IGNORED_SPRING_BOOT_V3_DEPENDENCIES.has(`spring-boot-starter-${m}`),
+                        );
+                        if (filteredModules.length === 0) return undefined;
+                        return original(...filteredModules);
+                    };
+
+                interceptSourceMethod(source, 'addGradleDependency', wrapDependencyMethod);
+                interceptSourceMethod(source, 'addGradleDependencies', wrapDependencyMethod);
+                interceptSourceMethod(source, 'addGradleDependencyCatalogLibraries', wrapCatalogLibrariesMethod);
+
+                interceptSourceMethod(source, 'addMavenDependency', wrapDependencyMethod);
+                interceptSourceMethod(source, 'addMavenDependencyManagement', wrapDependencyMethod);
+                interceptSourceMethod(source, 'addMavenAnnotationProcessor', wrapAnnotationProcessorMethod);
+                interceptSourceMethod(source, 'addMavenDefinition', wrapMavenDefinitionMethod);
+
+                interceptSourceMethod(source, 'addJavaDependencies', wrapJavaDependenciesMethod);
+                interceptSourceMethod(source, 'addJavaDefinition', wrapJavaDefinitionMethod);
+                interceptSourceMethod(source, 'addSpringBootModule', wrapSpringBootModuleMethod);
             },
             ignoreSpringBootV3Files({ application }) {
                 (application.customizeTemplatePaths ??= []).push(
+                    file => {
+                        if (
+                            file.sourceFile.includes('JacksonHibernateConfiguration') ||
+                            file.destinationFile?.includes('JacksonHibernateConfiguration')
+                        ) {
+                            return undefined;
+                        }
+                        return file;
+                    },
+                    file => {
+                        if (
+                            file.sourceFile.includes('TokenProviderSecurityMetersTests') ||
+                            file.destinationFile?.includes('TokenProviderSecurityMetersTests')
+                        ) {
+                            return undefined;
+                        }
+                        return file;
+                    },
                     // Adjust feign-client and kafka destinationFile for jhipster 7 paths
                     file => {
                         if (!['jhipster:feign-client', 'jhipster:spring-cloud-stream:kafka'].includes(file.namespace)) return file;
@@ -87,8 +277,13 @@ export default class extends BaseApplicationGenerator {
                             destinationFile: renamedFiles(file.destinationFile),
                         };
                     },
-                    // ignore files from jhipster:spring-boot
-                    file => (file.namespace === 'jhipster:spring-boot' ? undefined : file),
+                    // Ignore files from jhipster:spring-boot except the Gradle script applied by build.gradle
+                    file => {
+                        if (file.namespace === 'jhipster:spring-boot') {
+                            return file.sourceFile.includes('spring-boot.gradle') ? file : undefined;
+                        }
+                        return file;
+                    },
                     file => {
                         // Passthrough non liquibase files
                         if (!file.sourceFile.includes('src/main/resources/config/liquibase')) return file;
@@ -136,6 +331,12 @@ export default class extends BaseApplicationGenerator {
                             if (application.generateBuiltInAuthorityEntity && destinationFile.endsWith('AuthorityRepository.java')) {
                                 return undefined;
                             }
+                            if (
+                                destinationFile.endsWith('UserJWTController.java') ||
+                                destinationFile.endsWith('UserJWTControllerIT.java')
+                            ) {
+                                return undefined;
+                            }
 
                             if (
                                 sourceFile.endsWith('/TestContainersSpringContextCustomizerFactory.java') &&
@@ -178,7 +379,6 @@ export default class extends BaseApplicationGenerator {
                                 ['OAuth2UserClientFeignConfiguration.', 'OAuth2InterceptedFeignConfiguration.'],
                                 ['OAuth2_UserFeignClientInterceptor.', 'TokenRelayRequestInterceptor.'],
                                 ['UserJWTController', 'AuthenticateController'],
-                                ['TokenProviderSecurityMetersTests', 'TokenAuthenticationSecurityMetersIT'],
                             ]) {
                                 // Files renamed in v8
                                 sourceFile = sourceFile.replace(...fileMap);
@@ -490,6 +690,21 @@ export default class extends BaseApplicationGenerator {
                         source.addGradleProperty({ property: 'cassandraDriverVersion', value: '4.14.1' });
                     }
                     source.addGradleDependencies([{ groupId: 'tech.jhipster', artifactId: 'jhipster-framework', scope: 'implementation' }]);
+                    if (application.databaseTypeSql && !application.reactive) {
+                        source.addGradleDependencies([
+                            {
+                                groupId: 'com.fasterxml.jackson.datatype',
+                                artifactId: 'jackson-datatype-hibernate5',
+                                scope: 'implementation',
+                            },
+                        ]);
+                    }
+                    source.addGradleDependencyCatalogPlugin({
+                        pluginName: 'spring-dependency-management',
+                        id: 'io.spring.dependency-management',
+                        version: '1.1.7',
+                        addToBuild: true,
+                    });
                 }
             },
             async customizeMaven({ application, source }) {
@@ -498,6 +713,10 @@ export default class extends BaseApplicationGenerator {
                         properties: [
                             { property: 'modernizer-maven-plugin.version', value: application.javaDependencies['modernizer-maven-plugin'] },
                             { property: 'spring-boot.version', value: application.javaDependencies['spring-boot'] },
+                            {
+                                property: 'maven-resources-plugin.version',
+                                value: application.javaDependencies['maven-resources-plugin'] || '3.3.0',
+                            },
                         ],
                         dependencies: [
                             {

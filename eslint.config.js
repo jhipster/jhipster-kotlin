@@ -11,7 +11,7 @@ export default [
             },
         },
     },
-    { ignores: ['coverage/**'] },
+    { ignores: ['coverage/**', 'target/**'] },
     jhipster.recommended,
     // jhipster-needle-eslint-add-config - JHipster will add additional config here
     prettier,
