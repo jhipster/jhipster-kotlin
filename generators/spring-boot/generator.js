@@ -52,19 +52,6 @@ export default class extends BaseApplicationGenerator {
         await this.dependsOnJHipster('jhipster-kotlin:ktlint');
     }
 
-    get [BaseApplicationGenerator.CONFIGURING]() {
-        return this.asConfiguringTaskGroup({
-            cassandraMigrationLoader() {
-                // generator-jhipster 9.3.1+ defaults Cassandra to liquibase migrations, whose runtime
-                // (LiquibaseConfiguration backed by a JDBC DataSource) doesn't exist on the Spring Boot 2
-                // stack generated here. The Spring Boot 2 application and its tests rely on the CQL loader.
-                if (this.jhipsterConfigWithDefaults.databaseType === 'cassandra') {
-                    this.jhipsterConfig.databaseMigration = 'loader';
-                }
-            },
-        });
-    }
-
     get [BaseApplicationGenerator.COMPOSING]() {
         return this.asComposingTaskGroup({
             async composeDetekt() {
@@ -91,8 +78,6 @@ export default class extends BaseApplicationGenerator {
                             : file,
                     // Kotling blueprint does not implements these files
                     file => {
-                        // We don't want to handle spring-boot-v2 templates here
-                        if (file.namespace === 'jhipster-kotlin:spring-boot-v2') return file;
                         const { resolvedSourceFile: javaResolvedSourceFile, namespace: ns } = file;
                         const { sourceFile, destinationFile } = file;
                         // Already resolved kotlin files
