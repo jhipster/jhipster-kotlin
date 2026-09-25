@@ -70,9 +70,6 @@ export default class extends BaseApplicationGenerator {
             async composeDetekt() {
                 await this.composeWithJHipster('jhipster-kotlin:detekt');
             },
-            async composeSpringBootV2() {
-                await this.composeWithJHipster('jhipster-kotlin:spring-boot-v2');
-            },
         });
     }
 
