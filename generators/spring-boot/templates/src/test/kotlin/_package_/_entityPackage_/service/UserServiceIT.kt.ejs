@@ -52,10 +52,10 @@ import org.junit.jupiter.api.BeforeEach
 import org.junit.jupiter.api.Test
 import org.springframework.beans.factory.annotation.Autowired
 <%_ if (searchEngineElasticsearch) { _%>
-import org.springframework.boot.test.mock.mockito.SpyBean
+import org.springframework.test.context.bean.override.mockito.MockitoSpyBean
 <%_ } _%>
 <%_ if (databaseTypeSql && !reactive && !authenticationTypeOauth2) { _%>
-import org.springframework.boot.test.mock.mockito.MockBean
+import org.springframework.test.context.bean.override.mockito.MockitoBean
 import org.springframework.data.auditing.AuditingHandler
 import org.springframework.data.auditing.DateTimeProvider
 <%_ } _%>
@@ -157,7 +157,7 @@ class UserServiceIT {
      *
      * @see <%= packageName %>.repository.search.UserSearchRepositoryMockConfiguration
      */
-    @SpyBean
+    @MockitoSpyBean
     private lateinit var spiedUserSearchRepository: UserSearchRepository
     <%_ } _%>
     <%_ if (databaseTypeSql && !reactive && !authenticationTypeOauth2) { _%>
@@ -165,7 +165,7 @@ class UserServiceIT {
     @Autowired
     private lateinit var auditingHandler: AuditingHandler
 
-    @MockBean
+    @MockitoBean
     private lateinit var dateTimeProvider: DateTimeProvider
     <%_ } _%>
     <%_ if (!databaseTypeNo) { _%>
@@ -393,7 +393,7 @@ class UserServiceIT {
             )<% if (reactive) { %>.collectList().block()<% } %>
         assertThat(users).isEmpty()
         userService.removeNotActivatedUsers()
-        val maybeDbUser = userRepository.findById(dbUser.id)<% if (reactive) { %>.blockOptional()<% } %>
+        val maybeDbUser = userRepository.findById(dbUser.id!!)<% if (reactive) { %>.blockOptional()<% } %>
         assertThat(maybeDbUser).contains(dbUser)
         <%_ if (searchEngineElasticsearch) { _%>
 
