@@ -19,7 +19,7 @@
 package <%= packageName %>.config
 
 <%_ if (reactive) { _%>
-import com.fasterxml.jackson.databind.ObjectMapper
+import tools.jackson.databind.ObjectMapper
 <%_ } _%>
 <%_ if (!skipClient || devDatabaseTypeH2Any) { _%>
 import tech.jhipster.config.JHipsterConstants
@@ -29,82 +29,55 @@ import tech.jhipster.config.JHipsterProperties
 import tech.jhipster.config.h2.H2ConfigurationHelper
 <%_ } _%>
 <%_ if (!skipClient && reactive) { _%>
-import tech.jhipster.web.filter.<% if (reactive) { %>reactive.<% } %>CachingHttpHeadersFilter
+import tech.jhipster.web.filter.reactive.CachingHttpHeadersFilter
 <%_ } _%>
 import org.slf4j.LoggerFactory
 <%_ if (!reactive) { _%>
-import org.springframework.boot.web.server.MimeMappings
 import org.springframework.boot.web.server.WebServerFactory
 import org.springframework.boot.web.server.WebServerFactoryCustomizer
 import org.springframework.boot.web.servlet.ServletContextInitializer
-import org.springframework.boot.web.servlet.server.ConfigurableServletWebServerFactory
+import org.springframework.boot.web.server.servlet.ConfigurableServletWebServerFactory
 <%_ } _%>
 <%_ if (reactive && !skipClient) { _%>
-import org.springframework.boot.autoconfigure.web.reactive.ResourceHandlerRegistrationCustomizer
-<%_ } _%>
-<%_ if (messageBrokerKafka) { _%>
-import org.springframework.cloud.stream.annotation.EnableBinding
+import org.springframework.boot.webflux.autoconfigure.ResourceHandlerRegistrationCustomizer
 <%_ } _%>
 import org.springframework.context.annotation.Bean
 import org.springframework.context.annotation.Configuration
 <%_ if (reactive) { _%>
-    <%_ if (!skipClient) { _%>
+  <%_ if (!skipClient) { _%>
 import org.springframework.context.annotation.Profile
-    <%_ } _%>
+  <%_ } _%>
 import org.springframework.core.annotation.Order
 <%_ } _%>
 <%_ if (reactive && !databaseTypeNo) { _%>
 import org.springframework.data.web.ReactivePageableHandlerMethodArgumentResolver
 import org.springframework.data.web.ReactiveSortHandlerMethodArgumentResolver
 <%_ } _%>
-<%_ if (!reactive || (devDatabaseTypeH2Any && reactive)) { _%>
+<%_ if (!reactive || devDatabaseTypeH2Any) { _%>
 import org.springframework.core.env.Environment
 import org.springframework.core.env.Profiles
 <%_ } _%>
-<%_ if (reactive && !skipClient) { _%>
-import org.springframework.security.web.server.util.matcher.ServerWebExchangeMatcher
-import org.springframework.security.web.server.util.matcher.ServerWebExchangeMatchers
-<%_ } _%>
 import org.springframework.util.CollectionUtils
-<%_ if (!reactive) { _%>
+<%_ if (reactive) { _%>
+import org.springframework.web.cors.reactive.CorsConfigurationSource
+import org.springframework.web.cors.reactive.UrlBasedCorsConfigurationSource
+import org.springframework.web.reactive.config.WebFluxConfigurer
+import org.springframework.web.reactive.result.method.HandlerMethodArgumentResolver
+import org.springframework.web.server.WebExceptionHandler
+import <%= packageName %>.web.rest.errors.ExceptionTranslator
+import tech.jhipster.web.rest.errors.ReactiveWebExceptionHandler
+<%_ } else { _%>
 import org.springframework.web.cors.UrlBasedCorsConfigurationSource
 import org.springframework.web.filter.CorsFilter
 <%_ } _%>
-<%_ if (reactive) { _%>
-import org.springframework.web.cors.reactive.CorsWebFilter
-import org.springframework.web.cors.reactive.UrlBasedCorsConfigurationSource
-import org.springframework.web.reactive.config.WebFluxConfigurer
-    <%_ if (!skipClient) { _%>
-import org.springframework.web.reactive.function.server.HandlerFunction
-    <%_ } _%>
-import org.springframework.web.reactive.result.method.HandlerMethodArgumentResolver
-    <%_ if (!skipClient) { _%>
-import org.springframework.web.server.ServerWebExchange
-    <%_ } _%>
-import org.springframework.web.server.WebExceptionHandler
-    <%_ if (!skipClient) { _%>
-import org.springframework.web.server.WebFilter
-import org.springframework.web.server.WebFilterChain
-    <%_ } _%>
-import org.zalando.problem.spring.webflux.advice.ProblemExceptionHandler
-import org.zalando.problem.spring.webflux.advice.ProblemHandling
-    <%_ if (!skipClient) { _%>
-import reactor.core.publisher.Mono
-    <%_ } _%>
-<%_ } _%>
 <%_ if (!reactive) { _%>
 
-import jakarta.servlet.DispatcherType
 import jakarta.servlet.ServletContext
-import jakarta.servlet.ServletException
-    <%_ if (!skipClient) { _%>
-import java.io.File
-import java.nio.charset.StandardCharsets
-import java.nio.file.Paths
-import java.util.EnumSet
-
+  <%_ if (!skipClient) { _%>
 import java.net.URLDecoder.decode
-    <%_ } _%>
+import java.nio.charset.StandardCharsets
+import java.nio.file.Path
+  <%_ } _%>
 <%_ } _%>
 <%_ if (reactive && !skipClient) { _%>
 
@@ -114,47 +87,44 @@ import java.util.concurrent.TimeUnit
 /**
  * Configuration of web application with Servlet 3.0 APIs.
  */
-<%_ if (messageBrokerKafka) { _%>
-@EnableBinding(KafkaSseConsumer::class, KafkaSseProducer::class)
-<%_ } _%>
 @Configuration
 class WebConfigurer(
-    <% if (!reactive || (devDatabaseTypeH2Any && reactive)) { %>
+<%_ if (!reactive || devDatabaseTypeH2Any) { _%>
     private val env: Environment,
-    <%_ } _%>
+<%_ } _%>
     private val jHipsterProperties: JHipsterProperties
-) : <% if (!reactive) { %>ServletContextInitializer<% if (!skipClient) { %>, WebServerFactoryCustomizer<WebServerFactory><% } %><% } %><% if (reactive) { %>WebFluxConfigurer<% } %> {
+) : <% if (!reactive) { %>ServletContextInitializer<% if (!skipClient) { %>, WebServerFactoryCustomizer<WebServerFactory><% } %><% } else { %>WebFluxConfigurer<% } %> {
 
-    <%_ if (devDatabaseTypeH2Any && reactive) { _%>
+    private val log = LoggerFactory.getLogger(javaClass)
+<%_ if (devDatabaseTypeH2Any && reactive) { _%>
+
     init {
-        if (env.acceptsProfiles(Profiles.of(JHipsterConstants.SPRING_PROFILE_DEVELOPMENT))) {
+        if (h2ConsoleIsEnabled(env)) {
             try {
+                log.info("Initialize H2 console")
                 H2ConfigurationHelper.initH2Console()
             } catch (e: Exception) {
                 // Console may already be running on another app or after a refresh.
-                e.printStackTrace()
+                log.warn("Failed to initialize H2 console", e)
             }
         }
     }
-    <%_ } _%>
+<%_ } _%>
+<%_ if (!reactive) { _%>
 
-    private val log = LoggerFactory.getLogger(javaClass)
-    <%_ if (!reactive) { _%>
-
-    @Throws(ServletException::class)
     override fun onStartup(servletContext: ServletContext) {
         if (env.activeProfiles.isNotEmpty()) {
             log.info("Web application configuration, using profiles: {}", *env.activeProfiles as Array<*>)
         }
 
-        <%_ if (devDatabaseTypeH2Any) { _%>
-        if (env.acceptsProfiles(Profiles.of(JHipsterConstants.SPRING_PROFILE_DEVELOPMENT))) {
+  <%_ if (devDatabaseTypeH2Any) { _%>
+        if (h2ConsoleIsEnabled(env)) {
             initH2Console(servletContext)
         }
-        <%_ } _%>
+  <%_ } _%>
         log.info("Web application fully configured")
     }
-    <%_ if (!skipClient) { _%>
+  <%_ if (!skipClient) { _%>
 
     /**
      * Customize the Servlet engine: Mime types, the document root, the cache.
@@ -167,7 +137,7 @@ class WebConfigurer(
     private fun setLocationForStaticAssets(server: WebServerFactory) {
         if (server is ConfigurableServletWebServerFactory) {
             val prefixPath = resolvePathPrefix()
-            val root = File(prefixPath + "<%= clientDistDir %>")
+            val root = Path.of(prefixPath + "<%= clientDistDir %>").toFile()
             if (root.exists() && root.isDirectory) {
                 server.setDocumentRoot(root)
             }
@@ -178,8 +148,8 @@ class WebConfigurer(
      * Resolve path prefix to static resources.
      */
     private fun resolvePathPrefix(): String {
-        val fullExecutablePath = decode(this.javaClass.getResource("").path, StandardCharsets.UTF_8)
-        val rootPath = Paths.get(".").toUri().normalize().path
+        val fullExecutablePath = decode(this.javaClass.getResource("")!!.path, StandardCharsets.UTF_8)
+        val rootPath = Path.of(".").toUri().normalize().path
         val extractedPath = fullExecutablePath.replace(rootPath, "")
         val extractionEndIndex = extractedPath.indexOf("<%= temporaryDir %>")
         if (extractionEndIndex <= 0) {
@@ -187,71 +157,70 @@ class WebConfigurer(
         }
         return extractedPath.substring(0, extractionEndIndex)
     }
-
-        <%_ } _%>
-    <%_ } _%>
+  <%_ } _%>
+<%_ } _%>
 
     @Bean
-    fun corsFilter(): Cors<% if (reactive) { %>Web<% } %>Filter {
+    fun <% if (reactive) { %>corsConfigurationSource(): CorsConfigurationSource<% } else { %>corsFilter(): CorsFilter<% } %> {
         val source = UrlBasedCorsConfigurationSource()
         val config = jHipsterProperties.cors
-        if (!CollectionUtils.isEmpty(config.allowedOrigins) || ! CollectionUtils.isEmpty(config.allowedOriginPatterns)) {
+        if (!CollectionUtils.isEmpty(config.allowedOrigins) || !CollectionUtils.isEmpty(config.allowedOriginPatterns)) {
             log.debug("Registering CORS filter")
-            source.apply {
-                registerCorsConfiguration("/api/**", config)
-                registerCorsConfiguration("/management/**", config)
-                registerCorsConfiguration("/v3/api-docs", config)
-                registerCorsConfiguration("/swagger-ui/**", config)
-                <%_ if (applicationTypeGateway) { _%>
-                registerCorsConfiguration("/*/api/**", config)
-                registerCorsConfiguration("/services/*/api/**", config)
-                registerCorsConfiguration("/*/management/**", config)
-                <%_ } _%>
-            }
+            source.registerCorsConfiguration("/api/**", config)
+            source.registerCorsConfiguration("/management/**", config)
+            source.registerCorsConfiguration("/v3/api-docs", config)
+            source.registerCorsConfiguration("/swagger-ui/**", config)
+<%_ if (applicationTypeGateway) { _%>
+            source.registerCorsConfiguration("/*/api/**", config)
+            source.registerCorsConfiguration("/services/*/api/**", config)
+            source.registerCorsConfiguration("/*/management/**", config)
+<%_ } _%>
         }
-        return Cors<% if (reactive) { %>Web<% } %>Filter(source)
+        return <% if (reactive) { %>source<% } else { %>CorsFilter(source)<% } %>
     }
-    <%_ if (reactive) { _%>
+<%_ if (reactive) { _%>
 
-        <%_ if (!databaseTypeNo) { _%>
-    // TODO: remove when this is supported in spring-data / spring-boot
+  <%_ if (!databaseTypeNo) { _%>
+    // TODO: remove when this is supported in spring-boot
     @Bean
-    fun reactivePageableHandlerMethodArgumentResolver() = ReactivePageableHandlerMethodArgumentResolver()
+    fun reactivePageableHandlerMethodArgumentResolver(): HandlerMethodArgumentResolver = ReactivePageableHandlerMethodArgumentResolver()
 
     // TODO: remove when this is supported in spring-boot
     @Bean
-    fun reactiveSortHandlerMethodArgumentResolver() = ReactiveSortHandlerMethodArgumentResolver()
-        <%_ } _%>
+    fun reactiveSortHandlerMethodArgumentResolver(): HandlerMethodArgumentResolver = ReactiveSortHandlerMethodArgumentResolver()
+  <%_ } _%>
 
     @Bean
     @Order(-2) // The handler must have precedence over WebFluxResponseStatusExceptionHandler and Spring Boot's ErrorWebExceptionHandler
-    fun problemExceptionHandler(mapper: ObjectMapper, problemHandling: ProblemHandling): WebExceptionHandler {
-        return ProblemExceptionHandler(mapper, problemHandling)
-    }
-        <%_ if (!skipClient) { _%>
+    fun problemExceptionHandler(mapper: ObjectMapper, problemHandling: ExceptionTranslator): WebExceptionHandler =
+        ReactiveWebExceptionHandler(problemHandling, mapper)
+  <%_ if (!skipClient) { _%>
 
     @Bean
-    fun registrationCustomizer(): ResourceHandlerRegistrationCustomizer {
+    fun registrationCustomizer(): ResourceHandlerRegistrationCustomizer =
         // Disable built-in cache control to use our custom filter instead
-        return ResourceHandlerRegistrationCustomizer { registration -> registration.setCacheControl(null)}
-    }
+        ResourceHandlerRegistrationCustomizer { registration -> registration.setCacheControl(null) }
 
     @Bean
     @Profile(JHipsterConstants.SPRING_PROFILE_PRODUCTION)
-    fun cachingHttpHeadersFilter() : CachingHttpHeadersFilter {
+    fun cachingHttpHeadersFilter(): CachingHttpHeadersFilter =
         // Use a cache filter that only match selected paths
-        return CachingHttpHeadersFilter(TimeUnit.DAYS.toMillis(jHipsterProperties.http.cache.timeToLiveInDays.toLong()))
-    }
-        <%_ } _%>
-    <%_ } _%>
-    <%_ if (devDatabaseTypeH2Any && !reactive) { _%>
+        CachingHttpHeadersFilter(TimeUnit.DAYS.toMillis(jHipsterProperties.http.cache.timeToLiveInDays.toLong()))
+  <%_ } _%>
+<%_ } _%>
+<%_ if (devDatabaseTypeH2Any) { _%>
+
+    private fun h2ConsoleIsEnabled(env: Environment): Boolean =
+        env.acceptsProfiles(Profiles.of(JHipsterConstants.SPRING_PROFILE_DEVELOPMENT)) && "true" == env.getProperty("spring.h2.console.enabled")
+  <%_ if (!reactive) { _%>
 
     /**
      * Initializes H2 console.
      */
     private fun initH2Console(servletContext: ServletContext) {
-        log.debug("Initialize H2 console")
+        log.info("Initialize H2 console")
         H2ConfigurationHelper.initH2Console(servletContext)
     }
-    <%_ } _%>
+  <%_ } _%>
+<%_ } _%>
 }
