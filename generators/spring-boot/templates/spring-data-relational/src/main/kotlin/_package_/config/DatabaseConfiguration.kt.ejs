@@ -65,6 +65,9 @@ import org.springframework.transaction.annotation.EnableTransactionManagement
 
 <%_ if (devDatabaseTypeH2Any) { _%>
 import java.sql.SQLException
+import org.springframework.boot.autoconfigure.condition.ConditionalOnProperty
+import org.springframework.boot.context.properties.EnableConfigurationProperties
+import org.springframework.boot.h2console.autoconfigure.H2ConsoleProperties
 <%_ } _%>
 <%_ if (reactive) { _%>
 import java.time.Duration
@@ -90,6 +93,9 @@ import java.util.UUID
 @EnableJpaAuditing(auditorAwareRef = "springSecurityAuditorAware")
 <%_ } _%>
 @EnableTransactionManagement
+<%_ if (devDatabaseTypeH2Any) { _%>
+@EnableConfigurationProperties(H2ConsoleProperties::class)
+<%_ } _%>
 <%_ if (searchEngineElasticsearch) { _%>
 @Enable<% if (reactive) { %>Reactive<% } %>ElasticsearchRepositories("<%= packageName %>.repository.search")
 <%_ } _%>
@@ -107,6 +113,7 @@ class DatabaseConfiguration<% if (devDatabaseTypeH2Any) { %>(private val env: En
      @Throws(SQLException::class)
      @Bean(initMethod = "start", destroyMethod = "stop")
      @Profile(JHipsterConstants.SPRING_PROFILE_DEVELOPMENT)
+     @ConditionalOnProperty(prefix = "spring.h2.console", name = ["enabled"], havingValue = "true")
      fun h2TCPServer(): Any {
          val port = getValidPortForH2()
          log.debug("H2 database is available on port $port")
