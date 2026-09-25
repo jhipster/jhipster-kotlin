@@ -9,6 +9,10 @@ const angularWorkflowSamples = addSamplesGroup(JSON.parse(angularJson).include, 
 const reactJson = readFileSync(new URL('../templates/_workflow-samples/react.json', import.meta.url), 'utf8');
 const reactWorkflowSamples = addSamplesGroup(JSON.parse(reactJson).include, 'react');
 
-export const workflowSamples = prepareSamples([...angularWorkflowSamples, ...reactWorkflowSamples]);
+const vueJson = readFileSync(new URL('../templates/_workflow-samples/vue.json', import.meta.url), 'utf8');
+const vueWorkflowSamples = addSamplesGroup(JSON.parse(vueJson).include, 'vue');
+
+export const workflowSamples = prepareSamples([...angularWorkflowSamples, ...reactWorkflowSamples, ...vueWorkflowSamples]);
 export const angularSamples = prepareSamples(angularWorkflowSamples);
 export const reactSamples = prepareSamples(reactWorkflowSamples);
+export const vueSamples = prepareSamples(vueWorkflowSamples);

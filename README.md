@@ -22,6 +22,8 @@ Full documentation and information about JHipster is available [here](https://ww
 
 ![React](https://github.com/jhipster/jhipster-kotlin/workflows/React/badge.svg)
 
+![Vue](https://github.com/jhipster/jhipster-kotlin/workflows/Vue/badge.svg)
+
 # Greetings, Kotlin Hipster!
 
 [![NPM version][npm-image]][npm-url]
