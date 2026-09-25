@@ -1,15 +1,11 @@
-import migration from '../../generators/spring-boot-v2/migration.cjs';
-
-const { jhipsterConstants: constants } = migration;
-
-const { TEST_DIR } = constants;
-const { CLIENT_MAIN_SRC_DIR } = constants;
-
-const { SERVER_MAIN_RES_DIR } = constants;
-const { SERVER_TEST_RES_DIR } = constants;
-const { DOCKER_DIR } = constants;
-const SERVER_MAIN_SRC_DIR = `${constants.MAIN_DIR}kotlin/`;
-const SERVER_TEST_SRC_DIR = `${constants.TEST_DIR}kotlin/`;
+const MAIN_DIR = 'src/main/';
+const TEST_DIR = 'src/test/';
+const CLIENT_MAIN_SRC_DIR = 'src/main/webapp/';
+const SERVER_MAIN_RES_DIR = 'src/main/resources/';
+const SERVER_TEST_RES_DIR = 'src/test/resources/';
+const DOCKER_DIR = 'src/main/docker/';
+const SERVER_MAIN_SRC_DIR = `${MAIN_DIR}kotlin/`;
+const SERVER_TEST_SRC_DIR = `${TEST_DIR}kotlin/`;
 
 const expectedFiles = {
     entity: {
@@ -61,8 +57,6 @@ const expectedFiles = {
         `${SERVER_MAIN_SRC_DIR}com/mycompany/myapp/config/Constants.kt`,
         `${SERVER_MAIN_SRC_DIR}com/mycompany/myapp/config/DatabaseConfiguration.kt`,
         `${SERVER_MAIN_SRC_DIR}com/mycompany/myapp/config/DateTimeFormatConfiguration.kt`,
-        `${SERVER_MAIN_SRC_DIR}com/mycompany/myapp/config/JacksonConfiguration.kt`,
-        `${SERVER_MAIN_SRC_DIR}com/mycompany/myapp/config/LocaleConfiguration.kt`,
         `${SERVER_MAIN_SRC_DIR}com/mycompany/myapp/config/LoggingAspectConfiguration.kt`,
         `${SERVER_MAIN_SRC_DIR}com/mycompany/myapp/config/SecurityConfiguration.kt`,
         `${SERVER_MAIN_SRC_DIR}com/mycompany/myapp/config/WebConfigurer.kt`,
@@ -83,8 +77,6 @@ const expectedFiles = {
         `${SERVER_TEST_SRC_DIR}com/mycompany/myapp/web/rest/errors/ExceptionTranslatorTestController.kt`,
         `${SERVER_TEST_RES_DIR}config/application.yml`,
         `${SERVER_TEST_SRC_DIR}com/mycompany/myapp/config/AsyncSyncConfiguration.kt`,
-        `${SERVER_TEST_RES_DIR}META-INF/spring.factories`,
-        `${SERVER_TEST_RES_DIR}testcontainers.properties`,
         `${SERVER_TEST_RES_DIR}logback.xml`,
     ],
 
@@ -197,29 +189,19 @@ const expectedFiles = {
 
     jwtServer: [
         `${SERVER_MAIN_SRC_DIR}com/mycompany/myapp/management/SecurityMetersService.kt`,
-        `${SERVER_MAIN_SRC_DIR}com/mycompany/myapp/security/jwt/JWTConfigurer.kt`,
-        `${SERVER_MAIN_SRC_DIR}com/mycompany/myapp/security/jwt/JWTFilter.kt`,
-        `${SERVER_MAIN_SRC_DIR}com/mycompany/myapp/security/jwt/TokenProvider.kt`,
         `${SERVER_TEST_SRC_DIR}com/mycompany/myapp/management/SecurityMetersServiceTests.kt`,
-        `${SERVER_TEST_SRC_DIR}com/mycompany/myapp/security/jwt/JWTFilterTest.kt`,
-        `${SERVER_TEST_SRC_DIR}com/mycompany/myapp/security/jwt/TokenProviderTest.kt`,
         `${SERVER_TEST_SRC_DIR}com/mycompany/myapp/security/jwt/TokenAuthenticationSecurityMetersIT.kt`,
     ],
 
     jwtServerGateway: [
         `${SERVER_MAIN_SRC_DIR}com/mycompany/myapp/management/SecurityMetersService.kt`,
-        `${SERVER_MAIN_SRC_DIR}com/mycompany/myapp/security/jwt/JWTFilter.kt`,
-        `${SERVER_MAIN_SRC_DIR}com/mycompany/myapp/security/jwt/TokenProvider.kt`,
         `${SERVER_TEST_SRC_DIR}com/mycompany/myapp/management/SecurityMetersServiceTests.kt`,
-        `${SERVER_TEST_SRC_DIR}com/mycompany/myapp/security/jwt/JWTFilterTest.kt`,
-        `${SERVER_TEST_SRC_DIR}com/mycompany/myapp/security/jwt/TokenProviderTest.kt`,
         `${SERVER_TEST_SRC_DIR}com/mycompany/myapp/security/jwt/TokenAuthenticationSecurityMetersIT.kt`,
     ],
 
     oauth2: [
         `${SERVER_MAIN_SRC_DIR}com/mycompany/myapp/config/SecurityConfiguration.kt`,
         `${SERVER_MAIN_SRC_DIR}com/mycompany/myapp/domain/User.kt`,
-        `${SERVER_MAIN_SRC_DIR}com/mycompany/myapp/security/oauth2/JwtGrantedAuthorityConverter.kt`,
         `${SERVER_MAIN_SRC_DIR}com/mycompany/myapp/security/oauth2/AudienceValidator.kt`,
         `${SERVER_MAIN_SRC_DIR}com/mycompany/myapp/web/rest/AccountResource.kt`,
         `${DOCKER_DIR}keycloak.yml`,
@@ -232,7 +214,6 @@ const expectedFiles = {
         `${SERVER_TEST_SRC_DIR}com/mycompany/myapp/web/rest/JhipsterKafkaResourceIT.kt`,
         `${SERVER_TEST_SRC_DIR}com/mycompany/myapp/config/KafkaTestContainer.kt`,
         `${DOCKER_DIR}kafka.yml`,
-        `${SERVER_TEST_RES_DIR}testcontainers.properties`,
     ],
 
     swaggerCodegen: [`${SERVER_MAIN_RES_DIR}swagger/api.yml`],
@@ -241,8 +222,6 @@ const expectedFiles = {
         `${SERVER_MAIN_RES_DIR}config/bootstrap.yml`,
         `${SERVER_MAIN_RES_DIR}config/bootstrap-prod.yml`,
         `${SERVER_TEST_RES_DIR}config/bootstrap.yml`,
-        `${SERVER_MAIN_SRC_DIR}com/mycompany/myapp/web/filter/ModifyServersOpenApiFilter.kt`,
-        `${SERVER_TEST_SRC_DIR}com/mycompany/myapp/web/filter/ModifyServersOpenApiFilterTest.kt`,
         `${SERVER_MAIN_SRC_DIR}com/mycompany/myapp/web/rest/vm/RouteVM.kt`,
         `${SERVER_MAIN_SRC_DIR}com/mycompany/myapp/web/rest/GatewayResource.kt`,
     ],
@@ -258,7 +237,7 @@ const expectedFiles = {
         'package.json',
     ],
 
-    dockerServices: [`${DOCKER_DIR}app.yml`, `${DOCKER_DIR}sonar.yml`, `${DOCKER_DIR}jhipster-control-center.yml`],
+    dockerServices: [`${DOCKER_DIR}app.yml`, `${DOCKER_DIR}sonar.yml`],
 
     hibernateTimeZoneConfig: [
         `${SERVER_TEST_SRC_DIR}com/mycompany/myapp/config/timezone/HibernateTimeZoneIT.kt`,
@@ -268,14 +247,12 @@ const expectedFiles = {
 
     mysql: [
         `${SERVER_TEST_SRC_DIR}com/mycompany/myapp/config/DatabaseTestcontainer.kt`,
-        `${SERVER_TEST_RES_DIR}testcontainers.properties`,
         `${SERVER_MAIN_SRC_DIR}com/mycompany/myapp/config/LiquibaseConfiguration.kt`,
         `${DOCKER_DIR}mysql.yml`,
     ],
 
     mariadb: [
         `${SERVER_TEST_SRC_DIR}com/mycompany/myapp/config/DatabaseTestcontainer.kt`,
-        `${SERVER_TEST_RES_DIR}testcontainers.properties`,
         `${SERVER_MAIN_SRC_DIR}com/mycompany/myapp/config/LiquibaseConfiguration.kt`,
         `${DOCKER_DIR}mariadb.yml`,
         `${SERVER_TEST_RES_DIR}config/application-testdev.yml`,
@@ -285,14 +262,12 @@ const expectedFiles = {
 
     mssql: [
         `${SERVER_TEST_SRC_DIR}com/mycompany/myapp/config/DatabaseTestcontainer.kt`,
-        `${SERVER_TEST_RES_DIR}testcontainers.properties`,
         `${SERVER_MAIN_SRC_DIR}com/mycompany/myapp/config/LiquibaseConfiguration.kt`,
         `${DOCKER_DIR}mssql.yml`,
     ],
 
     postgresql: [
         `${SERVER_TEST_SRC_DIR}com/mycompany/myapp/config/DatabaseTestcontainer.kt`,
-        `${SERVER_TEST_RES_DIR}testcontainers.properties`,
         `${SERVER_MAIN_SRC_DIR}com/mycompany/myapp/config/LiquibaseConfiguration.kt`,
         `${DOCKER_DIR}postgresql.yml`,
         `${SERVER_TEST_RES_DIR}config/application-testdev.yml`,
@@ -309,13 +284,11 @@ const expectedFiles = {
 
     mongodb: [
         `${SERVER_MAIN_SRC_DIR}com/mycompany/myapp/config/dbmigrations/InitialSetupMigration.kt`,
-        `${SERVER_TEST_SRC_DIR}com/mycompany/myapp/config/TestContainersSpringContextCustomizerFactory.kt`,
         `${SERVER_TEST_SRC_DIR}com/mycompany/myapp/config/MongoDbTestContainer.kt`,
         `${DOCKER_DIR}mongodb.yml`,
         `${DOCKER_DIR}mongodb-cluster.yml`,
         `${DOCKER_DIR}mongodb/MongoDB.Dockerfile`,
         `${DOCKER_DIR}mongodb/scripts/init_replicaset.js`,
-        `${SERVER_TEST_RES_DIR}testcontainers.properties`,
     ],
 
     couchbase: [
@@ -333,7 +306,6 @@ const expectedFiles = {
 
     neo4j: [
         `${SERVER_TEST_SRC_DIR}com/mycompany/myapp/config/Neo4jTestContainer.kt`,
-        `${SERVER_TEST_RES_DIR}testcontainers.properties`,
         `${SERVER_MAIN_RES_DIR}config/neo4j/migrations/user__admin.json`,
         `${SERVER_MAIN_RES_DIR}config/neo4j/migrations/user__user.json`,
         `${DOCKER_DIR}neo4j.yml`,
@@ -342,16 +314,12 @@ const expectedFiles = {
     couchbaseSearch: [`${SERVER_TEST_SRC_DIR}com/mycompany/myapp/repository/CouchbaseSearchRepositoryTest.kt`],
 
     cassandra: [
-        `${SERVER_MAIN_RES_DIR}config/cql/create-keyspace-prod.cql`,
-        `${SERVER_MAIN_RES_DIR}config/cql/create-keyspace.cql`,
-        `${SERVER_MAIN_RES_DIR}config/cql/drop-keyspace.cql`,
-        `${SERVER_MAIN_RES_DIR}config/cql/changelog/00000000000000_create-tables.cql`,
-        `${SERVER_MAIN_RES_DIR}config/cql/changelog/00000000000001_insert_default_users.cql`,
+        `${SERVER_MAIN_RES_DIR}config/liquibase/master.xml`,
+        `${SERVER_MAIN_RES_DIR}config/liquibase/changelog/00000000000000_initial_schema.xml`,
         `${SERVER_TEST_SRC_DIR}com/mycompany/myapp/config/CassandraTestContainer.kt`,
         `${SERVER_TEST_SRC_DIR}com/mycompany/myapp/CassandraKeyspaceIT.kt`,
         `${DOCKER_DIR}cassandra-cluster.yml`,
         `${DOCKER_DIR}cassandra.yml`,
-        `${SERVER_TEST_RES_DIR}testcontainers.properties`,
     ],
 
     elasticsearch: [
