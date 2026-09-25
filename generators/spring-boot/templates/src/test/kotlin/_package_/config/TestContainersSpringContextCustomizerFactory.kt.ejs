@@ -40,6 +40,9 @@ class TestContainersSpringContextCustomizerFactory: ContextCustomizerFactory {
     <%_ if (databaseTypeMongodb) { _%>
         private var mongoDbBean: MongoDbTestContainer? = null
     <%_ } _%>
+    <%_ if (databaseTypeCassandra) { _%>
+        private var cassandraBean: CassandraTestContainer? = null
+    <%_ } _%>
     <%_ if (searchEngineElasticsearch) { _%>
         private var elasticsearchBean: ElasticsearchTestContainer? = null
     <%_ } _%>
@@ -86,6 +89,23 @@ class TestContainersSpringContextCustomizerFactory: ContextCustomizerFactory {
                 }
                 mongoDbBean?.let {
                     testValues = testValues.and("spring.data.mongodb.uri=" + it.getMongoDBContainer().replicaSetUrl)
+                }
+            }
+<%_ } _%>
+<%_ if (databaseTypeCassandra) { _%>
+            val cassandraAnnotation = AnnotatedElementUtils.findMergedAnnotation(testClass, EmbeddedCassandra::class.java)
+            if (null != cassandraAnnotation) {
+                log.debug("detected the EmbeddedCassandra annotation on class {}", testClass.name)
+                log.info("Warming up the cassandra database")
+                if (null == cassandraBean) {
+                    cassandraBean = beanFactory.createBean(CassandraTestContainer::class.java)
+                    beanFactory.registerSingleton(CassandraTestContainer::class.java.name, cassandraBean)
+                }
+                cassandraBean?.let {
+                    val container = it.getCassandraContainer()
+                    testValues = testValues.and("spring.data.cassandra.contact-points=" + container.host + ":" + container.getMappedPort(9042))
+                        .and("spring.data.cassandra.local-datacenter=" + container.localDatacenter)
+                        .and("spring.data.cassandra.keyspace-name=" + CassandraTestContainer.DEFAULT_KEYSPACE_NAME)
                 }
             }
 <%_ } _%>

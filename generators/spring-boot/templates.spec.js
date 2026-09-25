@@ -47,6 +47,22 @@ const excludedJavaTemplates = new Map([
 
 const excludedKotlinTemplates = new Map([
     [
+        'kafka/src/test/kotlin/_package_/config/EmbeddedKafka.kt.ejs',
+        'Spring Boot 2 (spring-boot-v2) test setup: generator-jhipster 9.x replaced this annotation driven testcontainers setup with @ServiceConnection, which needs Spring Boot 3.1+.',
+    ],
+    [
+        'kafka/src/test/kotlin/_package_/config/KafkaTestContainersSpringContextCustomizerFactory.kt.ejs',
+        'Spring Boot 2 (spring-boot-v2) test setup: generator-jhipster 9.x replaced this annotation driven testcontainers setup with @ServiceConnection, which needs Spring Boot 3.1+.',
+    ],
+    [
+        'spring-data-mongodb/src/test/kotlin/_package_/config/EmbeddedMongo.kt.ejs',
+        'Spring Boot 2 (spring-boot-v2) test setup: generator-jhipster 9.x replaced this annotation driven testcontainers setup with @ServiceConnection, which needs Spring Boot 3.1+.',
+    ],
+    [
+        'spring-data-elasticsearch/src/test/kotlin/_package_/config/EmbeddedElasticsearch.kt.ejs',
+        'Spring Boot 2 (spring-boot-v2) test setup: generator-jhipster 9.x replaced this annotation driven testcontainers setup with @ServiceConnection, which needs Spring Boot 3.1+.',
+    ],
+    [
         'src/test/kotlin/_package_/config/TestContainersSpringContextCustomizerFactory.kt.ejs',
         "Sourced from jhipster-7-templates (frozen v7.9.4), not generator-jhipster 9.x - it's the legacy spring-boot-v2 migration path's own copy, predating the SqlTestContainersSpringContextCustomizerFactory rename.",
     ],

@@ -18,103 +18,84 @@
 -%>
 package <%= packageName %>.config
 
-<%_ if (databaseMigrationLoader) { _%>
 import com.datastax.oss.driver.api.core.CqlSession
 import com.datastax.oss.driver.api.core.CqlSessionBuilder
 import com.datastax.oss.driver.api.core.config.DefaultDriverOption
 import com.datastax.oss.driver.api.core.config.DriverConfigLoader
-import com.github.dockerjava.api.command.InspectContainerResponse
-import java.io.IOException
-<%_ } _%>
 import org.slf4j.Logger
 import org.slf4j.LoggerFactory
-import org.springframework.boot.test.context.TestConfiguration
-import org.springframework.boot.testcontainers.service.connection.ServiceConnection
-import org.springframework.context.annotation.Bean
-<%_ if (databaseMigrationLoader) { _%>
+import org.springframework.beans.factory.DisposableBean
+import org.springframework.beans.factory.InitializingBean
 import org.springframework.core.io.support.PathMatchingResourcePatternResolver
 import org.springframework.data.cassandra.core.cql.session.init.ResourceKeyspacePopulator
-<%_ } _%>
-import org.springframework.test.context.DynamicPropertyRegistrar
 import org.testcontainers.cassandra.CassandraContainer
 import org.testcontainers.containers.output.Slf4jLogConsumer
 import java.time.Duration
 import java.time.temporal.ChronoUnit
 
-@TestConfiguration(proxyBeanMethods = false)
-class CassandraTestContainer {
+/**
+ * Starts the Cassandra container shared by the integration tests and creates the test keyspace with the CQL changelog.
+ *
+ * Spring Boot 2 has no `@ServiceConnection` support, so the connection properties are provided by
+ * [TestContainersSpringContextCustomizerFactory] for test classes annotated with [EmbeddedCassandra].
+ */
+class CassandraTestContainer : InitializingBean, DisposableBean {
 
     companion object {
         const val DEFAULT_KEYSPACE_NAME = "cassandratestkeyspace"
 
         private val LOG: Logger = LoggerFactory.getLogger(CassandraTestContainer::class.java)
-<%_ if (databaseMigrationLoader) { _%>
         private const val DATABASE_REQUEST_TIMEOUT_SECONDS = 20L
-<%_ } _%>
         private const val CONTAINER_STARTUP_TIMEOUT_MINUTES = 10L
 
-<%_ if (databaseMigrationLiquibase) { _%>
-        // The keyspace is created by the application when its session connects and the tables by liquibase.
         private val CASSANDRA_CONTAINER: CassandraContainer = CassandraContainer("<%= dockerContainers.cassandra %>")
-<%_ } else { _%>
-        // The keyspace must exist before the application's CqlSession connects, so it is created as part of the
-        // container startup instead of an eager bean the application context would have to depend on.
-        private val CASSANDRA_CONTAINER: CassandraContainer = object : CassandraContainer("<%= dockerContainers.cassandra %>") {
-            override fun containerIsStarted(containerInfo: InspectContainerResponse) {
-                super.containerIsStarted(containerInfo)
-                createKeyspace(this)
-            }
-        }
-<%_ } _%>
             .withStartupTimeout(Duration.of(CONTAINER_STARTUP_TIMEOUT_MINUTES, ChronoUnit.MINUTES))
             .withLogConsumer(Slf4jLogConsumer(LOG))
-<%_ if (databaseMigrationLoader) { _%>
-
-        private fun createKeyspace(container: CassandraContainer) {
-            CqlSessionBuilder()
-                .addContactPoint(container.contactPoint)
-                .withLocalDatacenter(container.localDatacenter)
-                // CREATE KEYSPACE is a schema change and must reach schema agreement; the driver's 2s default request
-                // timeout is not enough on a loaded CI runner and fails the container startup with a DriverTimeoutException.
-                .withConfigLoader(
-                    DriverConfigLoader.programmaticBuilder()
-                        .withDuration(DefaultDriverOption.REQUEST_TIMEOUT, Duration.ofSeconds(DATABASE_REQUEST_TIMEOUT_SECONDS))
-                        .build()
-                )
-                .build()
-                .use { session ->
-                    session.execute(
-                        "CREATE KEYSPACE IF NOT EXISTS $DEFAULT_KEYSPACE_NAME WITH replication={'class' : 'SimpleStrategy', 'replication_factor':1}"
-                    )
-                }
-            try {
-                CqlSessionBuilder()
-                    .addContactPoint(container.contactPoint)
-                    .withLocalDatacenter(container.localDatacenter)
-                    .withKeyspace(DEFAULT_KEYSPACE_NAME)
-                    .withConfigLoader(
-                        DriverConfigLoader.programmaticBuilder()
-                            .withDuration(DefaultDriverOption.REQUEST_TIMEOUT, Duration.ofSeconds(DATABASE_REQUEST_TIMEOUT_SECONDS))
-                            .build()
-                    )
-                    .build()
-                    .use { session ->
-                        ResourceKeyspacePopulator(*PathMatchingResourcePatternResolver().getResources("config/cql/changelog/*.cql"))
-                            .populate(session)
-                    }
-            } catch (e: IOException) {
-                throw IllegalStateException("Failed to populate the '$DEFAULT_KEYSPACE_NAME' keyspace", e)
-            }
-        }
-<%_ } _%>
     }
 
-    @Bean
-    @ServiceConnection
-    fun cassandraContainer(): CassandraContainer = CASSANDRA_CONTAINER
+    override fun destroy() {
+        if (CASSANDRA_CONTAINER.isRunning) {
+            CASSANDRA_CONTAINER.close()
+        }
+    }
 
-    @Bean
-    fun cassandraProperties(cassandraContainer: CassandraContainer): DynamicPropertyRegistrar {
-        return DynamicPropertyRegistrar { registry -> registry.add("spring.cassandra.keyspace-name") { DEFAULT_KEYSPACE_NAME } }
+    override fun afterPropertiesSet() {
+        if (!CASSANDRA_CONTAINER.isRunning) {
+            CASSANDRA_CONTAINER.start()
+            createKeyspace()
+        }
+    }
+
+    fun getCassandraContainer(): CassandraContainer = CASSANDRA_CONTAINER
+
+    private fun createSession(keyspace: String? = null): CqlSession {
+        val builder = CqlSessionBuilder()
+            .addContactPoint(CASSANDRA_CONTAINER.contactPoint)
+            .withLocalDatacenter(CASSANDRA_CONTAINER.localDatacenter)
+            // CREATE KEYSPACE is a schema change and must reach schema agreement; the driver's 2s default request
+            // timeout is not enough on a loaded CI runner and fails with a DriverTimeoutException.
+            .withConfigLoader(
+                DriverConfigLoader.programmaticBuilder()
+                    .withDuration(DefaultDriverOption.REQUEST_TIMEOUT, Duration.ofSeconds(DATABASE_REQUEST_TIMEOUT_SECONDS))
+                    .build()
+            )
+        keyspace?.let { builder.withKeyspace(it) }
+        return builder.build()
+    }
+
+    private fun createKeyspace() {
+        createSession().use { session ->
+            session.execute(
+                "CREATE KEYSPACE IF NOT EXISTS $DEFAULT_KEYSPACE_NAME WITH replication={'class' : 'SimpleStrategy', 'replication_factor':1}"
+            )
+        }
+        val changelogs = PathMatchingResourcePatternResolver().getResources("classpath*:config/cql/changelog/*.cql")
+            .sortedBy { it.filename }
+        if (changelogs.isEmpty()) {
+            return
+        }
+        createSession(DEFAULT_KEYSPACE_NAME).use { session ->
+            ResourceKeyspacePopulator(*changelogs.toTypedArray()).populate(session)
+        }
     }
 }

@@ -52,6 +52,19 @@ export default class extends BaseApplicationGenerator {
         await this.dependsOnJHipster('jhipster-kotlin:ktlint');
     }
 
+    get [BaseApplicationGenerator.CONFIGURING]() {
+        return this.asConfiguringTaskGroup({
+            cassandraMigrationLoader() {
+                // generator-jhipster 9.3.1+ defaults Cassandra to liquibase migrations, whose runtime
+                // (LiquibaseConfiguration backed by a JDBC DataSource) doesn't exist on the Spring Boot 2
+                // stack generated here. The Spring Boot 2 application and its tests rely on the CQL loader.
+                if (this.jhipsterConfigWithDefaults.databaseType === 'cassandra') {
+                    this.jhipsterConfig.databaseMigration = 'loader';
+                }
+            },
+        });
+    }
+
     get [BaseApplicationGenerator.COMPOSING]() {
         return this.asComposingTaskGroup({
             async composeDetekt() {
@@ -274,6 +287,16 @@ export default class extends BaseApplicationGenerator {
 
     get [BaseApplicationGenerator.POST_WRITING]() {
         return this.asPostWritingTaskGroup({
+            blockhoundMongodb({ application, source }) {
+                if (application.reactive && application.databaseTypeMongodb) {
+                    // The MongoDB driver managed by Spring Boot 2.7 generates new server session ids with
+                    // UUID.randomUUID() (SecureRandom reading /dev/urandom) on the Netty event loop.
+                    source.addAllowBlockingCallsInside?.({
+                        classPath: 'com.mongodb.internal.session.ServerSessionPool\\$ServerSessionItemFactory',
+                        method: 'createNewServerSessionIdentifier',
+                    });
+                }
+            },
             async customizeMaven({ application, source }) {
                 if (application.buildToolMaven) {
                     source.addMavenDefinition({

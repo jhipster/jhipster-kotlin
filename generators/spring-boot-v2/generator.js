@@ -34,17 +34,31 @@ const normalizeJhipster7Sections = sections =>
 const entityServerFiles = normalizeJhipster7Sections(rawEntityServerFiles);
 const serverFiles = normalizeJhipster7Sections(rawServerFiles);
 const { MAIN_DIR } = jhipsterConstants;
+const TESTCONTAINERS_VERSION = '1.21.4';
 const SERVER_MAIN_SRC_KOTLIN_DIR = `${MAIN_DIR}kotlin/`;
+const SERVER_TEST_SRC_KOTLIN_DIR = 'src/test/kotlin/';
 
 const jhipster7TemplatesPackage = dirname(fileURLToPath(import.meta.resolve('jhipster-7-templates/package.json')));
 
 const IGNORED_SPRING_BOOT_V3_DEPENDENCIES = new Set([
+    // cucumber 7.34 requires JUnit Platform 1.13+; use the cucumber version managed by jhipster-dependencies 7.x
+    'cucumber-bom',
     'spring-boot-docker-compose',
     'spring-boot-h2console',
     'spring-boot-starter-aspectj',
+    'spring-boot-starter-cache-test',
+    'spring-boot-starter-data-couchbase-test',
+    'spring-boot-starter-data-couchbase-reactive-test',
+    'spring-boot-starter-data-mongodb-test',
+    'spring-boot-starter-data-mongodb-reactive-test',
     'spring-boot-starter-jackson',
     'spring-boot-starter-jackson-test',
     'spring-boot-starter-liquibase',
+    // Spring Boot 4 RestClient starters and modules (not used by the Spring Boot 2 templates)
+    'spring-boot-starter-restclient',
+    'spring-boot-starter-restclient-test',
+    'restclient',
+    'restclient-test',
     'spring-boot-starter-security-test',
     'spring-boot-starter-webmvc-test',
     'spring-boot-testcontainers',
@@ -53,13 +67,20 @@ const IGNORED_SPRING_BOOT_V3_DEPENDENCIES = new Set([
     'jackson-module-jaxb-annotations',
 ]);
 
+// Spring Boot 4 split test support into per-technology `spring-boot-starter-<tech>-test` starters
+// (e.g. webflux-test, data-mongodb-reactive-test). Spring Boot 2.7 only ships `spring-boot-starter-test`.
+const isSpringBoot4TestStarter = artifactId => /^spring-boot-starter-.+-test$/.test(artifactId);
+
+const isIgnoredArtifactId = artifactId =>
+    Boolean(artifactId) && (IGNORED_SPRING_BOOT_V3_DEPENDENCIES.has(artifactId) || isSpringBoot4TestStarter(artifactId));
+
 const isIgnoredDependency = dep => {
     if (!dep) return false;
     const artifactId = dep.artifactId || (typeof dep === 'string' ? dep : undefined);
-    if (artifactId && IGNORED_SPRING_BOOT_V3_DEPENDENCIES.has(artifactId)) return true;
+    if (isIgnoredArtifactId(artifactId)) return true;
     if (dep.module && typeof dep.module === 'string') {
         const [, artId] = dep.module.split(':');
-        if (IGNORED_SPRING_BOOT_V3_DEPENDENCIES.has(artId)) {
+        if (isIgnoredArtifactId(artId)) {
             return true;
         }
     }
@@ -69,7 +90,7 @@ const isIgnoredDependency = dep => {
 const fixDependency = dep => {
     if (!dep) return dep;
     if (typeof dep === 'string') {
-        if (dep.startsWith('org.testcontainers:testcontainers-')) {
+        if (dep.startsWith('org.testcontainers:testcontainers-') && !dep.startsWith('org.testcontainers:testcontainers-bom')) {
             const [groupId, artifactId] = dep.split(':');
             let mappedArtifactId = artifactId.replace('testcontainers-', '');
             if (mappedArtifactId === 'mssql') mappedArtifactId = 'mssqlserver';
@@ -79,7 +100,7 @@ const fixDependency = dep => {
     }
     if (dep.groupId === 'org.testcontainers') {
         let { artifactId } = dep;
-        if (artifactId?.startsWith('testcontainers-')) {
+        if (artifactId?.startsWith('testcontainers-') && artifactId !== 'testcontainers-bom') {
             artifactId = artifactId.replace('testcontainers-', '');
             if (artifactId === 'mssql') artifactId = 'mssqlserver';
             return { ...dep, artifactId };
@@ -215,9 +236,7 @@ export default class extends BaseApplicationGenerator {
                     original =>
                     (...modules) => {
                         const filteredModules = modules.filter(
-                            m =>
-                                !IGNORED_SPRING_BOOT_V3_DEPENDENCIES.has(m) &&
-                                !IGNORED_SPRING_BOOT_V3_DEPENDENCIES.has(`spring-boot-starter-${m}`),
+                            m => !isIgnoredArtifactId(m) && !IGNORED_SPRING_BOOT_V3_DEPENDENCIES.has(`spring-boot-starter-${m}`),
                         );
                         if (filteredModules.length === 0) return undefined;
                         return original(...filteredModules);
@@ -337,9 +356,13 @@ export default class extends BaseApplicationGenerator {
                             ) {
                                 return undefined;
                             }
+                            if (!application.generateUserManagement && destinationFile.endsWith('/UserResource.java')) {
+                                return undefined;
+                            }
 
                             if (
                                 sourceFile.endsWith('/TestContainersSpringContextCustomizerFactory.java') &&
+                                !application.databaseTypeCassandra &&
                                 !application.databaseTypeMongodb &&
                                 !application.searchEngineElasticsearch &&
                                 !application.databaseTypeCouchbase
@@ -474,7 +497,6 @@ export default class extends BaseApplicationGenerator {
                             'DatabaseConfiguration_couchbase.java',
                             // jhipster:spring-data-cassandra
                             'DatabaseConfiguration_cassandra.java',
-                            'EmbeddedCassandra.java',
                             'CassandraTestContainer.java',
                             'CassandraKeyspaceIT.java',
                             // jhipster:spring-data-mongodb
@@ -553,6 +575,35 @@ export default class extends BaseApplicationGenerator {
                     },
                 });
             },
+            // generator-jhipster 9.x replaced the EmbeddedXxx annotation + ContextCustomizerFactory test setup
+            // with @ServiceConnection (Spring Boot 3.1+). Spring Boot 2 apps still need the annotation driven setup.
+            async writeSpringBootV2TestContainersFiles({ application }) {
+                const testDir = `${SERVER_TEST_SRC_KOTLIN_DIR}${application.packageFolder}`;
+                await this.writeFiles({
+                    blocks: [
+                        {
+                            condition: ctx => ctx.databaseTypeMongodb,
+                            path: 'spring-data-mongodb/src/test/kotlin/_package_/',
+                            renameTo: (_ctx, file) => `${testDir}${file}`,
+                            templates: ['config/EmbeddedMongo.kt'],
+                        },
+                        {
+                            condition: ctx => ctx.searchEngineElasticsearch,
+                            path: 'spring-data-elasticsearch/src/test/kotlin/_package_/',
+                            renameTo: (_ctx, file) => `${testDir}${file}`,
+                            templates: ['config/EmbeddedElasticsearch.kt'],
+                        },
+                        {
+                            condition: ctx => ctx.messageBrokerKafka,
+                            path: 'kafka/src/test/kotlin/_package_/',
+                            renameTo: (_ctx, file) => `${testDir}${file}`,
+                            templates: ['config/EmbeddedKafka.kt', 'config/KafkaTestContainersSpringContextCustomizerFactory.kt'],
+                        },
+                    ],
+                    rootTemplatesPath: ['../../spring-boot/templates/'],
+                    context: application,
+                });
+            },
         });
     }
 
@@ -629,6 +680,15 @@ export default class extends BaseApplicationGenerator {
                     dependencies: [
                         { groupId: 'io.dropwizard.metrics', artifactId: 'metrics-core' },
                         { groupId: 'org.zalando', artifactId: `problem-spring-${application.reactive ? 'webflux' : 'web'}` },
+                        // jhipster-dependencies 7.x manages testcontainers 1.17, whose docker-java client (API 1.32)
+                        // is rejected by Docker Engine 29+ (minimum API 1.40). Import a newer BOM first so it wins.
+                        {
+                            groupId: 'org.testcontainers',
+                            artifactId: 'testcontainers-bom',
+                            version: TESTCONTAINERS_VERSION,
+                            type: 'pom',
+                            scope: 'import',
+                        },
                         {
                             groupId: 'tech.jhipster',
                             artifactId: 'jhipster-dependencies',
@@ -668,7 +728,14 @@ export default class extends BaseApplicationGenerator {
                 }
                 if (application.databaseTypeCassandra) {
                     source.addJavaDefinition({
-                        dependencies: [{ groupId: 'org.cassandraunit', artifactId: 'cassandra-unit-spring' }],
+                        dependencies: [
+                            {
+                                groupId: 'org.cassandraunit',
+                                artifactId: 'cassandra-unit-spring',
+                                scope: 'test',
+                                exclusions: [{ groupId: 'net.jpountz.lz4', artifactId: 'lz4' }],
+                            },
+                        ],
                     });
                 }
                 if (application.databaseTypeSql && application.reactive) {
@@ -690,6 +757,12 @@ export default class extends BaseApplicationGenerator {
                         source.addGradleProperty({ property: 'cassandraDriverVersion', value: '4.14.1' });
                     }
                     source.addGradleDependencies([{ groupId: 'tech.jhipster', artifactId: 'jhipster-framework', scope: 'implementation' }]);
+                    if (!application.reactive) {
+                        // Undertow is the JHipster 7 servlet container (also declared by pom.xml.ejs), used by WebConfigurerTest
+                        source.addGradleDependencies([
+                            { groupId: 'org.springframework.boot', artifactId: 'spring-boot-starter-undertow', scope: 'implementation' },
+                        ]);
+                    }
                     if (application.databaseTypeSql && !application.reactive) {
                         source.addGradleDependencies([
                             {
@@ -745,6 +818,43 @@ export default class extends BaseApplicationGenerator {
                             ],
                         });
                     }
+                    if (application.databaseTypeCassandra) {
+                        // maven-compiler-plugin 3.10 doesn't resolve annotationProcessorPaths versions from
+                        // dependencyManagement, so the mapper processor added by generator-jhipster needs one.
+                        // The groupId is migrated to com.datastax.oss by the migration generator.
+                        source.addMavenDefinition({
+                            properties: [{ property: 'cassandra-driver.version', value: '4.14.1' }],
+                            annotationProcessors: [
+                                {
+                                    groupId: 'org.apache.cassandra',
+                                    artifactId: 'java-driver-mapper-processor',
+                                    version: '${cassandra-driver.version}',
+                                },
+                            ],
+                        });
+                    }
+                }
+            },
+            registerTestContainersSpringFactories({ application, source }) {
+                const key = 'org.springframework.test.context.ContextCustomizerFactory';
+                // Spring Boot 2.7 has no @ServiceConnection: these test containers are started by the v7-style
+                // TestContainersSpringContextCustomizerFactory, which upstream 9.x no longer registers.
+                if (
+                    application.databaseTypeCassandra ||
+                    application.databaseTypeMongodb ||
+                    application.searchEngineElasticsearch ||
+                    application.databaseTypeCouchbase
+                ) {
+                    source.addTestSpringFactory?.({
+                        key,
+                        value: `${application.packageName}.config.TestContainersSpringContextCustomizerFactory`,
+                    });
+                }
+                if (application.messageBrokerKafka) {
+                    source.addTestSpringFactory?.({
+                        key,
+                        value: `${application.packageName}.config.KafkaTestContainersSpringContextCustomizerFactory`,
+                    });
                 }
             },
             migrateOpenApi({ application }) {
