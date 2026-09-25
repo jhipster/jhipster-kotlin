@@ -115,8 +115,8 @@ interface <%= entityClass %>Mapper :
 
 
     <%_
-        const mappings3 = [];
         for (const {otherEntity, relatedField, collection} of otherEntitiesFields) {
+             const mappings3 = [];
              const mapperName = otherEntity.entityInstance + this._.upperFirst(relatedField.propertyName);
     _%>
 
@@ -128,7 +128,9 @@ interface <%= entityClass %>Mapper :
             mappings3.push(`Mapping(target = "${field.propertyName}", source = "${field.propertyName}")`);
         }
 
-        if (!relatedField.id) {
+        if (!relatedField.id && relatedField.mapstructExpression) {
+            mappings3.push(`Mapping(target = "${relatedField.propertyName}", expression = "${relatedField.mapstructExpression}")`);
+        } else if (!relatedField.id) {
             mappings3.push(`Mapping(target = "${relatedField.propertyName}", source = "${relatedField.propertyName}")`);
         }
     _%>
