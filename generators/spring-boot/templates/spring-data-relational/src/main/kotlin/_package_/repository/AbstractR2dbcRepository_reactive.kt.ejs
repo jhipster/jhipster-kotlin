@@ -160,7 +160,7 @@ abstract class AbstractR2dbcRepository<T : Any, ID : Any>(
         entities: List<T>,
         referenceId: (T) -> K?,
         relatedType: Class<R>,
-        relatedId: (R) -> K,
+        relatedId: (R) -> K?,
         setter: (T, R?) -> Unit
     ): Mono<List<T>> {
         val ids = entities.mapNotNull(referenceId).distinct()
@@ -172,9 +172,9 @@ abstract class AbstractR2dbcRepository<T : Any, ID : Any>(
             .select(relatedType)
             .matching(Query.query(Criteria.where(idProperty).`in`(ids)))
             .all()
-            .collectMap(relatedId)
+            .collectMap { requireNotNull(relatedId(it)) }
             .map { related ->
-                entities.forEach { entity -> setter(entity, related[referenceId(entity)]) }
+                entities.forEach { entity -> setter(entity, referenceId(entity)?.let { related[it] }) }
                 entities
             }
     }
@@ -192,7 +192,7 @@ abstract class AbstractR2dbcRepository<T : Any, ID : Any>(
         entities: List<T>,
         joinTable: JoinTable<T>,
         relatedType: Class<R>,
-        relatedId: (R) -> K,
+        relatedId: (R) -> K?,
         setter: (T, Set<R>) -> Unit
     ): Mono<List<T>> {
         if (entities.isEmpty()) {
@@ -216,7 +216,7 @@ abstract class AbstractR2dbcRepository<T : Any, ID : Any>(
                 val related: Mono<Map<K, R>> = if (ids.isEmpty())
                     Mono.just(emptyMap())
                 else
-                    template.select(relatedType).matching(Query.query(Criteria.where(relatedIdProperty).`in`(ids))).all().collectMap(relatedId)
+                    template.select(relatedType).matching(Query.query(Criteria.where(relatedIdProperty).`in`(ids))).all().collectMap { requireNotNull(relatedId(it)) }
                 related.map { relatedById ->
                     entitiesById.forEach { (id, entity) ->
                         setter(entity, references.getOrDefault(id, listOf()).mapNotNull { relatedById[it] }.toSet())
@@ -242,7 +242,7 @@ abstract class AbstractR2dbcRepository<T : Any, ID : Any>(
         }
         var sql = "${selectWithRelationsSql()} ORDER BY $orderBy"
         if (pageable.isPaged) {
-            sql += " " + dialect.limit().getLimitOffset(pageable.pageSize, pageable.offset)
+            sql += " " + dialect.limit().getLimitOffset(pageable.pageSize.toLong(), pageable.offset)
         }
         return populated(db.sql(sql).map { row, metadata -> template.converter.read(entityType, row, metadata) }.all())
     }

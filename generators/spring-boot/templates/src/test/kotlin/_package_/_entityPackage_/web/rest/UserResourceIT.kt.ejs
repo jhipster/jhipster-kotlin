@@ -46,7 +46,7 @@ import <%= packageName %>.security.ADMIN
 import <%= packageName %>.security.USER
 import <%= packageName %>.service.dto.<%= user.adminUserDto %>
 <%_ if (databaseTypeSql && reactive) { _%>
-import <%= packageName %>.repository.EntityManager
+import org.springframework.data.r2dbc.core.R2dbcEntityTemplate
 <%_ } _%>
 import <%= packageName %>.service.mapper.UserMapper
 <%_ if (!authenticationTypeOauth2) { _%>
@@ -153,7 +153,7 @@ class UserResourceIT {
     <%_ if (databaseTypeSql) { _%>
 
     @Autowired
-    private lateinit var em: EntityManager
+    private lateinit var em: <%= databaseTypeSql && reactive ? 'R2dbcEntityTemplate' : 'EntityManager' %>
     <%_ } _%>
     <%_ if (cacheProviderAny) { _%>
 
@@ -1078,7 +1078,7 @@ class UserResourceIT {
          * if they test an entity which has a required relationship to the User entity.
          */
         @JvmStatic
-        fun createEntity(<% if (databaseTypeSql) { %>em: EntityManager?<% } %>): <%= user.persistClass %> {
+        fun createEntity(<% if (databaseTypeSql) { %>em: <%= databaseTypeSql && reactive ? 'R2dbcEntityTemplate' : 'EntityManager' %>?<% } %>): <%= user.persistClass %> {
             return <%= user.persistClass %>(
                 <%_ if (databaseTypeCassandra || (authenticationTypeOauth2 && !databaseTypeCouchbase)) { _%>
                 id = UUID.randomUUID().toString(),
@@ -1107,10 +1107,10 @@ class UserResourceIT {
          * Delete all the users from the database.
          */
         @JvmStatic
-        fun deleteEntities(em: EntityManager) {
+        fun deleteEntities(em: R2dbcEntityTemplate) {
             try {
-                em.deleteAll("<%= jhiTablePrefix %>_user_authority").block()
-                em.deleteAll(<%= user.persistClass %>::class.java).block()
+                em.databaseClient.sql("DELETE FROM <%= jhiTablePrefix %>_user_authority").then().block()
+                em.delete(<%= user.persistClass %>::class.java).all().block()
             } catch (e: Exception) {
                 // It can fail, if other entities are still referring this - it will be removed later.
             }
@@ -1121,7 +1121,7 @@ class UserResourceIT {
          * Setups the database with one user.
          */
         @JvmStatic
-        fun initTestUser(userRepository: UserRepository<% if (databaseTypeSql ) { %>, em: EntityManager<% } _%>): <%= user.persistClass %> {
+        fun initTestUser(userRepository: UserRepository<% if (databaseTypeSql ) { %>, em: <%= databaseTypeSql && reactive ? 'R2dbcEntityTemplate' : 'EntityManager' %><% } _%>): <%= user.persistClass %> {
             <%_ if (databaseTypeSql && reactive) { _%>
             userRepository.deleteAllUserAuthorities().block()
             <%_ } _%>
