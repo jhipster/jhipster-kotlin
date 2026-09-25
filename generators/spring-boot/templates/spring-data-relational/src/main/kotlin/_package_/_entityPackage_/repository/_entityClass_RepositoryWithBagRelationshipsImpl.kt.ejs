@@ -27,7 +27,6 @@ import java.util.UUID
 import jakarta.persistence.EntityManager
 import jakarta.persistence.PersistenceContext
 
-import org.hibernate.annotations.QueryHints
 import org.springframework.data.domain.Page
 import org.springframework.data.domain.PageImpl
 
@@ -67,11 +66,10 @@ class <%= entityClass %>RepositoryWithBagRelationshipsImpl(
     fun fetch<%= relationship.relationshipNameCapitalizedPlural %>(result: <%= persistClass %>): <%= persistClass %> {
         return entityManager
             .createQuery(
-                "select <%= entityInstance %> from <%= persistClass %> <%= entityInstance %> left join fetch <%= entityInstance %>.<%= relationship.relationshipFieldNamePlural %> where <%= entityInstance %> is :<%= entityInstance %>",
+                "select <%= entityInstance %> from <%= persistClass %> <%= entityInstance %> left join fetch <%= entityInstance %>.<%= relationship.relationshipFieldNamePlural %> where <%= entityInstance %>.<%= primaryKey.name %> = :<%= primaryKey.name %>",
                 <%= persistClass %>::class.java
             )
-            .setParameter("<%= entityInstance %>", result)
-            .setHint(QueryHints.PASS_DISTINCT_THROUGH, false)
+            .setParameter("<%= primaryKey.name %>", result.<%= primaryKey.name %>)
             .singleResult
     }
 
@@ -82,11 +80,10 @@ class <%= entityClass %>RepositoryWithBagRelationshipsImpl(
         }
         val result = entityManager
             .createQuery(
-                "select distinct <%= entityInstance %> from <%= persistClass %> <%= entityInstance %> left join fetch <%= entityInstance %>.<%= relationship.relationshipFieldNamePlural %> where <%= entityInstance %> in :<%= entityInstancePlural %>",
+                "select <%= entityInstance %> from <%= persistClass %> <%= entityInstance %> left join fetch <%= entityInstance %>.<%= relationship.relationshipFieldNamePlural %> where <%= entityInstance %> in :<%= entityInstancePlural %>",
                 <%= persistClass %>::class.java
             )
             .setParameter("<%= entityInstancePlural %>", <%= entityInstancePlural %>)
-            .setHint(QueryHints.PASS_DISTINCT_THROUGH, false)
             .resultList
         return result.sortedBy { order[it] }
     }
