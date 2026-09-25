@@ -176,7 +176,7 @@ class UserResource(
         <%_ } else { _%>
         } else if (userRepository.findOneByLogin(userDTO.login!!.lowercase()).isPresent) {
             throw LoginAlreadyUsedException()
-        } else if (userRepository.findOneByEmailIgnoreCase(userDTO.email).isPresent) {
+        } else if (userRepository.findOneByEmailIgnoreCase(userDTO.email!!).isPresent) {
             throw EmailAlreadyUsedException()
         } else {
             val newUser = userService.createUser(userDTO)
@@ -227,7 +227,7 @@ class UserResource(
     <%_ } else { _%>
     fun updateUser(@Valid @RequestBody userDTO: <%= user.adminUserDto %>): ResponseEntity<<%= user.adminUserDto %>> {
         log.debug("REST request to update User : $userDTO")
-        var existingUser = userRepository.findOneByEmailIgnoreCase(userDTO.email)
+        var existingUser = userRepository.findOneByEmailIgnoreCase(userDTO.email!!)
         if (existingUser.isPresent && existingUser.orElseThrow().id != userDTO.id) {
             throw EmailAlreadyUsedException()
         }

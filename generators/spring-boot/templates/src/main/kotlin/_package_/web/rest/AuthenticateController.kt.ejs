@@ -35,6 +35,7 @@ import org.springframework.security.authentication.UsernamePasswordAuthenticatio
 import org.springframework.security.config.annotation.authentication.builders.AuthenticationManagerBuilder
 import org.springframework.security.core.context.SecurityContextHolder
 <%_ } _%>
+import org.springframework.web.bind.annotation.GetMapping
 import org.springframework.web.bind.annotation.PostMapping
 import org.springframework.web.bind.annotation.RequestBody
 import org.springframework.web.bind.annotation.RequestMapping
@@ -45,6 +46,7 @@ import reactor.core.scheduler.Schedulers
 <%_ } _%>
 
 import jakarta.validation.Valid
+import java.security.Principal
 
 /**
  * Controller to authenticate users.
@@ -85,6 +87,17 @@ class AuthenticateController(
         return ResponseEntity(JWTToken(jwt), httpHeaders, HttpStatus.OK)
     }
     <%_ } _%>
+
+    /**
+     * `GET /authenticate` : check if the user is authenticated.
+     *
+     * @param principal the authentication principal.
+     * @return the [ResponseEntity] with status `204 (No Content)`,
+     * or with status `401 (Unauthorized)` if not authenticated.
+     */
+    @GetMapping("/authenticate")
+    fun isAuthenticated(principal: Principal?): ResponseEntity<Void> =
+        ResponseEntity.status(if (principal == null) HttpStatus.UNAUTHORIZED else HttpStatus.NO_CONTENT).build()
 
     /**
      * Object to return as body in JWT Authentication.

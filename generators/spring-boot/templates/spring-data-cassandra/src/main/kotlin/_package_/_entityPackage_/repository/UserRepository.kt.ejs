@@ -57,7 +57,7 @@ import org.springframework.data.cassandra.core.ReactiveCassandraTemplate
 import org.springframework.data.cassandra.core.convert.CassandraConverter
 import org.springframework.data.cassandra.core.mapping.CassandraPersistentEntity
 <%_ } else { _%>
-import org.springframework.boot.cassandra.autoconfigure.CassandraProperties
+import org.springframework.boot.autoconfigure.cassandra.CassandraProperties
 <%_ } _%>
 import org.springframework.stereotype.Repository
 <%_ if (databaseMigrationLiquibase) { _%>
@@ -427,7 +427,7 @@ class UserRepository(
 
     private fun findOneFromIndex(stmt: BoundStatement): Mono<<%- user.persistClass %>> {
         return session.execute(stmt).flatMap { rs -> rs.rows().next() }
-            .map { row -> row.getString("id") }
+            .map { row -> row.getString("id")!! }
             .flatMap(this::findById)
     }
 
@@ -443,7 +443,7 @@ class UserRepository(
         val rs = session.execute(stmt)
         return Optional
             .ofNullable(rs.one())
-            .map { row -> row.getString("id") }
+            .map { row -> row.getString("id")!! }
             .flatMap { id -> userDao.get(id) }
     }
 

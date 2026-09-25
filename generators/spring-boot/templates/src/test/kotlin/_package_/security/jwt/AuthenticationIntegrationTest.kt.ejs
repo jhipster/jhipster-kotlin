@@ -32,12 +32,16 @@ import <%= packageName %>.repository.UserRepository
 import tech.jhipster.config.JHipsterProperties
 
 <%_ if (reactive) { %>
-import org.springframework.boot.webflux.test.autoconfigure.WebFluxTest
+import org.springframework.boot.test.autoconfigure.web.reactive.WebFluxTest
+import org.springframework.boot.test.mock.mockito.MockBean
 import org.springframework.context.annotation.ComponentScan
 import org.springframework.context.annotation.Import
 import org.springframework.security.core.userdetails.ReactiveUserDetailsService
-import org.springframework.test.context.bean.override.mockito.MockitoBean
 <%_ } else { _%>
+import org.springframework.boot.autoconfigure.ImportAutoConfiguration
+import org.springframework.boot.autoconfigure.http.HttpMessageConvertersAutoConfiguration
+import org.springframework.boot.autoconfigure.jackson.JacksonAutoConfiguration
+import org.springframework.boot.autoconfigure.web.servlet.WebMvcAutoConfiguration
 import org.springframework.boot.test.context.SpringBootTest
 <%_ } _%>
 
@@ -53,6 +57,7 @@ import org.springframework.boot.test.context.SpringBootTest
     SecurityConfiguration::class,
     SecurityJwtConfiguration::class,
     SecurityMetersService::class,
+    TokenProvider::class,
     JwtAuthenticationTestUtils::class
 )
 @WebFluxTest(
@@ -81,17 +86,25 @@ import org.springframework.boot.test.context.SpringBootTest
         SecurityConfiguration::class,
         SecurityJwtConfiguration::class,
         SecurityMetersService::class,
+        TokenProvider::class,
   <%_ if (!applicationTypeMicroservice) { _%>
         AuthenticateController::class,
   <%_ } _%>
         JwtAuthenticationTestUtils::class
     ]
 )
+// SecurityProblemSupport needs the "handlerExceptionResolver" bean, which a classes-restricted context lacks.
+@ImportAutoConfiguration(
+    WebMvcAutoConfiguration::class,
+    JacksonAutoConfiguration::class,
+    HttpMessageConvertersAutoConfiguration::class
+)
 <%_ } _%>
 <%_ if (reactive && generateAuthenticationApi) { %>
-@MockitoBean(types = [ReactiveUserDetailsService::class])
+// Spring Boot 2.7 has no @MockitoBean (Spring Framework 6.2+), use @MockBean instead.
+@MockBean(ReactiveUserDetailsService::class)
 <%_ } _%>
 <%_ if (reactive && generateBuiltInUserEntity) { _%>
-@MockitoBean(types = [UserRepository::class])
+@MockBean(UserRepository::class)
 <%_ } _%>
 annotation class AuthenticationIntegrationTest

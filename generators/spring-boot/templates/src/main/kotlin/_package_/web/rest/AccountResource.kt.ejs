@@ -21,6 +21,9 @@ package <%= packageName %>.web.rest
 import <%= packageName %>.domain.PersistentToken
 import <%= packageName %>.repository.PersistentTokenRepository
 <%_ } _%>
+<%_ if (reactive) { _%>
+import <%= packageName %>.domain.<%= user.persistClass %>
+<%_ } _%>
 import <%= packageName %>.repository.UserRepository
 import <%= packageName %>.security.getCurrentUserLogin
 import <%= packageName %>.service.MailService
@@ -201,7 +204,7 @@ class AccountResource(
         log.debug("REST request to save account")
         val userLogin = getCurrentUserLogin()
             .orElseThrow { AccountResourceException("Current user login not found") }
-        val existingUser = userRepository.findOneByEmailIgnoreCase(userDTO.email)
+        val existingUser = userRepository.findOneByEmailIgnoreCase(userDTO.email!!)
         if (existingUser.isPresent && !existingUser.orElseThrow().login.equals(userLogin, ignoreCase = true)) {
             throw EmailAlreadyUsedException()
         }
