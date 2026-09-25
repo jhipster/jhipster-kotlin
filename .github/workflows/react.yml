@@ -30,6 +30,7 @@ on:
         types: [closed, opened, synchronize, reopened]
         branches:
             - '*'
+    workflow_dispatch:
 permissions:
     contents: read
 env:
@@ -123,13 +124,13 @@ jobs:
               uses: actions/upload-artifact@v7
               if: always() && steps.backend.outcome == 'failure'
               with:
-                  name: log-${{ matrix.name }}
+                  name: log-${{ matrix.job-name || matrix.sample }}
                   path: ${{ steps.setup.outputs.application-path }}/**/reports/ktlint/**
             - name: 'E2E: Store failure screenshots'
               uses: actions/upload-artifact@v7
               if: always() && steps.e2e.outcome == 'failure'
               with:
-                  name: screenshots-${{ matrix.name }}
+                  name: screenshots-${{ matrix.job-name || matrix.sample }}
                   path: ${{ steps.setup.outputs.application-path }}/**/cypress/screenshots
             - name: Dump docker logs
               if: always()
