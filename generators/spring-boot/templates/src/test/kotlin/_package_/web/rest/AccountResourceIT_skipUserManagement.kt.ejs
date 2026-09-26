@@ -19,6 +19,13 @@ This file is part of the JHipster project, see https://jhipster.github.io/
 package <%= packageName %>.web.rest
 
 import <%= packageName %>.IntegrationTest
+import <%= packageName %>.security.ADMIN
+<%_ if (authenticationTypeJwt) { _%>
+import <%= packageName %>.security.jwt.JwtAuthenticationTestUtils.Companion.BEARER
+import <%= packageName %>.security.jwt.JwtAuthenticationTestUtils.Companion.createValidTokenForUser
+import org.springframework.beans.factory.annotation.Value
+import org.springframework.http.HttpHeaders.AUTHORIZATION
+<%_ } _%>
 <%_ if (reactive) { _%>
 import <%= packageName %>.IntegrationTest.Companion.DEFAULT_TIMEOUT
 <%_ } _%>
@@ -41,6 +48,7 @@ import org.springframework.test.web.servlet.MockMvc
 
 import org.springframework.test.web.servlet.request.MockMvcRequestBuilders.get
 import org.springframework.test.web.servlet.result.MockMvcResultMatchers.*
+import org.hamcrest.Matchers.hasItem
 <%_ } _%>
 <%_ if (reactive && searchEngineElasticsearch) { _%>
 import reactor.core.publisher.Mono
@@ -57,7 +65,6 @@ import <%= packageName %>.web.rest.TEST_USER_LOGIN
 <%_ } else { _%>
 @AutoConfigureMockMvc
 <%_ } _%>
-@WithMockUser(value = TEST_USER_LOGIN)
 @IntegrationTest
 class AccountResourceIT {
 
@@ -67,71 +74,67 @@ class AccountResourceIT {
     <%_ } else { _%>
     private lateinit var restAccountMockMvc: MockMvc
     <%_ } _%>
+    <%_ if (authenticationTypeJwt) { _%>
+
+    @Value("\${jhipster.security.authentication.jwt.base64-secret}")
+    private lateinit var jwtKey: String
+    <%_ } _%>
 
     @Test
-    <% if (!reactive) { %>@Throws(Exception::class)<% } %>
+    <%_ if (!authenticationTypeJwt) { _%>
     @WithMockUser(username = TEST_USER_LOGIN, authorities = [ADMIN])
+    <%_ } _%>
     fun testGetExistingAccount() {
         <%_ if (reactive) { _%>
         accountWebTestClient.get().uri("/api/account")
             .accept(MediaType.APPLICATION_JSON)
+            <%_ if (authenticationTypeJwt) { _%>
+            .headers { it.setBearerAuth(createValidTokenForUser(jwtKey, TEST_USER_LOGIN)) }
+            <%_ } _%>
             .exchange()
             .expectStatus().isOk
             .expectHeader().contentType(MediaType.APPLICATION_JSON)
             .expectBody()
-            .jsonPath("$.login").isEqualTo(TEST_USER_LOGIN)
-            .jsonPath("$.authorities").isEqualTo(ADMIN)
+            .jsonPath("\$.login").isEqualTo(TEST_USER_LOGIN)
+            .jsonPath("\$.authorities").isEqualTo(ADMIN)
         <%_ } else { _%>
         restAccountMockMvc.perform(
             get("/api/account")
                 .accept(MediaType.APPLICATION_JSON)
+                <%_ if (authenticationTypeJwt) { _%>
+                .header(AUTHORIZATION, BEARER + createValidTokenForUser(jwtKey, TEST_USER_LOGIN))
+                <%_ } _%>
         )
             .andExpect(status().isOk)
             .andExpect(content().contentType(MediaType.APPLICATION_JSON_VALUE))
             .andExpect(jsonPath("\$.login").value(TEST_USER_LOGIN))
-            .andExpect(jsonPath("\$.authorities").value(ADMIN))
+            .andExpect(jsonPath("\$.authorities", hasItem(ADMIN)))
         <%_ } _%>
     }
 
     @Test
     @WithUnauthenticatedMockUser
-    <% if (!reactive) { %>@Throws(Exception::class)<% } %>
-    <%_ if (reactive) { _%>
     fun testNonAuthenticatedUser() {
+        <%_ if (reactive) { _%>
         accountWebTestClient.get().uri("/api/authenticate")
-            .accept(MediaType.APPLICATION_JSON)
             .exchange()
-            .expectStatus().isOk
-            .expectBody().isEmpty
-    <%_ } else { _%>
-    fun testNonAuthenticatedUser(){
-        restAccountMockMvc.perform(get("/api/authenticate")
-            .accept(MediaType.APPLICATION_JSON))
-            .andExpect(status().isOk)
-            .andExpect(content().string(""))
-    <%_ } _%>
+            .expectStatus().isUnauthorized
+        <%_ } else { _%>
+        restAccountMockMvc.perform(get("/api/authenticate"))
+            .andExpect(status().isUnauthorized)
+        <%_ } _%>
     }
 
     @Test
-    <% if (!reactive) { %>@Throws(Exception::class)<% } %>
-    <%_ if (reactive) { _%>
+    @WithMockUser(TEST_USER_LOGIN)
     fun testAuthenticatedUser() {
-        accountWebTestClient
-            .get().uri("/api/authenticate")
-            .accept(MediaType.APPLICATION_JSON)
+        <%_ if (reactive) { _%>
+        accountWebTestClient.get().uri("/api/authenticate")
             .exchange()
-            .expectStatus().isOk
-            .expectBody<String>().isEqualTo(TEST_USER_LOGIN)
-    <%_ } else { _%>
-    fun testAuthenticatedUser() {
-        restAccountMockMvc.perform(get("/api/authenticate")
-            .with(request -> {
-                request.setRemoteUser(TEST_USER_LOGIN)
-                return request
-            })
-            .accept(MediaType.APPLICATION_JSON))
-            .andExpect(status().isOk)
-            .andExpect(content().string(TEST_USER_LOGIN))
-    <%_ } _%>
+            .expectStatus().isNoContent
+        <%_ } else { _%>
+        restAccountMockMvc.perform(get("/api/authenticate"))
+            .andExpect(status().isNoContent)
+        <%_ } _%>
     }
 }
