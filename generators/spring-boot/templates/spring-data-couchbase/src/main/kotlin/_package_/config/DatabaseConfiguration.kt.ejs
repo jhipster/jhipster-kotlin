@@ -19,8 +19,11 @@ This file is part of the JHipster project, see https://jhipster.github.io/
 
 package <%= packageName %>.config
 
+import com.couchbase.client.core.error.CouchbaseException
 import com.couchbase.client.java.Cluster
 import com.couchbase.client.java.Collection
+import com.couchbase.client.java.json.JsonObject
+import com.couchbase.client.java.query.QueryOptions
 import com.github.couchmove.Couchmove
 import org.slf4j.LoggerFactory
 import org.springframework.boot.couchbase.autoconfigure.CouchbaseConnectionDetails
@@ -73,6 +76,8 @@ class DatabaseConfiguration(
 
     private val CHANGELOG_COLLECTION = "changelog"
     private val CHANGELOG_PATH = "config/couchmove/changelog"
+    private val DEFERRED_INDEX_BUILD_ATTEMPTS = 60
+    private val DEFERRED_INDEX_BUILD_INTERVAL = Duration.ofSeconds(2)
     private val TYPE_KEY = "type"
     private val log = LoggerFactory.getLogger(javaClass)
 
@@ -144,7 +149,40 @@ class DatabaseConfiguration(
         val couchmove = Couchmove(collection, cluster, extractChangelog())
         couchmove.migrate()
         couchmove.buildN1qlDeferredIndexes(getScopeName())
+        buildRemainingDeferredIndexes(cluster)
         return couchmove
+    }
+
+    /**
+     * Couchmove builds the deferred indexes of every collection back to back. Couchbase rejects the builds that
+     * overlap one still in progress, and those indexes stay deferred, so retry until none are left.
+     */
+    private fun buildRemainingDeferredIndexes(cluster: Cluster) {
+        val parameters = JsonObject.create().put("bucket", bucketName).put("scope", getScopeName())
+        val deferredCollections = "SELECT DISTINCT RAW i.keyspace_id FROM system:indexes i " +
+            "WHERE i.bucket_id = \$bucket AND i.scope_id = \$scope AND i.state = 'deferred'"
+        repeat(DEFERRED_INDEX_BUILD_ATTEMPTS) {
+            val collections = cluster.query(deferredCollections, QueryOptions.queryOptions().parameters(parameters))
+                .rowsAs(String::class.java)
+            if (collections.isEmpty()) {
+                return
+            }
+            collections.forEach { collection ->
+                try {
+                    cluster.query(
+                        "BUILD INDEX ON `$bucketName`.`${getScopeName()}`.`$collection`((" +
+                            "SELECT RAW i.name FROM system:indexes i WHERE i.bucket_id = \$bucket " +
+                            "AND i.scope_id = \$scope AND i.keyspace_id = \$collection AND i.state = 'deferred'))",
+                        QueryOptions.queryOptions().parameters(JsonObject.create()
+                            .put("bucket", bucketName).put("scope", getScopeName()).put("collection", collection))
+                    )
+                } catch (e: CouchbaseException) {
+                    log.debug("Deferred index build for {} not accepted yet: {}", collection, e.message)
+                }
+            }
+            Thread.sleep(DEFERRED_INDEX_BUILD_INTERVAL.toMillis())
+        }
+        log.warn("Some N1QL indexes in scope {} are still deferred", getScopeName())
     }
 
     /**
