@@ -18,13 +18,13 @@
 -%>
 package <%= packageName %>.security
 
-import org.junit.jupiter.api.AfterEach
-import org.junit.jupiter.api.BeforeEach
+import kotlinx.coroutines.reactor.ReactorContext
+import kotlinx.coroutines.test.runTest
 import org.junit.jupiter.api.Test
 import org.springframework.security.authentication.UsernamePasswordAuthenticationToken
-import org.springframework.security.core.GrantedAuthority
 import org.springframework.security.core.authority.SimpleGrantedAuthority
 import org.springframework.security.core.context.ReactiveSecurityContextHolder
+import org.springframework.security.core.context.SecurityContextImpl
 import reactor.util.context.Context
 
 <%_ if (authenticationTypeOauth2) { _%>
@@ -35,110 +35,99 @@ import org.assertj.core.api.Assertions.assertThat
 <%_ if (authenticationTypeOauth2) { _%>
 import org.springframework.security.oauth2.core.oidc.endpoint.OidcParameterNames.ID_TOKEN
 <%_ } _%>
+import kotlin.coroutines.coroutineContext
 
 /**
  * Test class for the {@link SecurityUtils} utility class.
  */
 class SecurityUtilsUnitTest {
+
+    private fun securityContext(authentication: org.springframework.security.core.Authentication): Context =
+        ReactiveSecurityContextHolder.withAuthentication(authentication)
+
+    private suspend fun <T> withSecurityContext(
+        authentication: org.springframework.security.core.Authentication,
+        block: suspend () -> T
+    ): T {
+        val context = securityContext(authentication)
+        return kotlinx.coroutines.withContext(
+            coroutineContext + ReactorContext(context)
+        ) {
+            block()
+        }
+    }
+
     @Test
-    fun testgetCurrentUserLogin() {
-        val login = getCurrentUserLogin()
-            .contextWrite(
-                ReactiveSecurityContextHolder.withAuthentication(
-                    UsernamePasswordAuthenticationToken("admin", "admin")
-                )
-            )
-            .block()
-        assertThat(login).isEqualTo("admin")
+    fun testgetCurrentUserLogin() = runTest {
+        withSecurityContext(UsernamePasswordAuthenticationToken("admin", "admin")) {
+            val login = getCurrentUserLogin()
+            assertThat(login).isEqualTo("admin")
+        }
     }
     <%_ if (authenticationTypeJwt) { _%>
 
     @Test
-    fun testGetCurrentUserJWT() {
-        val jwt = getCurrentUserJWT()
-            .contextWrite(
-                ReactiveSecurityContextHolder.withAuthentication(
-                    UsernamePasswordAuthenticationToken("admin", "token")
-                )
-            )
-            .block()
-        assertThat(jwt).isEqualTo("token")
+    fun testGetCurrentUserJWT() = runTest {
+        withSecurityContext(UsernamePasswordAuthenticationToken("admin", "token")) {
+            val jwt = getCurrentUserJWT()
+            assertThat(jwt).isEqualTo("token")
+        }
     }
     <%_ } _%>
 
     @Test
-    fun testIsAuthenticated() {
-        val isAuthenticated = isAuthenticated()
-            .contextWrite(
-                ReactiveSecurityContextHolder.withAuthentication(
-                    UsernamePasswordAuthenticationToken("admin", "admin")
-                )
-            )
-            .block()
-        assertThat(isAuthenticated!!).isTrue
+    fun testIsAuthenticated() = runTest {
+        withSecurityContext(UsernamePasswordAuthenticationToken("admin", "admin")) {
+            val result = isAuthenticated()
+            assertThat(result).isTrue
+        }
     }
 
     @Test
-    fun testAnonymousIsNotAuthenticated() {
+    fun testAnonymousIsNotAuthenticated() = runTest {
         val authorities = mutableListOf(SimpleGrantedAuthority(ANONYMOUS))
-        val isAuthenticated = isAuthenticated()
-            .contextWrite(
-                ReactiveSecurityContextHolder.withAuthentication(
-                    UsernamePasswordAuthenticationToken("admin", "admin", authorities)
-                )
-            )
-            .block()
-        assertThat(isAuthenticated!!).isFalse
+        withSecurityContext(UsernamePasswordAuthenticationToken("admin", "admin", authorities)) {
+            val result = isAuthenticated()
+            assertThat(result).isFalse
+        }
     }
 
     @Test
-    fun testHasCurrentUserAnyOfAuthorities() {
+    fun testHasCurrentUserAnyOfAuthorities() = runTest {
         val authorities = listOf(SimpleGrantedAuthority(USER))
-        val context = ReactiveSecurityContextHolder.withAuthentication(
-            UsernamePasswordAuthenticationToken("admin", "admin", authorities)
-        )
-        var hasCurrentUserThisAuthority = hasCurrentUserAnyOfAuthorities(USER, ADMIN)
-            .contextWrite(context)
-            .block()
-        assertThat(hasCurrentUserThisAuthority).isTrue
+        val auth = UsernamePasswordAuthenticationToken("admin", "admin", authorities)
+        withSecurityContext(auth) {
+            var result = hasCurrentUserAnyOfAuthorities(USER, ADMIN)
+            assertThat(result).isTrue
 
-        hasCurrentUserThisAuthority = hasCurrentUserAnyOfAuthorities(ANONYMOUS, ADMIN)
-            .contextWrite(context)
-            .block()
-        assertThat(hasCurrentUserThisAuthority).isFalse
+            result = hasCurrentUserAnyOfAuthorities(ANONYMOUS, ADMIN)
+            assertThat(result).isFalse
+        }
     }
 
     @Test
-    fun testHasCurrentUserNoneOfAuthorities() {
+    fun testHasCurrentUserNoneOfAuthorities() = runTest {
         val authorities = listOf(SimpleGrantedAuthority(USER))
-        val context = ReactiveSecurityContextHolder.withAuthentication(
-            UsernamePasswordAuthenticationToken("admin", "admin", authorities)
-        )
-        var hasCurrentUserThisAuthority = hasCurrentUserNoneOfAuthorities(USER, ADMIN)
-            .contextWrite(context)
-            .block()
-        assertThat(hasCurrentUserThisAuthority).isFalse
+        val auth = UsernamePasswordAuthenticationToken("admin", "admin", authorities)
+        withSecurityContext(auth) {
+            var result = hasCurrentUserNoneOfAuthorities(USER, ADMIN)
+            assertThat(result).isFalse
 
-        hasCurrentUserThisAuthority = hasCurrentUserNoneOfAuthorities(ANONYMOUS, ADMIN)
-            .contextWrite(context)
-            .block()
-        assertThat(hasCurrentUserThisAuthority).isTrue
+            result = hasCurrentUserNoneOfAuthorities(ANONYMOUS, ADMIN)
+            assertThat(result).isTrue
+        }
     }
 
     @Test
-    fun testHasCurrentUserThisAuthority() {
+    fun testHasCurrentUserThisAuthority() = runTest {
         val authorities = mutableListOf(SimpleGrantedAuthority(USER))
-        val context = ReactiveSecurityContextHolder.withAuthentication(
-            UsernamePasswordAuthenticationToken("admin", "admin", authorities)
-        )
-        var hasCurrentUserThisAuthority = hasCurrentUserThisAuthority(USER)
-            .contextWrite(context)
-            .block()
-        assertThat(hasCurrentUserThisAuthority!!).isTrue
+        val auth = UsernamePasswordAuthenticationToken("admin", "admin", authorities)
+        withSecurityContext(auth) {
+            var result = hasCurrentUserThisAuthority(USER)
+            assertThat(result).isTrue
 
-        hasCurrentUserThisAuthority = hasCurrentUserThisAuthority(ADMIN)
-            .contextWrite(context)
-            .block()
-        assertThat(hasCurrentUserThisAuthority!!).isFalse
+            result = hasCurrentUserThisAuthority(ADMIN)
+            assertThat(result).isFalse
+        }
     }
 }
