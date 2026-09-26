@@ -195,8 +195,10 @@ _%><%- include('../../_partials_entity_/inject_template', {viaService: viaServic
 <%- include('/_global_partials_entity_/save_template_reactive', {saveNewEntityOperation: true, viaService: viaService, returnDirectly: false, isUsingMapsId: isUsingMapsId, mapsIdAssoc: mapsIdAssoc, isController: true, noReturn: true}); -%>
                 }
             }
+<%_ } else if (reactive) { _%>
+<%- include('/_global_partials_entity_/save_template_reactive', {saveNewEntityOperation: true, viaService: viaService, returnDirectly: false, isUsingMapsId: isUsingMapsId, mapsIdAssoc: mapsIdAssoc, isController: true, noReturn: false}); -%>
 <%_ } else { _%>
-<%- include('/_global_partials_entity_/save_template_' + (reactive ? 'reactive' : 'imperative'), {saveNewEntityOperation: true, viaService: viaService, returnDirectly: false, isUsingMapsId: isUsingMapsId, mapsIdAssoc: mapsIdAssoc, isController: true, noReturn: false}); -%>
+<%- include('/_global_partials_entity_/save_template_imperative', {saveNewEntityOperation: true, viaService: viaService, returnDirectly: false, isUsingMapsId: isUsingMapsId, mapsIdAssoc: mapsIdAssoc, isController: true, noReturn: false}); -%>
 <%_ } _%>
         <%_ if (reactive) { _%>
             .map { result ->
@@ -262,7 +264,11 @@ _%><%- include('../../_partials_entity_/inject_template', {viaService: viaServic
                 <%_ } _%>
             <% } %>
         <%_ } _%>
-<%- include((reactive ? '/reactive' : '') + '/_global_partials_entity_/update_template', {updatableEntity, viaService: viaService, returnDirectly: false, isUsingMapsId: false, mapsIdAssoc: mapsIdAssoc, isController: true, isPersisted: requiresPersistableImplementation && databaseTypeSql, noReturn: true}); -%>
+<%_ if (reactive) { _%>
+<%- include('/reactive/_global_partials_entity_/update_template', {updatableEntity, viaService: viaService, returnDirectly: false, isUsingMapsId: false, mapsIdAssoc: mapsIdAssoc, isController: true, isPersisted: requiresPersistableImplementation && databaseTypeSql, noReturn: true}); -%>
+<%_ } else { _%>
+<%- include('/_global_partials_entity_/update_template', {updatableEntity, viaService: viaService, returnDirectly: false, isUsingMapsId: false, mapsIdAssoc: mapsIdAssoc, isController: true, isPersisted: requiresPersistableImplementation && databaseTypeSql, noReturn: true}); -%>
+<%_ } _%>
         <%_ if (reactive) { _%>
             .switchIfEmpty(Mono.error(ResponseStatusException(HttpStatus.NOT_FOUND)))
             .map { result -> ResponseEntity.ok()
