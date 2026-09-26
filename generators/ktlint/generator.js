@@ -59,7 +59,7 @@ export default class extends BaseApplicationGenerator {
                                 await pipeline(Readable.fromWeb(response.body), createWriteStream(ktlintFile));
                                 await chmod(ktlintFile, 0o755);
 
-                                const batResponse = await fetch(`${ktlintUrl}/${ktlintVersion}/ktlint.bat`);
+                                const batResponse = await fetch(`${ktlintUrl}${ktlintVersion}/ktlint.bat`);
                                 if (!batResponse.ok) {
                                     throw new Error(`Failed to download ktlint.bat: ${batResponse.statusText} (${batResponse.status})`);
                                 }
@@ -77,25 +77,24 @@ export default class extends BaseApplicationGenerator {
                     );
                 }
             },
-            async defaultTemplateTask({ control }) {
+            async defaultTemplateTask() {
                 if (!this.options.skipKtlintFormat) {
                     const destinationPath = this.destinationPath();
 
                     this.queueCommitTransformStream({
-                        name: 'commiting .editorconfig with ktlint configuration',
+                        name: 'committing .editorconfig with ktlint configuration',
                         filter: file => file.path.startsWith(destinationPath) && file.path.endsWith('.editorconfig'),
                     });
 
                     this.queueTransformStream(
                         {
-                            name: 'formating using ktlint',
+                            name: 'formatting using ktlint',
                             filter: file => filterKtlintTransformFiles(file) && file.path.startsWith(destinationPath),
                             refresh: false,
                         },
                         createKtlintTransform.call(this, {
                             ktlintExecutable: this.ktlintExecutable,
                             cwd: destinationPath,
-                            ignoreErrors: control.ignoreNeedlesError,
                         }),
                     );
                 }
@@ -131,6 +130,7 @@ export default class extends BaseApplicationGenerator {
                 this.packageJson.merge({
                     scripts: {
                         'ktlint:format': command,
+                        'ktlint:check': application.buildToolGradle ? './gradlew :ktlintCheck' : './mvnw ktlint:check',
                     },
                 });
             },
@@ -169,7 +169,7 @@ tasks.named('runKtlintFormatOverMainSourceSet').configure {
                             <goal>check</goal>
                         </goals>
                         <configuration>
-                            <failOnViolation>false</failOnViolation>
+                            <failOnViolation>true</failOnViolation>
                         </configuration>
                     </execution>
                 </executions>`;

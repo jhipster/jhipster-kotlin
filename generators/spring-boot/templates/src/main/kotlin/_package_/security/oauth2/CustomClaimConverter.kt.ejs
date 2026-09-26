@@ -63,53 +63,53 @@ class CustomClaimConverter(
             return convertedClaims
         }
         val attributes = RequestContextHolder.getRequestAttributes()
-        if (attributes is ServletRequestAttributes) {
-            // Retrieve and set the token
-            val token = bearerTokenResolver.resolve(attributes.request)
-            val headers = HttpHeaders()
-            headers.set("Authorization", buildBearer(token))
+        if (attributes !is ServletRequestAttributes) return convertedClaims
 
-            // Retrieve user info from OAuth provider if not already loaded
-            val user = users.get(claims["sub"].toString()) {
-                val userInfo: ResponseEntity<ObjectNode> = restTemplate.exchange(
-                    checkNotNull(registration.providerDetails.userInfoEndpoint.uri),
-                    HttpMethod.GET,
-                    HttpEntity<String>(headers),
-                    ObjectNode::class.java
-                )
-                checkNotNull(userInfo.body)
+        // Retrieve and set the token
+        val token = bearerTokenResolver.resolve(attributes.request)
+        val headers = HttpHeaders()
+        headers.set("Authorization", buildBearer(token))
+
+        // Retrieve user info from OAuth provider if not already loaded
+        val user = users.get(claims["sub"].toString()) {
+            val userInfo: ResponseEntity<ObjectNode> = restTemplate.exchange(
+                checkNotNull(registration.providerDetails.userInfoEndpoint.uri),
+                HttpMethod.GET,
+                HttpEntity<String>(headers),
+                ObjectNode::class.java
+            )
+            checkNotNull(userInfo.body)
+        }
+
+        // Add custom claims
+        if (user != null) {
+            convertedClaims["preferred_username"] = user.get("preferred_username").asText()
+            if (user.has("given_name")) {
+                convertedClaims["given_name"] = user.get("given_name").asText()
+            }
+            if (user.has("family_name")) {
+                convertedClaims["family_name"] = user.get("family_name").asText()
+            }
+            if (user.has("email")) {
+                convertedClaims["email"] = user.get("email").asText()
+            }
+            // Allow full name in a name claim - happens with Auth0
+            if (user.has("name")) {
+                val name = user.get("name").asText().split("\\s+".toRegex()).toTypedArray()
+                if (name.size > 0) {
+                    convertedClaims["given_name"] = name[0]
+                    convertedClaims["family_name"] = "${name.copyOfRange(1, name.size).joinToString(" ")}"
+                }
             }
 
-            // Add custom claims
-            if (user != null) {
-                convertedClaims["preferred_username"] = user.get("preferred_username").asText()
-                if (user.has("given_name")) {
-                    convertedClaims["given_name"] = user.get("given_name").asText()
-                }
-                if (user.has("family_name")) {
-                    convertedClaims["family_name"] = user.get("family_name").asText()
-                }
-                if (user.has("email")) {
-                    convertedClaims["email"] = user.get("email").asText()
-                }
-                // Allow full name in a name claim - happens with Auth0
-                if (user.has("name")) {
-                    val name = user.get("name").asText().split("\\s+".toRegex()).toTypedArray()
-                    if (name.size > 0) {
-                        convertedClaims["given_name"] = name[0]
-                        convertedClaims["family_name"] = "${name.copyOfRange(1, name.size).joinToString(" ")}"
-                    }
-                }
+            if (user.has("groups")) {
+               val groups = user.get("groups").values().map(JsonNode::asString)
+                convertedClaims["groups"] = groups
+            }
 
-                if (user.has("groups")) {
-                   val groups = user.get("groups").values().map(JsonNode::asString)
-                    convertedClaims["groups"] = groups
-                }
-
-                if (user.has(CLAIMS_NAMESPACE + "roles")) {
-                    val roles = user.get(CLAIMS_NAMESPACE + "roles").values().map(JsonNode::asString)
-                    convertedClaims["roles"] = roles
-                }
+            if (user.has(CLAIMS_NAMESPACE + "roles")) {
+                val roles = user.get(CLAIMS_NAMESPACE + "roles").values().map(JsonNode::asString)
+                convertedClaims["roles"] = roles
             }
         }
 

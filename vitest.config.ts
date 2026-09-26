@@ -4,7 +4,13 @@ export default defineConfig({
     test: {
         pool: 'forks',
         hookTimeout: 20000,
-        exclude: [...defaultExclude.filter(val => val !== '**/cypress/**'), '**/templates/**', '**/resources/**', '**/target/**'],
+        exclude: [
+            ...defaultExclude.filter(val => val !== '**/cypress/**'),
+            '**/templates/**',
+            '**/resources/**',
+            '**/target/**',
+            '**/.kotlin-lint/**',
+        ],
         setupFiles: ['./vitest.test-setup.ts'],
     },
 });

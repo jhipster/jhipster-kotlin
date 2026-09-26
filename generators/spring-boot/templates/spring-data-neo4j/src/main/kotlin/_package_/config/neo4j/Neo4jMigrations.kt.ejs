@@ -35,7 +35,9 @@ class Neo4jMigrations private constructor() {
 
     /**
      * Load users including authorities from JSON files.
+     * Neo4j migrations require the version__description naming convention.
      */
+    @Suppress("ktlint:standard:class-naming")
     class V0001__CreateUsers : JavaBasedMigration {
 
         override fun apply(context: MigrationContext) {
@@ -45,8 +47,6 @@ class Neo4jMigrations private constructor() {
             } catch (e: IOException) {
                 throw MigrationsException("Could not load user definition resources.", e)
             }
-
-            val type = om.typeFactory.constructMapType(Map::class.java, String::class.java, Any::class.java)
 
             val userLabel = "<%= jhiTablePrefix %>_user"
             val authorityLabel = "<%= jhiTablePrefix %>_authority"
@@ -60,19 +60,23 @@ class Neo4jMigrations private constructor() {
 
             context.session.use { session ->
                 for (resource in resources) {
-                    try {
-                        val user: MutableMap<String, Any?> = resource.inputStream.use { om.readValue(it, type) }
-                        user["user_id"] = UUID.randomUUID().toString()
-                        val authorities = user.remove("authorities") as List<*>
-                        user.remove("_class")
-
-                        session.executeWrite { t ->
-                            t.run(query, Values.parameters("user", user, "authorities", authorities)).consume()
-                        }
-                    } catch (e: IOException) {
-                        throw MigrationsException("Could not load resource ${resource.description}.", e)
+                    val user = readUser(resource, om)
+                    user["user_id"] = UUID.randomUUID().toString()
+                    val authorities = user.remove("authorities") as List<*>
+                    user.remove("_class")
+                    session.executeWrite { t ->
+                        t.run(query, Values.parameters("user", user, "authorities", authorities)).consume()
                     }
                 }
+            }
+        }
+
+        private fun readUser(resource: Resource, om: ObjectMapper): MutableMap<String, Any?> {
+            val type = om.typeFactory.constructMapType(Map::class.java, String::class.java, Any::class.java)
+            try {
+                return resource.inputStream.use { om.readValue(it, type) }
+            } catch (e: IOException) {
+                throw MigrationsException("Could not load resource ${resource.description}.", e)
             }
         }
     }
