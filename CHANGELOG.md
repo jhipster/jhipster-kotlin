@@ -1,4 +1,6 @@
-Refer [releases](https://github.com/jhipster/jhipster-kotlin/releases).
+# Changelog
+
+See [GitHub Releases](https://github.com/jhipster/jhipster-kotlin/releases) for published release notes. The entries below are historical and do not describe every change on `main`.
 
 <a name="1.8.1"></a>
 

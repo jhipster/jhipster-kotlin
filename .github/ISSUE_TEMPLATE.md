@@ -1,13 +1,31 @@
-## Overview of the issue
+## What happened?
 
-## Motivation for or Use Case
+Describe the problem and what you expected to happen.
 
-## Reproduce the error
+## How can we reproduce it?
 
-## Related issues
+1. List the exact commands and options used.
+2. Include a minimal JDL or relevant `.yo-rc.json` and `.jhipster/` configuration.
+3. Include the complete error output as text.
 
-## Link to PR (if any)
+Remove credentials, tokens, and private application data before sharing files.
 
-## KHipster Version(s)
+## Environment
 
-- [] Checking this box is mandatory (this is just to show you read everything)
+- KHipster version:
+- Installed from npm or a source checkout (include the commit if applicable):
+- Operating system:
+- Node.js / npm versions:
+- Java version, if the generated application fails to build:
+
+Paste the relevant output of `khipster info` from the affected application.
+
+## Related issues or pull requests
+
+Link any related reports, workarounds, or proposed fixes.
+
+## Checklist
+
+- [ ] I checked the [troubleshooting guide](https://github.com/jhipster/jhipster-kotlin/blob/main/docs/troubleshooting.md).
+- [ ] I searched for existing issues.
+- [ ] I removed secrets from the reproduction and logs.

@@ -13,9 +13,18 @@ jobs:
         timeout-minutes: 20
         steps:
             - uses: actions/checkout@v7
+              with:
+                  fetch-depth: 0
+            - uses: ./.github/actions/changes
+              id: changes
             - uses: actions/setup-node@v7
               with:
                   node-version: 24
                   cache: 'npm'
+            - name: Check documentation formatting
+              if: steps.changes.outputs.docs-only == 'true'
+              run: npm exec --yes --package=prettier@3.4.2 -- prettier --check --config .prettierrc-docs.yml "**/*.md"
             - run: npm ci
+              if: steps.changes.outputs.docs-only != 'true'
             - run: npm run test
+              if: steps.changes.outputs.docs-only != 'true'
