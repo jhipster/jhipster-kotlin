@@ -86,6 +86,8 @@ class CacheConfiguration(<% if (serviceDiscoveryAny) { %>
     fun globalConfiguration(jHipsterProperties: JHipsterProperties): InfinispanGlobalConfigurer {
         log.info("Defining Infinispan Global Configuration")
         <%_ if (serviceDiscoveryAny) { _%>
+        val registration = registration
+        val discoveryClient = discoveryClient
         if (registration == null) { // if registry is not defined, use native discovery
             log.warn("No discovery service is set up, Infinispan will use default discovery for cluster formation")
             return InfinispanGlobalConfigurer {
@@ -96,7 +98,7 @@ class CacheConfiguration(<% if (serviceDiscoveryAny) { %>
                     .enabled(jHipsterProperties.cache.infinispan.isStatsEnabled)
                     .serialization().marshaller(JBossUserMarshaller()).build()
             }
-        } else if (discoveryClient?.getInstances(registration.serviceId).isNullOrEmpty()) {
+        } else if (discoveryClient == null || discoveryClient.getInstances(registration.serviceId).isEmpty()) {
             return InfinispanGlobalConfigurer {
                 GlobalConfigurationBuilder
                     .defaultClusteredBuilder().transport()
@@ -109,7 +111,7 @@ class CacheConfiguration(<% if (serviceDiscoveryAny) { %>
             return InfinispanGlobalConfigurer {
                 GlobalConfigurationBuilder
                     .defaultClusteredBuilder().transport()
-                    .transport(JGroupsTransport(getTransportChannel()))
+                    .transport(JGroupsTransport(getTransportChannel(discoveryClient, registration)))
                     .clusterName("infinispan-<%=baseName%>-cluster").jmx()
                     .enabled(jHipsterProperties.cache.infinispan.isStatsEnabled)
                     .serialization().marshaller(JBossUserMarshaller()).build()
@@ -222,12 +224,11 @@ class CacheConfiguration(<% if (serviceDiscoveryAny) { %>
      * MPING multicast is replaced with TCPPING with the host details discovered
      * from registry and sends only unicast messages to the host list.
      */
-    private fun getTransportChannel(): JChannel {
+    private fun getTransportChannel(discoveryClient: DiscoveryClient, registration: Registration): JChannel {
         val channel: JChannel
         val initialHosts = mutableListOf<InetSocketAddress>()
         try {
-            val serviceId = checkNotNull(registration).serviceId
-            for (instance in checkNotNull(discoveryClient).getInstances(serviceId)) {
+            for (instance in discoveryClient.getInstances(registration.serviceId)) {
                 log.debug("Adding Infinispan cluster member ${instance.host}:7800")
                 initialHosts.add(InetSocketAddress(instance.host, 7800))
             }

@@ -29,11 +29,13 @@ import org.testcontainers.containers.output.Slf4jLogConsumer
 class RedisTestContainer {
 
     companion object {
-        private val REDIS_CONTAINER: GenericContainer<*> = GenericContainer<Nothing>("<%= dockerContainers.redis %>")
+        private val REDIS_CONTAINER: GenericContainer<*> = RedisContainer("<%= dockerContainers.redis %>")
             .withExposedPorts(6379)
             .withLogConsumer(Slf4jLogConsumer(LoggerFactory.getLogger(RedisTestContainer::class.java)))
             .withReuse(true)
     }
+
+    private class RedisContainer(image: String) : GenericContainer<RedisContainer>(image)
 
     @Bean
     fun redisContainer(): GenericContainer<*> = REDIS_CONTAINER
@@ -42,7 +44,7 @@ class RedisTestContainer {
     fun redisProperties(redisContainer: GenericContainer<*>): DynamicPropertyRegistrar {
         return DynamicPropertyRegistrar { registry ->
             registry.add("jhipster.cache.redis.server") {
-                "redis://" + redisContainer.containerIpAddress + ":" + redisContainer.getMappedPort(6379)
+                "redis://" + redisContainer.host + ":" + redisContainer.getMappedPort(6379)
             }
         }
     }
