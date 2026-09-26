@@ -18,36 +18,34 @@
 -%>
 package <%= packageName %>.config
 
-import org.springframework.beans.factory.DisposableBean
-import org.springframework.beans.factory.InitializingBean
-import org.slf4j.Logger
 import org.slf4j.LoggerFactory
+import org.springframework.boot.test.context.TestConfiguration
+import org.springframework.context.annotation.Bean
+import org.springframework.test.context.DynamicPropertyRegistrar
 import org.testcontainers.containers.GenericContainer
 import org.testcontainers.containers.output.Slf4jLogConsumer
-import org.testcontainers.utility.DockerImageName
 
-class RedisTestContainer: InitializingBean, DisposableBean {
+@TestConfiguration(proxyBeanMethods = false)
+class RedisTestContainer {
 
-    private var redisContainer: GenericContainer<*>? = null
-    private val log = LoggerFactory.getLogger(javaClass)
-
-    override fun destroy() {
-        if (null != redisContainer && redisContainer?.isRunning == true) {
-            redisContainer?.close()
-        }
+    companion object {
+        private val REDIS_CONTAINER: GenericContainer<*> = RedisContainer("<%= dockerContainers.redis %>")
+            .withExposedPorts(6379)
+            .withLogConsumer(Slf4jLogConsumer(LoggerFactory.getLogger(RedisTestContainer::class.java)))
+            .withReuse(true)
     }
 
-    override fun afterPropertiesSet() {
-        if (null == redisContainer) {
-            redisContainer = GenericContainer("<%= dockerContainers.redis %>")
-                .withExposedPorts(6379)
-                .withLogConsumer(Slf4jLogConsumer(log))
-                .withReuse(true)
-        }
-        if (redisContainer?.isRunning != true) {
-            redisContainer?.start()
+    private class RedisContainer(image: String) : GenericContainer<RedisContainer>(image)
+
+    @Bean
+    fun redisContainer(): GenericContainer<*> = REDIS_CONTAINER
+
+    @Bean
+    fun redisProperties(redisContainer: GenericContainer<*>): DynamicPropertyRegistrar {
+        return DynamicPropertyRegistrar { registry ->
+            registry.add("jhipster.cache.redis.server") {
+                "redis://" + redisContainer.host + ":" + redisContainer.getMappedPort(6379)
+            }
         }
     }
-
-    fun getRedisContainer() = redisContainer
 }

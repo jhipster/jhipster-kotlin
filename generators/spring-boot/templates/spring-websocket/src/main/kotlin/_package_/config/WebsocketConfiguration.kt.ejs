@@ -46,17 +46,17 @@ class WebsocketConfiguration(
     private val jHipsterProperties: JHipsterProperties
 ) : WebSocketMessageBrokerConfigurer {
 
-    override fun configureMessageBroker(config: MessageBrokerRegistry?) {
-        config!!.enableSimpleBroker("/topic")
+    override fun configureMessageBroker(config: MessageBrokerRegistry) {
+        config.enableSimpleBroker("/topic")
     }
 
-    override fun registerStompEndpoints(registry: StompEndpointRegistry?) {
+    override fun registerStompEndpoints(registry: StompEndpointRegistry) {
         val allowedOrigins =
             Optional.ofNullable(jHipsterProperties.cors.allowedOrigins)
                 .map { origins -> origins.toTypedArray() }
-                .orElse(arrayOfNulls(0))
+                .orElse(emptyArray())
 
-        registry!!.addEndpoint("/websocket/tracker")
+        registry.addEndpoint("/websocket/tracker")
             .setHandshakeHandler(defaultHandshakeHandler())
             .setAllowedOrigins(*allowedOrigins)
             .withSockJS()
@@ -94,9 +94,9 @@ class WebsocketConfiguration(
         return object : DefaultHandshakeHandler() {
             override fun determineUser(
                 request: ServerHttpRequest,
-                wsHandler: WebSocketHandler?,
-                attributes: Map<String, Any>?
-            ): Principal? {
+                wsHandler: WebSocketHandler,
+                attributes: MutableMap<String, Any>
+            ): Principal {
                 var principal: Principal? = request.principal
                 if (principal == null) {
                     val authorities = mutableListOf<SimpleGrantedAuthority>()

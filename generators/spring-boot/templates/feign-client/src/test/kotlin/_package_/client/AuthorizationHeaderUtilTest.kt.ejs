@@ -16,7 +16,7 @@ This file is part of the JHipster project, see https://jhipster.github.io/
  See the License for the specific language governing permissions and
  limitations under the License.
 -%>
-package <%= packageName %>.security.oauth2
+package <%= packageName %>.client
 
 import org.assertj.core.api.Assertions
 import org.junit.jupiter.api.BeforeEach
@@ -24,7 +24,7 @@ import org.junit.jupiter.api.Test
 import org.mockito.InjectMocks
 import org.mockito.Mock
 import org.mockito.MockitoAnnotations
-import org.springframework.boot.web.client.RestTemplateBuilder
+import org.springframework.boot.restclient.RestTemplateBuilder
 import org.springframework.http.RequestEntity
 import org.springframework.http.ResponseEntity
 import org.springframework.http.converter.HttpMessageConverter
@@ -72,7 +72,7 @@ class AuthorizationHeaderUtilTest {
         MockitoAnnotations.openMocks(this)
         SecurityContextHolder.setContext(securityContext)
 
-        doReturn(restTemplateBuilder).`when`(restTemplateBuilder).additionalMessageConverters(any(HttpMessageConverter::class.java))
+        doReturn(restTemplateBuilder).`when`(restTemplateBuilder).additionalMessageConverters(any(HttpMessageConverter::class.java), any(HttpMessageConverter::class.java))
         doReturn(restTemplateBuilder).`when`(restTemplateBuilder).errorHandler(any(ResponseErrorHandler::class.java))
         doReturn(restTemplateBuilder).`when`(restTemplateBuilder).basicAuthentication(anyString(), anyString())
     }
@@ -90,7 +90,7 @@ class AuthorizationHeaderUtilTest {
     @Test
     fun getAuthorizationHeader_JwtAuthentication() {
         val jwtToken = JwtAuthenticationToken(Jwt("tokenVal", Instant.now(),
-            Instant.now().plus(Duration.ofMinutes(3)), hashMapOf("alg" to "HS256") as Map<String, Any>?, hashMapOf("sub" to SUB_VALUE) as Map<String, Any>?
+            Instant.now().plus(Duration.ofMinutes(3)), mapOf<String, Any>("alg" to "HS256"), mapOf<String, Any>("sub" to SUB_VALUE)
         ))
         doReturn(jwtToken).`when`(securityContext).authentication
 
@@ -196,7 +196,7 @@ class AuthorizationHeaderUtilTest {
                 .authorizationGrantType(AuthorizationGrantType.AUTHORIZATION_CODE)
                 .clientId("web-app")
                 .clientSecret("secret")
-                .redirectUriTemplate("/login/oauth2/code/oidc")
+                .redirectUri("/login/oauth2/code/oidc")
                 .authorizationUri("http://localhost:8080/auth/realms/master/protocol/openid-connect/auth")
                 .tokenUri("https://localhost:8080/auth/realms/master/protocol/openid-connect/token")
                 .build(),

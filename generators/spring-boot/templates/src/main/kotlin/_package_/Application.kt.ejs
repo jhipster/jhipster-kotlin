@@ -28,16 +28,19 @@ import org.slf4j.LoggerFactory
 import org.springframework.boot.runApplication
 import org.springframework.boot.autoconfigure.SpringBootApplication
 <%_ if (databaseMigrationLiquibase) { _%>
-import org.springframework.boot.autoconfigure.liquibase.LiquibaseProperties
+import org.springframework.boot.liquibase.autoconfigure.LiquibaseProperties
 <%_ } _%>
 import org.springframework.boot.context.properties.EnableConfigurationProperties
+<%_ if (devDatabaseTypeH2Any) { _%>
+import org.springframework.boot.h2console.autoconfigure.H2ConsoleAutoConfiguration
+<%_ } _%>
 import org.springframework.core.env.Environment
 
 import jakarta.annotation.PostConstruct
 import java.net.InetAddress
 import java.net.UnknownHostException
 
-@SpringBootApplication
+@SpringBootApplication<% if (devDatabaseTypeH2Any) { %>(exclude = [H2ConsoleAutoConfiguration::class])<% } %>
 @EnableConfigurationProperties(<% if (databaseMigrationLiquibase) { %>LiquibaseProperties::class, <% } %>ApplicationProperties::class)
 class <%= mainClass %>(private val env: Environment) {
 

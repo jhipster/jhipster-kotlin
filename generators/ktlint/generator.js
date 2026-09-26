@@ -2,13 +2,13 @@ import { createWriteStream, existsSync } from 'node:fs';
 import { chmod, mkdir, rm } from 'node:fs/promises';
 import { platform } from 'node:os';
 import { join } from 'node:path';
+import { Readable } from 'node:stream';
 import { pipeline } from 'node:stream/promises';
 
+import { createConflicterTransform, createYoResolveTransform } from '@yeoman/conflicter';
 import BaseApplicationGenerator from 'generator-jhipster/generators/base-application';
 import { autoCrlfTransform } from 'generator-jhipster/generators/bootstrap/support';
-import axios from 'axios';
 import { createCommitTransform } from 'mem-fs-editor/transform';
-import { createConflicterTransform, createYoResolveTransform } from '@yeoman/conflicter';
 
 import { createKtlintTransform, filterKtlintTransformFiles } from './internal/ktlint-transform.js';
 
@@ -27,9 +27,9 @@ export default class extends BaseApplicationGenerator {
         await this.dependsOnBootstrapApplicationServer();
     }
 
-    get [BaseApplicationGenerator.LOADING]() {
-        return this.asLoadingTaskGroup({
-            async loading({ application }) {
+    get [BaseApplicationGenerator.PREPARING]() {
+        return this.asPreparingTaskGroup({
+            async preparing({ application }) {
                 this.loadJavaDependenciesFromGradleCatalog(application.javaDependencies);
                 this.ktlintFolder = this.destinationPath('.ktlint', application.javaDependencies['ktlint-cli']);
                 this.ktlintExecutable = join(this.ktlintFolder, platform() === 'win32' ? 'ktlint.bat' : 'ktlint');
@@ -45,17 +45,28 @@ export default class extends BaseApplicationGenerator {
                         async () => {
                             try {
                                 const ktlintVersion = application.javaDependencies['ktlint-cli'];
-                                const ktlintUrl = 'https://github.com/pinterest/ktlint/releases/download/';
+                                // pinterest/ktlint moved to ktlint/ktlint; the old org still redirects, but use the
+                                // canonical URL directly to avoid depending on that redirect.
+                                const ktlintUrl = 'https://github.com/ktlint/ktlint/releases/download/';
 
                                 await mkdir(this.ktlintFolder, { recursive: true });
 
-                                const response = await axios.get(`${ktlintUrl}${ktlintVersion}/ktlint`, { responseType: 'stream' });
+                                const response = await fetch(`${ktlintUrl}${ktlintVersion}/ktlint`);
+                                if (!response.ok) {
+                                    throw new Error(`Failed to download ktlint: ${response.statusText} (${response.status})`);
+                                }
                                 const ktlintFile = join(this.ktlintFolder, 'ktlint');
-                                await pipeline(response.data, createWriteStream(ktlintFile));
+                                await pipeline(Readable.fromWeb(response.body), createWriteStream(ktlintFile));
                                 await chmod(ktlintFile, 0o755);
 
-                                const batResponse = await axios.get(`${ktlintUrl}/${ktlintVersion}/ktlint.bat`, { responseType: 'stream' });
-                                await pipeline(batResponse.data, createWriteStream(join(this.ktlintFolder, 'ktlint.bat')));
+                                const batResponse = await fetch(`${ktlintUrl}/${ktlintVersion}/ktlint.bat`);
+                                if (!batResponse.ok) {
+                                    throw new Error(`Failed to download ktlint.bat: ${batResponse.statusText} (${batResponse.status})`);
+                                }
+                                await pipeline(
+                                    Readable.fromWeb(batResponse.body),
+                                    createWriteStream(join(this.ktlintFolder, 'ktlint.bat')),
+                                );
                             } catch (error) {
                                 this.log.error('Failed to download ktlint');
                                 await rm(this.ktlintFolder, { recursive: true });

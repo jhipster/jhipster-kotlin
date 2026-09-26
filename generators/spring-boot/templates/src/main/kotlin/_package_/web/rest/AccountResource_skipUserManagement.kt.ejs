@@ -1,0 +1,223 @@
+<%#
+ Copyright 2013-2026 the original author or authors from the JHipster project.
+
+ This file is part of the JHipster project, see https://www.jhipster.tech/
+ for more information.
+
+ Licensed under the Apache License, Version 2.0 (the "License");
+ you may not use this file except in compliance with the License.
+ You may obtain a copy of the License at
+
+      https://www.apache.org/licenses/LICENSE-2.0
+
+ Unless required by applicable law or agreed to in writing, software
+ distributed under the License is distributed on an "AS IS" BASIS,
+ WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
+ See the License for the specific language governing permissions and
+ limitations under the License.
+-%>
+package <%- packageName %>.web.rest
+
+<%_ if (generateBuiltInAuthorityEntity) { _%>
+import <%- packageName %>.domain.Authority
+<%_ } _%>
+<%_ if (!authenticationTypeOauth2 && !authenticationTypeJwt && !reactive) { _%>
+import <%- packageName %>.security.getCurrentUserLogin
+<%_ } _%>
+import java.security.Principal
+<%_ if (reactive) { _%>
+import reactor.core.publisher.Mono
+<%_ } _%>
+<%_ if (authenticationTypeOauth2) { _%>
+import org.springframework.security.oauth2.client.authentication.OAuth2AuthenticationToken
+<%_ } _%>
+<%_ if (authenticationTypeOauth2 || authenticationTypeJwt) { _%>
+import org.springframework.security.oauth2.core.oidc.StandardClaimNames
+import org.springframework.security.oauth2.server.resource.authentication.JwtAuthenticationToken
+import org.springframework.security.authentication.AbstractAuthenticationToken
+<%_ } else { _%>
+  <%_ if (reactive) { _%>
+import org.springframework.security.core.context.ReactiveSecurityContextHolder
+import org.springframework.security.core.context.SecurityContext
+import org.springframework.security.core.userdetails.UserDetails
+  <%_ } else { _%>
+import org.springframework.security.core.context.SecurityContextHolder
+  <%_ } _%>
+<%_ } _%>
+
+import com.fasterxml.jackson.annotation.JsonAnyGetter
+import org.slf4j.LoggerFactory
+import org.springframework.http.HttpStatus
+import org.springframework.http.ResponseEntity
+import org.springframework.web.bind.annotation.GetMapping
+import org.springframework.web.bind.annotation.RequestMapping
+import org.springframework.web.bind.annotation.RestController
+
+@RestController
+@RequestMapping("/api")
+class AccountResource {
+
+    private val log = LoggerFactory.getLogger(AccountResource::class.java)
+
+<%_ if (authenticationTypeOauth2 || authenticationTypeJwt) { _%>
+    private class AccountResourceException(message: String? = null) : RuntimeException(message) {
+        companion object {
+            private const val serialVersionUID = 1L
+        }
+    }
+<%_ } else { _%>
+    private class AccountResourceException : RuntimeException()
+<%_ } _%>
+
+    /**
+     * `GET  /account` : get the current user.
+     *
+<%_ if (authenticationTypeOauth2 || authenticationTypeJwt) { _%>
+     * @param principal the current user; resolves to `null` if not authenticated.
+<%_ } _%>
+     * @return the current user.
+     * @throws AccountResourceException `500 (Internal Server Error)` if the user couldn't be returned.
+     */
+    @GetMapping("/account")
+<%_ if (reactive) { _%>
+  <%_ if (authenticationTypeOauth2 || authenticationTypeJwt) { _%>
+    fun getAccount(principal: Principal?): Mono<UserVM> =
+        if (principal is AbstractAuthenticationToken) {
+            Mono.just(getUserFromAuthentication(principal))
+        } else {
+            throw AccountResourceException("User could not be found")
+        }
+  <%_ } else { _%>
+    fun getAccount(): Mono<UserVM> =
+        ReactiveSecurityContextHolder.getContext()
+            .mapNotNull { it.authentication }
+            .map { authentication ->
+                val login = when (val p = authentication.principal) {
+                    is UserDetails -> p.username
+                    is String -> p
+                    else -> throw AccountResourceException()
+                }
+                val authorities = authentication.authorities
+                    .mapNotNullTo(mutableSetOf()) { it.authority }
+                UserVM(login, authorities)
+            }
+            .switchIfEmpty(Mono.error(AccountResourceException()))
+  <%_ } _%>
+<%_ } else { _%>
+  <%_ if (authenticationTypeOauth2 || authenticationTypeJwt) { _%>
+    fun getAccount(principal: Principal?): UserVM =
+        if (principal is AbstractAuthenticationToken) {
+            getUserFromAuthentication(principal)
+        } else {
+            throw AccountResourceException("User could not be found")
+        }
+  <%_ } else { _%>
+    fun getAccount(): UserVM {
+        val login = getCurrentUserLogin()
+            .orElseThrow { AccountResourceException() }
+        val authorities = SecurityContextHolder.getContext().authentication?.authorities.orEmpty()
+            .mapNotNullTo(mutableSetOf()) { it.authority }
+        return UserVM(login, authorities)
+    }
+  <%_ } _%>
+<%_ } _%>
+<%_ if (!authenticationTypeJwt) { _%>
+
+    /**
+     * `GET  /authenticate` : check if the user is authenticated.
+     *
+     * @return the [ResponseEntity] with status `204 (No Content)`,
+     * or with status `401 (Unauthorized)` if not authenticated.
+     */
+    @GetMapping("/authenticate")
+    fun isAuthenticated(principal: Principal?): ResponseEntity<Void> {
+        log.debug("REST request to check if the current user is authenticated")
+        return ResponseEntity.status(if (principal == null) HttpStatus.UNAUTHORIZED else HttpStatus.NO_CONTENT).build()
+    }
+<%_ } _%>
+
+    class UserVM(
+        val login: String,
+<%_ if (generateBuiltInAuthorityEntity) { _%>
+        val authorities: Set<Authority>,
+<%_ } else { _%>
+        val authorities: Set<String>,
+<%_ } _%>
+<%_ if (authenticationTypeOauth2 || authenticationTypeJwt) { _%>
+        @get:JsonAnyGetter
+        val details: Map<String, Any?>? = null,
+<%_ } _%>
+    ) {
+        fun isActivated(): Boolean = true
+    }
+<%_ if (authenticationTypeOauth2 || authenticationTypeJwt) { _%>
+
+    companion object {
+        private fun extractDetailsFromTokenAttributes(attributes: Map<String, Any?>): Map<String, Any?> {
+            val details = mutableMapOf<String, Any?>()
+
+            details["activated"] = attributes[StandardClaimNames.EMAIL_VERIFIED] ?: true
+            attributes["uid"]?.let { details["id"] = it }
+            attributes[StandardClaimNames.FAMILY_NAME]?.let { details["lastName"] = it }
+            attributes[StandardClaimNames.PICTURE]?.let { details["imageUrl"] = it }
+
+            val givenName = attributes[StandardClaimNames.GIVEN_NAME] ?: attributes[StandardClaimNames.NAME]
+            givenName?.let { details["firstName"] = it }
+
+            if (attributes[StandardClaimNames.EMAIL] != null) {
+                details["email"] = attributes[StandardClaimNames.EMAIL]
+            } else {
+                val sub = attributes[StandardClaimNames.SUB].toString()
+                val preferredUsername = attributes[StandardClaimNames.PREFERRED_USERNAME] as? String
+                if (sub.contains("|") && preferredUsername != null && preferredUsername.contains("@")) {
+                    // special handling for Auth0
+                    details["email"] = preferredUsername
+                } else {
+                    details["email"] = sub
+                }
+            }
+
+            if (attributes["langKey"] != null) {
+                details["langKey"] = attributes["langKey"]
+            } else if (attributes[StandardClaimNames.LOCALE] != null) {
+                // trim off country code if it exists
+                var locale = attributes[StandardClaimNames.LOCALE] as String
+                if (locale.contains("_")) {
+                    locale = locale.substring(0, locale.indexOf('_'))
+                } else if (locale.contains("-")) {
+                    locale = locale.substring(0, locale.indexOf('-'))
+                }
+                details["langKey"] = locale.lowercase()
+            } else {
+                // set langKey to default if not specified by IdP
+                details["langKey"] = "<%= nativeLanguage %>"
+            }
+
+            return details
+        }
+
+        private fun getUserFromAuthentication(authToken: AbstractAuthenticationToken): UserVM {
+            val attributes: Map<String, Any?> = when (authToken) {
+                is JwtAuthenticationToken -> authToken.tokenAttributes
+<%_ if (authenticationTypeOauth2) { _%>
+                is OAuth2AuthenticationToken -> authToken.principal.attributes
+<%_ } _%>
+                else -> throw IllegalArgumentException("AuthenticationToken is not OAuth2 or JWT!")
+            }
+
+            return UserVM(
+                login = authToken.name,
+                authorities = authToken.authorities
+<%_ if (generateBuiltInAuthorityEntity) { _%>
+                    .mapNotNull { it.authority }
+                    .map { Authority(name = it) }
+                    .toSet(),
+<%_ } else { _%>
+                    .mapNotNullTo(mutableSetOf()) { it.authority },
+<%_ } _%>
+                details = extractDetailsFromTokenAttributes(attributes),
+            )
+        }
+    }
+<%_ } _%>
+}

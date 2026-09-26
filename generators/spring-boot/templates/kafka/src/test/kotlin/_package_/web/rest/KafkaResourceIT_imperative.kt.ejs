@@ -18,90 +18,75 @@
 -%>
 package <%= packageName %>.web.rest
 
+import <%= packageName %>.IntegrationTest
 import org.assertj.core.api.Assertions.assertThat
 import org.junit.jupiter.api.Assertions.fail
-import org.springframework.test.web.servlet.request.MockMvcRequestBuilders.get
-import org.springframework.test.web.servlet.request.MockMvcRequestBuilders.post
-import org.springframework.test.web.servlet.result.MockMvcResultMatchers.content
-import org.springframework.test.web.servlet.result.MockMvcResultMatchers.request
-import org.springframework.test.web.servlet.result.MockMvcResultMatchers.status
-
-import java.util.HashMap
-import java.util.Map
-import java.util.concurrent.BlockingQueue
-
 import org.junit.jupiter.api.Test
 import org.springframework.beans.factory.annotation.Autowired
-import org.springframework.beans.factory.annotation.Qualifier
-import org.springframework.boot.test.autoconfigure.web.servlet.AutoConfigureMockMvc
-import org.springframework.cloud.stream.test.binder.MessageCollector
-import org.springframework.messaging.Message
-import org.springframework.messaging.MessageChannel
+import org.springframework.boot.autoconfigure.ImportAutoConfiguration
+import org.springframework.boot.webmvc.test.autoconfigure.AutoConfigureMockMvc
+import org.springframework.cloud.stream.binder.test.InputDestination
+import org.springframework.cloud.stream.binder.test.OutputDestination
+import org.springframework.cloud.stream.binder.test.TestChannelBinderConfiguration
 import org.springframework.messaging.MessageHeaders
 import org.springframework.messaging.support.GenericMessage
 import org.springframework.security.test.context.support.WithMockUser
+<%_ if (authenticationUsesCsrf) { _%>
+import org.springframework.security.test.web.servlet.request.SecurityMockMvcRequestPostProcessors.csrf
+<%_ } _%>
+import org.springframework.test.context.TestPropertySource
 import org.springframework.test.web.servlet.MockMvc
-import org.springframework.test.web.servlet.MvcResult
+import org.springframework.test.web.servlet.request.MockMvcRequestBuilders.get
+import org.springframework.test.web.servlet.request.MockMvcRequestBuilders.post
+import org.springframework.test.web.servlet.result.MockMvcResultMatchers.request
+import org.springframework.test.web.servlet.result.MockMvcResultMatchers.status
 import org.springframework.util.MimeTypeUtils
-import <%= packageName %>.IntegrationTest
-import <%= packageName %>.config.EmbeddedKafka
-import <%= packageName %>.config.KafkaSseConsumer
-import <%= packageName %>.config.KafkaSseProducer
 
 @IntegrationTest
 @AutoConfigureMockMvc
 @WithMockUser
-@EmbeddedKafka
+@ImportAutoConfiguration(TestChannelBinderConfiguration::class)
+@TestPropertySource(properties = ["spring.profiles.include=kafka"])
 class <%= upperFirstCamelCaseBaseName %>KafkaResourceIT {
-
-    @Autowired
-    private lateinit var collector: MessageCollector
 
     @Autowired
     private lateinit var restMockMvc: MockMvc
 
     @Autowired
-    @Qualifier(KafkaSseProducer.CHANNELNAME)
-    private lateinit var output: MessageChannel
+    private lateinit var input: InputDestination
 
     @Autowired
-    @Qualifier(KafkaSseConsumer.CHANNELNAME)
-    private lateinit var input: MessageChannel
+    private lateinit var output: OutputDestination
 
     @Test
-    @Throws(Exception::class)
     fun producesMessages() {
-
-        restMockMvc.perform(post("/api/<%= dasherizedBaseName %>-kafka/publish?message=value-produce"))
-            .andExpect(status().isOk)
-
-        val messages = collector.forChannel(output)
-        val payload = messages.take() as GenericMessage<String>
-        assertThat(payload.payload).isEqualTo("value-produce")
+        restMockMvc.perform(post("/api/<%= dasherizedBaseName %>-kafka/publish?message=value-produce")<%- authenticationUsesCsrf ? '.with(csrf())' : '' %>).andExpect(status().isOk)
+        assertThat(output.receive(1000, "binding-out-0").payload).isEqualTo("value-produce".toByteArray())
     }
 
     @Test
-    @Throws(Exception::class)
+    fun producesPooledMessages() {
+        assertThat(output.receive(1500, "kafkaProducer-out-0").payload).isEqualTo("kafka_producer".toByteArray())
+    }
+
+    @Test
     fun consumesMessages() {
-        val map = mutableMapOf<String, Any>()
-        map[MessageHeaders.CONTENT_TYPE] =  MimeTypeUtils.TEXT_PLAIN_VALUE
-        val headers = MessageHeaders(map)
-        val testMessage = GenericMessage<String>("value-consume", headers)
+        val headers = MessageHeaders(mapOf<String, Any>(MessageHeaders.CONTENT_TYPE to MimeTypeUtils.TEXT_PLAIN_VALUE))
+        val testMessage = GenericMessage("value-consume", headers)
         val mvcResult = restMockMvc
             .perform(get("/api/<%= dasherizedBaseName %>-kafka/register"))
             .andExpect(status().isOk)
             .andExpect(request().asyncStarted())
             .andReturn()
-        for (i in 0 until 100) {
+        repeat(100) {
             input.send(testMessage)
             Thread.sleep(100)
             val content = mvcResult.response.contentAsString
             if (content.contains("data:value-consume")) {
-                restMockMvc
-                    .perform(get("/api/<%= dasherizedBaseName %>-kafka/unregister"))
+                restMockMvc.perform(get("/api/<%= dasherizedBaseName %>-kafka/unregister"))
                 return
             }
         }
-        fail<String>("Expected content data:value-consume not received")
+        fail<Unit>("Expected content data:value-consume not received")
     }
 }

@@ -26,3 +26,17 @@ export const entityWithBagRelationship = {
         },
     ],
 };
+
+export const crossPackageReactiveEntity = {
+    name: 'CrossPackageOther',
+    changelogDate: '20260908120300',
+    entityPackage: 'other',
+    fields: [{ fieldName: 'title', fieldType: 'String' }],
+    relationships: [
+        {
+            relationshipName: 'customId',
+            otherEntityName: 'EntityWithCustomId',
+            relationshipType: 'many-to-one',
+        },
+    ],
+};

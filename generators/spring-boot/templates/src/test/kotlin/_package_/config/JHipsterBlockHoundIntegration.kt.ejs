@@ -28,9 +28,19 @@ class JHipsterBlockHoundIntegration: BlockHoundIntegration {
         // Workaround until https://github.com/reactor/reactor-core/issues/2137 is fixed
         builder.allowBlockingCallsInside("reactor.core.scheduler.BoundedElasticScheduler\$BoundedState", "dispose")
         builder.allowBlockingCallsInside("reactor.core.scheduler.BoundedElasticScheduler", "schedule")
+        builder.allowBlockingCallsInside("java.util.UUID", "randomUUID")
+        // kotlin-reflect (used by jackson-module-kotlin) lazily reads the builtins metadata from its jar once
+        builder.allowBlockingCallsInside("kotlin.reflect.jvm.internal.BuiltinsKt", "readBuiltinClassMetadata")
+        builder.allowBlockingCallsInside("java.util.zip.ZipFile\$ZipFileInputStream", "read")
+        builder.allowBlockingCallsInside("java.util.zip.ZipFile\$Source", "readFullyAt")
+        builder.allowBlockingCallsInside("java.io.RandomAccessFile", "readBytes")
         builder.allowBlockingCallsInside("org.springframework.validation.beanvalidation.SpringValidatorAdapter", "validate")
         builder.allowBlockingCallsInside("<%= packageName %>.service.MailService", "sendEmailFromTemplate")
         builder.allowBlockingCallsInside("<%= packageName %>.security.DomainUserDetailsService", "createSpringSecurityUser")
+<%_ if (databaseTypeMongodb) { _%>
+        // The MongoDB driver advances the cluster clock under a short-lived internal lock
+        builder.allowBlockingCallsInside("com.mongodb.internal.Locks", "checkedWithInterruptibleLock")
+<%_ } _%>
 <%_ if (databaseTypeCouchbase) { _%>
         builder.allowBlockingCallsInside("org.springframework.data.couchbase.core.convert.MappingCouchbaseConverter", "read")
         builder.allowBlockingCallsInside("com.github.couchmove.repository.CouchbaseRepositoryImpl", "lambda\$query\$2")

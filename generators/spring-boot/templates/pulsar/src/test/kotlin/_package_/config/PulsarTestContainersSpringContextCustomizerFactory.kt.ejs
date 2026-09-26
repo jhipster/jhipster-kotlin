@@ -1,0 +1,68 @@
+<%#
+ Copyright 2013-2026 the original author or authors from the JHipster project.
+
+ This file is part of the JHipster project, see https://www.jhipster.tech/
+ for more information.
+
+ Licensed under the Apache License, Version 2.0 (the "License")
+ you may not use this file except in compliance with the License.
+ You may obtain a copy of the License at
+
+      https://www.apache.org/licenses/LICENSE-2.0
+
+ Unless required by applicable law or agreed to in writing, software
+ distributed under the License is distributed on an "AS IS" BASIS,
+ WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
+ See the License for the specific language governing permissions and
+ limitations under the License.
+-%>
+package <%= packageName %>.config
+
+import org.slf4j.LoggerFactory
+import org.springframework.boot.test.util.TestPropertyValues
+import org.springframework.context.ConfigurableApplicationContext
+import org.springframework.core.annotation.AnnotatedElementUtils
+import org.springframework.test.context.ContextConfigurationAttributes
+import org.springframework.test.context.ContextCustomizer
+import org.springframework.test.context.ContextCustomizerFactory
+import org.springframework.test.context.MergedContextConfiguration
+
+class PulsarTestContainersSpringContextCustomizerFactory : ContextCustomizerFactory {
+
+    private val log = LoggerFactory.getLogger(PulsarTestContainersSpringContextCustomizerFactory::class.java)
+
+    override fun createContextCustomizer(
+        testClass: Class<*>,
+        configAttributes: List<ContextConfigurationAttributes>,
+    ): ContextCustomizer = object : ContextCustomizer {
+        override fun customizeContext(context: ConfigurableApplicationContext, mergedConfig: MergedContextConfiguration) {
+            val beanFactory = context.beanFactory
+            var testValues = TestPropertyValues.empty()
+            val pulsarAnnotation = AnnotatedElementUtils.findMergedAnnotation(testClass, EmbeddedPulsar::class.java)
+            if (pulsarAnnotation != null) {
+                log.debug("detected the EmbeddedPulsar annotation on class {}", testClass.name)
+                log.info("Warming up the pulsar database")
+                if (pulsarBean == null) {
+                    val container = beanFactory.createBean(PulsarTestContainer::class.java)
+                    beanFactory.registerSingleton(PulsarTestContainer::class.java.name, container)
+                    pulsarBean = container
+                }
+                pulsarBean?.pulsarContainer?.let { container ->
+                    testValues = testValues.and(
+                        "spring.pulsar.client.service-url=" + container.pulsarBrokerUrl,
+                        "spring.pulsar.admin.service-url=" + container.httpServiceUrl,
+                    )
+                }
+            }
+            testValues.applyTo(context)
+        }
+
+        override fun hashCode() = PulsarTestContainer::class.java.name.hashCode()
+
+        override fun equals(other: Any?) = other != null && hashCode() == other.hashCode()
+    }
+
+    companion object {
+        private var pulsarBean: PulsarTestContainer? = null
+    }
+}

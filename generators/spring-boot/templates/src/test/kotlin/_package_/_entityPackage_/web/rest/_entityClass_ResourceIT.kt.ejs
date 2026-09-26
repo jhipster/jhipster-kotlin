@@ -24,8 +24,8 @@ let mapsIdEntity;
 let mapsIdEntityInstance;
 let mapsIdRepoInstance;
 if (isUsingMapsId) {
-    mapsIdEntity = mapsIdAssoc.otherEntityNameCapitalized;
-    mapsIdEntityInstance =  mapsIdEntity.charAt(0).toLowerCase() + mapsIdEntity.slice(1);
+    mapsIdEntity = mapsIdAssoc.otherEntity.entityNameCapitalized;
+    mapsIdEntityInstance = mapsIdAssoc.otherEntity.entityInstance;
     mapsIdRepoInstance = `${mapsIdEntityInstance}Repository`;
 }
 
@@ -33,7 +33,7 @@ let callBlock = '';
 let callListBlock = '';
 if (reactive) {
     callBlock = ".block()";
-    callListBlock = ".collectList().block()";
+    callListBlock = ".collectList().block()!!";
 }
 let saveMethod = 'save';
 if (!reactive && databaseTypeSql) {
@@ -42,6 +42,8 @@ if (!reactive && databaseTypeSql) {
 
 let createEntityPrefix = '';
 let createEntityPostfix = '';
+// Reactive SQL tests use Spring Data's R2dbcEntityTemplate (as upstream) instead of the removed v7 EntityManager
+const entityManagerType = databaseTypeSql && reactive ? 'R2dbcEntityTemplate' : 'EntityManager';
 if (databaseTypeSql && reactive) {
     createEntityPrefix = 'em.insert(';
     createEntityPostfix = ').block()';
@@ -71,12 +73,12 @@ import <%= entityAbsolutePackage %>.domain.<%= persistClass %>
     for (relationship of relationships) { // import entities in required relationships
         const { otherEntity } = relationship;
         const relationshipValidate = relationship.relationshipValidate;
-        const otherEntityNameCapitalized = relationship.otherEntityNameCapitalized;
+        const otherEntityNameCapitalized = otherEntity?.entityNameCapitalized ?? relationship.otherEntityNameCapitalized;
         const isUsingMapsIdL1 = relationship.id;
         if(imported.indexOf(otherEntityNameCapitalized) === -1 && persistClass !== otherEntity.persistClass) {
             if ((relationshipValidate !== null && relationshipValidate) || jpaMetamodelFiltering || (isUsingMapsIdL1)) {
 _%>
-import <%= entityAbsolutePackage %>.domain.<%= otherEntity.persistClass %>
+import <%= otherEntity.entityAbsolutePackage ?? entityAbsolutePackage %>.domain.<%= otherEntity.persistClass %>
 <%_         imported.push(otherEntityNameCapitalized);
         } } } _%>
 <%_ if (saveUserSnapshot) { _%>
@@ -84,10 +86,10 @@ import <%= entityAbsolutePackage %>.repository.UserRepository
 <%_ } _%>
 import <%= entityAbsolutePackage %>.repository.<%= entityClass %>Repository
 <%_ if (databaseTypeSql && reactive) { _%>
-import <%= packageName %>.repository.EntityManager
+import org.springframework.data.r2dbc.core.R2dbcEntityTemplate
 <%_ } _%>
 <%_ if (isUsingMapsId&& ( !dtoMapstruct && serviceNo)) { _%>
-import <%= entityAbsolutePackage %>.repository.<%= mapsIdAssoc.otherEntityNameCapitalized %>Repository
+import <%= mapsIdAssoc.otherEntity.entityAbsolutePackage %>.repository.<%= mapsIdAssoc.otherEntity.entityNameCapitalized %>Repository
 <%_ } _%>
 <%_ if (searchEngineElasticsearch) { _%>
 import <%= entityAbsolutePackage %>.repository.search.<%= entityClass %>SearchRepository
@@ -122,9 +124,9 @@ import org.mockito.Mock
 import org.mockito.MockitoAnnotations
 import org.springframework.beans.factory.annotation.Autowired
 <%_ if (reactive) { _%>
-import org.springframework.boot.test.autoconfigure.web.reactive.AutoConfigureWebTestClient
+import org.springframework.boot.webtestclient.autoconfigure.AutoConfigureWebTestClient
 <%_ } else { _%>
-import org.springframework.boot.test.autoconfigure.web.servlet.AutoConfigureMockMvc
+import org.springframework.boot.webmvc.test.autoconfigure.AutoConfigureMockMvc
 <%_ } _%>
 <%_ if (searchEngineElasticsearch && !paginationNo || implementsEagerLoadApis) { _%>
 import org.springframework.data.domain.PageImpl
@@ -144,7 +146,6 @@ import org.junit.jupiter.api.Timeout
 import org.springframework.security.core.context.SecurityContextHolder
 import org.springframework.security.test.context.TestSecurityContextHolder
 <%_ } _%>
-import org.springframework.http.converter.json.MappingJackson2HttpMessageConverter
 <%_ if (reactive) { _%>
 import org.springframework.test.web.reactive.server.WebTestClient
 <%_ } _%>
@@ -157,7 +158,7 @@ import org.springframework.security.test.context.support.WithMockUser
 import org.springframework.transaction.annotation.Transactional
 <%_ } _%>
 <%_ if (anyFieldIsBlobDerived) { _%>
-import org.springframework.util.Base64Utils
+import java.util.Base64
 <%_ } _%>
 <%_ if (reactive && (implementsEagerLoadApis || searchEngineElasticsearch)) { _%>
 import reactor.core.publisher.Flux
@@ -286,9 +287,6 @@ class <%= entityClass %>ResourceIT {
 
     <%_ if (!reactive) { _%>
     @Autowired
-    private lateinit var jacksonMessageConverter: MappingJackson2HttpMessageConverter
-
-    @Autowired
     private lateinit var pageableArgumentResolver: PageableHandlerMethodArgumentResolver
 
     @Autowired
@@ -298,7 +296,7 @@ class <%= entityClass %>ResourceIT {
     <%_ if (databaseTypeSql) { _%>
 
     @Autowired
-    private lateinit var em: EntityManager
+    private lateinit var em: <%= entityManagerType %>
     <%_ } _%>
 
     <%_ if (reactive) { _%>
@@ -417,7 +415,7 @@ class <%= entityClass %>ResourceIT {
     @Throws(Exception::class)
     fun create<%= entityClass %>WithExistingId() {
         // Create the <%= entityClass %> with an existing ID
-        <%_ if (primaryKey.typeUUID && databaseTypeSql) { _%>
+        <%_ if ((primaryKey.typeUUID && databaseTypeSql) || !primaryKey.autoGenerate) { _%>
         <%= entityInstance %>Repository.<%= saveMethod %>(<%= persistInstance %>)<%= callBlock %>
         <%_ } else { _%>
         <%= persistInstance %>.<%= primaryKey.name %> = <% if (primaryKey.typeUUID) { %>UUID.randomUUID()<% } else if (primaryKey.typeLong) { %>1L<% } else { %>"existing_id"<% } %>
@@ -470,8 +468,8 @@ class <%= entityClass %>ResourceIT {
         <%_ } _%>
         <%_ for (relationship of relationships) {
             const relationshipValidate = relationship.relationshipValidate;
-            const otherEntityName = relationship.otherEntityName;
-            const otherEntityNameCapitalized = relationship.otherEntityNameCapitalized;
+            const otherEntityName = relationship.otherEntity?.entityInstance ?? relationship.otherEntityName;
+            const otherEntityNameCapitalized = relationship.otherEntity?.entityNameCapitalized ?? relationship.otherEntityNameCapitalized;
             const mapsIdUse = relationship.id;
             if (mapsIdUse) { _%>
         // Add a new parent entity
@@ -486,7 +484,7 @@ class <%= entityClass %>ResourceIT {
         <%_ } break; } _%>
 
         // Load the <%= entityInstance %>
-        val updated<%= persistClass %> = <%= entityInstance %>Repository.findById(<%= persistInstance %>.<%= primaryKey.name %>)<%= reactive ? '.block()' : '.get()' %>
+        val updated<%= persistClass %> = <%= entityInstance %>Repository.findById(<%= persistInstance %>.<%= primaryKey.name %>!!)<%= reactive ? '.block()!!' : '.get()' %>
         assertThat(updated<%= persistClass %>).isNotNull<% if (databaseTypeSql && !reactive) { %>
         // Disconnect from session so that the updates on updated<%= persistClass %> are not directly saved in db
         em.detach(updated<%= persistClass %>)<% } %>
@@ -602,7 +600,7 @@ class <%= entityClass %>ResourceIT {
             <%_ } _%>
             .filter(<%= persistInstance %>::equals)
             .collectList()
-            .block(Duration.ofSeconds(5))
+            .block(Duration.ofSeconds(5))!!
 
         assertThat(<%= entityInstance %>List).isNotNull
         assertThat(<%= entityInstance %>List).hasSize(1)
@@ -653,18 +651,19 @@ class <%= entityClass %>ResourceIT {
             <%= !reactive ? '.andExpect(' : '.' %>jsonPath("$.[*].<%= field.fieldName %>ContentType").value(hasItem(<%= 'DEFAULT_' + field.fieldNameUnderscored.toUpperCase() %>_CONTENT_TYPE))<%= !reactive ? ')' : '' %>
             <%_ } _%>
             <%= !reactive ? '.andExpect(' : '.' %>jsonPath("$.[*].<%= field.fieldName %>").value(hasItem(<%
-                if ((field.fieldTypeBinary) && !field.blobContentTypeText) { %>Base64Utils.encodeToString(<% } else
+                if ((field.fieldTypeBinary) && !field.blobContentTypeText) { %>Base64.getEncoder().encodeToString(<% } else
                     if (field.fieldTypeZonedDateTime) { %>sameInstant(<% } else
                         if (field.fieldTypeBigDecimal) { %>sameNumber(<% } %><%= 'DEFAULT_' + field.fieldNameUnderscored.toUpperCase() %><%
                     if ((field.fieldTypeBinary) && !field.blobContentTypeText) { %><%
                         if (databaseTypeCassandra) { %>.array()<% } %>)<% } else
                             if (field.fieldTypeInteger) { %><% } else
-                                if (field.fieldTypeLong) { %>?.toInt()<% } else
-                                    if (field.fieldTypeFloat || field.fieldTypeDouble) { %>.toDouble()<% } else
-                                        if (field.fieldTypeBigDecimal) { %>)<% } else
-                                            if (field.fieldTypeBoolean) { %><% } else
-                                                if (field.fieldTypeZonedDateTime) { %>)<% } else
-                                                    if (!field.fieldTypeString) { %>.toString()<% } %>))<%= !reactive ? ')' : '' %><%_ } _%>
+                                if (field.fieldTypeLong) { %>.toInt()<% } else
+                                    if (field.fieldTypeFloat) { %>.toDouble()<% } else
+                                        if (field.fieldTypeDouble) { %><% } else
+                                            if (field.fieldTypeBigDecimal) { %>)<% } else
+                                                if (field.fieldTypeBoolean) { %><% } else
+                                                    if (field.fieldTypeZonedDateTime) { %>)<% } else
+                                                        if (!field.fieldTypeString && !field.blobContentTypeText) { %>.toString()<% } %>))<%= !reactive ? ')' : '' %><%_ } _%>
     }
     <% if (implementsEagerLoadApis && !databaseTypeNeo4j && !databaseTypeCouchbase) { %>
     @Suppress("unchecked")
@@ -747,18 +746,19 @@ class <%= entityClass %>ResourceIT {
             <%= !reactive ? '.andExpect(' : '.' %>jsonPath("$.<%= field.fieldName %>ContentType").value(<%= reactive ? '`is`(' : '' %><%= 'DEFAULT_' + field.fieldNameUnderscored.toUpperCase() %>_CONTENT_TYPE))
             <%_ } _%>
             <%= !reactive ? '.andExpect(' : '.' %>jsonPath("$.<%= field.fieldName %>").value(<%= reactive ? '`is`(' : '' %><%
-                if ((field.fieldTypeBinary) && !field.blobContentTypeText) { %>Base64Utils.encodeToString(<% } else
+                if ((field.fieldTypeBinary) && !field.blobContentTypeText) { %>Base64.getEncoder().encodeToString(<% } else
                     if (field.fieldTypeZonedDateTime) { %>sameInstant(<% } else
                         if(field.fieldTypeBigDecimal) { %>sameNumber(<% } %><%= 'DEFAULT_' + field.fieldNameUnderscored.toUpperCase() %><%
                     if ((field.fieldTypeBinary) && !field.blobContentTypeText) { %><%
                         if (databaseTypeCassandra) { %>.array()<% } %>)<% } else
                             if (field.fieldTypeInteger) { %><% } else
-                                if (field.fieldTypeLong) { %>?.toInt()<% } else
-                                    if (field.fieldTypeFloat || field.fieldTypeDouble) { %>.toDouble()<% } else
-                                        if (field.fieldTypeBigDecimal) { %>)<% } else
-                                            if (field.fieldTypeBoolean) { %><% } else
-                                                if (field.fieldTypeZonedDateTime) { %>)<% } else
-                                                    if (!field.fieldTypeString) { %>.toString()<% } %>))<%_ } _%>
+                                if (field.fieldTypeLong) { %>.toInt()<% } else
+                                    if (field.fieldTypeFloat) { %>.toDouble()<% } else
+                                        if (field.fieldTypeDouble) { %><% } else
+                                            if (field.fieldTypeBigDecimal) { %>)<% } else
+                                                if (field.fieldTypeBoolean) { %><% } else
+                                                    if (field.fieldTypeZonedDateTime) { %>)<% } else
+                                                        if (!field.fieldTypeString && !field.blobContentTypeText) { %>.toString()<% } %>))<%_ } _%>
     }
 <%_ if (jpaMetamodelFiltering) {  %>
     @Test<%= transactionalAnnotation %>
@@ -935,12 +935,12 @@ class <%= entityClass %>ResourceIT {
         var <%= relationship.relationshipFieldName %>: <%= relationship.otherEntity.persistClass %>
         if (findAll(em, <%= relationship.otherEntity.persistClass %>::class).isEmpty()) {
             <%= entityInstance %>Repository.saveAndFlush(<%= persistInstance %>)
-            <%= relationship.relationshipFieldName %> = <%= createEntityPrefix %><%= relationship.otherEntityNameCapitalized %>ResourceIT.createEntity(em)
+            <%= relationship.relationshipFieldName %> = <%= createEntityPrefix %><%= relationship.otherEntity?.entityNameCapitalized ?? relationship.otherEntityNameCapitalized %>ResourceIT.createEntity(em)
         } else {
             <%= relationship.relationshipFieldName %> = findAll(em, <%= relationship.otherEntity.persistClass %>::class)[0]
         }
         <%_ } else { _%>
-        var <%= relationship.relationshipFieldName %> = <%= relationship.otherEntityNameCapitalized %>ResourceIT.createEntity(em)
+        var <%= relationship.relationshipFieldName %> = <%= relationship.otherEntity?.entityNameCapitalized ?? relationship.otherEntityNameCapitalized %>ResourceIT.createEntity(em)
         <%_ } _%>
         em.persist(<%= relationship.relationshipFieldName %>)
         em.flush()
@@ -988,18 +988,18 @@ class <%= entityClass %>ResourceIT {
             .jsonPath("$.[*].<%= field.fieldName %>ContentType").value(hasItem(<%= 'DEFAULT_' + field.fieldNameUnderscored.toUpperCase() %>_CONTENT_TYPE))
             <%_ } _%>
             .jsonPath("$.[*].<%= field.fieldName %>").value(hasItem(<% if
-                    ((field.fieldTypeBinary) && !field.blobContentTypeText) { %>Base64Utils.encodeToString(<% } else
+                    ((field.fieldTypeBinary) && !field.blobContentTypeText) { %>Base64.getEncoder().encodeToString(<% } else
                         if (field.fieldTypeZonedDateTime) { %>sameInstant(<% } else
                             if (field.fieldTypeBigDecimal) { %>sameNumber(<% } %><%= 'DEFAULT_' + field.fieldNameUnderscored.toUpperCase() %><%
                         if ((field.fieldTypeBinary) && !field.blobContentTypeText) { %><% if (databaseTypeCassandra) { %>.array()<% } %>)<% } else
                             if (field.fieldTypeInteger) { %><% } else
-                                if (field.fieldTypeLong) { %>?.toInt()<% } else
-                                    if (field.fieldTypeFloat) { %>?.toDouble()<% } else
+                                if (field.fieldTypeLong) { %>.toInt()<% } else
+                                    if (field.fieldTypeFloat) { %>.toDouble()<% } else
                                         if (field.fieldTypeDouble) { %><% } else
                                             if (field.fieldTypeBigDecimal) { %>))<% } else
                                                 if (field.fieldTypeBoolean) { %><% } else
                                                     if (field.fieldTypeZonedDateTime) { %>)<% } else
-                                                        if (!field.fieldTypeString) { %>.toString()<% } %>)))<% }; %>
+                                                        if (!field.fieldTypeString && !field.blobContentTypeText) { %>.toString()<% } %>)))<% }; %>
 
         // Check, that the count call also returns 1
         webTestClient.get().uri(ENTITY_API_URL + "/count?sort=<%= primaryKey.name %>,desc&$filter")
@@ -1026,19 +1026,19 @@ class <%= entityClass %>ResourceIT {
             .andExpect(jsonPath("$.[*].<%=field.fieldName%>ContentType").value(hasItem(<%='DEFAULT_' + field.fieldNameUnderscored.toUpperCase()%>_CONTENT_TYPE)))
             <%_ } _%>
             .andExpect(jsonPath("$.[*].<%=field.fieldName%>").value(hasItem(<%
-                if ((field.fieldTypeBinary) && !field.blobContentTypeText) { %>Base64Utils.encodeToString(<% } else
+                if ((field.fieldTypeBinary) && !field.blobContentTypeText) { %>Base64.getEncoder().encodeToString(<% } else
                     if (field.fieldTypeZonedDateTime) { %>sameInstant(<% } else
                         if (field.fieldTypeBigDecimal) { %>sameNumber(<% } %><%='DEFAULT_' + field.fieldNameUnderscored.toUpperCase()%><%
                 if ((field.fieldTypeBinary) && !field.blobContentTypeText) { %><%
                     if (databaseTypeCassandra) { %>.array()<% } %>)<% } else
                         if (field.fieldTypeInteger) { %><% } else
-                            if (field.fieldTypeLong) { %>?.toInt()<% } else
-                                if (field.fieldTypeFloat) { %>?.toDouble()<% } else
+                            if (field.fieldTypeLong) { %>.toInt()<% } else
+                                if (field.fieldTypeFloat) { %>.toDouble()<% } else
                                     if (field.fieldTypeDouble) { %><% } else
                                         if (field.fieldTypeBigDecimal) { %>)<% } else
                                             if (field.fieldTypeBoolean) { %><% } else
                                                 if (field.fieldTypeZonedDateTime) { %>)<% } else
-                                                        if (!field.fieldTypeString) { %>.toString()<% } %>)))<% }); %>
+                                                        if (!field.fieldTypeString && !field.blobContentTypeText) { %>.toString()<% } %>)))<% }); %>
 
 
         // Check, that the count call also returns 1
@@ -1120,7 +1120,7 @@ class <%= entityClass %>ResourceIT {
         val searchDatabaseSizeBefore = IterableUtil.sizeOf(<%= entityInstance %>SearchRepository.findAll()<%= callListBlock %>)
         <%_ } _%>
         // Update the <%= entityInstance %>
-        val updated<%= persistClass %> = <%= entityInstance %>Repository.findById(<%= persistInstance %>.<%= primaryKey.name %>)<%= reactive ? '.block()' : '.get()' %>
+        val updated<%= persistClass %> = <%= entityInstance %>Repository.findById(<%= persistInstance %>.<%= primaryKey.name %>!!)<%= reactive ? '.block()!!' : '.get()' %>
         <%_ if (databaseTypeSql && !reactive) { _%>
         // Disconnect from session so that the updates on updated<%= persistClass %> are not directly saved in db
         em.detach(updated<%= persistClass %>)
@@ -1524,12 +1524,26 @@ class <%= entityClass %>ResourceIT {
                 <%= persistInstance %>.<%= field.fieldName %> = <%- field.javaValueGenerator %>
             <%_ } _%>
         <%_ } _%>
-        <%= persistInstance %> = <%= entityInstance %>Repository.<%= saveMethod %>(<%= persistInstance %>)<%= callBlock %>
+        <%= persistInstance %> = <%= entityInstance %>Repository.<%= saveMethod %>(<%= persistInstance %>)<%= callBlock %><%= reactive ? '!!' : '' %>
     <%_ if (searchEngineElasticsearch) { _%>
         <%= entityInstance %>SearchRepository.save(<%= persistInstance %>)<%= callBlock %>
     <%_ } else if (searchEngineCouchbase) { _%>
         // Wait for the <%= entityInstance %> to be indexed
-        retryUntilNotEmpty{ <%= entityInstance %>Repository.search("id:${<%= entityInstance %>.<%= primaryKey.name %>}")<% if (reactive) { %>.collectList().block()<% } %> }
+        retryUntilNotEmpty{ <%= entityInstance %>Repository.search("id:${<%= entityInstance %>.<%= primaryKey.name %>}")<% if (reactive) { %>.collectList().block()!!<% } %> }
+        // The search endpoint queries with NOT_BOUNDED scan consistency, so wait until it returns the <%= entityInstance %> too
+        retryUntilNotEmpty {
+        <%_ if (reactive) { _%>
+            val body = webTestClient.get().uri("$ENTITY_SEARCH_API_URL?query=id:${<%= persistInstance %>.<%= primaryKey.name %>}")
+                .exchange()
+                .expectBody(String::class.java)
+                .returnResult()
+                .responseBody.orEmpty()
+        <%_ } else { _%>
+            val body = rest<%= entityClass %>MockMvc.perform(get("$ENTITY_SEARCH_API_URL?query=id:${<%= persistInstance %>.<%= primaryKey.name %>}"))
+                .andReturn().response.contentAsString
+        <%_ } _%>
+            if (body.contains("${<%= persistInstance %>.<%= primaryKey.name %>}")) listOf(body) else emptyList()
+        }
     <%_ } _%>
         // Search the <%= entityInstance %>
     <%_ if (reactive) { _%>
@@ -1548,18 +1562,19 @@ class <%= entityClass %>ResourceIT {
             <%_ if ((field.fieldTypeBinary) && !field.blobContentTypeText) { _%>
             <%= !reactive ? '.andExpect(' : '.' %>jsonPath("$.[*].<%= field.fieldName %>ContentType").value(hasItem(<%= 'DEFAULT_' + field.fieldNameUnderscored.toUpperCase() %>_CONTENT_TYPE))<%= !reactive ? ')' : '' %><%_ } _%>
             <%= !reactive ? '.andExpect(' : '.' %>jsonPath("$.[*].<%= field.fieldName %>").value(hasItem(<%
-                if ((field.fieldTypeBinary) && !field.blobContentTypeText) { %>Base64Utils.encodeToString(<% } else
+                if ((field.fieldTypeBinary) && !field.blobContentTypeText) { %>Base64.getEncoder().encodeToString(<% } else
                     if (field.fieldTypeZonedDateTime) { %>sameInstant(<% } else
                         if (field.fieldTypeBigDecimal) { %>sameNumber(<% }  %><%= 'DEFAULT_' + field.fieldNameUnderscored.toUpperCase() %><%
                     if ((field.fieldTypeBinary) && !field.blobContentTypeText) { %><%
                         if (databaseTypeCassandra) { %>.array()<% } %>)<% } else
                             if (field.fieldTypeInteger) { %><% } else
                                 if (field.fieldTypeBoolean) { %><% } else
-                                    if (field.fieldTypeLong) { %>?.toInt()<% } else
-                                        if (field.fieldTypeFloat || field.fieldTypeDouble) { %>.toDouble()<% } else
-                                            if (field.fieldTypeBigDecimal) { %>)<% } else
-                                                if (field.fieldTypeZonedDateTime) { %>)<% } else
-                                                    if (!field.fieldTypeString) { %>.toString()<% } %>))<%= !reactive ? ')' : '' %><%_ } _%>
+                                    if (field.fieldTypeLong) { %>.toInt()<% } else
+                                        if (field.fieldTypeFloat) { %>.toDouble()<% } else
+                                            if (field.fieldTypeDouble) { %><% } else
+                                                if (field.fieldTypeBigDecimal) { %>)<% } else
+                                                    if (field.fieldTypeZonedDateTime) { %>)<% } else
+                                                        if (!field.fieldTypeString && !field.blobContentTypeText) { %>.toString()<% } %>))<%= !reactive ? ')' : '' %><%_ } _%>
     }
 <%_ } _%>
 
@@ -1625,24 +1640,28 @@ class <%= entityClass %>ResourceIT {
                     // Generate Strings, using pattern
                     try {
                         const patternRegExp = new RegExp(field.fieldValidateRulesPattern);
-                        const randExp = field.createRandexp();
                         // set infinite repetitions max range
                         if (!patternRegExp.test(sampleTextString.replace(/\\"/g, '"').replace(/\\\\/g, '\\'))) {
-                            sampleTextString = randExp.gen().replace(/\\/g, '\\\\').replace(/"/g, '\\"');
+                            sampleTextString = field.generateFakeDataFromPattern().replace(/\\/g, '\\\\').replace(/"/g, '\\"');
                         }
                         if (!patternRegExp.test(updatedTextString.replace(/\\"/g, '"').replace(/\\\\/g, '\\'))) {
-                            updatedTextString = randExp.gen().replace(/\\/g, '\\\\').replace(/"/g, '\\"');
+                            updatedTextString = field.generateFakeDataFromPattern().replace(/\\/g, '\\\\').replace(/"/g, '\\"');
                         }
                     } catch (error) {
-                        log(this.chalkRed('Error generating test value for entity "' + entityClass +
-                            '" field "' + field.fieldName + '" with pattern "' + field.fieldValidateRulesPattern +
-                            '", generating default values for this field. Detailed error message: "' + error.message + '".'));
+                        this.log.warn(`Error generating test value for entity "${entityClass}" field "${field.fieldName}" with pattern "${field.fieldValidateRulesPattern}", generating default values for this field. Detailed error message: "${error.message}".`);
+                    }
+                    // Pattern generators can return the same value twice (e.g. `^\\d+$` generating "3"), and appending
+                    // "B" would then break the pattern, so retry the generator before falling back to that.
+                    for (let attempt = 0; sampleTextString === updatedTextString && attempt < 20; attempt++) {
+                        try {
+                            updatedTextString = field.generateFakeDataFromPattern().replace(/\\/g, '\\\\').replace(/"/g, '\\"');
+                        } catch (error) {
+                            break;
+                        }
                     }
                     if (sampleTextString === updatedTextString) {
                         updatedTextString = updatedTextString + "B";
-                        log(this.chalkRed('Randomly generated first and second test values for entity "' + entityClass +
-                            '" field "' + field.fieldName + '" with pattern "' + field.fieldValidateRulesPattern +
-                            '" in file "' + entityClass + 'ResourceIT" where equal, added symbol "B" to second value.'));
+                        this.log.warn(`Randomly generated first and second test values for entity "${entityClass}" field "${field.fieldName}" with pattern "${field.fieldValidateRulesPattern}" in file "${entityClass}ResourceIT" were equal, added symbol "B" to second value.`);
                     }
                 }
         _%>
@@ -1764,7 +1783,7 @@ class <%= entityClass %>ResourceIT {
          * if they test an entity which requires the current entity.
          */
         @JvmStatic
-        fun create<% if (fieldStatus === 'UPDATED_') { _%>Updated<%_ } %>Entity(<% if (databaseTypeSql) { %>em: EntityManager<% } %>): <%= persistClass %> {
+        fun create<% if (fieldStatus === 'UPDATED_') { _%>Updated<%_ } %>Entity(<% if (databaseTypeSql) { %>em: <%= entityManagerType %><% } %>): <%= persistClass %> {
             <%_
                 const filteredFields = fieldsToTest;
                 if (filteredFields.length === 0) {
@@ -1787,6 +1806,9 @@ class <%= entityClass %>ResourceIT {
                 <%_ } _%>
             )
             <%_ } _%>
+            <%_ if (primaryKey.typeString && !isUsingMapsId && !primaryKey.autoGenerate) { _%>
+            <%= persistInstance %>.<%= primaryKey.name %> = UUID.randomUUID().toString()
+            <%_ } _%>
 
 
             <%_
@@ -1794,8 +1816,8 @@ class <%= entityClass %>ResourceIT {
             for (relationship of relationships) {
                 const { otherEntity } = relationship;
                 const relationshipValidate = relationship.relationshipValidate;
-                const otherEntityName = relationship.otherEntityName;
-                const otherEntityNameCapitalized = relationship.otherEntityNameCapitalized;
+                const otherEntityName = relationship.otherEntity?.entityInstance ?? relationship.otherEntityName;
+                const otherEntityNameCapitalized = relationship.otherEntity?.entityNameCapitalized ?? relationship.otherEntityNameCapitalized;
                 const relationshipType = relationship.relationshipType;
                 const relationshipName = relationship.relationshipName;
                 const relationshipNamePlural = relationship.relationshipNamePlural;
@@ -1848,19 +1870,19 @@ class <%= entityClass %>ResourceIT {
         <%_ if (databaseTypeSql && reactive) {
             const alreadyGeneratedDeletionCalls = [];
         _%>
-        fun deleteEntities(em: EntityManager) {
+        fun deleteEntities(em: R2dbcEntityTemplate) {
             try {
             <%_ relationships.forEach(function(rel) {
                 if (rel.shouldWriteJoinTable) { _%>
-                    em.deleteAll("<%= rel.joinTable.name %>").block()
+                    em.databaseClient.sql("DELETE FROM <%= rel.joinTable.name %>").then().block()
             <%_ }}); _%>
-                    em.deleteAll(<%= persistClass %>::class.java).block()
+                    em.delete(<%= persistClass %>::class.java).all().block()
             } catch (e: Exception) {
                 // It can fail, if other entities are still referring this - it will be removed later.
             }
         <%_ relationships.forEach(function(rel) {
             if ((rel.relationshipValidate|| rel.id) && !alreadyGeneratedDeletionCalls.includes(rel.otherEntityName)) { _%>
-            <%= rel.otherEntityNameCapitalized %>ResourceIT.deleteEntities(em)
+            <%= (rel.otherEntity?.entityNameCapitalized ?? rel.otherEntityNameCapitalized) %>ResourceIT.deleteEntities(em)
                 <%_ alreadyGeneratedDeletionCalls.push(rel.otherEntityName);
                 }
             }); _%>

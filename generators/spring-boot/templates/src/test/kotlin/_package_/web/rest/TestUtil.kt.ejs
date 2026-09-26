@@ -21,9 +21,7 @@
 package <%= packageName %>.web.rest
 
 import com.fasterxml.jackson.annotation.JsonInclude
-import com.fasterxml.jackson.databind.ObjectMapper
-import com.fasterxml.jackson.databind.SerializationFeature
-import com.fasterxml.jackson.datatype.jsr310.JavaTimeModule
+import tools.jackson.databind.json.JsonMapper
 import org.hamcrest.Description
 import org.hamcrest.TypeSafeDiagnosingMatcher
 import org.hamcrest.TypeSafeMatcher
@@ -41,11 +39,6 @@ import org.springframework.security.test.context.TestSecurityContextHolder
 import jakarta.persistence.EntityManager
 <%_ } _%>
 
-<%_ if (searchEngineCouchbase) { _%>
-import java.util.NoSuchElementException
-import java.util.concurrent.Callable
-<%_ } _%>
-
 import java.io.IOException
 import java.math.BigDecimal
 import java.time.ZonedDateTime
@@ -58,7 +51,6 @@ import kotlin.reflect.full.createInstance
 import java.util.NoSuchElementException
 import java.util.concurrent.Callable
 import java.util.concurrent.TimeUnit
-import java.util.function.Function
 import java.time.Duration
 import reactor.core.publisher.Mono
 import reactor.util.retry.Retry
@@ -68,12 +60,11 @@ import org.assertj.core.api.Assertions.assertThat
 
 private val mapper = createObjectMapper()
 
+// Jackson 3 supports java.time out of the box and writes dates and durations as ISO strings, like the application mapper.
 private fun createObjectMapper() =
-    ObjectMapper().apply {
-        configure(SerializationFeature.WRITE_DURATIONS_AS_TIMESTAMPS, false)
-        setSerializationInclusion(JsonInclude.Include.NON_EMPTY)
-        registerModule(JavaTimeModule())
-    }
+    JsonMapper.builder()
+        .changeDefaultPropertyInclusion { it.withValueInclusion(JsonInclude.Include.NON_EMPTY) }
+        .build()
 
 /**
  * Convert an object to JSON byte array.
@@ -222,10 +213,10 @@ fun <T : Any> findAll(em: EntityManager, clazz: KClass<T>): List<T> {
 
 <%_ if (searchEngineCouchbase) { _%>
 
-fun <T> retryUntilNotEmpty(iterableCallable: Callable<Iterable<T>>) {
-    Mono.defer {
-        Mono.fromCallable(iterableCallable)
-            .flatMapIterable(Function.identity())
+fun <T : Any> retryUntilNotEmpty(iterableCallable: Callable<out Iterable<T>>) {
+    Mono.defer<T> {
+        Mono.fromCallable<Iterable<T>>(iterableCallable)
+            .flatMapIterable { it }
             .next()
             .switchIfEmpty(Mono.error(NoSuchElementException()))
     }

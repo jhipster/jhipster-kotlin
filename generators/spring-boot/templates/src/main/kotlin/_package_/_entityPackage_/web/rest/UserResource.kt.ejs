@@ -68,7 +68,7 @@ import org.springframework.web.servlet.support.ServletUriComponentsBuilder
 import org.springframework.web.bind.annotation.RestController
 <%_ if (reactive) { _%>
 import org.springframework.web.server.ResponseStatusException
-import org.springframework.web.util.UriComponentsBuilder
+import org.springframework.web.util.ForwardedHeaderUtils
 import reactor.core.publisher.Flux
 import reactor.core.publisher.Mono
 <%_ } _%>
@@ -118,7 +118,7 @@ class UserResource(
 
     private val log = LoggerFactory.getLogger(javaClass)
 
-    @Value("\${jhipster.clientApp.name}")
+    @Value("\${jhipster.clientApp.name:<%= camelizedBaseName %>}")
     private val applicationName: String? = null
 
     /**
@@ -163,7 +163,7 @@ class UserResource(
                 }
                 userService.createUser(userDTO)
             }
-            .doOnSuccess(mailService::sendCreationEmail)
+            .doOnSuccess { user -> user?.let(mailService::sendCreationEmail) }
             .map { user ->
                 try {
                     ResponseEntity.created(URI("/api/admin/users/${user.login}"))
@@ -176,7 +176,7 @@ class UserResource(
         <%_ } else { _%>
         } else if (userRepository.findOneByLogin(userDTO.login!!.lowercase()).isPresent) {
             throw LoginAlreadyUsedException()
-        } else if (userRepository.findOneByEmailIgnoreCase(userDTO.email).isPresent) {
+        } else if (userRepository.findOneByEmailIgnoreCase(userDTO.email!!).isPresent) {
             throw EmailAlreadyUsedException()
         } else {
             val newUser = userService.createUser(userDTO)
@@ -196,10 +196,10 @@ class UserResource(
      * @throws EmailAlreadyUsedException `400 (Bad Request)` if the email is already in use.
      * @throws LoginAlreadyUsedException `400 (Bad Request)` if the login is already in use.
      */
-    @PutMapping("/users")
+    @PutMapping("/users", "/users/{login}")
     @PreAuthorize("hasAuthority(\"$ADMIN\")")
     <%_ if (reactive) { _%>
-    fun updateUser(@Valid @RequestBody userDTO: <%= user.adminUserDto %>) : Mono<ResponseEntity<<%= user.adminUserDto %>>> {
+    fun updateUser(@PathVariable(name = "login", required = false) @Pattern(regexp = LOGIN_REGEX) login: String?, @Valid @RequestBody userDTO: <%= user.adminUserDto %>) : Mono<ResponseEntity<<%= user.adminUserDto %>>> {
         log.debug("REST request to update User : $userDTO")
         return userRepository.findOneByEmailIgnoreCase(userDTO.email!!)
             .filter { user -> user.id != userDTO.id }
@@ -225,9 +225,9 @@ class UserResource(
                     .body(user)
             }
     <%_ } else { _%>
-    fun updateUser(@Valid @RequestBody userDTO: <%= user.adminUserDto %>): ResponseEntity<<%= user.adminUserDto %>> {
+    fun updateUser(@PathVariable(name = "login", required = false) @Pattern(regexp = LOGIN_REGEX) login: String?, @Valid @RequestBody userDTO: <%= user.adminUserDto %>): ResponseEntity<<%= user.adminUserDto %>> {
         log.debug("REST request to update User : $userDTO")
-        var existingUser = userRepository.findOneByEmailIgnoreCase(userDTO.email)
+        var existingUser = userRepository.findOneByEmailIgnoreCase(userDTO.email!!)
         if (existingUser.isPresent && existingUser.orElseThrow().id != userDTO.id) {
             throw EmailAlreadyUsedException()
         }
@@ -259,7 +259,7 @@ class UserResource(
         <%_ if (reactive) { _%>
     fun getAllUsers(
         request: ServerHttpRequest,
-        @org.springdoc.api.annotations.ParameterObject pageable: Pageable
+        @org.springdoc.core.annotations.ParameterObject pageable: Pageable
     ): Mono<ResponseEntity<Flux<<%= user.adminUserDto %>>>> {
         log.debug("REST request to get all User for an admin")
         if (!onlyContainsAllowedProperties(pageable)) {
@@ -268,11 +268,11 @@ class UserResource(
 
         return userService.countManagedUsers()
             .map { total -> PageImpl(mutableListOf<<%= user.adminUserDto %>>(), pageable, total!!) }
-            .map { page -> PaginationUtil.generatePaginationHttpHeaders(UriComponentsBuilder.fromHttpRequest(request), page) }
+            .map { page -> PaginationUtil.generatePaginationHttpHeaders(ForwardedHeaderUtils.adaptFromForwardedHeaders(request.uri, request.headers), page) }
             .map { headers -> ResponseEntity.ok().headers(headers).body(userService.getAllManagedUsers(pageable)) }
     }
         <%_ } else { _%>
-    fun getAllUsers(@org.springdoc.api.annotations.ParameterObject pageable: Pageable): ResponseEntity<List<<%= user.adminUserDto %>>> {
+    fun getAllUsers(@org.springdoc.core.annotations.ParameterObject pageable: Pageable): ResponseEntity<List<<%= user.adminUserDto %>>> {
         log.debug("REST request to get all User for an admin")
         if (!onlyContainsAllowedProperties(pageable)) {
             return ResponseEntity.badRequest().build()

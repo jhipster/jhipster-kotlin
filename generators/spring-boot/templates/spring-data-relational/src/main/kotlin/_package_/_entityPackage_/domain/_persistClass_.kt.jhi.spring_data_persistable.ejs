@@ -21,8 +21,9 @@
  EJS fragments will process % delimiter tags in template and & delimiter tags in the merge process.
 -%>
 <&_ if (fragment.importSection) { -&>
+<%_ if (primaryKey.name !== 'id') { -%>
 import org.springframework.data.domain.Persistable
-import org.springframework.data.annotation.Transient
+<%_ } -%>
 <%_ if (!relationshipsContainOtherSideIgnore) { _%>
 import com.fasterxml.jackson.annotation.JsonIgnoreProperties
 <%_ } _%>
@@ -33,11 +34,16 @@ import com.fasterxml.jackson.annotation.JsonIgnoreProperties
 <&_ } -&>
 
 <&_ if (fragment.additionalInterfacesSection) { -&>
+<%_ if (primaryKey.name !== 'id') { -%>
 , Persistable<<%= primaryKey.type %>>
+<%_ } -%>
 <&_ } -&>
 
 <&_ if (fragment.classInnerAdditionalFieldsSection) { -&>
-    @Transient
+    @org.springframework.data.annotation.Transient
+<%_ if (!reactive) { _%>
+    @jakarta.persistence.Transient
+<%_ } _%>
     private var isPersisted: Boolean = false
 <&_ } -&>
 
@@ -45,8 +51,10 @@ import com.fasterxml.jackson.annotation.JsonIgnoreProperties
 <%_ if (primaryKey.name !== 'id') { -%>
     override fun getId() = this.<%= primaryKey.name %>
 
-<%_ } -%>
     override fun isNew() = !this.isPersisted
+<%_ } else { -%>
+    fun isNew() = !this.isPersisted
+<%_ } -%>
 
     fun setIsPersisted(): <%= persistClass %> {
         this.isPersisted = true

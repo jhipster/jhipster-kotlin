@@ -16,17 +16,47 @@
  See the License for the specific language governing permissions and
  limitations under the License.
 -%>
-package <%= packageName %>.config
+package <%= packageName %>.broker
 
-import org.springframework.cloud.stream.annotation.Input
-import org.springframework.messaging.MessageChannel
+import org.slf4j.LoggerFactory
+import org.springframework.http.MediaType
+import org.springframework.stereotype.Component
+import org.springframework.web.servlet.mvc.method.annotation.SseEmitter
+import org.springframework.web.servlet.mvc.method.annotation.SseEmitter.event
+import java.io.IOException
+import java.util.concurrent.ConcurrentHashMap
+import java.util.function.Consumer
 
-interface KafkaSseConsumer {
+@Component
+class KafkaConsumer : Consumer<String> {
 
-    companion object {
-        const val CHANNELNAME = "binding-in-sse"
+    private val emitters = ConcurrentHashMap<String, SseEmitter>()
+
+    fun register(key: String): SseEmitter {
+        log.debug("Registering sse client for {}", key)
+        val emitter = SseEmitter()
+        emitter.onCompletion { emitters.remove(key) }
+        emitters[key] = emitter
+        return emitter
     }
 
-    @Input(CHANNELNAME)
-    fun input(): MessageChannel
+    fun unregister(key: String) {
+        log.debug("Unregistering sse emitter for: {}", key)
+        emitters[key]?.complete()
+    }
+
+    override fun accept(input: String) {
+        log.debug("Got message from kafka stream: {}", input)
+        emitters.values.forEach { emitter ->
+            try {
+                emitter.send(event().data(input, MediaType.TEXT_PLAIN))
+            } catch (e: IOException) {
+                log.debug("error sending sse message, {}", input)
+            }
+        }
+    }
+
+    companion object {
+        private val log = LoggerFactory.getLogger(KafkaConsumer::class.java)
+    }
 }

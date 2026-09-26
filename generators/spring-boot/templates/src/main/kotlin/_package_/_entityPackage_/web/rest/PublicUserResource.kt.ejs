@@ -60,7 +60,7 @@ import org.springframework.web.bind.annotation.*
 
 <%_ if (reactive) { _%>
 import org.springframework.web.server.ResponseStatusException
-import org.springframework.web.util.UriComponentsBuilder
+import org.springframework.web.util.ForwardedHeaderUtils
 import reactor.core.publisher.Flux
 import reactor.core.publisher.Mono
 <%_ } else {_%>
@@ -78,7 +78,6 @@ import java.util.*
 import java.util.stream.Collectors
 import java.util.stream.StreamSupport
 
-import org.elasticsearch.index.query.QueryBuilders.*
 <%_ } _%>
 
 @RestController
@@ -112,7 +111,7 @@ class PublicUserResource(
     @GetMapping("/users")
     <%_ if (databaseTypeSql || databaseTypeMongodb || databaseTypeNeo4j || databaseTypeCouchbase) { _%>
         <%_ if (reactive) { _%>
-    fun getAllPublicUsers(request: ServerHttpRequest, @org.springdoc.api.annotations.ParameterObject pageable: Pageable): Mono<ResponseEntity<Flux<<%= user.restClass %>>>> {
+    fun getAllPublicUsers(request: ServerHttpRequest, @org.springdoc.core.annotations.ParameterObject pageable: Pageable): Mono<ResponseEntity<Flux<<%= user.restClass %>>>> {
         log.debug("REST request to get all public User names")
         <%_ if (!authenticationTypeOauth2) { _%>
         if (!onlyContainsAllowedProperties(pageable)) {
@@ -122,11 +121,11 @@ class PublicUserResource(
 
         return userService.countManagedUsers()
             .map { PageImpl<<%= user.restClass %>>(listOf(), pageable, it)  }
-            .map { PaginationUtil.generatePaginationHttpHeaders(UriComponentsBuilder.fromHttpRequest(request), it) }
+            .map { PaginationUtil.generatePaginationHttpHeaders(ForwardedHeaderUtils.adaptFromForwardedHeaders(request.uri, request.headers), it) }
             .map { ResponseEntity.ok().headers(it).body(userService.getAllPublicUsers(pageable)) }
     }
         <%_ } else { _%>
-    fun getAllPublicUsers(@org.springdoc.api.annotations.ParameterObject pageable: Pageable):  ResponseEntity<List<<%= user.restClass %>>> {
+    fun getAllPublicUsers(@org.springdoc.core.annotations.ParameterObject pageable: Pageable):  ResponseEntity<List<<%= user.restClass %>>> {
         log.debug("REST request to get all public User names")
         <%_ if (!authenticationTypeOauth2) { _%>
         if (!onlyContainsAllowedProperties(pageable)) {
@@ -143,13 +142,6 @@ class PublicUserResource(
     private fun onlyContainsAllowedProperties(pageable: Pageable) =
         pageable.sort.map(Sort.Order::getProperty).all(ALLOWED_ORDERED_PROPERTIES::contains)
         <%_ } _%>
-
-    /**
-     * Gets a list of all roles.
-     * @return a string list of all roles.
-     */
-    @GetMapping("/authorities")
-    fun getAuthorities() = userService.getAuthorities()<% if (reactive) { %>.collectList()<% } %>
 
     <%_ } else { /* Cassandra */ _%>
     fun getAllPublicUsers(): <% if (reactive) { %>Flux<% } else { %>List<% } %><<%= user.restClass %>> = userService.getAllPublicUsers()

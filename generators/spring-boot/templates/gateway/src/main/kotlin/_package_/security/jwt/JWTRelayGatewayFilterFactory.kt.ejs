@@ -20,38 +20,35 @@ package <%= packageName %>.security.jwt
 
 import org.springframework.cloud.gateway.filter.GatewayFilter
 import org.springframework.cloud.gateway.filter.factory.AbstractGatewayFilterFactory
-import org.springframework.http.server.reactive.ServerHttpRequest
+import org.springframework.http.HttpHeaders.AUTHORIZATION
+import org.springframework.security.oauth2.jwt.ReactiveJwtDecoder
 import org.springframework.stereotype.Component
 import org.springframework.util.StringUtils
-
-import <%= packageName %>.security.jwt.JWTFilter.Companion.AUTHORIZATION_HEADER
+import org.springframework.web.server.ServerWebExchange
 
 @Component
-class JWTRelayGatewayFilterFactory(private val tokenProvider: TokenProvider) : AbstractGatewayFilterFactory<Any>() {
+class JWTRelayGatewayFilterFactory(private val jwtDecoder: ReactiveJwtDecoder) : AbstractGatewayFilterFactory<Any>() {
 
-    override fun apply(config: Any) =
+    override fun apply(config: Any): GatewayFilter =
         GatewayFilter { exchange, chain ->
-            if(exchange != null) {
-                val token = extractJWTToken(exchange.request)
-                if(token != null && StringUtils.hasText(token) && tokenProvider.validateToken(token)) {
-                    val request = exchange.request.mutate()
-                        .header(AUTHORIZATION_HEADER, "Bearer $token")
-                        .build()
-                    return@GatewayFilter chain.filter(exchange.mutate().request(request).build())
-                }
-
-            }
-            chain.filter(exchange)
+            val bearerToken = exchange.request.headers.getFirst(AUTHORIZATION)
+                // Allow anonymous requests.
+                ?: return@GatewayFilter chain.filter(exchange)
+            val token = extractToken(bearerToken)
+            jwtDecoder.decode(token).thenReturn(withBearerAuth(exchange, token)).flatMap(chain::filter)
         }
 
-     private fun extractJWTToken(request: ServerHttpRequest): String? {
-        val bearerToken = request.headers.getFirst(AUTHORIZATION_HEADER)
-        if (bearerToken == null) {
-            return null
-        }
-        if (StringUtils.hasText(bearerToken) && bearerToken.startsWith("Bearer ")) {
+    private fun extractToken(bearerToken: String): String {
+        if (StringUtils.hasText(bearerToken) && bearerToken.length > 7 && bearerToken.startsWith(BEARER)) {
             return bearerToken.substring(7)
         }
         throw IllegalArgumentException("Invalid token in Authorization header")
+    }
+
+    private fun withBearerAuth(exchange: ServerWebExchange, authorizeToken: String): ServerWebExchange =
+        exchange.mutate().request { request -> request.headers { headers -> headers.setBearerAuth(authorizeToken) } }.build()
+
+    companion object {
+        private const val BEARER = "Bearer "
     }
 }

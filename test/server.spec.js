@@ -1,6 +1,8 @@
 import { beforeAll, describe, expect, it } from 'vitest';
-import { skipPrettierHelpers as helpers, runResult } from 'generator-jhipster/testing';
-import { applicationTypes, authenticationTypes, buildToolTypes, cacheTypes, databaseTypes } from 'generator-jhipster/jdl';
+
+import { runResult, skipPrettierHelpers as helpers } from 'generator-jhipster/testing';
+
+import { applicationTypes, authenticationTypes, buildToolTypes, cacheTypes, databaseTypes } from './utils/jhipster-types.js';
 
 const { JWT, OAUTH2 } = authenticationTypes;
 const { MICROSERVICE } = applicationTypes;
@@ -37,8 +39,8 @@ describe('JHipster server generator', () => {
                     rememberMeKey: '5c37379956bd1242f5636c8cb322c2966ad81277',
                     serverSideOptions: [],
                 })
-                .withJHipsterLookup()
-                .withParentBlueprintLookup()
+                .withJHipsterGenerators()
+                .withLookups({ packagePaths: [process.cwd()], lookups: ['generators', 'generators/*/generators'] })
                 .run();
         });
 
@@ -75,8 +77,8 @@ describe('JHipster server generator', () => {
                     rememberMeKey: '5c37379956bd1242f5636c8cb322c2966ad81277',
                     serverSideOptions: [],
                 })
-                .withJHipsterLookup()
-                .withParentBlueprintLookup()
+                .withJHipsterGenerators()
+                .withLookups({ packagePaths: [process.cwd()], lookups: ['generators', 'generators/*/generators'] })
                 .run();
         });
 
@@ -107,8 +109,8 @@ describe('JHipster server generator', () => {
                     languages: ['fr', 'en'],
                     withGeneratedFlag: true,
                 })
-                .withJHipsterLookup()
-                .withParentBlueprintLookup()
+                .withJHipsterGenerators()
+                .withLookups({ packagePaths: [process.cwd()], lookups: ['generators', 'generators/*/generators'] })
                 .run();
         });
         it('should match generated files snapshot', () => {

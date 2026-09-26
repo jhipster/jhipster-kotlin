@@ -1,4 +1,4 @@
-FROM ubuntu:20.04
+FROM ubuntu:24.04
 RUN \
   # configure the "khipster" user
   groupadd khipster && \
@@ -13,13 +13,11 @@ RUN \
   apt-get install -y \
     wget \
     sudo && \
-  # install node.js
-  wget https://nodejs.org/dist/v14.15.0/node-v14.15.0-linux-x64.tar.gz -O /tmp/node.tar.gz && \
+  # install node.js (generator-jhipster 9.x requires node ^22.18.0 || >=24.11.0, see package.json engines)
+  wget https://nodejs.org/dist/v22.23.2/node-v22.23.2-linux-x64.tar.gz -O /tmp/node.tar.gz && \
   tar -C /usr/local --strip-components 1 -xzf /tmp/node.tar.gz && \
   # upgrade npm
   npm install -g npm && \
-  # install yeoman
-  npm install -g yo && \
   # cleanup
   apt-get clean && \
   rm -rf \

@@ -18,63 +18,57 @@
 -%>
 package <%= packageName %>.web.rest
 
+import org.springframework.http.server.reactive.ServerHttpRequest
 import org.springframework.security.core.annotation.AuthenticationPrincipal
+import org.springframework.security.core.annotation.CurrentSecurityContext
+import org.springframework.security.oauth2.client.authentication.OAuth2AuthenticationToken
 import org.springframework.security.oauth2.client.registration.ClientRegistration
 import org.springframework.security.oauth2.client.registration.ReactiveClientRegistrationRepository
 import org.springframework.security.oauth2.core.oidc.OidcIdToken
+import org.springframework.security.oauth2.core.oidc.user.OidcUser
 import org.springframework.web.bind.annotation.PostMapping
 import org.springframework.web.bind.annotation.RestController
-
 import org.springframework.web.server.WebSession
-import org.springframework.http.server.reactive.ServerHttpRequest
 import reactor.core.publisher.Mono
 
 /**
  * REST controller for managing global OIDC logout.
  */
 @RestController
-class LogoutResource(
-    private val registrations: <% if (reactive) { %>Reactive<% } %>ClientRegistrationRepository
-) {
-    private val registration = registrations.findByRegistrationId("oidc")
+class LogoutResource(private val registrationRepository: ReactiveClientRegistrationRepository) {
 
     /**
      * `POST  /api/logout` : logout the current user.
      *
-     * @param idToken the ID token.
-     * @param request a {@link ServerHttpRequest} request.
-     * @param session the current {@link WebSession}.
-     * @return status {@code 200 (OK)} and a body with a global logout URL.
+     * @param oAuth2AuthenticationToken the OAuth2 authentication token.
+     * @param oidcUser the OIDC user.
+     * @param request a [ServerHttpRequest] request.
+     * @param session the current [WebSession].
+     * @return status `200 (OK)` and a body with a global logout URL.
      */
     @PostMapping("/api/logout")
-    fun logout(@AuthenticationPrincipal(expression = "idToken") idToken: OidcIdToken, request: ServerHttpRequest, session: WebSession): Mono<Map<String, String>>  {
-        return session.invalidate().then(
-            registration.map {
-                prepareLogoutUri(request, it, idToken)
-            }
-        )
-    }
+    fun logout(
+        @CurrentSecurityContext(expression = "authentication") oAuth2AuthenticationToken: OAuth2AuthenticationToken,
+        @AuthenticationPrincipal oidcUser: OidcUser,
+        request: ServerHttpRequest,
+        session: WebSession,
+    ): Mono<Map<String, String>> =
+        session
+            .invalidate()
+            .then(
+                registrationRepository
+                    .findByRegistrationId(oAuth2AuthenticationToken.authorizedClientRegistrationId)
+                    .map { oidc -> prepareLogoutUri(request, oidc, oidcUser.idToken) },
+            )
 
     private fun prepareLogoutUri(request: ServerHttpRequest, clientRegistration: ClientRegistration, idToken: OidcIdToken): Map<String, String> {
         val logoutUrl = StringBuilder()
-        val issuerUri = clientRegistration.providerDetails.issuerUri
-        if (issuerUri.contains("auth0.com")) {
-            val iUrl = if (issuerUri.endsWith("/")) {
-                issuerUri + "v2/logout"
-            } else {
-                "$issuerUri/v2/logout"
-            }
-            logoutUrl.append(iUrl)
-        } else {
-            logoutUrl.append(clientRegistration.providerDetails.configurationMetadata["end_session_endpoint"].toString())
-        }
+            .append(clientRegistration.providerDetails.configurationMetadata["end_session_endpoint"].toString())
 
-        val originUrl = request.headers.origin
-        if (issuerUri.contains("auth0.com")) {
-            logoutUrl.append("?client_id=").append(clientRegistration.clientId).append("&returnTo=").append(originUrl)
-        } else {
-            logoutUrl.append("?id_token_hint=").append(idToken.tokenValue).append("&post_logout_redirect_uri=").append(originUrl)
-        }
+        val originUrl = request.headers.origin ?: request.uri.let { "${it.scheme}://${it.authority}" }
+
+        logoutUrl.append("?id_token_hint=").append(idToken.tokenValue).append("&post_logout_redirect_uri=").append(originUrl)
+
         return mapOf("logoutUrl" to logoutUrl.toString())
     }
 }

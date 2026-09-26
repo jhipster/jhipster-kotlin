@@ -43,13 +43,13 @@ import org.springframework.stereotype.Repository
 import java.util.UUID
 <%_ } _%>
 <%_
-  var notEmbeddedRelationships = relationships.filter(relationship => !relationship.otherEntityIsEmbedded);
+  var notEmbeddedRelationships = relationships.filter(relationship => !relationship.otherEntity.embedded);
   if (searchEngine && notEmbeddedRelationships.length !== 0) {
 %>
 import <%= packageName %>.repository.CouchbaseSearchRepository.Companion.SEARCH_CONDITION
 <%_ } _%>
 
-import <%= entityAbsoluteClass %>.Companion.TYPE_NAME
+import <%= entityAbsolutePackage %>.domain.<%= persistClass %>.Companion.TYPE_NAME
 
 /**
  * Spring Data Couchbase repository for the <%= persistClass %> entity.
@@ -75,7 +75,7 @@ interface <%= entityClass %>Repository: JHipsterCouchbaseRepository<<%= persistC
                   %> ", OBJECT_ADD(`<%= relationship.relationshipFieldName %>`, 'id', meta(`<%= relationship.relationshipFieldName %>`).id) AS `<%= relationship.relationshipFieldName %>`" + <%
                 }
             } %>
-              " FROM #{#n1ql.bucket} b"
+              " FROM #{#n1ql.bucket}.#{#n1ql.scope}.#{#n1ql.collection} b"
 
       const val JOIN = <% notEmbeddedRelationships.forEach(function (relationship, index) {
              if (!relationship.collection) { %>" LEFT JOIN `<%= relationship.otherEntity.entityInstance %>` `<%= relationship.relationshipFieldName %>` ON KEYS b.`<%= relationship.relationshipFieldName %>`"<%} else { %>" LEFT NEST `<%= relationship.otherEntity.entityInstance %>` `<%= relationship.relationshipFieldNamePlural %>` ON KEYS b.`<%= relationship.relationshipFieldNamePlural %>`"<% } if (index < notEmbeddedRelationships.length - 1) { %> + <% }}); %>
@@ -95,7 +95,7 @@ interface <%= entityClass %>Repository: JHipsterCouchbaseRepository<<%= persistC
     override fun findAll(): <%= listOrFlux %><<%= persistClass %>>
 
     @Query("$SELECT USE KEYS \$1$JOIN")
-    override fun findById(id: String?): <%= optionalOrMono %><<%= persistClass %>> <%
+    override fun findById(id: String): <%= optionalOrMono %><<%= persistClass %>> <%
     } _%>
 
 <%_ if (searchEngine && notEmbeddedRelationships.length !== 0) { _%>

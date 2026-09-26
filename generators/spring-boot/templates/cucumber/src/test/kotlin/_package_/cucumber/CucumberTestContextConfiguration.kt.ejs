@@ -19,10 +19,25 @@ This file is part of the JHipster project, see https://jhipster.github.io/
 package <%= packageName %>.cucumber
 
 import <%= packageName %>.IntegrationTest
+import <%= packageName %>.security.ADMIN
 import io.cucumber.spring.CucumberContextConfiguration
-import org.springframework.test.context.web.WebAppConfiguration
+<%_ if (reactive) { _%>
+import org.springframework.boot.webtestclient.autoconfigure.AutoConfigureWebTestClient
+<%_ } else { _%>
+import org.springframework.boot.webmvc.test.autoconfigure.AutoConfigureMockMvc
+<%_ } _%>
+import org.springframework.security.test.context.support.WithMockUser
+<%_ if (locals.devDatabaseTypeH2Any) { _%>
+import org.springframework.test.context.ActiveProfiles
 
+@ActiveProfiles("test", "test<%= locals.defaultEnvironment %>")
+<%_ } _%>
 @CucumberContextConfiguration
 @IntegrationTest
-@WebAppConfiguration
+<%_ if (reactive) { _%>
+@AutoConfigureWebTestClient(timeout = IntegrationTest.DEFAULT_TIMEOUT)
+<%_ } else { _%>
+@AutoConfigureMockMvc
+<%_ } _%>
+@WithMockUser(authorities = [ADMIN])
 class CucumberTestContextConfiguration

@@ -1,0 +1,97 @@
+<%#
+ Copyright 2013-2026 the original author or authors from the JHipster project.
+
+ This file is part of the JHipster project, see https://www.jhipster.tech/
+ for more information.
+
+ Licensed under the Apache License, Version 2.0 (the "License")
+ you may not use this file except in compliance with the License.
+ You may obtain a copy of the License at
+
+      https://www.apache.org/licenses/LICENSE-2.0
+
+ Unless required by applicable law or agreed to in writing, software
+ distributed under the License is distributed on an "AS IS" BASIS,
+ WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
+ See the License for the specific language governing permissions and
+ limitations under the License.
+-%>
+package <%= packageName %>.security.jwt
+
+import <%= packageName %>.config.SecurityConfiguration
+import <%= packageName %>.config.SecurityJwtConfiguration
+import <%= packageName %>.config.WebConfigurer
+import <%= packageName %>.management.SecurityMetersService
+<%_ if (!applicationTypeMicroservice) { _%>
+import <%= packageName %>.web.rest.AuthenticateController
+<%_ } _%>
+<%_ if (reactive && generateBuiltInUserEntity) { _%>
+import <%= packageName %>.repository.UserRepository
+<%_ } _%>
+
+import tech.jhipster.config.JHipsterProperties
+
+<%_ if (reactive) { %>
+import org.springframework.boot.webflux.test.autoconfigure.WebFluxTest
+import org.springframework.context.annotation.ComponentScan
+import org.springframework.context.annotation.Import
+import org.springframework.security.core.userdetails.ReactiveUserDetailsService
+import org.springframework.test.context.bean.override.mockito.MockitoBean
+<%_ } else { _%>
+import org.springframework.boot.test.context.SpringBootTest
+<%_ } _%>
+
+/**
+ * Base composite annotation for JWT authentication tests.
+ */
+@kotlin.annotation.Target(AnnotationTarget.CLASS)
+@kotlin.annotation.Retention(AnnotationRetention.RUNTIME)
+<%_ if (reactive) { %>
+@Import(
+    JHipsterProperties::class,
+    WebConfigurer::class,
+    SecurityConfiguration::class,
+    SecurityJwtConfiguration::class,
+    SecurityMetersService::class,
+    JwtAuthenticationTestUtils::class
+)
+@WebFluxTest(
+  <%_ if (applicationTypeMicroservice) { _%>
+    controllers = [TestAuthenticationResource::class],
+  <%_ } else { _%>
+    controllers = [AuthenticateController::class],
+  <%_ } _%>
+    properties = [
+        "jhipster.security.authentication.jwt.base64-secret=fd54a45s65fds737b9aafcb3412e07ed99b267f33413274720ddbb7f6c5e64e9f14075f2d7ed041592f0b7657baf8",
+        "jhipster.security.authentication.jwt.token-validity-in-seconds=60000"
+    ]
+)
+@ComponentScan
+<%_ } else { _%>
+@SpringBootTest(
+  <%_ if (!applicationTypeMicroservice) { _%>
+    properties = [
+        "jhipster.security.authentication.jwt.base64-secret=fd54a45s65fds737b9aafcb3412e07ed99b267f33413274720ddbb7f6c5e64e9f14075f2d7ed041592f0b7657baf8",
+        "jhipster.security.authentication.jwt.token-validity-in-seconds=60000"
+    ],
+  <%_ } _%>
+    classes = [
+        JHipsterProperties::class,
+        WebConfigurer::class,
+        SecurityConfiguration::class,
+        SecurityJwtConfiguration::class,
+        SecurityMetersService::class,
+  <%_ if (!applicationTypeMicroservice) { _%>
+        AuthenticateController::class,
+  <%_ } _%>
+        JwtAuthenticationTestUtils::class
+    ]
+)
+<%_ } _%>
+<%_ if (reactive && generateAuthenticationApi) { %>
+@MockitoBean(types = [ReactiveUserDetailsService::class])
+<%_ } _%>
+<%_ if (reactive && generateBuiltInUserEntity) { _%>
+@MockitoBean(types = [UserRepository::class])
+<%_ } _%>
+annotation class AuthenticationIntegrationTest

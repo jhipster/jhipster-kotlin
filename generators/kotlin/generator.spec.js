@@ -1,6 +1,6 @@
 import { beforeAll, describe, expect, it } from 'vitest';
 
-import { fromMatrix, defaultHelpers as helpers, result } from 'generator-jhipster/testing';
+import { defaultHelpers as helpers, fromMatrix, result } from 'generator-jhipster/testing';
 
 const SUB_GENERATOR = 'kotlin';
 const SUB_GENERATOR_NAMESPACE = `jhipster-kotlin:${SUB_GENERATOR}`;
@@ -16,9 +16,9 @@ describe('SubGenerator kotlin of kotlin JHipster blueprint', () => {
                         ignoreNeedlesError: true,
                         skipKtlintFormat: true,
                     })
-                    .withJHipsterLookup()
+                    .withJHipsterGenerators()
                     .withMockedSource()
-                    .withParentBlueprintLookup(['generators', 'generators/*/generators']);
+                    .withLookups({ packagePaths: [process.cwd()], lookups: ['generators', 'generators/*/generators'] });
             });
 
             it('should succeed', () => {

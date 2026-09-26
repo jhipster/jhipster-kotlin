@@ -1,0 +1,70 @@
+<%#
+ Copyright 2013-2026 the original author or authors from the JHipster project.
+
+ This file is part of the JHipster project, see https://www.jhipster.tech/
+ for more information.
+
+ Licensed under the Apache License, Version 2.0 (the "License")
+ you may not use this file except in compliance with the License.
+ You may obtain a copy of the License at
+
+      https://www.apache.org/licenses/LICENSE-2.0
+
+ Unless required by applicable law or agreed to in writing, software
+ distributed under the License is distributed on an "AS IS" BASIS,
+ WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
+ See the License for the specific language governing permissions and
+ limitations under the License.
+-%>
+package <%= entityAbsolutePackage %>.domain
+
+<%_ if (fields.some(field => field.fieldTypeLong || field.fieldTypeInteger)) { _%>
+import java.util.Random
+<%_ } _%>
+<%_ if (fields.some(field => field.fieldTypeLong)) { _%>
+import java.util.concurrent.atomic.AtomicLong
+<%_ } _%>
+<%_ if (fields.some(field => field.fieldTypeInteger)) { _%>
+import java.util.concurrent.atomic.AtomicInteger
+<%_ } _%>
+<%_ if (fields.some(field => field.fieldTypeString || field.fieldTypeUUID)) { _%>
+import java.util.UUID
+<%_ } _%>
+
+<%_ const sampleFields = fields.filter(field => !field.mapstructExpression && (field.fieldTypeInteger || field.fieldTypeLong || field.fieldTypeString || field.fieldTypeUUID)); _%>
+object <%= persistClass %>TestSamples {
+
+<%_ if (fields.some(field => field.fieldTypeLong || field.fieldTypeInteger)) { _%>
+    private val random: Random = Random()
+<%_ } _%>
+<%_ if (fields.some(field => field.fieldTypeLong)) { _%>
+    private val longCount: AtomicLong = AtomicLong(random.nextInt() + (2L * Integer.MAX_VALUE))
+<%_ } _%>
+<%_ if (fields.some(field => field.fieldTypeInteger)) { _%>
+    private val intCount: AtomicInteger = AtomicInteger(random.nextInt() + (2 * Short.MAX_VALUE))
+<%_ } _%>
+
+    fun get<%= persistClass %>Sample1(): <%= persistClass %> {
+        val <%= persistInstance %> = <%= persistClass %>()
+  <%_ for (const field of sampleFields) { _%>
+        <%= persistInstance %>.<%= field.fieldName %> = <%- field.javaValueSample1 %>
+  <%_ } _%>
+        return <%= persistInstance %>
+    }
+
+    fun get<%= persistClass %>Sample2(): <%= persistClass %> {
+        val <%= persistInstance %> = <%= persistClass %>()
+  <%_ for (const field of sampleFields) { _%>
+        <%= persistInstance %>.<%= field.fieldName %> = <%- field.javaValueSample2 %>
+  <%_ } _%>
+        return <%= persistInstance %>
+    }
+
+    fun get<%= persistClass %>RandomSampleGenerator(): <%= persistClass %> {
+        val <%= persistInstance %> = <%= persistClass %>()
+  <%_ for (const field of sampleFields) { _%>
+        <%= persistInstance %>.<%= field.fieldName %> = <%- field.javaValueGenerator %>
+  <%_ } _%>
+        return <%= persistInstance %>
+    }
+}

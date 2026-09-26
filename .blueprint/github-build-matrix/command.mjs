@@ -19,7 +19,6 @@ const command = {
             scope: 'generator',
         },
     },
-    options: {},
 };
 
 export default command;

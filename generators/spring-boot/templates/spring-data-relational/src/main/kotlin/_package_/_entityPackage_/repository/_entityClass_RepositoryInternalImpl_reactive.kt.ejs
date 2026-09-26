@@ -1,225 +1,151 @@
-<%#
- Copyright 2013-2026 the original author or authors from the JHipster project.
-
- This file is part of the JHipster project, see https://www.jhipster.tech/
- for more information.
-
- Licensed under the Apache License, Version 2.0 (the "License")
- you may not use this file except in compliance with the License.
- You may obtain a copy of the License at
-
-      https://www.apache.org/licenses/LICENSE-2.0
-
- Unless required by applicable law or agreed to in writing, software
- distributed under the License is distributed on an "AS IS" BASIS,
- WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
- See the License for the specific language governing permissions and
- limitations under the License.
--%>
+<%# eslint-disable ejs-templates/no-global-function-call -%>
+<%# Copyright 2013-2026 the original author or authors from the JHipster project. -%>
+<%_ const toOneRelationships = relationships.filter(rel => rel.ownerSide && !rel.collection);
+    const eagerToOneRelationships = toOneRelationships.filter(rel => rel.relationshipEagerLoad);
+    const referencedRelationships = toOneRelationships.filter(rel => !rel.relationshipEagerLoad);
+    const joinTableRelationships = relationships.filter(rel => rel.shouldWriteJoinTable);
+    const eagerJoinTableRelationships = joinTableRelationships.filter(rel => rel.relationshipEagerLoad);
+    const populateRelations = toOneRelationships.length > 0 || eagerJoinTableRelationships.length > 0;
+    const populateCount = eagerToOneRelationships.length + eagerJoinTableRelationships.length;
+    const joinTableConstant = rel => `${rel.relationshipName.replace(/[A-Z]/g, letter => `_${letter}`).toUpperCase()}_JOIN_TABLE`;
+    const ownDomainImport = `${entityAbsolutePackage}.domain.${persistClass}`;
+    const otherDomainImports = [...new Set([...toOneRelationships, ...joinTableRelationships]
+      .map(rel => `${rel.otherEntity.entityAbsolutePackage}.domain.${rel.otherEntity.persistClass}`)
+      .filter(domainImport => domainImport !== ownDomainImport))].sort();
+_%>
 package <%= entityAbsolutePackage %>.repository
 
-import java.util.function.BiFunction
-<%_ if (anyFieldIsBigDecimal) { _%>
-import java.math.BigDecimal
-<%_} if (anyFieldIsInstant) { _%>
-import java.time.Instant
-<%_ } if (anyFieldIsLocalDate) { _%>
-import java.time.LocalDate
-<%_ } if (anyFieldIsZonedDateTime) { _%>
-import java.time.ZonedDateTime
-<%_ } if (anyFieldIsDuration) { _%>
-import java.time.Duration
-<%_ } if (anyFieldIsUUID) { _%>
-import java.util.UUID
-<%_ } _%>
-import java.util.ArrayList
-import java.util.List
-import java.util.Map
-import java.util.Map.Entry
-import java.util.Optional
-import org.apache.commons.lang3.StringUtils
-
+<%_ if (jpaMetamodelFiltering) { _%>
 import org.springframework.data.domain.Pageable
-import io.r2dbc.spi.Row
-import io.r2dbc.spi.RowMetadata
-import org.springframework.data.relational.core.query.Criteria.where
-  <%_ if (containsBagRelationships) { _%>
-import org.springframework.data.relational.core.query.Query.query
-  <%_ } _%>
+<%_ } _%>
 import org.springframework.data.r2dbc.convert.R2dbcConverter
-import org.springframework.data.r2dbc.core.R2dbcEntityOperations
 import org.springframework.data.r2dbc.core.R2dbcEntityTemplate
-import org.springframework.data.r2dbc.repository.support.SimpleR2dbcRepository
-import org.springframework.data.relational.core.mapping.RelationalPersistentEntity
+import org.springframework.data.r2dbc.dialect.R2dbcDialect
+<%_ if (jpaMetamodelFiltering) { _%>
 import org.springframework.data.relational.core.query.Criteria
-import org.springframework.data.relational.core.sql.Column
-import org.springframework.data.relational.core.sql.Comparison
-import org.springframework.data.relational.core.sql.Condition
-import org.springframework.data.relational.core.sql.Conditions
-import org.springframework.data.relational.core.sql.Expression
-import org.springframework.data.relational.core.sql.Select
-import org.springframework.data.relational.core.sql.SelectBuilder.SelectFromAndJoin<% if (reactiveEagerRelations.length > 0) { %>Condition<% } %>
-import org.springframework.data.relational.core.sql.Table
-import org.springframework.data.relational.repository.support.MappingRelationalEntityInformation
-import org.springframework.r2dbc.core.DatabaseClient
-import org.springframework.r2dbc.core.RowsFetchSpec
+<%_ } _%>
 
 import <%= entityAbsolutePackage %>.domain.<%= persistClass %>
-<% relationships.forEach(function(rel) {
-    if (rel.relationshipManyToMany  && rel.ownerSide) { _%>
-import <%= rel.otherEntity.entityAbsolutePackage %>.domain.<%= rel.otherEntity.persistClass %>
-    <%_ } _%>
-<%_ } ); _%>
-<%_ Object.keys(uniqueEnums).forEach(function(element) { _%>
-
-import <%= entityAbsolutePackage %>.domain.enumeration.<%= element %>
-<%_ }); _%>
-
-<%_ [...reactiveOtherEntities, locals].forEach(otherEntity => {
-    if (otherEntity.entityAbsolutePackage) { _%>
-import <%= otherEntity.entityAbsolutePackage %>.repository.rowmapper.<%= otherEntity.entityClass %>RowMapper
-  <%_ } else { _%>
-import <%= packageName %>.repository.rowmapper.<%= otherEntity.entityClass %>RowMapper
-  <%_ } _%>
-  <%_ if (otherEntity.entityPackage !== entityPackage) { _%>
-import <%= otherEntity.entityAbsolutePackage %>.repository.<%= otherEntity.entityClass %>SqlHelper
-  <%_ } _%>
-<%_ }); _%>
-<%# TODO Check why the below condition is empty %>
-<%# if (packageName !== entityAbsolutePackage) {  } %>
-import <%= packageName %>.repository.EntityManager
+<%_ if (jpaMetamodelFiltering) { _%>
+import <%= entityAbsolutePackage %>.domain.criteria.<%= entityClass %>Criteria
+<%_ } _%>
+<%_ for (const domainImport of otherDomainImports) { _%>
+import <%= domainImport %>
+<%_ } _%>
+<%_ if (packageName !== entityAbsolutePackage) { _%>
+import <%= packageName %>.repository.AbstractR2dbcRepository
+<%_ } _%>
+<%_ if (jpaMetamodelFiltering) { _%>
 
 import reactor.core.publisher.Flux
+import tech.jhipster.service.CriteriaBuilder
+<%_ } _%>
+<%_ if (populateRelations || isUsingMapsId || jpaMetamodelFiltering) { _%>
 import reactor.core.publisher.Mono
+<%_ } _%>
+<%_ if (primaryKey.typeUUID) { _%>
+
+import java.util.UUID
+<%_ } _%>
 
 /**
  * <%= springDataDescription %> custom repository implementation for the <%= persistClass %> entity.
  */
-@SuppressWarnings("unused")
+@Suppress("unused")
 class <%= entityClass %>RepositoryInternalImpl(
-    val template: R2dbcEntityTemplate,
-    val entityManager: EntityManager,<% reactiveUniqueEntityTypes.forEach(function(element) { %>
-    val <%= element.toLowerCase() %>Mapper: <%= element %>RowMapper,
-    <%_ }); _%>
-    entityOperations: R2dbcEntityOperations,
-    converter: R2dbcConverter
-): SimpleR2dbcRepository<<%= persistClass %>, <%= primaryKey.type %>>(
-    MappingRelationalEntityInformation(
-        converter.mappingContext.getRequiredPersistentEntity(<%= persistClass %>::class.java) as RelationalPersistentEntity<<%= persistClass %>>
-    ),
-    entityOperations,
-    converter
-), <%= entityClass %>RepositoryInternal {
-
-    private val db: DatabaseClient = template.databaseClient
+    template: R2dbcEntityTemplate,
+    converter: R2dbcConverter,
+    dialect: R2dbcDialect
+) : AbstractR2dbcRepository<<%= persistClass %>, <%= primaryKey.type %>>(<%= persistClass %>::class.java, template, converter, dialect),
+    <%= entityClass %>RepositoryInternal {
+<%_ if (toOneRelationships.length > 0 || joinTableRelationships.length > 0) { _%>
 
     companion object {
-        private val entityTable = Table.aliased("<%= entityTableName %>", EntityManager.ENTITY_ALIAS)
-        <%_ reactiveEagerRelations.forEach(function(rel) { _%>
-        private val <%= rel.relationshipName %>Table = Table.aliased("<%= rel.otherEntityTableName %>", "<%= rel.relationshipSqlSafeName %>")
-        <%_ }); _%>
-        <%_ relationships.forEach(function(rel) {
-            if (rel.relationshipManyToMany  && rel.ownerSide) {
-        _%>
-        private val <%= rel.relationshipName %>Link = EntityManager.LinkTable("<%= rel.joinTable.name %>", "<%= entityTableName %>_<%= primaryKey.fields[0].columnName %>", "<%= rel.joinColumnNames[0] %>")
-        <%_ }
-        }); _%>
+  <%_ if (toOneRelationships.length > 0) { _%>
+        private const val SELECT_WITH_RELATIONS_SQL =
+            "SELECT e.* FROM <%= entityTableName %> e"<% for (const rel of eagerToOneRelationships) { %> +
+                " LEFT JOIN <%= rel.otherEntity.entityTableName %> <%= rel.relationshipSqlSafeName %> ON e.<%= rel.joinColumnNames[0] %> = <%= rel.relationshipSqlSafeName %>.<%= rel.otherEntity.primaryKey.fields[0].columnName %>"<% } %>
 
+        private val SORT_COLUMNS = mapOf(
+            "<%= primaryKey.name %>" to "e.<%= primaryKey.fields[0].columnName %>"<% for (const rel of toOneRelationships) { %>,
+            "<%= rel.relationshipName %>.<%= rel.otherEntity.primaryKey.name %>" to "<% if (rel.relationshipEagerLoad) { %><%= rel.relationshipSqlSafeName %>.<%= rel.otherEntity.primaryKey.fields[0].columnName %><% } else { %>e.<%= rel.joinColumnNames[0] %><% } %>"<% if (rel.relationshipEagerLoad && rel.relatedField?.fieldSupportsSortBy && rel.relatedField.fieldName !== rel.otherEntity.primaryKey.name) { %>,
+            "<%= rel.relationshipName %>.<%= rel.relatedField.fieldName %>" to "<%= rel.relationshipSqlSafeName %>.<%= rel.relatedField.fieldNameAsDatabaseColumn %>"<% } %><% } %>
+        )
+  <%_ } _%>
+  <%_ for (const rel of joinTableRelationships) { _%>
+
+        private val <%= joinTableConstant(rel) %> = JoinTable<<%= persistClass %>>(
+            "<%= rel.joinTable.name %>",
+            "<%= entityTableName %>_<%= primaryKey.hibernateSnakeCaseName %>",
+            "<%= rel.joinColumnNames[0] %>"
+        ) { <%= entityInstance %> -> <%= entityInstance %>.<%= rel.relationshipNamePlural %>.orEmpty().mapNotNull { it.<%= rel.otherEntity.primaryKey.name %> } }
+  <%_ } _%>
+  <%_ if (joinTableRelationships.length > 0) { _%>
+
+        private val JOIN_TABLES = listOf(<%= joinTableRelationships.map(joinTableConstant).join(', ') %>)
+  <%_ } _%>
     }
+<%_ } _%>
+<%_ if (toOneRelationships.length > 0) { _%>
 
-    override fun findAllBy(pageable: Pageable?): Flux<<%= persistClass %>> {
-        return createQuery(pageable, null).all()
+    override fun selectWithRelationsSql(): String = SELECT_WITH_RELATIONS_SQL
+
+    override fun sortColumns(): Map<String, String> = SORT_COLUMNS
+<%_ } _%>
+<%_ if (populateRelations) { _%>
+
+    override fun populateRelationships(entities: List<<%= persistClass %>>): Mono<List<<%= persistClass %>>> {
+  <%_ for (const rel of referencedRelationships) { _%>
+        reference(entities, { it.<%= rel.id ? primaryKey.name : `${rel.relationshipName}Id` %> }, ::<%= rel.otherEntity.persistClass %>, { related, id -> related.<%= rel.otherEntity.primaryKey.name %> = id }, { entity, related -> entity.<%= rel.relationshipName %> = related })
+  <%_ } _%>
+        return Mono.just(entities)<%- populateCount === 0 ? '' : '' %>
+  <%_ for (const rel of eagerToOneRelationships) { _%>
+            .flatMap { populated -> populate(populated, { it.<%= rel.id ? primaryKey.name : `${rel.relationshipName}Id` %> }, <%= rel.otherEntity.persistClass %>::class.java, { it.<%= rel.otherEntity.primaryKey.name %> }, { entity, related -> entity.<%= rel.relationshipName %> = related }) }
+  <%_ } _%>
+  <%_ for (const rel of eagerJoinTableRelationships) { _%>
+            .flatMap { populated -> populate(populated, <%= joinTableConstant(rel) %>, <%= rel.otherEntity.persistClass %>::class.java, { it.<%= rel.otherEntity.primaryKey.name %> }, { entity, related -> entity.<%= rel.relationshipNamePlural %> = related.toMutableSet() }) }
+  <%_ } _%>
     }
+<%_ } _%>
+<%_ if (joinTableRelationships.length > 0) { _%>
 
-    fun createQuery(pageable: Pageable?, whereClause: Condition?): RowsFetchSpec<<%= persistClass %>> {
-        val columns = <%= entityClass %>SqlHelper().getColumns(entityTable, EntityManager.ENTITY_ALIAS)
-        <%_ reactiveEagerRelations.forEach(function(rel) { _%>
-        columns.addAll(<%= rel.otherEntityNameCapitalized %>SqlHelper().getColumns(<%= rel.relationshipName %>Table, "<%= rel.relationshipName %>"))
-        <%_ }); _%>
-        val selectFrom = Select.builder().select(columns).from(entityTable)
-            <%_ reactiveEagerRelations.forEach(function(rel) { _%>
-            .leftOuterJoin(<%= rel.relationshipName %>Table).on(Column.create("<%= rel.joinColumnNames[0] %>", entityTable)).equals(Column.create("<%= rel.otherEntity.primaryKey.fields[0].columnName %>", <%= rel.relationshipName %>Table  ))
-            <%_ }); _%>
-
-        // we do not support Criteria here for now as of https://github.com/jhipster/generator-jhipster/issues/18269
-        val select = entityManager.createSelect(selectFrom, <%= persistClass %>::class.java, pageable, whereClause)
-        return db.sql(select).map(this::process)
-    }
-
-    override fun findAll(): Flux<<%= persistClass %>> {
-        return findAllBy(null)
-    }
-
-    override fun findById(id: <%= primaryKey.type %>?): Mono<<%= persistClass %>> {
-        <%_ if (primaryKey.type != 'Long') {  _%>
-        val whereClause = Conditions.isEqual(entityTable.column("<%= primaryKey.fields[0].columnName %>"), Conditions.just(StringUtils.wrap(id.toString(), "'")))
-        <%_ } else { _%>
-        val whereClause = Conditions.isEqual(entityTable.column("<%= primaryKey.fields[0].columnName %>"), Conditions.just(id.toString()))
-        <%_ }_%>
-        return createQuery(null, whereClause).one()
-    }
-
-    <%_ if (implementsEagerLoadApis) { _%>
-
-    override fun findOneWithEagerRelationships(id: <%= primaryKey.type %>?): Mono<<%= persistClass %>> {
-        return findById(id)
-    }
-
-    override fun findAllWithEagerRelationships(): Flux<<%= persistClass %>> {
-        return findAll()
-    }
-
-    override fun findAllWithEagerRelationships(page: Pageable): Flux<<%= persistClass %>> {
-        return findAllBy(page)
-    }
-
-    <%_ } _%>
-    private fun process(row: Row, metadata: RowMetadata): <%= persistClass %> {
-        val entity = <%= entityClass.toLowerCase() %>Mapper.apply(row, "e")
-        <%_ reactiveEagerRelations.forEach(function(rel) { _%>
-        entity.<%= rel.relationshipName %> = <%= rel.otherEntityNameCapitalized.toLowerCase() %>Mapper.apply(row, "<%= rel.relationshipName %>")
-        <%_ }); _%>
-        return entity
-    }
-
-    override fun <S:<%= persistClass %>> save(entity: S): Mono<S>  {
+    override fun joinTables(): List<JoinTable<<%= persistClass %>>> = JOIN_TABLES
+<%_ } _%>
 <%_ if (isUsingMapsId) { _%>
+
+    override fun <S : <%= persistClass %>> save(entity: S): Mono<S> {
         if (entity.<%= primaryKey.name %> == null && entity.<%= mapsIdAssoc.relationshipName %> != null) {
             entity.<%= primaryKey.name %> = entity.<%= mapsIdAssoc.relationshipName %>!!.<%= mapsIdAssoc.otherEntity.primaryKey.name %>
-            return entityManager.insert(entity)
+            return template.insert(entity)
         }
+        return super.save(entity)
+    }
 <%_ } _%>
-        return super.save(entity)<% if (containsBagRelationships) { %>.flatMap { updateRelations(it) } <% } %>
-    }
+<%_ if (jpaMetamodelFiltering) { _%>
 
-    <%_ if (containsBagRelationships) { _%>
-    protected fun <S:<%= persistClass %>> updateRelations(entity: S): Mono<S> {
-        <%_ relationships.filter(function(rel) {
-            return (rel.relationshipManyToMany  && rel.ownerSide)
-        }).forEach(function(rel, idx) { _%>
-            <%_ if (idx === 0) { _%>
-        val result = entityManager.updateLinkTable(<%= rel.relationshipName %>Link, entity.<%= primaryKey.name %>, entity.<%= rel.relationshipNamePlural %>?.map { it.<%= rel.otherEntity.primaryKey.name %> }).then()
-            <%_ } else { _%>
-        result = result.and(entityManager.updateLinkTable(<%= rel.relationshipName %>Link, entity.<%= primaryKey.name %>, entity.<%= rel.relationshipNamePlural %>?.map { it.<%= rel.otherEntity.primaryKey.name %> }))
-            <%_ } _%>
-        <%_ }); _%>
-        return result.thenReturn(entity)
-    }
+    override fun findByCriteria(criteria: <%= entityClass %>Criteria, pageable: Pageable): Flux<<%= persistClass %>> =
+        findAllBy(buildCriteria(criteria), pageable)
 
-    override fun deleteById(entityId: <%= primaryKey.type %>?): Mono<Void> {
-        return deleteRelations(entityId).then(super.deleteById(entityId))
-    }
+    override fun countByCriteria(criteria: <%= entityClass %>Criteria): Mono<Long> = countBy(buildCriteria(criteria))
 
-    protected fun deleteRelations(entityId: <%= primaryKey.type %>?): Mono<Void> {
-        <%_ relationships.filter(function(rel) {
-                return (rel.relationshipManyToMany  && rel.ownerSide)
-        }).forEach(function(rel, idx) { _%>
-            <%_ if (idx === 0) { _%>
-        return entityManager.deleteFromLinkTable(<%= rel.relationshipName %>Link, entityId)
-            <%_ } else { _%>
-                .and(entityManager.deleteFromLinkTable(<%= rel.relationshipName %>Link, entityId))
-            <%_ } _%>
-        <%_ }); _%>
-    }
+    private fun buildCriteria(criteria: <%= entityClass %>Criteria?): Criteria {
+        val builder = CriteriaBuilder()
+        if (criteria != null) {
+  <%_ for (const field of fields) { _%>
+    <%_ if (field.transient) continue; _%>
+    <%_ if (field.filterableField) { _%>
+            if (criteria.<%= field.fieldName %> != null) {
+                builder.buildFilterCriteriaForField(criteria.<%= field.fieldName %>, "<%= field.fieldName %>")
+            }
     <%_ } _%>
+  <%_ } _%>
+  <%_ for (const relationship of toOneRelationships) { _%>
+            if (criteria.<%= relationship.relationshipName %>Id != null) {
+                builder.buildFilterCriteriaForField(criteria.<%= relationship.relationshipName %>Id, "<%= relationship.id ? primaryKey.name : `${relationship.relationshipFieldName}Id` %>")
+            }
+  <%_ } _%>
+        }
+        return builder.buildCriteria()
+    }
+<%_ } _%>
 }

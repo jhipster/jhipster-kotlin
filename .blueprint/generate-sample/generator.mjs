@@ -1,5 +1,6 @@
-import { readdir } from 'node:fs/promises';
 import { readFileSync } from 'node:fs';
+import { readdir } from 'node:fs/promises';
+
 import BaseGenerator from 'generator-jhipster/generators/base';
 
 export default class extends BaseGenerator {
@@ -15,30 +16,6 @@ export default class extends BaseGenerator {
 
     constructor(args, opts, features) {
         super(args, opts, { ...features, jhipsterBootstrap: false });
-    }
-
-    get [BaseGenerator.INITIALIZING]() {
-        return this.asInitializingTaskGroup({
-            async parseCommand() {
-                await this.parseCurrentJHipsterCommand();
-            },
-        });
-    }
-
-    get [BaseGenerator.PROMPTING]() {
-        return this.asPromptingTaskGroup({
-            async askForSample() {
-                await this.promptCurrentJHipsterCommand();
-            },
-        });
-    }
-
-    get [BaseGenerator.CONFIGURING]() {
-        return this.asConfiguringTaskGroup({
-            async configureCommand() {
-                await this.configureCurrentJHipsterCommandConfig();
-            },
-        });
     }
 
     get [BaseGenerator.LOADING]() {

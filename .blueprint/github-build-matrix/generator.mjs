@@ -1,6 +1,7 @@
 import { join } from 'node:path';
+
+import { convertToGitHubMatrix, getGithubOutputFile, getGithubSamplesGroup, setGithubTaskOutput } from 'generator-jhipster/ci';
 import BaseGenerator from 'generator-jhipster/generators/base';
-import { convertToGitHubMatrix, getGithubOutputFile, getGithubSamplesGroup, setGithubTaskOutput } from 'generator-jhipster/testing';
 
 export default class extends BaseGenerator {
     /** @type {string} */

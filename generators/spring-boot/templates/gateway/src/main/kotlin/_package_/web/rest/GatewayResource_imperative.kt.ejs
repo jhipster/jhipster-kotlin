@@ -1,0 +1,109 @@
+<%#
+ Copyright 2013-2026 the original author or authors from the JHipster project.
+
+ This file is part of the JHipster project, see https://www.jhipster.tech/
+ for more information.
+
+ Licensed under the Apache License, Version 2.0 (the "License")
+ you may not use this file except in compliance with the License.
+ You may obtain a copy of the License at
+
+      https://www.apache.org/licenses/LICENSE-2.0
+
+ Unless required by applicable law or agreed to in writing, software
+ distributed under the License is distributed on an "AS IS" BASIS,
+ WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
+ See the License for the specific language governing permissions and
+ limitations under the License.
+-%>
+package <%= packageName %>.web.rest
+
+import <%= packageName %>.web.rest.vm.RouteVM
+import <%= packageName %>.security.ADMIN
+
+import org.springframework.beans.factory.annotation.Value
+import org.springframework.core.io.Resource
+import org.springframework.http.ResponseEntity
+import org.springframework.security.access.annotation.Secured
+import org.springframework.web.bind.annotation.GetMapping
+import org.springframework.web.bind.annotation.RequestMapping
+import org.springframework.web.bind.annotation.RestController
+import org.springframework.web.servlet.function.HandlerFunction
+import org.springframework.web.servlet.function.RequestPredicate
+import org.springframework.web.servlet.function.RouterFunction
+import org.springframework.web.servlet.function.RouterFunctions
+import org.springframework.web.servlet.function.ServerRequest
+
+import java.util.Optional
+import java.util.concurrent.atomic.AtomicReference
+import java.util.function.Function
+
+/**
+ * REST controller for managing Gateway configuration.
+ */
+@RestController
+@RequestMapping("/api/gateway")
+class GatewayResource(
+    private val gatewayCompositeRouterFunction: RouterFunction<*>,
+    @Value("\${spring.application.name}") private val appName: String
+) {
+
+    /**
+     * `GET  /routes` : get the active routes.
+     *
+     * @return the [ResponseEntity] with status `200 (OK)` and with body the list of routes.
+     */
+    @GetMapping("/routes")
+    @Secured(ADMIN)
+    fun activeRoutes(): ResponseEntity<List<RouteVM>> {
+        val routes = getRouterFunctions()
+        val routeVMs = mutableListOf<RouteVM>()
+        routes.keys.forEach { key ->
+            val routeVM = RouteVM()
+            val serviceId = key.substring(0, key.indexOf("_")).lowercase()
+            routeVM.serviceId = "${serviceId}Service"
+
+            val route = routes[key]
+            // Format "RouterFunction routeId=gateway_route delegate=/services/gateway/** -> ProxyExchangeHandlerFunction"
+            val predicate = route.toString().split(" ")[2].split("=")[1]
+            routeVM.path = predicate.substring(0, predicate.length - 2)
+            // Exclude gateway app from routes
+            if (!serviceId.equals(appName, ignoreCase = true)) {
+                routeVMs.add(routeVM)
+            }
+        }
+        return ResponseEntity.ok(routeVMs)
+    }
+
+    /* Based on https://github.com/spring-cloud/spring-cloud-gateway/issues/3233#issuecomment-1989318818 */
+    private fun getRouterFunctions(): Map<String, RouterFunction<*>> {
+        val routerFunctionsRef = AtomicReference<Map<String, RouterFunction<*>>>()
+        gatewayCompositeRouterFunction.accept(
+            object : AbstractRouterFunctionsVisitor() {
+                @Suppress("UNCHECKED_CAST")
+                override fun attributes(attributes: Map<String, Any>) {
+                    if (attributes.containsKey("gatewayRouterFunctions")) {
+                        val map = attributes["gatewayRouterFunctions"] as Map<String, RouterFunction<*>>
+                        routerFunctionsRef.compareAndSet(null, map)
+                    }
+                }
+            }
+        )
+        return routerFunctionsRef.get()
+    }
+
+    abstract class AbstractRouterFunctionsVisitor : RouterFunctions.Visitor {
+
+        override fun startNested(predicate: RequestPredicate) {}
+
+        override fun endNested(predicate: RequestPredicate) {}
+
+        override fun route(predicate: RequestPredicate, handlerFunction: HandlerFunction<*>) {}
+
+        override fun resources(lookupFunction: Function<ServerRequest, Optional<Resource>>) {}
+
+        override fun attributes(attributes: Map<String, Any>) {}
+
+        override fun unknown(routerFunction: RouterFunction<*>) {}
+    }
+}

@@ -29,7 +29,7 @@ import <%= entityAbsolutePackage %>.repository.<%= entityClass %>Repository
 import <%= entityAbsolutePackage %>.service.<%= entityClass %>Service
 <%_ } else { _%>
     <%_ if (isUsingMapsId) { _%>
-import <%= entityAbsolutePackage %>.repository.<%= mapsIdAssoc.otherEntityNameCapitalized %>Repository
+import <%= entityAbsolutePackage %>.repository.<%= mapsIdAssoc.otherEntity.entityNameCapitalized %>Repository
     <%_ } _%>
     <%_ if (searchEngineElasticsearch) { _%>
 import <%= entityAbsolutePackage %>.repository.search.<%= entityClass %>SearchRepository
@@ -44,9 +44,11 @@ import <%= entityAbsolutePackage %>.service.dto.<%= dtoClass %>
 <%_ if (serviceNo) { _%>
 import <%= entityAbsolutePackage %>.service.mapper.<%= entityClass %>Mapper
 <%_ } } _%>
-<%_ if (jpaMetamodelFiltering) {  _%>
+<%_ if (jpaMetamodelFiltering && !reactive) {  _%>
 import <%= entityAbsolutePackage %>.service.criteria.<%= entityClass %>Criteria
 import <%= entityAbsolutePackage %>.service.<%= entityClass %>QueryService
+<%_ } else if (jpaMetamodelFiltering && reactive) { _%>
+import <%= entityAbsolutePackage %>.domain.criteria.<%= entityClass %>Criteria
 <%_ } _%>
 
 import tech.jhipster.web.util.HeaderUtil
@@ -66,7 +68,7 @@ import org.springframework.data.domain.PageImpl
 import org.springframework.http.server.reactive.ServerHttpRequest
     <%_ } _%>
     <%_ if (reactive) { _%>
-import org.springframework.web.util.UriComponentsBuilder
+import org.springframework.web.util.ForwardedHeaderUtils
     <%_ } else { _%>
 import org.springframework.web.servlet.support.ServletUriComponentsBuilder
     <%_ } _%>
@@ -107,7 +109,6 @@ import java.util.stream.StreamSupport
     <%_ } _%>
 <%_ } _%>
 <%_ if (searchEngineElasticsearch && !reactive) { _%>
-import org.elasticsearch.index.query.QueryBuilders.queryStringQuery
 <%_ } _%>
 <%_ if (!readOnly) { _%>
 <%_
@@ -145,7 +146,7 @@ _%><%- include('../../_partials_entity_/inject_template', {viaService: viaServic
         const val ENTITY_NAME = "<%= entityName %>"
     }
 
-    @Value("\${jhipster.clientApp.name}")
+    @Value("\${jhipster.clientApp.name:<%= camelizedBaseName %>}")
     private var applicationName: String? = null
 
     <%_ if (!readOnly) { _%>
@@ -159,24 +160,26 @@ _%><%- include('../../_partials_entity_/inject_template', {viaService: viaServic
     @PostMapping("/<%= entityApiUrl %>")
     fun create<%= entityClass %>(<% if (anyPropertyHasValidation) { %>@Valid <% } %>@RequestBody <%= instanceName %>: <%= instanceType %>): <% if (reactive) { %>Mono<<% } %>ResponseEntity<<%= instanceType %>><% if (reactive) { %>><% } %> {
         log.debug("REST request to save <%= entityClass %> : $<%= instanceName %>")
+<%_ if (primaryKey.autoGenerate) { _%>
         if (<%= instanceName %>.<%= primaryKey.name %> != null) {
             throw BadRequestAlertException(
                 "A new <%= entityInstance %> cannot already have an ID",
                 ENTITY_NAME, "idexists"
             )
         }
+<%_ } else if (!reactive) { _%>
+        if (<%= instanceName %>.<%= primaryKey.name %>?.let { <%= entityInstance %>Repository.existsById(it) } == true) {
+            throw BadRequestAlertException("<%= entityInstance %> already exists", ENTITY_NAME, "idexists")
+        }
+<%_ } _%>
         <%_ if (saveUserSnapshot) { %>
             <% for (const userRelationship of relationships.filter(rel => rel.otherEntity.builtInUser)) { %>
                 <%_ if (userRelationship.collection) { _%>
-                  if (<%= instanceName %>.<%= userRelationship.relationshipNamePlural %> != null) {
-                      // Save users in case they are new and only exist in gateway
-                      userRepository.saveAll(<%= instanceName %>.<%= userRelationship.relationshipNamePlural %>)
-                  }
+                  // Save users in case they are new and only exist in gateway
+                  <%= instanceName %>.<%= userRelationship.relationshipNamePlural %>?.let { userRepository.saveAll(it) }
                 <%_ } else { _%>
-                  if (<%= instanceName %>.<%= userRelationship.relationshipName %> != null) {
-                      // Save user in case it's new and only exists in gateway
-                      userRepository.save(<%= instanceName %>.<%= userRelationship.relationshipName %>)
-                  }
+                  // Save user in case it's new and only exists in gateway
+                  <%= instanceName %>.<%= userRelationship.relationshipName %>?.let { userRepository.save(it) }
                 <%_ } _%>
             <% } %>
         <%_ } _%>
@@ -185,7 +188,20 @@ _%><%- include('../../_partials_entity_/inject_template', {viaService: viaServic
         <%= instanceName %>.<%= field.fieldName %> = UUID.randomUUID()
             <%_ } _%>
        <%_ } _%>
-<%- include('/_global_partials_entity_/save_template', {viaService: viaService, returnDirectly: false, isUsingMapsId: isUsingMapsId, mapsIdAssoc: mapsIdAssoc, isController: true, noReturn: false}); -%>
+<%_ if (reactive && !primaryKey.autoGenerate) { _%>
+        return (<%= instanceName %>.<%= primaryKey.name %>?.let { <%= entityInstance %>Repository.existsById(it) } ?: Mono.just(false))
+            .flatMap { exists ->
+                if (exists) {
+                    Mono.error(BadRequestAlertException("<%= entityInstance %> already exists", ENTITY_NAME, "idexists"))
+                } else {
+<%- include('/_global_partials_entity_/save_template_reactive', {saveNewEntityOperation: true, viaService: viaService, returnDirectly: false, isUsingMapsId: isUsingMapsId, mapsIdAssoc: mapsIdAssoc, isController: true, noReturn: true}); -%>
+                }
+            }
+<%_ } else if (reactive) { _%>
+<%- include('/_global_partials_entity_/save_template_reactive', {saveNewEntityOperation: true, viaService: viaService, returnDirectly: false, isUsingMapsId: isUsingMapsId, mapsIdAssoc: mapsIdAssoc, isController: true, noReturn: false}); -%>
+<%_ } else { _%>
+<%- include('/_global_partials_entity_/save_template_imperative', {saveNewEntityOperation: true, viaService: viaService, returnDirectly: false, isUsingMapsId: isUsingMapsId, mapsIdAssoc: mapsIdAssoc, isController: true, noReturn: false}); -%>
+<%_ } _%>
         <%_ if (reactive) { _%>
             .map { result ->
                 try {
@@ -242,19 +258,19 @@ _%><%- include('../../_partials_entity_/inject_template', {viaService: viaServic
         <%_ if (saveUserSnapshot) { %>
             <% for (const userRelationship of relationships.filter(rel => rel.otherEntity.builtInUser)) { %>
                 <%_ if (userRelationship.collection) { _%>
-                  if (<%= instanceName %>.<%= userRelationship.relationshipNamePlural %> != null) {
-                      // Save users in case they are new and only exist in gateway
-                      userRepository.saveAll(<%= instanceName %>.<%= userRelationship.relationshipNamePlural %>)
-                  }
+                  // Save users in case they are new and only exist in gateway
+                  <%= instanceName %>.<%= userRelationship.relationshipNamePlural %>?.let { userRepository.saveAll(it) }
                 <%_ } else { _%>
-                  if (<%= instanceName %>.<%= userRelationship.relationshipName %> != null) {
-                      // Save user in case it's new and only exists in gateway
-                      userRepository.save(<%= instanceName %>.<%= userRelationship.relationshipName %>)
-                  }
+                  // Save user in case it's new and only exists in gateway
+                  <%= instanceName %>.<%= userRelationship.relationshipName %>?.let { userRepository.save(it) }
                 <%_ } _%>
             <% } %>
         <%_ } _%>
-<%- include('/_global_partials_entity_/update_template', {updatableEntity, viaService: viaService, returnDirectly: false, isUsingMapsId: false, mapsIdAssoc: mapsIdAssoc, isController: true, isPersisted: requiresPersistableImplementation, noReturn: true}); -%>
+<%_ if (reactive) { _%>
+<%- include('/reactive/_global_partials_entity_/update_template', {updatableEntity, viaService: viaService, returnDirectly: false, isUsingMapsId: false, mapsIdAssoc: mapsIdAssoc, isController: true, isPersisted: requiresPersistableImplementation && databaseTypeSql, noReturn: true}); -%>
+<%_ } else { _%>
+<%- include('/_global_partials_entity_/update_template', {updatableEntity, viaService: viaService, returnDirectly: false, isUsingMapsId: false, mapsIdAssoc: mapsIdAssoc, isController: true, isPersisted: requiresPersistableImplementation && databaseTypeSql, noReturn: true}); -%>
+<%_ } _%>
         <%_ if (reactive) { _%>
             .switchIfEmpty(Mono.error(ResponseStatusException(HttpStatus.NOT_FOUND)))
             .map { result -> ResponseEntity.ok()
@@ -313,15 +329,11 @@ _%><%- include('../../_partials_entity_/inject_template', {viaService: viaServic
         <%_ if (saveUserSnapshot) { _%>
             <% for (const userRelationship of relationships.filter(rel => rel.otherEntity.builtInUser)) { %>
                 <%_ if (userRelationship.collection) { _%>
-                  if (<%= instanceName %>.<%= userRelationship.relationshipNamePlural %> != null) {
-                      // Save users in case they are new and only exist in gateway
-                      userRepository.saveAll(<%= instanceName %>.<%= userRelationship.relationshipNamePlural %>)
-                  }
+                  // Save users in case they are new and only exist in gateway
+                  <%= instanceName %>.<%= userRelationship.relationshipNamePlural %>?.let { userRepository.saveAll(it) }
                 <%_ } else { _%>
-                  if (<%= instanceName %>.<%= userRelationship.relationshipName %> != null) {
-                      // Save user in case it's new and only exists in gateway
-                      userRepository.save(<%= instanceName %>.<%= userRelationship.relationshipName %>)
-                  }
+                  // Save user in case it's new and only exists in gateway
+                  <%= instanceName %>.<%= userRelationship.relationshipName %>?.let { userRepository.save(it) }
                 <%_ } _%>
             <% } %>
         <%_ } _%>
@@ -358,11 +370,16 @@ _%><%- include('../../_partials_entity_/inject_template', {viaService: viaServic
      * @param filter the filter of the request.<% } %>
      * @return the [ResponseEntity] with status `200 (OK)` and the list of <%= entityInstancePlural %> in body.
      */
-    @GetMapping("/<%= entityApiUrl %>")<%_ if (databaseTypeSql && isUsingMapsId&& !viaService) { %>
+    <%_ if (reactive) { _%>
+    @GetMapping(value = ["/<%= entityApiUrl %>"], produces = [MediaType.APPLICATION_JSON_VALUE])
+    <%_ } else { _%>
+    @GetMapping("/<%= entityApiUrl %>")
+    <%_ } _%>
+    <%_ if (databaseTypeSql && isUsingMapsId && !viaService) { %>
     @Transactional(readOnly = true)<%_ } _%>
     <%- include('../../_partials_entity_/get_all_template', {viaService}); -%>
 
-    <%_ if (reactive && paginationNo) { _%>
+    <%_ if (!jpaMetamodelFiltering && reactive && paginationNo) { _%>
     /**
      * `GET  /<%= entityApiUrl %>` : get all the <%= entityInstancePlural %> as a stream.
      * @return the [Flux] of <%= entityInstancePlural %>.

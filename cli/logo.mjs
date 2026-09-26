@@ -17,6 +17,7 @@
  * limitations under the License.
  */
 import chalk from 'chalk';
+
 import packagejs from './package-json.mjs';
 
 export function printLogo() {

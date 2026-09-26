@@ -18,104 +18,70 @@
 -%>
 package <%= packageName %>.config
 
-import java.util.*
-
-import java.util.Arrays
+<%_ if (databaseTypeSql) { _%>
 import tech.jhipster.config.JHipsterConstants
-
-import org.slf4j.Logger
+<%_ } _%>
 import org.slf4j.LoggerFactory
-import org.springframework.beans.factory.config.ConfigurableListableBeanFactory
-import org.springframework.beans.factory.support.DefaultSingletonBeanRegistry
+import org.springframework.boot.test.util.TestPropertyValues
+import org.springframework.context.ConfigurableApplicationContext
 import org.springframework.core.annotation.AnnotatedElementUtils
-
 import org.springframework.test.context.ContextConfigurationAttributes
 import org.springframework.test.context.ContextCustomizer
 import org.springframework.test.context.ContextCustomizerFactory
-import org.springframework.beans.factory.support.DefaultListableBeanFactory
-import org.springframework.boot.test.util.TestPropertyValues
+import org.springframework.test.context.MergedContextConfiguration
 
-class SqlTestContainersSpringContextCustomizerFactory: ContextCustomizerFactory {
+class SqlTestContainersSpringContextCustomizerFactory : ContextCustomizerFactory {
 
     private val log = LoggerFactory.getLogger(SqlTestContainersSpringContextCustomizerFactory::class.java)
 
-    companion object {
-<%_ if (!devDatabaseTypeH2Any) { _%>
-        private var devTestContainer: SqlTestContainer? = null
-<%_ } _%>
-        private var prodTestContainer: SqlTestContainer? = null
-    }
-
     override fun createContextCustomizer(
         testClass: Class<*>,
-        configAttributes: MutableList<ContextConfigurationAttributes>
-    ): ContextCustomizer {
-        return ContextCustomizer { context, _ ->
+        configAttributes: List<ContextConfigurationAttributes>,
+    ): ContextCustomizer = object : ContextCustomizer {
+        override fun customizeContext(context: ConfigurableApplicationContext, mergedConfig: MergedContextConfiguration) {
             val beanFactory = context.beanFactory
             var testValues = TestPropertyValues.empty()
             val sqlAnnotation = AnnotatedElementUtils.findMergedAnnotation(testClass, EmbeddedSQL::class.java)
-            if (null != sqlAnnotation) {
+<%_ if (prodDatabaseType === devDatabaseType) { _%>
+            if (sqlAnnotation != null) {
+<%_ } else { _%>
+            val usingTestProdProfile = context.environment.activeProfiles.contains("test${JHipsterConstants.SPRING_PROFILE_PRODUCTION}")
+            if (sqlAnnotation != null && usingTestProdProfile) {
+<%_ } _%>
                 log.debug("detected the EmbeddedSQL annotation on class {}", testClass.name)
                 log.info("Warming up the sql database")
-<%_ if (!devDatabaseTypeH2Any) { _%>
-                if (context.environment.activeProfiles.contains("test${JHipsterConstants.SPRING_PROFILE_DEVELOPMENT}")) {
-                    if (null == devTestContainer) {
-                        try {
-                            val containerClass =  Class.forName("${javaClass.packageName}.<% if (devDatabaseTypeMysql) { %>Mysql<% } else if (devDatabaseTypeMariadb) { %>Mariadb<% } else if (devDatabaseTypeMssql) { %>MsSql<% } else if (devDatabaseTypePostgres) { %>PostgreSql<% } %>TestContainer") as (Class<out SqlTestContainer>)
-                            devTestContainer = beanFactory.createBean(containerClass)
-                            beanFactory.registerSingleton(containerClass.name, devTestContainer)
-                            // (beanFactory as DefaultListableBeanFactory).registerDisposableBean(containerClass.name, devTestContainer)
-                        } catch (e: ClassNotFoundException) {
-                            throw RuntimeException(e)
-                        }
-                    }
-                    devTestContainer?.let {
-  <%_ if (reactive) { _%>
-                        testValues = testValues.and("spring.r2dbc.url=" + it.getTestContainer().jdbcUrl.replace("jdbc", "r2dbc")<% if (devDatabaseTypeMysql) { %>.replace("mysql", "mariadb")<% } else if (devDatabaseTypeMssql) { %>.replace("encrypt=false", "")<% } %> + "<%- prodDatabaseExtraOptions %>")
-                        testValues = testValues.and("spring.r2dbc.username=" + it.getTestContainer().username)
-                        testValues = testValues.and("spring.r2dbc.password=" + it.getTestContainer().password)
-                        testValues = testValues.and("spring.liquibase.url=" + it.getTestContainer().jdbcUrl + "<%- prodDatabaseExtraOptions %>" )
-  <%_ } else { _%>
-                        testValues = testValues.and("spring.datasource.url=" + it.getTestContainer().jdbcUrl + "<%- prodDatabaseExtraOptions %>")
-                        testValues = testValues.and("spring.datasource.username=" + it.getTestContainer().username)
-                        testValues = testValues.and("spring.datasource.password=" + it.getTestContainer().password)
-  <%_ } _%>
+                if (prodTestContainer == null) {
+                    try {
+                        val containerClass = Class.forName("${javaClass.packageName}.DatabaseTestcontainer").asSubclass(SqlTestContainer::class.java)
+                        val container = beanFactory.createBean(containerClass)
+                        beanFactory.registerSingleton(containerClass.name, container)
+                        prodTestContainer = container
+                    } catch (exception: ClassNotFoundException) {
+                        throw RuntimeException(exception)
                     }
                 }
-<%_ } _%>
-                if (context.environment.activeProfiles.asList().contains("test${JHipsterConstants.SPRING_PROFILE_PRODUCTION}")) {
-                    if (null == prodTestContainer) {
-                        try {
-                            val containerClass = Class.forName("${javaClass.packageName}.<% if (prodDatabaseTypeMysql) { %>Mysql<% } else if (prodDatabaseTypeMariadb) { %>Mariadb<% } else if (prodDatabaseTypeMssql) { %>MsSql<% } else if (prodDatabaseTypePostgresql) { %>PostgreSql<% } %>TestContainer") as (Class<out SqlTestContainer>)
-                            prodTestContainer = beanFactory.createBean(containerClass)
-                            beanFactory.registerSingleton(containerClass.name, prodTestContainer)
-                            // (beanFactory as (DefaultListableBeanFactory)).registerDisposableBean(containerClass.name, prodTestContainer)
-                        } catch (e: ClassNotFoundException) {
-                            throw RuntimeException(e)
-                        }
-                    }
-                    prodTestContainer?.let {
+                prodTestContainer?.getTestContainer()?.let { container ->
 <%_ if (reactive) { _%>
-                        testValues = testValues.and("spring.r2dbc.url=" + it.getTestContainer().jdbcUrl.replace("jdbc", "r2dbc")<% if (prodDatabaseTypeMysql) { %>.replace("mysql", "mariadb")<% } else if (prodDatabaseTypeMssql) { %>.replace("encrypt=false", "")<% } %> + "<%- prodDatabaseExtraOptions %>")
-                        testValues = testValues.and("spring.r2dbc.username=" + it.getTestContainer().username)
-                        testValues = testValues.and("spring.r2dbc.password=" + it.getTestContainer().password)
-                        testValues = testValues.and("spring.liquibase.url=" + it.getTestContainer().jdbcUrl  + "<%- prodDatabaseExtraOptions %>")
+                    testValues = testValues.and("spring.r2dbc.url=" + container.jdbcUrl.replace("jdbc", "r2dbc")<%- prodDatabaseTypeMssql ? '.replace(";encrypt=false", "")' : '' %> + "<%- prodDatabaseExtraOptions %>")
+                    testValues = testValues.and("spring.r2dbc.username=" + container.username)
+                    testValues = testValues.and("spring.r2dbc.password=" + container.password)
+                    testValues = testValues.and("spring.liquibase.url=" + container.jdbcUrl + "<%- prodDatabaseExtraOptions %>")
 <%_ } else { _%>
-                        testValues = testValues.and("spring.datasource.url=" + it.getTestContainer().jdbcUrl + "<%- prodDatabaseExtraOptions %>")
-                        testValues = testValues.and("spring.datasource.username=" + it.getTestContainer().username)
-                        testValues = testValues.and("spring.datasource.password=" + it.getTestContainer().password)
+                    testValues = testValues.and("spring.datasource.url=" + container.jdbcUrl + "<%- prodDatabaseExtraOptions %>")
+                    testValues = testValues.and("spring.datasource.username=" + container.username)
+                    testValues = testValues.and("spring.datasource.password=" + container.password)
 <%_ } _%>
-                    }
                 }
             }
-
             testValues.applyTo(context)
         }
+
+        override fun hashCode() = SqlTestContainer::class.java.name.hashCode()
+
+        override fun equals(other: Any?) = other != null && hashCode() == other.hashCode()
     }
 
-    override fun hashCode() = SqlTestContainersSpringContextCustomizerFactory::class.java.name.hashCode()
-
-    override fun equals(other: Any?): Boolean {
-        return this.hashCode() == other.hashCode();
+    companion object {
+        private var prodTestContainer: SqlTestContainer? = null
     }
 }

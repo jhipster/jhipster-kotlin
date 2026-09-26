@@ -17,7 +17,8 @@
  * limitations under the License.
  */
 import { readdirSync } from 'node:fs';
-import { entitiesByType, workflowSamples } from '../generate-sample/support/index.mjs';
+
+import { entitiesByType, workflowSamples } from './support/index.mjs';
 
 /**
  * @type {import('generator-jhipster').JHipsterCommandDefinition}
@@ -155,7 +156,6 @@ const command = {
             scope: 'generator',
         },
     },
-    options: {},
     import: ['app', 'workspaces'],
 };
 

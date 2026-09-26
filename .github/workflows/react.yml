@@ -26,10 +26,10 @@ on:
     push:
         branches:
             - main
+            - 'upgrade/**'
     pull_request:
         types: [closed, opened, synchronize, reopened]
-        branches:
-            - '*'
+    workflow_dispatch:
 permissions:
     contents: read
 env:
@@ -40,47 +40,75 @@ jobs:
         outputs:
             matrix: ${{ steps.build.outputs.matrix }}
         steps:
-            - uses: actions/checkout@v7
+            - name: 'SETUP: Checkout jhipster-kotlin'
+              uses: actions/checkout@v7
             - uses: actions/setup-node@v7
               with:
-                  node-version: 22
+                  node-version: 24
+            - run: npm ci --ignore-scripts
             - id: build
-              run: |
-                  npm install
-                  ./cli/cli.cjs github-build-matrix react
-    samples:
+              run: ./cli/cli.cjs github-build-matrix react
+    applications:
         name: ${{ matrix.job-name || matrix.sample }}
-        runs-on: ${{ matrix.os }}
+        runs-on: ${{ matrix.os || 'ubuntu-latest' }}
         needs: build-matrix
         defaults:
             run:
+                shell: bash
                 working-directory: ${{ github.workspace }}/app
-        timeout-minutes: 30
+        if: >-
+            !contains(github.event.head_commit.message, '[angular]') &&
+            !contains(github.event.head_commit.message, '[vue]') &&
+            !contains(github.event.pull_request.title, '[angular]') &&
+            !contains(github.event.pull_request.title, '[vue]') &&
+            !contains(github.event.head_commit.message, '[ci skip]') &&
+            !contains(github.event.head_commit.message, '[skip ci]') &&
+            !contains(github.event.pull_request.title, '[skip ci]') &&
+            !contains(github.event.pull_request.title, '[ci skip]') &&
+            github.event.action != 'closed' &&
+            !contains(github.event.pull_request.labels.*.name, 'pr: skip-ci') &&
+            fromJson(needs.build-matrix.outputs.matrix).include[0] != null
+        timeout-minutes: 50
         strategy:
             fail-fast: false
-            matrix: ${{fromJson(needs.build-matrix.outputs.matrix)}}
+            matrix: ${{ fromJson(needs.build-matrix.outputs.matrix) }}
         steps:
             #----------------------------------------------------------------------
             # Install all tools and check configuration
             #----------------------------------------------------------------------
-            - uses: actions/checkout@v7
+            - name: 'SETUP: Checkout jhipster-kotlin'
+              uses: actions/checkout@v7
               with:
                   path: jhipster-kotlin
                   fetch-depth: 2
             - uses: jhipster/actions/setup-runner@v2
               with:
-                  java-version: ${{ matrix.java-version }}
                   node-version: ${{ matrix.node-version }}
+                  java-version: ${{ matrix.java-version }}
+                  npm-version: ${{ matrix.npm-version }}
                   maven-cache: true
                   gradle-cache: true
                   binary-dir: ${{ github.workspace }}/jhipster-kotlin/cli
-            - run: npm install
-              working-directory: ${{ github.workspace }}/jhipster-kotlin
+            # Fail git operations on line ending mismatches, and make sure that JHipster generates crlf line endings on Windows correctly.
+            - run: |
+                  git config --global core.autocrlf false
+                  git config --global core.safecrlf true
             - run: |
                   mkdir -p ~/.gradle
                   echo "org.gradle.warning.mode=all" >> ~/.gradle/gradle.properties
-            - run: cli.cjs generate-sample ${{ matrix.sample }} --skip-jhipster-dependencies --skip-install --skip-ktlint-format ${{ matrix.extra-args }} ${{ matrix.new-extra-args }}
+            #----------------------------------------------------------------------
+            # Install KHipster and generate project+entities
+            #----------------------------------------------------------------------
+            - run: npm ci --ignore-scripts
+              working-directory: ${{ github.workspace }}/jhipster-kotlin
+            - name: 'GENERATION: project'
+              run: cli.cjs generate-sample ${{ matrix.sample }} --skip-jhipster-dependencies --skip-install --skip-ktlint-format ${{ matrix.extra-args }} ${{ matrix.new-extra-args }}
+              env:
+                  JHI_FOLDER_APP: ${{ github.workspace }}/app
+                  JHI_JWT_SECRET_KEY: ${{ matrix.jwt-secret-key }}
             - run: cli.cjs info
+            # Make sure that the script-shell is set to bash, otherwise npm scripts will fail on Windows runners
+            - run: npm config -L project set script-shell=bash
             #----------------------------------------------------------------------
             # Detect changes against base commit
             #----------------------------------------------------------------------
@@ -88,61 +116,105 @@ jobs:
               id: compare
               if: >-
                   github.event.pull_request &&
+                  matrix.skip-compare != 'true' &&
                   !contains(github.event.pull_request.labels.*.name, 'pr: disable-compare')
               with:
                   generator-path: jhipster-kotlin
                   cmd: cli.cjs generate-sample ${{ matrix.sample }} --skip-jhipster-dependencies --skip-install --skip-ktlint-format ${{ matrix.extra-args }}
+              env:
+                  # generate-sample uses JHI_FOLDER_APP to generate the application.
+                  JHI_FOLDER_APP: ${{ github.workspace }}/base/app
+                  JHI_JWT_SECRET_KEY: ${{ matrix.jwt-secret-key }}
             #----------------------------------------------------------------------
             # Launch tests
             #----------------------------------------------------------------------
-            - run: npm run ci:backend:test
+            - name: 'TESTS: backend'
               id: backend
-              if: steps.compare.outputs.equals != 'true' && matrix.skip-backend-tests != 1
-              continue-on-error: ${{matrix.continue-on-backend-tests-error || false}}
+              if: steps.compare.outputs.equals != 'true' && matrix.skip-backend-tests != 'true'
+              run: npm run ci:backend:test
+              continue-on-error: ${{ matrix.continue-on-backend-tests-error || false }}
               timeout-minutes: 20
-            - run: ${{ (matrix.workspaces == 'true' && 'npm') || './npmw' }} install
-              if: steps.compare.outputs.equals != 'true'
+            # Run npm install for workspaces only, as it is done in packaging for non-workspaces
+            - name: 'PREPARE: npm install'
+              if: steps.compare.outputs.equals != 'true' && matrix.workspaces == 'true' && matrix.skip-e2e != 'true'
+              run: npm install
               timeout-minutes: 7
-            - run: npm run ci:e2e:package
-              if: steps.compare.outputs.equals != 'true'
-              timeout-minutes: 7
-            - run: npm run ci:e2e:prepare
-              if: steps.compare.outputs.equals != 'true'
+            - name: 'TESTS: packaging'
+              id: packaging
+              if: steps.compare.outputs.equals != 'true' && matrix.skip-e2e != 'true'
+              run: npm run ci:e2e:package
+              timeout-minutes: 12
+            - name: 'TESTS: frontend'
+              id: frontend
+              if: steps.compare.outputs.equals != 'true' && matrix.skip-frontend-tests != 'true' && matrix.skip-e2e != 'true'
+              run: npm run ci:frontend:test
+              timeout-minutes: 15
+            - name: 'TESTS: Start docker compose containers for e2e tests'
+              id: docker-compose
+              if: steps.compare.outputs.equals != 'true' && runner.os == 'Linux' && matrix.skip-e2e != 'true'
+              run: npm run ci:e2e:prepare
               timeout-minutes: 5
-            - run: npm run preci:e2e:server:start --if-present
-            - run: npm run ci:e2e:run --if-present
+            - name: 'E2E: Run'
               id: e2e
-              if: steps.compare.outputs.equals != 'true'
-              timeout-minutes: 20
-            # - name: 'TESTS: frontend'
-            #  if: steps.compare.outputs.equals != 'true' && matrix.skip-frontend-tests != 1
-            #  run: npm run ci:frontend:test
-            #  timeout-minutes: 8
+              if: steps.compare.outputs.equals != 'true' && runner.os == 'Linux' && matrix.skip-e2e != 'true'
+              run: npm run ci:e2e:run --if-present
+              timeout-minutes: 15
+              env:
+                  CYPRESS_video: >-
+                      ${{ contains(github.event.pull_request.labels.*.name, 'ci: e2e-video') && 'true' || 'false' }}
+                  PLAYWRIGHT_VIDEO: >-
+                      ${{ contains(github.event.pull_request.labels.*.name, 'ci: e2e-video') && 'true' || 'false' }}
+            - name: Store the application
+              uses: actions/upload-artifact@v7
+              if: always() && (steps.backend.outcome == 'failure' || steps.e2e.outcome == 'failure' || steps.frontend.outcome == 'failure' || steps.packaging.outcome == 'failure' || steps.docker-compose.outcome == 'failure')
+              with:
+                  name: app-${{ matrix.sample }}
+                  include-hidden-files: true
+                  path: |
+                      ${{ github.workspace }}/app/**/*
+                      !**/app/build/**
+                      !**/app/*/build/**
+                      !**/app/.gradle/**
+                      !**/app/*/.gradle/**
+                      !**/app/target/**
+                      !**/app/*/target/**
+                      !**/node_modules/**
             - name: 'BACKEND: Store failure logs'
               uses: actions/upload-artifact@v7
               if: always() && steps.backend.outcome == 'failure'
               with:
-                  name: log-${{ matrix.name }}
-                  path: ${{ steps.setup.outputs.application-path }}/**/reports/ktlint/**
-            - name: 'E2E: Store failure screenshots'
+                  name: log-${{ matrix.sample }}
+                  path: |
+                      ${{ github.workspace }}/app/**/test-results/**/*.xml
+                      ${{ github.workspace }}/app/**/target/surefire-reports
+                      ${{ github.workspace }}/app/**/target/failsafe-reports
+                      ${{ github.workspace }}/app/**/reports/ktlint/**
+            - name: 'E2E: Store failure e2e assets'
               uses: actions/upload-artifact@v7
-              if: always() && steps.e2e.outcome == 'failure'
+              if: |
+                  always() && (
+                    contains(github.event.pull_request.labels.*.name, 'ci: always-upload-e2e-assets')
+                    || steps.e2e.outcome == 'failure')
               with:
-                  name: screenshots-${{ matrix.name }}
-                  path: ${{ steps.setup.outputs.application-path }}/**/cypress/screenshots
+                  name: e2e-${{ matrix.sample }}
+                  path: |
+                      ${{ github.workspace }}/app/**/cypress/screenshots
+                      ${{ github.workspace }}/app/**/cypress/videos
+                      ${{ github.workspace }}/app/**/playwright/results
+                      ${{ github.workspace }}/app/**/playwright/report
             - name: Dump docker logs
-              if: always()
+              if: always() && runner.os == 'Linux'
               uses: jwalton/gh-docker-logs@v2
     check-react:
         permissions:
             contents: none
         runs-on: ubuntu-latest
-        needs: [samples]
+        needs: [applications]
         if: always()
         steps:
             - run: |
                   echo '${{ toJSON(needs) }}'
-                  if [ 'skipped' == '${{ needs.samples.result }}' ] || [ 'success' == '${{ needs.samples.result }}' ] || [ 'closed' == '${{ github.event.action }}' ]; then
+                  if [ 'skipped' == '${{ needs.applications.result }}' ] || [ 'success' == '${{ needs.applications.result }}' ] || [ 'closed' == '${{ github.event.action }}' ]; then
                     exit 0
                   fi
                   exit 1

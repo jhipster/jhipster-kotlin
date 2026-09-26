@@ -43,7 +43,7 @@ import org.springframework.http.MediaType
 import org.springframework.security.test.context.support.WithMockUser
 <%_ if (reactive) { _%>
 import org.junit.jupiter.api.BeforeEach
-import org.springframework.boot.test.autoconfigure.web.reactive.AutoConfigureWebTestClient
+import org.springframework.boot.webtestclient.autoconfigure.AutoConfigureWebTestClient
 import org.springframework.security.oauth2.client.ReactiveOAuth2AuthorizedClientService
 import org.springframework.security.oauth2.client.registration.ClientRegistration
 import org.springframework.test.web.reactive.server.WebTestClient
@@ -54,7 +54,7 @@ import java.util.Collections
 import java.util.HashMap
 import java.util.Map
 <%_ } else { _%>
-import org.springframework.boot.test.autoconfigure.web.servlet.AutoConfigureMockMvc
+import org.springframework.boot.webmvc.test.autoconfigure.AutoConfigureMockMvc
 import org.springframework.security.oauth2.client.OAuth2AuthorizedClientService
 import org.springframework.security.oauth2.client.registration.ClientRegistration
 import org.springframework.security.test.context.TestSecurityContextHolder
@@ -164,16 +164,12 @@ class AccountResourceIT {
     <%_ if (reactive) { _%>
     fun testNonAuthenticatedUser() {
         webTestClient.get().uri("/api/authenticate")
-            .accept(MediaType.APPLICATION_JSON)
             .exchange()
-            .expectStatus().isOk
-            .expectBody().isEmpty
+            .expectStatus().isUnauthorized
     <%_ } else { _%>
     fun testNonAuthenticatedUser(){
-        restAccountMockMvc.perform(get("/api/authenticate")
-            .accept(MediaType.APPLICATION_JSON))
-            .andExpect(status().isOk)
-            .andExpect(content().string(""))
+        restAccountMockMvc.perform(get("/api/authenticate"))
+            .andExpect(status().isUnauthorized)
     <%_ } _%>
     }
 
@@ -183,20 +179,12 @@ class AccountResourceIT {
     fun testAuthenticatedUser() {
         webTestClient
             .get().uri("/api/authenticate")
-            .accept(MediaType.APPLICATION_JSON)
             .exchange()
-            .expectStatus().isOk
-            // .expectBody<String>().isEqualTo(TEST_USER_LOGIN)
+            .expectStatus().isNoContent
     <%_ } else { _%>
     fun testAuthenticatedUser() {
-        restAccountMockMvc.perform(get("/api/authenticate")
-            .with { request ->
-                request.remoteUser = TEST_USER_LOGIN
-                request
-            }
-            .accept(MediaType.APPLICATION_JSON))
-            .andExpect(status().isOk)
-            .andExpect(content().string(TEST_USER_LOGIN))
+        restAccountMockMvc.perform(get("/api/authenticate"))
+            .andExpect(status().isNoContent)
     <%_ } _%>
     }
 }

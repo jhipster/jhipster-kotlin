@@ -20,27 +20,28 @@ package <%= entityAbsolutePackage %>.service.mapper
 
 <%_
   const getOriginalField = field => field.originalField || field;
-  const uuidMapMethod = dtoReferences.some(reference => reference.valueReference && reference.valueReference.field && reference.valueReference.field.fieldTypeUUID);
-  const byteMapMethod = dtoReferences.some(reference => reference.valueReference && reference.valueReference.field && reference.valueReference.field.fieldTypeBytes);
-  const dtoRelationships = dtoReferences.filter(reference => reference.relationship && !reference.relationship.otherEntity.embedded).map(reference => reference.relationship);
+  const uuidMapMethod = restProperties.some(property => property.relatedField?.fieldTypeUUID);
+  const byteMapMethod = restProperties.some(property => property.relatedField?.fieldTypeBytes);
+  const dtoRelationships = restProperties.filter(property => property.relationshipName && !property.otherEntity.embedded);
+  const dtoRelationshipOtherEntities = this._.uniq(dtoRelationships.map(relationship => relationship.otherEntity));
   let otherEntitiesFields = otherEntities
     .filter(otherEntity => dtoRelationships.some(relationship => relationship.otherEntity === otherEntity))
     .map(otherEntity =>
       dtoRelationships
-        .filter(relationship => relationship.otherEntity == otherEntity)
+        .filter(relationship => relationship.otherEntity === otherEntity)
         .map(({relatedField, collection}) => ({otherEntity, relatedField, collection}))
     )
     .flat();
-  otherEntitiesFields.forEach(a => {
-    a.collection = a.collection || otherEntitiesFields.some(b => a.otherEntity === b.otherEntity && getOriginalField(a.relatedField) === getOriginalField(b.relatedField) && b.collection === true)
-  });
+  for (const a of otherEntitiesFields) {
+    a.collection = a.collection || otherEntitiesFields.some(b => a.otherEntity === b.otherEntity && getOriginalField(a.relatedField) === getOriginalField(b.relatedField) && b.collection === true);
+  }
   otherEntitiesFields = this._.uniqWith(otherEntitiesFields, (a, b) => a.otherEntity === b.otherEntity && a.collection === b.collection && getOriginalField(a.relatedField) === getOriginalField(b.relatedField));
 _%>
 
 import <%= entityAbsoluteClass %>
 import <%= entityAbsolutePackage %>.service.dto.<%= dtoClass %>
 
-<%_ for (const otherEntity of this._.uniq(dtoRelationships.map(relationship => relationship.otherEntity).filter(otherEntity => otherEntity.entityClass !== entityClass))) { _%>
+<%_ for (const otherEntity of dtoRelationshipOtherEntities.filter(otherEntity => otherEntity.entityClass !== entityClass)) { _%>
 import <%= otherEntity.entityAbsoluteClass.replace('undefined',entityAbsolutePackage ) %>
 import <%= otherEntity.entityAbsolutePackage || entityAbsolutePackage %>.service.dto.<%= otherEntity.dtoClass %>
 <%_ } _%>
@@ -49,8 +50,8 @@ import <%= otherEntity.entityAbsolutePackage || entityAbsolutePackage %>.service
 import org.mapstruct.*
 <%_ if (uuidMapMethod) { _%>
 
-import java.util.Objects;
-import java.util.UUID;
+import java.util.Objects
+import java.util.UUID
 <%_ } _%>
 
 /**
@@ -64,7 +65,7 @@ interface <%= entityClass %>Mapper :
     <%_
         var renMapAnotEnt = false; //Render Mapping Annotation during Entity to DTO conversion?
         const mappings = [];
-        for (relationship of dtoRelationships) {
+        for (const relationship of dtoRelationships) {
             renMapAnotEnt = true;
             let qualifiedByName = relationship.otherEntity.entityInstance + this._.upperFirst(relationship.otherEntityField);
             qualifiedByName = qualifiedByName + (relationship.collection ? 'Set' : '');
@@ -93,14 +94,31 @@ interface <%= entityClass %>Mapper :
             }
         }
 
-        for (relationship of dtoRelationships) {
+        for (const relationship of dtoRelationships) {
             if (!relationship.ownerSide) {
                 renMapAnotDto = true;
                 mappings2.push(`Mapping(target = "${relationship.propertyName}", ignore = true)`);
+            } else {
+                renMapAnotDto = true;
+                mappings2.push(`Mapping(target = "${relationship.propertyName}", source = "${relationship.propertyName}", qualifiedByName = ["${relationship.otherEntity.entityInstance}FromId"])`);
             }
             if (relationship.collection && fluentMethods) {
                 renMapAnotDto = true;
                 mappings2.push(`Mapping(target = "remove${relationship.relationshipNameCapitalized}", ignore = true)`);
+            }
+        }
+        // Relationships the DTO doesn't carry, and the foreign key columns of reactive SQL entities, are never mapped from the DTO.
+        for (const relationship of relationships.filter(relationship => !relationship.otherEntity.embedded && !dtoRelationships.includes(relationship))) {
+            renMapAnotDto = true;
+            mappings2.push(`Mapping(target = "${relationship.propertyName}", ignore = true)`);
+            if (relationship.collection && fluentMethods) {
+                mappings2.push(`Mapping(target = "remove${relationship.relationshipNameCapitalized}", ignore = true)`);
+            }
+        }
+        if (databaseTypeSql && reactive) {
+            for (const relationship of relationships.filter(relationship => relationship.ownerSide && !relationship.collection && !relationship.id)) {
+                renMapAnotDto = true;
+                mappings2.push(`Mapping(target = "${relationship.relationshipFieldName}Id", ignore = true)`);
             }
         }
     _%>
@@ -111,12 +129,42 @@ interface <%= entityClass %>Mapper :
     )
         <%_ } _%>
     override fun toEntity(<%= dtoInstance %>: <%= dtoClass %>): <%= persistClass %>
+
+        <%_ if (mappings2.length !== 0) { _%>
+    @Mappings(
+        <%-  [...new Set(mappings2)].join(',') %>
+    )
+        <%_ } _%>
+    @BeanMapping(nullValuePropertyMappingStrategy = NullValuePropertyMappingStrategy.IGNORE)
+    override fun partialUpdate(@MappingTarget entity: <%= persistClass %>, dto: <%= dtoClass %>)
+    <%_ } _%>
+
+    <%_
+        for (const otherEntity of dtoRelationshipOtherEntities) {
+            const mappingsToEntity = [];
+            const mapperName = otherEntity.entityInstance + 'FromId';
+    _%>
+
+    @Named("<%= mapperName %>")
+    @BeanMapping(ignoreByDefault = true)
+    <%_
+        for (const field of otherEntity.primaryKey.fields) {
+            mappingsToEntity.push(`Mapping(target = "${field.propertyName}", source = "${field.propertyName}")`);
+        }
+    _%>
+    <%_ if (mappingsToEntity.length !== 0) { _%>
+    @Mappings(
+        <%-  [...new Set(mappingsToEntity)].join(',') %>
+    )
+    <%_ } _%>
+    fun toEntity<%= this._.upperFirst(mapperName) %>(<%= otherEntity.entityInstance %>: <%- otherEntity.dtoClass %>): <%- otherEntity.persistClass %>
+
     <%_ } _%>
 
 
     <%_
-        const mappings3 = [];
         for (const {otherEntity, relatedField, collection} of otherEntitiesFields) {
+             const mappings3 = [];
              const mapperName = otherEntity.entityInstance + this._.upperFirst(relatedField.propertyName);
     _%>
 
@@ -128,7 +176,9 @@ interface <%= entityClass %>Mapper :
             mappings3.push(`Mapping(target = "${field.propertyName}", source = "${field.propertyName}")`);
         }
 
-        if (!relatedField.id) {
+        if (!relatedField.id && relatedField.mapstructExpression) {
+            mappings3.push(`Mapping(target = "${relatedField.propertyName}", expression = "${relatedField.mapstructExpression}")`);
+        } else if (!relatedField.id) {
             mappings3.push(`Mapping(target = "${relatedField.propertyName}", source = "${relatedField.propertyName}")`);
         }
     _%>
@@ -157,7 +207,7 @@ interface <%= entityClass %>Mapper :
     <%_ } _%>
     <%_ if (byteMapMethod) { _%>
 
-    fun map(value: byteArray) = String(value)
+    fun map(value: ByteArray) = String(value)
     <%_ } _%>
 <%_ } _%>
 }

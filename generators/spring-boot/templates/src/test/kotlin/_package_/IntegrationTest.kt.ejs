@@ -20,76 +20,73 @@ package <%= packageName %>
 
 import <%= packageName %>.<%= mainClass %>
 import <%= packageName %>.config.AsyncSyncConfiguration
-<%_ if (databaseTypeCouchbase) { _%>
+<%_ if (databaseTypeCouchbase || searchEngineCouchbase) { _%>
+import <%= packageName %>.config.CouchbaseTestContainer
 import org.springframework.test.context.ActiveProfiles
 import tech.jhipster.config.JHipsterConstants
 <%_ } _%>
 <%_ if (databaseTypeMongodb) { _%>
-import <%= packageName %>.config.EmbeddedMongo
+import <%= packageName %>.config.MongoDbTestContainer
 <%_ } _%>
 <%_ if (databaseTypeCassandra) { _%>
-import <%= packageName %>.config.EmbeddedCassandra
-<%_ } _%>
-<%_ if (databaseTypeCouchbase || searchEngineCouchbase) { _%>
-import <%= packageName %>.config.EmbeddedCouchbase
+import <%= packageName %>.config.CassandraTestContainer
 <%_ } _%>
 <%_ if (searchEngineElasticsearch) { _%>
-import <%= packageName %>.config.EmbeddedElasticsearch
-<%_ } _%>
-<%_ if (messageBrokerKafka) { _%>
-import <%= packageName %>.config.EmbeddedKafka
+import <%= packageName %>.config.ElasticsearchTestConfiguration
+import <%= packageName %>.config.ElasticsearchTestContainer
 <%_ } _%>
 <%_ if (databaseTypeNeo4j) { _%>
-import <%= packageName %>.config.EmbeddedNeo4j
+import <%= packageName %>.config.Neo4jTestContainer
+<%_ } _%>
+<%_ if (databaseTypeSql && !reactive) { _%>
+import <%= packageName %>.config.JacksonHibernateConfiguration
 <%_ } _%>
 <%_ if (databaseTypeSql) { _%>
+  <%_ if (locals.implementsDynamicSourceTestcontainersSupport) { _%>
+import <%= packageName %>.config.DatabaseTestcontainer
+  <%_ } else { _%>
 import <%= packageName %>.config.EmbeddedSQL
+  <%_ } _%>
 <%_ } _%>
 <%_ if (cacheProviderRedis) { _%>
-import <%= packageName %>.config.EmbeddedRedis
+import <%= packageName %>.config.RedisTestContainer
 <%_ } _%>
 <%_ if (authenticationTypeOauth2) { _%>
 import <%= packageName %>.config.TestSecurityConfiguration
 <%_ } _%>
-<%_ if (cacheProviderRedis) { _%>
-import org.junit.jupiter.api.extension.ExtendWith
+<%_ if (messageBrokerPulsar) { _%>
+import <%= packageName %>.config.EmbeddedPulsar
 <%_ } _%>
 
-import org.springframework.test.annotation.DirtiesContext
 import org.springframework.boot.test.context.SpringBootTest
+<%_
+const testConfigurations = [`${mainClass}::class`, 'AsyncSyncConfiguration::class'];
+if (authenticationTypeOauth2) testConfigurations.push('TestSecurityConfiguration::class');
+if (cacheProviderRedis) testConfigurations.push('RedisTestContainer::class');
+if (databaseTypeCouchbase || searchEngineCouchbase) testConfigurations.push('CouchbaseTestContainer::class');
+if (databaseTypeCassandra) testConfigurations.push('CassandraTestContainer::class');
+if (databaseTypeNeo4j) testConfigurations.push('Neo4jTestContainer::class');
+if (databaseTypeMongodb) testConfigurations.push('MongoDbTestContainer::class');
+if (databaseTypeSql && locals.implementsDynamicSourceTestcontainersSupport) testConfigurations.push('DatabaseTestcontainer::class');
+if (databaseTypeSql && !reactive) testConfigurations.push('JacksonHibernateConfiguration::class');
+if (searchEngineElasticsearch) testConfigurations.push('ElasticsearchTestContainer::class', 'ElasticsearchTestConfiguration::class');
+_%>
 
 /**
  * Base composite annotation for integration tests.
  */
 @kotlin.annotation.Target(AnnotationTarget.CLASS)
 @kotlin.annotation.Retention(AnnotationRetention.RUNTIME)
-@SpringBootTest(classes = [<%= mainClass %>::class, AsyncSyncConfiguration::class<% if (authenticationTypeOauth2) { %>, TestSecurityConfiguration::class<% } %>])
-<%_ if (cacheProviderRedis) { _%>
-@EmbeddedRedis
-<%_ } _%>
+@SpringBootTest(classes = [<%- testConfigurations.join(', ') %>])
 <%_ if (databaseTypeCouchbase || searchEngineCouchbase) { _%>
-@EmbeddedCouchbase
 @ActiveProfiles(JHipsterConstants.SPRING_PROFILE_TEST)
 <%_ } _%>
-<%_ if (databaseTypeMongodb) { _%>
-@EmbeddedMongo
-<%_ } _%>
-<%_ if (databaseTypeCassandra) { _%>
-@EmbeddedCassandra
-<%_ } _%>
-<%_ if (searchEngineElasticsearch) { _%>
-@EmbeddedElasticsearch
-<%_ } _%>
-<%_ if (messageBrokerKafka) { _%>
-@EmbeddedKafka
-<%_ } _%>
-<%_ if (databaseTypeNeo4j) { _%>
-@EmbeddedNeo4j
-<%_ } _%>
-<%_ if (databaseTypeSql) { _%>
+<%_ if (databaseTypeSql && !locals.implementsDynamicSourceTestcontainersSupport) { _%>
 @EmbeddedSQL
 <%_ } _%>
-@DirtiesContext(classMode = DirtiesContext.ClassMode.AFTER_CLASS)
+<%_ if (messageBrokerPulsar) { _%>
+@EmbeddedPulsar
+<%_ } _%>
 annotation class IntegrationTest {
      <%_ if (reactive) { _%>
       companion object {
