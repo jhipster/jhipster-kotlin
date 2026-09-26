@@ -214,7 +214,7 @@ class UserServiceIT {
             <%_ } _%>
             login = DEFAULT_LOGIN,
             <%_ if (!authenticationTypeOauth2) { _%>
-            password = RandomStringUtils.randomAlphanumeric(60),
+            password = RandomStringUtils.insecure().nextAlphanumeric(60),
             <%_ } _%>
             activated = true,
             email = DEFAULT_EMAIL,
@@ -358,7 +358,7 @@ class UserServiceIT {
         `when`<Optional<TemporalAccessor>>(dateTimeProvider.now).thenReturn(Optional.of(now.minus(4, ChronoUnit.DAYS)))
         <%_ } _%>
         user.activated = false
-        user.activationKey = RandomStringUtils.random(20)
+        user.activationKey = RandomStringUtils.insecure().next(20)
         val dbUser = userRepository.save<% if (databaseTypeSql && !reactive) { %>AndFlush<% } %>(user)<% if (reactive) { %>.block()!!<% } %>
         assertNotNull(dbUser)
         dbUser.createdDate = now.minus(4, ChronoUnit.DAYS)
