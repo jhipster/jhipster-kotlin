@@ -107,6 +107,20 @@ interface <%= entityClass %>Mapper :
                 mappings2.push(`Mapping(target = "remove${relationship.relationshipNameCapitalized}", ignore = true)`);
             }
         }
+        // Relationships the DTO doesn't carry, and the foreign key columns of reactive SQL entities, are never mapped from the DTO.
+        for (const relationship of relationships.filter(relationship => !relationship.otherEntity.embedded && !dtoRelationships.includes(relationship))) {
+            renMapAnotDto = true;
+            mappings2.push(`Mapping(target = "${relationship.propertyName}", ignore = true)`);
+            if (relationship.collection && fluentMethods) {
+                mappings2.push(`Mapping(target = "remove${relationship.relationshipNameCapitalized}", ignore = true)`);
+            }
+        }
+        if (databaseTypeSql && reactive) {
+            for (const relationship of relationships.filter(relationship => relationship.ownerSide && !relationship.collection && !relationship.id)) {
+                renMapAnotDto = true;
+                mappings2.push(`Mapping(target = "${relationship.relationshipFieldName}Id", ignore = true)`);
+            }
+        }
     _%>
     <%_ if (renMapAnotDto) { _%>
         <%_ if (mappings2.length !== 0) { _%>
