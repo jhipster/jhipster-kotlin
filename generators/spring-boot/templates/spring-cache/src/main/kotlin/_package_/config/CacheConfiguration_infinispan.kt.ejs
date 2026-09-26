@@ -232,31 +232,27 @@ class CacheConfiguration(<% if (serviceDiscoveryAny) { %>
                 log.debug("Adding Infinispan cluster member ${instance.host}:7800")
                 initialHosts.add(InetSocketAddress(instance.host, 7800))
             }
-            val tcp = TCP().apply {
-                bindAddress = InetAddress.getLocalHost()
-                bindPort = 7800
-            }
+            // JGroups setters return the protocol for chaining, so they are not Kotlin property setters.
+            val tcp = TCP()
+            tcp.setBindAddress(InetAddress.getLocalHost())
+            tcp.setBindPort(7800)
 
-            val tcpping = TCPPING().apply {
-                initialHosts.add(InetSocketAddress(InetAddress.getLocalHost(), 7800))
-                setInitialHosts(initialHosts)
-                setPortRange(10)
-            }
+            initialHosts.add(InetSocketAddress(InetAddress.getLocalHost(), 7800))
+            val tcpping = TCPPING()
+            tcpping.setInitialHosts(initialHosts)
+            tcpping.setPortRange(10)
 
-            val nakack = NAKACK2().apply {
-                isDiscardDeliveredMsgs = false
-            }
+            val nakack = NAKACK2()
+            nakack.setDiscardDeliveredMsgs(false)
 
-            val merge = MERGE3().apply {
-                minInterval = 10000
-                maxInterval = 30000
-            }
+            val merge = MERGE3()
+            merge.setMinInterval(10000)
+            merge.setMaxInterval(30000)
 
-            val fd = FD_ALL().apply {
-                setTimeout(60000L)
-                setInterval(15000L)
-                setTimeoutCheckInterval(5000L)
-            }
+            val fd = FD_ALL()
+            fd.setTimeout(60000L)
+            fd.setInterval(15000L)
+            fd.setTimeoutCheckInterval(5000L)
 
             val stack = ProtocolStack()
             // Order shouldn't be changed
