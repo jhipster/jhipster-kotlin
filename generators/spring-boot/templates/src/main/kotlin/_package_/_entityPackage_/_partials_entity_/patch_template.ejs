@@ -27,16 +27,21 @@ const mapper = entityInstance  + 'Mapper';
 <%_ if (viaService) { %>
             val result = <%= entityInstance %>Service.partialUpdate(<%= instanceName %>)
 <%_ } else { %>
+    <%_ if (!dtoMapstruct) { _%>
+        fun <T> updateIfPresent(value: T?, setter: (T) -> Unit) {
+            if (value != null) setter(value)
+        }
+    <%_ } _%>
          <%- returnPrefix %> <%= entityInstance %>Repository.findById(<%= instanceName %>.<%= primaryKey.name %>!!)
             .map {
             <%_ if (dtoMapstruct) { %><%= mapper %>.partialUpdate(it, <%= instanceName %>)<%_ } else { %>
             <%_ for (const field of fields.filter(field => !field.id && !field.transient)) { _%>
-                  if (<%= instanceName %>.<%= field.fieldName %>!= null) {
-                     it.<%= field.fieldName %> = <%= instanceName %>.<%= field.fieldName %>
+                  updateIfPresent(<%= instanceName %>.<%= field.fieldName %>) { value ->
+                     it.<%= field.fieldName %> = value
                   }
             <%_ if (field.fieldWithContentType) { _%>
-                  if (<%= instanceName %>.<%= field.fieldName %>ContentType != null) {
-                     it.<%= field.fieldName %>ContentType = <%= instanceName %>.<%= field.fieldName %>ContentType
+                  updateIfPresent(<%= instanceName %>.<%= field.fieldName %>ContentType) { value ->
+                     it.<%= field.fieldName %>ContentType = value
                   }
             <%_ } } _%>
             <%_ } %>

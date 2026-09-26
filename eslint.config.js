@@ -11,7 +11,7 @@ export default [
             },
         },
     },
-    { ignores: ['coverage/**', 'target/**'] },
+    { ignores: ['coverage/**', 'target/**', '.kotlin-lint/**'] },
     jhipster.recommended,
     // jhipster-needle-eslint-add-config - JHipster will add additional config here
     prettier,

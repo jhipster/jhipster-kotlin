@@ -16,7 +16,18 @@
  See the License for the specific language governing permissions and
  limitations under the License.
 -%>
+// Spring dependency management must not replace detekt's embedded Kotlin compiler.
+configurations.named("detekt") {
+    resolutionStrategy.eachDependency {
+        if (requested.group == "org.jetbrains.kotlin") {
+            useVersion(requested.version)
+        }
+    }
+}
+
 detekt {
+    toolVersion = "<%- javaDependencies['detekt-cli'] %>"
+    ignoreFailures = false
     source.setFrom("src/main/kotlin")
     config.setFrom("<%= detektConfigFile %>")
 }
