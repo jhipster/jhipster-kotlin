@@ -44,9 +44,11 @@ import <%= entityAbsolutePackage %>.service.dto.<%= dtoClass %>
 <%_ if (serviceNo) { _%>
 import <%= entityAbsolutePackage %>.service.mapper.<%= entityClass %>Mapper
 <%_ } } _%>
-<%_ if (jpaMetamodelFiltering) {  _%>
+<%_ if (jpaMetamodelFiltering && !reactive) {  _%>
 import <%= entityAbsolutePackage %>.service.criteria.<%= entityClass %>Criteria
 import <%= entityAbsolutePackage %>.service.<%= entityClass %>QueryService
+<%_ } else if (jpaMetamodelFiltering && reactive) { _%>
+import <%= entityAbsolutePackage %>.domain.criteria.<%= entityClass %>Criteria
 <%_ } _%>
 
 import tech.jhipster.web.util.HeaderUtil
@@ -368,11 +370,16 @@ _%><%- include('../../_partials_entity_/inject_template', {viaService: viaServic
      * @param filter the filter of the request.<% } %>
      * @return the [ResponseEntity] with status `200 (OK)` and the list of <%= entityInstancePlural %> in body.
      */
-    @GetMapping("/<%= entityApiUrl %>")<%_ if (databaseTypeSql && isUsingMapsId&& !viaService) { %>
+    <%_ if (reactive) { _%>
+    @GetMapping(value = ["/<%= entityApiUrl %>"], produces = [MediaType.APPLICATION_JSON_VALUE])
+    <%_ } else { _%>
+    @GetMapping("/<%= entityApiUrl %>")
+    <%_ } _%>
+    <%_ if (databaseTypeSql && isUsingMapsId && !viaService) { %>
     @Transactional(readOnly = true)<%_ } _%>
     <%- include('../../_partials_entity_/get_all_template', {viaService}); -%>
 
-    <%_ if (reactive && paginationNo) { _%>
+    <%_ if (!jpaMetamodelFiltering && reactive && paginationNo) { _%>
     /**
      * `GET  /<%= entityApiUrl %>` : get all the <%= entityInstancePlural %> as a stream.
      * @return the [Flux] of <%= entityInstancePlural %>.

@@ -23,34 +23,58 @@
     const entityListToDtoListReference = mapper + '.' + 'toDto';
     const entityToDtoReference = mapper + '::'+ 'toDto';
     const reactiveEntityToDto = (dtoMapstruct && !viaService) ? `.map(${entityToDtoReference})` : '';
+    const reactiveNoPagination = reactive && paginationNo;
+    const reactivePagination = reactive && !paginationNo;
 _%>
 <%_ if (jpaMetamodelFiltering) { _%>
     fun getAll<%= entityClassPlural %>(
-        criteria: <%= entityClass %>Criteria<% if (pagination != 'no') { %>,
-        @org.springdoc.core.annotations.ParameterObject pageable: Pageable
-        <% if (reactive) { %>, request: ServerHttpRequest<% } %><% } %>
-    ): ResponseEntity<MutableList<<%= instanceClass %>>> {
+        criteria: <%= entityClass %>Criteria<% if (!paginationNo) { %>,
+        @org.springdoc.core.annotations.ParameterObject pageable: Pageable<% if (reactive) { %>,
+        request: ServerHttpRequest<% } %><% } %>
+    ): <% if (reactiveNoPagination) { %>Flux<<%= instanceClass %>><% } else if (reactivePagination) { %>Mono<ResponseEntity<List<<%= instanceClass %>>>><% } else { %>ResponseEntity<MutableList<<%= instanceClass %>>><% } %> {
         log.debug("REST request to get <%= entityClassPlural %> by criteria: $criteria")
-    <%_ if (paginationNo) { _%>
+    <%_ if (reactive) { _%>
+        <%_ if (paginationNo) { _%>
+        return <%= entityInstance %>Service.findByCriteria(criteria)
+        <%_ } else { _%>
+        return <%= entityInstance %><%= viaService ? 'Service.countByCriteria' : 'Repository.countByCriteria' %>(criteria)
+            .zipWith(<%= entityInstance %><%= viaService ? 'Service.findByCriteria' : 'Repository.findByCriteria' %>(criteria, pageable)<%= reactiveEntityToDto %>.collectList())
+            .map {
+                ResponseEntity.ok().headers(
+                    PaginationUtil.generatePaginationHttpHeaders(
+                        ForwardedHeaderUtils.adaptFromForwardedHeaders(request.uri, request.headers),
+                        PageImpl(it.t2, pageable, it.t1)
+                    )
+                ).body(it.t2)
+            }
+        <%_ } _%>
+    <%_ } else { _%>
+        <%_ if (paginationNo) { _%>
         val entityList = <%= entityInstance %>QueryService.findByCriteria(criteria)
         return ResponseEntity.ok().body(entityList)
-    <%_ } else { _%>
+        <%_ } else { _%>
         val page = <%= entityInstance %>QueryService.findByCriteria(criteria, pageable)
-        val headers = PaginationUtil.generatePaginationHttpHeaders(<% if (!reactive) { %>ServletUriComponentsBuilder.fromCurrentRequest()<% } else { %>ForwardedHeaderUtils.adaptFromForwardedHeaders(request.uri, request.headers)<% } %>, page)
+        val headers = PaginationUtil.generatePaginationHttpHeaders(ServletUriComponentsBuilder.fromCurrentRequest(), page)
         return ResponseEntity.ok().headers(headers).body(page.content)
+        <%_ } _%>
     <%_ } _%>
     }
 
     /**
-     * `GET  /<%= entityApiUrl %>/count}` : count all the <%= entityInstancePlural %>.
+     * `GET  /<%= entityApiUrl %>/count` : count all the <%= entityInstancePlural %>.
      *
      * @param criteria the criteria which the requested entities should match.
      * @return the [ResponseEntity] with status `200 (OK)` and the count in body.
      */
     @GetMapping("/<%= entityApiUrl %>/count")
-    fun count<%= entityClassPlural %>(criteria: <%= entityClass %>Criteria): ResponseEntity<Long> {
+    fun count<%= entityClassPlural %>(criteria: <%= entityClass %>Criteria): <% if (reactive) { %>Mono<ResponseEntity<Long>><% } else { %>ResponseEntity<Long><% } %> {
         log.debug("REST request to count <%= entityClassPlural %> by criteria: $criteria")
+    <%_ if (reactive) { _%>
+        return <%= entityInstance %>Service.countByCriteria(criteria)
+            .map { ResponseEntity.status(HttpStatus.OK).body(it) }
+    <%_ } else { _%>
         return ResponseEntity.ok().body(<%= entityInstance %>QueryService.countByCriteria(criteria))
+    <%_ } _%>
     }
 <% } else { %>
     <%_ if (paginationNo) { _%>
