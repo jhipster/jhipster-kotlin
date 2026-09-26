@@ -121,7 +121,8 @@ class ExceptionTranslator(private val env: Environment) : ResponseEntityExceptio
     <%_ } _%>
         log.debug("Converting Exception to Problem Details:", ex)
         val pdCause = wrapAndCustomizeProblem(ex, request)
-        return handleExceptionInternal(ex as Exception, pdCause, buildHeaders(ex)<% if (!reactive) { %> ?: HttpHeaders()<% } %>, HttpStatusCode.valueOf(pdCause.status), request)
+        val exToHandle = if (ex is Exception) ex else RuntimeException(ex)
+        return handleExceptionInternal(exToHandle, pdCause, buildHeaders(ex)<% if (!reactive) { %> ?: HttpHeaders()<% } %>, HttpStatusCode.valueOf(pdCause.status), request)
     }
 
     override fun handleExceptionInternal(
