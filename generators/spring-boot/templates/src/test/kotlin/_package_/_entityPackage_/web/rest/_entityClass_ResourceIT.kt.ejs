@@ -1530,6 +1530,20 @@ class <%= entityClass %>ResourceIT {
     <%_ } else if (searchEngineCouchbase) { _%>
         // Wait for the <%= entityInstance %> to be indexed
         retryUntilNotEmpty{ <%= entityInstance %>Repository.search("id:${<%= entityInstance %>.<%= primaryKey.name %>}")<% if (reactive) { %>.collectList().block()!!<% } %> }
+        // The search endpoint queries with NOT_BOUNDED scan consistency, so wait until it returns the <%= entityInstance %> too
+        retryUntilNotEmpty {
+        <%_ if (reactive) { _%>
+            val body = webTestClient.get().uri("$ENTITY_SEARCH_API_URL?query=id:${<%= persistInstance %>.<%= primaryKey.name %>}")
+                .exchange()
+                .expectBody(String::class.java)
+                .returnResult()
+                .responseBody.orEmpty()
+        <%_ } else { _%>
+            val body = rest<%= entityClass %>MockMvc.perform(get("$ENTITY_SEARCH_API_URL?query=id:${<%= persistInstance %>.<%= primaryKey.name %>}"))
+                .andReturn().response.contentAsString
+        <%_ } _%>
+            if (body.contains("${<%= persistInstance %>.<%= primaryKey.name %>}")) listOf(body) else emptyList()
+        }
     <%_ } _%>
         // Search the <%= entityInstance %>
     <%_ if (reactive) { _%>
