@@ -32,13 +32,23 @@ detekt {
     config.setFrom("<%= detektConfigFile %>")
 }
 
+// detekt 1.x embeds a Kotlin compiler that crashes when it runs inside a Gradle JVM on JDK 25
+// ("IllegalArgumentException: 25.0.x"). Run detekt-cli in a forked JVM instead, as the Maven build does.
+def detektCli = tasks.register("detektCli", JavaExec) {
+    group = "verification"
+    description = "Runs detekt in a forked JVM."
+    classpath = configurations.named("detekt").get()
+    mainClass = "io.gitlab.arturbosch.detekt.cli.Main"
+    args = [
+        "--input", file("src/main/kotlin").absolutePath,
+        "--config", file("<%= detektConfigFile %>").absolutePath,
+        "--report", "xml:${buildDir}/reports/detekt/detekt.xml",
+    ]
+}
+
 tasks.named("detekt").configure {
-    reports {
-        xml {
-            required.set(true)
-            outputLocation.set(file("$buildDir/reports/detekt/detekt.xml"))
-        }
-    }
+    enabled = false
+    dependsOn(detektCli)
 }
 
 sonarqube {
