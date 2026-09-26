@@ -762,7 +762,7 @@ class AccountResourceIT {
             <%_ } _%>
             login = "activate-account",
             email = "activate-account@example.com",
-            password = RandomStringUtils.randomAlphanumeric(60),
+            password = RandomStringUtils.insecure().nextAlphanumeric(60),
             activated = false,
             <%_ if (databaseTypeSql && reactive) { _%>
             createdBy = SYSTEM_ACCOUNT,
@@ -811,7 +811,7 @@ class AccountResourceIT {
             <%_ } _%>
             login = "save-account",
             email = "save-account@example.com",
-            password = RandomStringUtils.randomAlphanumeric(60),
+            password = RandomStringUtils.insecure().nextAlphanumeric(60),
             <%_ if (databaseTypeSql && reactive) { _%>
             createdBy = SYSTEM_ACCOUNT,
             <%_ } _%>
@@ -849,7 +849,7 @@ class AccountResourceIT {
 
         <%_ } _%>
 
-        val updatedUser = userRepository.findOne<% if (databaseTypeSql) { %>WithAuthorities<% } %>ByLogin(user?.login!!)<%_ if (reactive) { _%>.block()<% } else { %>.orElse(null)<% } %>
+        val updatedUser = userRepository.findOne<% if (databaseTypeSql) { %>WithAuthorities<% } %>ByLogin(user.login!!)<%_ if (reactive) { _%>.block()<% } else { %>.orElse(null)<% } %>
         assertThat(updatedUser?.firstName).isEqualTo(userDTO.firstName)
         assertThat(updatedUser?.lastName).isEqualTo(userDTO.lastName)
         assertThat(updatedUser?.email).isEqualTo(userDTO.email)
@@ -875,7 +875,7 @@ class AccountResourceIT {
             <%_ } _%>
             login = "save-invalid-email",
             email = "save-invalid-email@example.com",
-            password = RandomStringUtils.randomAlphanumeric(60),
+            password = RandomStringUtils.insecure().nextAlphanumeric(60),
             <%_ if (databaseTypeSql && reactive) { _%>
             createdBy = SYSTEM_ACCOUNT,
             <%_ } _%>
@@ -933,7 +933,7 @@ class AccountResourceIT {
             <%_ } _%>
             login = "save-existing-email",
             email = "save-existing-email@example.com",
-            password = RandomStringUtils.randomAlphanumeric(60),
+            password = RandomStringUtils.insecure().nextAlphanumeric(60),
             <%_ if (databaseTypeSql && reactive) { _%>
             createdBy = SYSTEM_ACCOUNT,
             <%_ } _%>
@@ -948,7 +948,7 @@ class AccountResourceIT {
             <%_ } _%>
             login = "save-existing-email2",
             email = "save-existing-email2@example.com",
-            password = RandomStringUtils.randomAlphanumeric(60),
+            password = RandomStringUtils.insecure().nextAlphanumeric(60),
             <%_ if (databaseTypeSql && reactive) { _%>
             createdBy = SYSTEM_ACCOUNT,
             <%_ } _%>
@@ -1002,7 +1002,7 @@ class AccountResourceIT {
             <%_ } _%>
             login = "save-existing-email-and-login",
             email = "save-existing-email-and-login@example.com",
-            password = RandomStringUtils.randomAlphanumeric(60),
+            password = RandomStringUtils.insecure().nextAlphanumeric(60),
             <%_ if (databaseTypeSql && reactive) { _%>
             createdBy = SYSTEM_ACCOUNT,
             <%_ } _%>
@@ -1049,7 +1049,7 @@ class AccountResourceIT {
     @WithMockUser("change-password-wrong-existing-password")
     <%_ if (!reactive) { _%>@Throws(Exception::class)<%_ } _%>
     fun testChangePasswordWrongExistingPassword() {
-        val currentPassword = RandomStringUtils.randomAlphanumeric(60)
+        val currentPassword = RandomStringUtils.insecure().nextAlphanumeric(60)
         val user = <%= user.persistClass %>(
             <%_ if (databaseTypeCassandra) { _%>
             id = UUID.randomUUID().toString(),
@@ -1091,7 +1091,7 @@ class AccountResourceIT {
     @WithMockUser("change-password")
     <%_ if (!reactive) { _%>@Throws(Exception::class)<%_ } _%>
     fun testChangePassword() {
-        val currentPassword = RandomStringUtils.randomAlphanumeric(60)
+        val currentPassword = RandomStringUtils.insecure().nextAlphanumeric(60)
         val user = <%= user.persistClass %>(
             <%_ if (databaseTypeCassandra) { _%>
             id = UUID.randomUUID().toString(),
@@ -1132,7 +1132,7 @@ class AccountResourceIT {
     @WithMockUser("change-password-too-small")
     <%_ if (!reactive) { _%>@Throws(Exception::class)<%_ } _%>
     fun testChangePasswordTooSmall() {
-        val currentPassword = RandomStringUtils.randomAlphanumeric(60)
+        val currentPassword = RandomStringUtils.insecure().nextAlphanumeric(60)
         val user = <%= user.persistClass %>(
             <%_ if (databaseTypeCassandra) { _%>
             id = UUID.randomUUID().toString(),
@@ -1147,7 +1147,7 @@ class AccountResourceIT {
 
         userRepository.save<% if (databaseTypeSql && !reactive) { %>AndFlush<% } %>(user)<% if (reactive) { %>.block()<% } %>
 
-        val newPassword = RandomStringUtils.random(ManagedUserVM.PASSWORD_MIN_LENGTH - 1)
+        val newPassword = RandomStringUtils.insecure().next(ManagedUserVM.PASSWORD_MIN_LENGTH - 1)
 
         <%_ if (reactive) { _%>
         accountWebTestClient.post().uri("/api/account/change-password")
@@ -1175,7 +1175,7 @@ class AccountResourceIT {
     @WithMockUser("change-password-too-long")
     <%_ if (!reactive) { _%>@Throws(Exception::class)<%_ } _%>
     fun testChangePasswordTooLong() {
-        val currentPassword = RandomStringUtils.randomAlphanumeric(60)
+        val currentPassword = RandomStringUtils.insecure().nextAlphanumeric(60)
         val user = <%= user.persistClass %>(
             <%_ if (databaseTypeCassandra) { _%>
             id = UUID.randomUUID().toString(),
@@ -1190,7 +1190,7 @@ class AccountResourceIT {
 
         userRepository.save<% if (databaseTypeSql && !reactive) { %>AndFlush<% } %>(user)<% if (reactive) { %>.block()<% } %>
 
-        val newPassword = RandomStringUtils.random(ManagedUserVM.PASSWORD_MAX_LENGTH + 1)
+        val newPassword = RandomStringUtils.insecure().next(ManagedUserVM.PASSWORD_MAX_LENGTH + 1)
 
         <%_ if (reactive) { _%>
         accountWebTestClient.post().uri("/api/account/change-password")
@@ -1218,7 +1218,7 @@ class AccountResourceIT {
     @WithMockUser("change-password-empty")
     <%_ if (!reactive) { _%>@Throws(Exception::class)<%_ } _%>
     fun testChangePasswordEmpty() {
-        val currentPassword = RandomStringUtils.randomAlphanumeric(60)
+        val currentPassword = RandomStringUtils.insecure().nextAlphanumeric(60)
         val user = <%= user.persistClass %>(
             <%_ if (databaseTypeCassandra) { _%>
             id = UUID.randomUUID().toString(),
@@ -1264,7 +1264,7 @@ class AccountResourceIT {
             <%_ if (databaseTypeCassandra) { _%>
             id = UUID.randomUUID().toString(),
             <%_ } _%>
-            password = RandomStringUtils.randomAlphanumeric(60),
+            password = RandomStringUtils.insecure().nextAlphanumeric(60),
             login = "current-sessions",
             <%_ if (databaseTypeSql && reactive) { _%>
             createdBy = SYSTEM_ACCOUNT,
@@ -1312,7 +1312,7 @@ class AccountResourceIT {
             <%_ if (databaseTypeCassandra) { _%>
             id = UUID.randomUUID().toString(),
             <%_ } _%>
-            password = RandomStringUtils.randomAlphanumeric(60),
+            password = RandomStringUtils.insecure().nextAlphanumeric(60),
             login = "invalidate-session",
             <%_ if (databaseTypeSql && reactive) { _%>
             createdBy = SYSTEM_ACCOUNT,
@@ -1362,7 +1362,7 @@ class AccountResourceIT {
             <%_ if (databaseTypeCassandra) { _%>
             id = UUID.randomUUID().toString(),
             <%_ } _%>
-            password = RandomStringUtils.randomAlphanumeric(60),
+            password = RandomStringUtils.insecure().nextAlphanumeric(60),
             activated = true,
             login = "password-reset",
             <%_ if (databaseTypeSql && reactive) { _%>
@@ -1400,7 +1400,7 @@ class AccountResourceIT {
             <%_ if (databaseTypeCassandra) { _%>
             id = UUID.randomUUID().toString(),
             <%_ } _%>
-            password = RandomStringUtils.randomAlphanumeric(60),
+            password = RandomStringUtils.insecure().nextAlphanumeric(60),
             activated = true,
             login = "password-reset-upper-case",
             <%_ if (databaseTypeSql && reactive) { _%>
@@ -1455,7 +1455,7 @@ class AccountResourceIT {
             <%_ if (databaseTypeCassandra) { _%>
             id = UUID.randomUUID().toString(),
             <%_ } _%>
-            password = RandomStringUtils.randomAlphanumeric(60),
+            password = RandomStringUtils.insecure().nextAlphanumeric(60),
             login = "finish-password-reset",
             email = "finish-password-reset@example.com",
             resetDate = Instant.now().plusSeconds(60),
@@ -1498,7 +1498,7 @@ class AccountResourceIT {
             <%_ if (databaseTypeCassandra) { _%>
             id = UUID.randomUUID().toString(),
             <%_ } _%>
-            password = RandomStringUtils.randomAlphanumeric(60),
+            password = RandomStringUtils.insecure().nextAlphanumeric(60),
             login = "finish-password-reset-too-small",
             email = "finish-password-reset-too-small@example.com",
             resetDate = Instant.now().plusSeconds(60),
