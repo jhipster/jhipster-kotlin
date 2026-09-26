@@ -30,6 +30,7 @@ on:
         types: [closed, opened, synchronize, reopened]
         branches:
             - '*'
+    workflow_dispatch:
 permissions:
     contents: read
 env:
@@ -43,7 +44,7 @@ jobs:
             - uses: actions/checkout@v7
             - uses: actions/setup-node@v7
               with:
-                  node-version: 22
+                  node-version: 24
             - id: build
               run: |
                   npm install
@@ -68,6 +69,7 @@ jobs:
                   path: jhipster-kotlin
                   fetch-depth: 2
             - uses: jhipster/actions/setup-runner@v2
+              id: setup
               with:
                   java-version: ${{ matrix.java-version }}
                   node-version: ${{ matrix.node-version }}
@@ -80,6 +82,8 @@ jobs:
                   mkdir -p ~/.gradle
                   echo "org.gradle.warning.mode=all" >> ~/.gradle/gradle.properties
             - run: cli.cjs generate-sample ${{ matrix.sample }} --skip-jhipster-dependencies --skip-install --skip-ktlint-format ${{ matrix.extra-args }} ${{ matrix.new-extra-args }}
+              env:
+                  JHI_JWT_SECRET_KEY: ${{ matrix.jwt-secret-key }}
             - run: cli.cjs info
             #----------------------------------------------------------------------
             # Detect changes against base commit
@@ -92,6 +96,8 @@ jobs:
               with:
                   generator-path: jhipster-kotlin
                   cmd: cli.cjs generate-sample ${{ matrix.sample }} --skip-jhipster-dependencies --skip-install --skip-ktlint-format ${{ matrix.extra-args }}
+              env:
+                  JHI_JWT_SECRET_KEY: ${{ matrix.jwt-secret-key }}
             #----------------------------------------------------------------------
             # Launch tests
             #----------------------------------------------------------------------
@@ -118,18 +124,40 @@ jobs:
             #  if: steps.compare.outputs.equals != 'true' && matrix.skip-frontend-tests != 1
             #  run: npm run ci:frontend:test
             #  timeout-minutes: 8
+            - name: 'Store the application'
+              uses: actions/upload-artifact@v7
+              if: always() && (steps.backend.outcome == 'failure' || steps.e2e.outcome == 'failure')
+              with:
+                  name: app-${{ matrix.job-name || matrix.sample }}
+                  include-hidden-files: true
+                  path: |
+                      ${{ steps.setup.outputs.application-path }}/**/*
+                      !**/app/build/**
+                      !**/app/*/build/**
+                      !**/app/.gradle/**
+                      !**/app/*/.gradle/**
+                      !**/app/target/**
+                      !**/app/*/target/**
+                      !**/node_modules/**
             - name: 'BACKEND: Store failure logs'
               uses: actions/upload-artifact@v7
               if: always() && steps.backend.outcome == 'failure'
               with:
-                  name: log-${{ matrix.name }}
-                  path: ${{ steps.setup.outputs.application-path }}/**/reports/ktlint/**
+                  name: log-${{ matrix.job-name || matrix.sample }}
+                  path: |
+                      ${{ steps.setup.outputs.application-path }}/**/reports/ktlint/**
+                      ${{ steps.setup.outputs.application-path }}/**/build/test-results/**/*.xml
+                      ${{ steps.setup.outputs.application-path }}/**/target/surefire-reports
             - name: 'E2E: Store failure screenshots'
               uses: actions/upload-artifact@v7
               if: always() && steps.e2e.outcome == 'failure'
               with:
-                  name: screenshots-${{ matrix.name }}
-                  path: ${{ steps.setup.outputs.application-path }}/**/cypress/screenshots
+                  name: screenshots-${{ matrix.job-name || matrix.sample }}
+                  path: |
+                      ${{ steps.setup.outputs.application-path }}/**/cypress/screenshots
+                      ${{ steps.setup.outputs.application-path }}/**/cypress/videos
+                      ${{ steps.setup.outputs.application-path }}/**/playwright/results
+                      ${{ steps.setup.outputs.application-path }}/**/playwright/report
             - name: Dump docker logs
               if: always()
               uses: jwalton/gh-docker-logs@v2

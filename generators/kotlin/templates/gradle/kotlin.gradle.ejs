@@ -21,6 +21,7 @@ import org.gradle.internal.os.OperatingSystem
 dependencies {
     implementation "org.jetbrains.kotlin:kotlin-stdlib"
     implementation "org.jetbrains.kotlin:kotlin-reflect"
+    implementation "tools.jackson.module:jackson-module-kotlin"
 
 <%_ if (reactive) { _%>
     implementation "org.jetbrains.kotlinx:kotlinx-coroutines-debug"
@@ -28,28 +29,29 @@ dependencies {
     implementation "io.projectreactor.kotlin:reactor-kotlin-extensions"
 
 <%_ } _%>
-    kapt "org.mapstruct:mapstruct-processor:${mapstructVersion}"
+    kapt libs.mapstruct.processor
 <%_ if (databaseTypeSql) { _%>
-    kapt "org.hibernate:hibernate-jpamodelgen:${hibernateVersion}"
-    kapt "org.glassfish.jaxb:jaxb-runtime:${jaxbRuntimeVersion}"
+    kapt "org.hibernate.orm:hibernate-processor"
+    kapt "org.glassfish.jaxb:jaxb-runtime"
 <%_ } _%>
 <%_ if (databaseTypeCassandra) { _%>
-    kapt "com.datastax.oss:java-driver-mapper-processor:${cassandraDriverVersion}"
+    kapt "org.apache.cassandra:java-driver-mapper-processor"
 <%_ } _%>
 
     testImplementation "org.jetbrains.kotlin:kotlin-test-junit"
-    testImplementation "org.mockito.kotlin:mockito-kotlin:<%= javaDependencies['mockito-kotlin'] %>"
+    testImplementation libs.mockito.kotlin
 }
 
 kapt {
-    correctErrorTypes true
+    correctErrorTypes = true
 }
 
-[compileKotlin, compileTestKotlin]*.with {
-    kotlinOptions {
-        jvmTarget = "<%= javaVersion %>"
+tasks.matching { it.name in ['compileKotlin', 'compileTestKotlin'] }.configureEach {
+    compilerOptions {
+        def jvmTargetClass = jvmTarget.get().getClass()
+        jvmTarget.set(jvmTargetClass.valueOf("JVM_<%= javaVersion %>"))
         javaParameters = true
-        freeCompilerArgs = ["-Xjvm-default=all"]
+        freeCompilerArgs.add("-jvm-default=no-compatibility")
     }
 }
 

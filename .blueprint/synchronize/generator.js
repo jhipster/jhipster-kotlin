@@ -16,12 +16,14 @@
  * See the License for the specific language governing permissions and
  * limitations under the License.
  */
+import { existsSync } from 'fs';
 import { basename, dirname, join, relative } from 'path';
 import { fileURLToPath } from 'url';
-import { existsSync } from 'fs';
+
+import { passthrough } from '@yeoman/transform';
 import BaseGenerator from 'generator-jhipster/generators/base';
 import { globby } from 'globby';
-import { passthrough } from '@yeoman/transform';
+
 import { convertToKotlinFile } from '../../generators/kotlin/support/index.js';
 
 const __dirname = dirname(fileURLToPath(import.meta.url));

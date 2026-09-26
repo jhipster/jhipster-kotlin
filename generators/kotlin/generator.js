@@ -1,6 +1,8 @@
-import BaseApplicationGenerator from 'generator-jhipster/generators/base-application';
+import { parse } from '@iarna/toml';
 import { passthrough } from '@yeoman/transform';
+import BaseApplicationGenerator from 'generator-jhipster/generators/base-application';
 import { getPrimaryKeyValue } from 'generator-jhipster/generators/server/support';
+
 import { SERVER_MAIN_SRC_KOTLIN_DIR, SERVER_TEST_SRC_KOTLIN_DIR } from './support/index.js';
 
 export default class extends BaseApplicationGenerator {
@@ -9,19 +11,24 @@ export default class extends BaseApplicationGenerator {
     }
 
     async beforeQueue() {
-        await this.dependsOnJHipster('jhipster:java:build-tool');
+        await this.dependsOnJHipster('jhipster:java-simple-application:build-tool');
     }
 
     get [BaseApplicationGenerator.LOADING]() {
         return this.asLoadingTaskGroup({
-            async loadCatalog({ application }) {
-                this.loadJavaDependenciesFromGradleCatalog(application.javaDependencies);
-            },
             async applyKotlinDefaults({ application }) {
                 Object.assign(application, {
                     // We don't want to use to write any Java files
                     backendTypeJavaAny: false,
                 });
+            },
+        });
+    }
+
+    get [BaseApplicationGenerator.PREPARING]() {
+        return this.asPreparingTaskGroup({
+            async loadCatalog({ application }) {
+                this.loadJavaDependenciesFromGradleCatalog(application.javaDependencies);
             },
         });
     }
@@ -82,11 +89,25 @@ export default class extends BaseApplicationGenerator {
         return this.asPostWritingTaskGroup({
             async customizeGradle({ application, source }) {
                 if (application.buildToolGradle) {
+                    const kotlinCatalog = parse(this.readTemplate(this.templatePath('../resources/gradle/libs.versions.toml')));
+
                     source.addGradleDependencyCatalogVersion({ name: 'kotlin', version: application.javaDependencies.kotlin });
+
+                    source.addGradleDependencyCatalogLibraries(
+                        Object.entries(kotlinCatalog.libraries ?? {})
+                            .filter(([libraryName]) => libraryName !== 'kotlin')
+                            .map(([libraryName, library]) => ({
+                                libraryName,
+                                ...(typeof library === 'string' ? { library } : library),
+                            })),
+                    );
 
                     source.applyFromGradle({
                         script: 'gradle/kotlin.gradle',
                     });
+
+                    // The Kotlin compiler runs inside the Gradle daemon, whose 512m default heap is exhausted by large applications.
+                    source.addGradleProperty({ property: 'org.gradle.jvmargs', value: '-Xmx2g -Dfile.encoding=UTF-8' });
 
                     source.addGradleDependencyCatalogPlugins([
                         {
@@ -151,11 +172,16 @@ tasks.withType(org.jetbrains.kotlin.gradle.internal.KaptGenerateStubsTask.class)
                         },
                     });
 
+                    // javadoc cannot document Kotlin sources and fails on the kapt generated stubs that reference Kotlin classes.
+                    source.addMavenProperty({ property: 'maven.javadoc.skip', value: 'true' });
+
                     source.addJavaDefinition({
                         versions: [{ name: 'kotlin', version: application.javaDependencies.kotlin }],
                         dependencies: [
                             { groupId: 'org.jetbrains.kotlin', artifactId: 'kotlin-stdlib' },
                             { groupId: 'org.jetbrains.kotlin', artifactId: 'kotlin-reflect' },
+                            // Lets Jackson honor Kotlin default values and nullability when deserializing constructor parameters.
+                            { groupId: 'tools.jackson.module', artifactId: 'jackson-module-kotlin' },
                             { groupId: 'org.jetbrains.kotlin', artifactId: 'kotlin-test-junit', scope: 'test' },
                             {
                                 groupId: 'org.mockito.kotlin',
@@ -229,6 +255,7 @@ tasks.withType(org.jetbrains.kotlin.gradle.internal.KaptGenerateStubsTask.class)
                                     <executions>
                                         <execution>
                                             <id>kapt</id>
+                                            <phase>generate-sources</phase>
                                             <goals>
                                                 <goal>kapt</goal>
                                             </goals>
@@ -247,14 +274,14 @@ tasks.withType(org.jetbrains.kotlin.gradle.internal.KaptGenerateStubsTask.class)
                                                         application.databaseTypeSql
                                                             ? `<!-- For JPA static metamodel generation -->
                                                     <annotationProcessorPath>
-                                                        <groupId>org.hibernate</groupId>
-                                                        <artifactId>hibernate-jpamodelgen</artifactId>
+                                                        <groupId>org.hibernate.orm</groupId>
+                                                        <artifactId>hibernate-processor</artifactId>
                                                         <version>$\{hibernate.version}</version>
                                                     </annotationProcessorPath>
                                                     <annotationProcessorPath>
                                                         <groupId>org.glassfish.jaxb</groupId>
                                                         <artifactId>jaxb-runtime</artifactId>
-                                                        <version>$\{jaxb-runtime.version}</version>
+                                                        <version>$\{glassfish-jaxb.version}</version>
                                                     </annotationProcessorPath>`
                                                             : ''
                                                     }
@@ -262,7 +289,7 @@ tasks.withType(org.jetbrains.kotlin.gradle.internal.KaptGenerateStubsTask.class)
                                                         application.databaseTypeCassandra
                                                             ? `
                                                     <annotationProcessorPath>
-                                                        <groupId>com.datastax.oss</groupId>
+                                                        <groupId>org.apache.cassandra</groupId>
                                                         <artifactId>java-driver-mapper-processor</artifactId>
                                                         <version>$\{cassandra-driver.version}</version>
                                                     </annotationProcessorPath>`
@@ -302,7 +329,7 @@ tasks.withType(org.jetbrains.kotlin.gradle.internal.KaptGenerateStubsTask.class)
                                         <jvmTarget>$\{java.version}</jvmTarget>
                                         <javaParameters>true</javaParameters>
                                         <args>
-                                            <arg>-Xjvm-default=all</arg>
+                                            <arg>-jvm-default=no-compatibility</arg>
                                         </args>
                                         <compilerPlugins>
                                             <plugin>spring</plugin>${

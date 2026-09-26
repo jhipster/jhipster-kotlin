@@ -1,7 +1,9 @@
-import { extname } from 'node:path';
 import os from 'node:os';
-import { OutOfOrder } from 'p-transform';
+import { extname } from 'node:path';
+
 import { isFileStateDeleted, isFileStateModified } from 'mem-fs-editor/state';
+import { OutOfOrder } from 'p-transform';
+
 import ktlintWorker from './ktlint-worker.js';
 
 export const filterKtlintTransformFiles = file => isFileStateModified(file) && !isFileStateDeleted(file) && extname(file.path) === '.kt';

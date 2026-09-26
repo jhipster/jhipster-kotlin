@@ -17,18 +17,21 @@
  limitations under the License.
 -%>
 detekt {
-    input = files("src/main/kotlin")
-    config = files("<%= detektConfigFile %>")
+    source.setFrom("src/main/kotlin")
+    config.setFrom("<%= detektConfigFile %>")
+}
+
+tasks.named("detekt").configure {
     reports {
         xml {
-            required = true
-            outputLocation = file("$buildDir/reports/detekt/detekt.xml")
+            required.set(true)
+            outputLocation.set(file("$buildDir/reports/detekt/detekt.xml"))
         }
     }
 }
 
 sonarqube {
     properties {
-        property "sonar.kotlin.detekt.reportPaths", detekt.reports.xml.outputLocation
+        property "sonar.kotlin.detekt.reportPaths", "$buildDir/reports/detekt/detekt.xml"
     }
 }

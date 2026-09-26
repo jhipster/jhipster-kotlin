@@ -11,16 +11,11 @@ export default class extends BaseApplicationGenerator {
         await this.dependsOnBootstrapApplicationServer();
     }
 
-    get [BaseApplicationGenerator.LOADING]() {
-        return this.asLoadingTaskGroup({
-            async loading({ application }) {
-                this.loadJavaDependenciesFromGradleCatalog(application.javaDependencies);
-            },
-        });
-    }
-
     get [BaseApplicationGenerator.PREPARING]() {
         return this.asPreparingTaskGroup({
+            async loadCatalog({ application }) {
+                this.loadJavaDependenciesFromGradleCatalog(application.javaDependencies);
+            },
             async preparing({ applicationDefaults }) {
                 applicationDefaults({
                     detektConfigFile: DETEKT_CONFIG_FILE,

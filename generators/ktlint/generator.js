@@ -4,11 +4,11 @@ import { platform } from 'node:os';
 import { join } from 'node:path';
 import { pipeline } from 'node:stream/promises';
 
+import { createConflicterTransform, createYoResolveTransform } from '@yeoman/conflicter';
+import axios from 'axios';
 import BaseApplicationGenerator from 'generator-jhipster/generators/base-application';
 import { autoCrlfTransform } from 'generator-jhipster/generators/bootstrap/support';
-import axios from 'axios';
 import { createCommitTransform } from 'mem-fs-editor/transform';
-import { createConflicterTransform, createYoResolveTransform } from '@yeoman/conflicter';
 
 import { createKtlintTransform, filterKtlintTransformFiles } from './internal/ktlint-transform.js';
 
@@ -27,9 +27,9 @@ export default class extends BaseApplicationGenerator {
         await this.dependsOnBootstrapApplicationServer();
     }
 
-    get [BaseApplicationGenerator.LOADING]() {
-        return this.asLoadingTaskGroup({
-            async loading({ application }) {
+    get [BaseApplicationGenerator.PREPARING]() {
+        return this.asPreparingTaskGroup({
+            async preparing({ application }) {
                 this.loadJavaDependenciesFromGradleCatalog(application.javaDependencies);
                 this.ktlintFolder = this.destinationPath('.ktlint', application.javaDependencies['ktlint-cli']);
                 this.ktlintExecutable = join(this.ktlintFolder, platform() === 'win32' ? 'ktlint.bat' : 'ktlint');
@@ -45,7 +45,9 @@ export default class extends BaseApplicationGenerator {
                         async () => {
                             try {
                                 const ktlintVersion = application.javaDependencies['ktlint-cli'];
-                                const ktlintUrl = 'https://github.com/pinterest/ktlint/releases/download/';
+                                // pinterest/ktlint moved to ktlint/ktlint; the old org still redirects, but use the
+                                // canonical URL directly to avoid depending on that redirect.
+                                const ktlintUrl = 'https://github.com/ktlint/ktlint/releases/download/';
 
                                 await mkdir(this.ktlintFolder, { recursive: true });
 
