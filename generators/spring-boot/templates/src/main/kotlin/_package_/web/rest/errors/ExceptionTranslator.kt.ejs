@@ -183,7 +183,7 @@ class ExceptionTranslator(private val env: Environment) : ResponseEntityExceptio
         if (problem.type == URI.create("about:blank")) problem.type = getMappedType(err)
 
         // higher precedence to Custom/ResponseStatus types
-        val title = extractTitle(err, problem.status)
+        val title = getCustomizedTitle(err) ?: extractTitleForResponseStatus(err, problem.status)
         if (problem.title == null || problem.title != title) {
             problem.title = title
         }
@@ -211,9 +211,6 @@ class ExceptionTranslator(private val env: Environment) : ResponseEntityExceptio
         return problem
     }
 
-    private fun extractTitle(err: Throwable, statusCode: Int): String? =
-        getCustomizedTitle(err) ?: extractTitleForResponseStatus(err, statusCode)
-
     private fun getFieldErrors(ex: <%= bindException %>): List<FieldErrorVM> =
         ex.bindingResult.fieldErrors.map {
             FieldErrorVM(
@@ -224,7 +221,7 @@ class ExceptionTranslator(private val env: Environment) : ResponseEntityExceptio
         }
 
     private fun extractTitleForResponseStatus(err: Throwable, statusCode: Int): String? {
-        val specialStatus = extractResponseStatus(err)
+        val specialStatus = resolveResponseStatus(err)
         return specialStatus?.reason ?: HttpStatus.valueOf(statusCode).reasonPhrase
     }
 
@@ -241,8 +238,6 @@ class ExceptionTranslator(private val env: Environment) : ResponseEntityExceptio
 
         return getMappedStatus(throwable) ?: resolveResponseStatus(throwable)?.value ?: HttpStatus.INTERNAL_SERVER_ERROR
     }
-
-    private fun extractResponseStatus(throwable: Throwable): ResponseStatus? = resolveResponseStatus(throwable)
 
     private fun resolveResponseStatus(type: Throwable): ResponseStatus? {
         val candidate = findMergedAnnotation(type.javaClass, ResponseStatus::class.java)
@@ -319,15 +314,10 @@ class ExceptionTranslator(private val env: Environment) : ResponseEntityExceptio
 <%_ } _%>
 
     fun buildCause(throwable: Throwable?, request: <%= requestClass %>?): ProblemDetailWithCause? {
-        if (throwable != null && isCausalChainEnabled()) {
+        if (throwable != null && CAUSAL_CHAIN_ENABLED) {
             return customizeProblem(getProblemDetailWithCause(throwable), throwable, request)
         }
         return null
-    }
-
-    private fun isCausalChainEnabled(): Boolean {
-        // Customize as per the needs
-        return CAUSAL_CHAIN_ENABLED
     }
 
     private fun containsPackageName(message: String?): Boolean =

@@ -131,16 +131,13 @@ class <%= serviceClassName %>(
             if (criteria.<%= primaryKey.name %> != null) {
                 specification = specification.and(<%= primaryKey.javaBuildSpecification %>(criteria.<%= primaryKey.name %>, <%= persistClass %>_.<%= primaryKey.name %>))
             }
+            <%_ const filterFields = fields.filter(field => !field.id && !field.transient && field.filterableField);
+            const fieldGroups = [];
+            for (let index = 0; index < filterFields.length; index += 10) fieldGroups.push(filterFields.slice(index, index + 10));
+            fieldGroups.forEach((group, index) => { _%>
+            specification = specification.and(fieldSpecification<%= index %>(criteria))
+            <%_ }); _%>
             <%_
-            fields.forEach((field) => {
-                if (field.id || field.transient) return;
-                if (field.filterableField) { _%>
-            if (criteria.<%= field.fieldName %> != null) {
-                specification = specification.and(<%= field.fieldJavaBuildSpecification %>(criteria.<%= field.fieldName %>, <%= persistClass %>_.<%= field.fieldName %>))
-            }
-            <%_ }
-            });
-
             relationships.forEach((relationship) => {
                 const metamodelFieldName = (relationship.relationshipManyToMany || relationship.relationshipType === 'one-to-many') ? relationship.relationshipFieldNamePlural : relationship.relationshipFieldName; _%>
             if (criteria.<%= relationship.relationshipName %>Id != null) {
@@ -153,4 +150,18 @@ class <%= serviceClassName %>(
         }
         return specification
     }
+    <%_ fieldGroups.forEach((group, index) => { _%>
+    private fun fieldSpecification<%= index %>(criteria: <%= criteria %>): Specification<<%= persistClass %>> {
+        var specification: Specification<<%= persistClass %>> = Specification.unrestricted()
+        <%_ group.forEach(field => { _%>
+        if (criteria.<%= field.fieldName %> != null) {
+            specification = specification.and(
+                <%= field.fieldJavaBuildSpecification %>(criteria.<%= field.fieldName %>, <%= persistClass %>_.<%= field.fieldName %>)
+            )
+        }
+        <%_ }); _%>
+        return specification
+    }
+    <%_ }); _%>
+
 }

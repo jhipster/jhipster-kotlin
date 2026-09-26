@@ -1,0 +1,59 @@
+name: Kotlin lint
+on: [push, pull_request]
+permissions:
+    contents: read
+concurrency:
+    group: ${{ github.workflow }}-${{ github.head_ref || github.ref }}
+    cancel-in-progress: true
+jobs:
+    generated-kotlin:
+        runs-on: ubuntu-latest
+        timeout-minutes: 25
+        strategy:
+            fail-fast: false
+            matrix:
+                sample:
+                    - ng-default
+                    - ng-gradle-fr
+                    - ng-webflux-gradle-mongodb-oauth2
+                    - ng-webflux-psql-default
+                    - react-gradle-cassandra-session-redis
+                    - ng-webflux-couchbase
+                    - ng-neo4j
+                    - ng-mariadb-oauth2-infinispan
+                    - ng-mongodb-kafka-cucumber
+                    - ng-gradle-couchbase-search
+                    - ng-webflux-gradle-session-h2mem-es
+                    - vue-gradle-ws-session
+        steps:
+            - uses: actions/checkout@v7
+            - uses: actions/setup-node@v7
+              with:
+                  node-version: 24
+                  cache: npm
+            - uses: actions/setup-java@v5
+              with:
+                  distribution: temurin
+                  java-version: 25
+            - run: npm ci
+            - name: Generate with the real formatter
+              run: npm run test:kotlin-lint -- --sample ${{ matrix.sample }} --stage generate
+            - name: Check generated Kotlin without modifying it
+              run: npm run test:kotlin-lint -- --sample ${{ matrix.sample }} --stage check
+            - name: Analyze generated Kotlin
+              run: npm run test:kotlin-lint -- --sample ${{ matrix.sample }} --stage detekt
+            - name: Verify generated build-tool lint tasks
+              run: npm run test:kotlin-lint -- --sample ${{ matrix.sample }} --stage build
+            - uses: actions/upload-artifact@v7
+              if: failure()
+              with:
+                  name: kotlin-lint-${{ matrix.sample }}
+                  include-hidden-files: true
+                  path: |
+                      .kotlin-lint/${{ matrix.sample }}/lint-logs/**
+                      .kotlin-lint/${{ matrix.sample }}/src/**/*.kt
+                      .kotlin-lint/${{ matrix.sample }}/.editorconfig
+                      .kotlin-lint/${{ matrix.sample }}/detekt-config.yml
+                      .kotlin-lint/${{ matrix.sample }}/**/reports/ktlint/**
+                      .kotlin-lint/${{ matrix.sample }}/**/reports/detekt/**
+                      .kotlin-lint/${{ matrix.sample }}/target/detekt-reports/**

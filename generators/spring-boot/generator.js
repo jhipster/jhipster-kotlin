@@ -393,6 +393,15 @@ describe('Auth JWT', () => {`,
                     content.replace(/^max_connections=20$/m, 'max_connections=100'),
                 );
             },
+            dropEmptyConstants({ application }) {
+                // Without a built-in user, OAuth2 or Couchbase the Constants.kt template renders only its package line,
+                // which ktlint rejects (standard:no-empty-file).
+                const constantsFile = `src/main/kotlin/${application.packageFolder}config/Constants.kt`;
+                const content = this.readDestination(constantsFile, { defaults: null });
+                if (content !== null && !/\bconst val\b/.test(content)) {
+                    this.deleteDestination(constantsFile);
+                }
+            },
             async customizeMaven({ application, source }) {
                 if (application.buildToolMaven) {
                     source.addMavenDefinition({

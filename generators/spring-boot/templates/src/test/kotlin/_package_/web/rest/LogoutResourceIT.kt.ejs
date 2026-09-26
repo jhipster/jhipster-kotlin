@@ -103,15 +103,15 @@ class LogoutResourceIT {
     @Test
     <% if (!reactive) { %>@Throws(Exception::class)<% } %>
     fun getLogoutInformation() {
-    val ORIGIN_URL = "http://localhost:8080"
+    val originUrl = "http://localhost:8080"
     <%_ if (reactive) { _%>
         var logoutUrl = this.registrations.findByRegistrationId("oidc")
             .map { it.providerDetails.configurationMetadata["end_session_endpoint"].toString() }
             .block()
-        logoutUrl = "$logoutUrl?id_token_hint=$ID_TOKEN&post_logout_redirect_uri=$ORIGIN_URL"
+        logoutUrl = "$logoutUrl?id_token_hint=$ID_TOKEN&post_logout_redirect_uri=$originUrl"
         this.webTestClient.mutateWith(csrf())
             .mutateWith(mockAuthentication(registerAuthenticationToken(authorizedClientService, clientRegistration, authenticationToken(claims))))
-            .post().uri("http://localhost:8080/api/logout").header(HttpHeaders.ORIGIN, ORIGIN_URL).exchange()
+            .post().uri("http://localhost:8080/api/logout").header(HttpHeaders.ORIGIN, originUrl).exchange()
             .expectStatus().isOk
             .expectHeader().contentType(MediaType.APPLICATION_JSON_VALUE)
             .expectBody()
@@ -119,8 +119,8 @@ class LogoutResourceIT {
     <%_ } else { _%>
         var logoutUrl = this.registrations.findByRegistrationId("oidc")!!.providerDetails
             .configurationMetadata["end_session_endpoint"].toString()
-        logoutUrl = "$logoutUrl?id_token_hint=$ID_TOKEN&post_logout_redirect_uri=$ORIGIN_URL"
-        restLogoutMockMvc.perform(post("http://localhost:8080/api/logout").header(HttpHeaders.ORIGIN, ORIGIN_URL))
+        logoutUrl = "$logoutUrl?id_token_hint=$ID_TOKEN&post_logout_redirect_uri=$originUrl"
+        restLogoutMockMvc.perform(post("http://localhost:8080/api/logout").header(HttpHeaders.ORIGIN, originUrl))
             .andExpect(status().isOk)
             .andExpect(content().contentType(MediaType.APPLICATION_JSON_VALUE))
             .andExpect(jsonPath("\$.logoutUrl").value(logoutUrl))
@@ -130,14 +130,14 @@ class LogoutResourceIT {
 
     @Test
     fun getLogoutInformationWithoutOriginHeader() {
-        val ORIGIN_URL = "http://localhost:8080"
+        val originUrl = "http://localhost:8080"
         var logoutUrl = this.registrations.findByRegistrationId("oidc")
             .map { it.providerDetails.configurationMetadata["end_session_endpoint"].toString() }
             .block()
-        logoutUrl = "$logoutUrl?id_token_hint=$ID_TOKEN&post_logout_redirect_uri=$ORIGIN_URL"
+        logoutUrl = "$logoutUrl?id_token_hint=$ID_TOKEN&post_logout_redirect_uri=$originUrl"
         this.webTestClient.mutateWith(csrf())
             .mutateWith(mockAuthentication(registerAuthenticationToken(authorizedClientService, clientRegistration, authenticationToken(claims))))
-            .post().uri("$ORIGIN_URL/api/logout").exchange()
+            .post().uri("$originUrl/api/logout").exchange()
             .expectStatus().isOk
             .expectBody()
             .jsonPath("\$.logoutUrl").isEqualTo(logoutUrl)

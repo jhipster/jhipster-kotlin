@@ -105,11 +105,11 @@ import org.springframework.test.web.servlet.result.MockMvcResultMatchers.*
 @IntegrationTest
 class PublicUserResourceIT {
 
-    private val DEFAULT_LOGIN = "johndoe"
+    private val defaultLogin = "johndoe"
 
     <%_ const DEFAULT_USER = {firstName: 'john', lastName: 'doe'}; _%>
     <%_ for (field of user.fields.filter(field => !field.builtIn && field.relatedByOtherEntity)) { _%>
-    private val DEFAULT_<%= field.fieldName.toUpperCase() %> = "<%= DEFAULT_USER [field.fieldName] %>"
+    private val default<%= field.fieldName.charAt(0).toUpperCase() + field.fieldName.slice(1) %> = "<%= DEFAULT_USER [field.fieldName] %>"
     <%_ } _%>
 
     @Autowired
@@ -184,18 +184,18 @@ class PublicUserResourceIT {
             .expectHeader().contentType(MediaType.APPLICATION_JSON)
             .returnResult(<%= user.dtoClass %>::class.java).responseBody.blockFirst()!!
 
-        assertThat(foundUser.login).isEqualTo(DEFAULT_LOGIN)
+        assertThat(foundUser.login).isEqualTo(defaultLogin)
         <%_ for (field of user.fields.filter(field => !field.builtIn && field.relatedByOtherEntity)) { _%>
-        assertThat(foundUser.<%= field.fieldName %>).isEqualTo(DEFAULT_<%= field.fieldName.toUpperCase() %>)
+        assertThat(foundUser.<%= field.fieldName %>).isEqualTo(default<%= field.fieldName.charAt(0).toUpperCase() + field.fieldName.slice(1) %>)
         <%_ } _%>
         <%_ } else { _%>
         restUserMockMvc.perform(get("/api/users<% if (databaseTypeSql) { %>?sort=id,desc<% } %>")
             .accept(MediaType.APPLICATION_JSON))
             .andExpect(status().isOk)
             .andExpect(content().contentType(MediaType.APPLICATION_JSON_VALUE))
-            .andExpect(jsonPath("$.[*].login").value(hasItem<String>(DEFAULT_LOGIN)))
+            .andExpect(jsonPath("$.[*].login").value(hasItem<String>(defaultLogin)))
             <%_ for (field of user.fields.filter(field => !field.builtIn && field.relatedByOtherEntity)) { _%>
-            .andExpect(jsonPath("$.[*].<%= field.fieldName %>").value(hasItem(DEFAULT_<%= field.fieldName.toUpperCase() %>)))
+            .andExpect(jsonPath("$.[*].<%= field.fieldName %>").value(hasItem(default<%= field.fieldName.charAt(0).toUpperCase() + field.fieldName.slice(1) %>)))
             <%_ } _%>
             .andExpect(jsonPath("$.[*].email").doesNotExist())
             <%_ if (!databaseTypeCassandra) { _%>
