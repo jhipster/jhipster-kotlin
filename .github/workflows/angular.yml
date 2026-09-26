@@ -108,18 +108,19 @@ jobs:
               continue-on-error: ${{matrix.continue-on-backend-tests-error || false}}
               timeout-minutes: 20
             - run: ${{ (matrix.workspaces == 'true' && 'npm') || './npmw' }} install
-              if: steps.compare.outputs.equals != 'true'
+              if: steps.compare.outputs.equals != 'true' && matrix.skip-e2e != 'true'
               timeout-minutes: 7
             - run: npm run ci:e2e:package
-              if: steps.compare.outputs.equals != 'true'
+              if: steps.compare.outputs.equals != 'true' && matrix.skip-e2e != 'true'
               timeout-minutes: 7
             - run: npm run ci:e2e:prepare
-              if: steps.compare.outputs.equals != 'true'
+              if: steps.compare.outputs.equals != 'true' && matrix.skip-e2e != 'true'
               timeout-minutes: 5
             - run: npm run preci:e2e:server:start --if-present
+              if: matrix.skip-e2e != 'true'
             - run: npm run ci:e2e:run --if-present
               id: e2e
-              if: steps.compare.outputs.equals != 'true'
+              if: steps.compare.outputs.equals != 'true' && matrix.skip-e2e != 'true'
               timeout-minutes: 20
             # - name: 'TESTS: frontend'
             #  if: steps.compare.outputs.equals != 'true' && matrix.skip-frontend-tests != 1
