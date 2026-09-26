@@ -286,6 +286,17 @@ export default class extends BaseApplicationGenerator {
                     entity.jpaMetamodelFiltering = false;
                 }
             },
+            keepNullDefaultsForReactiveSql({ application, entity }) {
+                // Spring Data R2DBC leaves null properties out of the INSERT. Liquibase's dropDefaultValue on optional
+                // Instant/ZonedDateTime columns leaves MySQL without a default, so those inserts fail with
+                // "Field '...' doesn't have a default value". Required columns never had a default to drop.
+                if (!application.reactive || !application.databaseTypeSql) return;
+                for (const field of entity.fields ?? []) {
+                    if (field.shouldDropDefaultValue && !field.fieldValidationRequired) {
+                        field.shouldDropDefaultValue = false;
+                    }
+                }
+            },
             prepareEntityForKotlin({ entity }) {
                 const { primaryKey } = entity;
                 if (primaryKey && primaryKey.name === 'id') {
