@@ -33,6 +33,16 @@ const NAMESPACE_TO_TEMPLATE_PREFIX = {
     'jhipster:spring-boot:data-relational': 'spring-data-relational',
 };
 
+const templateExistsMemo = new Map();
+const templateExists = path => {
+    let exists = templateExistsMemo.get(path);
+    if (exists === undefined) {
+        exists = existsSync(path);
+        templateExistsMemo.set(path, exists);
+    }
+    return exists;
+};
+
 export default class extends BaseApplicationGenerator {
     constructor(args, options, features) {
         super(args, options, {
@@ -97,10 +107,10 @@ export default class extends BaseApplicationGenerator {
                         const resolvedSourceFile = this.templatePath(kotlinSourceFile);
 
                         if (!sourceFile.includes('.java')) {
-                            return existsSync(`${resolvedSourceFile}.ejs`) ? { ...file, resolvedSourceFile } : file;
+                            return templateExists(`${resolvedSourceFile}.ejs`) ? { ...file, resolvedSourceFile } : file;
                         }
 
-                        if (existsSync(`${resolvedSourceFile}.ejs`)) {
+                        if (templateExists(`${resolvedSourceFile}.ejs`)) {
                             return {
                                 ...file,
                                 sourceFile: kotlinSourceFile,
