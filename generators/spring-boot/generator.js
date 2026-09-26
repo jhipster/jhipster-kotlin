@@ -322,6 +322,47 @@ export default class extends BaseApplicationGenerator {
                     source.addSpringBootModule?.('spring-boot-testcontainers');
                 }
             },
+            angularJwtStorage() {
+                const authJwtServiceSpec = 'src/main/webapp/app/core/auth/auth-jwt.service.spec.ts';
+
+                if (existsSync(this.destinationPath(authJwtServiceSpec))) {
+                    this.editFile(authJwtServiceSpec, content =>
+                        content
+                            .replace(
+                                "import { beforeEach, describe, expect, it, vi } from 'vitest';",
+                                "import { beforeAll, beforeEach, describe, expect, it, vi } from 'vitest';",
+                            )
+                            .replace(
+                                "describe('Auth JWT', () => {",
+                                `const createStorage = (): Storage => {
+  const store = new Map<string, string>();
+
+  return {
+    get length() {
+      return store.size;
+    },
+    clear: () => store.clear(),
+    getItem: key => store.get(key) ?? null,
+    key: index => Array.from(store.keys())[index] ?? null,
+    removeItem: key => store.delete(key),
+    setItem: (key, value) => store.set(key, value),
+  };
+};
+
+describe('Auth JWT', () => {`,
+                            )
+                            .replace(
+                                '  beforeEach(() => {',
+                                `  beforeAll(() => {
+    Object.defineProperty(window, 'localStorage', { value: window.localStorage ?? createStorage() });
+    Object.defineProperty(window, 'sessionStorage', { value: window.sessionStorage ?? createStorage() });
+  });
+
+  beforeEach(() => {`,
+                            ),
+                    );
+                }
+            },
             async customizeMaven({ application, source }) {
                 if (application.buildToolMaven) {
                     source.addMavenDefinition({
