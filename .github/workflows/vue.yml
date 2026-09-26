@@ -38,15 +38,22 @@ jobs:
     build-matrix:
         runs-on: ubuntu-latest
         outputs:
-            matrix: ${{ steps.build.outputs.matrix }}
+            matrix: ${{ steps.changes.outputs.docs-only == 'true' && '{"include":[]}' || steps.build.outputs.matrix }}
         steps:
             - name: 'SETUP: Checkout jhipster-kotlin'
               uses: actions/checkout@v7
+              with:
+                  fetch-depth: 0
+            - uses: ./.github/actions/changes
+              id: changes
             - uses: actions/setup-node@v7
+              if: steps.changes.outputs.docs-only != 'true'
               with:
                   node-version: 24
             - run: npm ci --ignore-scripts
+              if: steps.changes.outputs.docs-only != 'true'
             - id: build
+              if: steps.changes.outputs.docs-only != 'true'
               run: ./cli/cli.cjs github-build-matrix vue
     applications:
         name: ${{ matrix.job-name || matrix.sample }}
@@ -209,11 +216,14 @@ jobs:
         permissions:
             contents: none
         runs-on: ubuntu-latest
-        needs: [applications]
+        needs: [build-matrix, applications]
         if: always()
         steps:
             - run: |
                   echo '${{ toJSON(needs) }}'
+                  if [ '${{ needs.build-matrix.result }}' != 'success' ]; then
+                    exit 1
+                  fi
                   if [ 'skipped' == '${{ needs.applications.result }}' ] || [ 'success' == '${{ needs.applications.result }}' ] || [ 'closed' == '${{ github.event.action }}' ]; then
                     exit 0
                   fi

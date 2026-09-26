@@ -1,85 +1,125 @@
-# We really love ❤ to have you as a contributor. 🎉🎉🎉 Thanks 🎉🎉🎉
+# Contributing to KHipster
 
-## To run the application in development
+Thanks for helping improve KHipster. Bug fixes, tests, examples, and documentation are all useful contributions. Please follow our [Code of Conduct](CODE_OF_CONDUCT.md).
 
-### Step 1 ✌️ : to setup JHipster-Kotlin generator
+## Set up a checkout
 
-`git clone https://github.com/jhipster/jhipster-kotlin`
-
-`cd jhipster-kotlin`
-
-`npm install | yarn`
-
-`npm link | yarn link`
-
-( 🏁 Kudos, you just setup JHipster-Kotlin and linked to it locally )
-
-### Step 2 🤟 : before generating your application, go to your application folder
-
-`yarn link "generator-jhipster-kotlin"`
-
-or
-
-`npm link "generator-jhipster-kotlin"`
-
-( 🏁 Kudos, you have done it. It is the time to generate the application `khipster` )
-
-✨✨✨✨ You are rocking ✨✨✨✨
-
-Fix / Code / Document and create a pull request 💯
-
-## Generating samples
-
-Default maven application:
-
-```
-khipster --defaults --skip-install
-```
-
-Default gradle application:
-
-```
-khipster --build gradle --defaults --skip-install
-```
-
-CI samples:
-
-```
-khipster generate-sample --app-sample sample-name
-```
-
-Tips:
-
-- Ktlint formatting is slow, disable with `--skip-ktlint-format`
-
-## Synchronizing generator-jhipster templates
-
-Run:
+Use Node.js 24, as CI does. The supported Node.js range and bundled JHipster version are declared in [package.json](package.json). Building generated applications also requires a suitable JDK and any services selected during generation.
 
 ```sh
-khipster synchronize
+git clone https://github.com/jhipster/jhipster-kotlin.git
+cd jhipster-kotlin
+npm ci
 ```
 
-In the conflict resolution, check diff and press `i` if the template is synchronized.
-`i` choice will add that file to be ignored in `.yo-resolve` file.
+Use npm and commit `package-lock.json` when changing dependencies. `npm ci` installs the locked versions and sets up the Git hooks.
 
-When synchronization is done revert `.yo-resolve` file to the initial previous state.
+To make this checkout available as `khipster`:
 
-Tips:
+```sh
+npm link
+```
 
-- Avoid changing ejs flow control code for a cleaner diff against original java template
-- In the confict resolution diff, you can edit the original file and press `r` to recreate the diff.
+Alternatively, invoke the CLI by its absolute path without changing your global installation:
 
-### Regular Contributor Guidelines
+```sh
+mkdir ../khipster-playground
+cd ../khipster-playground
+node ../jhipster-kotlin/cli/cli.cjs --defaults --skip-install
+```
 
-These are some of the guidelines that we would like you to follow if you are a regular contributor to the project
-or joined the [JHipster team](https://www.jhipster.tech/team/).
+Always generate applications outside the generator repository. The generator writes files into the current directory.
 
-- We recommend not committing directly to main, but always submit changes through PRs.
-- Before merging, try to get at least one review on the PR.
-- Add appropriate labels to issues and PRs that you create (if you have permission to do so).
-- Follow the project's [policies](https://www.jhipster.tech/policies/#-policies).
-- Follow the project's [Code of Conduct](https://github.com/jhipster/generator-jhipster/blob/main/CODE_OF_CONDUCT.md)
-  and be polite and helpful to users when answering questions/bug reports and when reviewing PRs.
-- We work on our free time so we have no obligation nor commitment. Work/life balance is important, so don't
-  feel tempted to put in all your free time fixing something.
+## Find the right place to change
+
+| Path                                       | Purpose                                                                          |
+| ------------------------------------------ | -------------------------------------------------------------------------------- |
+| `cli/`                                     | CLI entry point and customizations                                               |
+| `generators/spring-boot/`                  | Spring Boot blueprint hooks and Kotlin EJS templates                             |
+| `generators/kotlin/`                       | Kotlin language and build configuration                                          |
+| `generators/ktlint/`, `generators/detekt/` | Kotlin formatting and static analysis integration                                |
+| `generators/migration/`                    | Migration support                                                                |
+| `generators/**/*.spec.js`, `test/`         | Generator tests and snapshots                                                    |
+| `.blueprint/`                              | Repository development commands, sample definitions, and synchronization tooling |
+| `.github/workflows/`                       | GitHub Actions workflows                                                         |
+| `docs/`                                    | User and contributor documentation                                               |
+
+The blueprint overlays upstream generators. Check the matching template in `node_modules/generator-jhipster/dist/generators/` when changing EJS logic. Keep upstream control flow recognizable where possible; emitted source must use Kotlin syntax.
+
+## Validate a change
+
+Run from the repository root:
+
+```sh
+npm test
+npm run ejslint
+```
+
+`npm test` runs Prettier, ESLint, and the Vitest suite. `npm run ejslint` separately checks EJS syntax.
+
+Useful commands during development:
+
+```sh
+# Run a focused test file, without the npm pretest checks.
+npx vitest run generators/spring-boot/generator.spec.js
+
+# Format repository files.
+npm run prettier-format
+
+# Update a focused snapshot after reviewing the intended output change.
+npx vitest run generators/spring-boot/generator.spec.js --update
+
+# Check documentation without loading the package.json formatting plugin.
+npx prettier --check --config .prettierrc-docs.yml "**/*.md"
+```
+
+Add regression coverage for bugs. Review snapshot changes before committing: a passing snapshot update does not establish that generated code is correct. For template changes, also generate a relevant application and run its backend tests. GitHub Actions tests a wider set of generated applications.
+
+## Generate an application or CI sample
+
+After `npm link`, run these commands in an empty directory outside the repository:
+
+```sh
+# Default Maven application.
+khipster --defaults --skip-install
+
+# Or, in a separate directory, a Gradle application.
+khipster --defaults --build gradle --skip-install
+```
+
+For CI samples, use the repository's development CLI. From the repository root, inspect the available sample names:
+
+```sh
+node cli/cli.cjs generate-sample --help
+```
+
+The workflow definitions in [.blueprint/generate-sample/templates/\_workflow-samples](.blueprint/generate-sample/templates/_workflow-samples) are the source of truth for sample names and configurations. To generate one, replace `SAMPLE_NAME` with a name from those files:
+
+```sh
+# Run from an empty sibling directory, such as ../khipster-playground.
+node ../jhipster-kotlin/cli/cli.cjs generate-sample SAMPLE_NAME --skip-install --skip-ktlint-format
+```
+
+`--skip-ktlint-format` speeds up generation when inspecting output. It skips formatting only; still run the generated project's checks before submitting a Kotlin template change.
+
+## Synchronize upstream templates
+
+From the repository root:
+
+```sh
+node cli/cli.cjs synchronize
+```
+
+Review each conflict against the Kotlin template. Press `i` to mark an already synchronized template as ignored, or edit the file and press `r` to retry the comparison. Synchronization can update `.yo-resolve`; review those changes and discard temporary ignore entries before committing.
+
+## Submit a pull request
+
+1. Create a branch from the current `main`.
+2. Keep the change focused and explain the problem it solves.
+3. Include relevant validation results and issue references in the PR description.
+4. Review generated output, snapshots, and dependency changes.
+5. Request a review before merging. Maintainers can add suitable labels.
+
+Documentation-only changes use a lighter CI path automatically. Changes to templates, code, dependencies, or CI still get full validation; see [CI behavior](docs/ci.md). Do not add skip-CI markers to documentation commits.
+
+For project-wide contributor expectations, see the [JHipster policies](https://www.jhipster.tech/policies/). Maintainers work on the project in their spare time; clear reproduction steps and focused PRs make reviews easier.
