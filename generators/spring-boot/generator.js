@@ -82,7 +82,7 @@ export default class extends BaseApplicationGenerator {
             async applyKotlinDefaults({ application }) {
                 Object.assign(application, {
                     // syncUserWithIdp disabled is not supported by kotlin blueprint
-                    syncUserWithIdp: application.authenticationType === 'oauth2',
+                    syncUserWithIdp: application.authenticationType === 'oauth2' && application.databaseType !== 'no',
                 });
 
                 (application.customizeTemplatePaths ??= []).unshift(
