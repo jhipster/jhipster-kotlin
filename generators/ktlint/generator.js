@@ -118,12 +118,18 @@ export default class extends BaseApplicationGenerator {
 
     get [BaseApplicationGenerator.POST_WRITING]() {
         return this.asPostWritingTaskGroup({
-            editEditorconfigFile() {
-                this.editFile('.editorconfig', content =>
-                    content.includes('[*.{kt,kts}]')
-                        ? content
-                        : `${content}\n[*.{kt,kts}]\nindent_size = 4\nktlint_standard_no-wildcard-imports = disabled\n`,
-                );
+            editEditorconfigFile({ application }) {
+                // JHipster permits underscores in application package names.
+                const packageNameRule = application.packageName.includes('_') ? 'ktlint_standard_package-name = disabled\n' : '';
+                this.editFile('.editorconfig', content => {
+                    if (!content.includes('[*.{kt,kts}]')) {
+                        return `${content}\n[*.{kt,kts}]\nindent_size = 4\nktlint_standard_no-wildcard-imports = disabled\n${packageNameRule}`;
+                    }
+                    if (packageNameRule && !content.includes('ktlint_standard_package-name')) {
+                        return content.replace('[*.{kt,kts}]', `[*.{kt,kts}]\n${packageNameRule.trimEnd()}`);
+                    }
+                    return content;
+                });
             },
             async addNpmScript({ application }) {
                 const command = application.buildToolGradle ? './gradlew :ktlintFormat' : './mvnw ktlint:format';
