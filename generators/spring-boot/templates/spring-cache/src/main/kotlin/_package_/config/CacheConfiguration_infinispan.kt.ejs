@@ -232,15 +232,15 @@ class CacheConfiguration(<% if (serviceDiscoveryAny) { %>
                 log.debug("Adding Infinispan cluster member ${instance.host}:7800")
                 initialHosts.add(InetSocketAddress(instance.host, 7800))
             }
-            // JGroups setters return the protocol for chaining, so they are not Kotlin property setters.
+            // JGroups setters return the protocol for chaining (many generically), so call them with explicit type arguments.
             val tcp = TCP()
-            tcp.setBindAddress(InetAddress.getLocalHost())
-            tcp.setBindPort(7800)
+            tcp.setBindAddress<TCP>(InetAddress.getLocalHost())
+            tcp.setBindPort<TCP>(7800)
 
             initialHosts.add(InetSocketAddress(InetAddress.getLocalHost(), 7800))
             val tcpping = TCPPING()
-            tcpping.setInitialHosts(initialHosts)
-            tcpping.setPortRange(10)
+            tcpping.setInitialHosts<TCPPING>(initialHosts)
+            tcpping.setPortRange<TCPPING>(10)
 
             val nakack = NAKACK2()
             nakack.setDiscardDeliveredMsgs(false)
@@ -250,9 +250,9 @@ class CacheConfiguration(<% if (serviceDiscoveryAny) { %>
             merge.setMaxInterval(30000)
 
             val fd = FD_ALL()
-            fd.setTimeout(60000L)
-            fd.setInterval(15000L)
-            fd.setTimeoutCheckInterval(5000L)
+            fd.setTimeout<FD_ALL>(60000L)
+            fd.setInterval<FD_ALL>(15000L)
+            fd.setTimeoutCheckInterval<FD_ALL>(5000L)
 
             val stack = ProtocolStack()
             // Order shouldn't be changed
