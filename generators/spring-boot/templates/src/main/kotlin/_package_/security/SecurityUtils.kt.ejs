@@ -20,6 +20,7 @@
 
 package <%= packageName %>.security
 
+import org.springframework.security.authentication.AnonymousAuthenticationToken
 import org.springframework.security.core.Authentication
 import org.springframework.security.core.GrantedAuthority
 <%_ if (authenticationTypeOauth2) { _%>
@@ -33,6 +34,9 @@ import org.springframework.security.core.context.SecurityContext
 import org.springframework.security.core.context.SecurityContextHolder
 <%_ } _%>
 import org.springframework.security.core.userdetails.UserDetails
+<%_ if (authenticationTypeJwt) { _%>
+import org.springframework.security.oauth2.jwt.Jwt
+<%_ } _%>
 <%_ if (authenticationTypeOauth2) { _%>
 import org.springframework.security.oauth2.core.oidc.user.DefaultOidcUser
 import org.springframework.security.oauth2.server.resource.authentication.JwtAuthenticationToken
@@ -87,7 +91,8 @@ fun getCurrentUserLogin(): <% if (reactive) { %>Mono<% } else { %>Optional<% } %
 
 fun extractPrincipal(authentication: Authentication?): String? {
 
-    if(authentication == null) {
+    // AnonymousAuthenticationToken has a String principal that would fall through below
+    if (authentication == null || authentication is AnonymousAuthenticationToken) {
         return null
     <%_ if (authenticationTypeOauth2) { _%>
     } else if (authentication is JwtAuthenticationToken) {
@@ -97,6 +102,9 @@ fun extractPrincipal(authentication: Authentication?): String? {
 
     return when (val principal = authentication.principal) {
         is UserDetails -> principal.username
+        <%_ if (authenticationTypeJwt) { _%>
+        is Jwt -> principal.subject
+        <%_ } _%>
         <%_ if (authenticationTypeOauth2) { _%>
         is DefaultOidcUser -> {
             if(principal.attributes.containsKey("preferred_username")) {
@@ -125,8 +133,14 @@ fun getCurrentUserJWT(): <% if (reactive) { %>Mono<% } else { %>Optional<% } %><
     <%_ } else { _%>
     Optional.ofNullable(SecurityContextHolder.getContext().authentication)
     <%_ } _%>
-        .filter { it.credentials is String }
-        .map { it.credentials as String }
+        .<%= reactive ? 'mapNotNull' : 'map' %> { extractCredentials(it) }
+
+private fun extractCredentials(authentication: Authentication): String? =
+    when (val credentials = authentication.credentials) {
+        is String -> credentials
+        is Jwt -> credentials.tokenValue
+        else -> null
+    }
 <%_ } _%>
 
 /**

@@ -258,17 +258,6 @@ export default class extends BaseApplicationGenerator {
         });
     }
 
-    get [BaseApplicationGenerator.LOADING_ENTITIES]() {
-        return this.asLoadingEntitiesTaskGroup({
-            migration({ application }) {
-                if (application.authority) {
-                    // V8 rest api is not compatible with current authority api.
-                    application.authority.skipClient = true;
-                }
-            },
-        });
-    }
-
     get [BaseApplicationGenerator.POST_PREPARING_EACH_ENTITY]() {
         return this.asPostPreparingEachEntityTaskGroup({
             migration({ entity }) {
