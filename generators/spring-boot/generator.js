@@ -373,6 +373,15 @@ describe('Auth JWT', () => {`,
                     );
                 }
             },
+            mysqlTestConnections({ application }) {
+                // The MySQL test container allows 20 connections. Test classes that need their own Spring context
+                // (e.g. KafkaResourceIT) open a second R2DBC pool and Liquibase connection while the cached context
+                // still holds its pool, so Liquibase fails with "Too many connections".
+                if (!application.prodDatabaseTypeMysql) return;
+                this.editFile(`${application.srcTestResources}conf/mysql/my.cnf`, { ignoreNonExisting: true }, content =>
+                    content.replace(/^max_connections=20$/m, 'max_connections=100'),
+                );
+            },
             async customizeMaven({ application, source }) {
                 if (application.buildToolMaven) {
                     source.addMavenDefinition({
