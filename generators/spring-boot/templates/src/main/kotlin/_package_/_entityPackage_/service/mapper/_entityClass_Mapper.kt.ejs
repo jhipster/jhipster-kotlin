@@ -23,6 +23,7 @@ package <%= entityAbsolutePackage %>.service.mapper
   const uuidMapMethod = restProperties.some(property => property.relatedField?.fieldTypeUUID);
   const byteMapMethod = restProperties.some(property => property.relatedField?.fieldTypeBytes);
   const dtoRelationships = restProperties.filter(property => property.relationshipName && !property.otherEntity.embedded);
+  const dtoRelationshipOtherEntities = this._.uniq(dtoRelationships.map(relationship => relationship.otherEntity));
   let otherEntitiesFields = otherEntities
     .filter(otherEntity => dtoRelationships.some(relationship => relationship.otherEntity === otherEntity))
     .map(otherEntity =>
@@ -40,7 +41,7 @@ _%>
 import <%= entityAbsoluteClass %>
 import <%= entityAbsolutePackage %>.service.dto.<%= dtoClass %>
 
-<%_ for (const otherEntity of this._.uniq(dtoRelationships.map(relationship => relationship.otherEntity).filter(otherEntity => otherEntity.entityClass !== entityClass))) { _%>
+<%_ for (const otherEntity of dtoRelationshipOtherEntities.filter(otherEntity => otherEntity.entityClass !== entityClass)) { _%>
 import <%= otherEntity.entityAbsoluteClass.replace('undefined',entityAbsolutePackage ) %>
 import <%= otherEntity.entityAbsolutePackage || entityAbsolutePackage %>.service.dto.<%= otherEntity.dtoClass %>
 <%_ } _%>
@@ -97,6 +98,9 @@ interface <%= entityClass %>Mapper :
             if (!relationship.ownerSide) {
                 renMapAnotDto = true;
                 mappings2.push(`Mapping(target = "${relationship.propertyName}", ignore = true)`);
+            } else {
+                renMapAnotDto = true;
+                mappings2.push(`Mapping(target = "${relationship.propertyName}", source = "${relationship.propertyName}", qualifiedByName = ["${relationship.otherEntity.entityInstance}FromId"])`);
             }
             if (relationship.collection && fluentMethods) {
                 renMapAnotDto = true;
@@ -111,6 +115,28 @@ interface <%= entityClass %>Mapper :
     )
         <%_ } _%>
     override fun toEntity(<%= dtoInstance %>: <%= dtoClass %>): <%= persistClass %>
+    <%_ } _%>
+
+    <%_
+        for (const otherEntity of dtoRelationshipOtherEntities) {
+            const mappingsToEntity = [];
+            const mapperName = otherEntity.entityInstance + 'FromId';
+    _%>
+
+    @Named("<%= mapperName %>")
+    @BeanMapping(ignoreByDefault = true)
+    <%_
+        for (const field of otherEntity.primaryKey.fields) {
+            mappingsToEntity.push(`Mapping(target = "${field.propertyName}", source = "${field.propertyName}")`);
+        }
+    _%>
+    <%_ if (mappingsToEntity.length !== 0) { _%>
+    @Mappings(
+        <%-  [...new Set(mappingsToEntity)].join(',') %>
+    )
+    <%_ } _%>
+    fun toEntity<%= this._.upperFirst(mapperName) %>(<%= otherEntity.entityInstance %>: <%- otherEntity.dtoClass %>): <%- otherEntity.persistClass %>
+
     <%_ } _%>
 
 
