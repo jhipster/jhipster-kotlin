@@ -380,16 +380,6 @@ describe('Auth JWT', () => {`,
                     });
                 }
             },
-            customizeGradleJib({ application }) {
-                if (!application.buildToolGradle) return;
-                // Workaround java.lang.NoClassDefFoundError: kotlin/jvm/internal/Intrinsics in generated image
-                this.editFile('buildSrc/src/main/groovy/jhipster.docker-conventions.gradle', content =>
-                    content.replace(
-                        'configurationName = "productionRuntimeClasspath"',
-                        '// configurationName = "productionRuntimeClasspath"',
-                    ),
-                );
-            },
             customizeGradleProjectVersion({ application, source }) {
                 if (!application.buildToolGradle) return;
                 source.addGradleProperty({ property: 'projectVersion', value: application.projectVersion });
