@@ -26,6 +26,7 @@ import org.slf4j.LoggerFactory
 import org.springframework.boot.couchbase.autoconfigure.CouchbaseConnectionDetails
 import org.springframework.context.annotation.*
 import org.springframework.core.convert.converter.Converter
+import org.springframework.core.io.support.PathMatchingResourcePatternResolver
 <%_ if (searchEngineElasticsearch) { _%>
 import org.springframework.data.elasticsearch.repository.config.Enable<% if (reactive) { %>Reactive<% } %>ElasticsearchRepositories
 <%_ } _%>
@@ -45,10 +46,13 @@ import org.springframework.validation.beanvalidation.LocalValidatorFactoryBean
 import reactor.core.publisher.Flux
 import tech.jhipster.config.JHipsterConstants
 import tech.jhipster.config.JHipsterProperties
+import java.io.IOException
+import java.io.UncheckedIOException
 import java.math.BigDecimal
 import java.math.BigInteger
 import java.time.ZoneId
 import java.time.ZonedDateTime
+import java.nio.file.Files
 import java.time.Duration
 import java.util.*
 
@@ -68,6 +72,7 @@ class DatabaseConfiguration(
 ) : AbstractCouchbaseConfiguration() {
 
     private val CHANGELOG_COLLECTION = "changelog"
+    private val CHANGELOG_PATH = "config/couchmove/changelog"
     private val TYPE_KEY = "type"
     private val log = LoggerFactory.getLogger(javaClass)
 
@@ -134,11 +139,42 @@ class DatabaseConfiguration(
     fun couchmove(cluster: Cluster): Couchmove {
         log.debug("Configuring Couchmove")
         val bucket = cluster.bucket(bucketName)
+        bucket.waitUntilReady(Duration.ofMinutes(1))
         val collection = bucket.scope(getScopeName()).collection(CHANGELOG_COLLECTION)
-        val couchmove = Couchmove(collection, cluster, "config/couchmove/changelog");
+        val couchmove = Couchmove(collection, cluster, extractChangelog())
         couchmove.migrate()
         couchmove.buildN1qlDeferredIndexes(getScopeName())
         return couchmove
+    }
+
+    /**
+     * Couchmove cannot read the changelog from Spring Boot's nested executable jar format
+     * (https://github.com/tchlyah/couchmove/issues/48), so extract it to a temporary directory
+     * and pass a plain filesystem path, which couchmove reads directly.
+     * Migration checksums are computed from file names and contents only, so they are not
+     * affected by the changelog location.
+     */
+    private fun extractChangelog(): String {
+        try {
+            val changelogDirectory = Files.createTempDirectory("couchmove-changelog")
+            val resolver = PathMatchingResourcePatternResolver()
+            for (resource in resolver.getResources("classpath:$CHANGELOG_PATH/**")) {
+                if (!resource.isReadable) {
+                    continue
+                }
+                val url = resource.url.toString()
+                val relativePath = url.substring(url.lastIndexOf(CHANGELOG_PATH) + CHANGELOG_PATH.length + 1)
+                if (relativePath.isEmpty() || relativePath.endsWith("/")) {
+                    continue
+                }
+                val target = changelogDirectory.resolve(relativePath)
+                Files.createDirectories(target.parent)
+                resource.inputStream.use { Files.copy(it, target) }
+            }
+            return changelogDirectory.toAbsolutePath().toString()
+        } catch (e: IOException) {
+            throw UncheckedIOException("Could not extract the couchmove changelog", e)
+        }
     }
 
     @Bean

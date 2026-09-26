@@ -131,6 +131,14 @@ export default class extends BaseApplicationGenerator {
 
     get [BaseApplicationGenerator.PREPARING]() {
         return this.asPreparingTaskGroup({
+            springPulsarVersion({ application }) {
+                // spring-cloud:pulsar writes <spring-pulsar.version> from javaDependencies['spring-pulsar'], which upstream
+                // never sets; the resulting empty property overrides Spring Boot's managed version and breaks the pom.
+                const managed = application.javaManagedProperties?.['spring-pulsar.version'];
+                if (application.javaDependencies && managed && !application.javaDependencies['spring-pulsar']) {
+                    application.javaDependencies['spring-pulsar'] = managed;
+                }
+            },
             addApplicationPropertiesNeedles({ application, source }) {
                 source.addApplicationPropertiesContent = () => undefined;
                 source.addApplicationPropertiesProperty = () => undefined;
@@ -305,6 +313,13 @@ export default class extends BaseApplicationGenerator {
                         classPath: 'com.mongodb.internal.session.ServerSessionPool\\$ServerSessionItemFactory',
                         method: 'createNewServerSessionIdentifier',
                     });
+                }
+            },
+            kafkaServiceConnection({ application, source }) {
+                // KafkaTestContainer uses @ServiceConnection, but upstream only adds spring-boot-testcontainers
+                // through the database generators, so reactive SQL + Kafka apps miss it.
+                if (application.messageBrokerKafka) {
+                    source.addSpringBootModule?.('spring-boot-testcontainers');
                 }
             },
             async customizeMaven({ application, source }) {

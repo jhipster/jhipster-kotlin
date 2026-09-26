@@ -22,6 +22,19 @@
             .then(<%= entityInstance %>SearchRepository.deleteById(id))
   <%_ } -%>
 <%_ } else { %>
+<%_
+  // Hibernate 7 rejects the flush when a loaded inverse one-to-one still points at the removed entity.
+  const inverseOneToOnes = (!viaService && databaseTypeSql)
+    ? relationships.filter(rel => rel.relationshipOneToOne && rel.ownerSide && rel.otherRelationship && !rel.otherEntity.builtInUser)
+    : [];
+  if (inverseOneToOnes.length > 0) {
+_%>
+        <%= entityInstance %>Repository.findById(id).ifPresent { entity ->
+  <%_ for (const rel of inverseOneToOnes) { _%>
+            entity.<%= rel.relationshipFieldName %>?.<%= rel.otherRelationship.relationshipFieldName %> = null
+  <%_ } _%>
+        }
+<%_ } _%>
         <%= entityInstance %><%= viaService ? 'Service.delete' : 'Repository.deleteById' %>(id)
         <%_ if (!viaService && searchEngineElasticsearch) { _%>
         <%= entityInstance %>SearchRepository.deleteById(id)

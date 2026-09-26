@@ -39,11 +39,6 @@ import org.springframework.security.test.context.TestSecurityContextHolder
 import jakarta.persistence.EntityManager
 <%_ } _%>
 
-<%_ if (searchEngineCouchbase) { _%>
-import java.util.NoSuchElementException
-import java.util.concurrent.Callable
-<%_ } _%>
-
 import java.io.IOException
 import java.math.BigDecimal
 import java.time.ZonedDateTime
@@ -56,7 +51,6 @@ import kotlin.reflect.full.createInstance
 import java.util.NoSuchElementException
 import java.util.concurrent.Callable
 import java.util.concurrent.TimeUnit
-import java.util.function.Function
 import java.time.Duration
 import reactor.core.publisher.Mono
 import reactor.util.retry.Retry
@@ -219,10 +213,10 @@ fun <T : Any> findAll(em: EntityManager, clazz: KClass<T>): List<T> {
 
 <%_ if (searchEngineCouchbase) { _%>
 
-fun <T> retryUntilNotEmpty(iterableCallable: Callable<Iterable<T>>) {
-    Mono.defer {
-        Mono.fromCallable(iterableCallable)
-            .flatMapIterable(Function.identity())
+fun <T : Any> retryUntilNotEmpty(iterableCallable: Callable<out Iterable<T>>) {
+    Mono.defer<T> {
+        Mono.fromCallable<Iterable<T>>(iterableCallable)
+            .flatMapIterable { it }
             .next()
             .switchIfEmpty(Mono.error(NoSuchElementException()))
     }

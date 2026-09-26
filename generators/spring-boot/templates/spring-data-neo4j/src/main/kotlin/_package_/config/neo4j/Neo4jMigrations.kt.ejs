@@ -21,60 +21,58 @@ package <%= packageName %>.config.neo4j
 import ac.simons.neo4j.migrations.core.JavaBasedMigration
 import ac.simons.neo4j.migrations.core.MigrationContext
 import ac.simons.neo4j.migrations.core.MigrationsException
-import tools.jackson.databind.ObjectMapper
 import org.neo4j.driver.Values
 import org.springframework.core.io.Resource
 import org.springframework.core.io.support.PathMatchingResourcePatternResolver
+import tools.jackson.databind.ObjectMapper
 import java.io.IOException
-import java.util.*
+import java.util.UUID
 
 /**
-* Initial database setup for Neo4j.
-*/
-class Neo4jMigrations {
+ * Initial database setup for Neo4j.
+ */
+class Neo4jMigrations private constructor() {
 
-     /**
+    /**
      * Load users including authorities from JSON files.
      */
-    class V0001__CreateUsers: JavaBasedMigration {
+    class V0001__CreateUsers : JavaBasedMigration {
 
         override fun apply(context: MigrationContext) {
-
             val om = ObjectMapper()
-            val resourcePatternResolver = PathMatchingResourcePatternResolver()
-            val resources: Array<Resource>
-            try {
-                resources = resourcePatternResolver.getResources("classpath:config/neo4j/migrations/user__*.json")
+            val resources: Array<Resource> = try {
+                PathMatchingResourcePatternResolver().getResources("classpath:config/neo4j/migrations/user__*.json")
             } catch (e: IOException) {
                 throw MigrationsException("Could not load user definition resources.", e)
             }
-            val type = om.typeFactory.constructMapType(Map::class.java, String::class.java, Object::class.java)
+
+            val type = om.typeFactory.constructMapType(Map::class.java, String::class.java, Any::class.java)
+
             val userLabel = "<%= jhiTablePrefix %>_user"
             val authorityLabel = "<%= jhiTablePrefix %>_authority"
-            val query = String.format(
-                ""
-                    + "CREATE (u:%s) SET u = \$user WITH u "
-                    + "UNWIND \$authorities AS authority "
-                    + "MERGE (a:%s {name: authority}) "
-                    + "CREATE (u) - [:HAS_AUTHORITY] -> (a) ",
-                userLabel, authorityLabel
-            )
 
-           context.session.use { session ->
-               resources.forEach {
-                   try {
-                       val user = om.readValue(it.inputStream, type) as MutableMap<String, Any>
-                       user["user_id"] = UUID.randomUUID().toString() as Any
-                       val authorities = user.remove("authorities") as List<*>
-                       user.remove("_class")
-                       session.writeTransaction {t ->
-                           t.run(query, Values.parameters("user", user, "authorities", authorities))
-                               .consume()
-                       }
-                   } catch (e: IOException) {
-                       throw MigrationsException("could not load resource ${it.description}.", e)
-                   }
-               }
+            val query = """
+                CREATE (u:$userLabel) SET u = ${'$'}user WITH u
+                UNWIND ${'$'}authorities AS authority
+                MERGE (a:$authorityLabel {name: authority})
+                CREATE (u) - [:HAS_AUTHORITY] -> (a)
+                """.trimIndent()
+
+            context.session.use { session ->
+                for (resource in resources) {
+                    try {
+                        val user: MutableMap<String, Any?> = resource.inputStream.use { om.readValue(it, type) }
+                        user["user_id"] = UUID.randomUUID().toString()
+                        val authorities = user.remove("authorities") as List<*>
+                        user.remove("_class")
+
+                        session.executeWrite { t ->
+                            t.run(query, Values.parameters("user", user, "authorities", authorities)).consume()
+                        }
+                    } catch (e: IOException) {
+                        throw MigrationsException("Could not load resource ${resource.description}.", e)
+                    }
+                }
             }
         }
     }

@@ -42,7 +42,7 @@ import reactor.core.publisher.Mono
     let toMutableList = reactive ? '' : '.toMutableList()';
 _%>
 @NoRepositoryBean
-interface CouchbaseSearchRepository<T, ID>: JHipsterCouchbaseRepository<T, ID> {
+interface CouchbaseSearchRepository<T : Any, ID : Any> : JHipsterCouchbaseRepository<T, ID> {
 
     companion object {
         const val SEARCH_CONDITION = "SEARCH(b, #{T(<%= packageName %>.repository.CouchbaseSearchRepository).searchQuery([0]).toString()})"
@@ -70,13 +70,11 @@ interface CouchbaseSearchRepository<T, ID>: JHipsterCouchbaseRepository<T, ID> {
     }
 
     @ScanConsistency(query = QueryScanConsistency.NOT_BOUNDED)
-    @JvmDefault
     fun search(queryString: String) :<%= listOrFlux %><T> {
         return findAllById(toIds(searchIds(queryString)<%= toMutableList %>))
     }
 
     @ScanConsistency(query = QueryScanConsistency.NOT_BOUNDED)
-    @JvmDefault
     fun search(queryString: String, pageable: Pageable): <%= pageOrFlux %><T>  {
     <%_ if (reactive) { _%>
         return findAllById(toIds(searchIds(queryString, pageable)))

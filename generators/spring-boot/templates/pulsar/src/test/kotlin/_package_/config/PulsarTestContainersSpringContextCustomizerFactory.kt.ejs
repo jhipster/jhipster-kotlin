@@ -43,8 +43,9 @@ class PulsarTestContainersSpringContextCustomizerFactory : ContextCustomizerFact
                 log.debug("detected the EmbeddedPulsar annotation on class {}", testClass.name)
                 log.info("Warming up the pulsar database")
                 if (pulsarBean == null) {
-                    pulsarBean = beanFactory.createBean(PulsarTestContainer::class.java)
-                    beanFactory.registerSingleton(PulsarTestContainer::class.java.name, pulsarBean)
+                    val container = beanFactory.createBean(PulsarTestContainer::class.java)
+                    beanFactory.registerSingleton(PulsarTestContainer::class.java.name, container)
+                    pulsarBean = container
                 }
                 pulsarBean?.pulsarContainer?.let { container ->
                     testValues = testValues.and(

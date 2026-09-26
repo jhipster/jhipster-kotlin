@@ -40,6 +40,10 @@ for (const [upstreamGen, bpDir] of Object.entries(UPSTREAM_GENERATOR_TO_BLUEPRIN
 
 const excludedJavaTemplates = new Map([
     [
+        'spring-boot/templates/src/main/java/_package_/config/JacksonConfiguration.java.ejs',
+        'Not written by generator-jhipster 9.x (absent from the spring-boot file list); Jackson 3 registers java.time support itself.',
+    ],
+    [
         'java-simple-application/templates/src/main/java/_package_/GeneratedByJHipster.java.ejs',
         'Inherited from the base Java application generator; it is an annotation consumed by both Java and Kotlin sources.',
     ],

@@ -226,7 +226,8 @@ class CacheConfiguration(<% if (serviceDiscoveryAny) { %>
         val channel: JChannel
         val initialHosts = mutableListOf<InetSocketAddress>()
         try {
-            for (instance in discoveryClient?.getInstances(registration?.serviceId)!!) {
+            val serviceId = checkNotNull(registration).serviceId
+            for (instance in checkNotNull(discoveryClient).getInstances(serviceId)) {
                 log.debug("Adding Infinispan cluster member ${instance.host}:7800")
                 initialHosts.add(InetSocketAddress(instance.host, 7800))
             }

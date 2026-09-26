@@ -55,6 +55,9 @@ package <%= entityAbsolutePackage %>.domain
 <%_ if (relationshipsContainOtherSideIgnore) { _%>
 import com.fasterxml.jackson.annotation.JsonIgnoreProperties
 <%_ } _%>
+<%_ if (databaseTypeNeo4j) { _%>
+import com.fasterxml.jackson.annotation.JsonCreator
+<%_ } _%>
 <%_ if (!dtoMapstruct && (typeof javadoc !== 'undefined' || importApiModelProperty)) { _%>
 import io.swagger.v3.oas.annotations.media.Schema
 <%_ } _%>
@@ -95,7 +98,7 @@ import <%= otherEntity.entityAbsoluteClass %>
 <%_ } _%>
 <&- fragments.annotationSection() -&>
 @SuppressWarnings("common-java:DuplicatedBlocks")
-data class <%= persistClass %>(
+data class <%= persistClass %><% if (databaseTypeNeo4j) { %> @JsonCreator(mode = JsonCreator.Mode.DISABLED) constructor<% } %>(
     <%_ if (!embedded && primaryKey.composite) { _%>
     @Id
     var <%= primaryKey.name %>: <%= primaryKey.type %>? = null,
