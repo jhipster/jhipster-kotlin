@@ -18,74 +18,77 @@
 -%>
 package <%= packageName %>.web.rest
 
+import <%= packageName %>.IntegrationTest
 import org.assertj.core.api.Assertions.assertThat
-
-import java.time.Duration
-import java.util.HashMap
-import java.util.Map
-import java.util.concurrent.BlockingQueue
-
+<%_ if (authenticationUsesCsrf) { _%>
+import org.junit.jupiter.api.BeforeEach
+<%_ } _%>
 import org.junit.jupiter.api.Test
 import org.springframework.beans.factory.annotation.Autowired
-import org.springframework.beans.factory.annotation.Qualifier
-import org.springframework.boot.test.autoconfigure.web.servlet.AutoConfigureMockMvc
-import org.springframework.cloud.stream.test.binder.MessageCollector
+import org.springframework.boot.autoconfigure.ImportAutoConfiguration
+import org.springframework.boot.webtestclient.autoconfigure.AutoConfigureWebTestClient
+import org.springframework.cloud.stream.binder.test.InputDestination
+import org.springframework.cloud.stream.binder.test.OutputDestination
+import org.springframework.cloud.stream.binder.test.TestChannelBinderConfiguration
 import org.springframework.http.MediaType
-import org.springframework.messaging.Message
-import org.springframework.messaging.MessageChannel
 import org.springframework.messaging.MessageHeaders
 import org.springframework.messaging.support.GenericMessage
 import org.springframework.security.test.context.support.WithMockUser
+<%_ if (authenticationUsesCsrf) { _%>
+import org.springframework.security.test.web.reactive.server.SecurityMockServerConfigurers.csrf
+<%_ } _%>
+import org.springframework.test.context.ActiveProfiles
 import org.springframework.test.web.reactive.server.WebTestClient
 import org.springframework.util.MimeTypeUtils
-import <%= packageName %>.IntegrationTest
-import <%= packageName %>.config.EmbeddedKafka
-import <%= packageName %>.config.KafkaSseConsumer
-import <%= packageName %>.config.KafkaSseProducer
+import java.time.Duration
 
 @IntegrationTest
-@AutoConfigureMockMvc
+@AutoConfigureWebTestClient(timeout = IntegrationTest.DEFAULT_TIMEOUT)
 @WithMockUser
-@EmbeddedKafka
+@ImportAutoConfiguration(TestChannelBinderConfiguration::class)
+@ActiveProfiles("kafka")
 class <%= upperFirstCamelCaseBaseName %>KafkaResourceIT {
 
     @Autowired
     private lateinit var client: WebTestClient
 
     @Autowired
-    @Qualifier(KafkaSseProducer.CHANNELNAME)
-    private lateinit var output: MessageChannel
+    private lateinit var input: InputDestination
 
     @Autowired
-    @Qualifier(KafkaSseConsumer.CHANNELNAME)
-    private lateinit var input: MessageChannel
+    private lateinit var output: OutputDestination
+<%_ if (authenticationUsesCsrf) { _%>
 
-    @Autowired
-    private lateinit var collector: MessageCollector
+    @BeforeEach
+    fun setupCsrf() {
+        client = client.mutateWith(csrf())
+    }
+<%_ } _%>
 
     @Test
-    @Throws(InterruptedException::class)
     fun producesMessages() {
-        client.post().uri("/api/<%= dasherizedBaseName %>-kafka/publish?message=value-produce")
+        client
+            .post()
+            .uri { uriBuilder -> uriBuilder.path(KAFKA_API).queryParam("message", "value-produce").build("publish") }
             .exchange()
             .expectStatus()
             .isNoContent
+        assertThat(output.receive(1000, "binding-out-0").payload).isEqualTo("value-produce".toByteArray())
+    }
 
-        val messages = collector.forChannel(output)
-        val payload = messages.take() as (GenericMessage<String>)
-        assertThat(payload.payload).isEqualTo("value-produce")
+    @Test
+    fun producesPooledMessages() {
+        assertThat(output.receive(1500, "kafkaProducer-out-0").payload).isEqualTo("kafka_producer".toByteArray())
     }
 
     @Test
     fun consumesMessages() {
-        val map = hashMapOf<String, Any>()
-        map[MessageHeaders.CONTENT_TYPE] = MimeTypeUtils.TEXT_PLAIN_VALUE
-        val headers = MessageHeaders(map)
-        val testMessage = GenericMessage<String>("value-consume", headers)
+        val headers = MessageHeaders(mapOf<String, Any>(MessageHeaders.CONTENT_TYPE to MimeTypeUtils.TEXT_PLAIN_VALUE))
+        val testMessage = GenericMessage("value-consume", headers)
         input.send(testMessage)
         val value = client
             .get()
-            .uri("/api/<%= dasherizedBaseName %>-kafka/consume")
+            .uri(KAFKA_API, "consume")
             .accept(MediaType.TEXT_EVENT_STREAM)
             .exchange()
             .expectStatus()
@@ -96,5 +99,9 @@ class <%= upperFirstCamelCaseBaseName %>KafkaResourceIT {
             .responseBody
             .blockFirst(Duration.ofSeconds(10))
         assertThat(value).isEqualTo("value-consume")
+    }
+
+    companion object {
+        private const val KAFKA_API = "/api/<%= dasherizedBaseName %>-kafka/{command}"
     }
 }

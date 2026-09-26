@@ -36,7 +36,7 @@ import org.springframework.http.HttpHeaders
 class LogoutResource(
     private val registrations: <% if (reactive) { %>Reactive<% } %>ClientRegistrationRepository
 ) {
-    private val registration = registrations.findByRegistrationId("oidc")
+    private val registration = checkNotNull(registrations.findByRegistrationId("oidc")) { "No oidc client registration configured" }
 
     /**
      * `POST  /api/logout` : logout the current user.
@@ -52,7 +52,7 @@ class LogoutResource(
     ): ResponseEntity<*> {
         val logoutUrl = StringBuilder()
 
-        val issuerUri = registration.providerDetails.issuerUri
+        val issuerUri = registration.providerDetails.issuerUri.orEmpty()
         if (issuerUri.contains("auth0.com")) {
             val iUrl = if (issuerUri.endsWith("/")) {
                         issuerUri + "v2/logout"

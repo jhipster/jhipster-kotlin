@@ -18,8 +18,8 @@
 -%>
 package <%= packageName %>.security.oauth2
 
-import com.fasterxml.jackson.databind.JsonNode
-import com.fasterxml.jackson.databind.node.ObjectNode
+import tools.jackson.databind.JsonNode
+import tools.jackson.databind.node.ObjectNode
 import com.github.benmanes.caffeine.cache.Cache
 import com.github.benmanes.caffeine.cache.Caffeine
 import org.springframework.core.convert.converter.Converter
@@ -56,7 +56,7 @@ class CustomClaimConverter(
         .build();
 
 
-    override fun convert(claims: Map<String, Any>): Map<String, Any>? {
+    override fun convert(claims: Map<String, Any>): Map<String, Any> {
         val convertedClaims = delegate.convert(claims)
         // Only look up user information if identity claims are missing
         if (claims.containsKey("given_name") && claims.containsKey("family_name")) {
@@ -72,12 +72,12 @@ class CustomClaimConverter(
             // Retrieve user info from OAuth provider if not already loaded
             val user = users.get(claims["sub"].toString()) {
                 val userInfo: ResponseEntity<ObjectNode> = restTemplate.exchange(
-                    registration.providerDetails.userInfoEndpoint.uri,
+                    checkNotNull(registration.providerDetails.userInfoEndpoint.uri),
                     HttpMethod.GET,
                     HttpEntity<String>(headers),
                     ObjectNode::class.java
                 )
-                userInfo.body
+                checkNotNull(userInfo.body)
             }
 
             // Add custom claims
@@ -102,12 +102,12 @@ class CustomClaimConverter(
                 }
 
                 if (user.has("groups")) {
-                   val groups = user.get("groups").map(JsonNode::asText)
+                   val groups = user.get("groups").values().map(JsonNode::asString)
                     convertedClaims["groups"] = groups
                 }
 
                 if (user.has(CLAIMS_NAMESPACE + "roles")) {
-                    val roles = user.get(CLAIMS_NAMESPACE + "roles").map(JsonNode::asText)
+                    val roles = user.get(CLAIMS_NAMESPACE + "roles").values().map(JsonNode::asString)
                     convertedClaims["roles"] = roles
                 }
             }

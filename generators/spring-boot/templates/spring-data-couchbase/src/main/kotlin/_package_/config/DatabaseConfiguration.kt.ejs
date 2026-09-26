@@ -23,13 +23,9 @@ import com.couchbase.client.java.Cluster
 import com.couchbase.client.java.Collection
 import com.github.couchmove.Couchmove
 import org.slf4j.LoggerFactory
-import org.springframework.boot.autoconfigure.couchbase.CouchbaseProperties
-import org.springframework.boot.context.properties.EnableConfigurationProperties
+import org.springframework.boot.couchbase.autoconfigure.CouchbaseConnectionDetails
 import org.springframework.context.annotation.*
-import org.springframework.core.convert.TypeDescriptor
 import org.springframework.core.convert.converter.Converter
-import org.springframework.core.convert.converter.GenericConverter
-import org.springframework.core.convert.support.GenericConversionService
 <%_ if (searchEngineElasticsearch) { _%>
 import org.springframework.data.elasticsearch.repository.config.Enable<% if (reactive) { %>Reactive<% } %>ElasticsearchRepositories
 <%_ } _%>
@@ -38,8 +34,6 @@ import org.springframework.data.convert.WritingConverter
 import org.springframework.data.couchbase.config.AbstractCouchbaseConfiguration
 import org.springframework.data.couchbase.config.BeanNames
 import org.springframework.data.couchbase.core.convert.CouchbaseCustomConversions
-import org.springframework.data.couchbase.core.convert.MappingCouchbaseConverter
-import org.springframework.data.couchbase.core.mapping.CouchbaseMappingContext
 import org.springframework.data.couchbase.core.mapping.event.ValidatingCouchbaseEventListener
 <%_ if (!reactive) { _%>
 import org.springframework.data.couchbase.repository.auditing.EnableCouchbaseAuditing
@@ -59,7 +53,6 @@ import java.time.Duration
 import java.util.*
 
 @Configuration
-@EnableConfigurationProperties(CouchbaseProperties::class)
 <%_ if (searchEngineElasticsearch) { _%>
 @Enable<% if (reactive) { %>Reactive<% } %>ElasticsearchRepositories("<%= packageName %>.repository.search")
 <%_ } _%>
@@ -71,7 +64,7 @@ import java.util.*
 <%_ } _%>
 class DatabaseConfiguration(
     private val jHipsterProperties: JHipsterProperties,
-    private val couchbaseProperties: CouchbaseProperties
+    private val couchbaseConnectionDetails: CouchbaseConnectionDetails
 ) : AbstractCouchbaseConfiguration() {
 
     private val CHANGELOG_COLLECTION = "changelog"
@@ -105,13 +98,13 @@ class DatabaseConfiguration(
     fun validator() = LocalValidatorFactoryBean()
 
     override fun getConnectionString() =
-        couchbaseProperties.connectionString
+        couchbaseConnectionDetails.connectionString
 
     override fun getUserName() =
-        couchbaseProperties.username
+        couchbaseConnectionDetails.username.orEmpty()
 
     override fun getPassword() =
-        couchbaseProperties.password
+        couchbaseConnectionDetails.password.orEmpty()
 
     override fun  getBucketName() =
         jHipsterProperties.database.couchbase.bucketName
@@ -136,11 +129,6 @@ class DatabaseConfiguration(
             )
         )
 
-    override fun mappingCouchbaseConverter(couchbaseMappingContext: CouchbaseMappingContext, couchbaseCustomConversions: CouchbaseCustomConversions): MappingCouchbaseConverter {
-        val mappingCouchbaseConverter = super.mappingCouchbaseConverter(couchbaseMappingContext, couchbaseCustomConversions)
-        (mappingCouchbaseConverter.conversionService as (GenericConversionService)).addConverter(StringToObjectConverter)
-        return mappingCouchbaseConverter
-    }
 
     @Bean
     fun couchmove(cluster: Cluster): Couchmove {
@@ -193,7 +181,7 @@ class DatabaseConfiguration(
      * Simple singleton to convert from [String] [BigDecimal] representation.
      */
     @ReadingConverter
-    object StringToBigDecimalConverter : Converter<String, BigDecimal> {
+    object StringToBigDecimalConverter : Converter<String, BigDecimal?> {
         override fun convert(source: String) =
             if (StringUtils.hasText(source)) BigDecimal(source) else null
     }
@@ -210,7 +198,7 @@ class DatabaseConfiguration(
      * Simple singleton to convert from [String] [BigInteger] representation.
      */
     @ReadingConverter
-    object StringToBigIntegerConverter : Converter<String, BigInteger> {
+    object StringToBigIntegerConverter : Converter<String, BigInteger?> {
         override fun convert(source: String) =
             if (StringUtils.hasText(source)) BigInteger(source) else null
     }
@@ -235,18 +223,9 @@ class DatabaseConfiguration(
      * Simple singleton to convert from [String] [UUID] representation.
      */
     @ReadingConverter
-    object StringToUUIDConverter : Converter<String, UUID> {
+    object StringToUUIDConverter : Converter<String, UUID?> {
         override fun convert(source: String) =
             if (StringUtils.hasText(source)) UUID.fromString(source) else null
-    }
-
-    object StringToObjectConverter : GenericConverter {
-        override fun getConvertibleTypes(): Set<GenericConverter.ConvertiblePair> =
-            Collections.singleton(GenericConverter.ConvertiblePair(String::class.java, Any::class.java))
-
-        override fun convert(source: Any?, sourceType: TypeDescriptor, targetType: TypeDescriptor): Any? {
-            return null
-        }
     }
 
 }

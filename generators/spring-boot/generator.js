@@ -1,11 +1,37 @@
-import { join } from 'path';
 import { existsSync } from 'fs';
+import { createRequire } from 'module';
+import { join } from 'path';
+
 // Use spring-boot as parent due to this context in generators
 import BaseApplicationGenerator from 'generator-jhipster/generators/base-application';
-import { createNeedleCallback } from 'generator-jhipster/generators/base/support';
+import { createNeedleCallback } from 'generator-jhipster/generators/base-core/support';
 
 import { convertToKotlinFile } from '../kotlin/support/files.js';
-import { KOTLIN_TEST_SRC_DIR } from './kotlin-constants.js';
+
+import { KOTLIN_MAIN_SRC_DIR, KOTLIN_TEST_SRC_DIR } from './kotlin-constants.js';
+
+const require = createRequire(import.meta.url);
+const packageJson = require('../../package.json');
+
+// generator-jhipster's `jhipster:spring-boot:*` sub-generator namespaces don't always match
+// the flattened directory names under generators/spring-boot/templates used by the Kotlin
+// blueprint (e.g. namespace segment `cache` vs template directory `spring-cache`). Only
+// namespaces whose last segment differs from its template directory need an entry here;
+// everything else falls back to the last namespace segment (see `prefix` below).
+const NAMESPACE_TO_TEMPLATE_PREFIX = {
+    'jhipster:spring-boot': '',
+    // jwt and oauth2 templates live directly under templates/src, not a dedicated subfolder
+    'jhipster:spring-boot:jwt': '',
+    'jhipster:spring-boot:oauth2': '',
+    'jhipster:spring-boot:cache': 'spring-cache',
+    'jhipster:spring-boot:websocket': 'spring-websocket',
+    'jhipster:spring-boot:data-cassandra': 'spring-data-cassandra',
+    'jhipster:spring-boot:data-couchbase': 'spring-data-couchbase',
+    'jhipster:spring-boot:data-elasticsearch': 'spring-data-elasticsearch',
+    'jhipster:spring-boot:data-mongodb': 'spring-data-mongodb',
+    'jhipster:spring-boot:data-neo4j': 'spring-data-neo4j',
+    'jhipster:spring-boot:data-relational': 'spring-data-relational',
+};
 
 export default class extends BaseApplicationGenerator {
     constructor(args, options, features) {
@@ -27,6 +53,9 @@ export default class extends BaseApplicationGenerator {
     }
 
     async beforeQueue() {
+        if (this.options.skipPriorities?.includes('writing') && this.options.skipPriorities?.includes('postWriting')) {
+            return;
+        }
         await this.dependsOnJHipster('jhipster-kotlin:ktlint');
     }
 
@@ -34,9 +63,6 @@ export default class extends BaseApplicationGenerator {
         return this.asComposingTaskGroup({
             async composeDetekt() {
                 await this.composeWithJHipster('jhipster-kotlin:detekt');
-            },
-            async composeSpringBootV2() {
-                await this.composeWithJHipster('jhipster-kotlin:spring-boot-v2');
             },
         });
     }
@@ -49,13 +75,11 @@ export default class extends BaseApplicationGenerator {
                     syncUserWithIdp: application.authenticationType === 'oauth2',
                 });
 
-                application.customizeTemplatePaths.unshift(
+                (application.customizeTemplatePaths ??= []).unshift(
                     // Remove package-info.java files
                     file => (file.sourceFile.includes('package-info.java') ? undefined : file),
                     // Kotling blueprint does not implements these files
                     file => {
-                        // We don't want to handle spring-boot-v2 templates here
-                        if (file.namespace === 'jhipster-kotlin:spring-boot-v2') return file;
                         const { resolvedSourceFile: javaResolvedSourceFile, namespace: ns } = file;
                         const { sourceFile, destinationFile } = file;
                         // Already resolved kotlin files
@@ -68,7 +92,7 @@ export default class extends BaseApplicationGenerator {
                             return undefined;
                         }
 
-                        const prefix = ns === 'jhipster:spring-boot' ? '' : ns.split(':').pop();
+                        const prefix = ns in NAMESPACE_TO_TEMPLATE_PREFIX ? NAMESPACE_TO_TEMPLATE_PREFIX[ns] : ns.split(':').pop();
                         const kotlinSourceFile = join(prefix, convertToKotlinFile(sourceFile));
                         const resolvedSourceFile = this.templatePath(kotlinSourceFile);
 
@@ -107,22 +131,78 @@ export default class extends BaseApplicationGenerator {
 
     get [BaseApplicationGenerator.PREPARING]() {
         return this.asPreparingTaskGroup({
-            addApplicationPropertiesNeedles({ source }) {
+            addApplicationPropertiesNeedles({ application, source }) {
                 source.addApplicationPropertiesContent = () => undefined;
                 source.addApplicationPropertiesProperty = () => undefined;
+                // Kotlin port of jhipster:spring-boot addApplicationPropertiesClass, used for example by data-cassandra
+                // to bind `application.cassandra.*`.
+                source.addApplicationPropertiesClass = ({
+                    propertyType,
+                    propertyName = propertyType.charAt(0).toLowerCase() + propertyType.slice(1),
+                    classStructure,
+                }) => {
+                    const classProperties = Object.entries(classStructure)
+                        .map(([name, type]) => {
+                            const [kotlinType, defaultValue] = Array.isArray(type) ? type : [type];
+                            return `    var ${name}: ${kotlinType}${defaultValue === undefined ? '? = null' : ` = ${defaultValue}`}`;
+                        })
+                        .join('\n');
+                    this.editFile(
+                        `${KOTLIN_MAIN_SRC_DIR}${application.packageFolder}config/ApplicationProperties.kt`,
+                        createNeedleCallback({
+                            needle: 'application-properties-property',
+                            contentToAdd: `val ${propertyName} = ${propertyType}()`,
+                        }),
+                        createNeedleCallback({
+                            needle: 'application-properties-property-class',
+                            contentToAdd: `class ${propertyType} {\n${classProperties}\n}`,
+                        }),
+                    );
+                };
             },
             addSpringIntegrationTest({ source }) {
                 source.addIntegrationTestAnnotation = () => undefined;
+                // generator-jhipster 9.x's spring-boot sub-generators (data-relational, data-couchbase,
+                // data-cassandra, data-neo4j, data-mongodb, data-elasticsearch, cache, oauth2, graalvm)
+                // call source.editJavaFile directly on hardcoded *.java paths to inject annotations/imports
+                // (e.g. IntegrationTest.java), bypassing addIntegrationTestAnnotation above. Those files are
+                // Kotlin here, and the Kotlin templates (see spring-boot/templates/src/test/kotlin/_package_/
+                // IntegrationTest.kt.ejs) already bake the equivalent annotations in statically, so no-op it.
+                source.editJavaFile = () => undefined;
+            },
+            // Overrides jhipster:spring-boot's own updateLanguages task (same name, same priority group,
+            // sbsBlueprint composition): the upstream version hardcodes a *.java path for MailServiceIT,
+            // which doesn't exist here (Kotlin blueprint generates MailServiceIT.kt, which has the same
+            // "jhipster-needle-i18n-language-constant" needle) and crashes the build. Point it at the .kt file.
+            updateLanguages({ application }) {
+                if (!application.enableTranslation || !application.generateUserManagement) return;
+                application.addLanguageCallbacks = application.addLanguageCallbacks.filter(
+                    callback => !callback.toString().includes('MailServiceIT.java'),
+                );
+                application.addLanguageCallbacks.push((_newLanguages, allLanguages) => {
+                    this.editFile(
+                        `${KOTLIN_TEST_SRC_DIR}${application.packageFolder}service/MailServiceIT.kt`,
+                        { ignoreNonExisting: this.ignoreNeedlesError },
+                        createNeedleCallback({
+                            contentToAdd: allLanguages.map(language => `"${language.languageTag}"`).join(',\n'),
+                            needle: 'jhipster-needle-i18n-language-constant',
+                        }),
+                    );
+                });
             },
             blockhound({ application, source }) {
                 source.addAllowBlockingCallsInside = ({ classPath, method }) => {
                     if (!application.reactive) throw new Error('Blockhound is only supported by reactive applications');
 
+                    // Kotlin string templates interpolate `$`, synthetic lambda names such as `lambda$query$2` must escape it.
+                    const escapeKotlinString = value => value.replaceAll('$', '\\$');
                     this.editFile(
                         `${KOTLIN_TEST_SRC_DIR}${application.packageFolder}config/JHipsterBlockHoundIntegration.kt`,
                         createNeedleCallback({
                             needle: 'blockhound-integration',
-                            contentToAdd: `builder.allowBlockingCallsInside("${classPath}", "${method}")`,
+                            contentToAdd: [method]
+                                .flat()
+                                .map(m => `builder.allowBlockingCallsInside("${classPath}", "${escapeKotlinString(m)}")`),
                         }),
                     );
                 };
@@ -134,10 +214,19 @@ export default class extends BaseApplicationGenerator {
                     useNpmWrapper: ({ clientFrameworkAny }) => clientFrameworkAny,
                 });
             },
+            applyKotlinProjectVersion({ application }) {
+                if (application.projectVersion === '0.0.1-SNAPSHOT') {
+                    application.projectVersion = packageJson.version;
+                }
+            },
             addCacheNeedles({ source, application }) {
                 // Needle added in jhipster:spring-cache, delay to override it.
                 this.delayTask(() => {
-                    if (application.cacheProviderEhcache) {
+                    if (application.cacheProviderEhcache || application.cacheProviderCaffeine || application.cacheProviderRedis) {
+                        // The per-provider CacheConfiguration_<provider>.kt.ejs templates are only used to pick
+                        // which body gets rendered: upstream strips the `_<provider>` suffix from the destination
+                        // file (see replaceEntityFilePathVariables), so the generated file is always named
+                        // CacheConfiguration.kt regardless of the selected cacheProvider.
                         const cacheConfigurationFile = `src/main/kotlin/${application.packageFolder}config/CacheConfiguration.kt`;
                         const needle = `${application.cacheProvider}-add-entry`;
                         const useJcacheConfiguration = application.cacheProviderRedis;
@@ -199,12 +288,36 @@ export default class extends BaseApplicationGenerator {
                         field.fieldJavaBuildSpecification = 'buildRangeSpecification';
                     }
                 }
+                if (entity.uniqueEnums) {
+                    const uniqueEnumsObj = {};
+                    for (const enumField of entity.uniqueEnums) {
+                        const fieldType = enumField.fieldType || enumField;
+                        uniqueEnumsObj[fieldType] = typeof enumField === 'object' ? enumField : { fieldType };
+                    }
+                    Object.defineProperty(uniqueEnumsObj, Symbol.iterator, {
+                        enumerable: false,
+                        *value() {
+                            yield* Object.values(this);
+                        },
+                    });
+                    entity.uniqueEnums = uniqueEnumsObj;
+                }
             },
         });
     }
 
     get [BaseApplicationGenerator.POST_WRITING]() {
         return this.asPostWritingTaskGroup({
+            blockhoundMongodb({ application, source }) {
+                if (application.reactive && application.databaseTypeMongodb) {
+                    // The MongoDB driver managed by Spring Boot 2.7 generates new server session ids with
+                    // UUID.randomUUID() (SecureRandom reading /dev/urandom) on the Netty event loop.
+                    source.addAllowBlockingCallsInside?.({
+                        classPath: 'com.mongodb.internal.session.ServerSessionPool\\$ServerSessionItemFactory',
+                        method: 'createNewServerSessionIdentifier',
+                    });
+                }
+            },
             async customizeMaven({ application, source }) {
                 if (application.buildToolMaven) {
                     source.addMavenDefinition({
@@ -221,6 +334,11 @@ export default class extends BaseApplicationGenerator {
                         '// configurationName = "productionRuntimeClasspath"',
                     ),
                 );
+            },
+            customizeGradleProjectVersion({ application, source }) {
+                if (!application.buildToolGradle) return;
+                source.addGradleProperty({ property: 'projectVersion', value: application.projectVersion });
+                this.editFile('build.gradle', content => content.replace('version = "0.0.1-SNAPSHOT"', 'version = projectVersion'));
             },
             customizeGradle({ application }) {
                 if (!application.buildToolGradle || !application.devDatabaseTypeH2Any) return;
@@ -241,6 +359,7 @@ export default class extends BaseApplicationGenerator {
 sourceSets {
     test {
         kotlin {
+            exclude("**/DatabaseTestcontainer.kt")
             exclude("**/${dbConfigPrefix}TestContainer.kt")
         }
     }

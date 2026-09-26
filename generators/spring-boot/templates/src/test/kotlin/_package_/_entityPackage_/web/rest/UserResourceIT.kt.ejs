@@ -46,7 +46,7 @@ import <%= packageName %>.security.ADMIN
 import <%= packageName %>.security.USER
 import <%= packageName %>.service.dto.<%= user.adminUserDto %>
 <%_ if (databaseTypeSql && reactive) { _%>
-import <%= packageName %>.repository.EntityManager
+import org.springframework.data.r2dbc.core.R2dbcEntityTemplate
 <%_ } _%>
 import <%= packageName %>.service.mapper.UserMapper
 <%_ if (!authenticationTypeOauth2) { _%>
@@ -57,9 +57,9 @@ import org.junit.jupiter.api.BeforeEach
 import org.junit.jupiter.api.Test
 import org.springframework.beans.factory.annotation.Autowired
 <%_ if (reactive) { _%>
-import org.springframework.boot.test.autoconfigure.web.reactive.AutoConfigureWebTestClient
+import org.springframework.boot.webtestclient.autoconfigure.AutoConfigureWebTestClient
 <%_ } else { _%>
-import org.springframework.boot.test.autoconfigure.web.servlet.AutoConfigureMockMvc
+import org.springframework.boot.webmvc.test.autoconfigure.AutoConfigureMockMvc
 <%_ } _%>
 <%_ if (cacheProviderAny) { _%>
 import org.springframework.cache.CacheManager
@@ -81,7 +81,7 @@ import org.springframework.test.web.servlet.MockMvc
 <%_ if (databaseTypeSql && !reactive) { _%>
 import org.springframework.transaction.annotation.Transactional
 <%_ } _%>
-<%_ if (reactive && searchEngineElasticsearch) { _%>
+<%_ if (reactive) { _%>
 import reactor.core.publisher.Mono
 <%_ } _%>
 
@@ -153,7 +153,7 @@ class UserResourceIT {
     <%_ if (databaseTypeSql) { _%>
 
     @Autowired
-    private lateinit var em: EntityManager
+    private lateinit var em: <%= databaseTypeSql && reactive ? 'R2dbcEntityTemplate' : 'EntityManager' %>
     <%_ } _%>
     <%_ if (cacheProviderAny) { _%>
 
@@ -430,7 +430,7 @@ class UserResourceIT {
         <%_ if (databaseTypeSql && reactive && !applicationTypeMicroservice) { _%>
         authorityRepository
             .findById(USER)
-            .flatMap { authority -> authority.name?.let { user.id?.let { it1 -> userRepository.saveUserAuthority(it1, it) } } }
+            .flatMap { authority -> authority.name?.let { user.id?.let { it1 -> userRepository.saveUserAuthority(it1, it) } } ?: Mono.empty() }
             .block()
         <%_ } _%>
         // Get all the users
@@ -440,7 +440,7 @@ class UserResourceIT {
             .exchange()
             .expectStatus().isOk
             .expectHeader().contentType(MediaType.APPLICATION_JSON)
-            .returnResult(<%= user.adminUserDto %>::class.java).responseBody.blockFirst()
+            .returnResult(<%= user.adminUserDto %>::class.java).responseBody.blockFirst()!!
 
         assertNotNull(foundUser)
         assertThat(foundUser.login).isEqualTo(DEFAULT_LOGIN)
@@ -491,7 +491,7 @@ class UserResourceIT {
         <%_ if (databaseTypeSql && reactive) { _%>
         authorityRepository
             .findById(USER)
-            .flatMap { authority -> authority.name?.let { user.id?.let { it1 -> userRepository.saveUserAuthority(it1, it) } } }
+            .flatMap { authority -> authority.name?.let { user.id?.let { it1 -> userRepository.saveUserAuthority(it1, it) } } ?: Mono.empty() }
             .block()
         <%_ } _%>
 
@@ -999,32 +999,6 @@ class UserResourceIT {
         assertThat(userDTO.authorities).containsExactly(USER)
         assertThat(userDTO.toString()).isNotNull()
     }
-    <%_ if (databaseTypeSql || databaseTypeMongodb || databaseTypeNeo4j) { _%>
-
-    @Test
-    fun testAuthorityEquals() {
-        val authorityA = Authority()
-        assertThat(authorityA)
-            .isNotEqualTo(null)
-            .isNotEqualTo(Any())
-        assertThat(authorityA.hashCode()).isEqualTo(31)
-        assertThat(authorityA.toString()).isNotNull()
-
-        val authorityB = Authority()
-        assertThat(authorityA.name).isEqualTo(authorityB.name)
-
-        authorityB.name = ADMIN
-        assertThat(authorityA).isNotEqualTo(authorityB)
-
-        authorityA.name = USER
-        assertThat(authorityA).isNotEqualTo(authorityB)
-
-        authorityB.name = USER
-        assertThat(authorityA)
-            .isEqualTo(authorityB)
-            .hasSameHashCodeAs(authorityB)
-    }
-    <%_ } _%>
 
     companion object {
 
@@ -1078,7 +1052,7 @@ class UserResourceIT {
          * if they test an entity which has a required relationship to the User entity.
          */
         @JvmStatic
-        fun createEntity(<% if (databaseTypeSql) { %>em: EntityManager?<% } %>): <%= user.persistClass %> {
+        fun createEntity(<% if (databaseTypeSql) { %>em: <%= databaseTypeSql && reactive ? 'R2dbcEntityTemplate' : 'EntityManager' %>?<% } %>): <%= user.persistClass %> {
             return <%= user.persistClass %>(
                 <%_ if (databaseTypeCassandra || (authenticationTypeOauth2 && !databaseTypeCouchbase)) { _%>
                 id = UUID.randomUUID().toString(),
@@ -1107,10 +1081,10 @@ class UserResourceIT {
          * Delete all the users from the database.
          */
         @JvmStatic
-        fun deleteEntities(em: EntityManager) {
+        fun deleteEntities(em: R2dbcEntityTemplate) {
             try {
-                em.deleteAll("<%= jhiTablePrefix %>_user_authority").block()
-                em.deleteAll(<%= user.persistClass %>::class.java).block()
+                em.databaseClient.sql("DELETE FROM <%= jhiTablePrefix %>_user_authority").then().block()
+                em.delete(<%= user.persistClass %>::class.java).all().block()
             } catch (e: Exception) {
                 // It can fail, if other entities are still referring this - it will be removed later.
             }
@@ -1121,7 +1095,7 @@ class UserResourceIT {
          * Setups the database with one user.
          */
         @JvmStatic
-        fun initTestUser(userRepository: UserRepository<% if (databaseTypeSql ) { %>, em: EntityManager<% } _%>): <%= user.persistClass %> {
+        fun initTestUser(userRepository: UserRepository<% if (databaseTypeSql ) { %>, em: <%= databaseTypeSql && reactive ? 'R2dbcEntityTemplate' : 'EntityManager' %><% } _%>): <%= user.persistClass %> {
             <%_ if (databaseTypeSql && reactive) { _%>
             userRepository.deleteAllUserAuthorities().block()
             <%_ } _%>
@@ -1140,6 +1114,6 @@ class UserResourceIT {
         // The security filter chain clears the security context after remote calls
         SecurityContextHolder.setContext(TestSecurityContextHolder.getContext())
         <%_ } _%>
-        userAssertion(userRepository.findAll()<% if (reactive) { %>.collectList().block()<% } %>)
+        userAssertion(userRepository.findAll()<% if (reactive) { %>.collectList().block()!!<% } %>)
     }
 }

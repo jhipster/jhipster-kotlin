@@ -24,11 +24,12 @@ import com.tngtech.archunit.junit.ArchTest
 import com.tngtech.archunit.lang.ArchRule
 
 import com.tngtech.archunit.base.DescribedPredicate.alwaysTrue
+import com.tngtech.archunit.core.domain.JavaClass
 import com.tngtech.archunit.core.domain.JavaClass.Predicates.belongToAnyOf
 import com.tngtech.archunit.library.Architectures.layeredArchitecture
 
 <%_
-  const hasClientLayer = !reactive && (applicationTypeMicroservice || applicationTypeGateway);
+  const hasClientLayer = feignClient;
   const hasDomainLayer = !databaseTypeNo;
   const hasConstants = !skipUserManagement || databaseTypeSql || databaseTypeMongodb || databaseTypeCouchbase || databaseTypeNeo4j;
 _%>
@@ -37,6 +38,7 @@ _%>
 class TechnicalStructureTest {
         @ArchTest
         val respectsTechnicalArchitectureLayers = layeredArchitecture()
+                .consideringAllDependencies()
                 .layer("Config").definedBy("..config..")
     <%_ if (hasClientLayer) { _%>
                 .layer("Client").definedBy("..client..")
@@ -61,8 +63,8 @@ class TechnicalStructureTest {
             .whereLayer("Domain").mayOnlyBeAccessedByLayers("Persistence", "Service", "Security", "Web", "Config")
     <%_ } _%>
 
-            .ignoreDependency(belongToAnyOf(<%= mainClass %>::class.java), alwaysTrue())
-            .ignoreDependency(alwaysTrue(), belongToAnyOf(
+            .ignoreDependency(belongToAnyOf(<%= mainClass %>::class.java), alwaysTrue<JavaClass>())
+            .ignoreDependency(alwaysTrue<JavaClass>(), belongToAnyOf(
                 <%= packageName %>.config.ApplicationProperties::class.java
             ))
 }

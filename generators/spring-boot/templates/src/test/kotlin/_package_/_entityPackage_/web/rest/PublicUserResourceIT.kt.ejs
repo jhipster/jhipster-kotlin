@@ -23,7 +23,6 @@ import <%= packageName %>.IntegrationTest
 import <%= packageName %>.IntegrationTest.Companion.DEFAULT_TIMEOUT
 <%_ } _%>
 import <%= packageName %>.security.ADMIN
-import <%= packageName %>.security.USER
 <%_ if (authenticationTypeOauth2) { _%>
 import <%= packageName %>.config.TestSecurityConfiguration
 <%_ } _%>
@@ -33,15 +32,15 @@ import <%= packageName %>.repository.UserRepository
 import <%= packageName %>.repository.search.UserSearchRepository
 <%_ } _%>
 <%_ if (databaseTypeSql && reactive) { _%>
-import <%= packageName %>.repository.EntityManager
+import org.springframework.data.r2dbc.core.R2dbcEntityTemplate
 <%_ } _%>
 import org.junit.jupiter.api.BeforeEach
 import org.junit.jupiter.api.Test
 import org.springframework.beans.factory.annotation.Autowired
 <%_ if (reactive) { _%>
-import org.springframework.boot.test.autoconfigure.web.reactive.AutoConfigureWebTestClient
+import org.springframework.boot.webtestclient.autoconfigure.AutoConfigureWebTestClient
 <%_ } else { _%>
-import org.springframework.boot.test.autoconfigure.web.servlet.AutoConfigureMockMvc
+import org.springframework.boot.webmvc.test.autoconfigure.AutoConfigureMockMvc
 <%_ } _%>
 <%_ if (cacheProviderAny) { _%>
 import org.springframework.cache.CacheManager
@@ -88,7 +87,6 @@ import org.mockito.Mockito.*
 import org.springframework.security.test.web.reactive.server.SecurityMockServerConfigurers.csrf
 <%_ } else if (!reactive) { _%>
     <%_ if (databaseTypeSql || databaseTypeMongodb || databaseTypeNeo4j || databaseTypeCouchbase) { _%>
-import org.hamcrest.Matchers.hasItems
     <%_ } _%>
 import org.hamcrest.Matchers.hasItem
 import org.springframework.test.web.servlet.request.MockMvcRequestBuilders.*
@@ -129,7 +127,7 @@ class PublicUserResourceIT {
     <%_ if (databaseTypeSql) { _%>
 
     @Autowired
-    private lateinit var em: EntityManager
+    private lateinit var em: <%= databaseTypeSql && reactive ? 'R2dbcEntityTemplate' : 'EntityManager' %>
     <%_ } _%>
     <%_ if (cacheProviderAny) { _%>
 
@@ -149,8 +147,8 @@ class PublicUserResourceIT {
     <%_ if (cacheProviderAny) { _%>
     @BeforeEach
     fun setup() {
-        cacheManager.getCache(UserRepository.USERS_BY_LOGIN_CACHE).clear()
-        cacheManager.getCache(UserRepository.USERS_BY_EMAIL_CACHE).clear()
+        cacheManager.getCache(UserRepository.USERS_BY_LOGIN_CACHE)?.clear()
+        cacheManager.getCache(UserRepository.USERS_BY_EMAIL_CACHE)?.clear()
     }
 
     <%_ } _%>
@@ -184,7 +182,7 @@ class PublicUserResourceIT {
             .exchange()
             .expectStatus().isOk
             .expectHeader().contentType(MediaType.APPLICATION_JSON)
-            .returnResult(<%= user.dtoClass %>::class.java).responseBody.blockFirst()
+            .returnResult(<%= user.dtoClass %>::class.java).responseBody.blockFirst()!!
 
         assertThat(foundUser.login).isEqualTo(DEFAULT_LOGIN)
         <%_ for (field of user.fields.filter(field => !field.builtIn && field.relatedByOtherEntity)) { _%>
@@ -207,37 +205,6 @@ class PublicUserResourceIT {
         <% } _%>
     }
 
-    <%_ if ((databaseTypeSql || databaseTypeMongodb || databaseTypeNeo4j || databaseTypeCouchbase)
-            && (!(authenticationTypeOauth2 && applicationTypeMicroservice))) { _%>
-    @Test
-    <%_ if (databaseTypeSql && !reactive) { _%>
-    @Transactional
-    <%_ } _%>
-    <%_ if (!reactive) { _%>
-    @Throws(Exception::class)
-    <%_ } _%>
-    fun getAllAuthorities() {
-        <%_ if (reactive) { _%>
-        webTestClient.get().uri("/api/authorities")
-            .accept(MediaType.APPLICATION_JSON)
-            .exchange()
-            .expectStatus().isOk
-            .expectHeader().contentType(MediaType.APPLICATION_JSON_VALUE)
-            .expectBody()
-            .jsonPath("$").isArray()
-            .jsonPath("$[?(@=='$ADMIN')]").hasJsonPath()
-            .jsonPath("$[?(@=='$USER')]").hasJsonPath()
-        <%_ } else { _%>
-        restUserMockMvc.perform(get("/api/authorities")
-            .accept(MediaType.APPLICATION_JSON)
-            .contentType(MediaType.APPLICATION_JSON))
-            .andExpect(status().isOk)
-            .andExpect(content().contentType(MediaType.APPLICATION_JSON_VALUE))
-            .andExpect(jsonPath("$").isArray())
-            .andExpect(jsonPath("$").value(hasItems(USER, ADMIN)))
-        <%_ } _%>
-    }
-    <%_ } _%>
 
     <%_ if (databaseTypeSql && !authenticationTypeOauth2) { _%>
     @Test

@@ -102,7 +102,7 @@ import org.springframework.data.cassandra.core.mapping.CassandraPersistentEntity
 import org.springframework.stereotype.Repository
 <%_ if (databaseTypeCassandra) { _%>
     <%_ if (!reactive) { _%>
-import org.springframework.boot.autoconfigure.cassandra.CassandraProperties
+import org.springframework.boot.cassandra.autoconfigure.CassandraProperties
     <%_ } _%>
 import org.springframework.util.StringUtils
 
@@ -438,7 +438,7 @@ class UserRepository(
     private val findAllStmt = session.prepare("SELECT * FROM user")<% if(reactive) { %>.block()<% } %>
     <%_ } else { _%>
     private val userTokenMapper = UserTokenMapperBuilder(session).build()
-    private val userDao = userTokenMapper.userTokenDao(CqlIdentifier.fromCql(cassandraProperties.keyspaceName))
+    private val userDao = userTokenMapper.userTokenDao(CqlIdentifier.fromCql(requireNotNull(cassandraProperties.keyspaceName) { "spring.cassandra.keyspace-name must be set" }))
     <%_ } _%>
     private val findOneByActivationKeyStmt = session.prepare(
         "SELECT id " +

@@ -1,6 +1,6 @@
-import globals from 'globals';
 import prettier from 'eslint-plugin-prettier/recommended';
 import jhipster from 'generator-jhipster/eslint';
+import globals from 'globals';
 // jhipster-needle-eslint-add-import - JHipster will add additional import here
 
 export default [
@@ -11,7 +11,7 @@ export default [
             },
         },
     },
-    { ignores: ['coverage/**'] },
+    { ignores: ['coverage/**', 'target/**'] },
     jhipster.recommended,
     // jhipster-needle-eslint-add-config - JHipster will add additional config here
     prettier,

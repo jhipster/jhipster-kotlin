@@ -56,8 +56,18 @@ import java.util.stream.Stream
   <%_ } _%>
 <%_ } _%>
 
+<%_ if (authenticationTypeJwt) { _%>
+import org.springframework.security.oauth2.jose.jws.MacAlgorithm
+<%_ } _%>
+
 <%_ if (authenticationTypeOauth2) { _%>
 const val CLAIMS_NAMESPACE = "https://www.jhipster.tech/"
+<%_ } else if (authenticationTypeJwt) { _%>
+val JWT_ALGORITHM: MacAlgorithm = MacAlgorithm.HS512
+const val AUTHORITIES_CLAIM = "auth"
+  <%_ if (user) { _%>
+const val USER_ID_CLAIM = "userId"
+  <%_ } _%>
 <%_ } _%>
 
 /**
@@ -68,7 +78,7 @@ const val CLAIMS_NAMESPACE = "https://www.jhipster.tech/"
 fun getCurrentUserLogin(): <% if (reactive) { %>Mono<% } else { %>Optional<% } %><String> =
     <%_ if (reactive) { _%>
     ReactiveSecurityContextHolder.getContext()
-        .map(SecurityContext::getAuthentication)
+        .mapNotNull { it.authentication }
         .flatMap { Mono.justOrEmpty(extractPrincipal(it)) }
     <%_ } else { _%>
     Optional.ofNullable(extractPrincipal(SecurityContextHolder.getContext().authentication))
@@ -111,7 +121,7 @@ fun extractPrincipal(authentication: Authentication?): String? {
 fun getCurrentUserJWT(): <% if (reactive) { %>Mono<% } else { %>Optional<% } %><String> =
     <%_ if (reactive) { _%>
     ReactiveSecurityContextHolder.getContext()
-        .map(SecurityContext::getAuthentication)
+        .mapNotNull { it.authentication }
     <%_ } else { _%>
     Optional.ofNullable(SecurityContextHolder.getContext().authentication)
     <%_ } _%>
@@ -127,7 +137,7 @@ fun getCurrentUserJWT(): <% if (reactive) { %>Mono<% } else { %>Optional<% } %><
 fun isAuthenticated(): <% if (reactive) { %>Mono<Boolean><% } else { %>Boolean<% } %> {
     <%_ if (reactive) { _%>
     return ReactiveSecurityContextHolder.getContext()
-        .map(SecurityContext::getAuthentication)
+        .mapNotNull { it.authentication }
         .map(Authentication::getAuthorities)
         .map {
             it
@@ -158,7 +168,7 @@ fun isAuthenticated(): <% if (reactive) { %>Mono<Boolean><% } else { %>Boolean<%
 fun hasCurrentUserAnyOfAuthorities(vararg authorities: String): <% if (reactive) { %>Mono<Boolean><% } else { %>Boolean<% } %> {
 <%_ if (reactive) { _%>
 return ReactiveSecurityContextHolder.getContext()
-    .map(SecurityContext::getAuthentication)
+    .mapNotNull { it.authentication }
     .map(Authentication::getAuthorities)
     .map {
         it
@@ -205,9 +215,9 @@ fun getAuthorities(authentication: Authentication): List<String>? {
         else ->
             authentication.authorities
     }
-    return authorities?.map(GrantedAuthority::getAuthority)
+    return authorities?.mapNotNull(GrantedAuthority::getAuthority)
   <%_ } else { _%>
-    return authentication.authorities.map(GrantedAuthority::getAuthority)
+    return authentication.authorities.mapNotNull(GrantedAuthority::getAuthority)
   <%_ } _%>
 }
 <%_ } _%>

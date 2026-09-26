@@ -19,33 +19,43 @@
 package <%= packageName %>.config
 
 import tech.jhipster.config.JHipsterConstants
-<%_ if (reactive) { _%>
+<%_ if (databaseTypeCassandra) { _%>
+import com.datastax.oss.driver.api.core.CqlIdentifier
+import com.datastax.oss.driver.api.core.CqlSession
+import com.ing.data.cassandra.jdbc.CassandraDriver
+import org.springframework.boot.cassandra.autoconfigure.CassandraConnectionDetails
+import org.springframework.jdbc.datasource.SimpleDriverDataSource
+<%_ } else if (databaseTypeNeo4j || reactive) { _%>
 import tech.jhipster.config.liquibase.AsyncSpringLiquibase
 <%_ } else { _%>
 import tech.jhipster.config.liquibase.SpringLiquibaseUtil
+import org.springframework.beans.factory.ObjectProvider
+import org.springframework.boot.jdbc.autoconfigure.DataSourceProperties
+import org.springframework.boot.liquibase.autoconfigure.LiquibaseDataSource
+<%_ } _%>
+<%_ if (databaseTypeSql && reactive) { _%>
+import org.springframework.boot.jdbc.DataSourceBuilder
+import org.springframework.boot.r2dbc.autoconfigure.R2dbcProperties
+<%_ } _%>
+<%_ if (databaseTypeNeo4j) { _%>
+import liquibase.ext.neo4j.database.jdbc.Neo4jDriver
+import org.springframework.boot.neo4j.autoconfigure.Neo4jProperties
+import org.springframework.jdbc.datasource.SimpleDriverDataSource
 <%_ } _%>
 import liquibase.integration.spring.SpringLiquibase
 import org.slf4j.LoggerFactory
-import org.springframework.beans.factory.ObjectProvider
+<%_ if (!databaseTypeCassandra) { _%>
 import org.springframework.beans.factory.annotation.Qualifier
-<%_ if (!reactive) { _%>
-import org.springframework.boot.autoconfigure.jdbc.DataSourceProperties
 <%_ } _%>
-import org.springframework.boot.autoconfigure.liquibase.LiquibaseDataSource
-import org.springframework.boot.autoconfigure.liquibase.LiquibaseProperties
-<%_ if (reactive) { _%>
-import org.springframework.boot.autoconfigure.r2dbc.R2dbcProperties
-import org.springframework.boot.jdbc.DataSourceBuilder
-<%_ } _%>
+import org.springframework.boot.liquibase.autoconfigure.LiquibaseProperties
 import org.springframework.context.annotation.Bean
 import org.springframework.context.annotation.Configuration
 import org.springframework.core.env.Environment
-import org.springframework.core.env.Profiles
-
+import org.springframework.util.CollectionUtils
+import org.springframework.util.StringUtils
 import javax.sql.DataSource
+<%_ if (!databaseTypeCassandra) { _%>
 import java.util.concurrent.Executor
-<%_ if (reactive) { _%>
-import java.util.function.Supplier
 <%_ } _%>
 
 @Configuration
@@ -55,64 +65,115 @@ class LiquibaseConfiguration(private val env: Environment) {
 
     @Bean
     fun liquibase(
+<%_ if (!databaseTypeCassandra) { _%>
         @Qualifier("taskExecutor") executor: Executor,
-        <%_ if (!reactive) { _%>
-        @LiquibaseDataSource liquibaseDataSource: ObjectProvider<DataSource>,
-        <%_ } _%>
+<%_ } _%>
         liquibaseProperties: LiquibaseProperties,
-        <%_ if (reactive) { _%>
-        <%_ } else { _%>
-            dataSource: ObjectProvider<DataSource>,
-        <%_ } _%>
-        dataSourceProperties:  <% if (reactive) { %>R2dbcProperties<% } else { %>DataSourceProperties<% } %>
-    ) =
-        <%_ if (reactive) { _%>
-            createAsyncSpringLiquibase(this.env, executor, liquibaseProperties, dataSourceProperties)
-        <%_ } else { _%>
-            // If you don't want Liquibase to start asynchronously, substitute by this:
-            // val liquibase = SpringLiquibaseUtil.createSpringLiquibase(liquibaseDataSource.getIfAvailable(), liquibaseProperties, dataSource.getIfUnique(), dataSourceProperties)
-            SpringLiquibaseUtil.createAsyncSpringLiquibase(this.env, executor, liquibaseDataSource.getIfAvailable(), liquibaseProperties, dataSource.getIfUnique(), dataSourceProperties)
-        <%_ } _%>
-            .apply {
-            changeLog = "classpath:config/liquibase/master.xml"
-            contexts = liquibaseProperties.contexts
-            defaultSchema = liquibaseProperties.defaultSchema
-            liquibaseSchema = liquibaseProperties.liquibaseSchema
-            liquibaseTablespace = liquibaseProperties.liquibaseTablespace
-            databaseChangeLogLockTable = liquibaseProperties.databaseChangeLogLockTable
-            databaseChangeLogTable = liquibaseProperties.databaseChangeLogTable
-            isDropFirst = liquibaseProperties.isDropFirst
-            labels = liquibaseProperties.labels
-            setChangeLogParameters(liquibaseProperties.parameters)
-            setRollbackFile(liquibaseProperties.rollbackFile)
-            isTestRollbackOnUpdate = liquibaseProperties.isTestRollbackOnUpdate
-
-            if (env.acceptsProfiles(Profiles.of(JHipsterConstants.SPRING_PROFILE_NO_LIQUIBASE))) {
-                setShouldRun(false)
-            } else {
-                setShouldRun(liquibaseProperties.isEnabled)
-                log.debug("Configuring Liquibase")
-            }
+<%_ if (databaseTypeCassandra) { _%>
+        connectionDetails: CassandraConnectionDetails,
+        // The application session creates the keyspace when it connects, liquibase must run after it to find the keyspace.
+        session: CqlSession,
+<%_ } else if (databaseTypeNeo4j) { _%>
+        dataSourceProperties: Neo4jProperties,
+<%_ } else if (reactive) { _%>
+        dataSourceProperties: R2dbcProperties,
+<%_ } else { _%>
+        @LiquibaseDataSource liquibaseDataSource: ObjectProvider<DataSource>,
+        dataSource: ObjectProvider<DataSource>,
+        dataSourceProperties: DataSourceProperties,
+<%_ } _%>
+    ): SpringLiquibase {
+<%_ if (databaseTypeCassandra) { _%>
+        // Repositories depend on the liquibase bean: the schema must exist before they are created, so liquibase runs synchronously.
+        val liquibase = SpringLiquibase()
+        liquibase.dataSource = createLiquibaseDataSource(liquibaseProperties, connectionDetails, session)
+<%_ } else if (databaseTypeNeo4j || reactive) { _%>
+        val liquibase: SpringLiquibase = AsyncSpringLiquibase(executor, env)
+        liquibase.dataSource = createLiquibaseDataSource(liquibaseProperties, dataSourceProperties)
+<%_ } else { _%>
+        // If you don't want Liquibase to start asynchronously, substitute by this:
+        // val liquibase = SpringLiquibaseUtil.createSpringLiquibase(liquibaseDataSource.getIfAvailable(), liquibaseProperties, dataSource.getIfUnique(), dataSourceProperties)
+        val liquibase = SpringLiquibaseUtil.createAsyncSpringLiquibase(
+            env,
+            executor,
+            liquibaseDataSource.getIfAvailable(),
+            liquibaseProperties,
+            dataSource.getIfUnique(),
+            dataSourceProperties,
+        )
+<%_ } _%>
+        liquibase.changeLog = "classpath:config/liquibase/master.xml"
+        if (!CollectionUtils.isEmpty(liquibaseProperties.contexts)) {
+            liquibase.contexts = StringUtils.collectionToCommaDelimitedString(liquibaseProperties.contexts)
         }
-
-        <%_ if (reactive) { _%>
-        fun createAsyncSpringLiquibase(env: Environment, executor: Executor,
-            liquibaseProperties: LiquibaseProperties, dataSourceProperties: R2dbcProperties): SpringLiquibase {
-            val liquibase = AsyncSpringLiquibase(executor, env)
-            liquibase.setDataSource(createNewDataSource(liquibaseProperties, dataSourceProperties))
-            return liquibase
+        liquibase.defaultSchema = liquibaseProperties.defaultSchema
+        liquibase.liquibaseSchema = liquibaseProperties.liquibaseSchema
+        liquibase.liquibaseTablespace = liquibaseProperties.liquibaseTablespace
+        liquibase.databaseChangeLogLockTable = liquibaseProperties.databaseChangeLogLockTable
+        liquibase.databaseChangeLogTable = liquibaseProperties.databaseChangeLogTable
+        liquibase.isDropFirst = liquibaseProperties.isDropFirst
+        if (!CollectionUtils.isEmpty(liquibaseProperties.labelFilter)) {
+            liquibase.labelFilter = StringUtils.collectionToCommaDelimitedString(liquibaseProperties.labelFilter)
         }
-
-        fun createNewDataSource(liquibaseProperties: LiquibaseProperties, dataSourceProperties: R2dbcProperties): DataSource {
-            val user = getProperty(liquibaseProperties.user, dataSourceProperties.getUsername())
-            val password = getProperty(liquibaseProperties.password, dataSourceProperties.getPassword())
-            return DataSourceBuilder.create()
-                .url(liquibaseProperties.url)
-                .username(user)
-                .password(password)
-                .build()
+        liquibase.setChangeLogParameters(liquibaseProperties.parameters)
+        liquibase.setRollbackFile(liquibaseProperties.rollbackFile)
+        liquibase.isTestRollbackOnUpdate = liquibaseProperties.isTestRollbackOnUpdate
+        if (env.matchesProfiles(JHipsterConstants.SPRING_PROFILE_NO_LIQUIBASE)) {
+            liquibase.setShouldRun(false)
+        } else {
+            liquibase.setShouldRun(liquibaseProperties.isEnabled)
+            log.debug("Configuring Liquibase")
         }
+        return liquibase
+    }
+<%_ if (databaseTypeNeo4j) { _%>
 
-        fun getProperty(property: String?, defaultValue: String) =  property?:defaultValue
-        <%_ } _%>
+    fun createLiquibaseDataSource(liquibaseProperties: LiquibaseProperties, dataSourceProperties: Neo4jProperties): DataSource {
+        val url = liquibaseProperties.url ?: "jdbc:neo4j:${dataSourceProperties.uri}"
+        val user = liquibaseProperties.user ?: dataSourceProperties.authentication.username
+        val password = liquibaseProperties.password ?: dataSourceProperties.authentication.password
+        return SimpleDriverDataSource(Neo4jDriver(), url).apply {
+            username = user
+            this.password = password
+        }
+    }
+<%_ } else if (databaseTypeCassandra) { _%>
+
+    fun createLiquibaseDataSource(
+        liquibaseProperties: LiquibaseProperties,
+        connectionDetails: CassandraConnectionDetails,
+        session: CqlSession,
+    ): DataSource {
+        val url = liquibaseProperties.url ?: run {
+            val contactPoint = connectionDetails.contactPoints.first()
+            val keyspaceName = session.keyspace
+                .map(CqlIdentifier::asInternal)
+                .orElseThrow { IllegalStateException("The Cassandra session is not bound to a keyspace, configure spring.cassandra.keyspace-name") }
+            // The Liquibase compliance mode reports -1 affected rows for the changelog lock LWT update,
+            // otherwise liquibase-cassandra misreads the acquired lock and waits for it forever.
+            // Each changeSet is a schema change that must reach schema agreement, which does not fit in the
+            // driver's 2s default request timeout on a loaded machine.
+            "jdbc:cassandra://${contactPoint.host()}:${contactPoint.port()}/$keyspaceName" +
+                "?compliancemode=Liquibase&requesttimeout=$LIQUIBASE_REQUEST_TIMEOUT_MILLIS" +
+                "&localdatacenter=${connectionDetails.localDatacenter}"
+        }
+        val user = liquibaseProperties.user ?: connectionDetails.username
+        val password = liquibaseProperties.password ?: connectionDetails.password
+        return SimpleDriverDataSource(CassandraDriver(), url).apply {
+            username = user
+            this.password = password
+        }
+    }
+
+    companion object {
+        private const val LIQUIBASE_REQUEST_TIMEOUT_MILLIS = 20_000
+    }
+<%_ } else if (databaseTypeSql && reactive) { _%>
+
+    private fun createLiquibaseDataSource(liquibaseProperties: LiquibaseProperties, dataSourceProperties: R2dbcProperties): DataSource {
+        val user = liquibaseProperties.user ?: dataSourceProperties.username
+        val password = liquibaseProperties.password ?: dataSourceProperties.password
+        return DataSourceBuilder.create().url(checkNotNull(liquibaseProperties.url) { "spring.liquibase.url must be set" }).username(user).password(password).build()
+    }
+<%_ } _%>
 }

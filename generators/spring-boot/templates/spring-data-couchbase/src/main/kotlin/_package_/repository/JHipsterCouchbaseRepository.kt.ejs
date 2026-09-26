@@ -33,7 +33,7 @@ import java.util.stream.Collectors
 
 import java.lang.String.format
 
-const val FIND_IDS_QUERY = "SELECT meta().id as __id, 0 as __cas FROM #{#n1ql.bucket} WHERE #{#n1ql.filter}"
+const val FIND_IDS_QUERY = "SELECT meta().id as __id, 0 as __cas FROM #{#n1ql.bucket}.#{#n1ql.scope}.#{#n1ql.collection} WHERE #{#n1ql.filter}"
 
 /**
  * Couchbase specific {@link org.springframework.data.repository.Repository} interface uses N1QL for all requests.
@@ -44,7 +44,7 @@ const val FIND_IDS_QUERY = "SELECT meta().id as __id, 0 as __cas FROM #{#n1ql.bu
 _%>
 @NoRepositoryBean
 @ScanConsistency(query = QueryScanConsistency.REQUEST_PLUS)
-interface JHipsterCouchbaseRepository<T,ID>:  <% if (reactive) { %>Reactive<% } %>CouchbaseRepository<T, ID> {
+interface JHipsterCouchbaseRepository<T : Any, ID : Any> :  <% if (reactive) { %>Reactive<% } %>CouchbaseRepository<T, ID> {
 
     companion object {
         fun pageableStatement(pageable: Pageable, prefix: String): String? {
@@ -52,13 +52,11 @@ interface JHipsterCouchbaseRepository<T,ID>:  <% if (reactive) { %>Reactive<% } 
                 pageable.sort
                     .map { order ->
                         val property = order.property
-                        if ("id" == property) {
-                            order.withProperty("meta($prefix).id")
+                        when {
+                            "id" == property -> order.withProperty("meta($prefix).id")
+                            prefix.isEmpty() -> order
+                            else -> order.withProperty("$prefix.$property")
                         }
-                        if (prefix.isEmpty()) {
-                            order
-                        }
-                        order.withProperty("$prefix $property")
                     }
                     .toList()
             )

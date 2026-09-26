@@ -1,0 +1,490 @@
+<%#
+ Copyright 2013-2026 the original author or authors from the JHipster project.
+
+ This file is part of the JHipster project, see https://www.jhipster.tech/
+ for more information.
+
+ Licensed under the Apache License, Version 2.0 (the "License");
+ you may not use this file except in compliance with the License.
+ You may obtain a copy of the License at
+
+      https://www.apache.org/licenses/LICENSE-2.0
+
+ Unless required by applicable law or agreed to in writing, software
+ distributed under the License is distributed on an "AS IS" BASIS,
+ WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
+ See the License for the specific language governing permissions and
+ limitations under the License.
+-%>
+package <%- packageName %>.repository
+
+import <%- user.entityAbsoluteClass %>
+
+import com.datastax.oss.driver.api.core.CqlIdentifier
+<%_ if (!reactive) { _%>
+import com.datastax.oss.driver.api.core.CqlSession
+import com.datastax.oss.driver.api.core.PagingIterable
+<%_ } _%>
+import com.datastax.oss.driver.api.core.cql.BatchStatement
+import com.datastax.oss.driver.api.core.cql.BatchStatementBuilder
+import com.datastax.oss.driver.api.core.cql.BoundStatement
+<%_ if (!reactive) { _%>
+import com.datastax.oss.driver.api.core.cql.BoundStatementBuilder
+<%_ } _%>
+import com.datastax.oss.driver.api.core.cql.DefaultBatchType
+import com.datastax.oss.driver.api.core.cql.PreparedStatement
+<%_ if (reactive) { _%>
+import com.datastax.oss.driver.api.core.cql.SimpleStatement
+import com.datastax.oss.driver.api.querybuilder.QueryBuilder
+import com.datastax.oss.driver.api.querybuilder.insert.RegularInsert
+<%_ } else { _%>
+import com.datastax.oss.driver.api.core.cql.ResultSet
+import com.datastax.oss.driver.api.mapper.annotations.Dao
+import com.datastax.oss.driver.api.mapper.annotations.DaoFactory
+import com.datastax.oss.driver.api.mapper.annotations.DaoKeyspace
+import com.datastax.oss.driver.api.mapper.annotations.Delete
+import com.datastax.oss.driver.api.mapper.annotations.Insert
+import com.datastax.oss.driver.api.mapper.annotations.Mapper
+import com.datastax.oss.driver.api.mapper.annotations.Select
+<%_ } _%>
+<%_ if (cacheProviderAny) { _%>
+import org.springframework.cache.annotation.Cacheable
+<%_ } _%>
+<%_ if (reactive) { _%>
+import org.springframework.data.cassandra.ReactiveResultSet
+import org.springframework.data.cassandra.ReactiveSession
+import org.springframework.data.cassandra.core.ReactiveCassandraTemplate
+import org.springframework.data.cassandra.core.convert.CassandraConverter
+import org.springframework.data.cassandra.core.mapping.CassandraPersistentEntity
+<%_ } else { _%>
+import org.springframework.boot.cassandra.autoconfigure.CassandraProperties
+<%_ } _%>
+import org.springframework.stereotype.Repository
+<%_ if (databaseMigrationLiquibase) { _%>
+import org.springframework.context.annotation.DependsOn
+<%_ } _%>
+import org.springframework.util.StringUtils
+<%_ if (reactive) { _%>
+import reactor.core.publisher.Flux
+import reactor.core.publisher.Mono
+<%_ } _%>
+
+import jakarta.validation.ConstraintViolation
+import jakarta.validation.ConstraintViolationException
+import jakarta.validation.Validator
+<%_ if (!reactive) { _%>
+import java.util.Optional
+<%_ } _%>
+<%_ if (user.primaryKey.hasUUID) { _%>
+import java.util.UUID
+<%_ } _%>
+
+/**
+ * <%- springDataDescription %> repository for the {@link <%- user.persistClass %>} entity.
+ */
+@Repository
+<%_ if (databaseMigrationLiquibase) { _%>
+@DependsOn("liquibase")
+<%_ } _%>
+class UserRepository(
+<%_ if (reactive) { _%>
+    private val cqlTemplate: ReactiveCassandraTemplate,
+    private val session: ReactiveSession,
+    private val validator: Validator,
+<%_ } else { _%>
+    private val session: CqlSession,
+    private val validator: Validator,
+    cassandraProperties: CassandraProperties,
+<%_ } _%>
+) {
+<%_ if (cacheProviderAny) { _%>
+
+    companion object {
+        const val USERS_BY_LOGIN_CACHE: String = "usersByLogin"
+        const val USERS_BY_EMAIL_CACHE: String = "usersByEmail"
+    }
+<%_ } _%>
+<%_ if (reactive) { _%>
+
+    private val findAllStmt: PreparedStatement = session.prepare("SELECT * FROM user").block()!!
+<%_ } else { _%>
+
+    private val userTokenMapper: UserTokenMapper = UserTokenMapperBuilder(session).build()
+    private val userDao: UserDao = userTokenMapper.userTokenDao(CqlIdentifier.fromCql(requireNotNull(cassandraProperties.keyspaceName) { "spring.cassandra.keyspace-name must be set" }))
+<%_ } _%>
+<%_ if (generateUserManagement) { _%>
+
+    private val findOneByActivationKeyStmt: PreparedStatement = session.prepare(
+        """
+        SELECT id
+        FROM user_by_activation_key
+        WHERE activation_key = :activation_key
+        """.trimIndent()
+    )<% if (reactive) { %>.block()!!<% } %>
+
+    private val findOneByResetKeyStmt: PreparedStatement = session.prepare(
+        """
+        SELECT id
+        FROM user_by_reset_key
+        WHERE reset_key = :reset_key
+        """.trimIndent()
+    )<% if (reactive) { %>.block()!!<% } %>
+
+    private val insertByActivationKeyStmt: PreparedStatement = session.prepare(
+        """
+        INSERT INTO user_by_activation_key (activation_key, id)
+        VALUES (:activation_key, :id)
+        """.trimIndent()
+    )<% if (reactive) { %>.block()!!<% } %>
+
+    private val insertByResetKeyStmt: PreparedStatement = session.prepare(
+        """
+        INSERT INTO user_by_reset_key (reset_key, id)
+        VALUES (:reset_key, :id)
+        """.trimIndent()
+    )<% if (reactive) { %>.block()!!<% } %>
+<%_ } _%>
+<%_ if (reactive) { _%>
+
+    private val deleteByIdStmt: PreparedStatement = session.prepare(
+        """
+        DELETE FROM user
+        WHERE id = :id
+        """.trimIndent()
+    ).block()!!
+<%_ } _%>
+<%_ if (generateUserManagement) { _%>
+
+    private val deleteByActivationKeyStmt: PreparedStatement = session.prepare(
+        """
+        DELETE FROM user_by_activation_key
+        WHERE activation_key = :activation_key
+        """.trimIndent()
+    )<% if (reactive) { %>.block()!!<% } %>
+
+    private val deleteByResetKeyStmt: PreparedStatement = session.prepare(
+        """
+        DELETE FROM user_by_reset_key
+        WHERE reset_key = :reset_key
+        """.trimIndent()
+    )<% if (reactive) { %>.block()!!<% } %>
+<%_ } _%>
+
+    private val findOneByLoginStmt: PreparedStatement = session.prepare(
+        """
+        SELECT id
+        FROM user_by_login
+        WHERE login = :login
+        """.trimIndent()
+    )<% if (reactive) { %>.block()!!<% } %>
+
+    private val insertByLoginStmt: PreparedStatement = session.prepare(
+        """
+        INSERT INTO user_by_login (login, id)
+        VALUES (:login, :id)
+        """.trimIndent()
+    )<% if (reactive) { %>.block()!!<% } %>
+
+    private val deleteByLoginStmt: PreparedStatement = session.prepare(
+        """
+        DELETE FROM user_by_login
+        WHERE login = :login
+        """.trimIndent()
+    )<% if (reactive) { %>.block()!!<% } %>
+
+    private val findOneByEmailStmt: PreparedStatement = session.prepare(
+        """
+        SELECT id
+        FROM user_by_email
+        WHERE email     = :email
+        """.trimIndent()
+    )<% if (reactive) { %>.block()!!<% } %>
+
+    private val insertByEmailStmt: PreparedStatement = session.prepare(
+        """
+        INSERT INTO user_by_email (email, id)
+        VALUES (:email, :id)
+        """.trimIndent()
+    )<% if (reactive) { %>.block()!!<% } %>
+
+    private val deleteByEmailStmt: PreparedStatement = session.prepare(
+        """
+        DELETE FROM user_by_email
+        WHERE email = :email
+        """.trimIndent()
+    )<% if (reactive) { %>.block()!!<% } %>
+
+    private val truncateStmt: PreparedStatement = session.prepare("TRUNCATE user")<% if (reactive) { %>.block()!!<% } %>
+<%_ if (generateUserManagement) { _%>
+
+    private val truncateByResetKeyStmt: PreparedStatement = session.prepare("TRUNCATE user_by_reset_key")<% if (reactive) { %>.block()!!<% } %>
+<%_ } _%>
+
+    private val truncateByLoginStmt: PreparedStatement = session.prepare("TRUNCATE user_by_login")<% if (reactive) { %>.block()!!<% } %>
+
+    private val truncateByEmailStmt: PreparedStatement = session.prepare("TRUNCATE user_by_email")<% if (reactive) { %>.block()!!<% } %>
+
+    fun findById(id: String): <%- optionalOrMono %><<%- user.persistClass %>> {
+<%_ if (reactive) { _%>
+        return cqlTemplate.selectOneById(id, <%- user.persistClass %>::class.java)
+            .map { user ->
+                if (user.authorities == null) {
+                    user.authorities = mutableSetOf()
+                }
+                user
+            }
+<%_ } else { _%>
+        return userDao.get(id)
+<%_ } _%>
+    }
+<%_ if (generateUserManagement) { _%>
+
+    fun findOneByActivationKey(activationKey: String): <%- optionalOrMono %><<%- user.persistClass %>> {
+        val stmt = findOneByActivationKeyStmt.bind().setString("activation_key", activationKey)
+        return findOneFromIndex(stmt)
+    }
+
+    fun findOneByResetKey(resetKey: String): <%- optionalOrMono %><<%- user.persistClass %>> {
+        val stmt = findOneByResetKeyStmt.bind().setString("reset_key", resetKey)
+        return findOneFromIndex(stmt)
+    }
+<%_ } _%>
+<%_ if (cacheProviderAny) { _%>
+
+    @Cacheable(cacheNames = [USERS_BY_EMAIL_CACHE], unless = "#result == null")
+<%_ } _%>
+    fun findOneByEmailIgnoreCase(email: String): <%- optionalOrMono %><<%- user.persistClass %>> {
+        val stmt = findOneByEmailStmt.bind().setString("email", email.lowercase())
+        return findOneFromIndex(stmt)
+    }
+<%_ if (cacheProviderAny) { _%>
+
+    @Cacheable(cacheNames = [USERS_BY_LOGIN_CACHE], unless = "#result == null")
+<%_ } _%>
+    fun findOneByLogin(login: String): <%- optionalOrMono %><<%- user.persistClass %>> {
+        val stmt = findOneByLoginStmt.bind().setString("login", login)
+        return findOneFromIndex(stmt)
+    }
+
+    fun findAll(): <%- listOrFlux %><<%- user.persistClass %>> {
+<%_ if (reactive) { _%>
+        return cqlTemplate.select(findAllStmt.bind(), <%- user.persistClass %>::class.java)
+            .map { user ->
+                if (user.authorities == null) {
+                    user.authorities = mutableSetOf()
+                }
+                user
+            }
+<%_ } else { _%>
+        return userDao.findAll().all()
+<%_ } _%>
+    }
+
+    fun save(user: <%- user.persistClass %>): <%- reactive ? `Mono<${user.persistClass}>` : user.persistClass %> {
+        val violations = validator.validate(user)
+        if (violations != null && violations.isNotEmpty()) {
+            throw ConstraintViolationException(violations)
+        }
+<%_ if (reactive) { _%>
+        return this.findById(user.id!!)
+            .flatMapMany { oldUser ->
+                var deleteOps: Flux<ReactiveResultSet> = Flux.empty()
+  <%_ if (generateUserManagement) { _%>
+                if (!oldUser.activationKey.isNullOrEmpty() && oldUser.activationKey != user.activationKey) {
+                    deleteOps = deleteOps.mergeWith(session.execute(deleteByActivationKeyStmt.bind().setString("activation_key", oldUser.activationKey)))
+                }
+                if (!oldUser.resetKey.isNullOrEmpty() && oldUser.resetKey != user.resetKey) {
+                    deleteOps = deleteOps.mergeWith(session.execute(deleteByResetKeyStmt.bind().setString("reset_key", oldUser.resetKey)))
+                }
+  <%_ } _%>
+                if (!oldUser.login.isNullOrEmpty() && oldUser.login != user.login) {
+                    deleteOps = deleteOps.mergeWith(session.execute(deleteByLoginStmt.bind().setString("login", oldUser.login)))
+                }
+                if (!oldUser.email.isNullOrEmpty() && !oldUser.email.equals(user.email, ignoreCase = true)) {
+                    deleteOps = deleteOps.mergeWith(session.execute(deleteByEmailStmt.bind().setString("email", oldUser.email!!.lowercase())))
+                }
+                deleteOps
+            }
+            .then(
+                Mono.defer {
+                    val batch = BatchStatement.builder(DefaultBatchType.LOGGED)
+                    batch.addStatement(getInsertStatement(user))
+  <%_ if (generateUserManagement) { _%>
+                    if (!user.activationKey.isNullOrEmpty()) {
+                        batch.addStatement(
+                            insertByActivationKeyStmt.bind()
+                                .setString("activation_key", user.activationKey)
+                                .setString("id", user.id)
+                        )
+                    }
+                    if (!user.resetKey.isNullOrEmpty()) {
+                        batch.addStatement(
+                            insertByResetKeyStmt.bind()
+                                .setString("reset_key", user.resetKey)
+                                .setString("id", user.id)
+                        )
+                    }
+  <%_ } _%>
+                    batch.addStatement(
+                        insertByLoginStmt.bind()
+                            .setString("login", user.login)
+                            .setString("id", user.id)
+                    )
+                    batch.addStatement(
+                        insertByEmailStmt.bind()
+                            .setString("email", user.email!!.lowercase())
+                            .setString("id", user.id)
+                    )
+                    session.execute(batch.build())
+                }
+            )
+            .thenReturn(user)
+    }
+
+    private fun getInsertStatement(user: <%- user.persistClass %>): SimpleStatement {
+        val converter = cqlTemplate.converter
+        val persistentEntity = converter.mappingContext.getRequiredPersistentEntity(user::class.java)
+        val toInsert = mutableMapOf<CqlIdentifier, Any>()
+        converter.write(user, toInsert, persistentEntity)
+        var insert = QueryBuilder.insertInto(persistentEntity.tableName)
+            .value("id", QueryBuilder.literal(user.id))
+        for ((key, value) in toInsert) {
+            insert = insert.value(key, QueryBuilder.literal(value))
+        }
+        return insert.build()
+    }
+<%_ } else { /* !reactive */ _%>
+        val oldUser = userDao.get(user.id!!).orElse(null)
+        if (oldUser != null) {
+  <%_ if (generateUserManagement) { _%>
+            if (!oldUser.activationKey.isNullOrEmpty() && oldUser.activationKey != user.activationKey) {
+                session.execute(deleteByActivationKeyStmt.bind().setString("activation_key", oldUser.activationKey))
+            }
+            if (!oldUser.resetKey.isNullOrEmpty() && oldUser.resetKey != user.resetKey) {
+                session.execute(deleteByResetKeyStmt.bind().setString("reset_key", oldUser.resetKey))
+            }
+  <%_ } _%>
+            if (!oldUser.login.isNullOrEmpty() && oldUser.login != user.login) {
+                session.execute(deleteByLoginStmt.bind().setString("login", oldUser.login))
+            }
+            if (!oldUser.email.isNullOrEmpty() && !oldUser.email.equals(user.email, ignoreCase = true)) {
+                session.execute(deleteByEmailStmt.bind().setString("email", oldUser.email!!.lowercase()))
+            }
+        }
+        val batch = BatchStatement.builder(DefaultBatchType.LOGGED)
+        batch.addStatement(userDao.saveQuery(user))
+  <%_ if (generateUserManagement) { _%>
+        if (!user.activationKey.isNullOrEmpty()) {
+            batch.addStatement(
+                insertByActivationKeyStmt.bind()
+                    .setString("activation_key", user.activationKey)
+                    .setString("id", user.id)
+            )
+        }
+        if (!user.resetKey.isNullOrEmpty()) {
+            batch.addStatement(
+                insertByResetKeyStmt.bind()
+                    .setString("reset_key", user.resetKey)
+                    .setString("id", user.id)
+            )
+        }
+  <%_ } _%>
+        batch.addStatement(
+            insertByLoginStmt.bind()
+                .setString("login", user.login)
+                .setString("id", user.id)
+        )
+        batch.addStatement(
+            insertByEmailStmt.bind()
+                .setString("email", user.email!!.lowercase())
+                .setString("id", user.id)
+        )
+        session.execute(batch.build())
+        return user
+    }
+<%_ } _%>
+
+    fun delete(user: <%- user.persistClass %>)<%- reactive ? ': Mono<Void>' : '' %> {
+        val batch = BatchStatement.builder(DefaultBatchType.LOGGED)
+        batch.addStatement(<%- reactive ? 'deleteByIdStmt.bind().setString("id", user.id)' : 'userDao.deleteQuery(user)' %>)
+<%_ if (generateUserManagement) { _%>
+        if (!user.activationKey.isNullOrEmpty()) {
+            batch.addStatement(deleteByActivationKeyStmt.bind().setString("activation_key", user.activationKey))
+        }
+        if (!user.resetKey.isNullOrEmpty()) {
+            batch.addStatement(deleteByResetKeyStmt.bind().setString("reset_key", user.resetKey))
+        }
+<%_ } _%>
+        batch.addStatement(deleteByLoginStmt.bind().setString("login", user.login))
+        batch.addStatement(deleteByEmailStmt.bind().setString("email", user.email!!.lowercase()))
+<%_ if (reactive) { _%>
+        return session.execute(batch.build()).then()
+<%_ } else { _%>
+        session.execute(batch.build())
+<%_ } _%>
+    }
+<%_ if (reactive) { _%>
+
+    private fun findOneFromIndex(stmt: BoundStatement): Mono<<%- user.persistClass %>> {
+        return session.execute(stmt).flatMap { rs -> rs.rows().next() }
+            .map { row -> row.getString("id")!! }
+            .flatMap(this::findById)
+    }
+
+    fun deleteAll(): Mono<Void> {
+        return Flux.just(truncateStmt, truncateByEmailStmt, truncateByLoginStmt<%- generateUserManagement ? ', truncateByResetKeyStmt' : '' %>)
+            .map(PreparedStatement::bind)
+            .flatMap(session::execute)
+            .then()
+    }
+<%_ } else { _%>
+
+    private fun findOneFromIndex(stmt: BoundStatement): Optional<<%- user.persistClass %>> {
+        val rs = session.execute(stmt)
+        return Optional
+            .ofNullable(rs.one())
+            .map { row -> row.getString("id")!! }
+            .flatMap { id -> userDao.get(id) }
+    }
+
+    fun deleteAll() {
+        val truncate = truncateStmt.bind()
+        session.execute(truncate)
+
+        val truncateByEmail = truncateByEmailStmt.bind()
+        session.execute(truncateByEmail)
+
+        val truncateByLogin = truncateByLoginStmt.bind()
+        session.execute(truncateByLogin)
+  <%_ if (generateUserManagement) { _%>
+
+        val truncateByResetKey = truncateByResetKeyStmt.bind()
+        session.execute(truncateByResetKey)
+  <%_ } _%>
+    }
+<%_ } _%>
+}
+<%_ if (!reactive) { _%>
+
+@Dao
+interface UserDao {
+
+    @Select
+    fun get(id: String): Optional<<%- user.persistClass %>>
+
+    @Select
+    fun findAll(): PagingIterable<<%- user.persistClass %>>
+
+    @Insert
+    fun saveQuery(user: <%- user.persistClass %>): BoundStatement
+
+    @Delete
+    fun deleteQuery(user: <%- user.persistClass %>): BoundStatement
+}
+
+@Mapper
+interface UserTokenMapper {
+    @DaoFactory
+    fun userTokenDao(@DaoKeyspace keyspace: CqlIdentifier): UserDao
+}
+<%_ } _%>

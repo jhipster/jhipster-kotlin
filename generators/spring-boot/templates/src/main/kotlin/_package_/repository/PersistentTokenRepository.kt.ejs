@@ -47,7 +47,7 @@ import org.springframework.data.mongodb.repository.MongoRepository
 <%_ } _%><%_ if (databaseTypeNeo4j) { _%>
 import org.springframework.data.neo4j.repository.Neo4jRepository
 <%_ } if (databaseTypeCassandra) { _%>
-import org.springframework.boot.autoconfigure.cassandra.CassandraProperties
+import org.springframework.boot.cassandra.autoconfigure.CassandraProperties
 import org.springframework.stereotype.Repository
 
 import jakarta.validation.ConstraintViolationException
@@ -82,7 +82,7 @@ class PersistentTokenRepository(
 ) {
 
     private val persistentTokenMapper = PersistentTokenMapperBuilder(session).build()
-    private val persistentTokenDao = persistentTokenMapper.persistentTokenDao(CqlIdentifier.fromCql(cassandraProperties.keyspaceName))
+    private val persistentTokenDao = persistentTokenMapper.persistentTokenDao(CqlIdentifier.fromCql(requireNotNull(cassandraProperties.keyspaceName) { "spring.cassandra.keyspace-name must be set" }))
 
 
     private val findPersistentTokenSeriesByUserIdStmt = session.prepare(

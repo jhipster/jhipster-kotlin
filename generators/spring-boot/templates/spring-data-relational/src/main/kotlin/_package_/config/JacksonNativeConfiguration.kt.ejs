@@ -1,0 +1,99 @@
+<%#
+ Copyright 2013-2026 the original author or authors from the JHipster project.
+
+ This file is part of the JHipster project, see https://www.jhipster.tech/
+ for more information.
+
+ Licensed under the Apache License, Version 2.0 (the "License")
+ you may not use this file except in compliance with the License.
+ You may obtain a copy of the License at
+
+      https://www.apache.org/licenses/LICENSE-2.0
+
+ Unless required by applicable law or agreed to in writing, software
+ distributed under the License is distributed on an "AS IS" BASIS,
+ WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
+ See the License for the specific language governing permissions and
+ limitations under the License.
+-%>
+package <%= packageName %>.config
+
+import jakarta.persistence.Basic
+import jakarta.persistence.ElementCollection
+import jakarta.persistence.FetchType
+import jakarta.persistence.ManyToOne
+import jakarta.persistence.OneToMany
+import org.hibernate.Hibernate
+import org.springframework.boot.jackson.autoconfigure.JsonMapperBuilderCustomizer
+import org.springframework.context.annotation.Bean
+import org.springframework.context.annotation.Configuration
+import tools.jackson.core.JsonGenerator
+import tools.jackson.databind.SerializationContext
+import tools.jackson.databind.jsonFormatVisitors.JsonObjectFormatVisitor
+import tools.jackson.databind.ser.BeanPropertyWriter
+import tools.jackson.databind.ser.PropertyFilter
+import tools.jackson.databind.ser.PropertyWriter
+import tools.jackson.databind.ser.std.SimpleFilterProvider
+
+@Configuration
+class JacksonNativeConfiguration {
+
+    /*
+     * Filter to allow Jackson serializer to detect lazy-loaded properties when using hibernate-enhance-maven-plugin
+     * see: https://github.com/FasterXML/jackson-datatype-hibernate/issues/148#issuecomment-1383923857
+     */
+    @Bean
+    fun customizeJackson(): JsonMapperBuilderCustomizer =
+        JsonMapperBuilderCustomizer { builder ->
+            builder.filterProvider(SimpleFilterProvider().addFilter("lazyPropertyFilter", LazyPropertyFilter()))
+        }
+
+    <%- // Thanks to @hurelhuyag for contributing the LazyPropertyFilter source. %>
+    private class LazyPropertyFilter : PropertyFilter {
+        // Stateless filter, safe to share between mapper instances.
+        override fun snapshot(): PropertyFilter = this
+
+
+        override fun serializeAsProperty(pojo: Any, gen: JsonGenerator, ctxt: SerializationContext, writer: PropertyWriter) {
+            val initialized = isPropertyInitialized(writer as BeanPropertyWriter, pojo)
+            if (initialized) {
+                writer.serializeAsProperty(pojo, gen, ctxt)
+            } else if (!gen.canOmitProperties()) {
+                writer.serializeAsOmittedProperty(pojo, gen, ctxt)
+            }
+        }
+
+        override fun serializeAsElement(elementValue: Any, gen: JsonGenerator, ctxt: SerializationContext, writer: PropertyWriter) {
+            throw RuntimeException("LazyPropertyFilter.serializeAsElement() currently unsupported")
+        }
+
+        override fun depositSchemaProperty(writer: PropertyWriter, objectVisitor: JsonObjectFormatVisitor, ctxt: SerializationContext) {
+            writer.depositSchemaProperty(objectVisitor, ctxt)
+        }
+
+        companion object {
+
+            fun isPropertyInitialized(prop: BeanPropertyWriter, bean: Any): Boolean =
+                Hibernate.isPropertyInitialized(bean, prop.name) &&
+                    isInitialized(prop, bean, ManyToOne::class.java, ManyToOne::fetch) &&
+                    isInitialized(prop, bean, ElementCollection::class.java, ElementCollection::fetch) &&
+                    isInitialized(prop, bean, OneToMany::class.java, OneToMany::fetch) &&
+                    isInitialized(prop, bean, Basic::class.java, Basic::fetch)
+
+            fun <A : Annotation> isInitialized(
+                prop: BeanPropertyWriter,
+                bean: Any,
+                type: Class<A>,
+                fetch: (A) -> FetchType
+            ): Boolean {
+                val ann = prop.getAnnotation(type) ?: return true
+                val fetchType = fetch(ann)
+                if (fetchType == FetchType.EAGER) {
+                    return true
+                }
+                val value = prop.get(bean)
+                return Hibernate.isInitialized(value)
+            }
+        }
+    }
+}

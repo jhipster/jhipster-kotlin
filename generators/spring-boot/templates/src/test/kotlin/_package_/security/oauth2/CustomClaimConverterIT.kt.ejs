@@ -18,8 +18,8 @@
 -%>
 package <%= packageName %>.security.oauth2
 
-import com.fasterxml.jackson.databind.ObjectMapper
-import com.fasterxml.jackson.databind.node.ObjectNode
+import tools.jackson.databind.ObjectMapper
+import tools.jackson.databind.node.ObjectNode
 import org.assertj.core.api.Assertions.assertThat
 import org.assertj.core.api.Assertions.assertThatCode
 import org.junit.jupiter.api.BeforeEach
@@ -28,7 +28,7 @@ import org.mockito.ArgumentMatchers.any
 import org.mockito.ArgumentMatchers.eq
 import org.mockito.Mockito.`when`
 import org.springframework.beans.factory.annotation.Autowired
-import org.springframework.boot.test.mock.mockito.MockBean
+import org.springframework.test.context.bean.override.mockito.MockitoBean
 import org.springframework.http.HttpEntity
 import org.springframework.http.HttpMethod
 import org.springframework.http.ResponseEntity
@@ -49,7 +49,7 @@ private const val EMAIL = "john.doe@gmail.com"
 @IntegrationTest
 class CustomClaimConverterIT {
 
-    @MockBean
+    @MockitoBean
     private lateinit var restTemplate: RestTemplate
 
     @Autowired
@@ -61,7 +61,7 @@ class CustomClaimConverterIT {
 
     @BeforeEach
     fun initTest() {
-        customClaimConverter = CustomClaimConverter(clientRegistrationRepository.findByRegistrationId("oidc"), restTemplate)
+        customClaimConverter = CustomClaimConverter(clientRegistrationRepository.findByRegistrationId("oidc")!!, restTemplate)
     }
 
     private fun mockHttpGetUserInfo(userInfo: ObjectNode) {

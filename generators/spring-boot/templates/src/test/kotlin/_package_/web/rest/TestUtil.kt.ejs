@@ -21,9 +21,7 @@
 package <%= packageName %>.web.rest
 
 import com.fasterxml.jackson.annotation.JsonInclude
-import com.fasterxml.jackson.databind.ObjectMapper
-import com.fasterxml.jackson.databind.SerializationFeature
-import com.fasterxml.jackson.datatype.jsr310.JavaTimeModule
+import tools.jackson.databind.json.JsonMapper
 import org.hamcrest.Description
 import org.hamcrest.TypeSafeDiagnosingMatcher
 import org.hamcrest.TypeSafeMatcher
@@ -68,12 +66,11 @@ import org.assertj.core.api.Assertions.assertThat
 
 private val mapper = createObjectMapper()
 
+// Jackson 3 supports java.time out of the box and writes dates and durations as ISO strings, like the application mapper.
 private fun createObjectMapper() =
-    ObjectMapper().apply {
-        configure(SerializationFeature.WRITE_DURATIONS_AS_TIMESTAMPS, false)
-        setSerializationInclusion(JsonInclude.Include.NON_EMPTY)
-        registerModule(JavaTimeModule())
-    }
+    JsonMapper.builder()
+        .changeDefaultPropertyInclusion { it.withValueInclusion(JsonInclude.Include.NON_EMPTY) }
+        .build()
 
 /**
  * Convert an object to JSON byte array.

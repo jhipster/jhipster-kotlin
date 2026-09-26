@@ -1,0 +1,108 @@
+<%#
+ Copyright 2013-2026 the original author or authors from the JHipster project.
+
+ This file is part of the JHipster project, see https://www.jhipster.tech/
+ for more information.
+
+ Licensed under the Apache License, Version 2.0 (the "License")
+ you may not use this file except in compliance with the License.
+ You may obtain a copy of the License at
+
+      https://www.apache.org/licenses/LICENSE-2.0
+
+ Unless required by applicable law or agreed to in writing, software
+ distributed under the License is distributed on an "AS IS" BASIS,
+ WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
+ See the License for the specific language governing permissions and
+ limitations under the License.
+-%>
+package <%= packageName %>.security.jwt
+
+import <%= packageName %>.security.jwt.JwtAuthenticationTestUtils.Companion.createExpiredToken
+import <%= packageName %>.security.jwt.JwtAuthenticationTestUtils.Companion.createSignedInvalidJwt
+import <%= packageName %>.security.jwt.JwtAuthenticationTestUtils.Companion.createTokenWithDifferentSignature
+import <%= packageName %>.security.jwt.JwtAuthenticationTestUtils.Companion.createValidToken
+<%_ if (!reactive) { _%>
+import <%= packageName %>.security.jwt.JwtAuthenticationTestUtils.Companion.BEARER
+<%_ } _%>
+
+import org.junit.jupiter.api.Test
+import org.springframework.beans.factory.annotation.Autowired
+import org.springframework.beans.factory.annotation.Value
+
+<%_ if (reactive) { %>
+import <%= packageName %>.IntegrationTest
+import org.springframework.boot.webtestclient.autoconfigure.AutoConfigureWebTestClient
+import org.springframework.test.web.reactive.server.WebTestClient
+
+@AutoConfigureWebTestClient(timeout = IntegrationTest.DEFAULT_TIMEOUT)
+<%_ } else { _%>
+import org.springframework.http.HttpHeaders.AUTHORIZATION
+import org.springframework.test.web.servlet.result.MockMvcResultMatchers.status
+
+import org.springframework.boot.webmvc.test.autoconfigure.AutoConfigureMockMvc
+import org.springframework.test.web.servlet.MockMvc
+import org.springframework.test.web.servlet.request.MockMvcRequestBuilders
+
+@AutoConfigureMockMvc
+<%_ } _%>
+@AuthenticationIntegrationTest
+class TokenAuthenticationIT {
+
+    @Autowired
+<%_ if (reactive) { _%>
+    private lateinit var webTestClient: WebTestClient
+<%_ } else { _%>
+    private lateinit var mvc: MockMvc
+<%_ } _%>
+
+    @Value("\${jhipster.security.authentication.jwt.base64-secret}")
+    private lateinit var jwtKey: String
+
+    @Test
+    fun testLoginWithValidToken() {
+        expectOk(createValidToken(jwtKey))
+    }
+
+    @Test
+    fun testReturnFalseWhenJWThasInvalidSignature() {
+        expectUnauthorized(createTokenWithDifferentSignature())
+    }
+
+    @Test
+    fun testReturnFalseWhenJWTisMalformed() {
+        expectUnauthorized(createSignedInvalidJwt(jwtKey))
+    }
+
+    @Test
+    fun testReturnFalseWhenJWTisExpired() {
+        expectUnauthorized(createExpiredToken(jwtKey))
+    }
+<%_ if (reactive) { %>
+
+    private fun expectOk(token: String) {
+        webTestClient.get().uri("/api/authenticate").headers { headers -> headers.setBearerAuth(token) }.exchange().expectStatus().isNoContent
+    }
+
+    private fun expectUnauthorized(token: String) {
+        webTestClient
+            .get()
+            .uri("/api/authenticate")
+            .headers { headers -> headers.setBearerAuth(token) }
+            .exchange()
+            .expectStatus()
+            .isUnauthorized
+    }
+<%_ } else { _%>
+
+    private fun expectOk(token: String) {
+        mvc.perform(MockMvcRequestBuilders.get("/api/authenticate").header(AUTHORIZATION, BEARER + token)).andExpect(status().isNoContent)
+    }
+
+    private fun expectUnauthorized(token: String) {
+        mvc
+            .perform(MockMvcRequestBuilders.get("/api/authenticate").header(AUTHORIZATION, BEARER + token))
+            .andExpect(status().isUnauthorized)
+    }
+<%_ } _%>
+}

@@ -43,7 +43,7 @@ class SecurityUtilsUnitTest {
     @Test
     fun testgetCurrentUserLogin() {
         val login = getCurrentUserLogin()
-            .subscriberContext(
+            .contextWrite(
                 ReactiveSecurityContextHolder.withAuthentication(
                     UsernamePasswordAuthenticationToken("admin", "admin")
                 )
@@ -56,7 +56,7 @@ class SecurityUtilsUnitTest {
     @Test
     fun testGetCurrentUserJWT() {
         val jwt = getCurrentUserJWT()
-            .subscriberContext(
+            .contextWrite(
                 ReactiveSecurityContextHolder.withAuthentication(
                     UsernamePasswordAuthenticationToken("admin", "token")
                 )
@@ -69,7 +69,7 @@ class SecurityUtilsUnitTest {
     @Test
     fun testIsAuthenticated() {
         val isAuthenticated = isAuthenticated()
-            .subscriberContext(
+            .contextWrite(
                 ReactiveSecurityContextHolder.withAuthentication(
                     UsernamePasswordAuthenticationToken("admin", "admin")
                 )
@@ -82,7 +82,7 @@ class SecurityUtilsUnitTest {
     fun testAnonymousIsNotAuthenticated() {
         val authorities = mutableListOf(SimpleGrantedAuthority(ANONYMOUS))
         val isAuthenticated = isAuthenticated()
-            .subscriberContext(
+            .contextWrite(
                 ReactiveSecurityContextHolder.withAuthentication(
                     UsernamePasswordAuthenticationToken("admin", "admin", authorities)
                 )
@@ -98,12 +98,12 @@ class SecurityUtilsUnitTest {
             UsernamePasswordAuthenticationToken("admin", "admin", authorities)
         )
         var hasCurrentUserThisAuthority = hasCurrentUserAnyOfAuthorities(USER, ADMIN)
-            .subscriberContext(context)
+            .contextWrite(context)
             .block()
         assertThat(hasCurrentUserThisAuthority).isTrue
 
         hasCurrentUserThisAuthority = hasCurrentUserAnyOfAuthorities(ANONYMOUS, ADMIN)
-            .subscriberContext(context)
+            .contextWrite(context)
             .block()
         assertThat(hasCurrentUserThisAuthority).isFalse
     }
@@ -115,12 +115,12 @@ class SecurityUtilsUnitTest {
             UsernamePasswordAuthenticationToken("admin", "admin", authorities)
         )
         var hasCurrentUserThisAuthority = hasCurrentUserNoneOfAuthorities(USER, ADMIN)
-            .subscriberContext(context)
+            .contextWrite(context)
             .block()
         assertThat(hasCurrentUserThisAuthority).isFalse
 
         hasCurrentUserThisAuthority = hasCurrentUserNoneOfAuthorities(ANONYMOUS, ADMIN)
-            .subscriberContext(context)
+            .contextWrite(context)
             .block()
         assertThat(hasCurrentUserThisAuthority).isTrue
     }
@@ -132,12 +132,12 @@ class SecurityUtilsUnitTest {
             UsernamePasswordAuthenticationToken("admin", "admin", authorities)
         )
         var hasCurrentUserThisAuthority = hasCurrentUserThisAuthority(USER)
-            .subscriberContext(context)
+            .contextWrite(context)
             .block()
         assertThat(hasCurrentUserThisAuthority!!).isTrue
 
         hasCurrentUserThisAuthority = hasCurrentUserThisAuthority(ADMIN)
-            .subscriberContext(context)
+            .contextWrite(context)
             .block()
         assertThat(hasCurrentUserThisAuthority!!).isFalse
     }

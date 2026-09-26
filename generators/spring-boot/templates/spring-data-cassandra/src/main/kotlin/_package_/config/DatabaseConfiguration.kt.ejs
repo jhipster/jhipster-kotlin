@@ -18,6 +18,14 @@ This file is part of the JHipster project, see https://jhipster.github.io/
 -%>
 package <%= packageName %>.config
 
+<%_ if (databaseMigrationLiquibase) { _%>
+import com.datastax.oss.driver.api.core.CqlIdentifier
+import com.datastax.oss.driver.api.core.cql.SimpleStatement
+import org.springframework.boot.autoconfigure.condition.ConditionalOnProperty
+import org.springframework.boot.cassandra.autoconfigure.CassandraProperties
+import org.springframework.boot.cassandra.autoconfigure.CqlSessionBuilderCustomizer
+import java.time.Duration
+<%_ } _%>
 import com.datastax.oss.driver.api.core.data.TupleValue
 import com.datastax.oss.driver.api.core.type.DataTypes
 import com.datastax.oss.driver.api.core.type.TupleType
@@ -41,6 +49,29 @@ import java.util.List
 class DatabaseConfiguration {
 
     private val log = LoggerFactory.getLogger(javaClass)
+<%_ if (databaseMigrationLiquibase) { _%>
+
+    /**
+     * Creates the keyspace when it does not exist yet, disable it with `application.cassandra.create-keyspace=false`
+     * when the keyspace is managed outside of the application.
+     * The application session is bound to the keyspace, so the keyspace is created through a keyspace-less session
+     * before the application session connects. Liquibase creates the tables once the session is available.
+     */
+    @Bean
+    @ConditionalOnProperty(name = ["application.cassandra.create-keyspace"], havingValue = "true", matchIfMissing = true)
+    fun keyspaceCreator(cassandraProperties: CassandraProperties, applicationProperties: ApplicationProperties) =
+        CqlSessionBuilderCustomizer { builder ->
+            val keyspaceName = cassandraProperties.keyspaceName
+            builder.withKeyspace(null as CqlIdentifier?).build().use { session ->
+                session.execute(
+                    SimpleStatement.newInstance(
+                        "CREATE KEYSPACE IF NOT EXISTS $keyspaceName WITH replication = ${applicationProperties.cassandra.keyspaceReplication}",
+                    ).setTimeout(Duration.ofSeconds(KEYSPACE_CREATION_TIMEOUT_SECONDS)),
+                )
+            }
+            builder.withKeyspace(keyspaceName)
+        }
+<%_ } _%>
 
     @Bean
     fun cassandraCustomConversions() =
@@ -72,4 +103,12 @@ class DatabaseConfiguration {
         }
     }
 
+<%_ if (databaseMigrationLiquibase) { _%>
+
+    companion object {
+        // CREATE KEYSPACE is a schema change that must reach schema agreement, which does not fit in the driver's 2s default
+        // request timeout on a loaded machine.
+        private const val KEYSPACE_CREATION_TIMEOUT_SECONDS = 20L
+    }
+<%_ } _%>
 }

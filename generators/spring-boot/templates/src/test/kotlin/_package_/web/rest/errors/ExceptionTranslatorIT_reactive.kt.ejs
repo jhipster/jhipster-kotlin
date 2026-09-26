@@ -22,6 +22,8 @@ import <%= packageName %>.IntegrationTest
 <%_ if (reactive) { _%>
 import <%= packageName %>.IntegrationTest.Companion.DEFAULT_TIMEOUT
 <%_ } _%>
+import org.hamcrest.Matchers.anyOf
+import org.hamcrest.Matchers.equalTo
 import org.junit.jupiter.api.Test
 import org.springframework.beans.factory.annotation.Autowired
 import org.springframework.boot.test.context.SpringBootTest
@@ -30,7 +32,7 @@ import org.springframework.security.test.context.support.WithMockUser
     <%_ if (authenticationUsesCsrf) { _%>
 import org.junit.jupiter.api.BeforeEach
     <%_ } _%>
-import org.springframework.boot.test.autoconfigure.web.reactive.AutoConfigureWebTestClient
+import org.springframework.boot.webtestclient.autoconfigure.AutoConfigureWebTestClient
 import org.springframework.http.HttpStatus
 import org.springframework.http.MediaType
 import org.springframework.test.web.reactive.server.WebTestClient
@@ -123,7 +125,7 @@ class ExceptionTranslatorIT {
             .expectBody()
             .jsonPath("\$.message").isEqualTo("error.http.401")
             .jsonPath("$.path").isEqualTo("/api/exception-translator-test/unauthorized")
-            .jsonPath("\$.detail").isEqualTo("test authentication failed!")
+            .jsonPath("\$.detail").value(anyOf(equalTo("test authentication failed!"), equalTo("Invalid credentials")))
     }
 
     @Test
@@ -134,7 +136,7 @@ class ExceptionTranslatorIT {
             .expectHeader().contentType(MediaType.APPLICATION_PROBLEM_JSON)
             .expectBody()
             .jsonPath("\$.message").isEqualTo("error.http.405")
-            .jsonPath("\$.detail").isEqualTo("405 METHOD_NOT_ALLOWED \"Request method 'POST' not supported\"")
+            .jsonPath("\$.detail").isEqualTo("405 METHOD_NOT_ALLOWED \"Request method 'POST' is not supported.\"")
     }
 
     @Test

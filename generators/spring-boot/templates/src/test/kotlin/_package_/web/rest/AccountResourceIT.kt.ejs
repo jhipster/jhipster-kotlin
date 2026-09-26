@@ -53,9 +53,9 @@ import org.junit.jupiter.api.BeforeEach
 import org.junit.jupiter.api.Test
 import org.springframework.beans.factory.annotation.Autowired
 <%_ if (reactive) { _%>
-import org.springframework.boot.test.autoconfigure.web.reactive.AutoConfigureWebTestClient
+import org.springframework.boot.webtestclient.autoconfigure.AutoConfigureWebTestClient
 <%_ } else { _%>
-import org.springframework.boot.test.autoconfigure.web.servlet.AutoConfigureMockMvc
+import org.springframework.boot.webmvc.test.autoconfigure.AutoConfigureMockMvc
 <%_ } _%>
 <%_ if (reactive) { _%>
 import org.springframework.test.web.reactive.server.expectBody
@@ -180,18 +180,12 @@ class AccountResourceIT {
     <%_ if (reactive) { _%>
     fun testNonAuthenticatedUser() {
         accountWebTestClient.get().uri("/api/authenticate")
-            .accept(MediaType.APPLICATION_JSON)
             .exchange()
-            .expectStatus().isOk
-            .expectBody().isEmpty
+            .expectStatus().isUnauthorized
     <%_ } else { _%>
     fun testNonAuthenticatedUser() {
-        restAccountMockMvc.perform(
-            get("/api/authenticate")
-                .accept(MediaType.APPLICATION_JSON)
-        )
-            .andExpect(status().isOk)
-            .andExpect(content().string(""))
+        restAccountMockMvc.perform(get("/api/authenticate"))
+            .andExpect(status().isUnauthorized)
     <%_ } _%>
     }
 
@@ -200,21 +194,13 @@ class AccountResourceIT {
     fun testAuthenticatedUser() {
         accountWebTestClient
             .get().uri("/api/authenticate")
-            .accept(MediaType.APPLICATION_JSON)
             .exchange()
-            .expectStatus().isOk
-            .expectBody<String>().isEqualTo(TEST_USER_LOGIN)
+            .expectStatus().isNoContent
     <%_ } else { _%>
     @Throws(Exception::class)
     fun testAuthenticatedUser() {
-        restAccountMockMvc.perform(get("/api/authenticate")
-            .with { request ->
-                request.remoteUser = TEST_USER_LOGIN
-                request
-            }
-            .accept(MediaType.APPLICATION_JSON))
-            .andExpect(status().isOk)
-            .andExpect(content().string(TEST_USER_LOGIN))
+        restAccountMockMvc.perform(get("/api/authenticate"))
+            .andExpect(status().isNoContent)
     <%_ } _%>
     }
 
@@ -278,13 +264,13 @@ class AccountResourceIT {
         accountWebTestClient.get().uri("/api/account")
             .accept(MediaType.APPLICATION_JSON)
             .exchange()
-            .expectStatus().isEqualTo(HttpStatus.INTERNAL_SERVER_ERROR)
+            .expectStatus().isBadRequest
     <%_ } else { _%>
     @Throws(Exception::class)
     fun testGetUnknownAccount() {
         restAccountMockMvc.perform(get("/api/account")
             .accept(MediaType.APPLICATION_PROBLEM_JSON))
-            .andExpect(status().isInternalServerError)
+            .andExpect(status().isBadRequest)
     <%_ } _%>
     }
 
@@ -807,10 +793,10 @@ class AccountResourceIT {
         <%_ if (reactive) { _%>
         accountWebTestClient.get().uri("/api/activate?key=wrongActivationKey")
             .exchange()
-            .expectStatus().isEqualTo(HttpStatus.INTERNAL_SERVER_ERROR)
+            .expectStatus().isBadRequest
         <%_ } else { _%>
         restAccountMockMvc.perform(get("/api/activate?key=wrongActivationKey"))
-            .andExpect(status().isInternalServerError)
+            .andExpect(status().isBadRequest)
         <%_ } _%>
     }
 
@@ -1001,7 +987,7 @@ class AccountResourceIT {
 
         <%_ } _%>
 
-        val updatedUser = userRepository.findOneByLogin("save-existing-email")<%_ if (reactive) { _%>.block()<% } else { %>.orElse(null)<% } %>
+        val updatedUser = userRepository.findOneByLogin("save-existing-email")<%_ if (reactive) { _%>.block()!!<% } else { %>.orElse(null)<% } %>
         assertThat(updatedUser.email).isEqualTo("save-existing-email@example.com")
     }
 
@@ -1054,7 +1040,7 @@ class AccountResourceIT {
 
         <%_ } _%>
 
-        val updatedUser = userRepository.findOneByLogin("save-existing-email-and-login")<%_ if (reactive) { _%>.block()<% } else { %>.orElse(null)<% } %>
+        val updatedUser = userRepository.findOneByLogin("save-existing-email-and-login")<%_ if (reactive) { _%>.block()!!<% } else { %>.orElse(null)<% } %>
         assertThat(updatedUser.email).isEqualTo("save-existing-email-and-login@example.com")
     }
 
@@ -1095,7 +1081,7 @@ class AccountResourceIT {
             .andExpect(status().isBadRequest)
         <%_ } _%>
 
-        val updatedUser = userRepository.findOneByLogin("change-password-wrong-existing-password")<%_ if (reactive) { _%>.block()<% } else { %>.orElse(null)<% } %>
+        val updatedUser = userRepository.findOneByLogin("change-password-wrong-existing-password")<%_ if (reactive) { _%>.block()!!<% } else { %>.orElse(null)<% } %>
         assertThat(passwordEncoder.matches("new password", updatedUser.password)).isFalse
         assertThat(passwordEncoder.matches(currentPassword, updatedUser.password)).isTrue
     }
@@ -1137,7 +1123,7 @@ class AccountResourceIT {
             .andExpect(status().isOk)
         <%_ } _%>
 
-        val updatedUser = userRepository.findOneByLogin("change-password")<%_ if (reactive) { _%>.block()<% } else { %>.orElse(null)<% } %>
+        val updatedUser = userRepository.findOneByLogin("change-password")<%_ if (reactive) { _%>.block()!!<% } else { %>.orElse(null)<% } %>
         assertThat(passwordEncoder.matches("new password", updatedUser.password)).isTrue
     }
 
@@ -1180,7 +1166,7 @@ class AccountResourceIT {
             .andExpect(status().isBadRequest)
         <%_ } _%>
 
-        val updatedUser = userRepository.findOneByLogin("change-password-too-small")<%_ if (reactive) { _%>.block()<% } else { %>.orElse(null)<% } %>
+        val updatedUser = userRepository.findOneByLogin("change-password-too-small")<%_ if (reactive) { _%>.block()!!<% } else { %>.orElse(null)<% } %>
         assertThat(updatedUser.password).isEqualTo(user.password)
     }
 
@@ -1223,7 +1209,7 @@ class AccountResourceIT {
             .andExpect(status().isBadRequest)
         <%_ } _%>
 
-        val updatedUser = userRepository.findOneByLogin("change-password-too-long")<%_ if (reactive) { _%>.block()<% } else { %>.orElse(null)<% } %>
+        val updatedUser = userRepository.findOneByLogin("change-password-too-long")<%_ if (reactive) { _%>.block()!!<% } else { %>.orElse(null)<% } %>
         assertThat(updatedUser.password).isEqualTo(user.password)
     }
 
@@ -1264,7 +1250,7 @@ class AccountResourceIT {
             .andExpect(status().isBadRequest)
         <%_ } _%>
 
-        val updatedUser = userRepository.findOneByLogin("change-password-empty")<% if (reactive) { %>.block()<% } else { %>.orElse(null)<% } %>
+        val updatedUser = userRepository.findOneByLogin("change-password-empty")<% if (reactive) { %>.block()!!<% } else { %>.orElse(null)<% } %>
         assertThat(updatedUser.password).isEqualTo(user.password)
     }
     <%_ if (authenticationTypeSession && !reactive) { _%>
@@ -1500,7 +1486,7 @@ class AccountResourceIT {
 
         <%_ } _%>
 
-        val updatedUser = userRepository.findOneByLogin(user.login!!)<%_ if (reactive) { _%>.block()<% } else { %>.orElse(null)<% } %>
+        val updatedUser = userRepository.findOneByLogin(user.login!!)<%_ if (reactive) { _%>.block()!!<% } else { %>.orElse(null)<% } %>
         assertThat(passwordEncoder.matches(keyAndPassword.newPassword, updatedUser.password)).isTrue
     }
 
@@ -1543,7 +1529,7 @@ class AccountResourceIT {
 
         <%_ } _%>
 
-        val updatedUser = userRepository.findOneByLogin(user.login!!)<%_ if (reactive) { _%>.block()<% } else { %>.orElse(null)<% } %>
+        val updatedUser = userRepository.findOneByLogin(user.login!!)<%_ if (reactive) { _%>.block()!!<% } else { %>.orElse(null)<% } %>
         assertThat(passwordEncoder.matches(keyAndPassword.newPassword, updatedUser.password)).isFalse
     }
 
@@ -1558,7 +1544,7 @@ class AccountResourceIT {
             .contentType(MediaType.APPLICATION_JSON)
             .bodyValue(convertObjectToJsonBytes(keyAndPassword))
             .exchange()
-            .expectStatus().isEqualTo(HttpStatus.INTERNAL_SERVER_ERROR)
+            .expectStatus().isBadRequest
         <%_ } else { _%>
         restAccountMockMvc.perform(
             post("/api/account/reset-password/finish")
@@ -1566,7 +1552,7 @@ class AccountResourceIT {
                 .content(convertObjectToJsonBytes(keyAndPassword))<% if (authenticationUsesCsrf) { %>
                 .with(csrf())<% } %>
         )
-            .andExpect(status().isInternalServerError)
+            .andExpect(status().isBadRequest)
 
         <%_ } _%>
     }

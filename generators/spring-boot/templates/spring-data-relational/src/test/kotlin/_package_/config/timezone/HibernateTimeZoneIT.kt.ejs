@@ -21,6 +21,7 @@ package <%= packageName %>.config.timezone
 import <%= packageName %>.IntegrationTest
 import <%= packageName %>.repository.timezone.DateTimeWrapper
 import <%= packageName %>.repository.timezone.DateTimeWrapperRepository
+import org.assertj.core.api.Assertions.assertThat
 import org.junit.jupiter.api.BeforeEach
 import org.junit.jupiter.api.Test
 import org.springframework.beans.factory.annotation.Autowired
@@ -28,7 +29,6 @@ import org.springframework.beans.factory.annotation.Value
 import org.springframework.jdbc.core.JdbcTemplate
 import org.springframework.jdbc.support.rowset.SqlRowSet
 import org.springframework.transaction.annotation.Transactional
-
 import java.time.Instant
 import java.time.LocalDate
 import java.time.LocalDateTime
@@ -40,17 +40,21 @@ import java.time.ZoneId
 import java.time.ZonedDateTime
 import java.time.format.DateTimeFormatter
 
-import java.lang.String.format
-import org.assertj.core.api.Assertions.assertThat
-
 /**
- * Integration tests for the ZoneId Hibernate configuration.
+ * Integration tests for verifying the behavior of Hibernate in the context of storing various date and time types across different databases.
+ * The tests focus on ensuring that the stored values are correctly transformed and stored according to the configured timezone.
+ * Timezone is environment specific, and can be adjusted according to your needs.
+ *
+ * For more context, refer to:
+ * - GitHub Issue: https://github.com/jhipster/generator-jhipster/issues/22579
+ * - Pull Request: https://github.com/jhipster/generator-jhipster/pull/22946
  */
 @IntegrationTest
 class HibernateTimeZoneIT {
 
     @Autowired
     private lateinit var dateTimeWrapperRepository: DateTimeWrapperRepository
+
     @Autowired
     private lateinit var jdbcTemplate: JdbcTemplate
 
@@ -60,118 +64,108 @@ class HibernateTimeZoneIT {
     private lateinit var dateTimeWrapper: DateTimeWrapper
     private lateinit var dateTimeFormatter: DateTimeFormatter
     private lateinit var timeFormatter: DateTimeFormatter
+    private lateinit var offsetTimeFormatter: DateTimeFormatter
     private lateinit var dateFormatter: DateTimeFormatter
 
     @BeforeEach
     fun setup() {
         dateTimeWrapper = DateTimeWrapper(
-            instant = Instant.parse("2014-11-12T05:50:00.0Z"),
-            localDateTime = LocalDateTime.parse("2014-11-12T07:50:00.0"),
+            instant = Instant.parse("2014-11-12T05:10:00.0Z"),
+            localDateTime = LocalDateTime.parse("2014-11-12T07:20:00.0"),
             offsetDateTime = OffsetDateTime.parse("2011-12-14T08:30:00.0Z"),
-            zonedDateTime = ZonedDateTime.parse("2011-12-14T08:30:00.0Z"),
-            localTime = LocalTime.parse("14:30:00"),
-            offsetTime = OffsetTime.parse("14:30:00+02:00"),
-            localDate = LocalDate.parse("2016-09-10")
+            zonedDateTime = ZonedDateTime.parse("2011-12-14T08:40:00.0Z"),
+            localTime = LocalTime.parse("14:50:00"),
+            offsetTime = OffsetTime.parse("14:00:00+02:00"),
+            localDate = LocalDate.parse("2016-09-10"),
         )
 
-        dateTimeFormatter = DateTimeFormatter
-            .ofPattern("yyyy-MM-dd HH:mm:ss.S")
-            .withZone(ZoneId.of(zoneId))
-
-        timeFormatter = DateTimeFormatter
-            .ofPattern("HH:mm:ss")
-            .withZone(ZoneId.of(zoneId))
-
-        dateFormatter = DateTimeFormatter
-            .ofPattern("yyyy-MM-dd")
+        dateTimeFormatter = DateTimeFormatter.ofPattern("yyyy-MM-dd HH:mm:ss.S").withZone(ZoneId.of(zoneId))
+        timeFormatter = DateTimeFormatter.ofPattern("HH:mm:ss").withZone(ZoneId.of(zoneId))
+        offsetTimeFormatter = DateTimeFormatter.ofPattern("HH:mm:ss")
+        dateFormatter = DateTimeFormatter.ofPattern("yyyy-MM-dd")
     }
 
     @Test
     @Transactional
-    fun storeInstantWithZoneIdConfigShouldBeStoredOnGMTTimeZone() {
+    fun storeInstantWithZoneIdConfigShouldBeStoredOnConfiguredTimeZone() {
         dateTimeWrapperRepository.saveAndFlush(dateTimeWrapper)
 
         val request = generateSqlRequest("instant", dateTimeWrapper.id!!)
         val resultSet = jdbcTemplate.queryForRowSet(request)
         val expectedValue = dateTimeFormatter.format(dateTimeWrapper.instant)
 
-        assertThatDateStoredValueIsEqualToInsertDateValueOnGMTTimeZone(resultSet, expectedValue)
+        assertThatValueFromSqlRowSetIsEqualToExpectedValue(resultSet, expectedValue)
     }
 
     @Test
     @Transactional
-    fun storeLocalDateTimeWithZoneIdConfigShouldBeStoredOnGMTTimeZone() {
+    fun storeLocalDateTimeWithZoneIdConfigShouldBeStoredOnConfiguredTimeZone() {
         dateTimeWrapperRepository.saveAndFlush(dateTimeWrapper)
 
         val request = generateSqlRequest("local_date_time", dateTimeWrapper.id!!)
         val resultSet = jdbcTemplate.queryForRowSet(request)
-        val expectedValue = dateTimeWrapper
-            .localDateTime
-            ?.atZone(ZoneId.systemDefault())
-            ?.format(dateTimeFormatter)
+        val expectedValue = dateTimeWrapper.localDateTime!!.atZone(ZoneId.systemDefault()).format(dateTimeFormatter)
 
-        assertThatDateStoredValueIsEqualToInsertDateValueOnGMTTimeZone(resultSet, expectedValue)
+        assertThatValueFromSqlRowSetIsEqualToExpectedValue(resultSet, expectedValue)
     }
 
     @Test
     @Transactional
-    fun storeOffsetDateTimeWithZoneIdConfigShouldBeStoredOnGMTTimeZone() {
+    fun storeOffsetDateTimeWithZoneIdConfigShouldBeStoredOnConfiguredTimeZone() {
         dateTimeWrapperRepository.saveAndFlush(dateTimeWrapper)
 
         val request = generateSqlRequest("offset_date_time", dateTimeWrapper.id!!)
         val resultSet = jdbcTemplate.queryForRowSet(request)
-        val expectedValue = dateTimeWrapper
-            .offsetDateTime
-            ?.format(dateTimeFormatter)
+        val expectedValue = dateTimeWrapper.offsetDateTime!!.format(dateTimeFormatter)
 
-        assertThatDateStoredValueIsEqualToInsertDateValueOnGMTTimeZone(resultSet, expectedValue)
+        assertThatValueFromSqlRowSetIsEqualToExpectedValue(resultSet, expectedValue)
     }
 
     @Test
     @Transactional
-    fun storeZoneDateTimeWithZoneIdConfigShouldBeStoredOnGMTTimeZone() {
+    fun storeZoneDateTimeWithZoneIdConfigShouldBeStoredOnConfiguredTimeZone() {
         dateTimeWrapperRepository.saveAndFlush(dateTimeWrapper)
 
         val request = generateSqlRequest("zoned_date_time", dateTimeWrapper.id!!)
         val resultSet = jdbcTemplate.queryForRowSet(request)
-        val expectedValue = dateTimeWrapper
-            .zonedDateTime
-            ?.format(dateTimeFormatter)
+        val expectedValue = dateTimeWrapper.zonedDateTime!!.format(dateTimeFormatter)
 
-        assertThatDateStoredValueIsEqualToInsertDateValueOnGMTTimeZone(resultSet, expectedValue)
+        assertThatValueFromSqlRowSetIsEqualToExpectedValue(resultSet, expectedValue)
     }
 
     @Test
     @Transactional
-    fun storeLocalTimeWithZoneIdConfigShouldBeStoredOnGMTTimeZoneAccordingToHis1stJan1970Value() {
+    fun storeLocalTimeWithZoneIdConfigShouldBeStoredOnConfiguredTimeZoneAccordingToHis1stJan1970Value() {
         dateTimeWrapperRepository.saveAndFlush(dateTimeWrapper)
 
         val request = generateSqlRequest("local_time", dateTimeWrapper.id!!)
         val resultSet = jdbcTemplate.queryForRowSet(request)
-        val expectedValue = dateTimeWrapper
-            .localTime
-            ?.atDate(LocalDate.of(1970, Month.JANUARY, 1))
-            ?.atZone(ZoneId.systemDefault())
-            ?.format(timeFormatter)
+        val expectedValue = dateTimeWrapper.localTime!!
+            .atDate(LocalDate.of(1970, Month.JANUARY, 1))
+            .atZone(ZoneId.systemDefault())
+            .format(timeFormatter)
 
-        assertThatDateStoredValueIsEqualToInsertDateValueOnGMTTimeZone(resultSet, expectedValue)
+        assertThatValueFromSqlRowSetIsEqualToExpectedValue(resultSet, expectedValue)
     }
 
     @Test
     @Transactional
-    fun storeOffsetTimeWithZoneIdConfigShouldBeStoredOnGMTTimeZoneAccordingToHis1stJan1970Value() {
+    fun storeOffsetTimeWithZoneIdConfigShouldBeStoredOnConfiguredTimeZoneAccordingToHis1stJan1970Value() {
         dateTimeWrapperRepository.saveAndFlush(dateTimeWrapper)
 
         val request = generateSqlRequest("offset_time", dateTimeWrapper.id!!)
         val resultSet = jdbcTemplate.queryForRowSet(request)
-        val expectedValue = dateTimeWrapper
-            .offsetTime
-            ?.toLocalTime()
-            ?.atDate(LocalDate.of(1970, Month.JANUARY, 1))
-            ?.atZone(ZoneId.systemDefault())
-            ?.format(timeFormatter)
+        val expectedValue = dateTimeWrapper.offsetTime!!
+            // Convert to configured timezone
+            .withOffsetSameInstant(ZoneId.of(zoneId).rules.getOffset(Instant.now()))
+            // Normalize to System TimeZone.
+            // this behavior looks a bug, refer to https://github.com/jhipster/generator-jhipster/issues/22579.
+            .withOffsetSameLocal(OffsetDateTime.ofInstant(Instant.EPOCH, ZoneId.systemDefault()).offset)
+            // Convert the normalized value to configured timezone
+            .withOffsetSameInstant(ZoneId.of(zoneId).rules.getOffset(Instant.EPOCH))
+            .format(offsetTimeFormatter)
 
-        assertThatDateStoredValueIsEqualToInsertDateValueOnGMTTimeZone(resultSet, expectedValue)
+        assertThatValueFromSqlRowSetIsEqualToExpectedValue(resultSet, expectedValue)
     }
 
     @Test
@@ -181,19 +175,15 @@ class HibernateTimeZoneIT {
 
         val request = generateSqlRequest("local_date", dateTimeWrapper.id!!)
         val resultSet = jdbcTemplate.queryForRowSet(request)
-        val expectedValue = dateTimeWrapper
-            .localDate
-            ?.format(dateFormatter)
+        val expectedValue = dateTimeWrapper.localDate!!.format(dateFormatter)
 
-        assertThatDateStoredValueIsEqualToInsertDateValueOnGMTTimeZone(resultSet, expectedValue)
+        assertThatValueFromSqlRowSetIsEqualToExpectedValue(resultSet, expectedValue)
     }
 
-    private fun generateSqlRequest(fieldName: String, id: Long): String =
-        format("SELECT %s FROM <%= jhiTablePrefix %>_date_time_wrapper where id=%d", fieldName, id)
+    private fun generateSqlRequest(fieldName: String, id: Long) =
+        "SELECT $fieldName FROM <%= jhiTablePrefix %>_date_time_wrapper where id=$id"
 
-    private fun assertThatDateStoredValueIsEqualToInsertDateValueOnGMTTimeZone(
-        sqlRowSet: SqlRowSet, expectedValue: String?
-    ) {
+    private fun assertThatValueFromSqlRowSetIsEqualToExpectedValue(sqlRowSet: SqlRowSet, expectedValue: String) {
         while (sqlRowSet.next()) {
             val dbValue = sqlRowSet.getString(1)
 

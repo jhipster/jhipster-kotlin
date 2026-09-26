@@ -1,0 +1,44 @@
+<%#
+ Copyright 2013-2026 the original author or authors from the JHipster project.
+
+ This file is part of the JHipster project, see https://www.jhipster.tech/
+ for more information.
+
+ Licensed under the Apache License, Version 2.0 (the "License")
+ you may not use this file except in compliance with the License.
+ You may obtain a copy of the License at
+
+      https://www.apache.org/licenses/LICENSE-2.0
+
+ Unless required by applicable law or agreed to in writing, software
+ distributed under the License is distributed on an "AS IS" BASIS,
+ WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
+ See the License for the specific language governing permissions and
+ limitations under the License.
+-%>
+package <%= packageName %>.web.rest.errors
+
+import co.elastic.clients.elasticsearch._types.ElasticsearchException
+import co.elastic.clients.elasticsearch._types.ErrorCause
+import co.elastic.clients.elasticsearch._types.ErrorResponse
+import org.junit.jupiter.api.Assertions.assertInstanceOf
+import org.junit.jupiter.api.Test
+import org.springframework.data.elasticsearch.UncategorizedElasticsearchException
+
+class ElasticsearchExceptionMapperTest {
+
+    @Test
+    fun testMapException() {
+        val rootCause = ErrorCause.Builder().reason("Failed to parse query [").build()
+        val response = ErrorResponse.Builder()
+            .error(ErrorCause.Builder().reason("").rootCause(rootCause).build())
+            .status(400)
+            .build()
+        val esException = ElasticsearchException("", response)
+        val cause = UncategorizedElasticsearchException("", esException)
+        assertInstanceOf(
+            QuerySyntaxException::class.java,
+            ElasticsearchExceptionMapper.mapException(UncategorizedElasticsearchException("", cause))
+        )
+    }
+}

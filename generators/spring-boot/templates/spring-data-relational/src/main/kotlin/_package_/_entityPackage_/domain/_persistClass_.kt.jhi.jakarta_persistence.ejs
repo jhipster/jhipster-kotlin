@@ -22,8 +22,9 @@
 -%>
 <&_ if (fragment.importSection) { -&>
 import jakarta.persistence.*
-<%_ if ((prodDatabaseTypePostgresql && anyFieldHasTextContentType) || (anyFieldIsUUID && (prodDatabaseTypeMysql || prodDatabaseTypeMariadb))) { _%>
-import org.hibernate.annotations.Type
+<%_ if (anyFieldIsUUID && (prodDatabaseTypeMysql || prodDatabaseTypeMariadb)) { _%>
+import org.hibernate.annotations.JdbcTypeCode
+import org.hibernate.type.SqlTypes
 <%_ } _%>
 <&_ } -&>
 
@@ -40,7 +41,7 @@ import org.hibernate.annotations.Type
     @GeneratedValue(strategy = GenerationType.IDENTITY)
     <%_ } else if (field.jpaGeneratedValue === 'sequence') { _%>
     @GeneratedValue(strategy = GenerationType.SEQUENCE, generator = "sequenceGenerator")
-    @SequenceGenerator(name = "sequenceGenerator")
+    @SequenceGenerator(name = "sequenceGenerator"<% if (field.liquibaseCustomSequenceGenerator) { %>, sequenceName = "<%- field.jpaSequenceGeneratorName %>"<% } %>)
     <%_ } else if (field.jpaGeneratedValue) { _%>
     @GeneratedValue
     <%_ } _%>
@@ -50,16 +51,13 @@ import org.hibernate.annotations.Type
   <%_ } _%>
   <%_ if (field.fieldTypeBytes) { _%>
     @Lob
-    <%_ if (prodDatabaseTypePostgresql && field.blobContentTypeText) { _%>
-    @Type(type = "org.hibernate.type.TextType")
-    <%_ } _%>
   <%_ } _%>
   <%_ if (field.fieldTypeTemporal || field.fieldTypeDuration) { _%>
     @Column(name = "<%- field.fieldNameAsDatabaseColumn %>"<% if (field.fieldValidationRequired) { %>, nullable = false<% } %><% if (field.fieldValidationUnique) { %>, unique = true<% } %>)
   <%_ } else if (field.fieldTypeBigDecimal) { _%>
     @Column(name = "<%- field.fieldNameAsDatabaseColumn %>", precision = 21, scale = 2<% if (field.fieldValidationRequired) { %>, nullable = false<% } %><% if (field.fieldValidationUnique) { %>, unique = true<% } %>)
   <%_ } else if (field.fieldTypeUUID && (prodDatabaseTypeMysql || prodDatabaseTypeMariadb)) { _%>
-    @Type(type = "uuid-char")
+    @JdbcTypeCode(SqlTypes.VARCHAR)
     @Column(name = "<%- field.fieldNameAsDatabaseColumn %>", length = 36<% if (field.fieldValidationRequired) { %>, nullable = false<% } %><% if (field.fieldValidationUnique) { %>, unique = true<% } %>)
   <%_ } else { _%>
     @Column(name = "<%- field.fieldNameAsDatabaseColumn %>"<% if (field.fieldValidate === true) { %><% if (field.fieldValidationMaxLength) { %>, length = <%= field.fieldValidateRulesMaxlength %><% } %><% if (field.fieldValidationRequired) { %>, nullable = false<% } %><% if (field.fieldValidationUnique) { %>, unique = true<% } %><% } %>)
@@ -81,12 +79,12 @@ import org.hibernate.annotations.Type
   <%_ if (relationship.relationshipOneToMany) { -%>
     @OneToMany(mappedBy = "<%= relationship.otherEntityRelationshipName %>")
   <%_ } else if (relationship.relationshipManyToOne) { -%>
-    @ManyToOne<% if (relationship.relationshipRequired) { %>(optional = false)<% } %>
+    @ManyToOne(<%- relationship.relationshipRequired ? 'optional = false' : 'fetch = FetchType.LAZY' %>)
       <%_ if (relationship.relationshipValidate) { _%>
     <%- include('relationship_validators', { relationship }); -%>
       <%_ } _%>
   <%_ } else if (relationship.relationshipManyToMany) { -%>
-    @ManyToMany<% if (!relationship.ownerSide) { %>(mappedBy = "<%= relationship.otherEntityRelationshipNamePlural %>")<% } %>
+    @ManyToMany<% if (!relationship.ownerSide) { %>(mappedBy = "<%= relationship.otherRelationship.propertyName %>")<% } %>
       <%_ if (relationship.ownerSide) { _%>
         <%_ if (relationship.relationshipValidate) { _%>
     <%- include('relationship_validators', { relationship }); -%>
@@ -107,12 +105,12 @@ import org.hibernate.annotations.Type
       <%_ if (relationship.ignoreOtherSideProperty) { -%>
     @JsonIgnoreProperties(value = [
         <%_ relationship.otherEntity.relationships.forEach(otherRelationship => { _%>
-        "<%= otherRelationship.relationshipReferenceField %>",
+        "<%= otherRelationship.propertyName %>",
         <%_ }); _%>
     ], allowSetters = true)
       <%_ } _%>
       <%_ if (relationship.ownerSide) { -%>
-    @OneToOne<% if (relationship.relationshipRequired) { %>(optional = false)<% } %>
+    @OneToOne(fetch = FetchType.LAZY<%- relationship.relationshipRequired ? ', optional = false' : '' %>)
         <%_ if (relationship.relationshipValidate) { _%>
     <%- include('relationship_validators', { relationship }); -%>
         <%_ } _%>
@@ -123,7 +121,7 @@ import org.hibernate.annotations.Type
     @JoinColumn(unique = true)
         <%_ } _%>
       <%_ } else { _%>
-    @OneToOne(mappedBy = "<%= relationship.otherEntityRelationshipName %>")
+    @OneToOne(fetch = FetchType.LAZY, mappedBy = "<%= relationship.otherEntityRelationshipName %>")
       <%_ } -%>
   <%_ } -%>
 <&_ } -&>

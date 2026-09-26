@@ -17,7 +17,7 @@ import org.springframework.boot.ansi.AnsiStyle
  * @see <a href="https://owasp.org/www-community/attacks/Log_Injection">Log Forging Description</a>
  * @see <a href="https://github.com/jhipster/generator-jhipster/issues/14949">JHipster issue</a>
  */
-class CRLFLogConverter : CompositeConverter<ILoggingEvent>() {
+open class CRLFLogConverter : CompositeConverter<ILoggingEvent>() {
 
     companion object {
         val CRLF_SAFE_MARKER: Marker = MarkerFactory.getMarker("CRLF_SAFE")
@@ -26,34 +26,35 @@ class CRLFLogConverter : CompositeConverter<ILoggingEvent>() {
             "org.springframework.boot.autoconfigure",
             "org.springframework.boot.diagnostics",
         )
-        private val ELEMENTS: HashMap<String, AnsiElement> = hashMapOf(
+        private val ELEMENTS: Map<String, AnsiElement> = mapOf(
             "faint" to AnsiStyle.FAINT,
             "red" to AnsiColor.RED,
             "green" to AnsiColor.GREEN,
             "yellow" to AnsiColor.YELLOW,
             "blue" to AnsiColor.BLUE,
             "magenta" to AnsiColor.MAGENTA,
-            "cyan" to AnsiColor.CYAN
+            "cyan" to AnsiColor.CYAN,
         )
     }
 
-    override fun transform(event: ILoggingEvent, inStr: String): String {
+    public override fun transform(event: ILoggingEvent, inStr: String): String {
         val element = ELEMENTS[firstOption]
-        if ((event.marker != null && event.marker.contains(CRLF_SAFE_MARKER)) || isLoggerSafe(event)) {
+        val marker = event.marker
+        if ((marker != null && marker.contains(CRLF_SAFE_MARKER)) || isLoggerSafe(event)) {
             return inStr
         }
         val replacement = if (element == null) "_" else toAnsiString("_", element)
-        return inStr.replace("[\n\r\t]", replacement)
+        return inStr.replace(Regex("[\n\r\t]"), replacement)
     }
 
-    protected fun isLoggerSafe(event: ILoggingEvent): Boolean {
+    open fun isLoggerSafe(event: ILoggingEvent): Boolean {
         SAFE_LOGGERS.forEach {
-            if (event.loggerName.startsWith(it)) return true
+            if (event.loggerName?.startsWith(it) == true) return true
         }
         return false
     }
 
-    protected fun toAnsiString(inStr: String, element: AnsiElement): String {
+    open fun toAnsiString(inStr: String, element: AnsiElement): String {
         return AnsiOutput.toString(element, inStr)
     }
 }
