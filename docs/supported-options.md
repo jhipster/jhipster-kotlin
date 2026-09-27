@@ -6,11 +6,11 @@ KHipster follows the bundled JHipster version. This page documents the support
 boundaries for this checkout; published npm releases can target older JHipster
 versions.
 
-## Compatibility
+## Compatibility matrix
 
-| Source or release | JHipster | Node.js                   | Generated Java target |
-| ----------------- | -------- | ------------------------- | --------------------- |
-| `main` checkout   | 9.4.0    | `^22.18.0 \|\| >=24.11.0` | Java 21 by default    |
+| `generator-jhipster-kotlin` | JHipster | Node.js                   | Generated Java target |
+| --------------------------- | -------- | ------------------------- | --------------------- |
+| `main` / `1.16.0`           | 9.4.0    | `^22.18.0 \|\| >=24.11.0` | Java 21 by default    |
 
 CI runs the generator on Node.js 24. Generated applications need a JDK and any
 services selected during generation, such as a database, an identity provider, a
