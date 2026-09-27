@@ -4,13 +4,10 @@ import { defaultHelpers as helpers, entitiesServerSamples, entityCustomId, entit
 
 import { crossPackageReactiveEntity, entityWithBagRelationship, entityWithCriteriaAndDto, entityWithEnum } from '../../test/entities.js';
 
-// Regression guard: the Kotlin blueprint must never fall back to a Java template
-// under a Kotlin source root (see generator.js `NAMESPACE_TO_TEMPLATE_PREFIX`).
-const expectNoJavaFilesUnderKotlinSourceRoots = () => {
-    const javaFilesUnderKotlin = Object.keys(result.getStateSnapshot()).filter(
-        file => (file.startsWith('src/main/kotlin/') || file.startsWith('src/test/kotlin/')) && file.endsWith('.java'),
-    );
-    expect(javaFilesUnderKotlin).toEqual([]);
+// Regression guard: the Kotlin blueprint must never generate Java files.
+const expectNoJavaFiles = () => {
+    const javaFiles = Object.keys(result.getStateSnapshot()).filter(file => file.endsWith('.java'));
+    expect(javaFiles).toEqual([]);
 };
 
 describe('SubGenerator kotlin of kotlin JHipster blueprint', () => {
@@ -32,8 +29,8 @@ describe('SubGenerator kotlin of kotlin JHipster blueprint', () => {
             expect(result.getStateSnapshot()).toMatchSnapshot();
         });
 
-        it('should not leave .java files under a kotlin source root', () => {
-            expectNoJavaFilesUnderKotlinSourceRoots();
+        it('should not generate any .java files', () => {
+            expectNoJavaFiles();
         });
     });
 
@@ -61,8 +58,8 @@ describe('SubGenerator kotlin of kotlin JHipster blueprint', () => {
             expect(result.getStateSnapshot()).toMatchSnapshot();
         });
 
-        it('should not leave .java files under a kotlin source root', () => {
-            expectNoJavaFilesUnderKotlinSourceRoots();
+        it('should not generate any .java files', () => {
+            expectNoJavaFiles();
         });
     });
 
@@ -85,8 +82,8 @@ describe('SubGenerator kotlin of kotlin JHipster blueprint', () => {
             expect(result.getStateSnapshot()).toMatchSnapshot();
         });
 
-        it('should not leave .java files under a kotlin source root', () => {
-            expectNoJavaFilesUnderKotlinSourceRoots();
+        it('should not generate any .java files', () => {
+            expectNoJavaFiles();
         });
     });
 });
