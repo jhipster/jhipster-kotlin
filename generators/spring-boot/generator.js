@@ -375,8 +375,8 @@ describe('Auth JWT', () => {`,
                             .replace(
                                 '  beforeEach(() => {',
                                 `  beforeAll(() => {
-    Object.defineProperty(window, 'localStorage', { value: window.localStorage ?? createStorage() });
-    Object.defineProperty(window, 'sessionStorage', { value: window.sessionStorage ?? createStorage() });
+    Object.defineProperty(window, 'localStorage', { value: createStorage() });
+    Object.defineProperty(window, 'sessionStorage', { value: createStorage() });
   });
 
   beforeEach(() => {`,

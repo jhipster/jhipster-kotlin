@@ -56,6 +56,8 @@ import org.springframework.web.bind.annotation.RequestParam
 import org.springframework.web.bind.annotation.ResponseStatus
 import org.springframework.web.bind.annotation.RestController
 <%_ if (reactive) { _%>
+import kotlinx.coroutines.Dispatchers
+import kotlinx.coroutines.withContext
 import kotlinx.coroutines.reactor.awaitSingle
 import kotlinx.coroutines.reactor.awaitSingleOrNull
 <%_ } _%>
@@ -326,7 +328,9 @@ class AccountResource(
         if (user == null) {
             // Dummy hash to prevent reset-key enumeration via response-time timing attack:
             // mirrors the bcrypt cost of a successful path so both branches take equal time.
-            passwordEncoder.encode(keyAndPassword.newPassword)
+            withContext(Dispatchers.IO) {
+                passwordEncoder.encode(keyAndPassword.newPassword)
+            }
             throw AccountResourceException("No user was found for this reset key")
         }
         <%_ } else { _%>
