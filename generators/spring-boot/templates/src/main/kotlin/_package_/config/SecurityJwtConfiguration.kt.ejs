@@ -29,6 +29,7 @@ import org.springframework.beans.factory.annotation.Value
 import org.springframework.context.annotation.Bean
 import org.springframework.context.annotation.Configuration
 import org.springframework.security.oauth2.jwt.<%- reactive ? 'Reactive' : '' %>JwtDecoder
+import org.springframework.security.oauth2.jwt.JwtException
 import org.springframework.security.oauth2.jwt.JwtEncoder
 import org.springframework.security.oauth2.jwt.Nimbus<%- reactive ? 'Reactive' : '' %>JwtDecoder
 import org.springframework.security.oauth2.jwt.NimbusJwtEncoder
@@ -65,7 +66,7 @@ class SecurityJwtConfiguration {
                             else -> log.error("Unknown JWT reactive error {}", e.message)
                         }
                     }
-            } catch (e: Exception) {
+            } catch (e: JwtException) {
                 when {
                     e.message?.contains("An error occurred while attempting to decode the Jwt") == true -> metersService.trackTokenMalformed()
                     e.message?.contains("Failed to validate the token") == true -> metersService.trackTokenInvalidSignature()
@@ -76,7 +77,7 @@ class SecurityJwtConfiguration {
 <%_ } else { _%>
             try {
                 jwtDecoder.decode(token)
-            } catch (e: Exception) {
+            } catch (e: JwtException) {
                 when {
                     e.message?.contains("Invalid signature") == true -> metersService.trackTokenInvalidSignature()
                     e.message?.contains("Jwt expired at") == true -> metersService.trackTokenExpired()

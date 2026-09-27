@@ -55,7 +55,11 @@ import java.util.UUID
 interface <%=entityClass%>Repository : <% if (containsBagRelationships) { %><%= entityClass %>RepositoryWithBagRelationships, <% } %>JpaRepository<<%=persistClass%>, <%= primaryKey.type %>><% if (jpaMetamodelFiltering) { %>, JpaSpecificationExecutor<<%= persistClass %>><% } %><% if (searchEngineCouchbase) { %>, SearchCouchbaseRepository<<%= persistClass %>, <%= primaryKey.type %>><% } %> {
 <%_ for (const relationship of relationships) { _%>
   <%_ if (relationship.relationshipManyToOne && relationship.otherEntityUser) { _%>
-    @Query("select <%- entityJpqlInstance %> from <%- persistClass %> <%- entityJpqlInstance %> where <%- entityJpqlInstance %>.<%- relationship.relationshipFieldName %>.login = ?#{authentication.name}")
+    @Query("""
+        select <%- entityJpqlInstance %>
+        from <%- persistClass %> <%- entityJpqlInstance %>
+        where <%- entityJpqlInstance %>.<%- relationship.relationshipFieldName %>.login = ?#{authentication.name}
+    """)
     fun findBy<%= relationship.relationshipNameCapitalized %>IsCurrentUser(): MutableList<<%= persistClass %>>
 
   <%_ } _%>
@@ -76,14 +80,24 @@ interface <%=entityClass%>Repository : <% if (containsBagRelationships) { %><%= 
     }
   <%_ if (containsToOneEagerRelationship) { _%>
 
-    @Query(value = "select distinct <%- entityJpqlInstance %> from <%- persistClass %> <%- entityJpqlInstance %><%- relationships.filter(r => r.relationshipEagerLoad && !r.bagRelationship).map(r => ` left join fetch ${entityJpqlInstance}.${r.propertyName}`).join('') %>",
+    @Query(value = """
+        select distinct <%- entityJpqlInstance %>
+        from <%- persistClass %> <%- entityJpqlInstance %><%- relationships.filter(r => r.relationshipEagerLoad && !r.bagRelationship).map(r => `\n        left join fetch ${entityJpqlInstance}.${r.propertyName}`).join('') %>
+    """,
         countQuery = "select count(distinct <%- entityJpqlInstance %>) from <%- persistClass %> <%- entityJpqlInstance %>")
     fun findAllWithToOneRelationships(pageable: Pageable): Page<<%= persistClass %>>
 
-    @Query("select distinct <%- entityJpqlInstance %> from <%- persistClass %> <%- entityJpqlInstance %><%- relationships.filter(r => r.relationshipEagerLoad && !r.bagRelationship).map(r => ` left join fetch ${entityJpqlInstance}.${r.propertyName}`).join('') %>")
+    @Query("""
+        select distinct <%- entityJpqlInstance %>
+        from <%- persistClass %> <%- entityJpqlInstance %><%- relationships.filter(r => r.relationshipEagerLoad && !r.bagRelationship).map(r => `\n        left join fetch ${entityJpqlInstance}.${r.propertyName}`).join('') %>
+    """)
     fun findAllWithToOneRelationships(): MutableList<<%= persistClass %>>
 
-    @Query("select <%- entityJpqlInstance %> from <%- persistClass %> <%- entityJpqlInstance %><%- relationships.filter(r => r.relationshipEagerLoad && !r.bagRelationship).map(r => ` left join fetch ${entityJpqlInstance}.${r.propertyName}`).join('') %> where <%- entityJpqlInstance %>.id =:id")
+    @Query("""
+        select <%- entityJpqlInstance %>
+        from <%- persistClass %> <%- entityJpqlInstance %><%- relationships.filter(r => r.relationshipEagerLoad && !r.bagRelationship).map(r => `\n        left join fetch ${entityJpqlInstance}.${r.propertyName}`).join('') %>
+        where <%- entityJpqlInstance %>.id =:id
+    """)
     fun findOneWithToOneRelationships(@Param("id") id: <%= primaryKey.type %>): Optional<<%= persistClass %>>
   <%_ } _%>
 <%_ } _%>

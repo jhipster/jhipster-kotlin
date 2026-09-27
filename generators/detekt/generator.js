@@ -40,6 +40,13 @@ export default class extends BaseApplicationGenerator {
 
     get [BaseApplicationGenerator.POST_WRITING]() {
         return this.asPostWritingTaskGroup({
+            addNpmScript({ application }) {
+                this.packageJson.merge({
+                    scripts: {
+                        detekt: application.buildToolGradle ? './gradlew detekt' : './mvnw antrun:run@detekt',
+                    },
+                });
+            },
             async customizeGradle({ application, source }) {
                 if (application.buildToolGradle) {
                     source.applyFromGradle({ script: 'gradle/detekt.gradle' });
@@ -72,7 +79,7 @@ export default class extends BaseApplicationGenerator {
                                 <!-- See https://arturbosch.github.io/detekt/cli.html for more options-->
                                 <java taskname="detekt" dir="$\{basedir}"
                                       fork="true"
-                                      failonerror="false"
+                                      failonerror="true"
                                       classname="io.gitlab.arturbosch.detekt.cli.Main"
                                       classpathref="maven.plugin.classpath">
                                     <arg value="--input"/>

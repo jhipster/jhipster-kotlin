@@ -31,3 +31,22 @@ describe('SubGenerator kotlin of kotlin JHipster blueprint', () => {
         });
     });
 });
+
+describe.each(['com.example.app', 'com.example.gateway_jwt'])('ktlint package rules for %s', packageName => {
+    beforeAll(async () => {
+        await helpers
+            .run(SUB_GENERATOR_NAMESPACE)
+            .withJHipsterConfig({ packageName })
+            .withFiles({ '.editorconfig': 'root = true\n' })
+            .withOptions({ ignoreNeedlesError: true, skipKtlintFormat: true })
+            .withJHipsterGenerators()
+            .withMockedSource()
+            .withLookups({ packagePaths: [process.cwd()], lookups: ['generators', 'generators/*/generators'] });
+    });
+
+    it('allows supported package names without disabling unrelated rules', () => {
+        const editorconfig = result.fs.read('.editorconfig');
+        expect(editorconfig).toContain('ktlint_standard_no-wildcard-imports = disabled');
+        expect(editorconfig.includes('ktlint_standard_package-name = disabled')).toBe(packageName.includes('_'));
+    });
+});
