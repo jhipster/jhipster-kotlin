@@ -46,7 +46,7 @@ export default class extends BaseApplicationGenerator {
 
                     source.addGradleDependencyCatalogPlugin({
                         pluginName: 'detekt',
-                        id: 'io.gitlab.arturbosch.detekt',
+                        id: 'dev.detekt',
                         version: application.javaDependencies['detekt-gradle'],
                         addToBuild: true,
                     });
@@ -69,18 +69,18 @@ export default class extends BaseApplicationGenerator {
                         <phase>verify</phase>
                         <configuration>
                             <target name="detekt">
-                                <!-- See https://arturbosch.github.io/detekt/cli.html for more options-->
-                                <java taskname="detekt" dir="$\{basedir}"
+                                <!-- See https://detekt.dev for more options-->
+                                <java taskname="detekt" dir="\${basedir}"
                                       fork="true"
                                       failonerror="false"
-                                      classname="io.gitlab.arturbosch.detekt.cli.Main"
+                                      classname="dev.detekt.cli.Main"
                                       classpathref="maven.plugin.classpath">
                                     <arg value="--input"/>
-                                    <arg value="$\{project.basedir}/src/main/kotlin"/>
+                                    <arg value="\${project.basedir}/src/main/kotlin"/>
                                     <arg value="--report"/>
-                                    <arg value="xml:$\{detekt.xmlReportFile}"/>
+                                    <arg value="xml:\${detekt.xmlReportFile}"/>
                                     <arg value="--config"/>
-                                    <arg value="$\{detekt.configFile}"/>
+                                    <arg value="\${detekt.configFile}"/>
                                 </java>
                             </target>
                         </configuration>
@@ -91,9 +91,9 @@ export default class extends BaseApplicationGenerator {
                 </executions>
                 <dependencies>
                     <dependency>
-                        <groupId>io.gitlab.arturbosch.detekt</groupId>
+                        <groupId>dev.detekt</groupId>
                         <artifactId>detekt-cli</artifactId>
-                        <version>$\{detekt.version}</version>
+                        <version>\${detekt.version}</version>
                     </dependency>
                     <!-- additional 3rd party ruleset(s) can be specified here -->
                 </dependencies>`;
