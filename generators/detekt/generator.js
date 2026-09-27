@@ -40,6 +40,13 @@ export default class extends BaseApplicationGenerator {
 
     get [BaseApplicationGenerator.POST_WRITING]() {
         return this.asPostWritingTaskGroup({
+            addNpmScript({ application }) {
+                this.packageJson.merge({
+                    scripts: {
+                        detekt: application.buildToolGradle ? './gradlew detekt' : './mvnw antrun:run@detekt',
+                    },
+                });
+            },
             async customizeGradle({ application, source }) {
                 if (application.buildToolGradle) {
                     source.applyFromGradle({ script: 'gradle/detekt.gradle' });

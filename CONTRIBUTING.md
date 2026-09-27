@@ -123,3 +123,48 @@ Review each conflict against the Kotlin template. Press `i` to mark an already s
 Documentation-only changes use a lighter CI path automatically. Changes to templates, code, dependencies, or CI still get full validation; see [CI behavior](docs/ci.md). Do not add skip-CI markers to documentation commits.
 
 For project-wide contributor expectations, see the [JHipster policies](https://www.jhipster.tech/policies/). Maintainers work on the project in their spare time; clear reproduction steps and focused PRs make reviews easier.
+
+- We recommend not committing directly to main, but always submit changes through PRs.
+- Before merging, try to get at least one review on the PR.
+- Add appropriate labels to issues and PRs that you create (if you have permission to do so).
+- Follow the project's [policies](https://www.jhipster.tech/policies/#-policies).
+- Follow the project's [Code of Conduct](https://github.com/jhipster/generator-jhipster/blob/main/CODE_OF_CONDUCT.md)
+  and be polite and helpful to users when answering questions/bug reports and when reviewing PRs.
+- We work on our free time so we have no obligation nor commitment. Work/life balance is important, so don't
+  feel tempted to put in all your free time fixing something.
+
+### Checking generated Kotlin
+
+Kotlin templates contain EJS, so lint the generated application rather than the
+raw template files. Install Node and the JDK version required by the generated
+application, then run:
+
+```sh
+npm ci
+npm run test:kotlin-lint -- --sample ng-default
+```
+
+This generates into `.kotlin-lint/ng-default`, runs the real formatter during
+normal generation, checks Kotlin without changing files, runs detekt on main
+sources, and verifies the generated Maven or Gradle lint tasks. Tool versions
+come from the generator catalogs. The existing policy permitting wildcard
+imports is preserved; detekt retains its main-source scope.
+
+Each stage keeps its log in `lint-logs` inside the generated application. Resume a
+failed stage without regenerating:
+
+```sh
+npm run test:kotlin-lint -- --sample ng-default --stage check
+npm run test:kotlin-lint -- --sample ng-default --stage detekt
+npm run test:kotlin-lint -- --sample ng-default --stage build
+```
+
+After changing templates, rerun `--stage generate` before repeating the checks.
+Use `--output /absolute/path` for a different scratch directory. Generate only
+into a disposable directory: generation uses `--force`. A failed check never
+formats files or creates a lint baseline. The Kotlin lint workflow covers Maven,
+Gradle, SQL, MongoDB, Cassandra, Couchbase, Neo4j, reactive APIs, and OAuth2.
+
+Within a generated application, use `npm run ktlint:check`, `npm run ktlint:format`,
+and `npm run detekt`. The cleanup history and validation checkpoints are recorded
+in [the Kotlin lint plan](docs/kotlin-lint-plan.md).

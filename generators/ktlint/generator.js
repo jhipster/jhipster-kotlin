@@ -59,7 +59,7 @@ export default class extends BaseApplicationGenerator {
                                 await pipeline(Readable.fromWeb(response.body), createWriteStream(ktlintFile));
                                 await chmod(ktlintFile, 0o755);
 
-                                const batResponse = await fetch(`${ktlintUrl}/${ktlintVersion}/ktlint.bat`);
+                                const batResponse = await fetch(`${ktlintUrl}${ktlintVersion}/ktlint.bat`);
                                 if (!batResponse.ok) {
                                     throw new Error(`Failed to download ktlint.bat: ${batResponse.statusText} (${batResponse.status})`);
                                 }
@@ -77,25 +77,24 @@ export default class extends BaseApplicationGenerator {
                     );
                 }
             },
-            async defaultTemplateTask({ control }) {
+            async defaultTemplateTask() {
                 if (!this.options.skipKtlintFormat) {
                     const destinationPath = this.destinationPath();
 
                     this.queueCommitTransformStream({
-                        name: 'commiting .editorconfig with ktlint configuration',
+                        name: 'committing .editorconfig with ktlint configuration',
                         filter: file => file.path.startsWith(destinationPath) && file.path.endsWith('.editorconfig'),
                     });
 
                     this.queueTransformStream(
                         {
-                            name: 'formating using ktlint',
+                            name: 'formatting using ktlint',
                             filter: file => filterKtlintTransformFiles(file) && file.path.startsWith(destinationPath),
                             refresh: false,
                         },
                         createKtlintTransform.call(this, {
                             ktlintExecutable: this.ktlintExecutable,
                             cwd: destinationPath,
-                            ignoreErrors: control.ignoreNeedlesError,
                         }),
                     );
                 }
@@ -119,18 +118,25 @@ export default class extends BaseApplicationGenerator {
 
     get [BaseApplicationGenerator.POST_WRITING]() {
         return this.asPostWritingTaskGroup({
-            editEditorconfigFile() {
-                this.editFile('.editorconfig', content =>
-                    content.includes('[*.{kt,kts}]')
-                        ? content
-                        : `${content}\n[*.{kt,kts}]\nindent_size = 4\nktlint_standard_no-wildcard-imports = disabled\n`,
-                );
+            editEditorconfigFile({ application }) {
+                // JHipster permits underscores in application package names.
+                const packageNameRule = application.packageName.includes('_') ? 'ktlint_standard_package-name = disabled\n' : '';
+                this.editFile('.editorconfig', content => {
+                    if (!content.includes('[*.{kt,kts}]')) {
+                        return `${content}\n[*.{kt,kts}]\nindent_size = 4\nktlint_standard_no-wildcard-imports = disabled\n${packageNameRule}`;
+                    }
+                    if (packageNameRule && !content.includes('ktlint_standard_package-name')) {
+                        return content.replace('[*.{kt,kts}]', `[*.{kt,kts}]\n${packageNameRule.trimEnd()}`);
+                    }
+                    return content;
+                });
             },
             async addNpmScript({ application }) {
                 const command = application.buildToolGradle ? './gradlew :ktlintFormat' : './mvnw ktlint:format';
                 this.packageJson.merge({
                     scripts: {
                         'ktlint:format': command,
+                        'ktlint:check': application.buildToolGradle ? './gradlew :ktlintCheck' : './mvnw ktlint:check',
                     },
                 });
             },
@@ -169,7 +175,7 @@ tasks.named('runKtlintFormatOverMainSourceSet').configure {
                             <goal>check</goal>
                         </goals>
                         <configuration>
-                            <failOnViolation>false</failOnViolation>
+                            <failOnViolation>true</failOnViolation>
                         </configuration>
                     </execution>
                 </executions>`;

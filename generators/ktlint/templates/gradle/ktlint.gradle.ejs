@@ -16,12 +16,20 @@
  See the License for the specific language governing permissions and
  limitations under the License.
 -%>
+// Keep ktlint's compiler dependencies independent of Spring's application BOM.
+configurations.named("ktlint") {
+    resolutionStrategy.eachDependency {
+        if (requested.group == "org.jetbrains.kotlin") {
+            useVersion(requested.version)
+        }
+    }
+}
+
 ktlint {
     //See more options: https://github.com/JLLeitschuh/ktlint-gradle#configuration
     version = "<%- javaDependencies['ktlint-cli'] %>"
-    ignoreFailures = true
+    ignoreFailures = false
     filter {
-        include("src/main/kotlin/**")
-        include("src/test/kotlin/**")
+        include("**/kotlin/**")
     }
 }

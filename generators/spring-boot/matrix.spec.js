@@ -63,6 +63,27 @@ describe('Matrix test of SubGenerator kotlin of kotlin JHipster blueprint', () =
                     .withMockedGenerators(['jhipster-kotlin:ktlint', 'jhipster-kotlin:detekt', 'jhipster:client', 'jhipster:languages']);
             });
 
+            it('does not generate package-only constants files', () => {
+                const constants = Object.keys(result.getStateSnapshot()).filter(file => file.endsWith('/config/Constants.kt'));
+                for (const file of constants) {
+                    expect(result.fs.read(file)).toContain('const val ');
+                }
+            });
+
+            if (config.searchEngine === 'couchbase') {
+                it('retries the Couchbase search response assertions', () => {
+                    const resources = Object.keys(result.getStateSnapshot()).filter(file => file.endsWith('ResourceIT.kt'));
+                    const searchTests = resources
+                        .map(file => result.fs.read(file))
+                        .filter(content => content.includes('ENTITY_SEARCH_API_URL'));
+                    expect(searchTests.length).toBeGreaterThan(0);
+                    for (const content of searchTests) {
+                        expect(content).toContain('await().pollInSameThread().atMost(1, TimeUnit.MINUTES).untilAsserted');
+                        expect(content).not.toContain('retryUntilNotEmpty');
+                    }
+                });
+            }
+
             it('should succeed', () => {
                 expect(result.getStateSnapshot()).toMatchSnapshot();
             });

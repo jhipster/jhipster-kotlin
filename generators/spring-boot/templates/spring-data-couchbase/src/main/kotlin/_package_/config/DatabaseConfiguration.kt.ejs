@@ -74,11 +74,11 @@ class DatabaseConfiguration(
     private val couchbaseConnectionDetails: CouchbaseConnectionDetails
 ) : AbstractCouchbaseConfiguration() {
 
-    private val CHANGELOG_COLLECTION = "changelog"
-    private val CHANGELOG_PATH = "config/couchmove/changelog"
-    private val DEFERRED_INDEX_BUILD_ATTEMPTS = 60
-    private val DEFERRED_INDEX_BUILD_INTERVAL = Duration.ofSeconds(2)
-    private val TYPE_KEY = "type"
+    private val changelogCollection = "changelog"
+    private val changelogPath = "config/couchmove/changelog"
+    private val deferredIndexBuildAttempts = 60
+    private val deferredIndexBuildInterval = Duration.ofSeconds(2)
+    private val typeKey = "type"
     private val log = LoggerFactory.getLogger(javaClass)
 
     <%_ if (reactive) { _%>
@@ -94,7 +94,7 @@ class DatabaseConfiguration(
             allowedPageableTypes.isAccessible = true
             val apt = allowedPageableTypes.get(QueryExecutionConverters::class) as Set<*>
             apt.plus(Flux::class)
-        } catch (e: Exception) {
+        } catch (e: ReflectiveOperationException) {
             e.printStackTrace()
         }
     }
@@ -145,7 +145,7 @@ class DatabaseConfiguration(
         log.debug("Configuring Couchmove")
         val bucket = cluster.bucket(bucketName)
         bucket.waitUntilReady(Duration.ofMinutes(1))
-        val collection = bucket.scope(getScopeName()).collection(CHANGELOG_COLLECTION)
+        val collection = bucket.scope(getScopeName()).collection(changelogCollection)
         val couchmove = Couchmove(collection, cluster, extractChangelog())
         couchmove.migrate()
         couchmove.buildN1qlDeferredIndexes(getScopeName())
@@ -161,7 +161,7 @@ class DatabaseConfiguration(
         val parameters = JsonObject.create().put("bucket", bucketName).put("scope", getScopeName())
         val deferredCollections = "SELECT DISTINCT RAW i.keyspace_id FROM system:indexes i " +
             "WHERE i.bucket_id = \$bucket AND i.scope_id = \$scope AND i.state = 'deferred'"
-        repeat(DEFERRED_INDEX_BUILD_ATTEMPTS) {
+        repeat(deferredIndexBuildAttempts) {
             val collections = cluster.query(deferredCollections, QueryOptions.queryOptions().parameters(parameters))
                 .rowsAs(String::class.java)
             if (collections.isEmpty()) {
@@ -180,7 +180,7 @@ class DatabaseConfiguration(
                     log.debug("Deferred index build for {} not accepted yet: {}", collection, e.message)
                 }
             }
-            Thread.sleep(DEFERRED_INDEX_BUILD_INTERVAL.toMillis())
+            Thread.sleep(deferredIndexBuildInterval.toMillis())
         }
         log.warn("Some N1QL indexes in scope {} are still deferred", getScopeName())
     }
@@ -196,12 +196,12 @@ class DatabaseConfiguration(
         try {
             val changelogDirectory = Files.createTempDirectory("couchmove-changelog")
             val resolver = PathMatchingResourcePatternResolver()
-            for (resource in resolver.getResources("classpath:$CHANGELOG_PATH/**")) {
+            for (resource in resolver.getResources("classpath:$changelogPath/**")) {
                 if (!resource.isReadable) {
                     continue
                 }
                 val url = resource.url.toString()
-                val relativePath = url.substring(url.lastIndexOf(CHANGELOG_PATH) + CHANGELOG_PATH.length + 1)
+                val relativePath = url.substring(url.lastIndexOf(changelogPath) + changelogPath.length + 1)
                 if (relativePath.isEmpty() || relativePath.endsWith("/")) {
                     continue
                 }
@@ -222,7 +222,7 @@ class DatabaseConfiguration(
         return couchmove
     }
 
-    override fun typeKey() = TYPE_KEY
+    override fun typeKey() = typeKey
 
     override protected fun getScopeName() = jHipsterProperties.database.couchbase.scopeName
 

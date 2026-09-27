@@ -6,31 +6,31 @@ import { OutOfOrder } from 'p-transform';
 
 import ktlintWorker from './ktlint-worker.js';
 
-export const filterKtlintTransformFiles = file => isFileStateModified(file) && !isFileStateDeleted(file) && extname(file.path) === '.kt';
+export const filterKtlintTransformFiles = file =>
+    isFileStateModified(file) && !isFileStateDeleted(file) && ['.kt', '.kts'].includes(extname(file.path));
 
-export const createKtlintTransform = function ({ ktlintExecutable, cwd, ignoreErrors } = {}) {
+export const createKtlintTransform = function ({ ktlintExecutable, cwd } = {}) {
     return new OutOfOrder(
         async file => {
             if (!filterKtlintTransformFiles(file)) {
                 return file;
             }
-            const { result, error, info } = await ktlintWorker({ ktlintExecutable, cwd, fileContents: file.contents.toString('utf8') });
-            if (result) {
+            const { result, error } = await ktlintWorker({
+                ktlintExecutable,
+                cwd,
+                filePath: file.path,
+                fileContents: file.contents.toString('utf8'),
+            });
+            if (result !== undefined) {
                 file.contents = Buffer.from(result);
             }
-            if (info) {
-                this?.log?.info?.(info.replaceAll('<stdin>', file.relative));
-            }
             if (error) {
-                if (!ignoreErrors) {
-                    throw new Error(error);
-                }
-                this?.log?.warn?.(error);
+                throw new Error(`ktlint failed for ${file.relative}: ${error}`);
             }
             return file;
         },
         {
-            concurrency: os.availableParallelism(),
+            concurrency: Math.min(4, os.availableParallelism()),
         },
     ).duplex();
 };

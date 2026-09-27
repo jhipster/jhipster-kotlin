@@ -102,6 +102,17 @@ export default class extends BaseApplicationGenerator {
                             return undefined;
                         }
 
+                        // Some microservices have no constants; a package-only Kotlin file fails ktlint.
+                        if (
+                            sourceFile.endsWith('config/Constants.java') &&
+                            !application.generateBuiltInUserEntity &&
+                            !['sql', 'mongodb', 'couchbase'].includes(application.databaseType) &&
+                            !application.generateUserManagement &&
+                            !application.authenticationTypeOauth2
+                        ) {
+                            return undefined;
+                        }
+
                         const prefix = ns in NAMESPACE_TO_TEMPLATE_PREFIX ? NAMESPACE_TO_TEMPLATE_PREFIX[ns] : ns.split(':').pop();
                         const kotlinSourceFile = join(prefix, convertToKotlinFile(sourceFile));
                         const resolvedSourceFile = this.templatePath(kotlinSourceFile);

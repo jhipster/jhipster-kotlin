@@ -25,6 +25,14 @@ describe('SubGenerator detekt of kotlin JHipster blueprint', () => {
                 expect(result.getStateSnapshot()).toMatchSnapshot();
             });
 
+            it('should allow supported package names with underscores', () => {
+                const config = result.fs.read('detekt-config.yml');
+                const packagePattern = new RegExp(config.match(/packagePattern: '([^']+)'/)[1]);
+                expect(packagePattern.test('com.okta.developer.monolith_session')).toBe(true);
+                expect(packagePattern.test('tech.jhipster.sample')).toBe(true);
+                expect(packagePattern.test('com.invalid-name')).toBe(false);
+            });
+
             it('should match source calls', () => {
                 expect(result.sourceCallsArg).toMatchSnapshot();
             });
