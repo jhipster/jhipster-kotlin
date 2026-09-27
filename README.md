@@ -38,15 +38,16 @@ Available combinations depend on the bundled JHipster version. Use `khipster --h
 
 ## Documentation
 
-| I want to…                                             | Start here                                 |
-| ------------------------------------------------------ | ------------------------------------------ |
-| Install KHipster and run my first application          | [Getting started](docs/getting-started.md) |
-| Add entities, import JDL, or regenerate an application | [Generation guide](docs/generation.md)     |
-| Run the generator in a container                       | [Docker guide](docs/docker.md)             |
-| Fix a setup or generation problem                      | [Troubleshooting](docs/troubleshooting.md) |
-| Work on the generator or its templates                 | [Contributing](CONTRIBUTING.md)            |
-| Understand which CI jobs run for a change              | [CI guide](docs/ci.md)                     |
-| Read historical release notes                          | [Changelog](CHANGELOG.md)                  |
+| I want to…                                             | Start here                                     |
+| ------------------------------------------------------ | ---------------------------------------------- |
+| Install KHipster and run my first application          | [Getting started](docs/getting-started.md)     |
+| Check supported options and limitations                | [Supported options](docs/supported-options.md) |
+| Add entities, import JDL, or regenerate an application | [Generation guide](docs/generation.md)         |
+| Run the generator in a container                       | [Docker guide](docs/docker.md)                 |
+| Fix a setup or generation problem                      | [Troubleshooting](docs/troubleshooting.md)     |
+| Work on the generator or its templates                 | [Contributing](CONTRIBUTING.md)                |
+| Understand which CI jobs run for a change              | [CI guide](docs/ci.md)                         |
+| Read historical release notes                          | [Changelog](CHANGELOG.md)                      |
 
 For concepts shared with upstream, see the [JHipster documentation](https://www.jhipster.tech/), [JDL guide](https://www.jhipster.tech/jdl/), and [application creation guide](https://www.jhipster.tech/creating-an-app/).
 
