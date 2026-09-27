@@ -96,7 +96,7 @@ _%>
         <%_ } _%>
             log.debug("REST request to get all <%= entityClassPlural %>")
             <% if (viaService) { %>
-            return <%= entityInstance %>Service.findAll()<% if (reactive) { %>.collectList()<% } %>
+            return <%= entityInstance %>Service.findAll()<% if (reactive) { %>.asFlux().collectList()<% } %>
             <% } else if (dtoMapstruct) { %>
             val <%= entityInstancePlural %> = <%= entityInstance %>Repository.findAll()
                 <%_ if (reactive) { _%>
@@ -135,8 +135,8 @@ _%>
         <%_ } _%>
         log.debug("REST request to get a page of <%= entityClassPlural %>")
         <%_ if (reactive) { _%>
-        return <%= entityInstance %><%= viaService ? 'Service.countAll' : 'Repository.count' %>()
-            .zipWith(<%= entityInstance %><%= viaService ? 'Service.findAll' : 'Repository.findAllBy' %>(pageable)<%= reactiveEntityToDto %>.collectList())
+        return <% if (viaService) { %>mono { <%= entityInstance %>Service.countAll() }<% } else { %><%= entityInstance %>Repository.count()<% } %>
+            .zipWith(<%= entityInstance %><%= viaService ? 'Service.findAll' : 'Repository.findAllBy' %>(pageable)<%= reactiveEntityToDto %><% if (viaService && !jpaMetamodelFiltering) { %>.asFlux()<% } %>.collectList())
             .map {
                 ResponseEntity.ok().headers(
                     PaginationUtil.generatePaginationHttpHeaders(

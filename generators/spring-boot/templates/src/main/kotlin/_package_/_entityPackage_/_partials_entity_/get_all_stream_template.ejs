@@ -23,7 +23,7 @@ const reactiveSql = (databaseTypeSql && reactive);
 let toResponseEntityPrefix = '';
 let toResponseEntityPostfix = '';
 if (!paginationNo) {
-    if (reactiveSql) {
+    if (reactive) {
         toResponseEntityPostfix = '.map(ResponseEntity::ok)';
     } else {
         toResponseEntityPrefix = 'ResponseEntity(';
@@ -38,13 +38,16 @@ for (const relationship of relationships) {
         <% if(count > 1) { %>else <% } %>if ("<%= relationship.relationshipName.toLowerCase() %>-is-null".equals(filter)) {
             log.debug("REST request to get all <%= entityClass %>s where <%= relationship.relationshipName %> is null")
             <%_ if (viaService) { _%>
-            return <%- toResponseEntityPrefix %><%= entityInstance %>Service.findAllWhere<%= relationship.relationshipNameCapitalized %>IsNull()<% if (reactiveSql) { %>.collectList()<% } %><%= toResponseEntityPostfix %>
+            return <%- toResponseEntityPrefix %><%= entityInstance %>Service.findAllWhere<%= relationship.relationshipNameCapitalized %>IsNull()<% if (reactive) { %>.asFlux().collectList()<% } %><%= toResponseEntityPostfix %>
             <%_ } else { _%>
             return <%- toResponseEntityPrefix %><% if (reactiveSql) { %><%= entityInstance %>Repository.findAllWhere<%= relationship.relationshipNameCapitalized %>IsNull()<% if (dtoMapstruct) { %>.map(<%= entityToDtoReference %>)<% } %>.collectList()<%= toResponseEntityPostfix %>
                 <%_ } else { _%><%= entityInstance %>Repository.findAll()
+                <%_ if (!reactive) { _%>
                 .asSequence()
+                <%_ } _%>
                 .filter { it.<%= relationship.relationshipName %> == null }<% if (dtoMapstruct) { %>
-                .map(<%= entityToDtoReference %>)<% } if (!paginationNo) { %>
+                .map(<%= entityToDtoReference %>)<% } if (reactive) { %>
+                .collectList()<%= toResponseEntityPostfix %><% } else if (!paginationNo) { %>
                 .toMutableList(), HttpStatus.OK)<% } else { %>
                 .toMutableList()<% } %>
                 <%_ } } _%>

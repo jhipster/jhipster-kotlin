@@ -22,7 +22,7 @@ const entityToDtoReference = `${mapper}.toDto`; %>
 <%_ if (!viaService) { _%>
     <%_ if (reactive) { _%>
         return <%= entityInstance %><% if (searchEngineElasticsearch) { %>Search<% } %>Repository.search(query)<%_ if (dtoMapstruct) { %>
-            .map { <%= entityToDtoReference %>(it) }<%_ } %><%_ if (fromResource) { _%>.collectList()<%_ } _%>
+            .map { <%= entityToDtoReference %>(it) }<%_ } %><%_ if (fromResource) { _%>.collectList()<%_ } else { _%>.asFlow()<%_ } _%>
     <%_ } else { _%>
         <%_ if (searchEngineElasticsearch) { _%>
             return <%= entityInstance %>SearchRepository.search(query)
@@ -38,5 +38,5 @@ const entityToDtoReference = `${mapper}.toDto`; %>
             .toMutableList()
     <%_ } _%>
 <%_ } else { _%>
-        return <%= entityInstance %>Service.search(query)<% if (reactive && fromResource) { %>.collectList()<% } %>
+        return <%= entityInstance %>Service.search(query)<% if (reactive && fromResource) { %>.asFlux().collectList()<% } %>
 <%_ } _%>

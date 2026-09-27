@@ -21,8 +21,8 @@ package <%= entityAbsolutePackage %>.service
 const instanceType = restClass;
 const instanceName = restInstance;
 const optionalOrMono = (reactive) ? 'Mono' : 'Optional';
-const listOrFlux = (reactive) ? 'Flux' : 'MutableList';
-const pageOrFlux = (reactive) ? 'Flux' : 'Page';
+const listOrFlux = (reactive) ? 'Flow' : 'MutableList';
+const pageOrFlux = (reactive) ? 'Flow' : 'Page';
 _%>
 <%_ if (dtoMapstruct) { _%>
 import <%= entityAbsolutePackage %>.service.dto.<%= dtoClass %>
@@ -36,8 +36,7 @@ import org.springframework.data.domain.Page
 import org.springframework.data.domain.Pageable
 <%_ } _%>
 <%_ if (reactive) { _%>
-import reactor.core.publisher.Flux
-import reactor.core.publisher.Mono
+import kotlinx.coroutines.flow.Flow
 <%_ } _%>
 
 <%_ if (!reactive) { _%>
@@ -58,7 +57,7 @@ interface <%= entityClass %>Service {
      * @param <%= instanceName %> the entity to save.
      * @return the persisted entity.
      */
-    fun save(<%= instanceName %>: <%= instanceType %>): <% if (reactive) { %>Mono<<% } %><%= instanceType %><% if (reactive) { %>><% } %>
+    <% if (reactive) { %>suspend <% } %>fun save(<%= instanceName %>: <%= instanceType %>): <%= instanceType %>
 
     /**
      * Updates a <%= entityInstance %>.
@@ -66,7 +65,7 @@ interface <%= entityClass %>Service {
      * @param <%= instanceName %> the entity to update.
      * @return the persisted entity.
      */
-     fun update(<%= instanceName %>: <%= instanceType %>): <% if (reactive) { %>Mono<<% } %><%= instanceType %><% if (reactive) { %>><% } %>
+     <% if (reactive) { %>suspend <% } %>fun update(<%= instanceName %>: <%= instanceType %>): <%= instanceType %>
 
     /**
      * Partially updates a <%= entityInstance %>.
@@ -74,7 +73,7 @@ interface <%= entityClass %>Service {
      * @param <%= instanceName %> the entity to update partially.
      * @return the persisted entity.
      */
-    fun partialUpdate(<%= instanceName %>: <%= instanceType %>): <% if (reactive) { %>Mono<<% }else { %>Optional<<% } %><%= instanceType %>>
+    <% if (reactive) { %>suspend <% } %>fun partialUpdate(<%= instanceName %>: <%= instanceType %>): <% if (!reactive) { %>Optional<<% } %><%= instanceType %><% if (!reactive) { %>><% } else { %>?<% } %>
 
     /**
      * Get all the <%= entityInstancePlural %>.
@@ -106,14 +105,14 @@ interface <%= entityClass %>Service {
          * Returns the number of <%= entityInstancePlural %> available.
          * @return the number of entities in the database.
          */
-        fun countAll(): Mono<Long>
+        suspend fun countAll(): Long
         <%_ if (searchEngineElasticsearch) { _%>
 
         /**
         * Returns the number of <%= entityInstancePlural %> available in search repository.
         *
         */
-        fun searchCount(): Mono<Long>
+        suspend fun searchCount(): Long
         <%_  } _%>
     <%_  } _%>
     /**
@@ -122,7 +121,7 @@ interface <%= entityClass %>Service {
      * @param id the id of the entity.
      * @return the entity.
      */
-    fun findOne(id: <%= primaryKey.type %>): <%= optionalOrMono %><<%= instanceType %>>
+    <% if (reactive) { %>suspend <% } %>fun findOne(id: <%= primaryKey.type %>): <% if (!reactive) { %>Optional<<% } %><%= instanceType %><% if (!reactive) { %>><% } else { %>?<% } %>
 
     /**
      * Delete the "id" <%= entityInstance %>.
@@ -132,7 +131,7 @@ interface <%= entityClass %>Service {
      * @return a Mono to signal the deletion
 <%_ } _%>
      */
-    fun delete(id: <%= primaryKey.type %>)<% if (reactive) { %>: Mono<Void> <% } %>
+    <% if (reactive) { %>suspend <% } %>fun delete(id: <%= primaryKey.type %>)
 <%_ if (searchEngine) { _%>
     /**
      * Search for the <%= entityInstance %> corresponding to the query.

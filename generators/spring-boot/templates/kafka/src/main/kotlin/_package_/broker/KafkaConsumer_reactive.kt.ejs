@@ -18,9 +18,10 @@
 -%>
 package <%= packageName %>.broker
 
+import kotlinx.coroutines.flow.Flow
+import kotlinx.coroutines.reactive.asFlow
 import org.slf4j.LoggerFactory
 import org.springframework.stereotype.Component
-import reactor.core.publisher.Flux
 import reactor.core.publisher.Sinks
 import java.util.function.Consumer
 
@@ -29,7 +30,7 @@ class KafkaConsumer : Consumer<String> {
 
     private val sink: Sinks.Many<String> = Sinks.many().unicast().onBackpressureBuffer()
 
-    fun getFlux(): Flux<String> = sink.asFlux()
+    fun getFlow(): Flow<String> = sink.asFlux().asFlow()
 
     override fun accept(input: String) {
         log.debug("Got message from kafka stream: {}", input)

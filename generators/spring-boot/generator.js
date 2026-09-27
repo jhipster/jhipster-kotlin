@@ -131,19 +131,8 @@ export default class extends BaseApplicationGenerator {
                             };
                         }
 
-                        if (resolvedSourceFile.includes('.kt')) {
-                            if (resolvedSourceFile.includes('src/test/')) {
-                                // Ignore test files that are not converted to kotlin
-                                return undefined;
-                            }
-                        }
-
-                        return {
-                            ...file,
-                            javaResolvedSourceFile,
-                            resolvedSourceFile: javaResolvedSourceFile,
-                            destinationFile: convertToKotlinFile(destinationFile, false),
-                        };
+                        // Never generate Java files: ignore any unhandled Java template
+                        return undefined;
                     },
                 );
             },
@@ -386,8 +375,8 @@ describe('Auth JWT', () => {`,
                             .replace(
                                 '  beforeEach(() => {',
                                 `  beforeAll(() => {
-    Object.defineProperty(window, 'localStorage', { value: window.localStorage ?? createStorage() });
-    Object.defineProperty(window, 'sessionStorage', { value: window.sessionStorage ?? createStorage() });
+    Object.defineProperty(window, 'localStorage', { value: createStorage() });
+    Object.defineProperty(window, 'sessionStorage', { value: createStorage() });
   });
 
   beforeEach(() => {`,

@@ -29,7 +29,8 @@ import org.springframework.security.oauth2.core.oidc.user.OidcUser
 import org.springframework.web.bind.annotation.PostMapping
 import org.springframework.web.bind.annotation.RestController
 import org.springframework.web.server.WebSession
-import reactor.core.publisher.Mono
+import kotlinx.coroutines.reactor.awaitSingle
+import kotlinx.coroutines.reactor.awaitSingleOrNull
 
 /**
  * REST controller for managing global OIDC logout.
@@ -47,19 +48,18 @@ class LogoutResource(private val registrationRepository: ReactiveClientRegistrat
      * @return status `200 (OK)` and a body with a global logout URL.
      */
     @PostMapping("/api/logout")
-    fun logout(
+    suspend fun logout(
         @CurrentSecurityContext(expression = "authentication") oAuth2AuthenticationToken: OAuth2AuthenticationToken,
         @AuthenticationPrincipal oidcUser: OidcUser,
         request: ServerHttpRequest,
         session: WebSession,
-    ): Mono<Map<String, String>> =
-        session
-            .invalidate()
-            .then(
-                registrationRepository
-                    .findByRegistrationId(oAuth2AuthenticationToken.authorizedClientRegistrationId)
-                    .map { oidc -> prepareLogoutUri(request, oidc, oidcUser.idToken) },
-            )
+    ): Map<String, String> {
+        session.invalidate().awaitSingleOrNull()
+        val oidc = registrationRepository
+            .findByRegistrationId(oAuth2AuthenticationToken.authorizedClientRegistrationId)
+            .awaitSingle()
+        return prepareLogoutUri(request, oidc, oidcUser.idToken)
+    }
 
     private fun prepareLogoutUri(request: ServerHttpRequest, clientRegistration: ClientRegistration, idToken: OidcIdToken): Map<String, String> {
         val logoutUrl = StringBuilder()

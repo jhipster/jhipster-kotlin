@@ -28,17 +28,19 @@ for (const relationship of relationships) { if (relationship.relationshipOneToOn
      *  @return the list of entities.
      */<% if (databaseTypeSql) { %>
     @Transactional(readOnly = true) <% } %>
-    <% if (serviceImpl) { %>override <% } %>fun findAllWhere<%= relationship.relationshipNameCapitalized %>IsNull(): <%= reactiveSql ? 'Flux' : 'MutableList' %><<%= instanceType %>> {
+    <% if (serviceImpl) { %>override <% } %>fun findAllWhere<%= relationship.relationshipNameCapitalized %>IsNull(): <%= reactive ? 'Flow' : 'MutableList' %><<%= instanceType %>> {
         log.debug("Request to get all <%= entityInstancePlural %> where <%= relationship.relationshipNameCapitalized %> is null")
         <%_ if (reactiveSql) { _%>
         return <%= entityInstance %>Repository.findAllWhere<%= relationship.relationshipNameCapitalized %>IsNull()<% if (dtoMapstruct) { _%>
-             .map(<%= entityToDtoReference %>)<%_ } _%>
+             .map { <%= entityToDtoReference %> }<%_ } _%>.asFlow()
         <%_ } else { _%>
         return <%= entityInstance %>Repository.findAll()
             .filter { it.<%= relationship.relationshipName %> == null }
             <%_ if (dtoMapstruct) { _%>
             .map { <%= entityToDtoReference %> }
-            <%_ } if (!reactiveSql) { _%>
+            <%_ } if (reactive) { _%>
+            .asFlow()
+            <%_ } else { _%>
             .toMutableList()
             <%_ } _%>
         <%_ } _%>
