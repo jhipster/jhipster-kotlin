@@ -418,7 +418,7 @@ class UserService<% if (!databaseTypeNo) { %>(
             authorities = userDTO.authorities?.let { authorities ->
                 authorities.map { authorityRepository.findById(it) }
                         .filter { it.isPresent }
-                        .mapTo(mutableSetOf()) { it.get() }
+                        .mapTo(mutableSetOf()) { it.orElseThrow() }
             } ?: mutableSetOf()
             <%_ } else { _%>
             authorities = userDTO.authorities?.toMutableSet() ?: mutableSetOf()
@@ -452,7 +452,7 @@ class UserService<% if (!databaseTypeNo) { %>(
         <%_ } else { _%>
         return Optional.of(userRepository.findById(userDTO.id!!))
             .filter(Optional<<%= user.persistClass %>>::isPresent)
-            .map { it.get() }
+            .map { it.orElseThrow() }
             .map { user ->
         <%_ } _%>
                 <%_ if (databaseTypeCouchbase) { _%>
@@ -512,7 +512,7 @@ class UserService<% if (!databaseTypeNo) { %>(
                     this.asSequence()
                         .map { authorityRepository.findById(it) }
                         .filter { it.isPresent }
-                        .mapTo(managedAuthorities) { it.get() }
+                        .mapTo(managedAuthorities) { it.orElseThrow() }
                 }
                 <%_ } _%>
                 <%_ if (databaseTypeMongodb || databaseTypeNeo4j || databaseTypeCouchbase || databaseTypeCassandra) { _%>
@@ -878,7 +878,7 @@ class UserService<% if (!databaseTypeNo) { %>(
         if (existingUser.isPresent) {
             // if IdP sends last updated information, use it to determine if an update should happen
             if (details["updated_at"] != null) {
-                val dbModifiedDate = existingUser.get().lastModifiedDate
+                val dbModifiedDate = existingUser.orElseThrow().lastModifiedDate
                 val idpModifiedDate: Instant = if (details["updated_at"] is Instant) details["updated_at"] as Instant else Instant.ofEpochSecond(details["updated_at"] as Long)
                 if (idpModifiedDate.isAfter(dbModifiedDate)) {
                     log.debug("Updating user '${user.login}' in local database")
