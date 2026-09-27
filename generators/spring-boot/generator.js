@@ -131,19 +131,8 @@ export default class extends BaseApplicationGenerator {
                             };
                         }
 
-                        if (resolvedSourceFile.includes('.kt')) {
-                            if (resolvedSourceFile.includes('src/test/')) {
-                                // Ignore test files that are not converted to kotlin
-                                return undefined;
-                            }
-                        }
-
-                        return {
-                            ...file,
-                            javaResolvedSourceFile,
-                            resolvedSourceFile: javaResolvedSourceFile,
-                            destinationFile: convertToKotlinFile(destinationFile, false),
-                        };
+                        // Never generate Java files: ignore any unhandled Java template
+                        return undefined;
                     },
                 );
             },
