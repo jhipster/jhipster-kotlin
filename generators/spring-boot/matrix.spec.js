@@ -87,6 +87,11 @@ describe('Matrix test of SubGenerator kotlin of kotlin JHipster blueprint', () =
             it('should succeed', () => {
                 expect(result.getStateSnapshot()).toMatchSnapshot();
             });
+
+            it('should not generate any .java files', () => {
+                const javaFiles = Object.keys(result.getStateSnapshot()).filter(file => file.endsWith('.java'));
+                expect(javaFiles).toEqual([]);
+            });
         });
     });
 });
