@@ -85,7 +85,7 @@ export default class extends BaseApplicationGenerator {
                                     <arg value="--input"/>
                                     <arg value="\${project.basedir}/src/main/kotlin"/>
                                     <arg value="--report"/>
-                                    <arg value="xml:\${detekt.xmlReportFile}"/>
+                                    <arg value="checkstyle:\${detekt.xmlReportFile}"/>
                                     <arg value="--config"/>
                                     <arg value="\${detekt.configFile}"/>
                                 </java>
