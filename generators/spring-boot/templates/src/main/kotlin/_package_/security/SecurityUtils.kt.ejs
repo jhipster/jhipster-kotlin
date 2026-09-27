@@ -29,6 +29,7 @@ import org.springframework.security.core.authority.SimpleGrantedAuthority
 <%_ if (reactive) { _%>
 import org.springframework.security.core.context.ReactiveSecurityContextHolder
 import org.springframework.security.core.context.SecurityContext
+import kotlinx.coroutines.reactor.awaitSingleOrNull
 <%_ } _%>
 <%_ if (!reactive) { _%>
 import org.springframework.security.core.context.SecurityContextHolder
@@ -44,16 +45,11 @@ import org.springframework.security.oauth2.server.resource.authentication.JwtAut
 <%_ if (authenticationTypeOauth2) { _%>
 import java.util.*
 import java.util.stream.Collectors
-  <%_ if (reactive) { _%>
-import reactor.core.publisher.Mono
-  <%_ } else { _%>
+  <%_ if (!reactive) { _%>
 import java.util.stream.Stream
   <%_ } _%>
 <%_ } else { _%>
-  <%_ if (reactive) { _%>
-import reactor.core.publisher.Mono
-import java.util.Arrays
-  <%_ } else { _%>
+  <%_ if (!reactive) { _%>
 import java.util.Arrays
 import java.util.Optional
 import java.util.stream.Stream
@@ -79,11 +75,12 @@ const val USER_ID_CLAIM = "userId"
  *
  * @return the login of the current user.
  */
-fun getCurrentUserLogin(): <% if (reactive) { %>Mono<% } else { %>Optional<% } %><String> =
+<% if (reactive) { %>suspend <% } %>fun getCurrentUserLogin(): <% if (!reactive) { %>Optional<% } %><String<% if (reactive) { %>?<% } %>> =
     <%_ if (reactive) { _%>
     ReactiveSecurityContextHolder.getContext()
         .mapNotNull { it.authentication }
-        .flatMap { Mono.justOrEmpty(extractPrincipal(it)) }
+        .map { extractPrincipal(it) }
+        .awaitSingleOrNull()
     <%_ } else { _%>
     Optional.ofNullable(extractPrincipal(SecurityContextHolder.getContext().authentication))
     <%_ } _%>
@@ -126,14 +123,16 @@ fun extractPrincipal(authentication: Authentication?): String? {
  *
  * @return the JWT of the current user.
  */
-fun getCurrentUserJWT(): <% if (reactive) { %>Mono<% } else { %>Optional<% } %><String> =
+<% if (reactive) { %>suspend <% } %>fun getCurrentUserJWT(): <% if (!reactive) { %>Optional<% } %><String<% if (reactive) { %>?<% } %>> =
     <%_ if (reactive) { _%>
     ReactiveSecurityContextHolder.getContext()
         .mapNotNull { it.authentication }
+        .map { extractCredentials(it) }
+        .awaitSingleOrNull()
     <%_ } else { _%>
     Optional.ofNullable(SecurityContextHolder.getContext().authentication)
+        .map { extractCredentials(it) }
     <%_ } _%>
-        .<%= reactive ? 'mapNotNull' : 'map' %> { extractCredentials(it) }
 
 private fun extractCredentials(authentication: Authentication): String? =
     when (val credentials = authentication.credentials) {
@@ -148,7 +147,7 @@ private fun extractCredentials(authentication: Authentication): String? =
  *
  * @return true if the user is authenticated, false otherwise.
  */
-fun isAuthenticated(): <% if (reactive) { %>Mono<Boolean><% } else { %>Boolean<% } %> {
+<% if (reactive) { %>suspend <% } %>fun isAuthenticated(): Boolean {
     <%_ if (reactive) { _%>
     return ReactiveSecurityContextHolder.getContext()
         .mapNotNull { it.authentication }
@@ -158,6 +157,7 @@ fun isAuthenticated(): <% if (reactive) { %>Mono<Boolean><% } else { %>Boolean<%
             .map(GrantedAuthority::getAuthority)
             .none { it == ANONYMOUS }
         }
+        .awaitSingleOrNull() ?: false
     <%_ } else { _%>
     val authentication = SecurityContextHolder.getContext().authentication
 
@@ -179,7 +179,7 @@ fun isAuthenticated(): <% if (reactive) { %>Mono<Boolean><% } else { %>Boolean<%
 * @param authorities the authorities to check.
 * @return true if the current user has any of the authorities, false otherwise.
 */
-fun hasCurrentUserAnyOfAuthorities(vararg authorities: String): <% if (reactive) { %>Mono<Boolean><% } else { %>Boolean<% } %> {
+<% if (reactive) { %>suspend <% } %>fun hasCurrentUserAnyOfAuthorities(vararg authorities: String): Boolean {
 <%_ if (reactive) { _%>
 return ReactiveSecurityContextHolder.getContext()
     .mapNotNull { it.authentication }
@@ -189,6 +189,7 @@ return ReactiveSecurityContextHolder.getContext()
         .map(GrantedAuthority::getAuthority)
         .any { authorities.contains(it) }
     }
+    .awaitSingleOrNull() ?: false
 <%_ } else { _%>
 val authentication = SecurityContextHolder.getContext().authentication
 return authentication != null && getAuthorities(authentication)?.any { authorities.contains(it) } ?: false
@@ -201,9 +202,9 @@ return authentication != null && getAuthorities(authentication)?.any { authoriti
 * @param authorities the authorities to check.
 * @return true if the current user has none of the authorities, false otherwise.
 */
-fun hasCurrentUserNoneOfAuthorities(vararg authorities: String): <% if (reactive) { %>Mono<Boolean><% } else { %>Boolean<% } %> {
+<% if (reactive) { %>suspend <% } %>fun hasCurrentUserNoneOfAuthorities(vararg authorities: String): Boolean {
 <%_ if (reactive) { _%>
-    return hasCurrentUserAnyOfAuthorities(*authorities).map { !it }
+    return !hasCurrentUserAnyOfAuthorities(*authorities)
 <%_ } else { _%>
     return !hasCurrentUserAnyOfAuthorities(*authorities)
 <%_ } _%>
@@ -215,7 +216,7 @@ fun hasCurrentUserNoneOfAuthorities(vararg authorities: String): <% if (reactive
 * @param authority the authority to check.
 * @return true if the current user has the authority, false otherwise.
 */
-fun hasCurrentUserThisAuthority(authority: String): <% if (reactive) { %>Mono<Boolean><% } else { %>Boolean<% } %> {
+<% if (reactive) { %>suspend <% } %>fun hasCurrentUserThisAuthority(authority: String): Boolean {
    return hasCurrentUserAnyOfAuthorities(authority)
 }
 
@@ -254,4 +255,5 @@ fun getAuthorities(authentication: Authentication): List<String>? {
             .filter { it.startsWith("ROLE_") }
             .map { SimpleGrantedAuthority(it) }
     }
+
 <%_ } _%>

@@ -147,6 +147,28 @@ export default class extends BaseApplicationGenerator {
                                 addToBuild: true,
                             });
                         }
+                        if (application.reactive) {
+                            source.addGradleDependency({
+                                libraryName: 'kotlinx-coroutines-core',
+                                scope: 'implementation',
+                            });
+                            source.addGradleDependency({
+                                libraryName: 'kotlinx-coroutines-reactor',
+                                scope: 'implementation',
+                            });
+                            source.addGradleDependency({
+                                libraryName: 'reactor-kotlin-extensions',
+                                scope: 'implementation',
+                            });
+                            source.addGradleDependency({
+                                libraryName: 'kotlinx-coroutines-debug',
+                                scope: 'implementation',
+                            });
+                            source.addGradleDependency({
+                                libraryName: 'kotlinx-coroutines-test',
+                                scope: 'testImplementation',
+                            });
+                        }
                     }
 
                     if (application.enableSwaggerCodegen) {
@@ -194,9 +216,11 @@ tasks.withType(org.jetbrains.kotlin.gradle.internal.KaptGenerateStubsTask.class)
                     if (application.reactive) {
                         source.addJavaDefinition({
                             dependencies: [
+                                { groupId: 'org.jetbrains.kotlinx', artifactId: 'kotlinx-coroutines-core' },
                                 { groupId: 'org.jetbrains.kotlinx', artifactId: 'kotlinx-coroutines-debug' },
                                 { groupId: 'org.jetbrains.kotlinx', artifactId: 'kotlinx-coroutines-reactor' },
                                 { groupId: 'io.projectreactor.kotlin', artifactId: 'reactor-kotlin-extensions' },
+                                { groupId: 'org.jetbrains.kotlinx', artifactId: 'kotlinx-coroutines-test', scope: 'test' },
                             ],
                         });
                     }
