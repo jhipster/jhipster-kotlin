@@ -78,6 +78,7 @@ import org.springframework.stereotype.Service
 import org.springframework.transaction.annotation.Transactional
 <%_ } _%>
 <%_ if (reactive) { _%>
+import kotlinx.coroutines.reactor.mono
 import reactor.core.publisher.Flux
 import reactor.core.publisher.Mono
 import reactor.core.scheduler.Schedulers
@@ -579,7 +580,7 @@ class UserService<% if (!databaseTypeNo) { %>(
     @Transactional
     <%_ } _%>
     fun updateUser(firstName: String?, lastName: String?, email: String?, langKey: String?<% if (databaseTypeSql || databaseTypeMongodb || databaseTypeCouchbase || databaseTypeNeo4j) { %>, imageUrl: String?<% } %>) <% if (reactive) { %>: Mono<Void><% } %> {
-        <% if (reactive) { %>return <% } %>getCurrentUserLogin()
+        <% if (reactive) { %>return mono { getCurrentUserLogin() }<% } else { %>getCurrentUserLogin()<% } %>
             .flatMap(userRepository::findOneByLogin)
             .<% if (reactive) { %>flatMap<% } else { %>ifPresent<% } %>{
 
@@ -630,7 +631,7 @@ class UserService<% if (!databaseTypeNo) { %>(
             <%_ if (databaseTypeCassandra) { _%>
             return userRepository.save(user)
             <%_ } else { _%>
-            return getCurrentUserLogin()
+            return mono { getCurrentUserLogin() }
                 .switchIfEmpty(Mono.just(SYSTEM_ACCOUNT))
                 .flatMap{ login ->
                     if (user.createdBy == null) {
@@ -664,7 +665,7 @@ class UserService<% if (!databaseTypeNo) { %>(
     @Transactional
     <%_ } _%>
     fun changePassword(currentClearTextPassword: String, newPassword: String)<% if (reactive) { %>: Mono<Void><% } %> {
-        <% if (reactive) { %>return <% } %>getCurrentUserLogin()
+        <% if (reactive) { %>return mono { getCurrentUserLogin() }<% } else { %>getCurrentUserLogin()<% } %>
             .flatMap(userRepository::findOneByLogin)
             <%_ if (reactive) { _%>
                 .publishOn(Schedulers.boundedElastic())
@@ -741,7 +742,7 @@ class UserService<% if (!databaseTypeNo) { %>(
     @Transactional(readOnly = true)
         <%_ } _%>
     fun getUserWithAuthorities(): <% if (reactive) { %>Mono<% } else { %>Optional<% } %><<%= user.persistClass %>> =
-        getCurrentUserLogin().flatMap(userRepository::findOne<% if (databaseTypeSql) { %>WithAuthorities<% } %>ByLogin)
+        <% if (reactive) { %>mono { getCurrentUserLogin() }<% } else { %>getCurrentUserLogin()<% } %>.flatMap(userRepository::findOne<% if (databaseTypeSql) { %>WithAuthorities<% } %>ByLogin)
     <%_ } _%>
     <%_ if ((databaseTypeSql || databaseTypeMongodb || databaseTypeNeo4j || databaseTypeCouchbase) && authenticationTypeSession && !reactive) { _%>
 

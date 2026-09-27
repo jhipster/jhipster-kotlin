@@ -75,11 +75,11 @@ const val USER_ID_CLAIM = "userId"
  *
  * @return the login of the current user.
  */
-<% if (reactive) { %>suspend <% } %>fun getCurrentUserLogin(): <% if (!reactive) { %>Optional<% } %><String<% if (reactive) { %>?<% } else { %>><% } %> =
+<% if (reactive) { %>suspend <% } %>fun getCurrentUserLogin(): <%- reactive ? "String?" : "Optional<String>" %> =
     <%_ if (reactive) { _%>
     ReactiveSecurityContextHolder.getContext()
         .mapNotNull { it.authentication }
-        .map { extractPrincipal(it) }
+        .mapNotNull { extractPrincipal(it) }
         .awaitSingleOrNull()
     <%_ } else { _%>
     Optional.ofNullable(extractPrincipal(SecurityContextHolder.getContext().authentication))
@@ -123,11 +123,11 @@ fun extractPrincipal(authentication: Authentication?): String? {
  *
  * @return the JWT of the current user.
  */
-<% if (reactive) { %>suspend <% } %>fun getCurrentUserJWT(): <% if (!reactive) { %>Optional<% } %><String<% if (reactive) { %>?<% } else { %>><% } %> =
+<% if (reactive) { %>suspend <% } %>fun getCurrentUserJWT(): <%- reactive ? "String?" : "Optional<String>" %> =
     <%_ if (reactive) { _%>
     ReactiveSecurityContextHolder.getContext()
         .mapNotNull { it.authentication }
-        .map { extractCredentials(it) }
+        .mapNotNull { extractCredentials(it) }
         .awaitSingleOrNull()
     <%_ } else { _%>
     Optional.ofNullable(SecurityContextHolder.getContext().authentication)

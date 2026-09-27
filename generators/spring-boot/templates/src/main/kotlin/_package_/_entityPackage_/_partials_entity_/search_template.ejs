@@ -31,12 +31,12 @@ if (paginationNo) { %>
         log.debug("REST request to search for a page of <%= entityClassPlural %> for query $query")
 
     <%_ if (reactive) { _%>
-        return <%= entityInstance %><%= viaService ?
+        return <% if (viaService) { %>mono { <% } %><%= entityInstance %><%= viaService ?
                 'Service.' + (searchEngineElasticsearch ? 'searchCount' : 'countAll') :
-                (searchEngineElasticsearch ? 'Search' : '') + 'Repository.count' %>()
+                (searchEngineElasticsearch ? 'Search' : '') + 'Repository.count' %>()<% if (viaService) { %> }<% } %>
                 .map { PageImpl<<%= instanceType %>>(listOf(), pageable, it) }
                 .map { PaginationUtil.generatePaginationHttpHeaders(ForwardedHeaderUtils.adaptFromForwardedHeaders(request.uri, request.headers), it) }
-                .map { ResponseEntity.ok().headers(it).body(<%= entityInstance %><%= viaService ? 'Service' : (searchEngineElasticsearch ? 'Search' : '') + 'Repository' %>.search(query, pageable)<% if (!viaService && dtoMapstruct) { %>.map(<%= entityToDtoReference %>)<% } %>) }
+                .map { ResponseEntity.ok().headers(it).body(<%= entityInstance %><%= viaService ? 'Service' : (searchEngineElasticsearch ? 'Search' : '') + 'Repository' %>.search(query, pageable)<% if (viaService) { %>.asFlux()<% } %><% if (!viaService && dtoMapstruct) { %>.map(<%= entityToDtoReference %>)<% } %>) }
     <%_ } else { _%>
         <%_ if (viaService) { _%>
 

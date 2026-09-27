@@ -61,6 +61,8 @@ import org.springframework.transaction.annotation.Transactional
 <%_ } _%>
 <%_ if (reactive) { _%>
 import kotlinx.coroutines.flow.Flow
+import kotlinx.coroutines.reactive.asFlow
+import reactor.core.publisher.Mono
 import kotlinx.coroutines.flow.map
 import kotlinx.coroutines.reactor.awaitSingle
 import kotlinx.coroutines.reactor.awaitSingleOrNull
@@ -156,10 +158,10 @@ class <%= serviceClassName %>(
         log.debug("Request to get all <%= entityClassPlural %>")
         <%_ if (paginationNo) { _%>
         return <%= entityInstance %>Repository.findAll()<% if (dtoMapstruct) { %><% if (reactive !== true) { %>
-            .mapTo(mutableListOf(), <%= entityToDtoReference %>)<% } else { %>.map(<%= entityToDtoReference %> )<% } %><% } %>
+            .mapTo(mutableListOf(), <%= entityToDtoReference %>)<% } else { %>.map(<%= entityToDtoReference %> )<% } %><% } %><% if (reactive) { %>.asFlow()<% } %>
         <%_ } else { _%>
         return <%= entityInstance %>Repository.findAll<% if (reactive) { %>By<% } %>(pageable)<% if (dtoMapstruct) { %>
-            .map(<%= entityToDtoReference %>)<% } %>
+            .map(<%= entityToDtoReference %>)<% } %><% if (reactive) { %>.asFlow()<% } %>
         <%_ } _%>
     }
 
@@ -173,7 +175,7 @@ class <%= serviceClassName %>(
      */
         <%_ } _%>
     <% if (serviceImpl) { %>override <% } %>fun findAllWithEagerRelationships(pageable: Pageable) =
-        <%= entityInstance %>Repository.findAllWithEagerRelationships(pageable)<% if (!dtoMapstruct) { %><% } else { %>.map(<%= entityToDtoReference %>)<% } %>
+        <%= entityInstance %>Repository.findAllWithEagerRelationships(pageable)<% if (!dtoMapstruct) { %><% } else { %>.map(<%= entityToDtoReference %>)<% } %><% if (reactive) { %>.asFlow()<% } %>
 
     <%_ } _%>
 <%- include('../../_partials_entity_/get_filtered_template'); -%>
@@ -248,7 +250,7 @@ class <%= serviceClassName %>(
         log.debug("Request to search <%= entityClassPlural %> for query $query")<%- include('../../_partials_entity_/search_stream_template', {viaService: false, fromResource: false}); -%>
         <%_ } else { _%>
         log.debug("Request to search for a page of <%= entityClassPlural %> for query $query")
-        return <%= entityInstance %><% if (searchEngineElasticsearch) { %>Search<% } %>Repository.search(query, pageable)<%_ if (!dtoMapstruct) { _%><% } else { %>.map(<%= entityToDtoReference %>)<% } %>
+        return <%= entityInstance %><% if (searchEngineElasticsearch) { %>Search<% } %>Repository.search(query, pageable)<%_ if (!dtoMapstruct) { _%><% } else { %>.map(<%= entityToDtoReference %>)<% } %><% if (reactive) { %>.asFlow()<% } %>
         <%_ } _%>
     }
     <%_ } _%>

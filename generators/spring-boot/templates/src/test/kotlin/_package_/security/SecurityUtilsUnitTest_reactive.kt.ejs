@@ -21,6 +21,7 @@ package <%= packageName %>.security
 import kotlinx.coroutines.reactor.ReactorContext
 import kotlinx.coroutines.test.runTest
 import org.junit.jupiter.api.Test
+import org.springframework.security.authentication.AnonymousAuthenticationToken
 import org.springframework.security.authentication.UsernamePasswordAuthenticationToken
 import org.springframework.security.core.authority.SimpleGrantedAuthority
 import org.springframework.security.core.context.ReactiveSecurityContextHolder
@@ -64,7 +65,27 @@ class SecurityUtilsUnitTest {
             assertThat(login).isEqualTo("admin")
         }
     }
+
+    @Test
+    fun testGetCurrentUserLoginWithoutSecurityContext() = runTest {
+        assertThat(getCurrentUserLogin()).isNull()
+    }
+
+    @Test
+    fun testGetCurrentUserLoginForAnonymousAuthentication() = runTest {
+        val authentication = AnonymousAuthenticationToken("key", "anonymousUser", listOf(SimpleGrantedAuthority(ANONYMOUS)))
+        withSecurityContext(authentication) {
+            assertThat(getCurrentUserLogin()).isNull()
+        }
+    }
     <%_ if (authenticationTypeJwt) { _%>
+
+    @Test
+    fun testGetCurrentUserJWTWithoutCredentials() = runTest {
+        withSecurityContext(UsernamePasswordAuthenticationToken("admin", null)) {
+            assertThat(getCurrentUserJWT()).isNull()
+        }
+    }
 
     @Test
     fun testGetCurrentUserJWT() = runTest {

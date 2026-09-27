@@ -87,6 +87,9 @@ import org.springframework.web.bind.annotation.*
 <%_ if (reactive) { _%>
 import org.springframework.web.server.ResponseStatusException
 import kotlinx.coroutines.flow.Flow
+import kotlinx.coroutines.reactive.asFlow
+import kotlinx.coroutines.reactor.asFlux
+import kotlinx.coroutines.reactor.mono
 import kotlinx.coroutines.flow.toList
 import kotlinx.coroutines.reactor.awaitSingle
 import kotlinx.coroutines.reactor.awaitSingleOrNull
@@ -350,7 +353,7 @@ _%><%- include('../../_partials_entity_/inject_template', {viaService: viaServic
         <%_ } _%>
 <%- include('../../_partials_entity_/patch_template', {isService: false, viaService: viaService}); -%>
             <%_ if (reactive) { _%>
-        val entity = result.awaitSingleOrNull()
+        val entity = result<% if (!viaService) { %>.awaitSingleOrNull()<% } %>
         return if (entity != null) {
             ResponseEntity.ok()
                 .headers(HeaderUtil.createEntityUpdateAlert(applicationName, <%= enableTranslation %>, ENTITY_NAME, entity.<%= primaryKey.name %><% if (primaryKey.type !== 'String') { %>.toString()<% } %>))
@@ -404,7 +407,7 @@ _%><%- include('../../_partials_entity_/inject_template', {viaService: viaServic
         <%_ if (viaService) { _%>
         return <%= entityInstance %>Service.findAll()
         <%_ } else { _%>
-        return <%= entityInstance %>Repository.findAll()<%_ if (dtoMapstruct) { _%>.map(<%= entityToDtoReference %>)<%_ } _%>
+        return <%= entityInstance %>Repository.findAll()<%_ if (dtoMapstruct) { _%>.map(<%= entityToDtoReference %>)<%_ } _%>.asFlow()
         <%_ } _%>
     }
 
@@ -421,7 +424,11 @@ _%><%- include('../../_partials_entity_/inject_template', {viaService: viaServic
     <%_ } _%>
     <% if (reactive) { %>suspend <% } %>fun get<%= entityClass %>(@PathVariable id: <%= primaryKey.type %>): ResponseEntity<<%= instanceType %>> {
         log.debug("REST request to get <%= entityClass %> : $id")<%- include('../../_partials_entity_/get_template', {viaService, returnDirectly:false, implementsEagerLoadApis}); -%>
+        <%_ if (reactive) { _%>
+        return <%= instanceName %>?.let { ResponseEntity.ok(it) } ?: ResponseEntity.notFound().build()
+        <%_ } else { _%>
         return ResponseUtil.wrapOrNotFound(<%= instanceName %>)
+        <%_ } _%>
     }
 <%_ if (!readOnly) { _%>
     /**
@@ -434,7 +441,7 @@ _%><%- include('../../_partials_entity_/inject_template', {viaService: viaServic
     <% if (reactive) { %>suspend <% } %>fun delete<%= entityClass %>(@PathVariable id: <%= primaryKey.type %>): ResponseEntity<Void> {
         log.debug("REST request to delete <%= entityClass %> : $id")
 <%- include('../../_partials_entity_/delete_template', {viaService: viaService, fromResource: true}); -%>
-        <%_ if (reactive) { _%>
+        <%_ if (reactive && !viaService) { _%>
             .awaitSingleOrNull()
         <%_ } _%>
         return ResponseEntity.noContent()

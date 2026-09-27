@@ -66,6 +66,26 @@ describe('Matrix test of SubGenerator kotlin of kotlin JHipster blueprint', () =
             it('should succeed', () => {
                 expect(result.getStateSnapshot()).toMatchSnapshot();
             });
+
+            it('should generate valid security utility return types', () => {
+                const securityUtilsPath = Object.keys(result.getStateSnapshot()).find(path => path.endsWith('/security/SecurityUtils.kt'));
+                const securityUtils = result.fs.read(securityUtilsPath);
+                const prefix = config.reactive ? 'suspend ' : '';
+                const returnType = config.reactive ? 'String?' : 'Optional<String>';
+                expect(securityUtils).toContain(`${prefix}fun getCurrentUserLogin(): ${returnType} =`);
+                if (config.authenticationType === 'jwt') {
+                    expect(securityUtils).toContain(`${prefix}fun getCurrentUserJWT(): ${returnType} =`);
+                }
+                if (config.reactive) {
+                    const userServicePath = Object.keys(result.getStateSnapshot()).find(path => path.endsWith('/service/UserService.kt'));
+                    if (userServicePath) {
+                        const userService = result.fs.read(userServicePath);
+                        expect(userService).toContain('import kotlinx.coroutines.reactor.mono');
+                        expect(userService).not.toMatch(/getCurrentUserLogin\(\)\s*\./);
+                        expect(userService).toContain('mono { getCurrentUserLogin() }');
+                    }
+                }
+            });
         });
     });
 });
