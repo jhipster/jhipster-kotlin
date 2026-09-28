@@ -16,22 +16,14 @@
  See the License for the specific language governing permissions and
  limitations under the License.
 -%>
-import org.gradle.internal.os.OperatingSystem
-import org.gradle.api.tasks.JavaExec
-import org.gradle.testing.jacoco.tasks.JacocoReport
-import org.gradle.api.artifacts.VersionCatalogsExtension
-import org.jetbrains.kotlin.gradle.dsl.JvmTarget
-import org.jetbrains.kotlin.gradle.tasks.KotlinCompile
+@file:Suppress("UNCHECKED_CAST")
 
-buildscript {
-    repositories {
-        mavenCentral()
-        gradlePluginPortal()
-    }
-    dependencies {
-        classpath("org.jetbrains.kotlin:kotlin-gradle-plugin:<%- javaDependencies.kotlin %>")
-    }
-}
+import org.gradle.api.artifacts.VersionCatalogsExtension
+import org.gradle.api.provider.ListProperty
+import org.gradle.api.provider.Property
+import org.gradle.api.tasks.JavaExec
+import org.gradle.internal.os.OperatingSystem
+import org.gradle.testing.jacoco.tasks.JacocoReport
 
 val libs = project.extensions.getByType<VersionCatalogsExtension>().named("libs")
 
@@ -60,16 +52,18 @@ dependencies {
 }
 
 project.extensions.getByName("kapt").javaClass.methods
-    .single { it.name == "setCorrectErrorTypes" }
+    .first { it.name == "setCorrectErrorTypes" && it.parameterTypes.size == 1 }
     .invoke(project.extensions.getByName("kapt"), true)
 
-tasks.withType<KotlinCompile>().configureEach {
-    compilerOptions {
-        jvmTarget.set(JvmTarget.JVM_<%= javaVersion %>)
-        javaParameters.set(true)
-        freeCompilerArgs.add("-jvm-default=no-compatibility")
-    }
-}
+val kotlinExt = project.extensions.getByName("kotlin")
+val compilerOptions = kotlinExt.javaClass.methods.first { it.name == "getCompilerOptions" }.invoke(kotlinExt)
+val jvmTargetProp = compilerOptions.javaClass.methods.first { it.name == "getJvmTarget" }.invoke(compilerOptions) as Property<Any>
+val jvmTargetClass = jvmTargetProp.orNull?.javaClass
+    ?: Class.forName("org.jetbrains.kotlin.gradle.dsl.JvmTarget", true, kotlinExt.javaClass.classLoader)
+val jvmTargetValue = jvmTargetClass.getMethod("valueOf", String::class.java).invoke(null, "JVM_<%= javaVersion %>")
+jvmTargetProp.set(jvmTargetValue)
+(compilerOptions.javaClass.methods.first { it.name == "getJavaParameters" }.invoke(compilerOptions) as Property<Boolean>).set(true)
+(compilerOptions.javaClass.methods.first { it.name == "getFreeCompilerArgs" }.invoke(compilerOptions) as ListProperty<String>).add("-jvm-default=no-compatibility")
 
 if (OperatingSystem.current().isWindows()) {
     tasks.named<JavaExec>("bootRun") {

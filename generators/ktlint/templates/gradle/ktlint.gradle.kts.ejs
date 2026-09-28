@@ -16,6 +16,11 @@
  See the License for the specific language governing permissions and
  limitations under the License.
 -%>
+@file:Suppress("UNCHECKED_CAST")
+
+import org.gradle.api.provider.Property
+import org.gradle.api.tasks.util.PatternFilterable
+
 // Keep ktlint's compiler dependencies independent of Spring's application BOM.
 configurations.named("ktlint") {
     resolutionStrategy.eachDependency {
@@ -27,24 +32,16 @@ configurations.named("ktlint") {
 
 val ktlintExtension = project.extensions.getByName("ktlint")
 
-fun Any.invokeSingleArgumentMethod(name: String, argument: Any?) {
-    javaClass.methods
-        .first { it.name == name && it.parameterTypes.size == 1 }
-        .invoke(this, argument)
-}
-
 // See more options: https://github.com/JLLeitschuh/ktlint-gradle#configuration
-ktlintExtension.javaClass.methods.first { it.name == "getVersion" }.invoke(ktlintExtension)
-    .invokeSingleArgumentMethod("set", "<%- javaDependencies['ktlint-cli'] %>")
-ktlintExtension.javaClass.methods.first { it.name == "getIgnoreFailures" }.invoke(ktlintExtension)
-    .invokeSingleArgumentMethod("set", false)
+(ktlintExtension.javaClass.methods.first { it.name == "getVersion" }.invoke(ktlintExtension) as Property<String>)
+    .set("<%- javaDependencies['ktlint-cli'] %>")
+(ktlintExtension.javaClass.methods.first { it.name == "getIgnoreFailures" }.invoke(ktlintExtension) as Property<Boolean>)
+    .set(false)
 ktlintExtension.javaClass.methods
     .first { it.name == "filter" && it.parameterTypes[0] == Action::class.java }
     .invoke(
         ktlintExtension,
-        object : Action<Any> {
-            override fun execute(filter: Any) {
-                filter.invokeSingleArgumentMethod("setIncludes", listOf("**/kotlin/**"))
-            }
+        Action<PatternFilterable> {
+            include("**/kotlin/**")
         },
     )
