@@ -1,0 +1,89 @@
+<%#
+ Copyright 2013-2026 the original author or authors from the JHipster project.
+
+ This file is part of the JHipster project, see https://www.jhipster.tech/
+ for more information.
+
+ Licensed under the Apache License, Version 2.0 (the "License")
+ you may not use this file except in compliance with the License.
+ You may obtain a copy of the License at
+
+      https://www.apache.org/licenses/LICENSE-2.0
+
+ Unless required by applicable law or agreed to in writing, software
+ distributed under the License is distributed on an "AS IS" BASIS,
+ WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
+ See the License for the specific language governing permissions and
+ limitations under the License.
+-%>
+import org.gradle.internal.os.OperatingSystem
+import org.gradle.api.tasks.JavaExec
+import org.gradle.testing.jacoco.tasks.JacocoReport
+import org.gradle.api.artifacts.VersionCatalogsExtension
+import org.jetbrains.kotlin.gradle.dsl.JvmTarget
+import org.jetbrains.kotlin.gradle.tasks.KotlinCompile
+
+buildscript {
+    repositories {
+        mavenCentral()
+        gradlePluginPortal()
+    }
+    dependencies {
+        classpath("org.jetbrains.kotlin:kotlin-gradle-plugin:<%- javaDependencies.kotlin %>")
+    }
+}
+
+val libs = project.extensions.getByType<VersionCatalogsExtension>().named("libs")
+
+dependencies {
+    add("implementation", "org.jetbrains.kotlin:kotlin-stdlib")
+    add("implementation", "org.jetbrains.kotlin:kotlin-reflect")
+    add("implementation", "tools.jackson.module:jackson-module-kotlin")
+
+<%_ if (reactive) { _%>
+    add("implementation", "org.jetbrains.kotlinx:kotlinx-coroutines-debug")
+    add("implementation", "org.jetbrains.kotlinx:kotlinx-coroutines-reactor")
+    add("implementation", "io.projectreactor.kotlin:reactor-kotlin-extensions")
+
+<%_ } _%>
+    add("kapt", libs.findLibrary("mapstruct.processor").get())
+<%_ if (databaseTypeSql) { _%>
+    add("kapt", "org.hibernate.orm:hibernate-processor")
+    add("kapt", "org.glassfish.jaxb:jaxb-runtime")
+<%_ } _%>
+<%_ if (databaseTypeCassandra) { _%>
+    add("kapt", "org.apache.cassandra:java-driver-mapper-processor")
+<%_ } _%>
+
+    add("testImplementation", "org.jetbrains.kotlin:kotlin-test-junit")
+    add("testImplementation", libs.findLibrary("mockito.kotlin").get())
+}
+
+project.extensions.getByName("kapt").javaClass.methods
+    .single { it.name == "setCorrectErrorTypes" }
+    .invoke(project.extensions.getByName("kapt"), true)
+
+tasks.withType<KotlinCompile>().configureEach {
+    compilerOptions {
+        jvmTarget.set(JvmTarget.JVM_<%= javaVersion %>)
+        javaParameters.set(true)
+        freeCompilerArgs.add("-jvm-default=no-compatibility")
+    }
+}
+
+if (OperatingSystem.current().isWindows()) {
+    tasks.named<JavaExec>("bootRun") {
+        doFirst {
+            classpath += files(layout.buildDirectory.dir("classes/kotlin/main"))
+        }
+    }
+}
+
+tasks.named<JacocoReport>("jacocoTestReport") {
+    // Add Kotlin sources to Jacoco source dirs
+    sourceDirectories.from(file("src/main/kotlin"))
+}
+
+tasks.named("check") {
+    dependsOn(tasks.named("jacocoTestReport"))
+}

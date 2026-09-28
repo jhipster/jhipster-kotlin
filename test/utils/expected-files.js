@@ -33,7 +33,7 @@ const expectedFiles = {
         'gradle/wrapper/gradle-wrapper.jar',
         'gradle/wrapper/gradle-wrapper.properties',
         'checkstyle.xml',
-        'gradle/kotlin.gradle',
+        'gradle/kotlin.gradle.kts',
     ],
 
     maven: ['pom.xml', 'mvnw', 'mvnw.cmd', '.mvn/wrapper/maven-wrapper.jar', '.mvn/wrapper/maven-wrapper.properties', 'checkstyle.xml'],

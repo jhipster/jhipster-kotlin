@@ -72,7 +72,7 @@ export default class extends BaseApplicationGenerator {
                         { templates: ['.editorconfig.jhi.kotlin', `src/main/kotlin/_package_/GeneratedByJHipster.kt`] },
                         {
                             condition: ctx => ctx.buildToolGradle,
-                            templates: [{ file: 'gradle/kotlin.gradle' }],
+                            templates: [{ file: 'gradle/kotlin.gradle.kts' }],
                         },
                     ],
                     context: application,
@@ -103,7 +103,7 @@ export default class extends BaseApplicationGenerator {
                     );
 
                     source.applyFromGradle({
-                        script: 'gradle/kotlin.gradle',
+                        script: 'gradle/kotlin.gradle.kts',
                     });
 
                     // The Kotlin compiler runs inside the Gradle daemon, whose 512m default heap is exhausted by large applications.
