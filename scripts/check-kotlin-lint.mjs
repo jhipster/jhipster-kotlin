@@ -16,9 +16,8 @@ const { values } = parseArgs({
         stage: { type: 'string', default: 'all' },
     },
 });
-// Detekt 1.x does not support the CI JVM target; keep it available only as an explicit stage.
-const stages = ['generate', 'check', 'build'];
-if (values.stage !== 'all' && ![...stages, 'detekt'].includes(values.stage)) throw new Error(`Unknown stage: ${values.stage}`);
+const stages = ['generate', 'check', 'detekt', 'build'];
+if (values.stage !== 'all' && !stages.includes(values.stage)) throw new Error(`Unknown stage: ${values.stage}`);
 const output = resolve(values.output ?? join(root, '.kotlin-lint', values.sample));
 if (output === root) throw new Error('Generate into a separate directory, never the repository root');
 await mkdir(output, { recursive: true });
@@ -89,7 +88,7 @@ for (const stage of values.stage === 'all' ? stages : [values.stage]) {
             '--config',
             'detekt-config.yml',
             '--report',
-            'xml:lint-logs/detekt.xml',
+            'checkstyle:lint-logs/detekt.xml',
         ]);
     } else {
         const gradle = existsSync(join(output, 'gradlew'));
