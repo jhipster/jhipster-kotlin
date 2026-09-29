@@ -1,6 +1,36 @@
 # Changelog
 
-See [GitHub Releases](https://github.com/jhipster/jhipster-kotlin/releases) for published release notes. The entries below are historical and do not describe every change on `main`.
+See [GitHub Releases](https://github.com/jhipster/jhipster-kotlin/releases) for published release notes.
+
+<a name="2.0.0"></a>
+
+# [2.0.0](https://github.com/jhipster/jhipster-kotlin/compare/1.16.0...2.0.0) (2026-09-29)
+
+This major release upgrades KHipster to support **JHipster 9.4.0**, introduces full **Gradle Kotlin DSL (`.gradle.kts`)** support, modernizes the generator architecture with native ECMAScript Modules (ESM), and updates Kotlin linting and static analysis tools.
+
+### ⚠️ Breaking Changes
+
+- **JHipster 9.4.0 baseline:** Projects are now generated using JHipster 9 standards.
+- **Node.js runtime requirement:** Requires Node.js `^22.18.0 || >=24.11.0` (Node 24 recommended).
+- **ESM package:** The generator is now packaged as native ESM (`"type": "module"`).
+
+### 🚀 Highlights & New Features
+
+- **JHipster 9 Support:** Full alignment with upstream `generator-jhipster 9.4.0`.
+- **Gradle Kotlin DSL:** Added support for Kotlin DSL build scripts (`build.gradle.kts`) alongside standard Gradle and Maven.
+- **Modernized Kotlin Tooling:**
+    - Upgraded Ktlint and Detekt configurations.
+    - Added Jackson Kotlin module (`jackson-module-kotlin`) for improved Kotlin serialization.
+    - Updated Kotlin compiler arguments and Kapt configuration.
+- **Test Suite Modernization:**
+    - Migrated generator test suite from Mocha to Vitest.
+    - Added dedicated sample lint verification via `npm run test:kotlin-lint`.
+
+### 📦 Upstream & Dependency Updates
+
+- Upgraded `generator-jhipster` to `9.4.0`.
+- Upgraded `execa`, `mem-fs-editor`, and GitHub Actions workflows to latest major versions.
+- Cleaned up unused legacy needles and templates.
 
 <a name="1.8.1"></a>
 
