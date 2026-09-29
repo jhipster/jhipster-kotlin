@@ -1,0 +1,75 @@
+<%#
+ Copyright 2013-2026 the original author or authors from the JHipster project.
+
+ This file is part of the JHipster project, see https://www.jhipster.tech/
+ for more information.
+
+ Licensed under the Apache License, Version 2.0 (the "License")
+ you may not use this file except in compliance with the License.
+ You may obtain a copy of the License at
+
+      https://www.apache.org/licenses/LICENSE-2.0
+
+ Unless required by applicable law or agreed to in writing, software
+ distributed under the License is distributed on an "AS IS" BASIS,
+ WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
+ See the License for the specific language governing permissions and
+ limitations under the License.
+-%>
+@file:Suppress("UNCHECKED_CAST")
+
+import org.gradle.api.file.ConfigurableFileCollection
+import org.gradle.api.file.RegularFileProperty
+import org.gradle.api.provider.Property
+
+// Spring dependency management must not replace detekt's embedded Kotlin compiler.
+configurations.named("detekt") {
+    resolutionStrategy.eachDependency {
+        if (requested.group == "org.jetbrains.kotlin") {
+            useVersion(requireNotNull(requested.version))
+        }
+    }
+}
+
+fun Any.invokeSingleArgumentMethod(name: String, argument: Any?) {
+    javaClass.methods
+        .first { it.name == name && it.parameterTypes.size == 1 }
+        .invoke(this, argument)
+}
+
+fun Any.invokeTwoArgumentMethod(name: String, first: Any?, second: Any?) {
+    javaClass.methods
+        .first { it.name == name && it.parameterTypes.size == 2 }
+        .invoke(this, first, second)
+}
+
+val detektExtension = project.extensions.getByName("detekt")
+detektExtension.invokeSingleArgumentMethod("setToolVersion", "<%- javaDependencies['detekt-cli'] %>")
+detektExtension.invokeSingleArgumentMethod("setIgnoreFailures", false)
+(detektExtension.javaClass.methods.first { it.name == "getSource" }.invoke(detektExtension) as ConfigurableFileCollection)
+    .setFrom("src/main/kotlin")
+(detektExtension.javaClass.methods.first { it.name == "getConfig" }.invoke(detektExtension) as ConfigurableFileCollection)
+    .setFrom("<%= detektConfigFile %>")
+
+tasks.named("detekt") {
+    val reports = javaClass.methods.first { it.name == "getReports" }.invoke(this)
+    val checkstyle = reports.javaClass.methods.first { it.name == "getCheckstyle" }.invoke(reports)
+    (checkstyle.javaClass.methods.first { it.name == "getRequired" }.invoke(checkstyle) as Property<Boolean>).set(true)
+    (checkstyle.javaClass.methods.first { it.name == "getOutputLocation" }.invoke(checkstyle) as RegularFileProperty)
+        .set(layout.buildDirectory.file("reports/detekt/detekt.xml"))
+}
+
+val sonarqubeExtension = project.extensions.findByName("sonarqube")
+if (sonarqubeExtension != null) {
+    val properties = mapOf("sonar.kotlin.detekt.reportPaths" to layout.buildDirectory.file("reports/detekt/detekt.xml").get().asFile.path)
+    sonarqubeExtension.javaClass.methods
+        .first { it.name == "properties" && it.parameterTypes[0] == Action::class.java }
+        .invoke(
+            sonarqubeExtension,
+            object : Action<Any> {
+                override fun execute(extension: Any) {
+                    properties.forEach { (key, value) -> extension.invokeTwoArgumentMethod("property", key, value) }
+                }
+            },
+        )
+}

@@ -30,7 +30,7 @@ export default class extends BaseApplicationGenerator {
                 await this.writeFiles({
                     blocks: [
                         { templates: [{ file: DETEKT_CONFIG_FILE }] },
-                        { condition: ctx => ctx.buildToolGradle, templates: [{ file: 'gradle/detekt.gradle' }] },
+                        { condition: ctx => ctx.buildToolGradle, templates: [{ file: 'gradle/detekt.gradle.kts' }] },
                     ],
                     context: application,
                 });
@@ -49,7 +49,7 @@ export default class extends BaseApplicationGenerator {
             },
             async customizeGradle({ application, source }) {
                 if (application.buildToolGradle) {
-                    source.applyFromGradle({ script: 'gradle/detekt.gradle' });
+                    source.applyFromGradle({ script: 'gradle/detekt.gradle.kts' });
 
                     source.addGradleDependencyCatalogPlugin({
                         pluginName: 'detekt',
