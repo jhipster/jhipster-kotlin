@@ -16,20 +16,32 @@
  See the License for the specific language governing permissions and
  limitations under the License.
 -%>
+@file:Suppress("UNCHECKED_CAST")
+
+import org.gradle.api.provider.Property
+import org.gradle.api.tasks.util.PatternFilterable
+
 // Keep ktlint's compiler dependencies independent of Spring's application BOM.
 configurations.named("ktlint") {
     resolutionStrategy.eachDependency {
         if (requested.group == "org.jetbrains.kotlin") {
-            useVersion(requested.version)
+            useVersion(requireNotNull(requested.version))
         }
     }
 }
 
-ktlint {
-    //See more options: https://github.com/JLLeitschuh/ktlint-gradle#configuration
-    version = "<%- javaDependencies['ktlint-cli'] %>"
-    ignoreFailures = false
-    filter {
-        include("**/kotlin/**")
-    }
-}
+val ktlintExtension = project.extensions.getByName("ktlint")
+
+// See more options: https://github.com/JLLeitschuh/ktlint-gradle#configuration
+(ktlintExtension.javaClass.methods.first { it.name == "getVersion" }.invoke(ktlintExtension) as Property<String>)
+    .set("<%- javaDependencies['ktlint-cli'] %>")
+(ktlintExtension.javaClass.methods.first { it.name == "getIgnoreFailures" }.invoke(ktlintExtension) as Property<Boolean>)
+    .set(false)
+ktlintExtension.javaClass.methods
+    .first { it.name == "filter" && it.parameterTypes[0] == Action::class.java }
+    .invoke(
+        ktlintExtension,
+        Action<PatternFilterable> {
+            include("**/kotlin/**")
+        },
+    )
