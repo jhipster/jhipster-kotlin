@@ -29,7 +29,7 @@ Choose your application settings in the prompts. Follow the generated applicatio
 
 ## What you can generate
 
-- Kotlin Spring Boot backends, including application and entity code.
+- Kotlin Spring Boot backend, including application and entity code.
 - Monoliths, gateways, and microservices using JHipster's configuration options.
 - Angular, React, or Vue clients, or applications without a client.
 - Maven or Gradle projects, with Kotlin formatting and static analysis support.
