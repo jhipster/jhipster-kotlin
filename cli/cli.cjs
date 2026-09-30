@@ -12,6 +12,12 @@ const devBlueprintPath = join(packagePath, '.blueprint');
 const blueprint = packageFolderName.startsWith('jhipster-') ? `generator-${packageFolderName}` : packageFolderName;
 
 (async () => {
+    if (process.argv[2] === 'mcp') {
+        const { startMcpServer } = await import('./mcp-server.js');
+        await startMcpServer();
+        return;
+    }
+
     const { EnvironmentBuilder, runJHipster, done, logger } = await import('generator-jhipster/cli');
     const executableName = Object.keys(bin)[0];
 
