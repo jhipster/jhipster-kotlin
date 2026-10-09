@@ -24,12 +24,22 @@ await mkdir(output, { recursive: true });
 const logs = join(output, 'lint-logs');
 await mkdir(logs, { recursive: true });
 
-async function run(stage, command, args) {
+async function run(stage, command, args, { retryRateLimit = false } = {}) {
     console.log(`[${values.sample}] ${stage}: ${command} ${args.join(' ')}`);
-    const subprocess = execa(command, args, { cwd: output, reject: false, all: true });
-    // Persist output while the process runs so interruptions retain diagnostic logs.
-    const [result] = await Promise.all([subprocess, pipeline(subprocess.all, createWriteStream(join(logs, `${stage}.log`)))]);
-    if (result.failed) {
+    for (let attempt = 1; ; attempt++) {
+        const subprocess = execa(command, args, { cwd: output, reject: false, all: true });
+        // Persist output while the process runs so interruptions retain diagnostic logs.
+        const [result] = await Promise.all([
+            subprocess,
+            pipeline(subprocess.all, createWriteStream(join(logs, `${stage}.log`), { flags: attempt === 1 ? 'w' : 'a' })),
+        ]);
+        if (!result.failed) return;
+        if (retryRateLimit && attempt < 3 && /Received status code 429 from server/i.test(result.all)) {
+            const delay = 5_000 * 2 ** (attempt - 1) + Math.floor(Math.random() * 1_000);
+            console.warn(`${stage} hit Maven Central HTTP 429; retrying in ${delay}ms.`);
+            await new Promise(resolve => setTimeout(resolve, delay));
+            continue;
+        }
         console.error(result.all);
         throw new Error(`${stage} failed. Logs and generated files remain in ${output}; rerun with --stage ${stage}.`);
     }
@@ -92,7 +102,9 @@ for (const stage of values.stage === 'all' ? stages : [values.stage]) {
         ]);
     } else {
         const gradle = existsSync(join(output, 'gradlew'));
-        await run(stage, 'bash', gradle ? ['./gradlew', '--no-daemon', 'ktlintCheck'] : ['./mvnw', '-B', 'ktlint:check']);
+        await run(stage, 'bash', gradle ? ['./gradlew', '--no-daemon', 'ktlintCheck'] : ['./mvnw', '-B', 'ktlint:check'], {
+            retryRateLimit: true,
+        });
     }
 }
 console.log(`Kotlin lint ${values.stage} completed: ${output}`);
