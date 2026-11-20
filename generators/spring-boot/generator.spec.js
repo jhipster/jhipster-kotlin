@@ -86,4 +86,29 @@ describe('SubGenerator kotlin of kotlin JHipster blueprint', () => {
             expectNoJavaFiles();
         });
     });
+    describe.each(['postgresql', 'mysql'])('text blob field with %s', prodDatabaseType => {
+        beforeAll(async function () {
+            await helpers
+                .run('jhipster:spring-boot')
+                .withJHipsterConfig({ prodDatabaseType }, [
+                    {
+                        name: 'Note',
+                        changelogDate: '20250101000000',
+                        fields: [{ fieldName: 'text', fieldType: 'byte[]', fieldTypeBlobContent: 'text' }],
+                    },
+                ])
+                .withOptions({
+                    ignoreNeedlesError: true,
+                    blueprints: 'kotlin',
+                    skipKtlintFormat: true,
+                })
+                .withJHipsterGenerators()
+                .withLookups({ packagePaths: [process.cwd()], lookups: ['generators', 'generators/*/generators'] })
+                .withMockedGenerators(['jhipster-kotlin:ktlint', 'jhipster-kotlin:detekt', 'jhipster:client', 'jhipster:languages']);
+        });
+
+        it('should map the text blob field', () => {
+            expect(result.getSnapshot('**/domain/Note.kt')).toMatchSnapshot();
+        });
+    });
 });

@@ -22,7 +22,7 @@
 -%>
 <&_ if (fragment.importSection) { -&>
 import jakarta.persistence.*
-<%_ if (anyFieldIsUUID && (prodDatabaseTypeMysql || prodDatabaseTypeMariadb)) { _%>
+<%_ if (prodDatabaseTypePostgresql && anyFieldHasTextContentType || anyFieldIsUUID && (prodDatabaseTypeMysql || prodDatabaseTypeMariadb)) { _%>
 import org.hibernate.annotations.JdbcTypeCode
 import org.hibernate.type.SqlTypes
 <%_ } _%>
@@ -49,7 +49,9 @@ import org.hibernate.type.SqlTypes
   <%_ if (field.fieldIsEnum) { _%>
     @Enumerated(EnumType.STRING)
   <%_ } _%>
-  <%_ if (field.fieldTypeBytes) { _%>
+  <%_ if (field.fieldTypeBytes && field.blobContentTypeText && prodDatabaseTypePostgresql) { _%>
+    @JdbcTypeCode(SqlTypes.LONGVARCHAR)
+  <%_ } else if (field.fieldTypeBytes) { _%>
     @Lob
   <%_ } _%>
   <%_ if (field.fieldTypeTemporal || field.fieldTypeDuration) { _%>
